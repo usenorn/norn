@@ -608,3 +608,87 @@ func TestAnIssueCanBeRaisedInItsProjectWithoutASecondCall(t *testing.T) {
 		)
 	}
 }
+
+func TestAnIssueOnTheWrongTeamCanBeMovedAndKeepsNoOldReference(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	from := entity.Team{ID: uuid.New(), WorkspaceID: workspace.ID, Key: "GAM", Status: entity.TeamStatusActive}
+	to := entity.Team{ID: uuid.New(), WorkspaceID: workspace.ID, Key: "MAD", Status: entity.TeamStatusActive}
+
+	issue := entity.Issue{
+		ID: uuid.New(), WorkspaceID: workspace.ID, TeamID: from.ID,
+		ReferenceKey: "GAM", Number: 116, Version: 3, Title: "Raised in the wrong place",
+	}
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.issues.EXPECT().
+		GetByReference(gomock.Any(), workspace.ID, "GAM-116").
+		Return(issue, nil)
+
+	h.teams.EXPECT().
+		List(gomock.Any(), workspace.ID, gomock.Any()).
+		Return([]entity.Team{from, to}, nil).
+		AnyTimes()
+
+	var moved service.MoveIssueInput
+
+	h.issues.EXPECT().
+		MoveToTeam(gomock.Any(), workspace.ID, issue.ID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _, _ uuid.UUID, in service.MoveIssueInput,
+		) (entity.Issue, error) {
+			moved = in
+
+			return entity.Issue{
+				ID: issue.ID, WorkspaceID: workspace.ID, TeamID: to.ID,
+				ReferenceKey: "MAD", Number: 1, Version: 4, Title: issue.Title,
+			}, nil
+		})
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "norn_update_issue",
+		Arguments: map[string]any{
+			"workspace":        "acme",
+			"issue":            "GAM-116",
+			"expected_version": 3,
+			"team":             "MAD",
+		},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if result.IsError {
+		t.Fatalf("tool errored: %v", result.Content)
+	}
+
+	if moved.TeamID != to.ID {
+		t.Fatalf("the move asked for team %v, want %v", moved.TeamID, to.ID)
+	}
+
+	if moved.AcknowledgeLabelLoss {
+		t.Error(
+			"the move acknowledged losing labels without being asked to. An agent must be told " +
+				"the labels would be dropped rather than have them dropped for it.",
+		)
+	}
+
+	payload, err := json.Marshal(result.StructuredContent)
+	if err != nil {
+		t.Fatalf("marshal structured content: %v", err)
+	}
+
+	if !strings.Contains(string(payload), "MAD-1") {
+		t.Fatalf(
+			"the result is %s and does not carry the new reference. The agent may already have "+
+				"quoted the old one, so the answer has to say what it became.",
+			payload,
+		)
+	}
+}

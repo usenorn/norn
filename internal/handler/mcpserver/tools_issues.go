@@ -262,18 +262,20 @@ func (t *toolset) createIssue(
 }
 
 type updateIssueInput struct {
-	Workspace       string   `json:"workspace" jsonschema:"the workspace slug or id"`
-	Issue           string   `json:"issue" jsonschema:"the issue reference like ENG-42, or its id"`
-	ExpectedVersion int      `json:"expected_version" jsonschema:"the version returned by norn_get_issue"`
-	Title           *string  `json:"title,omitempty" jsonschema:"a new title"`
-	Description     *string  `json:"description,omitempty" jsonschema:"a new description, markdown"`
-	Priority        *string  `json:"priority,omitempty" jsonschema:"urgent, high, medium, low, or none"`
-	Assignee        *string  `json:"assignee,omitempty" jsonschema:"an account id, or me for the authorizing person"`
-	Estimate        *int     `json:"estimate,omitempty" jsonschema:"a new effort estimate in points"`
-	DueOn           *string  `json:"due_on,omitempty" jsonschema:"a new due date as YYYY-MM-DD"`
-	State           *string  `json:"state,omitempty" jsonschema:"a workflow state name or id"`
-	Project         *string  `json:"project,omitempty" jsonschema:"a project slug or id"`
-	Clear           []string `json:"clear,omitempty" jsonschema:"fields to clear: assignee, estimate, dueOn, cycle, or project"`
+	Workspace          string   `json:"workspace" jsonschema:"the workspace slug or id"`
+	Issue              string   `json:"issue" jsonschema:"the issue reference like ENG-42, or its id"`
+	ExpectedVersion    int      `json:"expected_version" jsonschema:"the version returned by norn_get_issue"`
+	Title              *string  `json:"title,omitempty" jsonschema:"a new title"`
+	Description        *string  `json:"description,omitempty" jsonschema:"a new description, markdown"`
+	Priority           *string  `json:"priority,omitempty" jsonschema:"urgent, high, medium, low, or none"`
+	Assignee           *string  `json:"assignee,omitempty" jsonschema:"an account id, or me for the authorizing person"`
+	Estimate           *int     `json:"estimate,omitempty" jsonschema:"a new effort estimate in points"`
+	DueOn              *string  `json:"due_on,omitempty" jsonschema:"a new due date as YYYY-MM-DD"`
+	State              *string  `json:"state,omitempty" jsonschema:"a workflow state name or id"`
+	Project            *string  `json:"project,omitempty" jsonschema:"a project slug or id"`
+	Team               *string  `json:"team,omitempty" jsonschema:"move the issue to this team key or id; the reference changes with it"`
+	DropStrandedLabels *bool    `json:"drop_stranded_labels,omitempty" jsonschema:"allow a move that loses labels the destination team cannot hold"`
+	Clear              []string `json:"clear,omitempty" jsonschema:"fields to clear: assignee, estimate, dueOn, cycle, or project"`
 }
 
 func (t *toolset) updateIssue(
@@ -289,6 +291,34 @@ func (t *toolset) updateIssue(
 	issue, err := t.resolveIssue(ctx, workspace.ID, input.Issue)
 	if err != nil {
 		return nil, issueOutput{}, toolFailure(ctx, err)
+	}
+
+	if input.Team != nil {
+		team, err := t.resolveTeam(ctx, workspace.ID, *input.Team)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+
+		move := service.MoveIssueInput{
+			ExpectedVersion: input.ExpectedVersion,
+			TeamID:          team.ID,
+		}
+
+		if input.DropStrandedLabels != nil {
+			move.AcknowledgeLabelLoss = *input.DropStrandedLabels
+		}
+
+		moved, err := t.issues.MoveToTeam(ctx, workspace.ID, issue.ID, move)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+
+		issue = moved
+		input.ExpectedVersion = moved.Version
+
+		if !changesBeyondTeam(input) {
+			return nil, issueOutput{Issue: issueDTOFrom(moved)}, nil
+		}
 	}
 
 	update := service.UpdateIssueInput{
@@ -388,4 +418,16 @@ func (t *toolset) changeIssueState(
 	}
 
 	return nil, issueOutput{Issue: issueDTOFrom(updated)}, nil
+}
+
+func changesBeyondTeam(input updateIssueInput) bool {
+	return input.Title != nil ||
+		input.Description != nil ||
+		input.Priority != nil ||
+		input.Assignee != nil ||
+		input.Estimate != nil ||
+		input.DueOn != nil ||
+		input.State != nil ||
+		input.Project != nil ||
+		len(input.Clear) > 0
 }
