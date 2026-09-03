@@ -146,3 +146,7 @@ export function groupByCategory(issues: Issue[]): CategoryGroup[] {
 		}))
 		.filter((group) => group.issues.length > 0);
 }
+
+export function teamProjectsPath(workspace: string, teamId: string): string {
+	return `${projectsPath(workspace)}?teamId=${teamId}`;
+}

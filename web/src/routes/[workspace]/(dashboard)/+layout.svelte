@@ -66,7 +66,7 @@
 	import { providePanels } from "$lib/layout/panels.svelte";
 	import ResizeHandle from "$lib/components/norn/resize-handle.svelte";
 	import PanelRestore from "$lib/components/norn/panel-restore.svelte";
-	import { projectPath, projectsPath } from "$lib/projects/projects";
+	import { projectPath, projectsPath, teamProjectsPath } from "$lib/projects/projects";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
@@ -197,6 +197,7 @@
 	const teams = $derived((data.teams ?? []).filter((team) => team.status === "active"));
 	const today = $derived(calendarDate(data.now, data.workspace.timezone));
 	const cycleFor = $derived((teamId: string) => data.cycles.find((entry) => entry.teamId === teamId));
+
 </script>
 
 <div class="relative flex h-dvh bg-background" style="--sidebar-width: {panels.width('sidebar')}px">
@@ -276,6 +277,14 @@
 						indent
 						active={current(teamIssuesPath(slug, team.key))}
 					/>
+					<SidebarItem
+						href={teamProjectsPath(slug, team.id)}
+						label="Projects"
+						glyph={TargetGlyph}
+						glyphEngaged={CrosshairGlyph}
+						indent
+						active={current(teamProjectsPath(slug, team.id))}
+					/>
 					{#if running}
 						<SidebarItem
 							href={cyclePath(slug, running.cycle)}
@@ -296,36 +305,6 @@
 					active={false}
 				/>
 			{/if}
-
-			<SidebarSection label="Projects">
-				{#snippet action()}
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						href={workspacePath(slug, "/projects?new")}
-						aria-label="New project"
-					>
-						<Plus aria-hidden="true" />
-					</Button>
-				{/snippet}
-			</SidebarSection>
-			{#each data.projects as project (project.id)}
-				<SidebarItem
-					href={projectPath(slug, project)}
-					label={project.name}
-					glyph={TargetGlyph}
-					glyphEngaged={CrosshairGlyph}
-					indent
-					active={current(projectPath(slug, project))}
-				/>
-			{/each}
-			<SidebarItem
-				href={projectsPath(slug)}
-				label={data.projects.length === 0 ? "Start a project" : "All projects"}
-				icon={data.projects.length === 0 ? Plus : List}
-				indent
-				active={exactly(projectsPath(slug))}
-			/>
 
 			<SidebarSection label="Views">
 				{#snippet action()}

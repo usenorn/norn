@@ -16,6 +16,7 @@
 		healthLabel,
 		projectFailureMessage,
 		projectPath,
+		projectsPath,
 		projectStates,
 		readProjectFailure,
 		stateLabel,
@@ -110,14 +111,24 @@
 </script>
 
 <svelte:head>
-	<title>Projects · {data.workspace.name} · Norn</title>
+	<title>{data.team ? `${data.team.name} projects` : "Projects"} · {data.workspace.name} · Norn</title>
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Target class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">Projects</h1>
+			<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+				{data.team ? data.team.name : "Projects"}
+			</h1>
+			{#if data.team}
+				<a
+					href={projectsPath(slug)}
+					class="shrink-0 rounded-sm border border-line-default px-1.5 py-0.5 text-sm whitespace-nowrap text-muted-foreground hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				>
+					Every project
+				</a>
+			{/if}
 			<div class="ml-auto flex items-center gap-2">
 				<Button variant="ghost" size="sm" href="?archived={showingArchived ? '0' : '1'}">
 					{showingArchived ? "Hide archived" : "Show archived"}
