@@ -5,6 +5,7 @@ import Menu from "@lucide/svelte/icons/menu";
 import Zap from "@lucide/svelte/icons/zap";
 import {
 	CircleDot as CircleDotGlyph,
+	Crosshair as CrosshairGlyph,
 	Eye as EyeGlyph,
 	Filter as FilterGlyph,
 	Inbox as InboxGlyph,
@@ -59,6 +60,12 @@ export function primaryNav(workspace: string, waiting = 0, unread = 0): NavEntry
 			glyph: ZapGlyph,
 			glyphEngaged: FilterGlyph,
 			count: waiting || undefined,
+		},
+		{
+			label: "Projects",
+			href: at("/projects"),
+			glyph: TargetGlyph,
+			glyphEngaged: CrosshairGlyph,
 		},
 	];
 }

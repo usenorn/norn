@@ -306,36 +306,6 @@
 				/>
 			{/if}
 
-			<SidebarSection label="Projects">
-				{#snippet action()}
-					<Button
-						variant="ghost"
-						size="icon-xs"
-						href={workspacePath(slug, "/projects?new")}
-						aria-label="New project"
-					>
-						<Plus aria-hidden="true" />
-					</Button>
-				{/snippet}
-			</SidebarSection>
-			{#each data.projects as project (project.id)}
-				<SidebarItem
-					href={projectPath(slug, project)}
-					label={project.name}
-					glyph={TargetGlyph}
-					glyphEngaged={CrosshairGlyph}
-					indent
-					active={current(projectPath(slug, project))}
-				/>
-			{/each}
-			<SidebarItem
-				href={projectsPath(slug)}
-				label={data.projects.length === 0 ? "Start a project" : "All projects"}
-				icon={data.projects.length === 0 ? Plus : List}
-				indent
-				active={exactly(projectsPath(slug))}
-			/>
-
 			<SidebarSection label="Views">
 				{#snippet action()}
 					<Button
