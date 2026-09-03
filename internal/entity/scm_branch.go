@@ -4,9 +4,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"golang.org/x/text/unicode/norm"
 
 	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
@@ -53,7 +55,35 @@ func BranchNameFor(settings SCMTeamSettings, handle string, issue Issue, referen
 }
 
 func SlugifyBranchPart(value string) string {
-	return channelv1.Slug(value, SCMBranchSlugMax)
+	return channelv1.Slug(latinise(value), SCMBranchSlugMax)
+}
+
+// A branch name reaches remote refs, CI job names, image tags and URLs, and those treat
+// anything outside ASCII as a problem to solve rather than a name. Latin letters lose their
+// marks, Cyrillic is transliterated, and an alphabet with no rule here leaves nothing — which
+// is correct: the template then yields the reference alone rather than an unusable name.
+func latinise(value string) string {
+	var builder strings.Builder
+
+	for _, symbol := range norm.NFKD.String(value) {
+		switch {
+		case symbol < utf8.RuneSelf:
+			builder.WriteRune(symbol)
+		case unicode.Is(unicode.Mn, symbol):
+		default:
+			builder.WriteString(cyrillic[unicode.ToLower(symbol)])
+		}
+	}
+
+	return builder.String()
+}
+
+var cyrillic = map[rune]string{
+	'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d", 'е': "e", 'ё': "e", 'ж': "zh",
+	'з': "z", 'и': "i", 'й': "i", 'к': "k", 'л': "l", 'м': "m", 'н': "n", 'о': "o",
+	'п': "p", 'р': "r", 'с': "s", 'т': "t", 'у': "u", 'ф': "f", 'х': "h", 'ц': "ts",
+	'ч': "ch", 'ш': "sh", 'щ': "sch", 'ъ': "", 'ы': "y", 'ь': "", 'э': "e", 'ю': "yu",
+	'я': "ya", 'і': "i", 'ї': "yi", 'є': "ye", 'ґ': "g",
 }
 
 func TrimBranchName(name string) string {

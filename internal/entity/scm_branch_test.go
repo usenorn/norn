@@ -16,7 +16,7 @@ func TestABranchNameIsSomethingGitWillAccept(t *testing.T) {
 		"Fix: the importer (again!)": "rae/eng-12-fix-the-importer-again",
 		"  leading and trailing   ":  "rae/eng-12-leading-and-trailing",
 		"..dots..and::colons":        "rae/eng-12-dots-and-colons",
-		"кириллица тоже":             "rae/eng-12-кириллица-тоже",
+		"кириллица тоже":             "rae/eng-12-kirillitsa-tozhe",
 	}
 
 	for title, want := range cases {
@@ -128,5 +128,34 @@ func TestATemplateThatNamesNoIssueIsRefused(t *testing.T) {
 
 	if field := entity.ValidateSCMBranchTemplate("branchTemplate", "{reference}"); field.Field != "" {
 		t.Fatal("a template naming the reference is valid")
+	}
+}
+
+func TestABranchNameIsAsciiWhateverAlphabetTheTitleUses(t *testing.T) {
+	for _, probe := range []struct {
+		name  string
+		title string
+		want  string
+	}{
+		{"english is untouched", "Check the connection", "check-the-connection"},
+		{"russian is transliterated", "Проверка связи", "proverka-svyazi"},
+		{"accents lose their marks", "Café déjà vu", "cafe-deja-vu"},
+		{"mixed alphabets survive together", "Fix Проверка now", "fix-proverka-now"},
+		{"an alphabet with no rule leaves nothing", "検索の修正", ""},
+		{"punctuation still separates", "Тест — 42", "test-42"},
+	} {
+		t.Run(probe.name, func(t *testing.T) {
+			got := entity.SlugifyBranchPart(probe.title)
+
+			if got != probe.want {
+				t.Fatalf("slug of %q is %q, want %q", probe.title, got, probe.want)
+			}
+
+			for _, symbol := range got {
+				if symbol >= utf8.RuneSelf {
+					t.Fatalf("slug %q carries %q, which no branch name may hold", got, symbol)
+				}
+			}
+		})
 	}
 }
