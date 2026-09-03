@@ -260,6 +260,7 @@ type projectDTO struct {
 	LeadName     string            `json:"leadName,omitempty"`
 	TargetOn     string            `json:"targetOn,omitempty"`
 	Archived     bool              `json:"archived"`
+	TeamIDs      []string          `json:"teamIds,omitempty"`
 	LatestStatus *projectStatusDTO `json:"latestStatus,omitempty"`
 }
 
@@ -276,6 +277,10 @@ func projectDTOFrom(view service.ProjectView) projectDTO {
 		LeadName:    project.LeadName,
 		TargetOn:    project.TargetOn,
 		Archived:    project.ArchivedAt != nil,
+	}
+
+	for _, teamID := range project.TeamIDs {
+		dto.TeamIDs = append(dto.TeamIDs, teamID.String())
 	}
 
 	if view.LatestStatus != nil {
