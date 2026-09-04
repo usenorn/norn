@@ -357,14 +357,15 @@ func searchResultDTOFrom(result entity.SearchResult) searchResultDTO {
 }
 
 type questionDTO struct {
-	ID         string `json:"id"`
-	Question   string `json:"question"`
-	Default    string `json:"default"`
-	Deadline   string `json:"deadline"`
-	Answered   bool   `json:"answered"`
-	Expired    bool   `json:"expired"`
-	Standing   string `json:"standing"`
-	AnsweredBy string `json:"answeredBy,omitempty"`
+	ID         string   `json:"id"`
+	Question   string   `json:"question"`
+	Default    string   `json:"default"`
+	Options    []string `json:"options,omitempty"`
+	Deadline   string   `json:"deadline"`
+	Answered   bool     `json:"answered"`
+	Expired    bool     `json:"expired"`
+	Standing   string   `json:"standing"`
+	AnsweredBy string   `json:"answeredBy,omitempty"`
 }
 
 func questionDTOFrom(question entity.IssueQuestion) questionDTO {
@@ -372,6 +373,7 @@ func questionDTOFrom(question entity.IssueQuestion) questionDTO {
 		ID:         question.ID.String(),
 		Question:   question.Question,
 		Default:    question.DefaultAnswer,
+		Options:    question.Options,
 		Deadline:   question.Deadline.Format(time.RFC3339),
 		Answered:   question.Answered(),
 		Expired:    question.Expired(time.Now().UTC()),
