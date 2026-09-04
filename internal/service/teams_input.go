@@ -14,8 +14,12 @@ type CreateTeamInput struct {
 }
 
 type UpdateTeamInput struct {
-	Name       *string
-	Visibility *entity.TeamVisibility
+	Name        *string
+	Description *string
+	Icon        *string
+	IconColor   *entity.TeamColor
+	Estimation  *entity.TeamEstimation
+	Visibility  *entity.TeamVisibility
 }
 
 type TeamMemberView struct {

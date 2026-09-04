@@ -33,6 +33,10 @@ type WorkspaceTeam struct {
 	ArchivedAt  null.Time `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
 	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Description string    `boil:"description" json:"description" toml:"description" yaml:"description"`
+	Icon        string    `boil:"icon" json:"icon" toml:"icon" yaml:"icon"`
+	IconColor   string    `boil:"icon_color" json:"icon_color" toml:"icon_color" yaml:"icon_color"`
+	Estimation  string    `boil:"estimation" json:"estimation" toml:"estimation" yaml:"estimation"`
 
 	R *workspaceTeamR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceTeamL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -48,6 +52,10 @@ var WorkspaceTeamColumns = struct {
 	ArchivedAt  string
 	CreatedAt   string
 	UpdatedAt   string
+	Description string
+	Icon        string
+	IconColor   string
+	Estimation  string
 }{
 	ID:          "id",
 	WorkspaceID: "workspace_id",
@@ -58,6 +66,10 @@ var WorkspaceTeamColumns = struct {
 	ArchivedAt:  "archived_at",
 	CreatedAt:   "created_at",
 	UpdatedAt:   "updated_at",
+	Description: "description",
+	Icon:        "icon",
+	IconColor:   "icon_color",
+	Estimation:  "estimation",
 }
 
 var WorkspaceTeamTableColumns = struct {
@@ -70,6 +82,10 @@ var WorkspaceTeamTableColumns = struct {
 	ArchivedAt  string
 	CreatedAt   string
 	UpdatedAt   string
+	Description string
+	Icon        string
+	IconColor   string
+	Estimation  string
 }{
 	ID:          "workspace_teams.id",
 	WorkspaceID: "workspace_teams.workspace_id",
@@ -80,6 +96,10 @@ var WorkspaceTeamTableColumns = struct {
 	ArchivedAt:  "workspace_teams.archived_at",
 	CreatedAt:   "workspace_teams.created_at",
 	UpdatedAt:   "workspace_teams.updated_at",
+	Description: "workspace_teams.description",
+	Icon:        "workspace_teams.icon",
+	IconColor:   "workspace_teams.icon_color",
+	Estimation:  "workspace_teams.estimation",
 }
 
 // Generated where
@@ -94,6 +114,10 @@ var WorkspaceTeamWhere = struct {
 	ArchivedAt  whereHelpernull_Time
 	CreatedAt   whereHelpertime_Time
 	UpdatedAt   whereHelpertime_Time
+	Description whereHelperstring
+	Icon        whereHelperstring
+	IconColor   whereHelperstring
+	Estimation  whereHelperstring
 }{
 	ID:          whereHelperstring{field: "\"workspace_teams\".\"id\""},
 	WorkspaceID: whereHelperstring{field: "\"workspace_teams\".\"workspace_id\""},
@@ -104,6 +128,10 @@ var WorkspaceTeamWhere = struct {
 	ArchivedAt:  whereHelpernull_Time{field: "\"workspace_teams\".\"archived_at\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"workspace_teams\".\"created_at\""},
 	UpdatedAt:   whereHelpertime_Time{field: "\"workspace_teams\".\"updated_at\""},
+	Description: whereHelperstring{field: "\"workspace_teams\".\"description\""},
+	Icon:        whereHelperstring{field: "\"workspace_teams\".\"icon\""},
+	IconColor:   whereHelperstring{field: "\"workspace_teams\".\"icon_color\""},
+	Estimation:  whereHelperstring{field: "\"workspace_teams\".\"estimation\""},
 }
 
 // WorkspaceTeamRels is where relationship names are stored.
@@ -257,9 +285,9 @@ func (r *workspaceTeamR) GetDefaultTeamWorkspaces() WorkspaceSlice {
 type workspaceTeamL struct{}
 
 var (
-	workspaceTeamAllColumns            = []string{"id", "workspace_id", "key", "name", "status", "visibility", "archived_at", "created_at", "updated_at"}
+	workspaceTeamAllColumns            = []string{"id", "workspace_id", "key", "name", "status", "visibility", "archived_at", "created_at", "updated_at", "description", "icon", "icon_color", "estimation"}
 	workspaceTeamColumnsWithoutDefault = []string{"workspace_id", "key", "name"}
-	workspaceTeamColumnsWithDefault    = []string{"id", "status", "visibility", "archived_at", "created_at", "updated_at"}
+	workspaceTeamColumnsWithDefault    = []string{"id", "status", "visibility", "archived_at", "created_at", "updated_at", "description", "icon", "icon_color", "estimation"}
 	workspaceTeamPrimaryKeyColumns     = []string{"id"}
 	workspaceTeamGeneratedColumns      = []string{}
 )

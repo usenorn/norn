@@ -40,6 +40,10 @@ func toEntity(model *dbpostgres.WorkspaceTeam) (entity.Team, error) {
 		WorkspaceID: workspaceID,
 		Key:         model.Key,
 		Name:        model.Name,
+		Description: model.Description,
+		Icon:        model.Icon,
+		IconColor:   entity.TeamColor(model.IconColor),
+		Estimation:  entity.TeamEstimation(model.Estimation),
 		Status:      entity.TeamStatus(model.Status),
 		Visibility:  entity.TeamVisibility(model.Visibility),
 		CreatedAt:   model.CreatedAt,
@@ -190,15 +194,18 @@ func (r *teamRepository) ListByWorkspaceMember(ctx context.Context, workspaceID,
 func (r *teamRepository) UpdateSettings(
 	ctx context.Context,
 	id uuid.UUID,
-	name string,
-	visibility entity.TeamVisibility,
+	settings repository.TeamSettings,
 ) (entity.Team, error) {
 	updated, err := dbpostgres.WorkspaceTeams(
 		dbpostgres.WorkspaceTeamWhere.ID.EQ(id.String()),
 	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
-		dbpostgres.WorkspaceTeamColumns.Name:       name,
-		dbpostgres.WorkspaceTeamColumns.Visibility: string(visibility),
-		dbpostgres.WorkspaceTeamColumns.UpdatedAt:  time.Now().UTC(),
+		dbpostgres.WorkspaceTeamColumns.Name:        settings.Name,
+		dbpostgres.WorkspaceTeamColumns.Description: settings.Description,
+		dbpostgres.WorkspaceTeamColumns.Icon:        settings.Icon,
+		dbpostgres.WorkspaceTeamColumns.IconColor:   string(settings.IconColor),
+		dbpostgres.WorkspaceTeamColumns.Estimation:  string(settings.Estimation),
+		dbpostgres.WorkspaceTeamColumns.Visibility:  string(settings.Visibility),
+		dbpostgres.WorkspaceTeamColumns.UpdatedAt:   time.Now().UTC(),
 	})
 	if err != nil {
 		return entity.Team{}, fmt.Errorf("update team settings: %w", err)

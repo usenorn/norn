@@ -190,6 +190,8 @@ func publicTeam(workspaceID, teamID uuid.UUID) entity.Team {
 		WorkspaceID: workspaceID,
 		Key:         "MOB",
 		Name:        "Mobile",
+		IconColor:   entity.DefaultTeamColor,
+		Estimation:  entity.DefaultTeamEstimation,
 		Status:      entity.TeamStatusActive,
 		Visibility:  entity.TeamVisibilityPublic,
 	}

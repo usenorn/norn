@@ -79,7 +79,21 @@ func (h *handler) UpdateWorkspaceTeam(ctx context.Context, request api.UpdateWor
 		return unauthorized(), nil
 	}
 
-	input := service.UpdateTeamInput{Name: request.Body.Name}
+	input := service.UpdateTeamInput{
+		Name:        request.Body.Name,
+		Description: request.Body.Description,
+		Icon:        request.Body.Icon,
+	}
+
+	if request.Body.IconColor != nil {
+		color := entity.TeamColor(*request.Body.IconColor)
+		input.IconColor = &color
+	}
+
+	if request.Body.Estimation != nil {
+		estimation := entity.TeamEstimation(*request.Body.Estimation)
+		input.Estimation = &estimation
+	}
 
 	if request.Body.Visibility != nil {
 		visibility := entity.TeamVisibility(*request.Body.Visibility)

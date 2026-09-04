@@ -204,13 +204,17 @@ func TestUpdateChangesTheNameAndNeverTheKey(t *testing.T) {
 	var capturedName string
 
 	h.teams.EXPECT().
-		UpdateSettings(gomock.Any(), teamID, gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, id uuid.UUID, name string, visibility entity.TeamVisibility) (entity.Team, error) {
-			capturedName = name
+		UpdateSettings(gomock.Any(), teamID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			id uuid.UUID,
+			settings repository.TeamSettings,
+		) (entity.Team, error) {
+			capturedName = settings.Name
 
 			updated := publicTeam(workspaceID, id)
-			updated.Name = name
-			updated.Visibility = visibility
+			updated.Name = settings.Name
+			updated.Visibility = settings.Visibility
 
 			return updated, nil
 		})
@@ -331,4 +335,105 @@ func TestANewTeamIsImmediatelyUsable(t *testing.T) {
 	if defaults != 1 || completions != 1 {
 		t.Fatalf("the seeded set has %d defaults and %d completion states, want exactly one of each", defaults, completions)
 	}
+}
+
+func TestATeamKeepsTheAppearanceFieldsItWasNotAskedToChange(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID, actorID := uuid.New(), uuid.New(), uuid.New()
+
+	current := publicTeam(workspaceID, teamID)
+	current.Description = "Ships the phone app"
+	current.Icon = "🚀"
+	current.IconColor = entity.TeamColor(entity.LabelColorCyan)
+	current.Estimation = entity.TeamEstimationPoints
+
+	h.expectActorMayAct(workspaceID, actorID, entity.MembershipRoleAdmin, entity.ResourceTeam, entity.ActionManage)
+	h.expectTeam(current)
+
+	var written repository.TeamSettings
+
+	h.teams.EXPECT().
+		UpdateSettings(gomock.Any(), teamID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			id uuid.UUID,
+			settings repository.TeamSettings,
+		) (entity.Team, error) {
+			written = settings
+
+			return current, nil
+		})
+
+	renamed := "Mobile Platform"
+	described := "Ships the phone app and its release train"
+
+	if _, err := h.service.Update(
+		actingAs(actorID),
+		workspaceID,
+		teamID,
+		service.UpdateTeamInput{Name: &renamed, Description: &described},
+	); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	if written.Name != renamed {
+		t.Fatalf("name = %q, want %q", written.Name, renamed)
+	}
+
+	if written.Description != described {
+		t.Fatalf("description = %q, want %q", written.Description, described)
+	}
+
+	if written.Icon != current.Icon ||
+		written.IconColor != current.IconColor ||
+		written.Estimation != current.Estimation {
+		t.Fatalf(
+			"renaming a team rewrote %+v; a field nobody mentioned must keep what it held",
+			written,
+		)
+	}
+}
+
+func TestATeamRefusesAnEstimationOrColourItDoesNotKnow(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		input service.UpdateTeamInput
+		field string
+	}{
+		{
+			name:  "colour",
+			input: service.UpdateTeamInput{IconColor: pointerTo(entity.TeamColor("chartreuse"))},
+			field: "iconColor",
+		},
+		{
+			name:  "estimation",
+			input: service.UpdateTeamInput{Estimation: pointerTo(entity.TeamEstimation("fibonacci"))},
+			field: "estimation",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			h := newHarness(t)
+
+			workspaceID, teamID, actorID := uuid.New(), uuid.New(), uuid.New()
+
+			h.expectActorMayAct(workspaceID, actorID, entity.MembershipRoleAdmin, entity.ResourceTeam, entity.ActionManage)
+			h.expectTeam(publicTeam(workspaceID, teamID))
+
+			_, err := h.service.Update(actingAs(actorID), workspaceID, teamID, test.input)
+
+			var validation entity.ValidationError
+			if !errors.As(err, &validation) {
+				t.Fatalf("Update error = %v, want ValidationError", err)
+			}
+
+			if len(validation.Fields) != 1 || validation.Fields[0].Field != test.field {
+				t.Fatalf("validation fields = %+v, want one on %q", validation.Fields, test.field)
+			}
+		})
+	}
+}
+
+func pointerTo[T any](value T) *T {
+	return &value
 }

@@ -16,7 +16,16 @@ type Team interface {
 	GetByID(ctx context.Context, id uuid.UUID) (entity.Team, error)
 	ListVisibleTo(ctx context.Context, workspaceID, accountID uuid.UUID, status entity.TeamStatus, includePrivate bool) ([]entity.Team, error)
 	ListByWorkspaceMember(ctx context.Context, workspaceID, accountID uuid.UUID) ([]entity.Team, error)
-	UpdateSettings(ctx context.Context, id uuid.UUID, name string, visibility entity.TeamVisibility) (entity.Team, error)
+	UpdateSettings(ctx context.Context, id uuid.UUID, settings TeamSettings) (entity.Team, error)
 	Archive(ctx context.Context, id uuid.UUID, archivedAt time.Time) (entity.Team, error)
 	Unarchive(ctx context.Context, id uuid.UUID) (entity.Team, error)
+}
+
+type TeamSettings struct {
+	Name        string
+	Description string
+	Icon        string
+	IconColor   entity.TeamColor
+	Estimation  entity.TeamEstimation
+	Visibility  entity.TeamVisibility
 }

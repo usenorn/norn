@@ -13,6 +13,8 @@
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
+	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import ColorChoice from "$lib/components/norn/color-choice.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import WorkflowStates from "$lib/components/norn/workflow-states.svelte";
 	import CycleCadence from "$lib/team/cycle-cadence.svelte";
@@ -34,8 +36,21 @@
 	import type { CadenceSetting } from "$lib/cycles/cycles";
 	import type { StateList } from "$lib/team/states";
 	import { settingsFor, teamOf, type TeamSettings } from "$lib/team/team-settings";
-	import { teamSettingsSchema } from "$lib/team/team-settings-schema";
-	import { visibilityLabels, visibilityNotes, type TeamVisibility } from "$lib/team/teams";
+	import {
+		teamColors,
+		teamEstimations,
+		teamSettingsSchema,
+	} from "$lib/team/team-settings-schema";
+	import {
+		estimationLabels,
+		estimationNotes,
+		visibilityLabels,
+		visibilityNotes,
+		type TeamColor,
+		type TeamEstimation,
+		type TeamVisibility,
+	} from "$lib/team/teams";
+	import { colorLabels } from "$lib/labels/labels";
 	import {
 		memberName,
 		searchDebounceMs,
@@ -183,8 +198,11 @@
 	$effect(() => {
 		if (!team) return;
 
-		const { name, visibility } = team;
-		formData.update((current) => ({ ...current, name, visibility }), { taint: false });
+		const { name, description, icon, iconColor, estimation, visibility } = team;
+		formData.update(
+			(current) => ({ ...current, name, description, icon, iconColor, estimation, visibility }),
+			{ taint: false }
+		);
 	});
 
 	const busy = $derived(
@@ -348,6 +366,90 @@
 									<Input {...props} disabled={locked} bind:value={$formData.name} />
 								{/snippet}
 							</Form.Control>
+							<Form.FieldErrors />
+						</Form.Field>
+
+						<Form.Field {form} name="icon">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Icon</Form.Label>
+									<Input
+										{...props}
+										disabled={locked}
+										bind:value={$formData.icon}
+										placeholder="🚀"
+										autocomplete="off"
+									/>
+								{/snippet}
+							</Form.Control>
+							<Form.Description class="text-sm text-muted-foreground">
+								An emoji, shown beside the team wherever it appears. Leave it empty for none.
+							</Form.Description>
+							<Form.FieldErrors />
+						</Form.Field>
+
+						<Form.Field {form} name="iconColor">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Colour</Form.Label>
+									<ColorChoice
+										{...props}
+										colors={teamColors}
+										labels={colorLabels}
+										value={$formData.iconColor}
+										name={props.name}
+										disabled={locked}
+										onpick={(color) => ($formData.iconColor = color as TeamColor)}
+									/>
+								{/snippet}
+							</Form.Control>
+							<Form.FieldErrors />
+						</Form.Field>
+
+						<Form.Field {form} name="description">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Description</Form.Label>
+									<Textarea
+										{...props}
+										rows={2}
+										disabled={locked}
+										bind:value={$formData.description}
+										placeholder="What this team is responsible for"
+									/>
+								{/snippet}
+							</Form.Control>
+							<Form.FieldErrors />
+						</Form.Field>
+
+						<Form.Field {form} name="estimation">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Estimates</Form.Label>
+									<Select.Root
+										type="single"
+										name={props.name}
+										value={$formData.estimation}
+										disabled={locked}
+										onValueChange={(value) => ($formData.estimation = value as TeamEstimation)}
+									>
+										<Select.Trigger {...props}>
+											{estimationLabels[$formData.estimation]}
+										</Select.Trigger>
+										<Select.Content>
+											{#each teamEstimations as estimation (estimation)}
+												<Select.Item value={estimation} label={estimationLabels[estimation]}>
+													{estimationLabels[estimation]}
+												</Select.Item>
+											{/each}
+										</Select.Content>
+									</Select.Root>
+								{/snippet}
+							</Form.Control>
+							<Form.Description class="text-sm text-muted-foreground">
+								{estimationNotes[$formData.estimation]} Changing this never rewrites an estimate
+								already given.
+							</Form.Description>
 							<Form.FieldErrors />
 						</Form.Field>
 

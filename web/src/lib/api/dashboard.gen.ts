@@ -7235,6 +7235,11 @@ export interface components {
             workspaceId: string;
             key: string;
             name: string;
+            description: string;
+            /** @description An emoji, or the name of an icon the app knows. Empty when the team has chosen neither, which is how it starts. */
+            icon: string;
+            iconColor: components["schemas"]["TeamColor"];
+            estimation: components["schemas"]["TeamEstimation"];
             status: components["schemas"]["TeamStatus"];
             visibility: components["schemas"]["TeamVisibility"];
             /** Format: date-time */
@@ -7242,6 +7247,13 @@ export interface components {
             /** Format: date-time */
             archivedAt?: string;
         };
+        /** @enum {string} */
+        TeamColor: "neutral" | "cyan" | "blue" | "violet" | "orchid" | "magenta";
+        /**
+         * @description How this team reads an issue's estimate. The estimate itself is always a number; this only decides how it is shown, so changing it never rewrites work already estimated.
+         * @enum {string}
+         */
+        TeamEstimation: "none" | "points" | "hours" | "sizes";
         CreateTeamRequest: {
             key: string;
             name: string;
@@ -7249,6 +7261,10 @@ export interface components {
         };
         UpdateTeamRequest: {
             name?: string;
+            description?: string;
+            icon?: string;
+            iconColor?: components["schemas"]["TeamColor"];
+            estimation?: components["schemas"]["TeamEstimation"];
             visibility?: components["schemas"]["TeamVisibility"];
         };
         TeamMember: {

@@ -11,10 +11,12 @@ import (
 )
 
 const (
-	TeamNameMinLen = 1
-	TeamNameMaxLen = 80
-	TeamKeyMinLen  = 2
-	TeamKeyMaxLen  = 5
+	TeamNameMinLen        = 1
+	TeamNameMaxLen        = 80
+	TeamKeyMinLen         = 2
+	TeamKeyMaxLen         = 5
+	TeamDescriptionMaxLen = 500
+	TeamIconMaxLen        = 40
 )
 
 var (
@@ -73,11 +75,54 @@ func (v TeamVisibility) Valid() bool {
 	}
 }
 
+type TeamColor string
+
+const DefaultTeamColor = TeamColor(LabelColorNeutral)
+
+func (c TeamColor) Valid() bool {
+	return LabelColor(c).Valid()
+}
+
+func TeamColors() []TeamColor {
+	palette := LabelColors()
+	colors := make([]TeamColor, 0, len(palette))
+
+	for _, color := range palette {
+		colors = append(colors, TeamColor(color))
+	}
+
+	return colors
+}
+
+type TeamEstimation string
+
+const (
+	TeamEstimationNone   TeamEstimation = "none"
+	TeamEstimationPoints TeamEstimation = "points"
+	TeamEstimationHours  TeamEstimation = "hours"
+	TeamEstimationSizes  TeamEstimation = "sizes"
+)
+
+const DefaultTeamEstimation = TeamEstimationNone
+
+func (e TeamEstimation) Valid() bool {
+	switch e {
+	case TeamEstimationNone, TeamEstimationPoints, TeamEstimationHours, TeamEstimationSizes:
+		return true
+	default:
+		return false
+	}
+}
+
 type Team struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
 	Key         string
 	Name        string
+	Description string
+	Icon        string
+	IconColor   TeamColor
+	Estimation  TeamEstimation
 	Status      TeamStatus
 	Visibility  TeamVisibility
 	ArchivedAt  *time.Time
@@ -134,4 +179,36 @@ func ValidateTeamKey(field, key string) FieldError {
 	default:
 		return FieldError{}
 	}
+}
+
+func ValidateTeamDescription(field, description string) FieldError {
+	if utf8.RuneCountInString(strings.TrimSpace(description)) > TeamDescriptionMaxLen {
+		return FieldError{Field: field, Code: ValidationCodeTooLong}
+	}
+
+	return FieldError{}
+}
+
+func ValidateTeamIcon(field, icon string) FieldError {
+	if utf8.RuneCountInString(strings.TrimSpace(icon)) > TeamIconMaxLen {
+		return FieldError{Field: field, Code: ValidationCodeTooLong}
+	}
+
+	return FieldError{}
+}
+
+func ValidateTeamColor(field string, color TeamColor) FieldError {
+	if !color.Valid() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
+}
+
+func ValidateTeamEstimation(field string, estimation TeamEstimation) FieldError {
+	if !estimation.Valid() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
 }
