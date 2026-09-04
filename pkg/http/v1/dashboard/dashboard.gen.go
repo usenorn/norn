@@ -2333,25 +2333,25 @@ func (e IssueMirrorOrigin) Valid() bool {
 
 // Defines values for IssuePriority.
 const (
-	High   IssuePriority = "high"
-	Low    IssuePriority = "low"
-	Medium IssuePriority = "medium"
-	None   IssuePriority = "none"
-	Urgent IssuePriority = "urgent"
+	IssuePriorityHigh   IssuePriority = "high"
+	IssuePriorityLow    IssuePriority = "low"
+	IssuePriorityMedium IssuePriority = "medium"
+	IssuePriorityNone   IssuePriority = "none"
+	IssuePriorityUrgent IssuePriority = "urgent"
 )
 
 // Valid indicates whether the value is a known member of the IssuePriority enum.
 func (e IssuePriority) Valid() bool {
 	switch e {
-	case High:
+	case IssuePriorityHigh:
 		return true
-	case Low:
+	case IssuePriorityLow:
 		return true
-	case Medium:
+	case IssuePriorityMedium:
 		return true
-	case None:
+	case IssuePriorityNone:
 		return true
-	case Urgent:
+	case IssuePriorityUrgent:
 		return true
 	default:
 		return false
@@ -2486,28 +2486,28 @@ func (e IssueStatus) Valid() bool {
 
 // Defines values for LabelColor.
 const (
-	Blue    LabelColor = "blue"
-	Cyan    LabelColor = "cyan"
-	Magenta LabelColor = "magenta"
-	Neutral LabelColor = "neutral"
-	Orchid  LabelColor = "orchid"
-	Violet  LabelColor = "violet"
+	LabelColorBlue    LabelColor = "blue"
+	LabelColorCyan    LabelColor = "cyan"
+	LabelColorMagenta LabelColor = "magenta"
+	LabelColorNeutral LabelColor = "neutral"
+	LabelColorOrchid  LabelColor = "orchid"
+	LabelColorViolet  LabelColor = "violet"
 )
 
 // Valid indicates whether the value is a known member of the LabelColor enum.
 func (e LabelColor) Valid() bool {
 	switch e {
-	case Blue:
+	case LabelColorBlue:
 		return true
-	case Cyan:
+	case LabelColorCyan:
 		return true
-	case Magenta:
+	case LabelColorMagenta:
 		return true
-	case Neutral:
+	case LabelColorNeutral:
 		return true
-	case Orchid:
+	case LabelColorOrchid:
 		return true
-	case Violet:
+	case LabelColorViolet:
 		return true
 	default:
 		return false
@@ -3606,6 +3606,36 @@ func (e StorageRefusedProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for TeamColor.
+const (
+	TeamColorBlue    TeamColor = "blue"
+	TeamColorCyan    TeamColor = "cyan"
+	TeamColorMagenta TeamColor = "magenta"
+	TeamColorNeutral TeamColor = "neutral"
+	TeamColorOrchid  TeamColor = "orchid"
+	TeamColorViolet  TeamColor = "violet"
+)
+
+// Valid indicates whether the value is a known member of the TeamColor enum.
+func (e TeamColor) Valid() bool {
+	switch e {
+	case TeamColorBlue:
+		return true
+	case TeamColorCyan:
+		return true
+	case TeamColorMagenta:
+		return true
+	case TeamColorNeutral:
+		return true
+	case TeamColorOrchid:
+		return true
+	case TeamColorViolet:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TeamConflictProblemCode.
 const (
 	TeamConflictProblemCodeTeamArchived     TeamConflictProblemCode = "team_archived"
@@ -3627,6 +3657,30 @@ func (e TeamConflictProblemCode) Valid() bool {
 	case TeamConflictProblemCodeTeamNotArchived:
 		return true
 	case TeamConflictProblemCodeWorkspaceDeleted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TeamEstimation.
+const (
+	TeamEstimationHours  TeamEstimation = "hours"
+	TeamEstimationNone   TeamEstimation = "none"
+	TeamEstimationPoints TeamEstimation = "points"
+	TeamEstimationSizes  TeamEstimation = "sizes"
+)
+
+// Valid indicates whether the value is a known member of the TeamEstimation enum.
+func (e TeamEstimation) Valid() bool {
+	switch e {
+	case TeamEstimationHours:
+		return true
+	case TeamEstimationNone:
+		return true
+	case TeamEstimationPoints:
+		return true
+	case TeamEstimationSizes:
 		return true
 	default:
 		return false
@@ -7801,8 +7855,16 @@ type SuppressIssueAutomationRequest struct {
 
 // Team defines model for Team.
 type Team struct {
-	ArchivedAt  *time.Time         `json:"archivedAt,omitempty"`
-	CreatedAt   time.Time          `json:"createdAt"`
+	ArchivedAt  *time.Time `json:"archivedAt,omitempty"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	Description string     `json:"description"`
+
+	// Estimation How this team reads an issue's estimate. The estimate itself is always a number; this only decides how it is shown, so changing it never rewrites work already estimated.
+	Estimation TeamEstimation `json:"estimation"`
+
+	// Icon An emoji, or the name of an icon the app knows. Empty when the team has chosen neither, which is how it starts.
+	Icon        string             `json:"icon"`
+	IconColor   TeamColor          `json:"iconColor"`
 	Id          openapi_types.UUID `json:"id"`
 	Key         string             `json:"key"`
 	Name        string             `json:"name"`
@@ -7810,6 +7872,9 @@ type Team struct {
 	Visibility  TeamVisibility     `json:"visibility"`
 	WorkspaceId openapi_types.UUID `json:"workspaceId"`
 }
+
+// TeamColor defines model for TeamColor.
+type TeamColor string
 
 // TeamConflictProblem defines model for TeamConflictProblem.
 type TeamConflictProblem struct {
@@ -7831,6 +7896,9 @@ type TeamCycle struct {
 	Cycle  Cycle              `json:"cycle"`
 	TeamId openapi_types.UUID `json:"teamId"`
 }
+
+// TeamEstimation How this team reads an issue's estimate. The estimate itself is always a number; this only decides how it is shown, so changing it never rewrites work already estimated.
+type TeamEstimation string
 
 // TeamMember defines model for TeamMember.
 type TeamMember struct {
@@ -7972,6 +8040,12 @@ type UpdateSourceControlRequest struct {
 
 // UpdateTeamRequest defines model for UpdateTeamRequest.
 type UpdateTeamRequest struct {
+	Description *string `json:"description,omitempty"`
+
+	// Estimation How this team reads an issue's estimate. The estimate itself is always a number; this only decides how it is shown, so changing it never rewrites work already estimated.
+	Estimation *TeamEstimation `json:"estimation,omitempty"`
+	Icon       *string         `json:"icon,omitempty"`
+	IconColor  *TeamColor      `json:"iconColor,omitempty"`
 	Name       *string         `json:"name,omitempty"`
 	Visibility *TeamVisibility `json:"visibility,omitempty"`
 }

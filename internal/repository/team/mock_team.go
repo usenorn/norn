@@ -16,6 +16,7 @@ import (
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
+	repository "github.com/usenorn/norn/internal/repository"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -134,16 +135,16 @@ func (mr *MockTeamMockRecorder) Unarchive(ctx, id any) *gomock.Call {
 }
 
 // UpdateSettings mocks base method.
-func (m *MockTeam) UpdateSettings(ctx context.Context, id uuid.UUID, name string, visibility entity.TeamVisibility) (entity.Team, error) {
+func (m *MockTeam) UpdateSettings(ctx context.Context, id uuid.UUID, settings repository.TeamSettings) (entity.Team, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSettings", ctx, id, name, visibility)
+	ret := m.ctrl.Call(m, "UpdateSettings", ctx, id, settings)
 	ret0, _ := ret[0].(entity.Team)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateSettings indicates an expected call of UpdateSettings.
-func (mr *MockTeamMockRecorder) UpdateSettings(ctx, id, name, visibility any) *gomock.Call {
+func (mr *MockTeamMockRecorder) UpdateSettings(ctx, id, settings any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSettings", reflect.TypeOf((*MockTeam)(nil).UpdateSettings), ctx, id, name, visibility)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSettings", reflect.TypeOf((*MockTeam)(nil).UpdateSettings), ctx, id, settings)
 }

@@ -197,28 +197,57 @@ func (s *teamsService) Update(ctx context.Context, workspaceID, teamID uuid.UUID
 		return entity.Team{}, err
 	}
 
-	name := current.Name
+	settings := repository.TeamSettings{
+		Name:        current.Name,
+		Description: current.Description,
+		Icon:        current.Icon,
+		IconColor:   current.IconColor,
+		Estimation:  current.Estimation,
+		Visibility:  current.Visibility,
+	}
+
 	if input.Name != nil {
-		name = *input.Name
+		settings.Name = *input.Name
 	}
 
-	visibility := current.Visibility
+	if input.Description != nil {
+		settings.Description = *input.Description
+	}
+
+	if input.Icon != nil {
+		settings.Icon = *input.Icon
+	}
+
+	if input.IconColor != nil {
+		settings.IconColor = *input.IconColor
+	}
+
+	if input.Estimation != nil {
+		settings.Estimation = *input.Estimation
+	}
+
 	if input.Visibility != nil {
-		visibility = *input.Visibility
+		settings.Visibility = *input.Visibility
 	}
 
-	if err := entity.NewValidationError(entity.ValidateTeamName("name", name)); err != nil {
+	if err := entity.NewValidationError(
+		entity.ValidateTeamName("name", settings.Name),
+		entity.ValidateTeamDescription("description", settings.Description),
+		entity.ValidateTeamIcon("icon", settings.Icon),
+		entity.ValidateTeamColor("iconColor", settings.IconColor),
+		entity.ValidateTeamEstimation("estimation", settings.Estimation),
+	); err != nil {
 		return entity.Team{}, err
 	}
 
-	if !visibility.Valid() {
+	if !settings.Visibility.Valid() {
 		return entity.Team{}, entity.NewValidationError(entity.FieldError{
 			Field: "visibility",
 			Code:  entity.ValidationCodeUnsupportedValue,
 		})
 	}
 
-	return s.teams.UpdateSettings(ctx, teamID, name, visibility)
+	return s.teams.UpdateSettings(ctx, teamID, settings)
 }
 
 func (s *teamsService) Archive(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.Team, error) {

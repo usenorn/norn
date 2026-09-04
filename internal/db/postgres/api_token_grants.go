@@ -796,7 +796,7 @@ func (apiTokenGrantL) LoadTeamWorkspaceTeams(ctx context.Context, e boil.Context
 	}
 
 	query := NewQuery(
-		qm.Select("\"workspace_teams\".\"id\", \"workspace_teams\".\"workspace_id\", \"workspace_teams\".\"key\", \"workspace_teams\".\"name\", \"workspace_teams\".\"status\", \"workspace_teams\".\"visibility\", \"workspace_teams\".\"archived_at\", \"workspace_teams\".\"created_at\", \"workspace_teams\".\"updated_at\", \"a\".\"grant_id\""),
+		qm.Select("\"workspace_teams\".\"id\", \"workspace_teams\".\"workspace_id\", \"workspace_teams\".\"key\", \"workspace_teams\".\"name\", \"workspace_teams\".\"status\", \"workspace_teams\".\"visibility\", \"workspace_teams\".\"archived_at\", \"workspace_teams\".\"created_at\", \"workspace_teams\".\"updated_at\", \"workspace_teams\".\"description\", \"workspace_teams\".\"icon\", \"workspace_teams\".\"icon_color\", \"workspace_teams\".\"estimation\", \"a\".\"grant_id\""),
 		qm.From("\"workspace_teams\""),
 		qm.InnerJoin("\"api_token_grant_teams\" as \"a\" on \"workspace_teams\".\"id\" = \"a\".\"team_id\""),
 		qm.WhereIn("\"a\".\"grant_id\" in ?", argsSlice...),
@@ -817,7 +817,7 @@ func (apiTokenGrantL) LoadTeamWorkspaceTeams(ctx context.Context, e boil.Context
 		one := new(WorkspaceTeam)
 		var localJoinCol string
 
-		err = results.Scan(&one.ID, &one.WorkspaceID, &one.Key, &one.Name, &one.Status, &one.Visibility, &one.ArchivedAt, &one.CreatedAt, &one.UpdatedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.WorkspaceID, &one.Key, &one.Name, &one.Status, &one.Visibility, &one.ArchivedAt, &one.CreatedAt, &one.UpdatedAt, &one.Description, &one.Icon, &one.IconColor, &one.Estimation, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for workspace_teams")
 		}

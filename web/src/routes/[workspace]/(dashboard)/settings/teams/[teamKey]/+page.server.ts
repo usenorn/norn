@@ -120,7 +120,14 @@ export const actions: Actions = {
 			"/workspaces/{workspaceId}/teams/{teamId}",
 			{
 				params: { path },
-				body: { name: form.data.name, visibility: form.data.visibility },
+				body: {
+					name: form.data.name,
+					description: form.data.description,
+					icon: form.data.icon,
+					iconColor: form.data.iconColor,
+					estimation: form.data.estimation,
+					visibility: form.data.visibility,
+				},
 			}
 		);
 

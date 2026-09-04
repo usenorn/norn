@@ -89,7 +89,12 @@ func TestAWorkspaceAdministratorAdministersAPrivateTeamTheyAreNotOn(t *testing.T
 	name := "Platform"
 
 	h.teams.EXPECT().
-		UpdateSettings(gomock.Any(), teamID, name, entity.TeamVisibilityPrivate).
+		UpdateSettings(gomock.Any(), teamID, repository.TeamSettings{
+			Name:       name,
+			IconColor:  entity.DefaultTeamColor,
+			Estimation: entity.DefaultTeamEstimation,
+			Visibility: entity.TeamVisibilityPrivate,
+		}).
 		Return(privateTeam(workspaceID, teamID), nil)
 
 	if _, err := h.service.Update(

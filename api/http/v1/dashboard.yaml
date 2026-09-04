@@ -11430,16 +11430,35 @@ components:
 
     Team:
       type: object
-      required: [id, workspaceId, key, name, status, visibility, createdAt]
+      required: [id, workspaceId, key, name, description, icon, iconColor, estimation, status, visibility, createdAt]
       properties:
         id: { type: string, format: uuid }
         workspaceId: { type: string, format: uuid }
         key: { type: string }
         name: { type: string }
+        description: { type: string }
+        icon:
+          type: string
+          description: >-
+            An emoji, or the name of an icon the app knows. Empty when the team has chosen neither,
+            which is how it starts.
+        iconColor: { $ref: '#/components/schemas/TeamColor' }
+        estimation: { $ref: '#/components/schemas/TeamEstimation' }
         status: { $ref: '#/components/schemas/TeamStatus' }
         visibility: { $ref: '#/components/schemas/TeamVisibility' }
         createdAt: { type: string, format: date-time }
         archivedAt: { type: string, format: date-time }
+
+    TeamColor:
+      type: string
+      enum: [neutral, cyan, blue, violet, orchid, magenta]
+
+    TeamEstimation:
+      type: string
+      description: >-
+        How this team reads an issue's estimate. The estimate itself is always a number; this only
+        decides how it is shown, so changing it never rewrites work already estimated.
+      enum: [none, points, hours, sizes]
 
     CreateTeamRequest:
       type: object
@@ -11453,6 +11472,10 @@ components:
       type: object
       properties:
         name: { type: string }
+        description: { type: string }
+        icon: { type: string }
+        iconColor: { $ref: '#/components/schemas/TeamColor' }
+        estimation: { $ref: '#/components/schemas/TeamEstimation' }
         visibility: { $ref: '#/components/schemas/TeamVisibility' }
 
     TeamMember:

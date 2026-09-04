@@ -3,6 +3,8 @@ import type { components, operations } from "$lib/api/dashboard.gen";
 export type Team = components["schemas"]["Team"];
 export type TeamStatus = components["schemas"]["TeamStatus"];
 export type TeamVisibility = components["schemas"]["TeamVisibility"];
+export type TeamColor = components["schemas"]["TeamColor"];
+export type TeamEstimation = components["schemas"]["TeamEstimation"];
 
 export const teamKeyPattern = /^[A-Z]{2,5}$/;
 
@@ -27,6 +29,35 @@ export function teamPath(workspace: string, teamKey: string): string {
 
 export function teamSettingsPath(workspace: string, teamKey: string): string {
 	return `/${workspace}/settings/teams/${teamKey.toUpperCase()}`;
+}
+
+export const estimationLabels: Record<TeamEstimation, string> = {
+	none: "No estimates",
+	points: "Points",
+	hours: "Hours",
+	sizes: "T-shirt sizes",
+};
+
+export const estimationNotes: Record<TeamEstimation, string> = {
+	none: "Issues on this team carry no estimate.",
+	points: "An estimate reads as a number of points.",
+	hours: "An estimate reads as a number of hours.",
+	sizes: "An estimate reads as XS through XL.",
+};
+
+const sizeNames = ["XS", "S", "M", "L", "XL"];
+
+export function estimateLabel(estimate: number, estimation: TeamEstimation): string {
+	switch (estimation) {
+		case "none":
+			return "";
+		case "points":
+			return `${estimate}`;
+		case "hours":
+			return `${estimate}h`;
+		case "sizes":
+			return sizeNames[Math.min(Math.max(estimate, 1), sizeNames.length) - 1];
+	}
 }
 
 export const teamListTabs = ["active", "archived"] as const;

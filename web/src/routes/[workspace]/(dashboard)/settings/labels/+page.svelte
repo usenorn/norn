@@ -13,6 +13,7 @@
 	import * as Empty from "$lib/components/ui/empty/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
+	import ColorChoice from "$lib/components/norn/color-choice.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -581,27 +582,15 @@
 						<Form.Control>
 							{#snippet children({ props })}
 								<Form.Label>Colour</Form.Label>
-								<div {...props} class="flex flex-wrap gap-2">
-									{#each labelColors as color (color)}
-										<button
-											type="button"
-											disabled={busy}
-											aria-pressed={$formData.color === color}
-											aria-label={colorLabels[color]}
-											onclick={() => ($formData.color = color as LabelColor)}
-											class="inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-sm motion-control disabled:opacity-50 aria-pressed:border-primary aria-pressed:bg-accent"
-											class:border-line-default={$formData.color !== color}
-										>
-											<span
-												class="size-2.5 rounded-xs"
-												style="background: var(--label-{color})"
-												aria-hidden="true"
-											></span>
-											{colorLabels[color]}
-										</button>
-									{/each}
-								</div>
-								<input type="hidden" name={props.name} value={$formData.color} />
+								<ColorChoice
+									{...props}
+									colors={labelColors}
+									labels={colorLabels}
+									value={$formData.color}
+									name={props.name}
+									disabled={busy}
+									onpick={(color) => ($formData.color = color as LabelColor)}
+								/>
 							{/snippet}
 						</Form.Control>
 						<Form.Description class="text-sm text-muted-foreground">
