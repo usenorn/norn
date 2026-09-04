@@ -1,5 +1,6 @@
 export type WorkspaceContext = {
 	existingWorkspace: string | null;
+	returnTo: { name: string; href: string } | null;
 };
 
 export type WorkspaceCreationFailure =

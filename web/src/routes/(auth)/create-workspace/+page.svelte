@@ -2,6 +2,7 @@
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
+	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
@@ -136,6 +137,18 @@
 <div class="my-auto flex w-full flex-col items-center gap-4">
 	<div class="notch w-full max-w-105">
 		<div class="flex flex-col gap-5 p-6.5">
+			{#if workspace.returnTo}
+				<Button
+					variant="ghost"
+					size="sm"
+					href={workspace.returnTo.href}
+					class="-mt-1 -ml-2 w-fit max-w-full"
+				>
+					<ArrowLeft data-icon="inline-start" aria-hidden="true" />
+					<span class="min-w-0 truncate">Back to {workspace.returnTo.name}</span>
+				</Button>
+			{/if}
+
 			<div class="flex flex-col gap-1.5">
 				<Eyebrow>{eyebrow}</Eyebrow>
 				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>

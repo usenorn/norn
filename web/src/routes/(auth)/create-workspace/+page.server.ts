@@ -1,6 +1,8 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
 import { sessionParam, withSlot } from "$lib/account/accounts";
+import { lastWorkspaceCookie, rememberedWorkspace } from "$lib/account/last-workspace";
+import { workspacePath } from "$lib/workspace/navigation";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import {
@@ -14,18 +16,28 @@ import type { Actions, PageServerLoad } from "./$types";
 
 type CreateWorkspaceForm = Infer<typeof createWorkspaceSchema>;
 
-export const load: PageServerLoad = async ({ depends, route, parent }) => {
+export const load: PageServerLoad = async ({ cookies, depends, route, parent }) => {
 	depends(keys.page(route.id));
 
 	const { accounts, acting } = await parent();
 	const owner = accounts.find((candidate) => candidate.account.id === acting?.accountId);
+	const held = owner?.workspaces ?? [];
+	const remembered = owner && cookies.get(lastWorkspaceCookie(owner.account.id));
+	const reachable = held.filter((candidate) => candidate.reachable);
+	const leaving = rememberedWorkspace(reachable, remembered) ?? reachable[0];
 
 	return {
 		owner: owner?.account ?? null,
 		choices: accounts.length,
 		workspace: {
-			existingWorkspace: owner?.workspaces[0]?.workspace.name ?? null,
-		} as WorkspaceContext,
+			existingWorkspace: (rememberedWorkspace(held, remembered) ?? held[0])?.workspace.name ?? null,
+			returnTo: leaving
+				? {
+						name: leaving.workspace.name,
+						href: withSlot(workspacePath(leaving.workspace.slug, "/my-tasks"), leaving.slot),
+					}
+				: null,
+		} satisfies WorkspaceContext,
 		form: await superValidate<CreateWorkspaceForm, WorkspaceCreationFailure>(
 			zod4(createWorkspaceSchema)
 		),
