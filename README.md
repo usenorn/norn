@@ -12,8 +12,8 @@
   <a href="https://norn.so">norn.so</a> ·
   <a href="https://docs.norn.so">Documentation</a> ·
   <a href="https://docs.norn.so/changelog">Changelog</a> ·
-  <a href="https://roadmap.norn.so">Roadmap</a> ·
-  <a href="https://status.norn.so">Status</a>
+  Roadmap (soon) ·
+  Status (soon)
 </p>
 
 <p align="center">
