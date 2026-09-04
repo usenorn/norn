@@ -860,3 +860,64 @@ func TestAProjectIsRaisedWithTheTeamsNamedByKey(t *testing.T) {
 		)
 	}
 }
+
+func TestReadingAnIssueNamesWhoRaisedIt(t *testing.T) {
+	h := newHarness(t)
+
+	workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+	raisedBy := uuid.New()
+
+	h.workspaces.EXPECT().
+		ListForAccount(gomock.Any(), h.actor.AccountID).
+		Return([]entity.Workspace{workspace}, nil)
+
+	h.issues.EXPECT().
+		GetByReference(gomock.Any(), workspace.ID, "GAM-9").
+		Return(entity.Issue{
+			ID:                 uuid.New(),
+			WorkspaceID:        workspace.ID,
+			TeamID:             uuid.New(),
+			ReferenceKey:       "GAM",
+			Number:             9,
+			Title:              "Wire the probe",
+			CreatedByAccountID: raisedBy,
+		}, nil)
+
+	session := h.session(t)
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name:      "norn_get_issue",
+		Arguments: map[string]any{"workspace": "acme", "issue": "GAM-9"},
+	})
+	if err != nil {
+		t.Fatalf("call tool: %v", err)
+	}
+
+	if result.IsError {
+		t.Fatalf("tool errored: %v", result.Content)
+	}
+
+	var output struct {
+		Issue struct {
+			CreatedByID string `json:"createdById"`
+		} `json:"issue"`
+	}
+
+	payload, err := json.Marshal(result.StructuredContent)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	if err := json.Unmarshal(payload, &output); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+
+	if output.Issue.CreatedByID != raisedBy.String() {
+		t.Fatalf(
+			"createdById = %q, want %q. An agent asked who raised an issue must read it from the "+
+				"payload rather than infer it.",
+			output.Issue.CreatedByID,
+			raisedBy,
+		)
+	}
+}

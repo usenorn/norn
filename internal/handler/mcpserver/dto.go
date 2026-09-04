@@ -99,6 +99,7 @@ type issueDTO struct {
 	Status          string     `json:"status"`
 	Priority        string     `json:"priority"`
 	AssigneeID      string     `json:"assigneeId,omitempty"`
+	CreatedByID     string     `json:"createdById,omitempty"`
 	Estimate        int        `json:"estimate,omitempty"`
 	DueOn           string     `json:"dueOn,omitempty"`
 	CycleID         string     `json:"cycleId,omitempty"`
@@ -146,6 +147,10 @@ func issueDTOFrom(issue entity.Issue) issueDTO {
 
 	if issue.AssigneeAccountID != uuid.Nil {
 		dto.AssigneeID = issue.AssigneeAccountID.String()
+	}
+
+	if issue.CreatedByAccountID != uuid.Nil {
+		dto.CreatedByID = issue.CreatedByAccountID.String()
 	}
 
 	if issue.CycleID != uuid.Nil {
