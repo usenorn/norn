@@ -43,7 +43,22 @@ export const createWorkspacePreviewStates: Record<string, CreateWorkspacePreview
 				busy: true,
 			},
 			additional: {
-				workspace: { existingWorkspace: "Northwind" },
+				workspace: {
+					existingWorkspace: "Northwind",
+					returnTo: { name: "Northwind", href: "/northwind/my-tasks" },
+				},
+				form: {
+					name: "Northwind Labs",
+					slug: "northwind-labs",
+					teamName: "Mobile",
+					teamKey: "MOB",
+				},
+			},
+			additional_unreachable: {
+				workspace: {
+					existingWorkspace: "Northwind",
+					returnTo: null,
+				},
 				form: {
 					name: "Northwind Labs",
 					slug: "northwind-labs",
