@@ -11,6 +11,7 @@
 	import { cyclePath, phaseLabel, type Cycle } from "$lib/cycles/cycles";
 	import { cycleWindow } from "$lib/time";
 	import { workspacePath } from "$lib/workspace/navigation";
+	import { teamSettingsPath } from "$lib/team/teams";
 	import { teamCyclesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -100,7 +101,7 @@
 						<Button
 							variant="secondary"
 							size="sm"
-							href={workspacePath(slug, `/settings/teams/${listing.teamKey}`)}
+							href={teamSettingsPath(slug, listing.teamKey)}
 						>
 							Team settings
 						</Button>
@@ -114,7 +115,7 @@
 					<Button
 						variant="ghost"
 						size="sm"
-						href={workspacePath(slug, `/settings/teams/${listing.teamKey}`)}
+						href={teamSettingsPath(slug, listing.teamKey)}
 					>
 						Change cadence
 					</Button>
