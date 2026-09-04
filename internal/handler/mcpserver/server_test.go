@@ -921,3 +921,90 @@ func TestReadingAnIssueNamesWhoRaisedIt(t *testing.T) {
 		)
 	}
 }
+
+func TestAQuestionAskedThroughTheToolIsOneAPersonCanAnswer(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		options []string
+	}{
+		{name: "prose"},
+		{name: "with options", options: []string{"Leave it", "Change it"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			h := newHarness(t)
+
+			workspace := entity.Workspace{ID: uuid.New(), Slug: "acme", Name: "Acme"}
+			issue := entity.Issue{
+				ID:           uuid.New(),
+				WorkspaceID:  workspace.ID,
+				TeamID:       uuid.New(),
+				ReferenceKey: "GAM",
+				Number:       9,
+			}
+
+			h.workspaces.EXPECT().
+				ListForAccount(gomock.Any(), h.actor.AccountID).
+				Return([]entity.Workspace{workspace}, nil)
+
+			h.issues.EXPECT().
+				GetByReference(gomock.Any(), workspace.ID, "GAM-9").
+				Return(issue, nil)
+
+			var raised service.AskQuestionInput
+
+			h.questions.EXPECT().
+				Ask(gomock.Any(), workspace.ID, issue.ID, gomock.Any()).
+				DoAndReturn(func(
+					_ context.Context,
+					_, _ uuid.UUID,
+					in service.AskQuestionInput,
+				) (entity.IssueQuestion, error) {
+					raised = in
+
+					if err := entity.NewValidationError(
+						entity.ValidateQuestionReachable("options", in.Options, in.AllowFreeText),
+					); err != nil {
+						return entity.IssueQuestion{}, err
+					}
+
+					return entity.IssueQuestion{ID: uuid.New(), Question: in.Question}, nil
+				})
+
+			session := h.session(t)
+
+			arguments := map[string]any{
+				"workspace": "acme",
+				"issue":     "GAM-9",
+				"question":  "May the identifier change?",
+				"default":   "Leave it read-only",
+			}
+
+			if test.options != nil {
+				arguments["options"] = test.options
+			}
+
+			result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+				Name:      "norn_ask",
+				Arguments: arguments,
+			})
+			if err != nil {
+				t.Fatalf("call tool: %v", err)
+			}
+
+			if result.IsError {
+				t.Fatalf(
+					"asking failed: %v. An agent told to ask rather than guess must be able to.",
+					result.Content,
+				)
+			}
+
+			if len(raised.Options) != len(test.options) {
+				t.Fatalf("options = %v, want %v", raised.Options, test.options)
+			}
+
+			if !raised.AllowFreeText {
+				t.Fatal("the question refuses free text, so a person cannot say anything the agent did not offer")
+			}
+		})
+	}
+}
