@@ -1,4 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
+import { teamSettingsPath } from "$lib/team/teams";
 
 export type Notification = components["schemas"]["Notification"];
 export type NotificationPage = components["schemas"]["NotificationPage"];
@@ -116,7 +117,7 @@ export function subjectPath(workspace: string, notification: Notification): stri
 	}
 
 	if (notification.subjectKind === "team") {
-		return notification.teamKey ? `/${workspace}/settings/teams/${notification.teamKey}` : null;
+		return notification.teamKey ? teamSettingsPath(workspace, notification.teamKey) : null;
 	}
 
 	return `/${workspace}/issues/${notification.reference ?? notification.subjectId}`;

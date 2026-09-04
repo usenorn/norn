@@ -8,6 +8,7 @@
 	import List from "@lucide/svelte/icons/list";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Search from "@lucide/svelte/icons/search";
+	import MoreHorizontal from "@lucide/svelte/icons/more-horizontal";
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
 	import BadgeCheck from "@lucide/svelte/icons/badge-check";
@@ -58,7 +59,7 @@
 	import { viewEntries, viewsPath } from "$lib/views/views";
 	import { cyclePath } from "$lib/cycles/cycles";
 	import { teamIssuesPath } from "$lib/issues/listing";
-	import { teamPath } from "$lib/team/teams";
+	import { teamPath, teamSettingsPath } from "$lib/team/teams";
 	import { expansionCookie, toggledExpansion, writeExpanded } from "$lib/workspace/sidebar";
 	import { untrack } from "svelte";
 	import { cn } from "$lib/utils.js";
@@ -269,6 +270,32 @@
 					expanded={expanded.includes(team.key)}
 					ontoggle={() => toggle(team.key)}
 				>
+					{#snippet action()}
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										variant="ghost"
+										size="icon-sm"
+										aria-label="Actions for {team.name}"
+									>
+										<MoreHorizontal aria-hidden="true" />
+									</Button>
+								{/snippet}
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content align="start">
+								<DropdownMenu.Item>
+									{#snippet child({ props })}
+										<a {...props} href={teamSettingsPath(slug, team.key)}>
+											<Settings aria-hidden="true" />
+											Team settings
+										</a>
+									{/snippet}
+								</DropdownMenu.Item>
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
+					{/snippet}
 					<SidebarItem
 						href={teamIssuesPath(slug, team.key)}
 						label="Issues"

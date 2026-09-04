@@ -9,6 +9,7 @@
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { teamIssuesPath } from "$lib/issues/listing";
 	import { workspacePath } from "$lib/workspace/navigation";
+	import { teamSettingsPath } from "$lib/team/teams";
 	import { teamOverviewPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -46,7 +47,7 @@
 				<Button
 					variant="outline"
 					size="sm"
-					href={workspacePath(slug, `/settings/teams/${overview.team.key}`)}
+					href={teamSettingsPath(slug, overview.team.key)}
 				>
 					<Settings aria-hidden="true" />
 					Team settings

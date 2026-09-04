@@ -25,6 +25,10 @@ export function teamPath(workspace: string, teamKey: string): string {
 	return `/${workspace}/teams/${teamKey.toUpperCase()}`;
 }
 
+export function teamSettingsPath(workspace: string, teamKey: string): string {
+	return `/${workspace}/settings/teams/${teamKey.toUpperCase()}`;
+}
+
 export const teamListTabs = ["active", "archived"] as const;
 
 export type TeamListTab = (typeof teamListTabs)[number];

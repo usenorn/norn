@@ -15,6 +15,7 @@
 		active = false,
 		expanded = false,
 		ontoggle,
+		action,
 		children,
 		class: className,
 	}: {
@@ -27,6 +28,7 @@
 		active?: boolean;
 		expanded?: boolean;
 		ontoggle: () => void;
+		action?: Snippet;
 		children: Snippet;
 		class?: string;
 	} = $props();
@@ -50,6 +52,7 @@
 		/>
 	</button>
 	<SidebarItem {href} {label} {icon} {glyph} {glyphEngaged} {active} class="min-w-0 flex-1" />
+	{@render action?.()}
 </div>
 {#if expanded}
 	<div {id} class="pl-5">
