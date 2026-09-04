@@ -5725,6 +5725,11 @@ type ForbiddenProblemReason string
 // GatewayReach Whether this machine can open a preview tunnel. unconfigured means this server serves no preview domain, so there was nothing to reach and nothing is wrong.
 type GatewayReach string
 
+// GrantableAgentScopes defines model for GrantableAgentScopes.
+type GrantableAgentScopes struct {
+	Scopes []APIScope `json:"scopes"`
+}
+
 // Health defines model for Health.
 type Health struct {
 	Status  HealthStatus `json:"status"`
@@ -9791,6 +9796,13 @@ type ClientInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agents (the `RegisterWorkspaceAgent` operationId).
 	RegisterWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, body RegisterWorkspaceAgentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListGrantableAgentScopes The permissions the caller may give an agent in this workspace
+	//
+	// An agent may never do more than the person who registered it, so the set on offer depends on the caller's own role. Asked before the register form is drawn, so a permission the caller cannot grant is shown as unavailable rather than refused after the fact.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agents/grantable-scopes (the `ListGrantableAgentScopes` operationId).
+	ListGrantableAgentScopes(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DisableWorkspaceAgent Disable an agent at once, keeping everything it has already done
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId} (the `DisableWorkspaceAgent` operationId).
@@ -13175,6 +13187,23 @@ func (c *Client) RegisterWorkspaceAgentWithBody(ctx context.Context, workspaceId
 // Corresponds with POST /workspaces/{workspaceId}/agents (the `RegisterWorkspaceAgent` operationId).
 func (c *Client) RegisterWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, body RegisterWorkspaceAgentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRegisterWorkspaceAgentRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListGrantableAgentScopes The permissions the caller may give an agent in this workspace
+//
+// An agent may never do more than the person who registered it, so the set on offer depends on the caller's own role. Asked before the register form is drawn, so a permission the caller cannot grant is shown as unavailable rather than refused after the fact.
+//
+// Corresponds with GET /workspaces/{workspaceId}/agents/grantable-scopes (the `ListGrantableAgentScopes` operationId).
+func (c *Client) ListGrantableAgentScopes(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListGrantableAgentScopesRequest(c.Server, workspaceId)
 	if err != nil {
 		return nil, err
 	}
@@ -20654,6 +20683,40 @@ func NewRegisterWorkspaceAgentRequestWithBody(server string, workspaceId Workspa
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListGrantableAgentScopesRequest constructs an http.Request for the ListGrantableAgentScopes method
+func NewListGrantableAgentScopesRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/grantable-scopes", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -33399,6 +33462,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agents (the `RegisterWorkspaceAgent` operationId).
 	RegisterWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, body RegisterWorkspaceAgentJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterWorkspaceAgentResponse, error)
 
+	// ListGrantableAgentScopesWithResponse The permissions the caller may give an agent in this workspace
+	//
+	// An agent may never do more than the person who registered it, so the set on offer depends on the caller's own role. Asked before the register form is drawn, so a permission the caller cannot grant is shown as unavailable rather than refused after the fact.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agents/grantable-scopes (the `ListGrantableAgentScopes` operationId).
+	ListGrantableAgentScopesWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListGrantableAgentScopesResponse, error)
+
 	// DisableWorkspaceAgentWithResponse Disable an agent at once, keeping everything it has already done
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -39711,6 +39783,75 @@ func (r RegisterWorkspaceAgentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RegisterWorkspaceAgentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListGrantableAgentScopesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *GrantableAgentScopes
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListGrantableAgentScopesResponse) GetJSON200() *GrantableAgentScopes {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListGrantableAgentScopesResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListGrantableAgentScopesResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ListGrantableAgentScopesResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListGrantableAgentScopesResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListGrantableAgentScopesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListGrantableAgentScopesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListGrantableAgentScopesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListGrantableAgentScopesResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58780,6 +58921,21 @@ func (c *ClientWithResponses) RegisterWorkspaceAgentWithResponse(ctx context.Con
 	return ParseRegisterWorkspaceAgentResponse(rsp)
 }
 
+// ListGrantableAgentScopesWithResponse The permissions the caller may give an agent in this workspace
+//
+// An agent may never do more than the person who registered it, so the set on offer depends on the caller's own role. Asked before the register form is drawn, so a permission the caller cannot grant is shown as unavailable rather than refused after the fact.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/agents/grantable-scopes (the `ListGrantableAgentScopes` operationId).
+func (c *ClientWithResponses) ListGrantableAgentScopesWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListGrantableAgentScopesResponse, error) {
+	rsp, err := c.ListGrantableAgentScopes(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListGrantableAgentScopesResponse(rsp)
+}
+
 // DisableWorkspaceAgentWithResponse Disable an agent at once, keeping everything it has already done
 //
 // Returns a wrapper object for the known response body format(s).
@@ -66251,6 +66407,60 @@ func ParseRegisterWorkspaceAgentResponse(rsp *http.Response) (*RegisterWorkspace
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListGrantableAgentScopesResponse parses an HTTP response from a ListGrantableAgentScopesWithResponse call
+func ParseListGrantableAgentScopesResponse(rsp *http.Response) (*ListGrantableAgentScopesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListGrantableAgentScopesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GrantableAgentScopes
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -80817,6 +81027,9 @@ type ServerInterface interface {
 	// RegisterWorkspaceAgent Register an agent that acts under a person's authority
 	// (POST /workspaces/{workspaceId}/agents)
 	RegisterWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListGrantableAgentScopes The permissions the caller may give an agent in this workspace
+	// (GET /workspaces/{workspaceId}/agents/grantable-scopes)
+	ListGrantableAgentScopes(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// DisableWorkspaceAgent Disable an agent at once, keeping everything it has already done
 	// (DELETE /workspaces/{workspaceId}/agents/{agentId})
 	DisableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
@@ -81915,6 +82128,12 @@ func (_ Unimplemented) ListWorkspaceAgents(w http.ResponseWriter, r *http.Reques
 // RegisterWorkspaceAgent Register an agent that acts under a person's authority
 // (POST /workspaces/{workspaceId}/agents)
 func (_ Unimplemented) RegisterWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListGrantableAgentScopes The permissions the caller may give an agent in this workspace
+// (GET /workspaces/{workspaceId}/agents/grantable-scopes)
+func (_ Unimplemented) ListGrantableAgentScopes(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -84609,6 +84828,32 @@ func (siw *ServerInterfaceWrapper) RegisterWorkspaceAgent(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RegisterWorkspaceAgent(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListGrantableAgentScopes operation middleware
+func (siw *ServerInterfaceWrapper) ListGrantableAgentScopes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListGrantableAgentScopes(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -94290,6 +94535,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents", wrapper.RegisterWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/grantable-scopes", wrapper.ListGrantableAgentScopes)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}", wrapper.DisableWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
@@ -99668,6 +99916,90 @@ func (response RegisterWorkspaceAgent422ApplicationProblemPlusJSONResponse) Visi
 type RegisterWorkspaceAgent500ApplicationProblemPlusJSONResponse Problem
 
 func (response RegisterWorkspaceAgent500ApplicationProblemPlusJSONResponse) VisitRegisterWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGrantableAgentScopesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListGrantableAgentScopesResponseObject interface {
+	VisitListGrantableAgentScopesResponse(w http.ResponseWriter) error
+}
+
+type ListGrantableAgentScopes200JSONResponse GrantableAgentScopes
+
+func (response ListGrantableAgentScopes200JSONResponse) VisitListGrantableAgentScopesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGrantableAgentScopes401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListGrantableAgentScopes401ApplicationProblemPlusJSONResponse) VisitListGrantableAgentScopesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGrantableAgentScopes403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListGrantableAgentScopes403ApplicationProblemPlusJSONResponse) VisitListGrantableAgentScopesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGrantableAgentScopes409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response ListGrantableAgentScopes409ApplicationProblemPlusJSONResponse) VisitListGrantableAgentScopesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGrantableAgentScopes500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListGrantableAgentScopes500ApplicationProblemPlusJSONResponse) VisitListGrantableAgentScopesResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -122697,6 +123029,9 @@ type StrictServerInterface interface {
 	// RegisterWorkspaceAgent Register an agent that acts under a person's authority
 	// (POST /workspaces/{workspaceId}/agents)
 	RegisterWorkspaceAgent(ctx context.Context, request RegisterWorkspaceAgentRequestObject) (RegisterWorkspaceAgentResponseObject, error)
+	// ListGrantableAgentScopes The permissions the caller may give an agent in this workspace
+	// (GET /workspaces/{workspaceId}/agents/grantable-scopes)
+	ListGrantableAgentScopes(ctx context.Context, request ListGrantableAgentScopesRequestObject) (ListGrantableAgentScopesResponseObject, error)
 	// DisableWorkspaceAgent Disable an agent at once, keeping everything it has already done
 	// (DELETE /workspaces/{workspaceId}/agents/{agentId})
 	DisableWorkspaceAgent(ctx context.Context, request DisableWorkspaceAgentRequestObject) (DisableWorkspaceAgentResponseObject, error)
@@ -125119,6 +125454,32 @@ func (sh *strictHandler) RegisterWorkspaceAgent(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RegisterWorkspaceAgentResponseObject); ok {
 		if err := validResponse.VisitRegisterWorkspaceAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListGrantableAgentScopes operation middleware
+func (sh *strictHandler) ListGrantableAgentScopes(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListGrantableAgentScopesRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListGrantableAgentScopes(ctx, request.(ListGrantableAgentScopesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListGrantableAgentScopes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListGrantableAgentScopesResponseObject); ok {
+		if err := validResponse.VisitListGrantableAgentScopesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

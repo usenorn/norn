@@ -240,6 +240,32 @@ func (s *agentsService) grant(
 	return entity.APITokenGrant{WorkspaceID: input.WorkspaceID, TeamIDs: input.TeamIDs}, nil
 }
 
+func (s *agentsService) GrantableScopes(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) (entity.APIScopeSet, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionManage,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return nil, entity.ErrAPITokenMintForbidden
+	}
+
+	ownership, err := s.ownerMembership(ctx, workspaceID, decision.Actor.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return entity.AllowedAPIScopesFor(ownership.Role), nil
+}
+
 func (s *agentsService) List(ctx context.Context, workspaceID uuid.UUID) ([]service.OwnedAgent, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceAgent,

@@ -2096,6 +2096,28 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents/grantable-scopes:
+    get:
+      tags: [agents]
+      operationId: listGrantableAgentScopes
+      summary: The permissions the caller may give an agent in this workspace
+      description: >-
+        An agent may never do more than the person who registered it, so the set on offer depends
+        on the caller's own role. Asked before the register form is drawn, so a permission the
+        caller cannot grant is shown as unavailable rather than refused after the fact.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The permissions this caller may grant, in catalogue order
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GrantableAgentScopes' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/agents/{agentId}:
     get:
       tags: [agents]
@@ -9764,6 +9786,14 @@ components:
         ownerName: { type: string }
         ownerEmail: { type: string }
         authority: { $ref: '#/components/schemas/AgentAuthority' }
+
+    GrantableAgentScopes:
+      type: object
+      required: [scopes]
+      properties:
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/APIScope' }
 
     AgentAuthority:
       type: object

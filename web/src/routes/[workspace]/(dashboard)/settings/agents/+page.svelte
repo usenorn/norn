@@ -88,6 +88,7 @@
 	const workspace = $derived(data.workspace);
 	const listing = $derived<AgentListing>(preview?.listing ?? data.listing);
 	const teams = $derived(preview?.teams ?? data.teams);
+	const grantable = $derived(preview?.grantable ?? data.grantable);
 	const allAgents = $derived(
 		listing.kind === "ready" || listing.kind === "registered" ? listing.agents : []
 	);
@@ -291,6 +292,7 @@
 		workspaceName={workspace.name}
 		origin={page.url.origin}
 		{teams}
+		{grantable}
 		initial={submitted?.form ?? data.form}
 		{inline}
 		closeHref={page.url.pathname}

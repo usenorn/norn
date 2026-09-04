@@ -1478,6 +1478,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/grantable-scopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The permissions the caller may give an agent in this workspace
+         * @description An agent may never do more than the person who registered it, so the set on offer depends on the caller's own role. Asked before the register form is drawn, so a permission the caller cannot grant is shown as unavailable rather than refused after the fact.
+         */
+        get: operations["listGrantableAgentScopes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents/{agentId}": {
         parameters: {
             query?: never;
@@ -6183,6 +6203,9 @@ export interface components {
             ownerName: string;
             ownerEmail: string;
             authority: components["schemas"]["AgentAuthority"];
+        };
+        GrantableAgentScopes: {
+            scopes: components["schemas"]["APIScope"][];
         };
         AgentAuthority: {
             scopes: components["schemas"]["APIScope"][];
@@ -11079,6 +11102,32 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             409: components["responses"]["AgentUnusable"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listGrantableAgentScopes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The permissions this caller may grant, in catalogue order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrantableAgentScopes"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["AgentUnusable"];
             500: components["responses"]["Problem"];
         };
     };

@@ -1,4 +1,4 @@
-import type { AgentFailure, AgentListing } from "$lib/agents/agents";
+import type { AgentFailure, AgentListing, APIScope } from "$lib/agents/agents";
 import type { Team } from "$lib/team/teams";
 
 export type AgentsPreview = {
@@ -6,13 +6,48 @@ export type AgentsPreview = {
 	teams?: Team[];
 	busy?: boolean;
 	failure?: AgentFailure;
+	grantable?: APIScope[] | null;
 };
 
 export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.env.DEV
 	? {
 			loading: { listing: { kind: "loading" } },
 			empty: { listing: { kind: "empty" } },
-			member_empty: { listing: { kind: "empty" } },
+			member_empty: {
+				listing: { kind: "empty" },
+				grantable: [
+					"issue:read",
+					"issue:manage",
+					"cycle:read",
+					"project:read",
+					"project:manage",
+					"label:read",
+					"team:read",
+					"membership:read",
+					"comment:read",
+					"comment:manage",
+					"notification:read",
+					"notification:manage",
+				],
+			},
+			member_refused: {
+				listing: { kind: "empty" },
+				grantable: [
+					"issue:read",
+					"issue:manage",
+					"cycle:read",
+					"project:read",
+					"project:manage",
+					"label:read",
+					"team:read",
+					"membership:read",
+					"comment:read",
+					"comment:manage",
+					"notification:read",
+					"notification:manage",
+				],
+				failure: { kind: "scope_exceeds", scopes: ["label:manage", "team:manage"] },
+			},
 			member_ready: {
 				listing: {
 					kind: "ready",

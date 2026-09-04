@@ -27,15 +27,20 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 		id: formId,
 	});
 
-	const agents = await locals.api.GET("/workspaces/{workspaceId}/agents", {
-		params: { path: { workspaceId: workspace.id } },
-	});
+	const path = { workspaceId: workspace.id };
+
+	const [agents, grants] = await Promise.all([
+		locals.api.GET("/workspaces/{workspaceId}/agents", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/agents/grantable-scopes", { params: { path } }),
+	]);
 	const reachable = (teams ?? []).filter((team) => team.status === "active");
+	const grantable = grants.data?.scopes ?? null;
 
 	if (agents.error) {
 		return {
 			form,
 			teams: reachable,
+			grantable,
 			listing: {
 				kind:
 					agents.error.status === 403
@@ -48,12 +53,13 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 	}
 
 	if (!agents.data || agents.data.length === 0) {
-		return { form, teams: reachable, listing: { kind: "empty" } as AgentListing };
+		return { form, teams: reachable, grantable, listing: { kind: "empty" } as AgentListing };
 	}
 
 	return {
 		form,
 		teams: reachable,
+		grantable,
 		listing: { kind: "ready", agents: agents.data } as AgentListing,
 	};
 };

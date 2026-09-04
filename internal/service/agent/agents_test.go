@@ -907,3 +907,110 @@ func TestAMemberDoesNotRatifyWhatATeamHeld(t *testing.T) {
 		)
 	}
 }
+
+func TestTheScopesOfferedAreTheOnesRegistrationWouldAccept(t *testing.T) {
+	adminOnly := adminOnlyScopes()
+
+	for _, test := range []struct {
+		role    entity.MembershipRole
+		offered bool
+	}{
+		{role: entity.MembershipRoleAdmin, offered: true},
+		{role: entity.MembershipRoleMember, offered: false},
+		{role: entity.MembershipRoleViewer, offered: false},
+	} {
+		t.Run(string(test.role), func(t *testing.T) {
+			h := newHarness(t, test.role)
+
+			h.members.EXPECT().
+				Get(gomock.Any(), h.workspaceID, h.adminID).
+				Return(entity.Membership{Role: test.role}, nil)
+			expectActivePerson(h, h.adminID)
+
+			scopes, err := h.service.GrantableScopes(context.Background(), h.workspaceID)
+			if err != nil {
+				t.Fatalf("GrantableScopes error = %v, want nil", err)
+			}
+
+			if got := adminOnly.SubsetOf(scopes); got != test.offered {
+				t.Fatalf(
+					"%s offered %v = %t, want %t. The register form must not put on offer what "+
+						"registration itself refuses.",
+					test.role,
+					adminOnly,
+					got,
+					test.offered,
+				)
+			}
+		})
+	}
+}
+
+func TestAViewerIsOfferedNothingItCouldNotAlreadyDo(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleViewer)
+
+	h.members.EXPECT().
+		Get(gomock.Any(), h.workspaceID, h.adminID).
+		Return(entity.Membership{Role: entity.MembershipRoleViewer}, nil)
+	expectActivePerson(h, h.adminID)
+
+	scopes, err := h.service.GrantableScopes(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("GrantableScopes error = %v, want nil", err)
+	}
+
+	if len(scopes) == 0 {
+		t.Fatal("a viewer was offered nothing at all, so the register form would be empty")
+	}
+
+	for _, scope := range scopes {
+		switch scope.Action() {
+		case entity.ActionRead:
+		case entity.ActionManage:
+			switch scope.Resource() {
+			case entity.ResourceSavedView, entity.ResourceComment, entity.ResourceNotification:
+			default:
+				t.Errorf("a viewer was offered %s, which it cannot do itself", scope)
+			}
+		default:
+			t.Errorf("a viewer was offered %s, which it cannot do itself", scope)
+		}
+	}
+}
+
+func TestAnAgentsOwnCredentialCannotAskWhatItMayGrant(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	ctrl := gomock.NewController(t)
+	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
+	authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor: entity.Actor{Kind: entity.ActorKindToken, AccountID: h.adminID},
+			Role:  entity.MembershipRoleAdmin,
+		}, nil)
+
+	h.authorizer = authorizer
+
+	_, err := agentsvc.New(
+		h.agents,
+		agentsettingrepo.NewMockAgentSetting(ctrl),
+		h.proposals,
+		h.accounts,
+		h.members,
+		h.tokens,
+		teamrepo.NewMockTeam(ctrl),
+		activityrepo.NewMockActivity(ctrl),
+		workflowstaterepo.NewMockWorkflowState(ctrl),
+		h.issues,
+		(service.IssueComments)(nil),
+		h.questions,
+		authorizer,
+		transactorrepo.NewMockTransactor(ctrl),
+		silentAudit(ctrl),
+	).GrantableScopes(context.Background(), h.workspaceID)
+
+	if !errors.Is(err, entity.ErrAPITokenMintForbidden) {
+		t.Fatalf("GrantableScopes error = %v, want ErrAPITokenMintForbidden", err)
+	}
+}
