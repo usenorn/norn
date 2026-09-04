@@ -23,10 +23,13 @@
 		agentIcons,
 		agentScopeGroups,
 		agentScopeLabels,
+		agentScopes,
+		beyondGrant,
 		failureMessage,
 		type Agent,
 		type AgentFailure,
 		type AgentScope,
+		type APIScope,
 	} from "./agents";
 	import { defaultAgentActionLimit, registerAgentSchema } from "./register-agent-schema";
 
@@ -34,6 +37,7 @@
 	type RegistrationOutcome = { kind: "issued"; agent: Agent; value: string } | AgentFailure;
 
 	const formId = "register-agent-form";
+	const withheldId = "agent-scopes-withheld";
 
 	let {
 		open,
@@ -41,6 +45,7 @@
 		workspaceName,
 		origin,
 		teams,
+		grantable = null,
 		initial,
 		inline = false,
 		closeHref,
@@ -53,6 +58,7 @@
 		workspaceName: string;
 		origin: string;
 		teams: Team[];
+		grantable?: APIScope[] | null;
 		initial?: SuperValidated<RegisterForm, RegistrationOutcome>;
 		inline?: boolean;
 		closeHref?: string;
@@ -75,7 +81,13 @@
 
 	const busy = $derived(disabled || $submitting);
 	const outcome = $derived<RegistrationOutcome | null>($message ?? null);
-	const failure = $derived(outcome && outcome.kind !== "issued" ? outcome : null);
+	const refused = $derived(outcome && outcome.kind !== "issued" ? outcome : null);
+	const failure = $derived<AgentFailure | null>(
+		refused?.kind === "scope_exceeds"
+			? { kind: "scope_exceeds", scopes: beyondGrant($formData.scopes, grantable) }
+			: refused
+	);
+	const withheld = $derived(new Set(beyondGrant([...agentScopes], grantable)));
 
 	$effect(() => {
 		if (!inline && open && !wasOpen) {
@@ -233,7 +245,7 @@
 			<div class="grid gap-3 sm:grid-cols-2">
 				{#each agentScopeGroups as group (group.title)}
 					<fieldset class="flex min-w-0 flex-col gap-1.5">
-						<legend class="text-xs font-medium tracking-snug text-ink-900">
+						<legend class="mb-2 text-xs font-medium tracking-snug text-ink-900">
 							{group.title}
 						</legend>
 						{#each group.scopes as scope (scope)}
@@ -244,22 +256,27 @@
 										type="checkbox"
 										name="scopes"
 										value={scope}
-										disabled={busy}
+										disabled={busy || withheld.has(scope)}
 										checked={$formData.scopes.includes(scope)}
 										onchange={(event) => toggleScope(scope, event.currentTarget.checked)}
+										aria-describedby={withheld.has(scope) ? withheldId : undefined}
 										class="mt-0.5 size-3.5 accent-ink-900"
 									/>
 								{:else}
 									<Checkbox
 										id={`agent-scope-${scope}`}
-										disabled={busy}
+										disabled={busy || withheld.has(scope)}
 										checked={$formData.scopes.includes(scope)}
 										onCheckedChange={(checked) => toggleScope(scope, checked === true)}
+										aria-describedby={withheld.has(scope) ? withheldId : undefined}
 									/>
 								{/if}
 								<label
 									for={`agent-scope-${scope}`}
-									class="text-xs leading-normal text-ink-600"
+									class={cn(
+										"text-xs leading-normal text-ink-600",
+										withheld.has(scope) && "text-ink-400"
+									)}
 								>
 									{agentScopeLabels[scope] ?? scope}
 								</label>
@@ -268,6 +285,11 @@
 					</fieldset>
 				{/each}
 			</div>
+			{#if withheld.size > 0}
+				<p id={withheldId} class="text-xs leading-normal text-ink-400">
+					An agent cannot do more than you can, so the greyed permissions need an administrator.
+				</p>
+			{/if}
 			<Form.FieldErrors />
 		</Form.Fieldset>
 

@@ -24,6 +24,22 @@ func (h *handler) ListWorkspaceAgents(
 	return api.ListWorkspaceAgents200JSONResponse(workspaceAgentDTOs(agents)), nil
 }
 
+func (h *handler) ListGrantableAgentScopes(
+	ctx context.Context,
+	request api.ListGrantableAgentScopesRequestObject,
+) (api.ListGrantableAgentScopesResponseObject, error) {
+	scopes, err := h.agents.GrantableScopes(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListGrantableAgentScopes200JSONResponse{Scopes: apiScopeDTOs(scopes)}, nil
+}
+
 func (h *handler) RegisterWorkspaceAgent(
 	ctx context.Context,
 	request api.RegisterWorkspaceAgentRequestObject,

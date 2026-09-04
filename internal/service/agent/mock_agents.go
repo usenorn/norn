@@ -147,6 +147,21 @@ func (mr *MockAgentsMockRecorder) Get(ctx, workspaceID, agentID any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockAgents)(nil).Get), ctx, workspaceID, agentID)
 }
 
+// GrantableScopes mocks base method.
+func (m *MockAgents) GrantableScopes(ctx context.Context, workspaceID uuid.UUID) (entity.APIScopeSet, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GrantableScopes", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.APIScopeSet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GrantableScopes indicates an expected call of GrantableScopes.
+func (mr *MockAgentsMockRecorder) GrantableScopes(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GrantableScopes", reflect.TypeOf((*MockAgents)(nil).GrantableScopes), ctx, workspaceID)
+}
+
 // List mocks base method.
 func (m *MockAgents) List(ctx context.Context, workspaceID uuid.UUID) ([]service.OwnedAgent, error) {
 	m.ctrl.T.Helper()

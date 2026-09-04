@@ -13,6 +13,7 @@ import (
 type Agents interface {
 	Register(ctx context.Context, input RegisterAgentInput) (RegisteredAgent, error)
 	List(ctx context.Context, workspaceID uuid.UUID) ([]OwnedAgent, error)
+	GrantableScopes(ctx context.Context, workspaceID uuid.UUID) (entity.APIScopeSet, error)
 	Get(ctx context.Context, workspaceID, agentID uuid.UUID) (OwnedAgent, error)
 	Disable(ctx context.Context, workspaceID, agentID uuid.UUID) error
 	Enable(ctx context.Context, workspaceID, agentID uuid.UUID) (RegisteredAgent, error)

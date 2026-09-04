@@ -1386,6 +1386,10 @@ func (r problemResponse) VisitListWorkspaceAgentsResponse(w http.ResponseWriter)
 	return r.write(w)
 }
 
+func (r problemResponse) VisitListGrantableAgentScopesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitRegisterWorkspaceAgentResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

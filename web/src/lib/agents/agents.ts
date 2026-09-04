@@ -31,7 +31,7 @@ export type AgentFailure =
 	| { kind: "disabled" }
 	| { kind: "active" }
 	| { kind: "authority_missing" }
-	| { kind: "scope_exceeds" }
+	| { kind: "scope_exceeds"; scopes: AgentScope[] }
 	| { kind: "scope_invalid" }
 	| { kind: "grant_invalid" }
 	| { kind: "forbidden" }
@@ -169,6 +169,20 @@ export const agentScopeLabels: Record<string, string> = {
 	"notification:manage": "Mark its own inbox as read",
 };
 
+export function beyondGrant(scopes: AgentScope[], grantable: APIScope[] | null): AgentScope[] {
+	if (!grantable) return [];
+
+	return scopes.filter((scope) => !grantable.includes(scope));
+}
+
+function listed(names: string[]): string {
+	if (names.length === 1) return `“${names[0]}”`;
+
+	const quoted = names.map((name) => `“${name}”`);
+
+	return `${quoted.slice(0, -1).join(", ")} and ${quoted[quoted.length - 1]}`;
+}
+
 function coded(problem: RegisterProblem): problem is CodedRegisterProblem {
 	return "code" in problem;
 }
@@ -192,7 +206,7 @@ export function registerFailure(problem: RegisterProblem): AgentFailure {
 		case "token_scope_invalid":
 			return { kind: "scope_invalid" };
 		case "token_scope_exceeds":
-			return { kind: "scope_exceeds" };
+			return { kind: "scope_exceeds", scopes: [] };
 		case "token_may_not_mint":
 			return { kind: "forbidden" };
 		case "token_grant_invalid":
@@ -218,7 +232,12 @@ export function failureMessage(failure: AgentFailure): string {
 		case "authority_missing":
 			return "That agent no longer has authority to restore. Register a new agent instead.";
 		case "scope_exceeds":
-			return "An agent cannot do more than you can. Choose fewer permissions.";
+			return failure.scopes.length === 0
+				? "An agent cannot do more than you can. Choose fewer permissions."
+				: `An agent cannot do more than you can, and ${listed(
+						failure.scopes.map((scope) => agentScopeLabels[scope] ?? scope)
+					)} ${failure.scopes.length === 1 ? "is" : "are"} beyond what your role allows. ` +
+					"Clear those to carry on, or ask an administrator to raise your role.";
 		case "scope_invalid":
 			return "One of those permissions is not recognised.";
 		case "grant_invalid":
