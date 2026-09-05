@@ -2,6 +2,11 @@ import type { components } from "$lib/api/dashboard.gen";
 import type { ActivityFeed } from "$lib/activity/activity";
 import type { Issue } from "$lib/issues/issues";
 import type { StateCategory } from "$lib/team/states";
+import type { Team } from "$lib/team/teams";
+import { totalIssues, type IssueProgress } from "$lib/issues/board";
+import { calendarDate, daysBetween, onCalendarDate, onDate } from "$lib/time";
+
+const targetSoonDays = 14;
 
 export type Project = components["schemas"]["Project"];
 export type ProjectState = components["schemas"]["ProjectState"];
@@ -149,4 +154,75 @@ export function groupByCategory(issues: Issue[]): CategoryGroup[] {
 
 export function teamProjectsPath(workspace: string, teamId: string): string {
 	return `${projectsPath(workspace)}?teamId=${teamId}`;
+}
+
+export type ProjectStanding = "on_track" | "at_risk" | "completed" | "cancelled";
+
+export function projectStanding(project: Project): ProjectStanding {
+	if (project.state === "completed") return "completed";
+	if (project.state === "cancelled") return "cancelled";
+	if (project.health === "at_risk" || project.health === "off_track") return "at_risk";
+
+	return "on_track";
+}
+
+export const standingLabels: Record<ProjectStanding, string> = {
+	on_track: "On track",
+	at_risk: "At risk",
+	completed: "Completed",
+	cancelled: "Cancelled",
+};
+
+export function targetLine(project: Project, now: string, timezone: string): string {
+	const standing = projectStanding(project);
+
+	if (standing === "completed") {
+		return project.archivedAt
+			? `completed ${onDate(project.archivedAt, timezone)}`
+			: "completed";
+	}
+
+	if (standing === "cancelled") {
+		return project.archivedAt
+			? `cancelled ${onDate(project.archivedAt, timezone)}`
+			: "cancelled";
+	}
+
+	if (!project.targetOn) return "no target date";
+
+	const days = daysBetween(calendarDate(now, timezone), project.targetOn);
+	const target = `target ${onCalendarDate(project.targetOn)}`;
+
+	if (days > 0 && days <= targetSoonDays) {
+		return `${target} · ${days} ${days === 1 ? "day" : "days"}`;
+	}
+
+	return days < 0 ? `${target} · ${-days} ${days === -1 ? "day" : "days"} over` : target;
+}
+
+export type ScopeSegment = { label: string; count: number; token: string };
+
+export function scopeSegments(progress: IssueProgress): ScopeSegment[] {
+	return [
+		{ label: "Done", count: progress.complete, token: "status-complete" },
+		{ label: "In progress", count: progress.active, token: "status-active" },
+		{ label: "Not started", count: progress.notStarted, token: "status-not-started" },
+		{ label: "Cancelled", count: progress.abandoned, token: "status-abandoned" },
+	].filter((segment) => segment.count > 0);
+}
+
+export function progressLabel(progress: IssueProgress): string {
+	const total = totalIssues(progress);
+
+	if (total === 0) return "no issues yet";
+
+	return `${progress.complete}/${total} done · ${Math.round((progress.complete / total) * 100)}%`;
+}
+
+export function teamsLine(project: Project, teams: Team[]): string {
+	const named = (project.teamIds ?? [])
+		.map((id) => teams.find((team) => team.id === id)?.name)
+		.filter((name): name is string => Boolean(name));
+
+	return named.length > 0 ? named.join(" · ") : "Every team";
 }
