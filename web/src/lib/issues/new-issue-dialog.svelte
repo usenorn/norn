@@ -27,6 +27,8 @@
 	import { initialsOf } from "$lib/team/members";
 	import { onCalendarDate } from "$lib/time";
 	import { formatBytes } from "$lib/attachments/attachments";
+	import UploadList from "$lib/attachments/upload-list.svelte";
+	import type { UploadTask } from "$lib/attachments/upload";
 	import { assignable, type AccountKind } from "$lib/workspace/members";
 	import { conflictFailure, labelColors, labelFailureMessage } from "$lib/labels/labels";
 	import type { Label } from "$lib/labels/labels";
@@ -75,9 +77,11 @@
 	} = $props();
 
 	let failure = $state<string | null>(null);
+	let wasOpen = $state(false);
 	let teamStates = $state.raw<Record<string, WorkflowState[]>>({});
 	let titleField = $state<HTMLInputElement | null>(null);
 	let attaching = $state.raw<PendingFile[]>([]);
+	let uploads = $state.raw<UploadTask[]>([]);
 	let coined = $state.raw<Label[]>([]);
 	let labelSearch = $state("");
 	let coining = $state(false);
@@ -228,10 +232,17 @@
 
 			const settled: CreationOutcome = { key, kind: "created", issue: raised };
 			const held = attaching;
-			attaching = [];
 
 			if (held.length > 0) {
-				const outcome = await attachPending(workspaceId, raised.id, held);
+				const outcome = await attachPending(
+					workspaceId,
+					raised.id,
+					held,
+					(tasks) => (uploads = tasks)
+				);
+
+				attaching = [];
+				uploads = [];
 
 				if (outcome.markdown) {
 					await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
@@ -297,7 +308,11 @@
 	);
 
 	$effect(() => {
-		if (!open) return;
+		const opening = open && !wasOpen;
+
+		wasOpen = open;
+
+		if (!opening) return;
 
 		form.reset({ keepMessage: false });
 		failure = null;
@@ -525,7 +540,13 @@
 						<Form.FieldErrors />
 					</Form.Field>
 
-					{#if attaching.length > 0}
+					{#if uploads.length > 0}
+						<UploadList {uploads} />
+						<p class="text-xs text-muted-foreground">
+							The issue is created. Leave this open until the files finish, or they will not reach
+							it.
+						</p>
+					{:else if attaching.length > 0}
 						<ul class="flex flex-col gap-1">
 							{#each attaching as file (file.key)}
 								<li
@@ -736,7 +757,13 @@
 					Cancel
 				</Button>
 				<Button type="submit" size="sm" disabled={$submitting || !$formData.title.trim()}>
-					{$submitting ? "Creating issue" : "Create issue"}
+					{#if uploads.length > 0}
+						Attaching files
+					{:else if $submitting}
+						Creating issue
+					{:else}
+						Create issue
+					{/if}
 					<Kbd keys="⌘ ↵" tone="inverse" />
 				</Button>
 			</div>

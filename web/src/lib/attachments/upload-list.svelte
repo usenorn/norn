@@ -12,9 +12,9 @@
 		ondismiss,
 	}: {
 		uploads: UploadTask[];
-		oncancel: (id: string) => void;
-		onretry: (id: string) => void;
-		ondismiss: (id: string) => void;
+		oncancel?: (id: string) => void;
+		onretry?: (id: string) => void;
+		ondismiss?: (id: string) => void;
 	} = $props();
 
 	const labels: Record<UploadTask["state"], string> = {
@@ -36,17 +36,19 @@
 					<span class="font-mono text-xs text-muted-foreground">
 						{labels[task.state]}
 					</span>
-					{#if task.state === "failed"}
+					{#if task.state === "failed" && onretry}
 						<Button variant="ghost" size="sm" onclick={() => onretry(task.id)}>Retry</Button>
 					{/if}
-					<Button
-						variant="ghost"
-						size="sm"
-						aria-label={settled(task) ? `Dismiss ${task.name}` : `Stop uploading ${task.name}`}
-						onclick={() => (settled(task) ? ondismiss(task.id) : oncancel(task.id))}
-					>
-						<X aria-hidden="true" />
-					</Button>
+					{#if settled(task) ? ondismiss : oncancel}
+						<Button
+							variant="ghost"
+							size="sm"
+							aria-label={settled(task) ? `Dismiss ${task.name}` : `Stop uploading ${task.name}`}
+							onclick={() => (settled(task) ? ondismiss?.(task.id) : oncancel?.(task.id))}
+						>
+							<X aria-hidden="true" />
+						</Button>
+					{/if}
 				</div>
 
 				{#if task.state === "sending"}

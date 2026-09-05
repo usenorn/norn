@@ -1,5 +1,5 @@
 import { attachmentMarkdown, type Attachment } from "$lib/attachments/attachments";
-import { newTask, upload } from "$lib/attachments/upload";
+import { newTask, upload, type UploadTask } from "$lib/attachments/upload";
 
 export type PendingFile = { key: string; name: string; size: number; file: File };
 
@@ -22,21 +22,28 @@ export function attachFailureMessage(failed: string[]): string {
 export async function attachPending(
 	workspaceId: string,
 	issueId: string,
-	files: PendingFile[]
+	files: PendingFile[],
+	onprogress: (tasks: UploadTask[]) => void = () => {}
 ): Promise<AttachOutcome> {
 	const attached: Attachment[] = [];
 	const failed: string[] = [];
+	const tasks = files.map((held) => newTask(held.key, held.file));
 
-	for (const held of files) {
-		let settled = newTask(held.key, held.file);
+	onprogress([...tasks]);
 
+	for (const [index, held] of files.entries()) {
 		await upload(
 			{ workspaceId, issueId },
 			held.file,
-			settled,
-			(task) => (settled = task),
+			tasks[index],
+			(task) => {
+				tasks[index] = task;
+				onprogress([...tasks]);
+			},
 			() => {}
 		);
+
+		const settled = tasks[index];
 
 		if (settled.state === "done" && settled.attachment) {
 			attached.push(settled.attachment);
