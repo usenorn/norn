@@ -3,8 +3,10 @@
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import Folder from "@lucide/svelte/icons/folder";
 	import Target from "@lucide/svelte/icons/target";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
@@ -219,16 +221,19 @@
 					<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
 				</Alert.Root>
 			{:else if listing.kind === "empty"}
-				<div class="flex flex-col gap-2">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">No projects yet</h2>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Cycles say what {data.workspace.name} is doing this fortnight. A project says what it is trying
-						to achieve, and it can span several teams.
-					</p>
-					<div>
-						<Button variant="secondary" size="sm" href="?{teamQuery}new">Start a project</Button>
-					</div>
-				</div>
+				<Empty.Root>
+					<Empty.Media variant="icon"><Folder aria-hidden="true" /></Empty.Media>
+					<Empty.Header>
+						<Empty.Title>No projects yet</Empty.Title>
+						<Empty.Description>
+							A project holds work with a goal and an end date, across teams. Cycles stay for the
+							week-to-week.
+						</Empty.Description>
+					</Empty.Header>
+					<Empty.Content>
+						<Button size="sm" href="?{teamQuery}new">New project</Button>
+					</Empty.Content>
+				</Empty.Root>
 			{:else}
 				{#each grouped as group (group.state)}
 					<section class="flex flex-col gap-2">

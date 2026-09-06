@@ -13,9 +13,11 @@
 	import EyeOff from "@lucide/svelte/icons/eye-off";
 	import Target from "@lucide/svelte/icons/target";
 	import X from "@lucide/svelte/icons/x";
+	import List from "@lucide/svelte/icons/list";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -132,7 +134,8 @@
 
 	const members = $derived(ready?.members ?? []);
 	const links = $derived(ready?.links ?? []);
-	let editing = $state(false);
+	// svelte-ignore state_referenced_locally
+	let editing = $state(Boolean(preview?.editing));
 	let unsaved = $state(false);
 	const latest = $derived(ready?.updates[0] ?? null);
 	const earlier = $derived(ready?.updates.slice(1) ?? []);
@@ -634,7 +637,7 @@
 				{#if editing}
 					<ProjectDetailsForm
 						{project}
-						members={data.members}
+						members={preview?.people ?? data.members}
 						teams={data.teams ?? []}
 						locked={working}
 						onsave={saveDetails}
@@ -869,9 +872,25 @@
 						{/if}
 					</div>
 					{#if groups.length === 0}
-						<p class="text-sm leading-normal text-muted-foreground text-pretty">
-							No issues are in this project yet. Put one in from the issue itself.
-						</p>
+						<Empty.Root>
+							<Empty.Media variant="icon"><List aria-hidden="true" /></Empty.Media>
+							<Empty.Header>
+								<Empty.Title>No issues in this project</Empty.Title>
+								<Empty.Description>
+									Add existing issues from the list, or create the first one. The description above
+									is enough to start.
+								</Empty.Description>
+							</Empty.Header>
+							<Empty.Content>
+								<Button
+									variant="secondary"
+									size="sm"
+									href={workspacePath(slug, `/issues?project=${project.id}`)}
+								>
+									Add issues
+								</Button>
+							</Empty.Content>
+						</Empty.Root>
 					{:else}
 						{#each groups as group (group.category)}
 							<div class="flex flex-col">
