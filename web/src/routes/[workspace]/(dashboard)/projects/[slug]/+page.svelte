@@ -4,13 +4,18 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
+	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import Ellipsis from "@lucide/svelte/icons/ellipsis";
+	import Link2 from "@lucide/svelte/icons/link-2";
 	import Pencil from "@lucide/svelte/icons/pencil";
+	import Plus from "@lucide/svelte/icons/plus";
 	import EyeOff from "@lucide/svelte/icons/eye-off";
 	import Target from "@lucide/svelte/icons/target";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -70,6 +75,11 @@
 
 	const ready = $derived(detail.kind === "ready" ? detail : null);
 	const project = $derived(ready?.project ?? null);
+	const settled = $derived(
+		project
+			? project.archived || project.state === "completed" || project.state === "cancelled"
+			: false
+	);
 
 	type Loaded = { source: Issue[]; issues: Issue[]; nextCursor: string | undefined };
 	type Paging = { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
@@ -328,6 +338,29 @@
 		);
 	}
 
+	async function settle(next: ProjectState, said: string) {
+		if (!project) return;
+
+		const name = project.name;
+
+		await setState(next);
+
+		if (!failure) showToast(`${said} ${name}`);
+	}
+
+	async function copyLink() {
+		if (!project) return;
+
+		try {
+			await navigator.clipboard.writeText(
+				`${page.url.origin}${workspacePath(slug, `/projects/${project.slug}`)}`
+			);
+			showToast(`Copied link to ${project.name}`);
+		} catch {
+			showToast("Your browser would not let us copy that");
+		}
+	}
+
 	async function setArchived(archive: boolean) {
 		if (!project) return;
 
@@ -454,11 +487,65 @@
 						<Button type="submit" form="project-details-form" size="sm" disabled={working}>
 							{working ? "Saving" : "Save changes"}
 						</Button>
-					{:else if !project.archived}
-						<Button variant="ghost" size="sm" disabled={working} onclick={() => (editing = true)}>
+					{:else}
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={working || settled}
+							onclick={() => (editing = true)}
+						>
 							<Pencil aria-hidden="true" />
 							Edit
 						</Button>
+						<DropdownMenu.Root>
+							<DropdownMenu.Trigger>
+								{#snippet child({ props })}
+									<Button
+										{...props}
+										variant="outline"
+										size="icon-sm"
+										aria-label="Project actions"
+									>
+										<Ellipsis aria-hidden="true" />
+									</Button>
+								{/snippet}
+							</DropdownMenu.Trigger>
+							<DropdownMenu.Content align="end" class="w-53">
+								<DropdownMenu.Item
+									disabled={working || settled}
+									onSelect={() => (editing = true)}
+								>
+									<Pencil aria-hidden="true" />
+									Edit details
+								</DropdownMenu.Item>
+								<DropdownMenu.Item
+									onSelect={() => goto(workspacePath(slug, `/issues?project=${project.id}`))}
+								>
+									<Plus aria-hidden="true" />
+									Add issues
+								</DropdownMenu.Item>
+								<DropdownMenu.Item onSelect={copyLink}>
+									<Link2 aria-hidden="true" />
+									Copy project link
+								</DropdownMenu.Item>
+								<DropdownMenu.Separator />
+								<DropdownMenu.Item
+									disabled={working || project.archived || project.state === "completed"}
+									onSelect={() => settle("completed", "Completed")}
+								>
+									<CircleCheck aria-hidden="true" />
+									Mark completed
+								</DropdownMenu.Item>
+								<DropdownMenu.Item
+									variant="destructive"
+									disabled={working || project.archived || project.state === "cancelled"}
+									onSelect={() => settle("cancelled", "Cancelled")}
+								>
+									<CircleX aria-hidden="true" />
+									Cancel project
+								</DropdownMenu.Item>
+							</DropdownMenu.Content>
+						</DropdownMenu.Root>
 					{/if}
 				</span>
 			{/if}
