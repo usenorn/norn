@@ -14,6 +14,7 @@ export const projectDetailsSchema = z.object({
 			message: "Use a date like 2026-09-30.",
 		}),
 	leadAccountId: z.string().trim(),
+	teamIds: z.array(z.string()),
 });
 
 export type ProjectDetailsInput = z.infer<typeof projectDetailsSchema>;

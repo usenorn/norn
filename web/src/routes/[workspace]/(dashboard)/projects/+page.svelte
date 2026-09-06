@@ -39,6 +39,7 @@
 	const listing = $derived(preview?.listing ?? data.listing);
 	const showingArchived = $derived(page.url.searchParams.get("archived") === "1");
 	const creating = $derived(page.url.searchParams.has("new"));
+	const teamQuery = $derived(data.team ? `teamId=${data.team.id}&` : "");
 
 	const grouped = $derived.by(() => {
 		if (listing.kind !== "ready") return [];
@@ -81,7 +82,11 @@
 		try {
 			const { data: created, error } = await api.POST("/workspaces/{workspaceId}/projects", {
 				params: { path: { workspaceId: data.workspace.id } },
-				body: { name: name.trim(), slug: derivedAddress },
+				body: {
+					name: name.trim(),
+					slug: derivedAddress,
+					...(data.team ? { teamIds: [data.team.id] } : {}),
+				},
 			});
 
 			if (error) {
@@ -130,10 +135,10 @@
 				</a>
 			{/if}
 			<div class="ml-auto flex items-center gap-2">
-				<Button variant="ghost" size="sm" href="?archived={showingArchived ? '0' : '1'}">
+				<Button variant="ghost" size="sm" href="?{teamQuery}archived={showingArchived ? '0' : '1'}">
 					{showingArchived ? "Hide archived" : "Show archived"}
 				</Button>
-				<Button variant="secondary" size="sm" href="?new">New project</Button>
+				<Button variant="secondary" size="sm" href="?{teamQuery}new">New project</Button>
 			</div>
 		</div>
 	</div>
@@ -155,7 +160,13 @@
 					<div class="flex flex-col gap-1">
 						<h2 class="text-md font-medium tracking-snug text-ink-900">Start a project</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
-							A body of work with a goal and an end. It can draw issues from any team you can see.
+							A body of work with a goal and an end.
+							{#if data.team}
+								It starts under {data.team.name} and can still draw issues from any team you can
+								see.
+							{:else}
+								It can draw issues from any team you can see.
+							{/if}
 						</p>
 					</div>
 
@@ -215,7 +226,7 @@
 						to achieve, and it can span several teams.
 					</p>
 					<div>
-						<Button variant="secondary" size="sm" href="?new">Start a project</Button>
+						<Button variant="secondary" size="sm" href="?{teamQuery}new">Start a project</Button>
 					</div>
 				</div>
 			{:else}
