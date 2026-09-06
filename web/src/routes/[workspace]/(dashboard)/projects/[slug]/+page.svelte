@@ -17,6 +17,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
 	import { cn } from "$lib/utils.js";
+	import ProjectPanel from "$lib/projects/project-panel.svelte";
 	import ScopeBar from "$lib/projects/scope-bar.svelte";
 	import StandingBadge from "$lib/projects/standing-badge.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
@@ -405,8 +406,9 @@
 
 	<div class="flex-1 overflow-auto">
 		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
+			class="mx-auto flex w-full max-w-260 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))] lg:flex-row lg:items-start lg:gap-10"
 		>
+			<div class="flex min-w-0 flex-1 flex-col gap-6">
 			{#if detail.kind === "loading"}
 				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if detail.kind === "not_found"}
@@ -590,18 +592,6 @@
 							</Select.Content>
 						</Select.Root>
 					</div>
-					<dl class="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-						<div class="flex items-baseline gap-2">
-							<dt class="text-muted-foreground">Lead</dt>
-							<dd class="text-ink-900">{project.leadName || "Nobody yet"}</dd>
-						</div>
-						<div class="flex items-baseline gap-2">
-							<dt class="text-muted-foreground">Started</dt>
-							<dd class="font-mono text-ink-900">
-								{onDate(project.createdAt, data.workspace.timezone)}
-							</dd>
-						</div>
-					</dl>
 				</section>
 
 				<section class="flex flex-col gap-2">
@@ -747,17 +737,6 @@
 					{/if}
 				</section>
 
-				<section class="flex flex-col gap-3">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">History</h2>
-					<ActivityFeedView
-						feed={activity}
-						{when}
-						{working}
-						emptyLine="Nothing has changed since this project was created."
-						onmore={moreActivity}
-					/>
-				</section>
-
 				<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">
 					<div class="flex flex-col gap-1">
 						<h2 class="text-md font-medium tracking-snug text-ink-900">
@@ -785,6 +764,29 @@
 						</Button>
 					</div>
 				</section>
+			{/if}
+			</div>
+
+			{#if detail.kind === "ready" && project}
+				<div class="flex w-full flex-col gap-6 lg:w-70 lg:flex-none">
+					<ProjectPanel
+						{project}
+						{members}
+						{progress}
+						teams={data.teams ?? []}
+						timezone={data.workspace.timezone}
+					/>
+					<section class="flex flex-col gap-2.5">
+						<Eyebrow class="text-ink-600">Activity</Eyebrow>
+						<ActivityFeedView
+							feed={activity}
+							{when}
+							{working}
+							emptyLine="Nothing has changed since this project was created."
+							onmore={moreActivity}
+						/>
+					</section>
+				</div>
 			{/if}
 		</div>
 	</div>
