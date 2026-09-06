@@ -16,7 +16,9 @@
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
-	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
+	import { cn } from "$lib/utils.js";
+	import ScopeBar from "$lib/projects/scope-bar.svelte";
+	import StandingBadge from "$lib/projects/standing-badge.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
@@ -33,9 +35,12 @@
 		healths,
 		projectFailureMessage,
 		projectStates,
+		projectStanding,
 		projectsPath,
 		readProjectFailure,
 		stateLabel,
+		targetLine,
+		teamsLine,
 		type ProjectFailure,
 		type ProjectHealth,
 		type ProjectState,
@@ -43,7 +48,7 @@
 	import { categoryLabels } from "$lib/team/states";
 	import { initialsOf } from "$lib/team/members";
 	import { memberName, searchDebounceMs, type Membership } from "$lib/workspace/members";
-	import { onCalendarDate, onDate, onDateAndTime } from "$lib/time";
+	import { onDate, onDateAndTime } from "$lib/time";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { projectPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -358,12 +363,45 @@
 				<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
 					{project.name}
 				</h1>
-				{#if progress}
-					<ProgressBar {progress} class="ml-auto hidden lg:inline-flex" />
-				{/if}
+				<StandingBadge standing={projectStanding(project)} />
+				<span class="hidden h-3.5 w-px bg-line-default sm:block" aria-hidden="true"></span>
+				<span
+					class={cn(
+						"hidden font-mono text-xs whitespace-nowrap sm:block",
+						projectStanding(project) === "at_risk" ? "text-warning" : "text-muted-foreground"
+					)}
+				>
+					{targetLine(project, data.now, data.workspace.timezone)}
+				</span>
 			{/if}
 		</div>
 	</div>
+
+	{#if project && progress}
+		<div
+			class="flex flex-none flex-wrap items-center gap-x-4 gap-y-2 border-b border-line-subtle px-4 py-2"
+		>
+			<ScopeBar {progress} class="w-full max-w-105 sm:w-auto sm:flex-1" />
+			<span class="flex items-center gap-2">
+				<span class="font-mono text-2xs tracking-caps uppercase text-muted-foreground">Lead</span>
+				{#if project.leadName}
+					<Avatar.Root size="sm">
+						<Avatar.Fallback>{initialsOf(project.leadName)}</Avatar.Fallback>
+					</Avatar.Root>
+					<span class="text-xs text-ink-600">{project.leadName}</span>
+				{:else}
+					<span class="text-xs text-muted-foreground">Nobody yet</span>
+				{/if}
+			</span>
+			<span class="hidden h-3.5 w-px bg-line-default sm:block" aria-hidden="true"></span>
+			<span class="flex min-w-0 items-center gap-2">
+				<span class="font-mono text-2xs tracking-caps uppercase text-muted-foreground">Team</span>
+				<span class="truncate font-mono text-xs text-muted-foreground">
+					{teamsLine(project, data.teams ?? [])}
+				</span>
+			</span>
+		</div>
+	{/if}
 
 	<div class="flex-1 overflow-auto">
 		<div
@@ -423,16 +461,6 @@
 							{project.description}
 						</p>
 					{/if}
-					<div class="flex flex-wrap items-center gap-2">
-						{#if progress}
-							<ProgressBar {progress} class="lg:hidden" />
-						{/if}
-						<span class="font-mono text-xs text-muted-foreground tabular-nums">
-							{project.targetOn
-								? `Target ${onCalendarDate(project.targetOn)}`
-								: "No target date"}
-						</span>
-					</div>
 				</div>
 
 				{#if project.concealedWork}
