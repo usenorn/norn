@@ -154,6 +154,30 @@ export const signUpPreviewStates: Record<string, SignUpPreview> = import.meta.en
 				},
 				outcome: { kind: "breach_check_unavailable" },
 			},
+			refused_timezone: {
+				form: {
+					name: "Rae Okafor",
+					email: "rae@northwind.co",
+					password: "northwind-cycle-24",
+					passwordConfirm: "northwind-cycle-24",
+					terms: true,
+				},
+				outcome: {
+					kind: "refused",
+					reason:
+						"Your browser reported a time zone we do not recognise, and the account carries one. Correct it in your system settings and try again.",
+				},
+			},
+			refused: {
+				form: {
+					name: "Rae Okafor",
+					email: "rae@northwind.co",
+					password: "northwind-cycle-24",
+					passwordConfirm: "northwind-cycle-24",
+					terms: true,
+				},
+				outcome: { kind: "refused" },
+			},
 			unavailable: {
 				form: {
 					name: "Rae Okafor",

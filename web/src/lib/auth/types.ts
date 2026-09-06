@@ -45,6 +45,7 @@ export type SignUpOutcome =
 	| { kind: "rate_limited" }
 	| { kind: "breach_check_unavailable" }
 	| { kind: "undeliverable" }
+	| { kind: "refused"; reason?: string }
 	| { kind: "unavailable" };
 
 export type SignUpResend = "idle" | "limited" | "unavailable";
