@@ -66,6 +66,23 @@ export function signUpConfirmFailure(problem: SignUpConfirmProblem): SignUpConfi
 	}
 }
 
+export const signUpFormFields = ["email", "display_name", "password"];
+
+const hiddenFieldReasons: Record<string, string> = {
+	timezone:
+		"Your browser reported a time zone we do not recognise, and the account carries one. Correct it in your system settings and try again.",
+};
+
+export function signUpRefusal(problem: SignUpProblem): SignUpOutcome {
+	for (const field of problem.errors ?? []) {
+		const reason = hiddenFieldReasons[field.field];
+
+		if (reason) return { kind: "refused", reason };
+	}
+
+	return { kind: "refused" };
+}
+
 export function displayNameMessage(code: string): string {
 	switch (code) {
 		case "required":

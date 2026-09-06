@@ -153,6 +153,16 @@
 				body: "Passwords are checked against known breaches before an account is made. Try again shortly.",
 			};
 		}
+		if (outcome?.kind === "refused") {
+			return {
+				variant: "destructive" as const,
+				icon: TriangleAlert,
+				title: "Could not create the account",
+				body:
+					outcome.reason ??
+					"The server refused the request without saying why. Nothing was created. Try again, and tell us if it keeps happening.",
+			};
+		}
 		if (outcome?.kind === "unavailable") {
 			return {
 				variant: "destructive" as const,

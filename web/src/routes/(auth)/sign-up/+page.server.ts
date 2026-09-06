@@ -2,7 +2,7 @@ import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import { emailMessage, passwordMessage } from "$lib/auth/password-reset";
-import { displayNameMessage, signUpFailure, signUpSent } from "$lib/auth/sign-up";
+import { displayNameMessage, signUpFailure, signUpRefusal, signUpSent } from "$lib/auth/sign-up";
 import { signUpSchema } from "$lib/auth/sign-up-schema";
 import { addingAccount, leaveIfSignedIn } from "$lib/auth/signed-in";
 import { safeReturn } from "$lib/auth/return-to";
@@ -76,7 +76,7 @@ async function requestSignUp(api: App.Locals["api"], body: FormData, resend: boo
 
 	return resend
 		? message(form, { outcome: null, resend: "unavailable" }, { status: 500 })
-		: message(form, { outcome: { kind: "unavailable" }, resend: "idle" }, { status: 500 });
+		: message(form, { outcome: signUpRefusal(error), resend: "idle" }, { status: 500 });
 }
 
 export const actions: Actions = {
