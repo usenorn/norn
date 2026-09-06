@@ -5,6 +5,7 @@
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import Pencil from "@lucide/svelte/icons/pencil";
 	import EyeOff from "@lucide/svelte/icons/eye-off";
 	import Target from "@lucide/svelte/icons/target";
 	import X from "@lucide/svelte/icons/x";
@@ -17,6 +18,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
 	import { cn } from "$lib/utils.js";
+	import ProjectDetailsForm from "$lib/projects/project-details-form.svelte";
 	import ProjectPanel from "$lib/projects/project-panel.svelte";
 	import ScopeBar from "$lib/projects/scope-bar.svelte";
 	import StandingBadge from "$lib/projects/standing-badge.svelte";
@@ -120,6 +122,8 @@
 
 	const members = $derived(ready?.members ?? []);
 	const links = $derived(ready?.links ?? []);
+	let editing = $state(false);
+	let unsaved = $state(false);
 	const latest = $derived(ready?.updates[0] ?? null);
 	const earlier = $derived(ready?.updates.slice(1) ?? []);
 	const posting = $derived(page.url.searchParams.has("status"));
@@ -277,6 +281,38 @@
 		);
 	}
 
+	async function saveDetails(input: {
+		name: string;
+		description: string;
+		targetOn: string;
+		leadAccountId: string;
+	}) {
+		if (!project) return false;
+
+		const saved = await act(() =>
+			api.PATCH("/workspaces/{workspaceId}/projects/{projectId}", {
+				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
+				body: {
+					name: input.name,
+					description: input.description,
+					...(input.targetOn ? { targetOn: input.targetOn } : {}),
+					...(input.leadAccountId ? { leadAccountId: input.leadAccountId } : {}),
+					clear: [
+						...(input.targetOn ? [] : (["targetOn"] as const)),
+						...(input.leadAccountId ? [] : (["lead"] as const)),
+					],
+				},
+			})
+		);
+
+		if (saved) {
+			editing = false;
+			unsaved = false;
+		}
+
+		return saved;
+	}
+
 	async function setState(next: ProjectState) {
 		if (!project || project.state === next) return;
 
@@ -398,6 +434,29 @@
 				>
 					{targetLine(project, data.now, data.workspace.timezone)}
 				</span>
+				<span class="ml-auto flex shrink-0 items-center gap-2">
+					{#if editing}
+						{#if unsaved}
+							<span class="font-mono text-2xs tracking-caps uppercase text-warning">Unsaved</span>
+						{/if}
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={working}
+							onclick={() => ((editing = false), (unsaved = false))}
+						>
+							Cancel
+						</Button>
+						<Button type="submit" form="project-details-form" size="sm" disabled={working}>
+							{working ? "Saving" : "Save changes"}
+						</Button>
+					{:else if !project.archived}
+						<Button variant="ghost" size="sm" disabled={working} onclick={() => (editing = true)}>
+							<Pencil aria-hidden="true" />
+							Edit
+						</Button>
+					{/if}
+				</span>
 			{/if}
 		</div>
 	</div>
@@ -481,13 +540,21 @@
 					</Alert.Root>
 				{/if}
 
-				<div class="flex flex-col gap-2">
-					{#if project.description}
-						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+				{#if editing}
+					<ProjectDetailsForm
+						{project}
+						members={data.members}
+						locked={working}
+						onsave={saveDetails}
+						ondirty={(value) => (unsaved = value)}
+					/>
+				{:else if project.description}
+					<div class="flex flex-col gap-2">
+						<p class="text-sm leading-normal whitespace-pre-line text-muted-foreground text-pretty">
 							{project.description}
 						</p>
-					{/if}
-				</div>
+					</div>
+				{/if}
 
 				{#if project.concealedWork}
 					<Alert.Root>
