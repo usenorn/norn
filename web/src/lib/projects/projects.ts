@@ -224,9 +224,7 @@ export function progressLabel(progress: IssueProgress): string {
 const everyTeam = "Every team";
 
 function namedTeams(teamIds: string[], teams: Team[]): string[] {
-	return teamIds
-		.map((id) => teams.find((team) => team.id === id)?.name)
-		.filter((name): name is string => Boolean(name));
+	return teams.filter((team) => teamIds.includes(team.id)).map((team) => team.name);
 }
 
 export function teamsLine(project: Project, teams: Team[]): string {
