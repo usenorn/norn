@@ -14,6 +14,7 @@ export class ListCursor<T> {
 	#surface: () => ListCursorSurface<T>;
 	#wanted = $state(0);
 	#held = $state.raw<string | undefined>(undefined);
+	#following = false;
 
 	#index = $derived.by(() => {
 		const rows = this.#rows;
@@ -45,6 +46,12 @@ export class ListCursor<T> {
 
 		$effect(() => {
 			void this.at;
+
+			if (!this.#following) {
+				this.#following = true;
+
+				return;
+			}
 
 			document.querySelector('[data-cursor="true"]')?.scrollIntoView({ block: "nearest" });
 		});
