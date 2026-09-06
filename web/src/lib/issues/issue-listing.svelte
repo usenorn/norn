@@ -188,6 +188,9 @@
 		(data.cycles ?? []).filter((entry) => !team || entry.teamId === team.id).map((entry) => entry.cycle)
 	);
 	const openCycle = $derived(teamCycles.find((cycle) => cycle.id === facets.cycle));
+	const chosenProject = $derived(
+		(data.projects ?? []).find((project) => project.id === facets.project)
+	);
 
 	const backlog = $derived(backlogStates(states));
 
@@ -797,7 +800,10 @@
 	}));
 
 	registerNewIssue(() => ({
-		seed: { teamId: team?.id ?? "" },
+		seed: {
+			teamId: team?.id ?? "",
+			...(chosenProject ? { projectId: chosenProject.id } : {}),
+		},
 		onraising: (key, draft) => (creations = withDraft(creations, key, draft)),
 		onsettled: settle,
 	}));

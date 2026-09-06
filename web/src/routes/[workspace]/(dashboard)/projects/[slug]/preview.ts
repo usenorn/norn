@@ -1,10 +1,13 @@
 import type { IssueProgress } from "$lib/issues/board";
+import type { Membership } from "$lib/workspace/members";
 import type { ProjectDetail } from "$lib/projects/projects";
 
 export type ProjectPreview = {
 	detail: ProjectDetail;
 	progress?: IssueProgress;
 	paging?: { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+	editing?: boolean;
+	people?: Membership[];
 };
 
 export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.env.DEV
@@ -112,6 +115,76 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 1, active: 1, complete: 6, abandoned: 0 },
+			},
+			editing: {
+				editing: true,
+				people: [
+					{
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						accountId: "00000000-0000-4000-8000-000000000201",
+						displayName: "Rae Okafor",
+						email: "rae@northwind.co",
+						role: "member",
+						source: "manual",
+						kind: "person",
+					},
+				],
+				detail: {
+					kind: "ready",
+					project: {
+						id: "00000000-0000-4000-8000-000000000806",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						slug: "checkout-rebuild",
+						name: "Checkout rebuild",
+						description: "Replace the payment flow end to end.",
+						state: "active",
+						leadAccountId: "00000000-0000-4000-8000-000000000201",
+						leadName: "Rae Okafor",
+						targetOn: "2026-09-30",
+						archived: false,
+						health: "on_track",
+						concealedWork: false,
+						createdAt: "2026-06-01T09:00:00Z",
+					},
+					links: [],
+					members: [
+						{
+							projectId: "00000000-0000-4000-8000-000000000806",
+							accountId: "00000000-0000-4000-8000-000000000201",
+							displayName: "Rae Okafor",
+							email: "rae@northwind.co",
+							createdAt: "2026-06-01T09:00:00Z",
+						},
+					],
+					updates: [],
+					issues: [],
+					nextCursor: undefined,
+					activity: { kind: "empty" },
+				},
+				progress: { notStarted: 2, active: 1, complete: 3, abandoned: 0 },
+			},
+			noissues: {
+				detail: {
+					kind: "ready",
+					project: {
+						id: "00000000-0000-4000-8000-000000000805",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						slug: "search-rewrite",
+						name: "Search rewrite",
+						description: "Replace the query planner so a search answers in one round trip.",
+						state: "planned",
+						archived: false,
+						concealedWork: false,
+						createdAt: "2026-09-01T09:00:00Z",
+					},
+					links: [],
+					members: [],
+					updates: [],
+					issues: [],
+					nextCursor: undefined,
+					activity: { kind: "empty" },
+				},
+				progress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
 			},
 			on_track: {
 				detail: {
