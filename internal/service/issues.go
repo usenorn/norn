@@ -24,5 +24,6 @@ type Issues interface {
 	MoveToTeam(ctx context.Context, workspaceID, issueID uuid.UUID, input MoveIssueInput) (entity.Issue, error)
 	SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueLabelsInput) ([]entity.Label, error)
 	Progress(ctx context.Context, workspaceID uuid.UUID, input ProgressInput) (entity.IssueProgress, error)
+	ProjectProgress(ctx context.Context, workspaceID, projectID uuid.UUID) (entity.ProjectIssueProgress, error)
 	Activity(ctx context.Context, workspaceID, issueID uuid.UUID, input ListActivityInput) (ActivityPage, error)
 }

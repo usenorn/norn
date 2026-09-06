@@ -5591,6 +5591,11 @@ export interface components {
             complete: number;
             /** Format: int32 */
             abandoned: number;
+            /**
+             * Format: int32
+             * @description How many of the issues counted here were raised after the project began. Sent only when a project was asked for, and counted through the same team scope as the tallies above, so it reports the caller's share of the project rather than the whole of it. It says nothing about issues that existed before and were moved into the project later, which no record would let it know.
+             */
+            raisedSinceStart?: number;
         };
         /** @enum {string} */
         ProjectState: "planned" | "active" | "paused" | "completed" | "cancelled";

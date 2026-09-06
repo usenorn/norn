@@ -252,10 +252,10 @@ func (mr *MockIssueMockRecorder) ProgressByParent(ctx, scope, parentIDs any) *go
 }
 
 // ProgressByProject mocks base method.
-func (m *MockIssue) ProgressByProject(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (entity.IssueProgress, error) {
+func (m *MockIssue) ProgressByProject(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (entity.ProjectIssueProgress, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProgressByProject", ctx, scope, projectID)
-	ret0, _ := ret[0].(entity.IssueProgress)
+	ret0, _ := ret[0].(entity.ProjectIssueProgress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

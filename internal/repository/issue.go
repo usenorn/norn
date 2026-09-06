@@ -32,7 +32,7 @@ type Issue interface {
 	ProgressByParent(ctx context.Context, scope entity.TeamScope, parentIDs []uuid.UUID) (map[uuid.UUID]entity.IssueProgress, error)
 	ProgressByCategory(ctx context.Context, scope entity.TeamScope, teamID *uuid.UUID) (entity.IssueProgress, error)
 	ProgressByCycle(ctx context.Context, scope entity.TeamScope, cycleID uuid.UUID) (entity.IssueProgress, error)
-	ProgressByProject(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (entity.IssueProgress, error)
+	ProgressByProject(ctx context.Context, scope entity.TeamScope, projectID uuid.UUID) (entity.ProjectIssueProgress, error)
 	TallyByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupTally, error)
 	ListVisibleByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupSlice, error)
 	LowestRank(ctx context.Context, workspaceID uuid.UUID) (string, error)

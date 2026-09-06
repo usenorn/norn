@@ -710,11 +710,24 @@ func (s *issuesService) Progress(
 		return s.issues.ProgressByCycle(ctx, decision.Scope, *input.CycleID)
 	}
 
-	if input.ProjectID != nil {
-		return s.issues.ProgressByProject(ctx, decision.Scope, *input.ProjectID)
+	return s.issues.ProgressByCategory(ctx, decision.Scope, input.TeamID)
+}
+
+func (s *issuesService) ProjectProgress(
+	ctx context.Context,
+	workspaceID, projectID uuid.UUID,
+) (entity.ProjectIssueProgress, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceIssue,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return entity.ProjectIssueProgress{}, err
 	}
 
-	return s.issues.ProgressByCategory(ctx, decision.Scope, input.TeamID)
+	return s.issues.ProgressByProject(ctx, decision.Scope, projectID)
 }
 
 func (s *issuesService) Activity(

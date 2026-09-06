@@ -38,6 +38,12 @@ type IssueProgress struct {
 	Abandoned  int
 }
 
+type ProjectIssueProgress struct {
+	IssueProgress
+
+	RaisedSinceStart int
+}
+
 func (p *IssueProgress) Add(category StateCategory, issues int) bool {
 	switch category {
 	case StateCategoryNotStarted:

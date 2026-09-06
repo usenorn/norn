@@ -326,6 +326,17 @@ WHERE i.workspace_id = $1
   AND i.triage_state IS DISTINCT FROM 'waiting'
 GROUP BY i.parent_issue_id, s.category`
 
+const raisedSinceProjectStartQuery = `
+SELECT count(*)
+FROM workspace_issues i
+JOIN workspace_projects p ON p.id = i.project_id
+WHERE i.workspace_id = $1
+  AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
+  AND i.project_id = $4::uuid
+  AND i.created_at > p.created_at
+  AND i.status = 'active'
+  AND i.triage_state IS DISTINCT FROM 'waiting'`
+
 const issueLabelsQuery = `
 SELECT il.issue_id,
        l.id,
@@ -1493,8 +1504,28 @@ func (r *issueRepository) ProgressByProject(
 	ctx context.Context,
 	scope entity.TeamScope,
 	projectID uuid.UUID,
-) (entity.IssueProgress, error) {
-	return r.summed(ctx, scope, nil, nil, &projectID)
+) (entity.ProjectIssueProgress, error) {
+	tallies, err := r.summed(ctx, scope, nil, nil, &projectID)
+	if err != nil {
+		return entity.ProjectIssueProgress{}, err
+	}
+
+	progress := entity.ProjectIssueProgress{IssueProgress: tallies}
+
+	row := r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		raisedSinceProjectStartQuery,
+		scope.WorkspaceID.String(),
+		scope.AllTeams,
+		teamIDs(scope),
+		projectID.String(),
+	)
+
+	if err := row.Scan(&progress.RaisedSinceStart); err != nil {
+		return entity.ProjectIssueProgress{}, fmt.Errorf("count issues raised since the project started: %w", err)
+	}
+
+	return progress, nil
 }
 
 func (r *issueRepository) summed(
