@@ -131,7 +131,9 @@
 					Raised
 				</dt>
 				<dd class="font-mono text-ink-900 tabular-nums">
-					+{progress?.raisedSinceStart ?? 0} since start
+					{progress?.raisedSinceStart === undefined
+						? "Unknown"
+						: `+${progress.raisedSinceStart} since start`}
 				</dd>
 			</div>
 		</dl>
