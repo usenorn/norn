@@ -9,7 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-//go:generate go tool mockgen -source=project.go -destination=project/mock_project.go -package=project -mock_names=Project=MockProject,ProjectMember=MockProjectMember,ProjectStatusUpdate=MockProjectStatusUpdate
+//go:generate go tool mockgen -source=project.go -destination=project/mock_project.go -package=project -mock_names=Project=MockProject,ProjectMember=MockProjectMember,ProjectStatusUpdate=MockProjectStatusUpdate,ProjectLink=MockProjectLink
 
 type ProjectFilter struct {
 	State           entity.ProjectState
@@ -47,6 +47,12 @@ type ProjectMember interface {
 	Get(ctx context.Context, projectID, accountID uuid.UUID) (entity.ProjectMembership, error)
 	ListByProjectID(ctx context.Context, projectID uuid.UUID) ([]entity.ProjectMembership, error)
 	Delete(ctx context.Context, projectID, accountID uuid.UUID) error
+}
+
+type ProjectLink interface {
+	Add(ctx context.Context, projectID uuid.UUID, label, url string) (entity.ProjectLink, error)
+	ListByProjectID(ctx context.Context, projectID uuid.UUID) ([]entity.ProjectLink, error)
+	Remove(ctx context.Context, projectID, linkID uuid.UUID) error
 }
 
 type ProjectStatusUpdate interface {

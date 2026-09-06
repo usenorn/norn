@@ -119,6 +119,7 @@
 	}
 
 	const members = $derived(ready?.members ?? []);
+	const links = $derived(ready?.links ?? []);
 	const latest = $derived(ready?.updates[0] ?? null);
 	const earlier = $derived(ready?.updates.slice(1) ?? []);
 	const posting = $derived(page.url.searchParams.has("status"));
@@ -251,6 +252,29 @@
 			body = "";
 			dismiss();
 		}
+	}
+
+	async function pinLink(label: string, url: string) {
+		if (!project) return;
+
+		await act(() =>
+			api.POST("/workspaces/{workspaceId}/projects/{projectId}/links", {
+				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
+				body: { label, url },
+			})
+		);
+	}
+
+	async function unpinLink(linkId: string) {
+		if (!project) return;
+
+		await act(() =>
+			api.DELETE("/workspaces/{workspaceId}/projects/{projectId}/links/{linkId}", {
+				params: {
+					path: { workspaceId: data.workspace.id, projectId: project.id, linkId },
+				},
+			})
+		);
 	}
 
 	async function setState(next: ProjectState) {
@@ -772,9 +796,13 @@
 					<ProjectPanel
 						{project}
 						{members}
+						{links}
 						{progress}
 						teams={data.teams ?? []}
 						timezone={data.workspace.timezone}
+						locked={working || project.archived}
+						onadd={pinLink}
+						onremove={unpinLink}
 					/>
 					<section class="flex flex-col gap-2.5">
 						<Eyebrow class="text-ink-600">Activity</Eyebrow>

@@ -58,6 +58,21 @@ func (mr *MockProjectsMockRecorder) Activity(ctx, workspaceID, projectID, input 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Activity", reflect.TypeOf((*MockProjects)(nil).Activity), ctx, workspaceID, projectID, input)
 }
 
+// AddLink mocks base method.
+func (m *MockProjects) AddLink(ctx context.Context, workspaceID, projectID uuid.UUID, input service.AddProjectLinkInput) (entity.ProjectLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddLink", ctx, workspaceID, projectID, input)
+	ret0, _ := ret[0].(entity.ProjectLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddLink indicates an expected call of AddLink.
+func (mr *MockProjectsMockRecorder) AddLink(ctx, workspaceID, projectID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLink", reflect.TypeOf((*MockProjects)(nil).AddLink), ctx, workspaceID, projectID, input)
+}
+
 // AddMember mocks base method.
 func (m *MockProjects) AddMember(ctx context.Context, workspaceID, projectID, accountID uuid.UUID) (service.ProjectMemberView, error) {
 	m.ctrl.T.Helper()
@@ -148,6 +163,21 @@ func (mr *MockProjectsMockRecorder) List(ctx, workspaceID, input any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockProjects)(nil).List), ctx, workspaceID, input)
 }
 
+// ListLinks mocks base method.
+func (m *MockProjects) ListLinks(ctx context.Context, workspaceID, projectID uuid.UUID) ([]entity.ProjectLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListLinks", ctx, workspaceID, projectID)
+	ret0, _ := ret[0].([]entity.ProjectLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListLinks indicates an expected call of ListLinks.
+func (mr *MockProjectsMockRecorder) ListLinks(ctx, workspaceID, projectID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLinks", reflect.TypeOf((*MockProjects)(nil).ListLinks), ctx, workspaceID, projectID)
+}
+
 // ListMembers mocks base method.
 func (m *MockProjects) ListMembers(ctx context.Context, workspaceID, projectID uuid.UUID) ([]service.ProjectMemberView, error) {
 	m.ctrl.T.Helper()
@@ -205,6 +235,20 @@ func (m *MockProjects) Remove(ctx context.Context, workspaceID, projectID uuid.U
 func (mr *MockProjectsMockRecorder) Remove(ctx, workspaceID, projectID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockProjects)(nil).Remove), ctx, workspaceID, projectID)
+}
+
+// RemoveLink mocks base method.
+func (m *MockProjects) RemoveLink(ctx context.Context, workspaceID, projectID, linkID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveLink", ctx, workspaceID, projectID, linkID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveLink indicates an expected call of RemoveLink.
+func (mr *MockProjectsMockRecorder) RemoveLink(ctx, workspaceID, projectID, linkID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLink", reflect.TypeOf((*MockProjects)(nil).RemoveLink), ctx, workspaceID, projectID, linkID)
 }
 
 // RemoveMember mocks base method.

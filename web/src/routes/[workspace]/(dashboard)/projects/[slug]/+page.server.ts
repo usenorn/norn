@@ -48,7 +48,7 @@ export const load: PageServerLoad = async ({
 
 	const path = { workspaceId: workspace.id, projectId: project.id };
 
-	const [members, updates, issues, activity, progress] = await Promise.all([
+	const [members, updates, issues, activity, progress, links] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/members", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/status", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues", {
@@ -63,6 +63,9 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/progress", {
 			params: { path: { workspaceId: workspace.id }, query: { projectId: project.id } },
 		}),
+		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/links", {
+			params: { path: { workspaceId: workspace.id, projectId: project.id } },
+		}),
 	]);
 
 	return {
@@ -70,6 +73,7 @@ export const load: PageServerLoad = async ({
 			kind: "ready",
 			project,
 			members: members.data ?? [],
+			links: links.data ?? [],
 			updates: updates.data ?? [],
 			issues: issues.data?.issues ?? [],
 			nextCursor: issues.data?.nextCursor,

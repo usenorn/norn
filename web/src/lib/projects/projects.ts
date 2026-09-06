@@ -13,6 +13,7 @@ export type ProjectState = components["schemas"]["ProjectState"];
 export type ProjectHealth = components["schemas"]["ProjectHealth"];
 export type ProjectMember = components["schemas"]["ProjectMember"];
 export type ProjectStatusUpdate = components["schemas"]["ProjectStatusUpdate"];
+export type ProjectLink = components["schemas"]["ProjectLink"];
 
 export const projectStates: ProjectState[] = [
 	"planned",
@@ -80,6 +81,7 @@ export type ProjectDetail =
 			kind: "ready";
 			project: Project;
 			members: ProjectMember[];
+			links: ProjectLink[];
 			updates: ProjectStatusUpdate[];
 			issues: Issue[];
 			nextCursor: string | undefined;

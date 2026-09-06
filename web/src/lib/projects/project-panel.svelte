@@ -10,21 +10,56 @@
 	import { totalIssues, type IssueProgress } from "$lib/issues/board";
 	import { onCalendarDate, onDate } from "$lib/time";
 	import type { Team } from "$lib/team/teams";
-	import { projectStanding, teamsLine, type Project, type ProjectMember } from "./projects";
+	import { projectStanding, teamsLine, type Project, type ProjectLink, type ProjectMember } from "./projects";
+	import { Button } from "$lib/components/ui/button/index.js";
+	import { Input } from "$lib/components/ui/input/index.js";
+	import Link2 from "@lucide/svelte/icons/link-2";
+	import Plus from "@lucide/svelte/icons/plus";
+	import X from "@lucide/svelte/icons/x";
 
 	let {
 		project,
 		members,
+		links,
 		progress,
 		teams,
 		timezone,
+		locked = false,
+		onadd,
+		onremove,
 	}: {
 		project: Project;
 		members: ProjectMember[];
+		links: ProjectLink[];
 		progress: IssueProgress | undefined;
 		teams: Team[];
 		timezone: string;
+		locked?: boolean;
+		onadd: (label: string, url: string) => Promise<void>;
+		onremove: (linkId: string) => Promise<void>;
 	} = $props();
+
+	let adding = $state(false);
+	let label = $state("");
+	let address = $state("");
+	let busy = $state(false);
+
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+
+		if (busy || label.trim() === "" || address.trim() === "") return;
+
+		busy = true;
+
+		try {
+			await onadd(label.trim(), address.trim());
+			label = "";
+			address = "";
+			adding = false;
+		} finally {
+			busy = false;
+		}
+	}
 
 	const breakdown = $derived<{ category: StateCategory; count: number }[]>(
 		progress
@@ -108,4 +143,75 @@
 			</dl>
 		</section>
 	{/if}
+	<section class="flex flex-col gap-2.5">
+		<Eyebrow class="text-ink-600">Links</Eyebrow>
+		{#if links.length > 0}
+			<ul class="flex flex-col gap-1.5">
+				{#each links as link (link.id)}
+					<li class="group flex items-center gap-1.5">
+						<Link2 class="size-icon-row shrink-0 text-muted-foreground" aria-hidden="true" />
+						<a
+							href={link.url}
+							target="_blank"
+							rel="noreferrer noopener"
+							class="min-w-0 flex-1 truncate text-sm text-link motion-control hover:underline"
+						>
+							{link.label}
+						</a>
+						{#if !locked}
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								aria-label="Remove {link.label}"
+								onclick={() => onremove(link.id)}
+								class="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+							>
+								<X aria-hidden="true" />
+							</Button>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{:else if locked}
+			<p class="text-sm leading-normal text-muted-foreground text-pretty">
+				Nothing pinned here yet.
+			</p>
+		{/if}
+
+		{#if !locked}
+			{#if adding}
+				<form onsubmit={submit} class="flex flex-col gap-1.5">
+					<Input bind:value={label} placeholder="What it is" disabled={busy} autocomplete="off" />
+					<Input
+						bind:value={address}
+						type="url"
+						placeholder="https://"
+						disabled={busy}
+						autocomplete="off"
+					/>
+					<div class="flex gap-1.5">
+						<Button type="submit" size="sm" disabled={busy || !label.trim() || !address.trim()}>
+							{busy ? "Pinning" : "Pin it"}
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={busy}
+							onclick={() => (adding = false)}
+						>
+							Cancel
+						</Button>
+					</div>
+				</form>
+			{:else}
+				<div>
+					<Button variant="ghost" size="sm" class="-ml-2" onclick={() => (adding = true)}>
+						<Plus aria-hidden="true" />
+						Pin a link
+					</Button>
+				</div>
+			{/if}
+		{/if}
+	</section>
 </aside>

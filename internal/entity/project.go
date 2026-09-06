@@ -2,8 +2,10 @@ package entity
 
 import (
 	"errors"
+	"net/url"
 	"regexp"
 	"slices"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -18,6 +20,9 @@ const (
 	ProjectDescriptionMaxLen = 4000
 	ProjectStatusBodyMinLen  = 1
 	ProjectStatusBodyMaxLen  = 2000
+	ProjectLinkLabelMaxLen   = 60
+	ProjectLinkURLMaxLen     = 2000
+	ProjectLinksMax          = 20
 )
 
 var (
@@ -29,6 +34,8 @@ var (
 	ErrProjectNotLead            = errors.New("only the project lead or an administrator may change this project")
 	ErrProjectMemberExists       = errors.New("account is already on this project")
 	ErrProjectMembershipNotFound = errors.New("project membership not found")
+	ErrProjectLinkNotFound       = errors.New("project link not found")
+	ErrProjectLinksFull          = errors.New("project already holds the most links it may")
 )
 
 var projectSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
@@ -120,6 +127,48 @@ type ProjectStatusUpdate struct {
 	Health          ProjectHealth
 	Body            string
 	CreatedAt       time.Time
+}
+
+type ProjectLink struct {
+	ID        uuid.UUID
+	ProjectID uuid.UUID
+	Label     string
+	URL       string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func ValidateProjectLinkLabel(field, label string) FieldError {
+	switch length := utf8.RuneCountInString(strings.TrimSpace(label)); {
+	case length == 0:
+		return FieldError{Field: field, Code: ValidationCodeRequired}
+	case length > ProjectLinkLabelMaxLen:
+		return FieldError{Field: field, Code: ValidationCodeTooLong}
+	default:
+		return FieldError{}
+	}
+}
+
+// ValidateProjectLinkURL refuses anything a browser would not treat as a plain web address. A
+// javascript: or data: target rendered as a link is a way to run script from somebody else's
+// project, so the scheme is checked here as well as by the column's own constraint.
+func ValidateProjectLinkURL(field, address string) FieldError {
+	trimmed := strings.TrimSpace(address)
+
+	if trimmed == "" {
+		return FieldError{Field: field, Code: ValidationCodeRequired}
+	}
+
+	if utf8.RuneCountInString(trimmed) > ProjectLinkURLMaxLen {
+		return FieldError{Field: field, Code: ValidationCodeTooLong}
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return FieldError{Field: field, Code: ValidationCodeMalformed}
+	}
+
+	return FieldError{}
 }
 
 func ValidateProjectName(field, name string) FieldError {

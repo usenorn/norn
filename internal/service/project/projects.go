@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,7 @@ type projectsService struct {
 	projects    repository.Project
 	members     repository.ProjectMember
 	statuses    repository.ProjectStatusUpdate
+	links       repository.ProjectLink
 	activity    repository.Activity
 	accounts    repository.Account
 	memberships repository.Membership
@@ -30,6 +32,7 @@ func New(
 	projects repository.Project,
 	members repository.ProjectMember,
 	statuses repository.ProjectStatusUpdate,
+	links repository.ProjectLink,
 	activity repository.Activity,
 	accounts repository.Account,
 	memberships repository.Membership,
@@ -42,6 +45,7 @@ func New(
 		projects:    projects,
 		members:     members,
 		statuses:    statuses,
+		links:       links,
 		activity:    activity,
 		accounts:    accounts,
 		memberships: memberships,
@@ -802,6 +806,70 @@ func (s *projectsService) PostStatus(
 	}
 
 	return posted, nil
+}
+
+func (s *projectsService) AddLink(
+	ctx context.Context,
+	workspaceID, projectID uuid.UUID,
+	input service.AddProjectLinkInput,
+) (entity.ProjectLink, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
+	if err != nil {
+		return entity.ProjectLink{}, err
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateProjectLinkLabel("label", input.Label),
+		entity.ValidateProjectLinkURL("url", input.URL),
+	); err != nil {
+		return entity.ProjectLink{}, err
+	}
+
+	if _, err := s.writable(ctx, workspaceID, projectID, decision); err != nil {
+		return entity.ProjectLink{}, err
+	}
+
+	held, err := s.links.ListByProjectID(ctx, projectID)
+	if err != nil {
+		return entity.ProjectLink{}, err
+	}
+
+	if len(held) >= entity.ProjectLinksMax {
+		return entity.ProjectLink{}, entity.ErrProjectLinksFull
+	}
+
+	return s.links.Add(ctx, projectID, strings.TrimSpace(input.Label), strings.TrimSpace(input.URL))
+}
+
+func (s *projectsService) ListLinks(
+	ctx context.Context,
+	workspaceID, projectID uuid.UUID,
+) ([]entity.ProjectLink, error) {
+	if _, err := s.decide(ctx, workspaceID, entity.ActionRead); err != nil {
+		return nil, err
+	}
+
+	if _, err := s.projects.GetByID(ctx, workspaceID, projectID); err != nil {
+		return nil, err
+	}
+
+	return s.links.ListByProjectID(ctx, projectID)
+}
+
+func (s *projectsService) RemoveLink(
+	ctx context.Context,
+	workspaceID, projectID, linkID uuid.UUID,
+) error {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
+	if err != nil {
+		return err
+	}
+
+	if _, err := s.writable(ctx, workspaceID, projectID, decision); err != nil {
+		return err
+	}
+
+	return s.links.Remove(ctx, projectID, linkID)
 }
 
 func (s *projectsService) ListStatus(

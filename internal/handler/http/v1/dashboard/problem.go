@@ -600,6 +600,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrCycleCadenceNotFound),
 		errors.Is(err, entity.ErrProjectNotFound),
 		errors.Is(err, entity.ErrProjectMembershipNotFound),
+		errors.Is(err, entity.ErrProjectLinkNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
 		errors.Is(err, entity.ErrIssueCommentNotFound),
 		errors.Is(err, entity.ErrAttachmentNotFound),
@@ -656,6 +657,9 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrProjectMemberExists):
 		return projectConflictProblem(api.ProjectConflictProblemCodeProjectMemberExists, err), true
+
+	case errors.Is(err, entity.ErrProjectLinksFull):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectLinksFull, err), true
 
 	case errors.Is(err, entity.ErrCycleClosed):
 		return cycleConflictProblem(api.CycleConflictProblemCodeCycleClosed, err), true
@@ -1757,6 +1761,18 @@ func (r problemResponse) VisitRemoveWorkspaceProjectMemberResponse(w http.Respon
 }
 
 func (r problemResponse) VisitListWorkspaceProjectStatusResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceProjectLinksResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAddWorkspaceProjectLinkResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceProjectLinkResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

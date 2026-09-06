@@ -572,6 +572,25 @@ func projectMemberDTOs(views []service.ProjectMemberView) []api.ProjectMember {
 	return dtos
 }
 
+func projectLinkDTO(link entity.ProjectLink) api.ProjectLink {
+	return api.ProjectLink{
+		Id:        link.ID,
+		ProjectId: link.ProjectID,
+		Label:     link.Label,
+		Url:       link.URL,
+		CreatedAt: link.CreatedAt,
+	}
+}
+
+func projectLinkDTOs(links []entity.ProjectLink) []api.ProjectLink {
+	dtos := make([]api.ProjectLink, len(links))
+	for i, link := range links {
+		dtos[i] = projectLinkDTO(link)
+	}
+
+	return dtos
+}
+
 func projectStatusDTO(update entity.ProjectStatusUpdate) api.ProjectStatusUpdate {
 	dto := api.ProjectStatusUpdate{
 		Id:        update.ID,
