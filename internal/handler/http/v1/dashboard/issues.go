@@ -215,10 +215,26 @@ func (h *handler) GetWorkspaceIssueProgress(
 	ctx context.Context,
 	request api.GetWorkspaceIssueProgressRequestObject,
 ) (api.GetWorkspaceIssueProgressResponseObject, error) {
+	if request.Params.ProjectId != nil {
+		progress, err := h.issues.ProjectProgress(ctx, request.WorkspaceId, *request.Params.ProjectId)
+		if err != nil {
+			if problem, ok := problemFor(err); ok {
+				return problem, nil
+			}
+
+			return nil, err
+		}
+
+		dto := issueProgressDTO(progress.IssueProgress)
+		raised := int32(progress.RaisedSinceStart)
+		dto.RaisedSinceStart = &raised
+
+		return api.GetWorkspaceIssueProgress200JSONResponse(dto), nil
+	}
+
 	progress, err := h.issues.Progress(ctx, request.WorkspaceId, service.ProgressInput{
-		TeamID:    request.Params.TeamId,
-		CycleID:   request.Params.CycleId,
-		ProjectID: request.Params.ProjectId,
+		TeamID:  request.Params.TeamId,
+		CycleID: request.Params.CycleId,
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

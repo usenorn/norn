@@ -164,6 +164,21 @@ func (mr *MockIssuesMockRecorder) Progress(ctx, workspaceID, input any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Progress", reflect.TypeOf((*MockIssues)(nil).Progress), ctx, workspaceID, input)
 }
 
+// ProjectProgress mocks base method.
+func (m *MockIssues) ProjectProgress(ctx context.Context, workspaceID, projectID uuid.UUID) (entity.ProjectIssueProgress, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProjectProgress", ctx, workspaceID, projectID)
+	ret0, _ := ret[0].(entity.ProjectIssueProgress)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProjectProgress indicates an expected call of ProjectProgress.
+func (mr *MockIssuesMockRecorder) ProjectProgress(ctx, workspaceID, projectID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProjectProgress", reflect.TypeOf((*MockIssues)(nil).ProjectProgress), ctx, workspaceID, projectID)
+}
+
 // Purge mocks base method.
 func (m *MockIssues) Purge(ctx context.Context, workspaceID, issueID uuid.UUID) error {
 	m.ctrl.T.Helper()

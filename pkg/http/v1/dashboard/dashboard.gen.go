@@ -6380,6 +6380,9 @@ type IssueProgress struct {
 	Active     int32 `json:"active"`
 	Complete   int32 `json:"complete"`
 	NotStarted int32 `json:"notStarted"`
+
+	// RaisedSinceStart How many of the issues counted here were raised after the project began. Sent only when a project was asked for, and counted through the same team scope as the tallies above, so it reports the caller's share of the project rather than the whole of it. It says nothing about issues that existed before and were moved into the project later, which no record would let it know.
+	RaisedSinceStart *int32 `json:"raisedSinceStart,omitempty"`
 }
 
 // IssueQueryRequest defines model for IssueQueryRequest.

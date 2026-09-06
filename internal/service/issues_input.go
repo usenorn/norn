@@ -54,9 +54,8 @@ type IssueQueryResult struct {
 }
 
 type ProgressInput struct {
-	TeamID    *uuid.UUID
-	CycleID   *uuid.UUID
-	ProjectID *uuid.UUID
+	TeamID  *uuid.UUID
+	CycleID *uuid.UUID
 }
 
 type ListActivityInput struct {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right";
 	import Calendar from "@lucide/svelte/icons/calendar";
 	import Clock from "@lucide/svelte/icons/clock";
 	import Folder from "@lucide/svelte/icons/folder";
@@ -122,6 +123,17 @@
 				</dt>
 				<dd class="font-mono text-ink-900 tabular-nums">
 					{onDate(project.createdAt, timezone)}
+				</dd>
+			</div>
+			<div class="flex items-baseline justify-between gap-3">
+				<dt class="flex items-center gap-1.5 text-muted-foreground">
+					<ArrowUpRight class="size-icon-row" aria-hidden="true" />
+					Raised
+				</dt>
+				<dd class="font-mono text-ink-900 tabular-nums">
+					{progress?.raisedSinceStart === undefined
+						? "Unknown"
+						: `+${progress.raisedSinceStart} since start`}
 				</dd>
 			</div>
 		</dl>
