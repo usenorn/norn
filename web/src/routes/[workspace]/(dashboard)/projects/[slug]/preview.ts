@@ -30,6 +30,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						concealedWork: true,
 						createdAt: "2026-06-01T09:00:00Z",
 					},
+					links: [],
 					members: [
 						{
 							projectId: "00000000-0000-4000-8000-000000000801",
@@ -130,6 +131,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						concealedWork: false,
 						createdAt: "2026-06-01T09:00:00Z",
 					},
+					links: [],
 					members: [
 						{
 							projectId: "00000000-0000-4000-8000-000000000801",
@@ -230,6 +232,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						concealedWork: false,
 						createdAt: "2026-06-01T09:00:00Z",
 					},
+					links: [],
 					members: [
 						{
 							projectId: "00000000-0000-4000-8000-000000000801",
@@ -331,6 +334,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						concealedWork: false,
 						createdAt: "2026-06-01T09:00:00Z",
 					},
+					links: [],
 					members: [
 						{
 							projectId: "00000000-0000-4000-8000-000000000801",
@@ -432,6 +436,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						concealedWork: false,
 						createdAt: "2026-06-01T09:00:00Z",
 					},
+					links: [],
 					members: [
 						{
 							projectId: "00000000-0000-4000-8000-000000000801",
@@ -529,6 +534,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						concealedWork: false,
 						createdAt: "2026-01-08T09:00:00Z",
 					},
+					links: [],
 					members: [],
 					updates: [],
 					issues: [],
@@ -551,6 +557,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						concealedWork: false,
 						createdAt: "2026-07-14T09:00:00Z",
 					},
+					links: [],
 					members: [],
 					updates: [],
 					issues: [],

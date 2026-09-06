@@ -4482,6 +4482,70 @@ paths:
         '409': { $ref: '#/components/responses/ProjectConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/projects/{projectId}/links:
+    get:
+      tags: [projects]
+      operationId: listWorkspaceProjectLinks
+      summary: Read the links pinned to this project, in the order they were added
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: The links
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProjectLink' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [projects]
+      operationId: addWorkspaceProjectLink
+      summary: Pin a link to this project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddProjectLinkRequest' }
+      responses:
+        '201':
+          description: The link that was pinned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProjectLink' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/links/{linkId}:
+    delete:
+      tags: [projects]
+      operationId: removeWorkspaceProjectLink
+      summary: Unpin a link from this project
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ProjectId'
+        - name: linkId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: The link is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/projects/{projectId}/status:
     get:
       tags: [projects]
@@ -8898,6 +8962,27 @@ components:
         body: { type: string }
         createdAt: { type: string, format: date-time }
 
+    ProjectLink:
+      type: object
+      required: [id, projectId, label, url, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        label: { type: string }
+        url:
+          type: string
+          description: >-
+            Always an http or https address. Anything else is refused, because a link is rendered
+            for other people to click and a scheme that runs script would run it as them.
+        createdAt: { type: string, format: date-time }
+
+    AddProjectLinkRequest:
+      type: object
+      required: [label, url]
+      properties:
+        label: { type: string }
+        url: { type: string }
+
     PostProjectStatusRequest:
       type: object
       required: [health, body]
@@ -8919,6 +9004,7 @@ components:
                 - project_not_archived
                 - project_not_finished
                 - project_member_exists
+                - project_links_full
 
     CyclePhase:
       type: string

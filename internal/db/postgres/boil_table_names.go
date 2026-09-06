@@ -70,6 +70,7 @@ var TableNames = struct {
 	WorkspaceNotificationReads        string
 	WorkspaceNotificationSettings     string
 	WorkspaceOidcConnections          string
+	WorkspaceProjectLinks             string
 	WorkspaceProjectMembers           string
 	WorkspaceProjectStatusUpdates     string
 	WorkspaceProjectTeams             string
@@ -166,6 +167,7 @@ var TableNames = struct {
 	WorkspaceNotificationReads:        "workspace_notification_reads",
 	WorkspaceNotificationSettings:     "workspace_notification_settings",
 	WorkspaceOidcConnections:          "workspace_oidc_connections",
+	WorkspaceProjectLinks:             "workspace_project_links",
 	WorkspaceProjectMembers:           "workspace_project_members",
 	WorkspaceProjectStatusUpdates:     "workspace_project_status_updates",
 	WorkspaceProjectTeams:             "workspace_project_teams",

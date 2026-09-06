@@ -2901,6 +2901,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/projects/{projectId}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the links pinned to this project, in the order they were added */
+        get: operations["listWorkspaceProjectLinks"];
+        put?: never;
+        /** Pin a link to this project */
+        post: operations["addWorkspaceProjectLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unpin a link from this project */
+        delete: operations["removeWorkspaceProjectLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/projects/{projectId}/status": {
         parameters: {
             query?: never;
@@ -5635,13 +5670,28 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        ProjectLink: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            projectId: string;
+            label: string;
+            /** @description Always an http or https address. Anything else is refused, because a link is rendered for other people to click and a scheme that runs script would run it as them. */
+            url: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AddProjectLinkRequest: {
+            label: string;
+            url: string;
+        };
         PostProjectStatusRequest: {
             health: components["schemas"]["ProjectHealth"];
             body: string;
         };
         ProjectConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists";
+            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full";
         };
         /** @enum {string} */
         CyclePhase: "upcoming" | "current" | "ended" | "closed";
@@ -14306,6 +14356,92 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["ProjectConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceProjectLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The links */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectLink"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    addWorkspaceProjectLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddProjectLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description The link that was pinned */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectLink"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceProjectLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+                linkId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

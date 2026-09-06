@@ -27,6 +27,7 @@ type harness struct {
 	projects    *projectrepo.MockProject
 	members     *projectrepo.MockProjectMember
 	statuses    *projectrepo.MockProjectStatusUpdate
+	links       *projectrepo.MockProjectLink
 	activity    *activityrepo.MockActivity
 	accounts    *accountrepo.MockAccount
 	memberships *membershiprepo.MockMembership
@@ -49,6 +50,7 @@ func newHarness(t *testing.T) *harness {
 		projects:    projectrepo.NewMockProject(ctrl),
 		members:     projectrepo.NewMockProjectMember(ctrl),
 		statuses:    projectrepo.NewMockProjectStatusUpdate(ctrl),
+		links:       projectrepo.NewMockProjectLink(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
 		accounts:    accountrepo.NewMockAccount(ctrl),
 		memberships: membershiprepo.NewMockMembership(ctrl),
@@ -70,8 +72,8 @@ func newHarness(t *testing.T) *harness {
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.service = projectsvc.New(
-		h.projects, h.members, h.statuses, h.activity, h.accounts, h.memberships, h.notify, h.authorizer,
-		silentEmitter(ctrl), h.transactor,
+		h.projects, h.members, h.statuses, h.links, h.activity, h.accounts, h.memberships, h.notify,
+		h.authorizer, silentEmitter(ctrl), h.transactor,
 	)
 
 	return h
@@ -448,4 +450,51 @@ func TestProjectsNeverPutACountOnTheWire(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestAProjectLinkMustBeAWebAddressAndThereIsACeiling(t *testing.T) {
+	t.Run("a scheme that runs script is refused", func(t *testing.T) {
+		h := newHarness(t)
+		h.actAs(entity.MembershipRoleAdmin, uuid.New())
+
+		_, err := h.service.AddLink(
+			context.Background(),
+			h.workspaceID,
+			h.projectID,
+			service.AddProjectLinkInput{Label: "Spec", URL: "javascript:alert(1)"},
+		)
+
+		var validation entity.ValidationError
+		if !errors.As(err, &validation) {
+			t.Fatalf("AddLink error = %v, want ValidationError", err)
+		}
+
+		if len(validation.Fields) != 1 || validation.Fields[0].Field != "url" {
+			t.Fatalf("validation fields = %+v, want one on url", validation.Fields)
+		}
+	})
+
+	t.Run("a project already at the ceiling refuses another", func(t *testing.T) {
+		h := newHarness(t)
+		h.actAs(entity.MembershipRoleAdmin, uuid.New())
+
+		h.projects.EXPECT().
+			GetByID(gomock.Any(), h.workspaceID, h.projectID).
+			Return(h.project(entity.ProjectStateActive), nil)
+
+		h.links.EXPECT().
+			ListByProjectID(gomock.Any(), h.projectID).
+			Return(make([]entity.ProjectLink, entity.ProjectLinksMax), nil)
+
+		_, err := h.service.AddLink(
+			context.Background(),
+			h.workspaceID,
+			h.projectID,
+			service.AddProjectLinkInput{Label: "One more", URL: "https://example.com"},
+		)
+
+		if !errors.Is(err, entity.ErrProjectLinksFull) {
+			t.Fatalf("AddLink error = %v, want ErrProjectLinksFull", err)
+		}
+	})
 }

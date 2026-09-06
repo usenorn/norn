@@ -54,6 +54,11 @@ type PostProjectStatusInput struct {
 	Body   string
 }
 
+type AddProjectLinkInput struct {
+	Label string
+	URL   string
+}
+
 type Projects interface {
 	Create(ctx context.Context, input CreateProjectInput) (ProjectView, error)
 	Get(ctx context.Context, workspaceID, projectID uuid.UUID) (ProjectView, error)
@@ -70,4 +75,7 @@ type Projects interface {
 	Activity(ctx context.Context, workspaceID, projectID uuid.UUID, input ListActivityInput) (ActivityPage, error)
 	PostStatus(ctx context.Context, workspaceID, projectID uuid.UUID, input PostProjectStatusInput) (entity.ProjectStatusUpdate, error)
 	ListStatus(ctx context.Context, workspaceID, projectID uuid.UUID) ([]entity.ProjectStatusUpdate, error)
+	AddLink(ctx context.Context, workspaceID, projectID uuid.UUID, input AddProjectLinkInput) (entity.ProjectLink, error)
+	ListLinks(ctx context.Context, workspaceID, projectID uuid.UUID) ([]entity.ProjectLink, error)
+	RemoveLink(ctx context.Context, workspaceID, projectID, linkID uuid.UUID) error
 }

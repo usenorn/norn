@@ -247,6 +247,61 @@ func (h *handler) RemoveWorkspaceProjectMember(
 	return api.RemoveWorkspaceProjectMember204Response{}, nil
 }
 
+func (h *handler) ListWorkspaceProjectLinks(
+	ctx context.Context,
+	request api.ListWorkspaceProjectLinksRequestObject,
+) (api.ListWorkspaceProjectLinksResponseObject, error) {
+	links, err := h.projects.ListLinks(ctx, request.WorkspaceId, request.ProjectId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceProjectLinks200JSONResponse(projectLinkDTOs(links)), nil
+}
+
+func (h *handler) AddWorkspaceProjectLink(
+	ctx context.Context,
+	request api.AddWorkspaceProjectLinkRequestObject,
+) (api.AddWorkspaceProjectLinkResponseObject, error) {
+	added, err := h.projects.AddLink(ctx, request.WorkspaceId, request.ProjectId, service.AddProjectLinkInput{
+		Label: request.Body.Label,
+		URL:   request.Body.Url,
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.AddWorkspaceProjectLink201JSONResponse(projectLinkDTO(added)), nil
+}
+
+func (h *handler) RemoveWorkspaceProjectLink(
+	ctx context.Context,
+	request api.RemoveWorkspaceProjectLinkRequestObject,
+) (api.RemoveWorkspaceProjectLinkResponseObject, error) {
+	if err := h.projects.RemoveLink(
+		ctx,
+		request.WorkspaceId,
+		request.ProjectId,
+		request.LinkId,
+	); err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RemoveWorkspaceProjectLink204Response{}, nil
+}
+
 func (h *handler) ListWorkspaceProjectStatus(
 	ctx context.Context,
 	request api.ListWorkspaceProjectStatusRequestObject,
