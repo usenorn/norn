@@ -221,10 +221,25 @@ export function progressLabel(progress: IssueProgress): string {
 	return `${progress.complete}/${total} done · ${Math.round((progress.complete / total) * 100)}%`;
 }
 
-export function teamsLine(project: Project, teams: Team[]): string {
-	const named = (project.teamIds ?? [])
+const everyTeam = "Every team";
+
+function namedTeams(teamIds: string[], teams: Team[]): string[] {
+	return teamIds
 		.map((id) => teams.find((team) => team.id === id)?.name)
 		.filter((name): name is string => Boolean(name));
+}
 
-	return named.length > 0 ? named.join(" · ") : "Every team";
+export function teamsLine(project: Project, teams: Team[]): string {
+	const named = namedTeams(project.teamIds ?? [], teams);
+
+	return named.length > 0 ? named.join(" · ") : everyTeam;
+}
+
+export function teamsChoice(teamIds: string[], teams: Team[]): string {
+	const named = namedTeams(teamIds, teams);
+
+	if (named.length === 0) return everyTeam;
+	if (named.length > 2) return `${named.length} teams`;
+
+	return named.join(" · ");
 }

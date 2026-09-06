@@ -6,24 +6,29 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import { memberName, type Membership } from "$lib/workspace/members";
+	import TeamKey from "$lib/components/norn/team-key.svelte";
+	import type { Team } from "$lib/team/teams";
 	import { projectDetailsSchema } from "./project-details-schema";
-	import type { Project } from "./projects";
+	import { teamsChoice, type Project } from "./projects";
 
 	let {
 		project,
 		members,
+		teams,
 		locked = false,
 		onsave,
 		ondirty,
 	}: {
 		project: Project;
 		members: Membership[];
+		teams: Team[];
 		locked?: boolean;
 		onsave: (input: {
 			name: string;
 			description: string;
 			targetOn: string;
 			leadAccountId: string;
+			teamIds: string[];
 		}) => Promise<boolean>;
 		ondirty: (dirty: boolean) => void;
 	} = $props();
@@ -34,6 +39,7 @@
 		description: project.description,
 		targetOn: project.targetOn ?? "",
 		leadAccountId: project.leadAccountId ?? "",
+		teamIds: project.teamIds ?? [],
 	};
 
 	const form = superForm(defaults(held, zod4(projectDetailsSchema)), {
@@ -59,7 +65,8 @@
 		$formData.name !== held.name ||
 			$formData.description !== held.description ||
 			$formData.targetOn !== held.targetOn ||
-			$formData.leadAccountId !== held.leadAccountId
+			$formData.leadAccountId !== held.leadAccountId ||
+			$formData.teamIds.join() !== held.teamIds.join()
 	);
 
 	$effect(() => {
@@ -144,4 +151,38 @@
 			<Form.FieldErrors />
 		</Form.Field>
 	</div>
+
+	{#if teams.length > 0}
+		<Form.Field {form} name="teamIds">
+			<Form.Control>
+				{#snippet children({ props })}
+					<Form.Label>Teams</Form.Label>
+					<Select.Root
+						type="multiple"
+						name={props.name}
+						value={$formData.teamIds}
+						disabled={locked || $submitting}
+						onValueChange={(value) => ($formData.teamIds = value)}
+					>
+						<Select.Trigger {...props} class="w-full">
+							{teamsChoice($formData.teamIds, teams)}
+						</Select.Trigger>
+						<Select.Content>
+							{#each teams as team (team.id)}
+								<Select.Item value={team.id} label={team.name}>
+									<TeamKey key={team.key} />
+									{team.name}
+								</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				{/snippet}
+			</Form.Control>
+			<Form.Description class="text-sm text-muted-foreground">
+				The teams this project serves. It appears under each of them in the sidebar. Pick none and
+				it stays the whole workspace's.
+			</Form.Description>
+			<Form.FieldErrors />
+		</Form.Field>
+	{/if}
 </form>

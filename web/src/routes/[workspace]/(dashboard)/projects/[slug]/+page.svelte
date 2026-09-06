@@ -286,6 +286,7 @@
 		description: string;
 		targetOn: string;
 		leadAccountId: string;
+		teamIds: string[];
 	}) {
 		if (!project) return false;
 
@@ -297,6 +298,9 @@
 					description: input.description,
 					...(input.targetOn ? { targetOn: input.targetOn } : {}),
 					...(input.leadAccountId ? { leadAccountId: input.leadAccountId } : {}),
+					...(input.teamIds.join() !== (project.teamIds ?? []).join()
+						? { teamIds: input.teamIds }
+						: {}),
 					clear: [
 						...(input.targetOn ? [] : (["targetOn"] as const)),
 						...(input.leadAccountId ? [] : (["lead"] as const)),
@@ -544,6 +548,7 @@
 					<ProjectDetailsForm
 						{project}
 						members={data.members}
+						teams={data.teams ?? []}
 						locked={working}
 						onsave={saveDetails}
 						ondirty={(value) => (unsaved = value)}
