@@ -232,3 +232,109 @@ func TestChunkingNothingProducesNoChunks(t *testing.T) {
 		t.Fatalf("got %d chunks from no items", len(chunks))
 	}
 }
+
+func TestWhoMayReadABulkActionAndWhoIsToldItIsNotThere(t *testing.T) {
+	requester, owner, other := uuid.New(), uuid.New(), uuid.New()
+	action := entity.BulkAction{RequestedByAccount: requester}
+
+	person := func(id uuid.UUID) entity.Actor {
+		return entity.Actor{Kind: entity.ActorKindUser, AccountID: id}
+	}
+
+	for _, probe := range []struct {
+		name       string
+		reader     entity.Actor
+		onBehalfOf uuid.UUID
+		role       entity.MembershipRole
+		readable   bool
+		why        string
+	}{
+		{
+			name:     "the person who ran it",
+			reader:   person(requester),
+			role:     entity.MembershipRoleMember,
+			readable: true,
+			why:      "whoever started the operation has to be able to watch it settle",
+		},
+		{
+			name:     "another member of the workspace",
+			reader:   person(other),
+			role:     entity.MembershipRoleMember,
+			readable: false,
+			why:      "the counts cover issues this reader is refused everywhere else",
+		},
+		{
+			name:     "a workspace admin",
+			reader:   person(other),
+			role:     entity.MembershipRoleAdmin,
+			readable: true,
+			why:      "an admin already sees every team of their workspace",
+		},
+		{
+			name:       "the agent that ran it",
+			reader:     entity.Actor{Kind: entity.ActorKindAgent, AccountID: requester, OwnerAccountID: owner},
+			onBehalfOf: owner,
+			role:       entity.MembershipRoleMember,
+			readable:   true,
+			why:        "the credential that started the operation polls it",
+		},
+		{
+			name:       "the person the agent ran it for",
+			reader:     person(owner),
+			onBehalfOf: owner,
+			role:       entity.MembershipRoleMember,
+			readable:   true,
+			why:        "an agent acts on somebody's behalf, so the operation is theirs too",
+		},
+		{
+			name:       "another agent of the same owner",
+			reader:     entity.Actor{Kind: entity.ActorKindAgent, AccountID: other, OwnerAccountID: owner},
+			onBehalfOf: owner,
+			role:       entity.MembershipRoleMember,
+			readable:   false,
+			why:        "sharing an owner is not sharing an operation",
+		},
+		{
+			name:       "another agent whose owner is an admin",
+			reader:     entity.Actor{Kind: entity.ActorKindAgent, AccountID: other, OwnerAccountID: owner},
+			onBehalfOf: owner,
+			role:       entity.MembershipRoleAdmin,
+			readable:   false,
+			why: "an agent is authorised against its owner's membership, so an admin's agent " +
+				"arrives holding an admin role; the blanket read is the person's, not the " +
+				"credential's, which may be confined to a few teams",
+		},
+		{
+			name:     "an api token acting as the person who ran it",
+			reader:   entity.Actor{Kind: entity.ActorKindToken, AccountID: requester},
+			role:     entity.MembershipRoleMember,
+			readable: true,
+			why:      "a token is the person operating through the api",
+		},
+		{
+			name:     "an admin's api token, on somebody else's operation",
+			reader:   entity.Actor{Kind: entity.ActorKindToken, AccountID: other},
+			role:     entity.MembershipRoleAdmin,
+			readable: false,
+			why:      "a token carries its own grants and may be narrower than the person who minted it",
+		},
+		{
+			name:     "nobody at all",
+			reader:   entity.Actor{Kind: entity.ActorKindUser},
+			role:     entity.MembershipRoleAdmin,
+			readable: false,
+			why:      "an actor without an account must never match a row without a requester",
+		},
+	} {
+		t.Run(probe.name, func(t *testing.T) {
+			got := action.ReadableBy(probe.reader, probe.onBehalfOf, probe.role)
+
+			if got != probe.readable {
+				t.Errorf(
+					"ReadableBy = %v, want %v for %s: %s",
+					got, probe.readable, probe.name, probe.why,
+				)
+			}
+		})
+	}
+}

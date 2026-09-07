@@ -2,6 +2,7 @@ package bulkoperation
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 
 type operationsService struct {
 	actions      repository.BulkAction
+	agents       repository.Agent
 	issues       repository.Issue
 	states       repository.WorkflowState
 	labels       repository.Label
@@ -32,6 +34,7 @@ type operationsService struct {
 
 func New(
 	actions repository.BulkAction,
+	agents repository.Agent,
 	issues repository.Issue,
 	states repository.WorkflowState,
 	labels repository.Label,
@@ -46,6 +49,7 @@ func New(
 ) service.BulkOperations {
 	return &operationsService{
 		actions:      actions,
+		agents:       agents,
 		issues:       issues,
 		states:       states,
 		labels:       labels,
@@ -251,12 +255,46 @@ func (s *operationsService) Get(
 		return entity.BulkAction{}, nil, err
 	}
 
+	readable, err := s.readable(ctx, action, decision)
+	if err != nil {
+		return entity.BulkAction{}, nil, err
+	}
+
+	if !readable {
+		return entity.BulkAction{}, nil, entity.ErrBulkActionNotFound
+	}
+
 	outcomes, err := s.actions.ListOutcomes(ctx, actionID, decision.Scope)
 	if err != nil {
 		return entity.BulkAction{}, nil, err
 	}
 
 	return action, outcomes, nil
+}
+
+func (s *operationsService) readable(
+	ctx context.Context,
+	action entity.BulkAction,
+	decision entity.Decision,
+) (bool, error) {
+	if action.ReadableBy(decision.Actor, uuid.Nil, decision.Role) {
+		return true, nil
+	}
+
+	if action.RequestedActorKind != entity.ActorKindAgent {
+		return false, nil
+	}
+
+	agent, err := s.agents.GetByAccountID(ctx, action.RequestedByAccount)
+	if err != nil {
+		if errors.Is(err, entity.ErrAgentNotFound) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return action.ReadableBy(decision.Actor, agent.OwnerAccountID, decision.Role), nil
 }
 
 func (s *operationsService) process(

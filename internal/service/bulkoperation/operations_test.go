@@ -2,6 +2,7 @@ package bulkoperation_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	bulkrepo "github.com/usenorn/norn/internal/repository/bulkaction"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
@@ -27,6 +29,7 @@ import (
 
 type harness struct {
 	actions      *bulkrepo.MockBulkAction
+	agents       *agentrepo.MockAgent
 	issues       *issuerepo.MockIssue
 	states       *workflowstaterepo.MockWorkflowState
 	labels       *labelrepo.MockLabel
@@ -39,6 +42,7 @@ type harness struct {
 	codeLinks    *scmrepo.MockCodeLink
 	authorizer   *authorizersvc.MockAuthorizer
 	actor        entity.Actor
+	role         entity.MembershipRole
 	service      service.BulkOperations
 }
 
@@ -55,6 +59,7 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 
 	h := &harness{
 		actions:      bulkrepo.NewMockBulkAction(ctrl),
+		agents:       agentrepo.NewMockAgent(ctrl),
 		issues:       issuerepo.NewMockIssue(ctrl),
 		states:       workflowstaterepo.NewMockWorkflowState(ctrl),
 		labels:       labelrepo.NewMockLabel(ctrl),
@@ -67,17 +72,18 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		codeLinks:    scmrepo.NewMockCodeLink(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 		actor:        entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
+		role:         entity.MembershipRoleMember,
 	}
 
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ entity.AccessRequest) (entity.Decision, error) {
-			return entity.Decision{Actor: h.actor, Scope: scope}, nil
+			return entity.Decision{Actor: h.actor, Role: h.role, Scope: scope}, nil
 		}).
 		AnyTimes()
 
 	h.service = bulksvc.New(
-		h.actions, h.issues, h.states, h.labels, h.activity, h.members, h.accounts,
+		h.actions, h.agents, h.issues, h.states, h.labels, h.activity, h.members, h.accounts,
 		h.cycles, h.scopeChanges, h.jobs, h.authorizer, tx,
 	)
 
@@ -518,7 +524,12 @@ func TestReadingAnActionAsksOnlyForOutcomesTheReaderMaySee(t *testing.T) {
 
 	h.actions.EXPECT().
 		GetByID(gomock.Any(), workspaceID, actionID).
-		Return(entity.BulkAction{ID: actionID, WorkspaceID: workspaceID}, nil)
+		Return(entity.BulkAction{
+			ID:                 actionID,
+			WorkspaceID:        workspaceID,
+			RequestedByAccount: h.actor.AccountID,
+			RequestedActorKind: entity.ActorKindUser,
+		}, nil)
 
 	h.actions.EXPECT().
 		ListOutcomes(gomock.Any(), actionID, gomock.Any()).
@@ -549,5 +560,191 @@ func TestReadingAnActionAsksOnlyForOutcomesTheReaderMaySee(t *testing.T) {
 			asked.TeamIDs,
 			mine,
 		)
+	}
+}
+
+func TestAMemberWhoDidNotRunAnActionIsToldItIsNotThere(t *testing.T) {
+	workspaceID, actionID := uuid.New(), uuid.New()
+
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{uuid.New()}})
+
+	expected := 40
+
+	h.actions.EXPECT().
+		GetByID(gomock.Any(), workspaceID, actionID).
+		Return(entity.BulkAction{
+			ID:                 actionID,
+			WorkspaceID:        workspaceID,
+			RequestedByAccount: uuid.New(),
+			RequestedActorKind: entity.ActorKindUser,
+			Expected:           &expected,
+			Processed:          40,
+		}, nil)
+
+	_, _, err := h.service.Get(context.Background(), workspaceID, actionID)
+
+	if !errors.Is(err, entity.ErrBulkActionNotFound) {
+		t.Fatalf(
+			"reading somebody else's action returned %v, want ErrBulkActionNotFound. The counts "+
+				"come off the row and cover issues this reader is refused everywhere else, so the "+
+				"action has to read as absent rather than as forbidden.",
+			err,
+		)
+	}
+}
+
+func TestAWorkspaceAdminReadsAnActionSomebodyElseRan(t *testing.T) {
+	workspaceID, actionID := uuid.New(), uuid.New()
+
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
+	h.role = entity.MembershipRoleAdmin
+
+	h.actions.EXPECT().
+		GetByID(gomock.Any(), workspaceID, actionID).
+		Return(entity.BulkAction{
+			ID:                 actionID,
+			WorkspaceID:        workspaceID,
+			RequestedByAccount: uuid.New(),
+			RequestedActorKind: entity.ActorKindUser,
+		}, nil)
+
+	h.actions.EXPECT().
+		ListOutcomes(gomock.Any(), actionID, gomock.Any()).
+		Return(nil, nil)
+
+	if _, _, err := h.service.Get(context.Background(), workspaceID, actionID); err != nil {
+		t.Fatalf("an admin was refused an action of their own workspace: %v", err)
+	}
+}
+
+func TestTheOwnerBehindAnAgentReadsTheActionItRanForThem(t *testing.T) {
+	workspaceID, actionID, agentAccount := uuid.New(), uuid.New(), uuid.New()
+
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{uuid.New()}})
+
+	h.actions.EXPECT().
+		GetByID(gomock.Any(), workspaceID, actionID).
+		Return(entity.BulkAction{
+			ID:                 actionID,
+			WorkspaceID:        workspaceID,
+			RequestedByAccount: agentAccount,
+			RequestedActorKind: entity.ActorKindAgent,
+		}, nil)
+
+	h.agents.EXPECT().
+		GetByAccountID(gomock.Any(), agentAccount).
+		Return(entity.Agent{AccountID: agentAccount, OwnerAccountID: h.actor.AccountID}, nil)
+
+	h.actions.EXPECT().
+		ListOutcomes(gomock.Any(), actionID, gomock.Any()).
+		Return(nil, nil)
+
+	if _, _, err := h.service.Get(context.Background(), workspaceID, actionID); err != nil {
+		t.Fatalf(
+			"the owner was refused the action their own agent ran for them: %v. An agent acts "+
+				"on somebody's behalf, so the operation belongs to that person too.",
+			err,
+		)
+	}
+}
+
+func TestAnotherAgentOfTheSameOwnerCannotReadTheAction(t *testing.T) {
+	workspaceID, actionID := uuid.New(), uuid.New()
+	owner, ran, reading := uuid.New(), uuid.New(), uuid.New()
+
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{uuid.New()}})
+	h.actor = entity.Actor{
+		Kind:           entity.ActorKindAgent,
+		AccountID:      reading,
+		OwnerAccountID: owner,
+	}
+
+	h.actions.EXPECT().
+		GetByID(gomock.Any(), workspaceID, actionID).
+		Return(entity.BulkAction{
+			ID:                 actionID,
+			WorkspaceID:        workspaceID,
+			RequestedByAccount: ran,
+			RequestedActorKind: entity.ActorKindAgent,
+		}, nil)
+
+	h.agents.EXPECT().
+		GetByAccountID(gomock.Any(), ran).
+		Return(entity.Agent{AccountID: ran, OwnerAccountID: owner}, nil)
+
+	_, _, err := h.service.Get(context.Background(), workspaceID, actionID)
+
+	if !errors.Is(err, entity.ErrBulkActionNotFound) {
+		t.Fatalf(
+			"an agent read an action another agent of the same owner ran, and got %v. Sharing an "+
+				"owner is not sharing an operation: the person may read it, their other agents "+
+				"may not.",
+			err,
+		)
+	}
+}
+
+func TestAnAgentOfAnAdminStillCannotReadAnotherAgentsAction(t *testing.T) {
+	workspaceID, actionID := uuid.New(), uuid.New()
+	owner, ran, reading := uuid.New(), uuid.New(), uuid.New()
+
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{uuid.New()}})
+	h.role = entity.MembershipRoleAdmin
+	h.actor = entity.Actor{
+		Kind:           entity.ActorKindAgent,
+		AccountID:      reading,
+		OwnerAccountID: owner,
+	}
+
+	h.actions.EXPECT().
+		GetByID(gomock.Any(), workspaceID, actionID).
+		Return(entity.BulkAction{
+			ID:                 actionID,
+			WorkspaceID:        workspaceID,
+			RequestedByAccount: ran,
+			RequestedActorKind: entity.ActorKindAgent,
+		}, nil)
+
+	h.agents.EXPECT().
+		GetByAccountID(gomock.Any(), ran).
+		Return(entity.Agent{AccountID: ran, OwnerAccountID: owner}, nil)
+
+	_, _, err := h.service.Get(context.Background(), workspaceID, actionID)
+
+	if !errors.Is(err, entity.ErrBulkActionNotFound) {
+		t.Fatalf(
+			"an admin's agent read another agent's action and got %v. An agent is authorised "+
+				"against its owner's membership, so it arrives holding an admin role; that role "+
+				"belongs to the person, not to a credential confined to a few teams.",
+			err,
+		)
+	}
+}
+
+func TestTheAgentThatRanAnActionPollsItWithoutAskingWhoOwnsIt(t *testing.T) {
+	workspaceID, actionID, ran := uuid.New(), uuid.New(), uuid.New()
+
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{uuid.New()}})
+	h.actor = entity.Actor{
+		Kind:           entity.ActorKindAgent,
+		AccountID:      ran,
+		OwnerAccountID: uuid.New(),
+	}
+
+	h.actions.EXPECT().
+		GetByID(gomock.Any(), workspaceID, actionID).
+		Return(entity.BulkAction{
+			ID:                 actionID,
+			WorkspaceID:        workspaceID,
+			RequestedByAccount: ran,
+			RequestedActorKind: entity.ActorKindAgent,
+		}, nil)
+
+	h.actions.EXPECT().
+		ListOutcomes(gomock.Any(), actionID, gomock.Any()).
+		Return(nil, nil)
+
+	if _, _, err := h.service.Get(context.Background(), workspaceID, actionID); err != nil {
+		t.Fatalf("the credential that ran the action was refused its own operation: %v", err)
 	}
 }
