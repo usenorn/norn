@@ -250,6 +250,18 @@ func (a BulkAction) Requester() Actor {
 	)
 }
 
+func (a BulkAction) ReadableBy(reader Actor, onBehalfOf uuid.UUID, role MembershipRole) bool {
+	if reader.Anonymous() {
+		return false
+	}
+
+	if role == MembershipRoleAdmin && reader.Kind == ActorKindUser {
+		return true
+	}
+
+	return reader.AccountID == a.RequestedByAccount || reader.AccountID == onBehalfOf
+}
+
 type BulkActionOutcome struct {
 	IssueID   uuid.UUID
 	Reference string
