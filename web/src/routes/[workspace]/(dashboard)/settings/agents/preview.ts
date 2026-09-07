@@ -37,7 +37,6 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 					"issue:manage",
 					"cycle:read",
 					"project:read",
-					"project:manage",
 					"label:read",
 					"team:read",
 					"membership:read",
@@ -46,7 +45,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 					"notification:read",
 					"notification:manage",
 				],
-				failure: { kind: "scope_exceeds", scopes: ["label:manage", "team:manage"] },
+				failure: { kind: "scope_exceeds", scopes: ["label:manage", "project:manage"] },
 			},
 			member_ready: {
 				listing: {

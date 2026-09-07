@@ -1014,3 +1014,146 @@ func TestAnAgentsOwnCredentialCannotAskWhatItMayGrant(t *testing.T) {
 		t.Fatalf("GrantableScopes error = %v, want ErrAPITokenMintForbidden", err)
 	}
 }
+
+func TestAnAgentCannotBeMintedWithTeamManagementByAnyone(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	h.members.EXPECT().
+		Get(gomock.Any(), h.workspaceID, h.adminID).
+		Return(entity.Membership{Role: entity.MembershipRoleAdmin}, nil)
+	expectActivePerson(h, h.adminID)
+
+	_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Scopes: entity.APIScopeSet{
+			entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead),
+			entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage),
+		},
+		AllTeams: true,
+	})
+
+	if !errors.Is(err, entity.ErrAPITokenScopeExceeds) {
+		t.Fatalf(
+			"Register error = %v, want ErrAPITokenScopeExceeds. An admin may create teams, but "+
+				"an agent is never lent that, so an admin cannot hand it over either.",
+			err,
+		)
+	}
+}
+
+func TestTheScopesOfferedForAnAgentLeaveOutTeamManagement(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	h.members.EXPECT().
+		Get(gomock.Any(), h.workspaceID, h.adminID).
+		Return(entity.Membership{Role: entity.MembershipRoleAdmin}, nil)
+	expectActivePerson(h, h.adminID)
+
+	offered, err := h.service.GrantableScopes(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("GrantableScopes: %v", err)
+	}
+
+	if offered.Permits(entity.ResourceTeam, entity.ActionManage) {
+		t.Fatal(
+			"the register form is offered team management. What it offers is what norn_whoami " +
+				"will report, and no tool stands behind it.",
+		)
+	}
+
+	if !offered.Permits(entity.ResourceTeam, entity.ActionRead) {
+		t.Fatal("the register form is not offered team reading, which an agent needs to file an issue")
+	}
+}
+
+func TestEnablingAnAgentDoesNotCarryTeamManagementForward(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	agentID, accountID, ownerID := uuid.New(), uuid.New(), uuid.New()
+	disabledAt := time.Now().UTC()
+
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).Return(entity.Agent{
+		ID:             agentID,
+		WorkspaceID:    h.workspaceID,
+		AccountID:      accountID,
+		OwnerAccountID: ownerID,
+		Name:           "opsy",
+		Status:         entity.AgentStatusDisabled,
+		DisabledAt:     &disabledAt,
+	}, nil)
+	expectActiveOwner(h, ownerID)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), accountID).
+		Return(entity.APIToken{
+			AccountID: accountID,
+			Scopes: entity.APIScopeSet{
+				entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage),
+				entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage),
+			},
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}, nil)
+	h.agents.EXPECT().Enable(gomock.Any(), h.workspaceID, agentID).Return(nil)
+	h.tokens.EXPECT().RevokeAllByAccount(gomock.Any(), accountID, gomock.Any()).Return(nil)
+	h.members.EXPECT().
+		SetDeactivated(gomock.Any(), h.workspaceID, accountID, nil).
+		Return(entity.Membership{}, nil)
+
+	var minted entity.APIToken
+	h.tokens.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, token entity.APIToken) (entity.APIToken, error) {
+			minted = token
+
+			return token, nil
+		})
+
+	if _, err := h.service.Enable(context.Background(), h.workspaceID, agentID); err != nil {
+		t.Fatalf("Enable: %v", err)
+	}
+
+	if minted.Scopes.Permits(entity.ResourceTeam, entity.ActionManage) {
+		t.Fatalf(
+			"re-enabling an agent minted %v. The old credential is where a withheld scope comes "+
+				"back from, so the ceiling has to hold on the way out as well.",
+			minted.Scopes,
+		)
+	}
+
+	if !minted.Scopes.Permits(entity.ResourceIssue, entity.ActionManage) {
+		t.Fatalf("re-enabling an agent minted %v, losing authority it should have kept", minted.Scopes)
+	}
+}
+
+func TestRotatingAnAgentWhoseOnlyAuthorityIsWithheldRefusesRatherThanMintingNothing(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	agentID, accountID, ownerID := uuid.New(), uuid.New(), uuid.New()
+
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).Return(entity.Agent{
+		ID:             agentID,
+		WorkspaceID:    h.workspaceID,
+		AccountID:      accountID,
+		OwnerAccountID: ownerID,
+		Name:           "opsy",
+		Status:         entity.AgentStatusActive,
+	}, nil)
+	h.tokens.EXPECT().
+		ListByOwner(gomock.Any(), accountID).
+		Return([]entity.APIToken{{
+			AccountID: accountID,
+			Scopes:    entity.APIScopeSet{entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage)},
+			Grants:    entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}}, nil)
+
+	_, err := h.service.Rotate(context.Background(), h.workspaceID, agentID)
+
+	if !errors.Is(err, entity.ErrAgentAuthorityMissing) {
+		t.Fatalf(
+			"Rotate error = %v, want ErrAgentAuthorityMissing. A token has to carry at least one "+
+				"scope, so an agent left with none must be told, not handed a credential the "+
+				"store will reject.",
+			err,
+		)
+	}
+}
