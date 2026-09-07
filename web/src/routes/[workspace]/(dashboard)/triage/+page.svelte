@@ -5,6 +5,7 @@
 	import Bot from "@lucide/svelte/icons/bot";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import GitBranch from "@lucide/svelte/icons/git-branch";
 	import Info from "@lucide/svelte/icons/info";
 	import Plug from "@lucide/svelte/icons/plug";
@@ -38,16 +39,21 @@
 		readTriageFailure,
 		sourceLabels,
 		readSource,
-		sourceTabs,
+		sourceSlots,
+		unmeasuredSignal,
+		unrecordedSource,
+		unsuggestedDuplicates,
 		triageFailureMessage,
 		type TriageDeclineReason,
 		type TriageFailure,
+		type TriageFlow,
 		type TriageListing,
 		type TriageSource,
 	} from "$lib/triage/triage";
 	import type { Issue, IssueCandidate } from "$lib/issues/issues";
 	import { workspacePath } from "$lib/workspace/navigation";
-	import { triagePreviewStates } from "./preview";
+	import Soon from "$lib/triage/soon.svelte";
+	import { triagePreviewStates, type TriagePreview } from "./preview";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();
@@ -56,13 +62,16 @@
 		import.meta.env.DEV ? triagePreviewStates[page.url.searchParams.get("state") ?? ""] : undefined
 	);
 
+	// svelte-ignore state_referenced_locally
+	const seed: Partial<TriagePreview> = preview ?? {};
+
 	let localFailure = $state<TriageFailure | null>(null);
-	let working = $state(false);
+	let working = $state(Boolean(seed.working));
 	const tab = $derived(readSource(page.url.searchParams.get("source")));
-	let flow = $state<"accept" | "decline" | "merge" | null>(null);
-	let reason = $state<TriageDeclineReason | null>(null);
-	let note = $state("");
-	let duplicateOf = $state<IssueCandidate | null>(null);
+	let flow = $state<TriageFlow | null>(seed.flow ?? null);
+	let reason = $state<TriageDeclineReason | null>(seed.reason ?? null);
+	let note = $state(seed.note ?? "");
+	let duplicateOf = $state<IssueCandidate | null>(seed.duplicateOf ?? null);
 	let pendingTeamId = $state("");
 
 
@@ -79,7 +88,7 @@
 	const role = $derived(
 		members.find((member) => member.accountId === data.member.id)?.role ?? "member"
 	);
-	const readOnly = $derived(role === "viewer");
+	const readOnly = $derived(preview?.readOnly ?? role === "viewer");
 
 	const waiting = $derived(queued(listing));
 	const counts = $derived({
@@ -113,12 +122,27 @@
 
 	$effect(() => {
 		tab;
-		cursor.to(0);
+		cursor.to(preview?.cursor ?? 0);
+	});
+
+	let decidedOn: string | null | undefined;
+
+	$effect(() => {
+		const current = cursor.row?.id ?? null;
+
+		if (decidedOn !== undefined && decidedOn !== current) closeFlow();
+
+		decidedOn = current;
 	});
 
 	$effect(() => {
-		cursor.row;
-		closeFlow();
+		const shown = preview;
+
+		flow = shown?.flow ?? null;
+		reason = shown?.reason ?? null;
+		note = shown?.note ?? "";
+		duplicateOf = shown?.duplicateOf ?? null;
+		working = Boolean(shown?.working);
 	});
 
 	function closeFlow() {
@@ -128,7 +152,7 @@
 		duplicateOf = null;
 	}
 
-	function open(next: "accept" | "decline" | "merge") {
+	function open(next: TriageFlow) {
 		if (readOnly || !item) return;
 
 		flow = flow === next ? null : next;
@@ -264,18 +288,32 @@
 			<div
 				class="flex min-w-0 gap-0.5 overflow-x-auto rounded-sm border border-line-default p-0.5"
 			>
-				{#each sourceTabs as choice (choice.value)}
-					<a
-						href={sourcePath(choice.value)}
-						aria-current={tab === choice.value ? "page" : undefined}
-						class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {tab ===
-						choice.value
-							? 'bg-primary text-primary-foreground'
-							: 'text-ink-600 hover:bg-accent'}"
-					>
-						{choice.label}
-						<span class="tabular-nums opacity-70">{counts[choice.value]}</span>
-					</a>
+				{#each sourceSlots as slot (slot.label)}
+					{#if slot.kind === "live"}
+						<a
+							href={sourcePath(slot.value)}
+							aria-current={tab === slot.value ? "page" : undefined}
+							class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {tab ===
+							slot.value
+								? 'bg-primary text-primary-foreground'
+								: 'text-ink-600 hover:bg-accent'}"
+						>
+							{slot.label}
+							<span class="tabular-nums opacity-70">{counts[slot.value]}</span>
+						</a>
+					{:else}
+						<button
+							type="button"
+							disabled
+							aria-label="{slot.label} — {unrecordedSource}"
+							title={unrecordedSource}
+							class="inline-flex h-5.5 flex-none items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase opacity-60"
+						>
+							{slot.label}
+							<span aria-hidden="true">—</span>
+							<Soon />
+						</button>
+					{/if}
 				{/each}
 			</div>
 			<div class="flex-1"></div>
@@ -302,8 +340,11 @@
 	{/if}
 
 	{#if listing.kind === "loading"}
-		<div class="flex min-h-0 flex-1">
-			<div class="w-81.5 flex-none border-r border-line-default p-3" aria-busy="true">
+		<div class="flex min-h-0 flex-1 flex-col lg:flex-row">
+			<div
+				class="w-full flex-none border-b border-line-default p-3 lg:w-81.5 lg:border-r lg:border-b-0"
+				aria-busy="true"
+			>
 				{#each [1, 2, 3, 4, 5] as row (row)}
 					<div class="mb-3 flex flex-col gap-2">
 						<span class="block h-3 w-4/5 animate-breathe rounded-xs bg-paper-2"></span>
@@ -311,7 +352,7 @@
 					</div>
 				{/each}
 			</div>
-			<div class="flex-1 p-7">
+			<div class="min-w-0 flex-1 p-5 sm:p-7">
 				<span class="mb-4 block h-5 w-1/2 animate-breathe rounded-xs bg-paper-3"></span>
 				<span class="mb-2 block h-3 w-full animate-breathe rounded-xs bg-paper-2"></span>
 				<span class="block h-3 w-4/5 animate-breathe rounded-xs bg-paper-2"></span>
@@ -418,6 +459,11 @@
 										</time>
 									</span>
 									<div class="flex-1"></div>
+									<Button variant="ghost" size="sm" disabled title={unrecordedSource}>
+										<ExternalLink aria-hidden="true" />
+										Open source
+										<Soon />
+									</Button>
 									<Button variant="ghost" size="sm" href={at(`/issues/${item.reference}`)}>
 										Open {item.reference}
 									</Button>
@@ -479,7 +525,39 @@
 
 									<dt class="font-mono text-xs text-muted-foreground">Reference</dt>
 									<dd class="font-mono text-sm text-ink-900">{item.reference}</dd>
+
+									<dt class="font-mono text-xs text-muted-foreground">Signal</dt>
+									<dd class="flex items-center gap-2 text-sm text-muted-foreground">
+										<span aria-hidden="true">—</span>
+										<Soon />
+										<span class="sr-only">{unmeasuredSignal}</span>
+									</dd>
 								</dl>
+							</div>
+
+							<div class="flex flex-col gap-2">
+								<div class="flex items-center gap-2">
+									<Eyebrow rule class="flex-1 text-ink-600">Possible duplicates</Eyebrow>
+									<Soon />
+								</div>
+								<div
+									class="flex flex-col gap-2 rounded-lg border border-dashed border-line-default bg-card px-3.5 py-3"
+								>
+									<div class="flex items-center gap-2.5">
+										<span class="font-mono text-xs text-muted-foreground" aria-hidden="true">—</span>
+										<span
+											class="min-w-0 flex-1 font-mono text-xs text-muted-foreground"
+											aria-hidden="true"
+										>
+											—
+										</span>
+										<Button variant="outline" size="xs" disabled>Merge</Button>
+									</div>
+									<p class="text-sm text-muted-foreground text-pretty">
+										{unsuggestedDuplicates} Mark one yourself with Duplicate
+										<Kbd keys="M" />.
+									</p>
+								</div>
 							</div>
 						</div>
 					</div>

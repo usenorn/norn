@@ -32,21 +32,40 @@ export type TriageFailure =
 
 export type TriageDeclineReason = components["schemas"]["TriageDeclineReason"];
 
+export type TriageFlow = "accept" | "decline" | "merge";
+
+export type TriageSourceSlot =
+	| { kind: "live"; value: "all" | TriageSource; label: string }
+	| { kind: "soon"; label: string };
+
 export const sourceLabels: Record<TriageSource, string> = {
 	user: "A person",
 	token: "An integration",
 	agent: "An agent",
 };
 
-export const sourceTabs: { value: "all" | TriageSource; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "user", label: "People" },
-	{ value: "token", label: "Integrations" },
-	{ value: "agent", label: "Agents" },
+export const sourceSlots: TriageSourceSlot[] = [
+	{ kind: "live", value: "all", label: "All" },
+	{ kind: "soon", label: "Slack" },
+	{ kind: "soon", label: "Email" },
+	{ kind: "live", value: "token", label: "API" },
+	{ kind: "live", value: "agent", label: "Agents" },
+	{ kind: "soon", label: "Form" },
+	{ kind: "live", value: "user", label: "People" },
 ];
 
+const liveSources = sourceSlots.filter(
+	(slot): slot is Extract<TriageSourceSlot, { kind: "live" }> => slot.kind === "live"
+);
+
+export const unrecordedSource = "Reports do not record where they came in from yet.";
+
+export const unsuggestedDuplicates = "Nothing looks for duplicates yet.";
+
+export const unmeasuredSignal = "Nothing weighs one report against another yet.";
+
 export function readSource(value: string | null): "all" | TriageSource {
-	return sourceTabs.some((tab) => tab.value === value) ? (value as "all" | TriageSource) : "all";
+	return liveSources.some((slot) => slot.value === value) ? (value as "all" | TriageSource) : "all";
 }
 
 export const declineReasons: { value: TriageDeclineReason; label: string }[] = [
