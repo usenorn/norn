@@ -564,7 +564,7 @@
 										checked: candidate.id === duplicateOf?.id,
 									}))}
 									placeholder="Search issues…"
-									empty="No issue matches that"
+									empty="No issue matches that."
 									onpick={(id) =>
 										(duplicateOf = duplicates.find((candidate) => candidate.id === id) ?? null)}
 								>
