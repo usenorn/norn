@@ -105,7 +105,7 @@ func (s *agentsService) Register(
 		return service.RegisteredAgent{}, entity.ErrAPITokenScopeInvalid
 	}
 
-	if !scopes.SubsetOf(entity.AllowedAPIScopesFor(ownership.Role)) {
+	if !scopes.SubsetOf(entity.AllowedAgentAPIScopesFor(ownership.Role)) {
 		return service.RegisteredAgent{}, entity.ErrAPITokenScopeExceeds
 	}
 
@@ -263,7 +263,7 @@ func (s *agentsService) GrantableScopes(
 		return nil, err
 	}
 
-	return entity.AllowedAPIScopesFor(ownership.Role), nil
+	return entity.AllowedAgentAPIScopesFor(ownership.Role), nil
 }
 
 func (s *agentsService) List(ctx context.Context, workspaceID uuid.UUID) ([]service.OwnedAgent, error) {
@@ -373,7 +373,7 @@ func agentAuthority(token entity.APIToken, workspaceID uuid.UUID) (service.Agent
 	teamIDs = append(teamIDs, grant.TeamIDs...)
 
 	return service.AgentAuthority{
-		Scopes:   scopes,
+		Scopes:   entity.AgentAPIScopes(scopes),
 		AllTeams: grant.AllTeams,
 		TeamIDs:  teamIDs,
 	}, nil
@@ -475,6 +475,10 @@ func (s *agentsService) Enable(
 	authority, err := agentAuthority(latest, workspaceID)
 	if err != nil {
 		return service.RegisteredAgent{}, err
+	}
+
+	if len(authority.Scopes) == 0 {
+		return service.RegisteredAgent{}, entity.ErrAgentAuthorityMissing
 	}
 
 	value, tokenHash, err := entity.NewAPIToken()
@@ -634,6 +638,11 @@ func (s *agentsService) Rotate(
 		return service.RegisteredAgent{}, err
 	}
 
+	scopes := carriedScopes(held)
+	if len(scopes) == 0 {
+		return service.RegisteredAgent{}, entity.ErrAgentAuthorityMissing
+	}
+
 	value, tokenHash, err := entity.NewAPIToken()
 	if err != nil {
 		return service.RegisteredAgent{}, err
@@ -654,7 +663,7 @@ func (s *agentsService) Rotate(
 			AccountID: agent.AccountID,
 			Name:      agent.Name,
 			TokenHash: tokenHash,
-			Scopes:    carriedScopes(held),
+			Scopes:    scopes,
 			Grants:    carriedGrants(held),
 			ExpiresAt: &expiresAt,
 		})
@@ -686,14 +695,14 @@ func carriedScopes(held []entity.APIToken) entity.APIScopeSet {
 			continue
 		}
 
-		return token.Scopes
+		return entity.AgentAPIScopes(token.Scopes)
 	}
 
 	if len(held) == 0 {
 		return entity.APIScopeSet{}
 	}
 
-	return held[0].Scopes
+	return entity.AgentAPIScopes(held[0].Scopes)
 }
 
 func carriedGrants(held []entity.APIToken) entity.APITokenGrants {

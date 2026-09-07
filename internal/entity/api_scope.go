@@ -58,6 +58,13 @@ func APIScopes() []APIScope {
 	return slices.Clone(apiScopeCatalog)
 }
 
+// A team cannot be deleted, its key is unique per workspace and is stamped for good into every
+// issue raised under it, and its visibility decides who may see that work. An agent's strength
+// is volume, so creating teams is never lent to one, however wide its owner's role is.
+var scopesWithheldFromAgents = []APIScope{
+	NewAPIScope(ResourceTeam, ActionManage),
+}
+
 type APIScopeSet []APIScope
 
 func (s APIScopeSet) Permits(resource Resource, action Action) bool {
@@ -112,6 +119,16 @@ func AllowedAPIScopesFor(role MembershipRole) APIScopeSet {
 	}
 
 	return allowed
+}
+
+func AllowedAgentAPIScopesFor(role MembershipRole) APIScopeSet {
+	return AgentAPIScopes(AllowedAPIScopesFor(role))
+}
+
+func AgentAPIScopes(scopes APIScopeSet) APIScopeSet {
+	return slices.DeleteFunc(slices.Clone(scopes), func(scope APIScope) bool {
+		return slices.Contains(scopesWithheldFromAgents, scope)
+	})
 }
 
 func RoleGrants(role MembershipRole, resource Resource, action Action) bool {

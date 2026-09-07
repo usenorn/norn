@@ -242,3 +242,42 @@ func TestAMemberRunsAgentsAndAViewerHasNone(t *testing.T) {
 		}
 	}
 }
+
+func TestAnAgentIsNeverLentTeamManagement(t *testing.T) {
+	manage := entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage)
+	read := entity.NewAPIScope(entity.ResourceTeam, entity.ActionRead)
+
+	for _, role := range []entity.MembershipRole{
+		entity.MembershipRoleAdmin, entity.MembershipRoleMember, entity.MembershipRoleViewer,
+	} {
+		allowed := entity.AllowedAgentAPIScopesFor(role)
+
+		if allowed.Permits(manage.Resource(), manage.Action()) {
+			t.Errorf(
+				"a %s may mint %q for an agent. A team cannot be deleted and its key is stamped "+
+					"into every issue raised under it, so no role lends that to an agent.",
+				role, manage,
+			)
+		}
+
+		if !allowed.Permits(read.Resource(), read.Action()) {
+			t.Errorf(
+				"a %s cannot mint %q for an agent, which needs to read teams to file an issue "+
+					"on one.",
+				role, read,
+			)
+		}
+	}
+}
+
+func TestAScopeWithheldFromAgentsIsStillSomethingAPersonMayHold(t *testing.T) {
+	manage := entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage)
+
+	if !entity.AllowedAPIScopesFor(entity.MembershipRoleAdmin).
+		Permits(manage.Resource(), manage.Action()) {
+		t.Errorf(
+			"an admin may no longer mint %q for their own token. Only an agent is withheld it.",
+			manage,
+		)
+	}
+}
