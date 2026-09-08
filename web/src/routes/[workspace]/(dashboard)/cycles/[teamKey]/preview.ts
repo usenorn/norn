@@ -7,7 +7,8 @@ export const teamCyclesPreviewStates: Record<string, TeamCyclesPreview> = import
 			loading: { listing: { kind: "loading" } },
 			unavailable: { listing: { kind: "unavailable" } },
 			not_found: { listing: { kind: "not_found" } },
-			disabled: { listing: { kind: "disabled", teamKey: "DES" } },
+			none: { listing: { kind: "disabled", teamKey: "MOB", teamName: "Mobile" } },
+			disabled: { listing: { kind: "disabled", teamKey: "DES", teamName: "Design" } },
 			upcoming_only: {
 				listing: {
 					kind: "ready",

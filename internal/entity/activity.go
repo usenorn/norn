@@ -22,6 +22,7 @@ type ActivityKind string
 const (
 	ActivityKindCreated           ActivityKind = "created"
 	ActivityKindStateChanged      ActivityKind = "state_changed"
+	ActivityKindStateReclassified ActivityKind = "state_reclassified"
 	ActivityKindPropertyChanged   ActivityKind = "property_changed"
 	ActivityKindTeamMoved         ActivityKind = "team_moved"
 	ActivityKindArchived          ActivityKind = "archived"
@@ -51,6 +52,7 @@ func ActivityKinds() []ActivityKind {
 	return []ActivityKind{
 		ActivityKindCreated,
 		ActivityKindStateChanged,
+		ActivityKindStateReclassified,
 		ActivityKindPropertyChanged,
 		ActivityKindTeamMoved,
 		ActivityKindArchived,
@@ -139,6 +141,8 @@ type Activity struct {
 	Kind         ActivityKind
 	FromState    string
 	ToState      string
+	FromCategory StateCategory
+	ToCategory   StateCategory
 	Field        string
 	FromValue    string
 	ToValue      string

@@ -118,6 +118,47 @@ LEFT JOIN workspace_cycles c ON c.id = i.cycle_id
 LEFT JOIN workspace_projects pr ON pr.id = i.project_id
 LEFT JOIN accounts td ON td.id = i.triage_decided_by_account_id`
 
+const visibleIssuesByIDsQuery = `
+SELECT` + issueColumns + issueJoins + `
+WHERE i.id = ANY($1::uuid[])
+  AND i.workspace_id = $2
+  AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))
+ORDER BY i.id`
+
+const cycleOfIssueQuery = `
+SELECT coalesce(i.cycle_id::text, '')
+FROM workspace_issues i
+WHERE i.id = $1
+  AND i.workspace_id = $2
+  AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))`
+
+const cyclesOfIssuesQuery = `
+SELECT i.id, coalesce(i.cycle_id::text, '')
+FROM workspace_issues i
+WHERE i.id = ANY($1::uuid[])
+  AND i.workspace_id = $2
+  AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))`
+
+const lockIssuesByIDsQuery = `
+SELECT` + issueColumns + issueJoins + `
+WHERE i.id = ANY($1::uuid[])
+  AND i.workspace_id = $2
+  AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))
+ORDER BY i.id
+FOR UPDATE OF i`
+
+const lockIssuesByCycleQuery = `
+SELECT` + issueColumns + issueJoins + `
+WHERE i.cycle_id = $1
+  AND i.triage_state IS DISTINCT FROM 'waiting'
+ORDER BY i.id
+FOR UPDATE OF i`
+
+const issuesByStateQuery = `
+SELECT` + issueColumns + issueJoins + `
+WHERE i.state_id = $1
+ORDER BY i.id`
+
 const lockIssueQuery = `
 SELECT` + issueColumns + issueJoins + `
 WHERE i.id = $1
@@ -176,7 +217,8 @@ SET cycle_id       = $2::uuid,
     version        = version + 1,
     field_versions = field_versions || jsonb_build_object('cycle', version + 1),
     updated_at     = $3
-WHERE id = ANY($1::uuid[])`
+WHERE id = ANY($1::uuid[])
+  AND cycle_id IS NOT DISTINCT FROM $4::uuid`
 
 const reassignStateQuery = `
 UPDATE workspace_issues i
@@ -953,6 +995,110 @@ func (r *issueRepository) LockByID(
 	return issue, nil
 }
 
+func (r *issueRepository) LockByIDs(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	issueIDs []uuid.UUID,
+	scope entity.TeamScope,
+) ([]entity.Issue, error) {
+	ordered := entity.LockOrder(issueIDs)
+	if len(ordered) == 0 {
+		return []entity.Issue{}, nil
+	}
+
+	wanted := make([]string, 0, len(ordered))
+	for _, issueID := range ordered {
+		wanted = append(wanted, issueID.String())
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx, lockIssuesByIDsQuery,
+		wanted, workspaceID.String(), scope.AllTeams, teamIDs(scope),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("lock issues by id: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	issues := make([]entity.Issue, 0, len(ordered))
+
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan issue: %w", err)
+		}
+
+		issues = append(issues, issue)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate locked issues: %w", err)
+	}
+
+	return issues, nil
+}
+
+func (r *issueRepository) CyclesOf(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	issueIDs []uuid.UUID,
+	scope entity.TeamScope,
+) (map[uuid.UUID]uuid.UUID, error) {
+	held := map[uuid.UUID]uuid.UUID{}
+
+	if len(issueIDs) == 0 {
+		return held, nil
+	}
+
+	wanted := make([]string, 0, len(issueIDs))
+	for _, issueID := range issueIDs {
+		wanted = append(wanted, issueID.String())
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx, cyclesOfIssuesQuery,
+		wanted, workspaceID.String(), scope.AllTeams, teamIDs(scope),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("read the cycles a set of issues is in: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var issueID, cycleID string
+
+		if err := rows.Scan(&issueID, &cycleID); err != nil {
+			return nil, fmt.Errorf("scan the cycle an issue is in: %w", err)
+		}
+
+		issue, err := uuid.Parse(issueID)
+		if err != nil {
+			return nil, fmt.Errorf("parse issue id: %w", err)
+		}
+
+		if cycleID == "" {
+			held[issue] = uuid.Nil
+
+			continue
+		}
+
+		cycle, err := uuid.Parse(cycleID)
+		if err != nil {
+			return nil, fmt.Errorf("parse cycle id: %w", err)
+		}
+
+		held[issue] = cycle
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate the cycles a set of issues is in: %w", err)
+	}
+
+	return held, nil
+}
+
 func (r *issueRepository) Update(
 	ctx context.Context,
 	issueID uuid.UUID,
@@ -1125,11 +1271,12 @@ func (r *issueRepository) MoveToTeam(
 func (r *issueRepository) MoveIssuesToCycle(
 	ctx context.Context,
 	issueIDs []uuid.UUID,
+	from uuid.UUID,
 	cycleID *uuid.UUID,
 	changedAt time.Time,
-) error {
+) (int, error) {
 	if len(issueIDs) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	ids := make([]string, 0, len(issueIDs))
@@ -1143,17 +1290,30 @@ func (r *issueRepository) MoveIssuesToCycle(
 		destination = cycleID.String()
 	}
 
-	if _, err := r.db.Querier(ctx).ExecContext(
+	var origin any
+
+	if from != uuid.Nil {
+		origin = from.String()
+	}
+
+	outcome, err := r.db.Querier(ctx).ExecContext(
 		ctx,
 		moveIssuesToCycleQuery,
 		ids,
 		destination,
 		changedAt,
-	); err != nil {
-		return fmt.Errorf("move issues to another cycle: %w", err)
+		origin,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("move issues to another cycle: %w", err)
 	}
 
-	return nil
+	moved, err := outcome.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("count the issues moved: %w", err)
+	}
+
+	return int(moved), nil
 }
 
 func (r *issueRepository) SetStatus(
@@ -1300,6 +1460,136 @@ func (r *issueRepository) StampLabels(
 	}
 
 	return nil
+}
+
+func (r *issueRepository) ListVisibleByIDs(
+	ctx context.Context,
+	scope entity.TeamScope,
+	issueIDs []uuid.UUID,
+) ([]entity.Issue, error) {
+	if len(issueIDs) == 0 {
+		return []entity.Issue{}, nil
+	}
+
+	wanted := make([]string, 0, len(issueIDs))
+	for _, issueID := range issueIDs {
+		wanted = append(wanted, issueID.String())
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx, visibleIssuesByIDsQuery,
+		wanted, scope.WorkspaceID.String(), scope.AllTeams, teamIDs(scope),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list visible issues by id: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	issues := make([]entity.Issue, 0, len(issueIDs))
+
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan issue: %w", err)
+		}
+
+		issues = append(issues, issue)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate issues by id: %w", err)
+	}
+
+	if err := r.hydrate(ctx, scope, issues); err != nil {
+		return nil, err
+	}
+
+	return issues, nil
+}
+
+func (r *issueRepository) CycleOf(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	scope entity.TeamScope,
+) (uuid.UUID, error) {
+	var held string
+
+	err := r.db.Querier(ctx).QueryRowContext(
+		ctx, cycleOfIssueQuery,
+		issueID.String(), workspaceID.String(), scope.AllTeams, teamIDs(scope),
+	).Scan(&held)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return uuid.Nil, entity.ErrIssueNotFound
+		}
+
+		return uuid.Nil, fmt.Errorf("read the cycle an issue is in: %w", err)
+	}
+
+	if held == "" {
+		return uuid.Nil, nil
+	}
+
+	return uuid.Parse(held)
+}
+
+func (r *issueRepository) LockByCycleID(
+	ctx context.Context,
+	cycleID uuid.UUID,
+) ([]entity.Issue, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, lockIssuesByCycleQuery, cycleID.String())
+	if err != nil {
+		return nil, fmt.Errorf("lock the issues of a cycle: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	issues := make([]entity.Issue, 0)
+
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan issue: %w", err)
+		}
+
+		issues = append(issues, issue)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate the issues of a cycle: %w", err)
+	}
+
+	return issues, nil
+}
+
+func (r *issueRepository) ListByStateID(
+	ctx context.Context,
+	stateID uuid.UUID,
+) ([]entity.Issue, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, issuesByStateQuery, stateID.String())
+	if err != nil {
+		return nil, fmt.Errorf("list issues in a state: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	issues := make([]entity.Issue, 0)
+
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan issue: %w", err)
+		}
+
+		issues = append(issues, issue)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate issues in a state: %w", err)
+	}
+
+	return issues, nil
 }
 
 func (r *issueRepository) ReassignState(ctx context.Context, fromStateID, toStateID uuid.UUID) error {

@@ -11,10 +11,13 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
+	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
+	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -22,15 +25,24 @@ import (
 )
 
 type harness struct {
-	cycles     *cyclerepo.MockCycle
-	cadences   *cyclerepo.MockCycleCadence
-	scope      *cyclerepo.MockCycleScopeChange
-	issues     *issuerepo.MockIssue
-	teams      *teamrepo.MockTeam
-	workspaces *workspacerepo.MockWorkspace
-	authorizer *authorizersvc.MockAuthorizer
-	transactor *transactorrepo.MockTransactor
-	service    service.Cycles
+	cycles        *cyclerepo.MockCycle
+	cadences      *cyclerepo.MockCycleCadence
+	scope         *cyclerepo.MockCycleScopeChange
+	results       *cyclerepo.MockCycleResult
+	activity      *activityrepo.MockActivity
+	states        *workflowstaterepo.MockWorkflowState
+	members       *teammemberrepo.MockTeamMember
+	frozen        []entity.CycleResult
+	lastMoved     map[uuid.UUID]time.Time
+	acquired      []string
+	workspaceErr  error
+	recordingFrom time.Time
+	issues        *issuerepo.MockIssue
+	teams         *teamrepo.MockTeam
+	workspaces    *workspacerepo.MockWorkspace
+	authorizer    *authorizersvc.MockAuthorizer
+	transactor    *transactorrepo.MockTransactor
+	service       service.Cycles
 
 	workspaceID uuid.UUID
 	teamID      uuid.UUID
@@ -46,6 +58,10 @@ func newHarness(t *testing.T) *harness {
 		cycles:      cyclerepo.NewMockCycle(ctrl),
 		cadences:    cyclerepo.NewMockCycleCadence(ctrl),
 		scope:       cyclerepo.NewMockCycleScopeChange(ctrl),
+		results:     cyclerepo.NewMockCycleResult(ctrl),
+		activity:    activityrepo.NewMockActivity(ctrl),
+		states:      workflowstaterepo.NewMockWorkflowState(ctrl),
+		members:     teammemberrepo.NewMockTeamMember(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		teams:       teamrepo.NewMockTeam(ctrl),
 		workspaces:  workspacerepo.NewMockWorkspace(ctrl),
@@ -63,12 +79,82 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.results.EXPECT().
+		RecordingFrom(gomock.Any()).
+		DoAndReturn(func(_ context.Context) (time.Time, error) { return h.recordingFrom, nil }).
+		AnyTimes()
+
+	h.results.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, results []entity.CycleResult) error {
+			h.frozen = append(h.frozen, results...)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.activity.EXPECT().
+		LastStatusChanges(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ []uuid.UUID) (map[uuid.UUID]time.Time, error) {
+			return h.lastMoved, nil
+		}).
+		AnyTimes()
+
+	h.states.EXPECT().
+		ShareByTeamID(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, teamID uuid.UUID) ([]entity.WorkflowState, error) {
+			h.acquired = append(h.acquired, "states "+teamID.String())
+
+			return nil, nil
+		}).
+		AnyTimes()
+
 	h.service = cyclesvc.New(
-		h.cycles, h.cadences, h.scope, h.issues, h.teams, h.workspaces, h.authorizer,
-		silentEmitter(ctrl), h.transactor,
+		h.cycles, h.cadences, h.scope, h.results, h.activity, h.states, h.members, h.issues,
+		h.teams, h.workspaces, h.authorizer, silentEmitter(ctrl), h.transactor,
 	)
 
 	return h
+}
+
+func (h *harness) locks(cycles ...entity.Cycle) {
+	for _, cycle := range cycles {
+		h.cycles.EXPECT().
+			GetVisible(gomock.Any(), h.workspaceID, cycle.ID, gomock.Any()).
+			Return(cycle, nil).
+			AnyTimes()
+		h.cycles.EXPECT().
+			LockByID(gomock.Any(), cycle.ID).
+			DoAndReturn(func(_ context.Context, cycleID uuid.UUID) (entity.Cycle, error) {
+				h.acquired = append(h.acquired, "cycle "+cycleID.String())
+
+				return cycle, nil
+			}).
+			AnyTimes()
+	}
+}
+
+func (h *harness) follows(previous, next entity.Cycle) {
+	h.cycles.EXPECT().
+		NextAfter(gomock.Any(), previous.TeamID, previous.EndsOn).
+		Return(next, nil).
+		AnyTimes()
+}
+
+func (h *harness) allowOnlyOwnTeam() {
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor:     entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID},
+			Workspace: entity.Workspace{ID: h.workspaceID, Timezone: "UTC"},
+			Scope:     entity.TeamScope{WorkspaceID: h.workspaceID, TeamIDs: []uuid.UUID{h.teamID}},
+		}, nil).
+		AnyTimes()
+
+	h.workspaces.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID).
+		Return(entity.Workspace{ID: h.workspaceID, Timezone: "UTC"}, nil).
+		AnyTimes()
 }
 
 func (h *harness) allowAnything() {
@@ -83,7 +169,13 @@ func (h *harness) allowAnything() {
 
 	h.workspaces.EXPECT().
 		GetByID(gomock.Any(), h.workspaceID).
-		Return(entity.Workspace{ID: h.workspaceID, Timezone: "UTC"}, nil).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID) (entity.Workspace, error) {
+			if h.workspaceErr != nil {
+				return entity.Workspace{}, h.workspaceErr
+			}
+
+			return entity.Workspace{ID: h.workspaceID, Timezone: "UTC"}, nil
+		}).
 		AnyTimes()
 
 	h.teams.EXPECT().
@@ -244,9 +336,9 @@ func TestClosingIsRefusedUntilTheUnfinishedIssuesHaveSomewhereToGo(t *testing.T)
 
 	ended := h.cycle(4, lastMonth(), yesterday())
 
-	h.cycles.EXPECT().LockByID(gomock.Any(), ended.ID).Return(ended, nil)
+	h.locks(ended)
 	h.issues.EXPECT().
-		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		LockByCycleID(gomock.Any(), gomock.Any()).
 		Return([]entity.Issue{h.issue(entity.StateCategoryActive)}, nil)
 
 	_, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{})
@@ -267,7 +359,7 @@ func TestClosingACycleThatHasNotEndedIsRefused(t *testing.T) {
 	today := entity.Today(time.Now().UTC(), "UTC")
 	running := h.cycle(4, today, entity.Today(time.Now().UTC().AddDate(0, 0, 7), "UTC"))
 
-	h.cycles.EXPECT().LockByID(gomock.Any(), running.ID).Return(running, nil)
+	h.locks(running)
 
 	_, err := h.service.Close(
 		context.Background(),
@@ -292,24 +384,25 @@ func TestAnOverrideSendsOneIssueToTheBacklogWhileTheRestRollForward(t *testing.T
 	staying := h.issue(entity.StateCategoryNotStarted)
 	finished := h.issue(entity.StateCategoryComplete)
 
-	h.cycles.EXPECT().LockByID(gomock.Any(), ended.ID).Return(ended, nil)
+	h.locks(ended)
 	h.issues.EXPECT().
-		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		LockByCycleID(gomock.Any(), gomock.Any()).
 		Return([]entity.Issue{rolling, staying, finished}, nil)
-	h.cycles.EXPECT().NextAfter(gomock.Any(), h.teamID, ended.EndsOn).Return(next, nil)
+	h.locks(next)
+	h.follows(ended, next)
 
 	var forward, backlog []uuid.UUID
 
 	h.issues.EXPECT().
-		MoveIssuesToCycle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, ids []uuid.UUID, cycleID *uuid.UUID, _ time.Time) error {
+		MoveIssuesToCycle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, ids []uuid.UUID, _ uuid.UUID, cycleID *uuid.UUID, _ time.Time) (int, error) {
 			if cycleID == nil {
 				backlog = ids
 			} else {
 				forward = ids
 			}
 
-			return nil
+			return len(ids), nil
 		}).
 		Times(2)
 
@@ -322,7 +415,7 @@ func TestAnOverrideSendsOneIssueToTheBacklogWhileTheRestRollForward(t *testing.T
 
 			return nil
 		}).
-		Times(2)
+		Times(3)
 
 	h.cycles.EXPECT().
 		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), entity.CycleRolloverNext).
@@ -360,9 +453,9 @@ func TestAFinishedCycleClosesWithoutARolloverDecision(t *testing.T) {
 
 	ended := h.cycle(4, lastMonth(), yesterday())
 
-	h.cycles.EXPECT().LockByID(gomock.Any(), ended.ID).Return(ended, nil)
+	h.locks(ended)
 	h.issues.EXPECT().
-		ListVisible(gomock.Any(), gomock.Any(), gomock.Any()).
+		LockByCycleID(gomock.Any(), gomock.Any()).
 		Return([]entity.Issue{h.issue(entity.StateCategoryComplete), h.issue(entity.StateCategoryAbandoned)}, nil)
 	h.cycles.EXPECT().
 		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), gomock.Any()).
@@ -766,5 +859,507 @@ func TestTheCyclesHistoryIsAskedForOnlyWhatTheReaderMaySee(t *testing.T) {
 
 	if len(asked.TeamIDs) != 1 || asked.TeamIDs[0] != h.teamID {
 		t.Fatalf("the history was scoped to %v, want the reader's own team %v", asked.TeamIDs, h.teamID)
+	}
+}
+
+func TestAnIssueKeptWhereItIsStaysInTheCycleItWasClosedIn(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+	next := h.cycle(5, entity.Today(time.Now().UTC(), "UTC"), entity.Today(time.Now().UTC().AddDate(0, 0, 13), "UTC"))
+
+	rolling := h.issue(entity.StateCategoryActive)
+	kept := h.issue(entity.StateCategoryActive)
+
+	h.locks(ended)
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), gomock.Any()).
+		Return([]entity.Issue{rolling, kept}, nil)
+	h.locks(next)
+	h.follows(ended, next)
+
+	var moved []uuid.UUID
+
+	h.issues.EXPECT().
+		MoveIssuesToCycle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, ids []uuid.UUID, _ uuid.UUID, _ *uuid.UUID, _ time.Time) (int, error) {
+			moved = append(moved, ids...)
+
+			return len(ids), nil
+		})
+
+	arriving := map[uuid.UUID][]uuid.UUID{}
+
+	h.scope.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			if change.Change == entity.CycleScopeChangeAdded {
+				arriving[change.CycleID] = append(arriving[change.CycleID], change.IssueID)
+			}
+
+			return nil
+		}).
+		Times(2)
+
+	h.cycles.EXPECT().
+		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), entity.CycleRolloverNext).
+		Return(ended, nil)
+
+	if _, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{
+		Rollover: entity.CycleRolloverNext,
+		Overrides: []service.RolloverOverride{
+			{IssueID: kept.ID, Destination: entity.CycleRolloverKeep},
+		},
+	}); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	if len(arriving[next.ID]) != 1 || arriving[next.ID][0] != rolling.ID {
+		t.Fatalf(
+			"the next cycle recorded %v arriving, want only %v. A cycle already under way has to "+
+				"say when work landed in it, or the issue reads as having been there from the "+
+				"first day and its carried-in count is a guess.",
+			arriving[next.ID], rolling.ID,
+		)
+	}
+
+	if len(moved) != 1 || moved[0] != rolling.ID {
+		t.Fatalf(
+			"closing moved %v. Keeping an issue here means it is not moved at all: it stays "+
+				"attached to the cycle it was closed in, which is what the report of that cycle "+
+				"then has to account for.",
+			moved,
+		)
+	}
+}
+
+func TestKeepingEveryUnfinishedIssueClosesTheCycleWithoutMovingAnything(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+	open := h.issue(entity.StateCategoryActive)
+
+	h.locks(ended)
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), gomock.Any()).
+		Return([]entity.Issue{open}, nil)
+
+	h.cycles.EXPECT().
+		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), entity.CycleRolloverKeep).
+		Return(ended, nil)
+
+	if _, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{
+		Rollover: entity.CycleRolloverKeep,
+	}); err != nil {
+		t.Fatalf(
+			"close: %v. Keep is a decision like the other two, so a cycle every issue is kept in "+
+				"still closes — it neither moves an issue nor asks for a next cycle.",
+			err,
+		)
+	}
+}
+
+func TestWorkRolledIntoACycleThatHasNotStartedNeedsNoArrivalEvent(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+	next := h.cycle(5, entity.Today(time.Now().UTC().AddDate(0, 0, 7), "UTC"), entity.Today(time.Now().UTC().AddDate(0, 0, 20), "UTC"))
+
+	rolling := h.issue(entity.StateCategoryActive)
+
+	h.locks(ended)
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), gomock.Any()).
+		Return([]entity.Issue{rolling}, nil)
+	h.locks(next)
+	h.follows(ended, next)
+	h.issues.EXPECT().
+		MoveIssuesToCycle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, ids []uuid.UUID, _ uuid.UUID, _ *uuid.UUID, _ time.Time) (int, error) {
+			return len(ids), nil
+		})
+
+	kinds := map[entity.CycleScopeChangeKind]int{}
+
+	h.scope.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			kinds[change.Change]++
+
+			return nil
+		}).
+		Times(1)
+
+	h.cycles.EXPECT().
+		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), entity.CycleRolloverNext).
+		Return(ended, nil)
+
+	if _, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{
+		Rollover: entity.CycleRolloverNext,
+	}); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	if kinds[entity.CycleScopeChangeAdded] != 0 {
+		t.Fatalf(
+			"an arrival was recorded on a cycle that has not begun. Work that lands before the " +
+				"first day was there from the first day, and the ledger only carries what " +
+				"departs from that.",
+		)
+	}
+}
+
+func TestClosingWritesWhereEveryIssueStoodAndWhatWasDecidedAboutIt(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+	next := h.cycle(5, entity.Today(time.Now().UTC(), "UTC"), entity.Today(time.Now().UTC().AddDate(0, 0, 13), "UTC"))
+
+	rolling := h.issue(entity.StateCategoryActive)
+	kept := h.issue(entity.StateCategoryNotStarted)
+	finished := h.issue(entity.StateCategoryComplete)
+
+	h.locks(ended)
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), gomock.Any()).
+		Return([]entity.Issue{rolling, kept, finished}, nil)
+	h.locks(next)
+	h.follows(ended, next)
+	h.issues.EXPECT().
+		MoveIssuesToCycle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, ids []uuid.UUID, _ uuid.UUID, _ *uuid.UUID, _ time.Time) (int, error) {
+			return len(ids), nil
+		})
+	h.scope.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	h.cycles.EXPECT().
+		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), entity.CycleRolloverNext).
+		Return(ended, nil)
+
+	if _, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{
+		Rollover: entity.CycleRolloverNext,
+		Overrides: []service.RolloverOverride{
+			{IssueID: kept.ID, Destination: entity.CycleRolloverKeep},
+		},
+	}); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	frozen := h.frozen
+
+	if len(frozen) != 3 {
+		t.Fatalf("the cycle froze %d rows, want one for every issue it held", len(frozen))
+	}
+
+	held := map[uuid.UUID]entity.CycleResult{}
+	for _, result := range frozen {
+		held[result.IssueID] = result
+	}
+
+	if held[finished.ID].Category != entity.StateCategoryComplete || !held[finished.ID].Finished() {
+		t.Errorf(
+			"the finished issue froze as %q. What a cycle achieved is decided when it closes, "+
+				"not by where its issues drift to afterwards.",
+			held[finished.ID].Category,
+		)
+	}
+
+	if held[finished.ID].Decision != entity.CycleRolloverNone {
+		t.Errorf(
+			"the finished issue froze carrying the decision %q, want none: nothing was decided "+
+				"about work that was already done",
+			held[finished.ID].Decision,
+		)
+	}
+
+	if held[kept.ID].Decision != entity.CycleRolloverKeep {
+		t.Errorf("the kept issue froze carrying %q, want keep", held[kept.ID].Decision)
+	}
+
+	if held[rolling.ID].Decision != entity.CycleRolloverNext {
+		t.Errorf("the rolled issue froze carrying %q, want next", held[rolling.ID].Decision)
+	}
+}
+
+func TestACycleTakesAnOwnerFromItsOwnTeamAndCanBeCleared(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	running := h.cycle(6, entity.Today(time.Now().UTC(), "UTC"), entity.Today(time.Now().UTC().AddDate(0, 0, 13), "UTC"))
+	owner := uuid.New()
+
+	h.cycles.EXPECT().LockByID(gomock.Any(), running.ID).Return(running, nil).Times(2)
+	h.members.EXPECT().
+		Get(gomock.Any(), h.teamID, owner).
+		Return(entity.TeamMembership{TeamID: h.teamID, AccountID: owner}, nil)
+
+	var given []*uuid.UUID
+
+	h.cycles.EXPECT().
+		SetOwner(gomock.Any(), running.ID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, account *uuid.UUID) (entity.Cycle, error) {
+			given = append(given, account)
+
+			return running, nil
+		}).
+		Times(2)
+
+	if _, err := h.service.SetOwner(context.Background(), h.workspaceID, running.ID, &owner); err != nil {
+		t.Fatalf("setting an owner from the team: %v", err)
+	}
+
+	if _, err := h.service.SetOwner(context.Background(), h.workspaceID, running.ID, nil); err != nil {
+		t.Fatalf("clearing the owner: %v", err)
+	}
+
+	if len(given) != 2 || given[0] == nil || *given[0] != owner || given[1] != nil {
+		t.Fatalf(
+			"the store was given %v, want the chosen account and then nothing. Unassigned is a "+
+				"real value here, not the absence of a request.",
+			given,
+		)
+	}
+}
+
+func TestSomebodyOutsideTheTeamCannotOwnItsCycle(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	running := h.cycle(6, entity.Today(time.Now().UTC(), "UTC"), entity.Today(time.Now().UTC().AddDate(0, 0, 13), "UTC"))
+	stranger := uuid.New()
+
+	h.locks(running)
+	h.members.EXPECT().
+		Get(gomock.Any(), h.teamID, stranger).
+		Return(entity.TeamMembership{}, entity.ErrTeamMembershipNotFound)
+
+	_, err := h.service.SetOwner(context.Background(), h.workspaceID, running.ID, &stranger)
+
+	if !errors.Is(err, entity.ErrCycleOwnerNotOnTeam) {
+		t.Fatalf(
+			"SetOwner error = %v, want ErrCycleOwnerNotOnTeam. The owner is picked from the "+
+				"team that runs the cycle, and choosing one grants nothing, so the list it is "+
+				"picked from is the whole of the rule.",
+			err,
+		)
+	}
+}
+
+func TestAClosedCycleWillNotTakeANewOwner(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	closedAt := time.Now().UTC()
+	ended := h.cycle(4, lastMonth(), yesterday())
+	ended.ClosedAt = &closedAt
+
+	owner := uuid.New()
+
+	h.locks(ended)
+
+	_, err := h.service.SetOwner(context.Background(), h.workspaceID, ended.ID, &owner)
+
+	if !errors.Is(err, entity.ErrCycleClosed) {
+		t.Fatalf(
+			"SetOwner error = %v, want ErrCycleClosed. A finished cycle reads as a record of "+
+				"what happened, and the row is locked while that is decided so a close cannot "+
+				"land between the check and the write.",
+			err,
+		)
+	}
+}
+
+func TestClosingACycleThatHeldNothingStillRecordsThatItWasCounted(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+
+	h.locks(ended)
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), gomock.Any()).
+		Return([]entity.Issue{}, nil)
+
+	var stamped bool
+
+	h.cycles.EXPECT().
+		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), entity.CycleRolloverBacklog).
+		DoAndReturn(func(
+			_ context.Context, cycleID uuid.UUID, closedAt time.Time,
+			_ *uuid.UUID, rollover entity.CycleRollover,
+		) (entity.Cycle, error) {
+			stamped = true
+			closed := ended
+			closed.ClosedAt = &closedAt
+			closed.ResultsRecordedAt = &closedAt
+			closed.Rollover = rollover
+
+			return closed, nil
+		})
+
+	closed, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{})
+	if err != nil {
+		t.Fatalf("closing a cycle that held nothing: %v", err)
+	}
+
+	if !stamped || !closed.Cycle.Frozen() {
+		t.Fatal(
+			"closing an empty cycle left no record that its results were taken. Zero issues is " +
+				"an answer; having never been asked is not, and the screen has to tell them apart.",
+		)
+	}
+
+	if len(h.frozen) != 0 {
+		t.Fatalf("the empty cycle froze %d rows, want none", len(h.frozen))
+	}
+}
+
+func TestACycleClosedBeforeAnyOfThisHasNoResultsToReport(t *testing.T) {
+	h := newHarness(t)
+
+	closedAt := time.Now().UTC().AddDate(0, 0, -30)
+	legacy := h.cycle(3, lastMonth(), yesterday())
+	legacy.ClosedAt = &closedAt
+
+	if !legacy.Closed() {
+		t.Fatal("the fixture is not closed, so it cannot stand for a cycle closed long ago")
+	}
+
+	if legacy.Frozen() {
+		t.Fatal(
+			"a cycle closed before results were ever recorded reads as frozen. It has no " +
+				"snapshot at all, which is a different answer from a cycle that closed holding " +
+				"nothing, and reporting zero for it would be an invention.",
+		)
+	}
+}
+
+func TestClosingIsRefusedWhenTheNextCycleClosedWhileTheFormWasOpen(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+	next := h.cycle(5, yesterday(), entity.Today(time.Now().UTC().AddDate(0, 0, 13), "UTC"))
+	shut := time.Now().UTC()
+	next.ClosedAt = &shut
+
+	h.locks(ended, next)
+	h.follows(ended, next)
+
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), gomock.Any()).
+		Return([]entity.Issue{h.issue(entity.StateCategoryActive)}, nil)
+	h.issues.EXPECT().
+		MoveIssuesToCycle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(0)
+	h.cycles.EXPECT().
+		Close(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(0)
+
+	_, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{
+		Rollover: entity.CycleRolloverNext,
+	})
+	if !errors.Is(err, entity.ErrCycleStale) {
+		t.Fatalf(
+			"closing into a cycle that had itself closed returned %v, want a conflict. Unfinished "+
+				"work would otherwise be moved into a cycle whose numbers are already final.",
+			err,
+		)
+	}
+}
+
+func TestClosingIsRefusedWhenTheUnfinishedWorkIsNotWhatTheFormShowed(t *testing.T) {
+	for name, reviewed := range map[string][]uuid.UUID{
+		"the form showed nothing":       {},
+		"the form showed another issue": {uuid.New()},
+	} {
+		t.Run(name, func(t *testing.T) {
+			closingIsRefused(t, reviewed)
+		})
+	}
+}
+
+func closingIsRefused(t *testing.T, reviewed []uuid.UUID) {
+	t.Helper()
+
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+
+	h.locks(ended)
+
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), gomock.Any()).
+		Return([]entity.Issue{h.issue(entity.StateCategoryActive)}, nil)
+	h.issues.EXPECT().
+		MoveIssuesToCycle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(0)
+	h.cycles.EXPECT().
+		Close(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(0)
+
+	_, err := h.service.Close(context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{
+		Rollover: entity.CycleRolloverBacklog,
+		Reviewed: reviewed,
+	})
+	if !errors.Is(err, entity.ErrCycleStale) {
+		t.Fatalf(
+			"closing a cycle whose unfinished work changed returned %v, want a conflict. An issue "+
+				"nobody saw in the form would otherwise be sent wherever the default pointed.",
+			err,
+		)
+	}
+}
+
+func TestClosingHoldsTheTeamsWorkflowStatesBeforeItReadsWhatTheCycleHeld(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	ended := h.cycle(4, lastMonth(), yesterday())
+
+	h.locks(ended)
+
+	h.issues.EXPECT().
+		LockByCycleID(gomock.Any(), ended.ID).
+		DoAndReturn(func(_ context.Context, cycleID uuid.UUID) ([]entity.Issue, error) {
+			h.acquired = append(h.acquired, "issues "+cycleID.String())
+
+			return []entity.Issue{h.issue(entity.StateCategoryComplete)}, nil
+		})
+
+	h.cycles.EXPECT().
+		Close(gomock.Any(), ended.ID, gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(ended, nil)
+
+	if _, err := h.service.Close(
+		context.Background(), h.workspaceID, ended.ID, service.CloseCycleInput{},
+	); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+
+	want := []string{
+		"states " + h.teamID.String(),
+		"cycle " + ended.ID.String(),
+		"issues " + ended.ID.String(),
+	}
+
+	if len(h.acquired) != len(want) {
+		t.Fatalf("acquired %v, want %v", h.acquired, want)
+	}
+
+	for at, step := range want {
+		if h.acquired[at] != step {
+			t.Fatalf(
+				"acquired %v, want %v. The query that reads what a cycle held joins the workflow "+
+					"states and locks only the issue rows, so a reclassification committing while it "+
+					"waits leaves the joined category at the statement's older snapshot.",
+				h.acquired, want,
+			)
+		}
 	}
 }

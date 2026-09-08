@@ -11,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -30,6 +31,10 @@ type harness struct {
 	states     *workflowstaterepo.MockWorkflowState
 	activity   *activityrepo.MockActivity
 	teams      *teamrepo.MockTeam
+	cycles     *cyclerepo.MockCycle
+	teamStates []entity.WorkflowState
+	scope      *cyclerepo.MockCycleScopeChange
+	joined     []entity.CycleScopeChange
 	relations  *issuerelationsvc.MockIssueRelations
 	issueMoves *issuesvc.MockIssues
 	comments   *issuecommentsvc.MockIssueComments
@@ -55,6 +60,8 @@ func newHarness(t *testing.T) *harness {
 		states:      workflowstaterepo.NewMockWorkflowState(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
 		teams:       teamrepo.NewMockTeam(ctrl),
+		cycles:      cyclerepo.NewMockCycle(ctrl),
+		scope:       cyclerepo.NewMockCycleScopeChange(ctrl),
 		relations:   issuerelationsvc.NewMockIssueRelations(ctrl),
 		issueMoves:  issuesvc.NewMockIssues(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
@@ -77,14 +84,31 @@ func newHarness(t *testing.T) *harness {
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
 		Return(entity.Decision{
-			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: h.actorID},
-			Role:  entity.MembershipRoleAdmin,
-			Scope: entity.TeamScope{WorkspaceID: h.workspaceID, AllTeams: true},
+			Actor:     entity.Actor{Kind: entity.ActorKindUser, AccountID: h.actorID},
+			Role:      entity.MembershipRoleAdmin,
+			Workspace: entity.Workspace{ID: h.workspaceID, Timezone: "UTC"},
+			Scope:     entity.TeamScope{WorkspaceID: h.workspaceID, AllTeams: true},
 		}, nil).
 		AnyTimes()
 
+	h.states.EXPECT().
+		ShareByTeamID(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID) ([]entity.WorkflowState, error) {
+			return h.teamStates, nil
+		}).
+		AnyTimes()
+
+	h.scope.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			h.joined = append(h.joined, change)
+
+			return nil
+		}).
+		AnyTimes()
+
 	h.service = triagesvc.New(
-		h.triage, h.issues, h.states, h.activity, h.teams,
+		h.triage, h.issues, h.states, h.activity, h.teams, h.cycles, h.scope,
 		h.relations, h.issueMoves, h.comments, h.authorizer,
 		capturingEmitter(ctrl, &h.emitted), h.transactor,
 	)
@@ -174,9 +198,7 @@ func TestDecliningClosesTheIssueWithoutDeletingIt(t *testing.T) {
 	abandoned := h.abandonedState()
 
 	h.holds(issue)
-	h.states.EXPECT().
-		ListByTeamID(gomock.Any(), h.teamID).
-		Return([]entity.WorkflowState{abandoned}, nil)
+	h.teamStates = []entity.WorkflowState{abandoned}
 	h.expectDecided(entity.TriageStateDeclined)
 
 	var moved *uuid.UUID
@@ -228,9 +250,7 @@ func TestDecliningClosesTheIssueWithoutDeletingIt(t *testing.T) {
 func TestADeclineNoteReachesTheReporterInTheThread(t *testing.T) {
 	h := newHarness(t)
 	h.holds(h.waiting())
-	h.states.EXPECT().
-		ListByTeamID(gomock.Any(), h.teamID).
-		Return([]entity.WorkflowState{h.abandonedState()}, nil)
+	h.teamStates = []entity.WorkflowState{h.abandonedState()}
 	h.issues.EXPECT().
 		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil)
@@ -292,11 +312,9 @@ func TestDecliningNeedsAReasonTheReporterCanBeTold(t *testing.T) {
 func TestDecliningIsRefusedWhenTheTeamHasNowhereToPutIt(t *testing.T) {
 	h := newHarness(t)
 	h.holds(h.waiting())
-	h.states.EXPECT().
-		ListByTeamID(gomock.Any(), h.teamID).
-		Return([]entity.WorkflowState{{
-			ID: uuid.New(), Name: "Todo", Category: entity.StateCategoryNotStarted,
-		}}, nil)
+	h.teamStates = []entity.WorkflowState{{
+		ID: uuid.New(), Name: "Todo", Category: entity.StateCategoryNotStarted,
+	}}
 
 	if _, err := h.service.Decline(
 		context.Background(),
@@ -549,6 +567,47 @@ func TestTheQueueOnlyEverAsksForWaitingWork(t *testing.T) {
 		t.Fatal(
 			"the queue asked for the ordinary backlog. The queue and the backlog are the same " +
 				"engine asking opposite questions, and without the flag it shows the wrong one.",
+		)
+	}
+}
+
+func TestAnIssueJoinsTheCycleOnlyOnceTriageLetsItThrough(t *testing.T) {
+	h := newHarness(t)
+
+	cycleID := uuid.New()
+	issue := h.waiting()
+	issue.CycleID = cycleID
+
+	running := entity.Cycle{
+		ID:          cycleID,
+		WorkspaceID: h.workspaceID,
+		TeamID:      h.teamID,
+		Number:      7,
+		StartsOn:    "2020-01-01",
+		EndsOn:      "2999-01-01",
+	}
+
+	h.holds(issue)
+	h.expectDecided(entity.TriageStateAccepted)
+	h.captureDecision()
+
+	h.cycles.EXPECT().LockByID(gomock.Any(), cycleID).Return(running, nil)
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), h.workspaceID, cycleID, gomock.Any()).
+		Return(running, nil)
+
+	if _, err := h.service.Accept(context.Background(), h.workspaceID, h.issueID); err != nil {
+		t.Fatalf("Accept: %v", err)
+	}
+
+	if len(h.joined) != 1 ||
+		h.joined[0].CycleID != cycleID ||
+		h.joined[0].IssueID != h.issueID ||
+		h.joined[0].Change != entity.CycleScopeChangeAdded {
+		t.Fatalf(
+			"scope changes %+v, want one arrival in cycle %v. Every cycle count excludes work "+
+				"still waiting in triage, so the moment it is accepted is the moment it joined.",
+			h.joined, cycleID,
 		)
 	}
 }

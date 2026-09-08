@@ -13,6 +13,7 @@ const (
 	CycleMinLengthWeeks = 1
 	CycleMaxLengthWeeks = 4
 	daysPerWeek         = 7
+	hoursPerDay         = 24
 )
 
 var (
@@ -22,6 +23,8 @@ var (
 	ErrCycleOverlaps             = errors.New("cycle overlaps another cycle in this team")
 	ErrCycleTeamMismatch         = errors.New("cycle belongs to another team")
 	ErrCycleRolloverRequired     = errors.New("cycle has unfinished issues and no rollover decision")
+	ErrCycleOwnerNotOnTeam       = errors.New("cycle owner must be a member of the cycle's team")
+	ErrCycleStale                = errors.New("cycle membership changed while it was being closed")
 	ErrCycleNotEnded             = errors.New("cycle has not ended yet")
 	ErrCycleCadenceNotFound      = errors.New("team does not use cycles")
 	ErrCycleNoNextCycle          = errors.New("team has no later cycle to move issues to")
@@ -50,10 +53,15 @@ const (
 	CycleRolloverNone    CycleRollover = ""
 	CycleRolloverNext    CycleRollover = "next"
 	CycleRolloverBacklog CycleRollover = "backlog"
+	CycleRolloverKeep    CycleRollover = "keep"
 )
 
+func CycleRollovers() []CycleRollover {
+	return []CycleRollover{CycleRolloverNext, CycleRolloverBacklog, CycleRolloverKeep}
+}
+
 func (r CycleRollover) Valid() bool {
-	return r == CycleRolloverNext || r == CycleRolloverBacklog
+	return slices.Contains(CycleRollovers(), r)
 }
 
 type Cycle struct {
@@ -66,6 +74,8 @@ type Cycle struct {
 	EndsOn            string
 	ClosedAt          *time.Time
 	ClosedByAccountID uuid.UUID
+	OwnerAccountID    uuid.UUID
+	ResultsRecordedAt *time.Time
 	Rollover          CycleRollover
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
@@ -74,6 +84,10 @@ type Cycle struct {
 
 func (c Cycle) Closed() bool {
 	return c.ClosedAt != nil
+}
+
+func (c Cycle) Frozen() bool {
+	return c.ResultsRecordedAt != nil
 }
 
 func (c Cycle) PhaseOn(today string) CyclePhase {
@@ -197,6 +211,75 @@ func ParseCalendarDate(date string) (time.Time, error) {
 
 func FormatCalendarDate(at time.Time) string {
 	return at.Format(time.DateOnly)
+}
+
+func StartOfCalendarDay(date string, in *time.Location) (time.Time, error) {
+	day, err := ParseCalendarDate(date)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if in == nil {
+		in = time.UTC
+	}
+
+	return time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, in), nil
+}
+
+func StartOfNextCalendarDay(date string, in *time.Location) (time.Time, error) {
+	day, err := ParseCalendarDate(date)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if in == nil {
+		in = time.UTC
+	}
+
+	return time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, in).AddDate(0, 0, 1), nil
+}
+
+func CalendarDaysBetween(from, to string) ([]string, error) {
+	start, err := ParseCalendarDate(from)
+	if err != nil {
+		return nil, err
+	}
+
+	end, err := ParseCalendarDate(to)
+	if err != nil {
+		return nil, err
+	}
+
+	days := make([]string, 0)
+
+	for day := start; !day.After(end); day = day.AddDate(0, 0, 1) {
+		days = append(days, FormatCalendarDate(day))
+	}
+
+	return days, nil
+}
+
+func CalendarDaysSince(at time.Time, today string, in *time.Location) (int, error) {
+	if in == nil {
+		in = time.UTC
+	}
+
+	changed, err := ParseCalendarDate(FormatCalendarDate(at.In(in)))
+	if err != nil {
+		return 0, err
+	}
+
+	day, err := ParseCalendarDate(today)
+	if err != nil {
+		return 0, err
+	}
+
+	days := int(day.Sub(changed).Hours()) / hoursPerDay
+	if days < 0 {
+		return 0, nil
+	}
+
+	return days, nil
 }
 
 func Today(now time.Time, timezone string) string {

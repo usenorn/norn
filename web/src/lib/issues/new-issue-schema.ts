@@ -12,6 +12,7 @@ export const newIssueSchema = z.object({
 	priority: z.enum(["urgent", "high", "medium", "low", "none"]).default("none"),
 	assigneeId: z.string().trim().default(""),
 	projectId: z.string().trim().default(""),
+	cycleId: z.string().trim().default(""),
 	labelIds: z.array(z.string()).default([]),
 	dueOn: z
 		.string()

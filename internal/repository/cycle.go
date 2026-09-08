@@ -9,7 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-//go:generate go tool mockgen -source=cycle.go -destination=cycle/mock_cycle.go -package=cycle -mock_names=Cycle=MockCycle,CycleCadence=MockCycleCadence,CycleScopeChange=MockCycleScopeChange
+//go:generate go tool mockgen -source=cycle.go -destination=cycle/mock_cycle.go -package=cycle -mock_names=Cycle=MockCycle,CycleCadence=MockCycleCadence,CycleScopeChange=MockCycleScopeChange,CycleResult=MockCycleResult
 
 type CycleFilter struct {
 	TeamID *uuid.UUID
@@ -23,6 +23,7 @@ type Cycle interface {
 	ListByTeamID(ctx context.Context, teamID uuid.UUID) ([]entity.Cycle, error)
 	LockByID(ctx context.Context, cycleID uuid.UUID) (entity.Cycle, error)
 	Close(ctx context.Context, cycleID uuid.UUID, closedAt time.Time, closedBy *uuid.UUID, rollover entity.CycleRollover) (entity.Cycle, error)
+	SetOwner(ctx context.Context, cycleID uuid.UUID, owner *uuid.UUID) (entity.Cycle, error)
 	NextAfter(ctx context.Context, teamID uuid.UUID, endsOn string) (entity.Cycle, error)
 	HighestNumber(ctx context.Context, teamID uuid.UUID) (int, error)
 	Delete(ctx context.Context, cycleID uuid.UUID) error
@@ -50,4 +51,10 @@ type CycleScopeChange interface {
 		cycleID uuid.UUID,
 		scope entity.TeamScope,
 	) ([]entity.CycleScopeChange, error)
+}
+
+type CycleResult interface {
+	Record(ctx context.Context, results []entity.CycleResult) error
+	ListByCycleID(ctx context.Context, cycleID uuid.UUID) ([]entity.CycleResult, error)
+	RecordingFrom(ctx context.Context) (time.Time, error)
 }

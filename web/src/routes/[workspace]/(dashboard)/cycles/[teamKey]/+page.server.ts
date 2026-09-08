@@ -44,7 +44,7 @@ export const load: PageServerLoad = async ({
 	if (cycles.error || !cycles.data) return { listing: { kind: "unavailable" } };
 
 	if (cadence.error && cycles.data.length === 0) {
-		return { listing: { kind: "disabled", teamKey: team.key } };
+		return { listing: { kind: "disabled", teamKey: team.key, teamName: team.name } };
 	}
 
 	return {

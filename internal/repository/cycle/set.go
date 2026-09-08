@@ -2,4 +2,4 @@ package cycle
 
 import "github.com/goforj/wire"
 
-var Set = wire.NewSet(New, NewCadence, NewScopeChange)
+var Set = wire.NewSet(New, NewCadence, NewScopeChange, NewResult)

@@ -54,6 +54,16 @@ type RolloverOverride struct {
 type CloseCycleInput struct {
 	Rollover  entity.CycleRollover
 	Overrides []RolloverOverride
+	Reviewed  []uuid.UUID
+}
+
+type CycleReport struct {
+	View     CycleView
+	Issues   []entity.Issue
+	Results  []entity.CycleResult
+	Burndown entity.CycleBurndown
+	Stale    []entity.CycleStaleIssue
+	Frozen   bool
 }
 
 type CycleScope struct {
@@ -71,6 +81,8 @@ type Cycles interface {
 	Get(ctx context.Context, workspaceID, cycleID uuid.UUID) (CycleView, error)
 	Current(ctx context.Context, workspaceID uuid.UUID) ([]TeamCycle, error)
 	Scope(ctx context.Context, workspaceID, cycleID uuid.UUID) (CycleScope, error)
+	Report(ctx context.Context, workspaceID, cycleID uuid.UUID) (CycleReport, error)
 	Close(ctx context.Context, workspaceID, cycleID uuid.UUID, input CloseCycleInput) (CycleView, error)
+	SetOwner(ctx context.Context, workspaceID, cycleID uuid.UUID, owner *uuid.UUID) (CycleView, error)
 	Generate(ctx context.Context) error
 }

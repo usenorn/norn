@@ -160,6 +160,21 @@ func (mr *MockCyclesMockRecorder) List(ctx, workspaceID, input any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockCycles)(nil).List), ctx, workspaceID, input)
 }
 
+// Report mocks base method.
+func (m *MockCycles) Report(ctx context.Context, workspaceID, cycleID uuid.UUID) (service.CycleReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Report", ctx, workspaceID, cycleID)
+	ret0, _ := ret[0].(service.CycleReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Report indicates an expected call of Report.
+func (mr *MockCyclesMockRecorder) Report(ctx, workspaceID, cycleID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Report", reflect.TypeOf((*MockCycles)(nil).Report), ctx, workspaceID, cycleID)
+}
+
 // Scope mocks base method.
 func (m *MockCycles) Scope(ctx context.Context, workspaceID, cycleID uuid.UUID) (service.CycleScope, error) {
 	m.ctrl.T.Helper()
@@ -188,4 +203,19 @@ func (m *MockCycles) SetCadence(ctx context.Context, workspaceID, teamID uuid.UU
 func (mr *MockCyclesMockRecorder) SetCadence(ctx, workspaceID, teamID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCadence", reflect.TypeOf((*MockCycles)(nil).SetCadence), ctx, workspaceID, teamID, input)
+}
+
+// SetOwner mocks base method.
+func (m *MockCycles) SetOwner(ctx context.Context, workspaceID, cycleID uuid.UUID, owner *uuid.UUID) (service.CycleView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetOwner", ctx, workspaceID, cycleID, owner)
+	ret0, _ := ret[0].(service.CycleView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetOwner indicates an expected call of SetOwner.
+func (mr *MockCyclesMockRecorder) SetOwner(ctx, workspaceID, cycleID, owner any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOwner", reflect.TypeOf((*MockCycles)(nil).SetOwner), ctx, workspaceID, cycleID, owner)
 }

@@ -83,6 +83,21 @@ func (s *relationsService) Add(
 	var created entity.IssueRelation
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		observed, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+		if err != nil {
+			return err
+		}
+
+		seen, err := s.issues.GetVisible(ctx, workspaceID, input.CounterpartID, decision.Scope)
+		if err != nil {
+			return err
+		}
+
+		shared, err := s.shareStates(ctx, observed.TeamID, seen.TeamID)
+		if err != nil {
+			return err
+		}
+
 		subject, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
 		if err != nil {
 			return err
@@ -91,6 +106,10 @@ func (s *relationsService) Add(
 		counterpart, err := s.issues.GetVisible(ctx, workspaceID, input.CounterpartID, decision.Scope)
 		if err != nil {
 			return err
+		}
+
+		if subject.TeamID != observed.TeamID || counterpart.TeamID != seen.TeamID {
+			return entity.ErrIssueStale
 		}
 
 		if err := s.unheld(ctx, workspaceID, subject.ID, counterpart.ID, decision); err != nil {
@@ -129,7 +148,7 @@ func (s *relationsService) Add(
 		}
 
 		if input.CloseDuplicate && kind == entity.IssueRelationDuplicates {
-			if err := s.close(ctx, workspaceID, source, decision); err != nil {
+			if err := s.close(ctx, workspaceID, source, shared[source.TeamID], decision); err != nil {
 				return err
 			}
 		}
@@ -167,17 +186,31 @@ func (s *relationsService) unheld(
 	return err
 }
 
+func (s *relationsService) shareStates(
+	ctx context.Context,
+	teamIDs ...uuid.UUID,
+) (map[uuid.UUID][]entity.WorkflowState, error) {
+	shared := map[uuid.UUID][]entity.WorkflowState{}
+
+	for _, teamID := range entity.LockOrder(teamIDs) {
+		states, err := s.states.ShareByTeamID(ctx, teamID)
+		if err != nil {
+			return nil, err
+		}
+
+		shared[teamID] = states
+	}
+
+	return shared, nil
+}
+
 func (s *relationsService) close(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	duplicate entity.Issue,
+	states []entity.WorkflowState,
 	decision entity.Decision,
 ) error {
-	states, err := s.states.ListByTeamID(ctx, duplicate.TeamID)
-	if err != nil {
-		return err
-	}
-
 	target, found := entity.CounterpartState(states, entity.StateCategoryAbandoned)
 	if !found {
 		return entity.ErrIssueDestinationIncapable
@@ -204,13 +237,15 @@ func (s *relationsService) close(
 	}
 
 	return s.activity.Record(ctx, entity.Activity{
-		WorkspaceID: workspaceID,
-		Subject:     entity.IssueSubject(duplicate.ID),
-		Actor:       decision.ActivityActor(),
-		Kind:        entity.ActivityKindStateChanged,
-		FromState:   duplicate.State.Name,
-		ToState:     target.Name,
-		Version:     duplicate.Version + 1,
+		WorkspaceID:  workspaceID,
+		Subject:      entity.IssueSubject(duplicate.ID),
+		Actor:        decision.ActivityActor(),
+		Kind:         entity.ActivityKindStateChanged,
+		FromState:    duplicate.State.Name,
+		ToState:      target.Name,
+		FromCategory: duplicate.State.Category,
+		ToCategory:   target.Category,
+		Version:      duplicate.Version + 1,
 	})
 }
 

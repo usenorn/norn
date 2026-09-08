@@ -1,4 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
+import { categoryLabels } from "$lib/team/states";
 
 export type ActivityEvent = components["schemas"]["ActivityEvent"];
 export type ActivityChange = components["schemas"]["ActivityChange"];
@@ -58,6 +59,10 @@ const changeLines: Record<ActivityKind, (change: ActivityChange) => string> = {
 	created: (change) => (change.toState ? `Raised in ${change.toState}` : "Raised"),
 	state_changed: (change) =>
 		`${change.fromState ?? "somewhere"} → ${change.toState ?? "somewhere"}`,
+	state_reclassified: (change) =>
+		change.toCategory
+			? `${change.toState ?? "That state"} now counts as ${categoryLabels[change.toCategory].toLowerCase()}`
+			: `${change.toState ?? "That state"} was reclassified`,
 	team_moved: (change) => `Moved from ${change.fromValue} to ${change.toValue}`,
 	child_added: (change) => `${change.toValue} was filed under this`,
 	child_removed: (change) => `${change.fromValue} is no longer filed under this`,

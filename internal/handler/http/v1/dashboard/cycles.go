@@ -2,6 +2,8 @@ package dashboard
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 	"time"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -85,6 +87,44 @@ func (h *handler) GetWorkspaceCycleScope(
 	return api.GetWorkspaceCycleScope200JSONResponse(cycleScopeDTO(scope)), nil
 }
 
+func (h *handler) GetWorkspaceCycleReport(
+	ctx context.Context,
+	request api.GetWorkspaceCycleReportRequestObject,
+) (api.GetWorkspaceCycleReportResponseObject, error) {
+	report, err := h.cycles.Report(ctx, request.WorkspaceId, request.CycleId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceCycleReport200JSONResponse(cycleReportDTO(report)), nil
+}
+
+func (h *handler) SetWorkspaceCycleOwner(
+	ctx context.Context,
+	request api.SetWorkspaceCycleOwnerRequestObject,
+) (api.SetWorkspaceCycleOwnerResponseObject, error) {
+	var owner *uuid.UUID
+
+	if request.Body != nil {
+		owner = request.Body.OwnerAccountId
+	}
+
+	view, err := h.cycles.SetOwner(ctx, request.WorkspaceId, request.CycleId, owner)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceCycleOwner200JSONResponse(cycleDTO(view)), nil
+}
+
 func (h *handler) CloseWorkspaceCycle(
 	ctx context.Context,
 	request api.CloseWorkspaceCycleRequestObject,
@@ -102,6 +142,11 @@ func (h *handler) CloseWorkspaceCycle(
 				Destination: entity.CycleRollover(override.Destination),
 			})
 		}
+	}
+
+	if request.Body.ReviewedIssueIds != nil {
+		reviewed := make([]uuid.UUID, 0, len(*request.Body.ReviewedIssueIds))
+		input.Reviewed = append(reviewed, *request.Body.ReviewedIssueIds...)
 	}
 
 	view, err := h.cycles.Close(ctx, request.WorkspaceId, request.CycleId, input)

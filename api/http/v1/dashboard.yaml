@@ -4169,6 +4169,51 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/cycles/{cycleId}/report:
+    get:
+      tags: [cycles]
+      operationId: getWorkspaceCycleReport
+      summary: Read what a cycle holds, what it achieved and how it burned down
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CycleId'
+      responses:
+        '200':
+          description: The cycle's report
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CycleReport' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/cycles/{cycleId}/owner:
+    put:
+      tags: [cycles]
+      operationId: setWorkspaceCycleOwner
+      summary: Name the person coordinating a cycle, or leave it unassigned
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CycleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CycleOwnerRequest' }
+      responses:
+        '200':
+          description: The cycle
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cycle' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/CycleConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/cycles/{cycleId}/scope:
     get:
       tags: [cycles]
@@ -8852,6 +8897,8 @@ components:
                 - cycle_rollover_required
                 - cycle_not_ended
                 - cycle_no_next_cycle
+                - cycle_owner_not_on_team
+                - cycle_stale
             open:
               type: array
               description: The unfinished issues that still need a destination
@@ -9021,7 +9068,7 @@ components:
 
     CycleRollover:
       type: string
-      enum: [next, backlog]
+      enum: [next, backlog, keep]
 
     Cycle:
       type: object
@@ -9038,6 +9085,11 @@ components:
         phase: { $ref: '#/components/schemas/CyclePhase' }
         closedAt: { type: string, format: date-time }
         closedByAccountId: { type: string, format: uuid }
+        ownerAccountId: { type: string, format: uuid }
+        resultsRecordedAt:
+          type: string
+          format: date-time
+          description: When this cycle's results were frozen. Absent for a cycle closed before results were kept.
         rollover: { $ref: '#/components/schemas/CycleRollover' }
 
     TeamCycle:
@@ -9069,6 +9121,82 @@ components:
       properties:
         lengthWeeks: { type: integer, format: int32, minimum: 1, maximum: 4 }
         startsOn: { type: integer, format: int32, minimum: 0, maximum: 6 }
+
+    CycleOwnerRequest:
+      type: object
+      required: [ownerAccountId]
+      properties:
+        ownerAccountId:
+          type: string
+          format: uuid
+          nullable: true
+          description: The team member coordinating this cycle. Null leaves it unassigned.
+
+    CycleBurndownPoint:
+      type: object
+      required: [on, scope, remaining, unknown, unrecorded]
+      properties:
+        on: { type: string, format: date }
+        scope: { type: integer, format: int32 }
+        remaining: { type: integer, format: int32 }
+        unknown:
+          type: integer
+          format: int32
+          description: Issues whose standing on this day cannot be read from the record.
+        unrecorded:
+          type: boolean
+          description: True when this day predates the records the series is read from.
+
+    CycleBurndown:
+      type: object
+      required: [points, whole]
+      properties:
+        points:
+          type: array
+          items: { $ref: '#/components/schemas/CycleBurndownPoint' }
+        whole:
+          type: boolean
+          description: False when any day predates the records this series is read from.
+
+    CycleResult:
+      type: object
+      required: [issueId, teamId, category, stateName]
+      properties:
+        issueId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        category: { $ref: '#/components/schemas/StateCategory' }
+        stateName: { type: string }
+        decision: { $ref: '#/components/schemas/CycleRollover' }
+
+    CycleStale:
+      type: object
+      required: [issueId, days]
+      properties:
+        issueId: { type: string, format: uuid }
+        days:
+          type: integer
+          description: Calendar days in the workspace timezone since this issue last changed status.
+
+    CycleReport:
+      type: object
+      required: [cycle, phase, issues, results, burndown, stale, frozen]
+      properties:
+        cycle: { $ref: '#/components/schemas/Cycle' }
+        phase: { $ref: '#/components/schemas/CyclePhase' }
+        issues:
+          type: array
+          items: { $ref: '#/components/schemas/Issue' }
+        results:
+          type: array
+          items: { $ref: '#/components/schemas/CycleResult' }
+        burndown: { $ref: '#/components/schemas/CycleBurndown' }
+        stale:
+          type: array
+          description: Unfinished issues of a running or ended cycle that have not changed status for five calendar days.
+          items: { $ref: '#/components/schemas/CycleStale' }
+        frozen:
+          type: boolean
+          description: Whether this cycle's results were recorded when it closed.
 
     CycleScopeChangeKind:
       type: string
@@ -9108,6 +9236,12 @@ components:
           type: array
           description: Issues that go somewhere other than the rollover chosen for the rest
           items: { $ref: '#/components/schemas/CycleRolloverOverride' }
+        reviewedIssueIds:
+          type: array
+          description: >-
+            The unfinished issues the close form showed, so a cycle whose membership
+            changed since then is reported as a conflict instead of taking the default
+          items: { type: string, format: uuid }
 
     CycleRolloverOverride:
       type: object
@@ -9164,6 +9298,8 @@ components:
         toValue: { type: string }
         fromState: { type: string }
         toState: { type: string }
+        fromCategory: { $ref: '#/components/schemas/StateCategory' }
+        toCategory: { $ref: '#/components/schemas/StateCategory' }
         version: { type: integer, format: int32 }
 
     ActivityKind:
@@ -9171,6 +9307,7 @@ components:
       enum:
         - created
         - state_changed
+        - state_reclassified
         - property_changed
         - team_moved
         - archived
@@ -9824,6 +9961,10 @@ components:
           format: uuid
           description: A state on the team; absent files the issue into the team's default state
         projectId: { type: string, format: uuid }
+        cycleId:
+          type: string
+          format: uuid
+          description: A cycle on the same team; the issue is filed into it as it is raised
         labelIds:
           type: array
           items: { type: string, format: uuid }

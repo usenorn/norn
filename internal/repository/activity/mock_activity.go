@@ -12,6 +12,7 @@ package activity
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -42,6 +43,21 @@ func (m *MockActivity) EXPECT() *MockActivityMockRecorder {
 	return m.recorder
 }
 
+// LastStatusChanges mocks base method.
+func (m *MockActivity) LastStatusChanges(ctx context.Context, issueIDs []uuid.UUID) (map[uuid.UUID]time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LastStatusChanges", ctx, issueIDs)
+	ret0, _ := ret[0].(map[uuid.UUID]time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LastStatusChanges indicates an expected call of LastStatusChanges.
+func (mr *MockActivityMockRecorder) LastStatusChanges(ctx, issueIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastStatusChanges", reflect.TypeOf((*MockActivity)(nil).LastStatusChanges), ctx, issueIDs)
+}
+
 // ListByActor mocks base method.
 func (m *MockActivity) ListByActor(ctx context.Context, workspaceID, accountID uuid.UUID, page entity.ActivityPage) ([]entity.ActivityEvent, error) {
 	m.ctrl.T.Helper()
@@ -70,6 +86,21 @@ func (m *MockActivity) ListBySubject(ctx context.Context, subject entity.Activit
 func (mr *MockActivityMockRecorder) ListBySubject(ctx, subject, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBySubject", reflect.TypeOf((*MockActivity)(nil).ListBySubject), ctx, subject, page)
+}
+
+// ListStateChanges mocks base method.
+func (m *MockActivity) ListStateChanges(ctx context.Context, issueIDs []uuid.UUID, since time.Time) ([]entity.CycleStateChange, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListStateChanges", ctx, issueIDs, since)
+	ret0, _ := ret[0].([]entity.CycleStateChange)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListStateChanges indicates an expected call of ListStateChanges.
+func (mr *MockActivityMockRecorder) ListStateChanges(ctx, issueIDs, since any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStateChanges", reflect.TypeOf((*MockActivity)(nil).ListStateChanges), ctx, issueIDs, since)
 }
 
 // Record mocks base method.

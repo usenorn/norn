@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -12,6 +13,8 @@ import (
 
 type Activity interface {
 	Record(ctx context.Context, activity entity.Activity) error
+	ListStateChanges(ctx context.Context, issueIDs []uuid.UUID, since time.Time) ([]entity.CycleStateChange, error)
+	LastStatusChanges(ctx context.Context, issueIDs []uuid.UUID) (map[uuid.UUID]time.Time, error)
 	ListBySubject(ctx context.Context, subject entity.ActivitySubject, page entity.ActivityPage) ([]entity.ActivityEvent, error)
 	ListByActor(ctx context.Context, workspaceID, accountID uuid.UUID, page entity.ActivityPage) ([]entity.ActivityEvent, error)
 }

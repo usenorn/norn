@@ -126,6 +126,10 @@ func (h *handler) CreateWorkspaceIssue(
 		input.ProjectID = *request.Body.ProjectId
 	}
 
+	if request.Body.CycleId != nil {
+		input.CycleID = *request.Body.CycleId
+	}
+
 	if request.Body.LabelIds != nil {
 		input.LabelIDs = *request.Body.LabelIds
 	}

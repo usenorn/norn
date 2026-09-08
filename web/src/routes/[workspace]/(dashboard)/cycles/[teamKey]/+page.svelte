@@ -91,11 +91,11 @@
 			{:else if listing.kind === "disabled"}
 				<div class="flex flex-col gap-2">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">
-						This team does not use cycles
+						Cycles are off for {listing.teamName}
 					</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Cycles are a repeating time box a team plans against. Turn them on and Norn keeps the
-						next few ready.
+						Turn them on to batch work into two-week runs. Unfinished issues roll into the next
+						cycle.
 					</p>
 					<div>
 						<Button
@@ -103,7 +103,7 @@
 							size="sm"
 							href={teamSettingsPath(slug, listing.teamKey)}
 						>
-							Team settings
+							Turn on cycles
 						</Button>
 					</div>
 				</div>

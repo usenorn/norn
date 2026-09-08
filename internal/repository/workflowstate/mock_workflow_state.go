@@ -173,6 +173,36 @@ func (mr *MockWorkflowStateMockRecorder) SetDefault(ctx, teamID, stateID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDefault", reflect.TypeOf((*MockWorkflowState)(nil).SetDefault), ctx, teamID, stateID)
 }
 
+// ShareByIDs mocks base method.
+func (m *MockWorkflowState) ShareByIDs(ctx context.Context, stateIDs []uuid.UUID) ([]entity.WorkflowState, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ShareByIDs", ctx, stateIDs)
+	ret0, _ := ret[0].([]entity.WorkflowState)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ShareByIDs indicates an expected call of ShareByIDs.
+func (mr *MockWorkflowStateMockRecorder) ShareByIDs(ctx, stateIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShareByIDs", reflect.TypeOf((*MockWorkflowState)(nil).ShareByIDs), ctx, stateIDs)
+}
+
+// ShareByTeamID mocks base method.
+func (m *MockWorkflowState) ShareByTeamID(ctx context.Context, teamID uuid.UUID) ([]entity.WorkflowState, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ShareByTeamID", ctx, teamID)
+	ret0, _ := ret[0].([]entity.WorkflowState)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ShareByTeamID indicates an expected call of ShareByTeamID.
+func (mr *MockWorkflowStateMockRecorder) ShareByTeamID(ctx, teamID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShareByTeamID", reflect.TypeOf((*MockWorkflowState)(nil).ShareByTeamID), ctx, teamID)
+}
+
 // UpdateSettings mocks base method.
 func (m *MockWorkflowState) UpdateSettings(ctx context.Context, id uuid.UUID, name string, category entity.StateCategory) (entity.WorkflowState, error) {
 	m.ctrl.T.Helper()

@@ -73,6 +73,36 @@ func (mr *MockIssueMockRecorder) Create(ctx, issue any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockIssue)(nil).Create), ctx, issue)
 }
 
+// CycleOf mocks base method.
+func (m *MockIssue) CycleOf(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CycleOf", ctx, workspaceID, issueID, scope)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CycleOf indicates an expected call of CycleOf.
+func (mr *MockIssueMockRecorder) CycleOf(ctx, workspaceID, issueID, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CycleOf", reflect.TypeOf((*MockIssue)(nil).CycleOf), ctx, workspaceID, issueID, scope)
+}
+
+// CyclesOf mocks base method.
+func (m *MockIssue) CyclesOf(ctx context.Context, workspaceID uuid.UUID, issueIDs []uuid.UUID, scope entity.TeamScope) (map[uuid.UUID]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CyclesOf", ctx, workspaceID, issueIDs, scope)
+	ret0, _ := ret[0].(map[uuid.UUID]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CyclesOf indicates an expected call of CyclesOf.
+func (mr *MockIssueMockRecorder) CyclesOf(ctx, workspaceID, issueIDs, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CyclesOf", reflect.TypeOf((*MockIssue)(nil).CyclesOf), ctx, workspaceID, issueIDs, scope)
+}
+
 // GetVisible mocks base method.
 func (m *MockIssue) GetVisible(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error) {
 	m.ctrl.T.Helper()
@@ -101,6 +131,21 @@ func (m *MockIssue) GetVisibleByReference(ctx context.Context, workspaceID uuid.
 func (mr *MockIssueMockRecorder) GetVisibleByReference(ctx, workspaceID, reference, scope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVisibleByReference", reflect.TypeOf((*MockIssue)(nil).GetVisibleByReference), ctx, workspaceID, reference, scope)
+}
+
+// ListByStateID mocks base method.
+func (m *MockIssue) ListByStateID(ctx context.Context, stateID uuid.UUID) ([]entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByStateID", ctx, stateID)
+	ret0, _ := ret[0].([]entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByStateID indicates an expected call of ListByStateID.
+func (mr *MockIssueMockRecorder) ListByStateID(ctx, stateID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByStateID", reflect.TypeOf((*MockIssue)(nil).ListByStateID), ctx, stateID)
 }
 
 // ListChildren mocks base method.
@@ -148,6 +193,36 @@ func (mr *MockIssueMockRecorder) ListVisibleByGroup(ctx, scope, page, groupBy an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisibleByGroup", reflect.TypeOf((*MockIssue)(nil).ListVisibleByGroup), ctx, scope, page, groupBy)
 }
 
+// ListVisibleByIDs mocks base method.
+func (m *MockIssue) ListVisibleByIDs(ctx context.Context, scope entity.TeamScope, issueIDs []uuid.UUID) ([]entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListVisibleByIDs", ctx, scope, issueIDs)
+	ret0, _ := ret[0].([]entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListVisibleByIDs indicates an expected call of ListVisibleByIDs.
+func (mr *MockIssueMockRecorder) ListVisibleByIDs(ctx, scope, issueIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisibleByIDs", reflect.TypeOf((*MockIssue)(nil).ListVisibleByIDs), ctx, scope, issueIDs)
+}
+
+// LockByCycleID mocks base method.
+func (m *MockIssue) LockByCycleID(ctx context.Context, cycleID uuid.UUID) ([]entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LockByCycleID", ctx, cycleID)
+	ret0, _ := ret[0].([]entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LockByCycleID indicates an expected call of LockByCycleID.
+func (mr *MockIssueMockRecorder) LockByCycleID(ctx, cycleID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByCycleID", reflect.TypeOf((*MockIssue)(nil).LockByCycleID), ctx, cycleID)
+}
+
 // LockByID mocks base method.
 func (m *MockIssue) LockByID(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error) {
 	m.ctrl.T.Helper()
@@ -161,6 +236,21 @@ func (m *MockIssue) LockByID(ctx context.Context, workspaceID, issueID uuid.UUID
 func (mr *MockIssueMockRecorder) LockByID(ctx, workspaceID, issueID, scope any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockIssue)(nil).LockByID), ctx, workspaceID, issueID, scope)
+}
+
+// LockByIDs mocks base method.
+func (m *MockIssue) LockByIDs(ctx context.Context, workspaceID uuid.UUID, issueIDs []uuid.UUID, scope entity.TeamScope) ([]entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LockByIDs", ctx, workspaceID, issueIDs, scope)
+	ret0, _ := ret[0].([]entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LockByIDs indicates an expected call of LockByIDs.
+func (mr *MockIssueMockRecorder) LockByIDs(ctx, workspaceID, issueIDs, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByIDs", reflect.TypeOf((*MockIssue)(nil).LockByIDs), ctx, workspaceID, issueIDs, scope)
 }
 
 // LowestRank mocks base method.
@@ -179,17 +269,18 @@ func (mr *MockIssueMockRecorder) LowestRank(ctx, workspaceID any) *gomock.Call {
 }
 
 // MoveIssuesToCycle mocks base method.
-func (m *MockIssue) MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) error {
+func (m *MockIssue) MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, from uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MoveIssuesToCycle", ctx, issueIDs, cycleID, changedAt)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "MoveIssuesToCycle", ctx, issueIDs, from, cycleID, changedAt)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // MoveIssuesToCycle indicates an expected call of MoveIssuesToCycle.
-func (mr *MockIssueMockRecorder) MoveIssuesToCycle(ctx, issueIDs, cycleID, changedAt any) *gomock.Call {
+func (mr *MockIssueMockRecorder) MoveIssuesToCycle(ctx, issueIDs, from, cycleID, changedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveIssuesToCycle", reflect.TypeOf((*MockIssue)(nil).MoveIssuesToCycle), ctx, issueIDs, cycleID, changedAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveIssuesToCycle", reflect.TypeOf((*MockIssue)(nil).MoveIssuesToCycle), ctx, issueIDs, from, cycleID, changedAt)
 }
 
 // MoveToTeam mocks base method.
