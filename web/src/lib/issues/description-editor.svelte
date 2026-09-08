@@ -71,15 +71,12 @@
 	let popup = $state.raw<Popup | null>(null);
 	let revision = $state(0);
 	let emitted = "";
+	let sought = 0;
 
 	const listId = $props.id();
 	const optionId = (at: number) => `${listId}-option-${at}`;
 
-	function completing(
-		char: string,
-		key: string,
-		lookup: (query: string) => SuggestionItem[] | Promise<SuggestionItem[]>
-	) {
+	function completing(char: string, key: string) {
 		return Extension.create({
 			name: `describe-${key}`,
 			addProseMirrorPlugins() {
@@ -89,7 +86,7 @@
 						char,
 						pluginKey: new PluginKey(`describe-${key}`),
 						allowSpaces: char === "#",
-						items: ({ query }) => lookup(query),
+						items: () => [],
 						command: ({ editor: within, range, props }) => {
 							within
 								.chain()
@@ -107,8 +104,8 @@
 								.run();
 						},
 						render: () => ({
-							onStart: (props) => show(props),
-							onUpdate: (props) => show(props),
+							onStart: (props) => void show(key, props),
+							onUpdate: (props) => void show(key, props),
 							onKeyDown: ({ event }) => steer(event),
 							onExit: () => (popup = null),
 						}),
@@ -118,26 +115,34 @@
 		});
 	}
 
-	function show(props: {
-		items: SuggestionItem[];
-		command: (item: SuggestionItem) => void;
-		clientRect?: (() => DOMRect | null) | null;
-	}) {
+	async function offer(key: string, query: string): Promise<SuggestionItem[]> {
+		if (key === "mention") return mentionItems(members, teams, query);
+
+		return issueItems(workspaceId, workspace, query);
+	}
+
+	async function show(
+		key: string,
+		props: {
+			query: string;
+			command: (item: SuggestionItem) => void;
+			clientRect?: (() => DOMRect | null) | null;
+		}
+	) {
 		const rect = props.clientRect?.();
 
-		if (!rect || props.items.length === 0) {
+		if (!rect) {
 			popup = null;
 
 			return;
 		}
 
-		popup = {
-			items: props.items,
-			index: 0,
-			left: rect.left,
-			top: rect.bottom,
-			take: props.command,
-		};
+		const asked = (sought += 1);
+		const items = await offer(key, props.query);
+
+		if (asked !== sought) return;
+
+		popup = items.length > 0 ? { items, index: 0, left: rect.left, top: rect.bottom, take: props.command } : null;
 	}
 
 	function steer(event: KeyboardEvent): boolean {
@@ -171,24 +176,24 @@
 		return Array.from(list ?? []);
 	}
 
-	$effect(() => {
-		const element = host;
+	function written(within: Editor): string {
+		return within.getMarkdown().replace(/[ \t]+$/gm, "").trim();
+	}
 
-		if (!element) return;
-
-		const created = new Editor({
+	function build(element: HTMLElement): Editor {
+		return new Editor({
 			element,
-			content: untrack(() => value),
+			content: value,
 			contentType: "markdown",
-			editable: !untrack(() => disabled),
+			editable: !disabled,
 			extensions: [
 				StarterKit.configure({
 					link: { openOnClick: false, autolink: true, HTMLAttributes: { rel: "noreferrer" } },
 				}),
 				Markdown,
 				Image.configure({ inline: false }),
-				completing("@", "mention", (query) => mentionItems(members, teams, query)),
-				completing("#", "issue", (query) => issueItems(workspaceId, workspace, query)),
+				completing("@", "mention"),
+				completing("#", "issue"),
 			],
 			editorProps: {
 				attributes: {
@@ -230,11 +235,19 @@
 				},
 			},
 			onUpdate: ({ editor: within }) => {
-				emitted = within.getMarkdown();
+				emitted = written(within);
 				value = emitted;
 			},
 			onTransaction: () => (revision += 1),
 		});
+	}
+
+	$effect(() => {
+		const element = host;
+
+		if (!element) return;
+
+		const created = untrack(() => build(element));
 
 		emitted = untrack(() => value);
 		editor = created;

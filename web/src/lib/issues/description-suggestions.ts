@@ -53,32 +53,64 @@ export function mentionItems(
 		.slice(0, suggestionLimit);
 }
 
+const referenceShape = /^[A-Za-z][A-Za-z0-9]*-\d+$/;
+
+function issueItem(reference: string, title: string, id: string, workspace: string): SuggestionItem {
+	return {
+		key: id,
+		label: title,
+		hint: reference,
+		text: `${reference} ${title}`,
+		href: workspacePath(workspace, `/issues/${reference}`),
+		agent: false,
+	};
+}
+
+async function namedIssue(
+	workspaceId: string,
+	workspace: string,
+	reference: string
+): Promise<SuggestionItem[]> {
+	const found = await api
+		.GET("/workspaces/{workspaceId}/issues/by-reference/{reference}", {
+			params: { path: { workspaceId, reference: reference.toUpperCase() } },
+		})
+		.catch(() => undefined);
+
+	if (!found || found.error || !found.data) return [];
+
+	return [issueItem(found.data.reference, found.data.title, found.data.id, workspace)];
+}
+
 export async function issueItems(
 	workspaceId: string,
 	workspace: string,
 	query: string
 ): Promise<SuggestionItem[]> {
-	if (query.trim() === "") return [];
+	const asked = query.trim();
 
-	const found = await api.GET("/workspaces/{workspaceId}/search", {
-		params: {
-			path: { workspaceId },
-			query: { q: query, kinds: ["issue"], limit: suggestionLimit },
-		},
-	});
+	if (asked === "") return [];
 
-	if (found.error || !found.data) return [];
+	if (referenceShape.test(asked)) {
+		const named = await namedIssue(workspaceId, workspace, asked);
+
+		if (named.length > 0) return named;
+	}
+
+	const found = await api
+		.GET("/workspaces/{workspaceId}/search", {
+			params: {
+				path: { workspaceId },
+				query: { q: asked, kinds: ["issue"], limit: suggestionLimit },
+			},
+		})
+		.catch(() => undefined);
+
+	if (!found || found.error || !found.data) return [];
 
 	const issues = found.data.groups.find((group) => group.kind === "issue");
 
 	return (issues?.results ?? [])
 		.filter((result) => Boolean(result.reference))
-		.map((result) => ({
-			key: result.id,
-			label: result.title,
-			hint: result.reference ?? "",
-			text: `${result.reference} ${result.title}`,
-			href: workspacePath(workspace, `/issues/${result.reference}`),
-			agent: false,
-		}));
+		.map((result) => issueItem(result.reference ?? "", result.title, result.id, workspace));
 }
