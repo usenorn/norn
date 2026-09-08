@@ -13,6 +13,7 @@ export type CycleReport = components["schemas"]["CycleReport"];
 export type CycleBurndown = components["schemas"]["CycleBurndown"];
 export type CycleBurndownPoint = components["schemas"]["CycleBurndownPoint"];
 export type CycleResult = components["schemas"]["CycleResult"];
+export type CycleStale = components["schemas"]["CycleStale"];
 
 export const cycleLengths = [1, 2, 3, 4] as const;
 
@@ -186,12 +187,15 @@ export function scopeAddedWithin(scope: CycleScope, cycle: Cycle): number {
 }
 
 export type CycleResults =
-	| { kind: "live"; issues: Issue[] }
+	| { kind: "live"; issues: Issue[]; stale: CycleStale[] }
 	| { kind: "final"; issues: Issue[]; results: CycleResult[] }
 	| { kind: "unrecorded"; issues: Issue[] };
 
 export function cycleResults(report: CycleReport): CycleResults {
-	if (report.phase !== "closed") return { kind: "live", issues: report.issues };
+	if (report.phase !== "closed") {
+		return { kind: "live", issues: report.issues, stale: report.stale };
+	}
+
 	if (!report.frozen) return { kind: "unrecorded", issues: report.issues };
 
 	return { kind: "final", issues: report.issues, results: report.results };
@@ -276,11 +280,16 @@ export function cycleGroups(results: CycleResults): CycleGroup[] {
 		.filter((group) => group.issues.length > 0);
 }
 
-export type CycleRisk = { issue: Issue; reason: string };
+export type CycleRiskKind = "blocked" | "unassigned" | "stale";
+
+export type CycleRiskReason = { kind: CycleRiskKind; text: string };
+
+export type CycleRisk = { issue: Issue; reasons: CycleRiskReason[] };
 
 export function cycleRisks(results: CycleResults): CycleRisk[] {
 	if (results.kind !== "live") return [];
 
+	const unmoved = new Map(results.stale.map((held) => [held.issueId, held.days]));
 	const risks: CycleRisk[] = [];
 
 	for (const issue of results.issues) {
@@ -288,16 +297,28 @@ export function cycleRisks(results: CycleResults): CycleRisk[] {
 
 		if (category !== "active" && category !== "not_started") continue;
 
-		if (issue.blocked) {
-			risks.push({ issue, reason: "Blocked by another issue" });
+		const reasons: CycleRiskReason[] = [];
 
-			continue;
+		if (issue.blocked) {
+			reasons.push({ kind: "blocked", text: "Blocked by another issue" });
+		} else if (!issue.assigneeAccountId) {
+			reasons.push({ kind: "unassigned", text: "Nobody is assigned" });
 		}
 
-		if (!issue.assigneeAccountId) risks.push({ issue, reason: "Nobody is assigned" });
+		const days = unmoved.get(issue.id);
+
+		if (days !== undefined) {
+			reasons.push({ kind: "stale", text: `No status change in ${days} days` });
+		}
+
+		if (reasons.length > 0) risks.push({ issue, reasons });
 	}
 
 	return risks;
+}
+
+export function risksBecause(risks: CycleRisk[], kind: CycleRiskKind): number {
+	return risks.filter((risk) => risk.reasons.some((reason) => reason.kind === kind)).length;
 }
 
 export function unfinishedIssues(results: CycleResults): Issue[] {

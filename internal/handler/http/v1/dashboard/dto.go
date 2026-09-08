@@ -2775,6 +2775,16 @@ func cycleResultDTOs(results []entity.CycleResult) []api.CycleResult {
 	return dtos
 }
 
+func cycleStaleDTOs(stale []entity.CycleStaleIssue) []api.CycleStale {
+	dtos := make([]api.CycleStale, 0, len(stale))
+
+	for _, held := range stale {
+		dtos = append(dtos, api.CycleStale{IssueId: held.IssueID, Days: held.Days})
+	}
+
+	return dtos
+}
+
 func cycleReportDTO(report service.CycleReport) api.CycleReport {
 	return api.CycleReport{
 		Cycle:    cycleDTO(report.View),
@@ -2782,6 +2792,7 @@ func cycleReportDTO(report service.CycleReport) api.CycleReport {
 		Issues:   issueDTOs(report.Issues),
 		Results:  cycleResultDTOs(report.Results),
 		Burndown: cycleBurndownDTO(report.Burndown),
+		Stale:    cycleStaleDTOs(report.Stale),
 		Frozen:   report.Frozen,
 	}
 }

@@ -43,6 +43,21 @@ func (m *MockActivity) EXPECT() *MockActivityMockRecorder {
 	return m.recorder
 }
 
+// LastStatusChanges mocks base method.
+func (m *MockActivity) LastStatusChanges(ctx context.Context, issueIDs []uuid.UUID) (map[uuid.UUID]time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LastStatusChanges", ctx, issueIDs)
+	ret0, _ := ret[0].(map[uuid.UUID]time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LastStatusChanges indicates an expected call of LastStatusChanges.
+func (mr *MockActivityMockRecorder) LastStatusChanges(ctx, issueIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastStatusChanges", reflect.TypeOf((*MockActivity)(nil).LastStatusChanges), ctx, issueIDs)
+}
+
 // ListByActor mocks base method.
 func (m *MockActivity) ListByActor(ctx context.Context, workspaceID, accountID uuid.UUID, page entity.ActivityPage) ([]entity.ActivityEvent, error) {
 	m.ctrl.T.Helper()

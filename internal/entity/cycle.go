@@ -13,6 +13,7 @@ const (
 	CycleMinLengthWeeks = 1
 	CycleMaxLengthWeeks = 4
 	daysPerWeek         = 7
+	hoursPerDay         = 24
 )
 
 var (
@@ -253,6 +254,29 @@ func CalendarDaysBetween(from, to string) ([]string, error) {
 
 	for day := start; !day.After(end); day = day.AddDate(0, 0, 1) {
 		days = append(days, FormatCalendarDate(day))
+	}
+
+	return days, nil
+}
+
+func CalendarDaysSince(at time.Time, today string, in *time.Location) (int, error) {
+	if in == nil {
+		in = time.UTC
+	}
+
+	changed, err := ParseCalendarDate(FormatCalendarDate(at.In(in)))
+	if err != nil {
+		return 0, err
+	}
+
+	day, err := ParseCalendarDate(today)
+	if err != nil {
+		return 0, err
+	}
+
+	days := int(day.Sub(changed).Hours()) / hoursPerDay
+	if days < 0 {
+		return 0, nil
 	}
 
 	return days, nil

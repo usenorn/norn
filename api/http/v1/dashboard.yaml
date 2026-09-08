@@ -9168,9 +9168,18 @@ components:
         stateName: { type: string }
         decision: { $ref: '#/components/schemas/CycleRollover' }
 
+    CycleStale:
+      type: object
+      required: [issueId, days]
+      properties:
+        issueId: { type: string, format: uuid }
+        days:
+          type: integer
+          description: Calendar days in the workspace timezone since this issue last changed status.
+
     CycleReport:
       type: object
-      required: [cycle, phase, issues, results, burndown, frozen]
+      required: [cycle, phase, issues, results, burndown, stale, frozen]
       properties:
         cycle: { $ref: '#/components/schemas/Cycle' }
         phase: { $ref: '#/components/schemas/CyclePhase' }
@@ -9181,6 +9190,10 @@ components:
           type: array
           items: { $ref: '#/components/schemas/CycleResult' }
         burndown: { $ref: '#/components/schemas/CycleBurndown' }
+        stale:
+          type: array
+          description: Unfinished issues of a running or ended cycle that have not changed status for five calendar days.
+          items: { $ref: '#/components/schemas/CycleStale' }
         frozen:
           type: boolean
           description: Whether this cycle's results were recorded when it closed.

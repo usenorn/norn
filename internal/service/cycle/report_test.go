@@ -386,3 +386,138 @@ func TestAnArrivalKeepsImportedWorkOffTheDaysBeforeItWasSeen(t *testing.T) {
 		t.Fatalf("the last day counts %d in scope and %d remaining, want one of each", last.Scope, last.Remaining)
 	}
 }
+
+func staleDays(report service.CycleReport) map[uuid.UUID]int {
+	days := map[uuid.UUID]int{}
+
+	for _, held := range report.Stale {
+		days[held.IssueID] = held.Days
+	}
+
+	return days
+}
+
+func TestUnfinishedWorkThatHasNotChangedStatusForFiveDaysIsNamedInTheReport(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	now := time.Now().UTC()
+	start := now.AddDate(0, 0, -6)
+	running := h.cycle(9, entity.Today(start, "UTC"), entity.Today(start.AddDate(0, 0, 13), "UTC"))
+
+	waiting := h.issue(entity.StateCategoryNotStarted)
+	waiting.CreatedAt = start
+	moving := h.issue(entity.StateCategoryActive)
+	moving.CreatedAt = start
+	finished := h.issue(entity.StateCategoryComplete)
+	finished.CreatedAt = start
+	dropped := h.issue(entity.StateCategoryAbandoned)
+	dropped.CreatedAt = start
+
+	members := []entity.Issue{waiting, moving, finished, dropped}
+
+	h.lastMoved = map[uuid.UUID]time.Time{
+		waiting.ID:  now.AddDate(0, 0, -5),
+		moving.ID:   now.AddDate(0, 0, -4),
+		finished.ID: now.AddDate(0, 0, -9),
+		dropped.ID:  now.AddDate(0, 0, -9),
+	}
+
+	r := &reported{harness: h, cycle: running}
+	r.expect(members, nil, nil, members)
+
+	days := staleDays(r.read(t))
+
+	if len(days) != 1 || days[waiting.ID] != 5 {
+		t.Fatalf(
+			"the report calls %v stale, want only the issue that has stood still for five days. "+
+				"Four days is not yet five, and finished or abandoned work is not waiting on "+
+				"anybody.",
+			days,
+		)
+	}
+}
+
+func TestAnIssueWithNoRecordedStatusChangeIsCountedFromWhenItWasRaised(t *testing.T) {
+	h := newHarness(t)
+	h.allowAnything()
+
+	now := time.Now().UTC()
+	start := now.AddDate(0, 0, -9)
+	running := h.cycle(9, entity.Today(start, "UTC"), entity.Today(start.AddDate(0, 0, 13), "UTC"))
+
+	raised := h.issue(entity.StateCategoryNotStarted)
+	raised.CreatedAt = now.AddDate(0, 0, -7)
+
+	r := &reported{harness: h, cycle: running}
+	r.expect([]entity.Issue{raised}, nil, nil, []entity.Issue{raised})
+
+	days := staleDays(r.read(t))
+
+	if days[raised.ID] != 7 {
+		t.Fatalf(
+			"an issue that has never changed status is %d days old in the report, want seven. "+
+				"Without a recorded move the only honest start is the day it was raised.",
+			days[raised.ID],
+		)
+	}
+}
+
+func TestACycleThatIsClosedOrHasNotStartedNamesNobodyAsStale(t *testing.T) {
+	now := time.Now().UTC()
+	closedAt := now
+
+	probes := []struct {
+		name  string
+		cycle func(h *harness) entity.Cycle
+	}{
+		{"closed", func(h *harness) entity.Cycle {
+			start := now.AddDate(0, 0, -20)
+			closed := h.cycle(9, entity.Today(start, "UTC"), entity.Today(start.AddDate(0, 0, 6), "UTC"))
+			closed.ClosedAt = &closedAt
+			closed.ResultsRecordedAt = &closedAt
+
+			return closed
+		}},
+		{"upcoming", func(h *harness) entity.Cycle {
+			start := now.AddDate(0, 0, 7)
+
+			return h.cycle(9, entity.Today(start, "UTC"), entity.Today(start.AddDate(0, 0, 13), "UTC"))
+		}},
+	}
+
+	for _, probe := range probes {
+		t.Run(probe.name, func(t *testing.T) {
+			h := newHarness(t)
+			h.allowAnything()
+
+			cycle := probe.cycle(h)
+			still := h.issue(entity.StateCategoryActive)
+			still.CreatedAt = now.AddDate(0, 0, -30)
+
+			h.lastMoved = map[uuid.UUID]time.Time{still.ID: now.AddDate(0, 0, -30)}
+
+			r := &reported{harness: h, cycle: cycle}
+
+			if cycle.Frozen() {
+				r.expect(
+					[]entity.Issue{},
+					[]entity.CycleResult{closedResult(cycle.ID, still, entity.CycleRolloverNone)},
+					nil,
+					[]entity.Issue{still},
+				)
+			} else {
+				r.expect([]entity.Issue{still}, nil, nil, []entity.Issue{still})
+			}
+
+			if report := r.read(t); len(report.Stale) != 0 {
+				t.Fatalf(
+					"the %s cycle names %d issues as stale. A frozen report must not grow new "+
+						"warnings as time passes, and work that has not started cannot be "+
+						"standing still.",
+					probe.name, len(report.Stale),
+				)
+			}
+		})
+	}
+}

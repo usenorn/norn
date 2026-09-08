@@ -5824,12 +5824,20 @@ export interface components {
             stateName: string;
             decision?: components["schemas"]["CycleRollover"];
         };
+        CycleStale: {
+            /** Format: uuid */
+            issueId: string;
+            /** @description Calendar days in the workspace timezone since this issue last changed status. */
+            days: number;
+        };
         CycleReport: {
             cycle: components["schemas"]["Cycle"];
             phase: components["schemas"]["CyclePhase"];
             issues: components["schemas"]["Issue"][];
             results: components["schemas"]["CycleResult"][];
             burndown: components["schemas"]["CycleBurndown"];
+            /** @description Unfinished issues of a running or ended cycle that have not changed status for five calendar days. */
+            stale: components["schemas"]["CycleStale"][];
             /** @description Whether this cycle's results were recorded when it closed. */
             frozen: boolean;
         };

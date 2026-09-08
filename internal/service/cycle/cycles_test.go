@@ -33,6 +33,7 @@ type harness struct {
 	states        *workflowstaterepo.MockWorkflowState
 	members       *teammemberrepo.MockTeamMember
 	frozen        []entity.CycleResult
+	lastMoved     map[uuid.UUID]time.Time
 	acquired      []string
 	workspaceErr  error
 	recordingFrom time.Time
@@ -89,6 +90,13 @@ func newHarness(t *testing.T) *harness {
 			h.frozen = append(h.frozen, results...)
 
 			return nil
+		}).
+		AnyTimes()
+
+	h.activity.EXPECT().
+		LastStatusChanges(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ []uuid.UUID) (map[uuid.UUID]time.Time, error) {
+			return h.lastMoved, nil
 		}).
 		AnyTimes()
 

@@ -7,7 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
-const CycleCategoryUnknown StateCategory = ""
+const (
+	CycleCategoryUnknown StateCategory = ""
+
+	CycleStaleAfterDays = 5
+)
 
 type CycleResult struct {
 	CycleID    uuid.UUID
@@ -32,6 +36,29 @@ type CycleStateChange struct {
 
 func (c CycleStateChange) Known() bool {
 	return c.From != CycleCategoryUnknown && c.To != CycleCategoryUnknown
+}
+
+type CycleStaleIssue struct {
+	IssueID uuid.UUID
+	Days    int
+}
+
+func StaleInCycle(
+	issueID uuid.UUID,
+	lastStatusChange time.Time,
+	today string,
+	in *time.Location,
+) (CycleStaleIssue, bool) {
+	if lastStatusChange.IsZero() {
+		return CycleStaleIssue{}, false
+	}
+
+	days, err := CalendarDaysSince(lastStatusChange, today, in)
+	if err != nil || days < CycleStaleAfterDays {
+		return CycleStaleIssue{}, false
+	}
+
+	return CycleStaleIssue{IssueID: issueID, Days: days}, true
 }
 
 type CycleSpell struct {

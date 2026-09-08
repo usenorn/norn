@@ -62,6 +62,7 @@ type CycleReport struct {
 	Issues   []entity.Issue
 	Results  []entity.CycleResult
 	Burndown entity.CycleBurndown
+	Stale    []entity.CycleStaleIssue
 	Frozen   bool
 }
 

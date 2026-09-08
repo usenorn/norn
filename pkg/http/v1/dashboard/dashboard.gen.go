@@ -5235,6 +5235,9 @@ type CycleReport struct {
 	Issues  []Issue       `json:"issues"`
 	Phase   CyclePhase    `json:"phase"`
 	Results []CycleResult `json:"results"`
+
+	// Stale Unfinished issues of a running or ended cycle that have not changed status for five calendar days.
+	Stale []CycleStale `json:"stale"`
 }
 
 // CycleResult defines model for CycleResult.
@@ -5275,6 +5278,13 @@ type CycleScopeChange struct {
 
 // CycleScopeChangeKind defines model for CycleScopeChangeKind.
 type CycleScopeChangeKind string
+
+// CycleStale defines model for CycleStale.
+type CycleStale struct {
+	// Days Calendar days in the workspace timezone since this issue last changed status.
+	Days    int                `json:"days"`
+	IssueId openapi_types.UUID `json:"issueId"`
+}
 
 // DecideImportMappingsRequest defines model for DecideImportMappingsRequest.
 type DecideImportMappingsRequest struct {

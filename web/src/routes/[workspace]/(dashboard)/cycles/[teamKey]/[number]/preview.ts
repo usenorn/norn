@@ -368,6 +368,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 						],
 						"results": [],
 						"burndown": { "points": [], "whole": true },
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [
@@ -874,6 +875,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": null,
@@ -1674,6 +1676,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [
@@ -2180,6 +2183,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": 25,
@@ -3021,6 +3025,10 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [
+							{ "issueId": "00000000-0000-4000-8000-000000007006", "days": 7 },
+							{ "issueId": "00000000-0000-4000-8000-000000007011", "days": 9 },
+						],
 						"frozen": false,
 					},
 					"others": [
@@ -3527,6 +3535,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": 25,
@@ -4389,6 +4398,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [
@@ -4895,6 +4905,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": 25,
@@ -5047,6 +5058,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [
@@ -5553,6 +5565,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": 25,
@@ -6427,6 +6440,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"others": [
@@ -7260,6 +7274,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": false,
 						},
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [
@@ -7766,6 +7781,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": 25,
@@ -8197,6 +8213,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 						],
 						"results": [],
 						"burndown": { "points": [], "whole": true },
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [
@@ -8703,6 +8720,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": null,
@@ -8963,6 +8981,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [
@@ -9469,6 +9488,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 							],
 							"whole": true,
 						},
+						"stale": [],
 						"frozen": true,
 					},
 					"nextNumber": null,
@@ -9796,6 +9816,7 @@ export const cyclePreviewStates: Record<string, CyclePreview> = import.meta.env.
 						],
 						"results": [],
 						"burndown": { "points": [], "whole": false },
+						"stale": [],
 						"frozen": false,
 					},
 					"others": [

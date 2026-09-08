@@ -812,13 +812,65 @@ func (s *cyclesService) Report(
 		}
 	}
 
+	phase := cycle.PhaseOn(today)
+
+	stale, err := s.stale(ctx, phase, shown, today, zone)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
 	return service.CycleReport{
-		View:     service.CycleView{Cycle: cycle, Phase: cycle.PhaseOn(today)},
+		View:     service.CycleView{Cycle: cycle, Phase: phase},
 		Issues:   shown,
 		Results:  held,
 		Burndown: burndown,
+		Stale:    stale,
 		Frozen:   cycle.Frozen(),
 	}, nil
+}
+
+func (s *cyclesService) stale(
+	ctx context.Context,
+	phase entity.CyclePhase,
+	issues []entity.Issue,
+	today string,
+	zone *time.Location,
+) ([]entity.CycleStaleIssue, error) {
+	stale := make([]entity.CycleStaleIssue, 0)
+
+	if phase != entity.CyclePhaseCurrent && phase != entity.CyclePhaseEnded {
+		return stale, nil
+	}
+
+	unfinished := make([]uuid.UUID, 0, len(issues))
+
+	for _, issue := range issues {
+		if entity.OpenCategory(issue.State.Category) {
+			unfinished = append(unfinished, issue.ID)
+		}
+	}
+
+	changed, err := s.activity.LastStatusChanges(ctx, unfinished)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, issue := range issues {
+		if !entity.OpenCategory(issue.State.Category) {
+			continue
+		}
+
+		moved, recorded := changed[issue.ID]
+		if !recorded {
+			moved = issue.CreatedAt
+		}
+
+		if held, unmoved := entity.StaleInCycle(issue.ID, moved, today, zone); unmoved {
+			stale = append(stale, held)
+		}
+	}
+
+	return stale, nil
 }
 
 func everyCandidate(

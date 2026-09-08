@@ -30,6 +30,13 @@ WHERE kind IN ('state_changed', 'state_reclassified')
   AND created_at >= $2
 ORDER BY created_at`
 
+const lastStatusChangesQuery = `
+SELECT issue_id, max(created_at)
+FROM workspace_activity
+WHERE kind = 'state_changed'
+  AND issue_id = ANY($1::uuid[])
+GROUP BY issue_id`
+
 const activityColumns = `
 SELECT a.id,
        a.operation_id,
@@ -242,6 +249,53 @@ func (r *activityRepository) ListStateChanges(
 	}
 
 	return changes, nil
+}
+
+func (r *activityRepository) LastStatusChanges(
+	ctx context.Context,
+	issueIDs []uuid.UUID,
+) (map[uuid.UUID]time.Time, error) {
+	changed := map[uuid.UUID]time.Time{}
+
+	if len(issueIDs) == 0 {
+		return changed, nil
+	}
+
+	subjects := make([]string, 0, len(issueIDs))
+	for _, issueID := range issueIDs {
+		subjects = append(subjects, issueID.String())
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, lastStatusChangesQuery, subjects)
+	if err != nil {
+		return nil, fmt.Errorf("list last status changes: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var (
+			issueID string
+			at      time.Time
+		)
+
+		if err := rows.Scan(&issueID, &at); err != nil {
+			return nil, fmt.Errorf("scan last status change: %w", err)
+		}
+
+		parsed, err := uuid.Parse(issueID)
+		if err != nil {
+			return nil, fmt.Errorf("parse last status change issue: %w", err)
+		}
+
+		changed[parsed] = at
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read last status changes: %w", err)
+	}
+
+	return changed, nil
 }
 
 func (r *activityRepository) ListBySubject(

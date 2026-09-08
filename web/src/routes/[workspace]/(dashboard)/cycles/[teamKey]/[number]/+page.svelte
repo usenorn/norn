@@ -44,6 +44,7 @@
 		cycleResults,
 		cycleRisks,
 		cycleStanding,
+		risksBecause,
 		destinationLabels,
 		plannedDays,
 		readCycleFailure,
@@ -56,6 +57,7 @@
 		unknownDays,
 		unrecordedDays,
 		type CycleFailure,
+		type CycleRiskKind,
 		type CycleRollover,
 	} from "$lib/cycles/cycles";
 	import { closeCycleSchema } from "$lib/cycles/close-schema";
@@ -355,15 +357,34 @@
 		if (!cycle || !standing) return undefined;
 
 		if (standing.kind === "ending") {
-			const blocked = risks.filter((risk) => risk.issue.blocked).length;
+			const left =
+				standing.daysLeft === 0
+					? "Last day"
+					: `${standing.daysLeft} ${standing.daysLeft === 1 ? "day" : "days"} left`;
+
+			if (risks.length === 0) {
+				return {
+					tone: "info" as const,
+					title: `${cycle.name} ends soon`,
+					text: `${left}. Nothing needs a nudge. Review unfinished work when you close the cycle.`,
+				};
+			}
+
+			const counted: [CycleRiskKind, string][] = [
+				["blocked", "blocked"],
+				["unassigned", "with nobody assigned"],
+				["stale", "with no recent status change"],
+			];
+
+			const because = counted
+				.map(([kind, label]) => [risksBecause(risks, kind), label] as const)
+				.filter(([count]) => count > 0)
+				.map(([count, label]) => `${count} ${label}`);
 
 			return {
 				tone: "warning" as const,
 				title: `${risks.length} ${risks.length === 1 ? "issue needs" : "issues need"} a nudge`,
-				text:
-					`${standing.daysLeft === 0 ? "Last day" : `${standing.daysLeft} ${standing.daysLeft === 1 ? "day" : "days"} left`}. ` +
-					`${blocked} blocked, ${risks.length - blocked} with nobody assigned. ` +
-					`Move them to ${nextLabel} now, or accept the roll-over.`,
+				text: `${left}. ${because.join(", ")}. Move them to ${nextLabel} now, or accept the roll-over.`,
 			};
 		}
 
@@ -1007,10 +1028,12 @@
 										{/if}
 									</span>
 									<span class="truncate text-sm text-ink-900">{risk.issue.title}</span>
-									<span class="flex items-center gap-1.5 text-xs text-warning">
-										<TriangleAlert class="size-3" aria-hidden="true" />
-										{risk.reason}
-									</span>
+									{#each risk.reasons as reason (reason.kind)}
+										<span class="flex items-center gap-1.5 text-xs text-warning">
+											<TriangleAlert class="size-3" aria-hidden="true" />
+											{reason.text}
+										</span>
+									{/each}
 								</a>
 							{/each}
 						</section>
