@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { tick } from "svelte";
-	import { caretAfterPaste, pastedMarkdown, withPasted } from "$lib/issues/paste";
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
@@ -19,7 +18,6 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Switch } from "$lib/components/ui/switch/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
@@ -50,12 +48,14 @@
 	import { duePresets } from "./facets";
 	import { newIssueSchema, type NewIssueInput } from "./new-issue-schema";
 	import { draftIssue, type CreationOutcome } from "./creating";
+	import DescriptionEditor from "$lib/issues/description-editor.svelte";
 	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "./issues";
 	import type { Issue } from "./issues";
 
 	let {
 		open = $bindable(false),
 		workspaceId,
+		workspace,
 		teams,
 		states,
 		members,
@@ -69,6 +69,7 @@
 	}: {
 		open?: boolean;
 		workspaceId: string;
+		workspace: string;
 		teams: Team[];
 		states: Record<string, WorkflowState[]>;
 		members: { accountId: string; displayName?: string; kind?: AccountKind }[];
@@ -85,6 +86,7 @@
 	let wasOpen = $state(false);
 	let teamStates = $state.raw<Record<string, WorkflowState[]>>({});
 	let titleField = $state<HTMLInputElement | null>(null);
+	let fields = $state<HTMLFormElement | null>(null);
 	let attaching = $state.raw<PendingFile[]>([]);
 	let uploads = $state.raw<UploadTask[]>([]);
 	let dragging = $state(false);
@@ -191,19 +193,6 @@
 		if (live && !holding.running) live.files = next;
 	}
 
-	function pasteFiles(event: ClipboardEvent) {
-		const files = Array.from(event.clipboardData?.files ?? []);
-
-		if (files.length === 0) {
-			pasteMarkup(event);
-
-			return;
-		}
-
-		event.preventDefault();
-		takeFiles(files);
-	}
-
 	function carriesFiles(event: DragEvent): boolean {
 		return Array.from(event.dataTransfer?.types ?? []).includes("Files");
 	}
@@ -226,22 +215,6 @@
 		dragging = false;
 
 		takeFiles(Array.from(event.dataTransfer?.files ?? []));
-	}
-
-	function pasteMarkup(event: ClipboardEvent) {
-		const markdown = pastedMarkdown(event);
-
-		if (!markdown) return;
-
-		event.preventDefault();
-
-		const field = event.currentTarget as HTMLTextAreaElement;
-		const caret = caretAfterPaste(field, markdown);
-		const next = withPasted(field, markdown);
-
-		formData.update((current) => ({ ...current, description: next }), { taint: true });
-
-		tick().then(() => field.setSelectionRange(caret, caret));
 	}
 
 	function dropPending(key: string) {
@@ -707,6 +680,12 @@
 		event.currentTarget.closest("form")?.requestSubmit();
 	}
 
+	function submitForm() {
+		if (unconfirmed || busy) return;
+
+		fields?.requestSubmit();
+	}
+
 	function toggleLabel(labelId: string) {
 		$formData.labelIds = $formData.labelIds.includes(labelId)
 			? $formData.labelIds.filter((held) => held !== labelId)
@@ -786,6 +765,7 @@
 		</Dialog.Description>
 
 		<form
+			bind:this={fields}
 			method="POST"
 			use:enhance
 			class="relative flex min-h-0 w-full min-w-0 flex-col"
@@ -877,16 +857,17 @@
 						<Form.Control>
 							{#snippet children({ props })}
 								<Form.Label class="sr-only">Description</Form.Label>
-								<Textarea
+								<DescriptionEditor
 									{...props}
 									bind:value={$formData.description}
-									variant="seamless"
-									rows={3}
+									{workspaceId}
+									{workspace}
+									{members}
+									{teams}
 									disabled={busy || Boolean(raised)}
-									onkeydown={submitOnMeta}
-									onpaste={pasteFiles}
+									onfiles={takeFiles}
+									onmetaenter={submitForm}
 									placeholder="Add description… What is broken, what should happen instead."
-									class="p-0"
 								/>
 							{/snippet}
 						</Form.Control>

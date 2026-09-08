@@ -459,6 +459,7 @@
 	<NewIssueDialog
 		bind:open={raising.open}
 		workspaceId={data.workspace.id}
+		workspace={data.workspace.slug}
 		{teams}
 		states={{}}
 		members={data.members}
