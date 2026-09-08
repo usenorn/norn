@@ -39,7 +39,7 @@
 					{#if task.state === "failed" && onretry}
 						<Button variant="ghost" size="sm" onclick={() => onretry(task.id)}>Retry</Button>
 					{/if}
-					{#if settled(task) ? ondismiss : oncancel}
+					{#if settled(task) ? ondismiss : oncancel && task.state === "sending"}
 						<Button
 							variant="ghost"
 							size="sm"

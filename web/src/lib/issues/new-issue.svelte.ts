@@ -15,6 +15,7 @@ export class NewIssue {
 	#open = $state(false);
 	#prefill = $state.raw<Partial<NewIssueInput>>({});
 	#surface = $state.raw<NewIssueSurface>({});
+	#held = $state.raw<NewIssueSurface>({});
 
 	get open(): boolean {
 		return this.#open;
@@ -29,15 +30,16 @@ export class NewIssue {
 	}
 
 	get onraising(): NewIssueSurface["onraising"] {
-		return this.#surface.onraising;
+		return this.#held.onraising;
 	}
 
 	get onsettled(): NewIssueSurface["onsettled"] {
-		return this.#surface.onsettled;
+		return this.#held.onsettled;
 	}
 
 	raise(seed?: Partial<NewIssueInput>) {
 		this.#prefill = { ...this.#surface.seed, ...seed };
+		this.#held = this.#surface;
 		this.#open = true;
 	}
 
