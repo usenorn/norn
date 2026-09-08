@@ -62,7 +62,6 @@
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
-	import { caretAfterPaste, pastedMarkdown, withPasted } from "$lib/issues/paste";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
 		issueFailureMessage,
@@ -81,6 +80,7 @@
 	import Target from "@lucide/svelte/icons/target";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
+	import DescriptionEditor from "$lib/issues/description-editor.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import type { CreationOutcome } from "$lib/issues/creating";
 	import type { NewIssueInput } from "$lib/issues/new-issue-schema";
@@ -1045,6 +1045,16 @@
 	async function run(into: "comment" | "body", taskId: string, file: File, task: UploadTask) {
 		if (!issue) return;
 
+		try {
+			await attempt(into, taskId, file, task);
+		} catch {
+			replaceTask(into, { ...task, state: "failed", failure: { kind: "unavailable" } });
+		}
+	}
+
+	async function attempt(into: "comment" | "body", taskId: string, file: File, task: UploadTask) {
+		if (!issue) return;
+
 		await upload(
 			{ workspaceId: data.workspace.id, issueId: issue.id },
 			file,
@@ -1125,23 +1135,6 @@
 
 	let editingField = $state<"title" | "description" | null>(null);
 	let titleField = $state<HTMLInputElement | null>(null);
-	let descriptionField = $state<HTMLTextAreaElement | null>(null);
-
-	function pasteDescription(event: ClipboardEvent) {
-		const field = event.currentTarget as HTMLTextAreaElement;
-		const markdown = pastedMarkdown(event);
-
-		if (!markdown) return;
-
-		event.preventDefault();
-
-		const caret = caretAfterPaste(field, markdown);
-		const next = withPasted(field, markdown);
-
-		formData.update((current) => ({ ...current, description: next }), { taint: true });
-
-		tick().then(() => field.setSelectionRange(caret, caret));
-	}
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
 	let addingChild = $state(false);
@@ -1331,9 +1324,7 @@
 		editingField = field;
 	}
 
-	const editedField = $derived(
-		editingField === "title" ? titleField : editingField === "description" ? descriptionField : null
-	);
+	const editedField = $derived(editingField === "title" ? titleField : null);
 
 	$effect(() => {
 		if (!editedField) return;
@@ -1893,24 +1884,20 @@
 										<Form.Control>
 											{#snippet children({ props })}
 												<Form.Label class="sr-only">Description</Form.Label>
-												<div
-													class="flex flex-col overflow-hidden rounded-md border border-line-strong"
-												>
-													<div
-														class="flex h-7.5 items-center gap-0.5 border-b border-line-subtle bg-paper-0 px-1.25"
-													>
-														<span class="flex-1"></span>
-														<span class="font-mono text-2xs text-muted-foreground">Markdown</span>
-													</div>
-													<textarea
+												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5">
+													<DescriptionEditor
 														{...props}
-														bind:this={descriptionField}
 														bind:value={$formData.description}
+														workspaceId={data.workspace.id}
+														workspace={data.workspace.slug}
+														members={ready?.members ?? []}
+														teams={data.teams ?? []}
 														disabled={$submitting}
-														rows={8}
-														onpaste={pasteDescription}
-														class="min-h-47 w-full resize-y bg-paper-0 px-3 py-2.75 text-base leading-normal text-ink-900 outline-none"
-													></textarea>
+														autofocus
+														onfiles={(files) => begin("body", files)}
+														placeholder="Describe the issue…"
+														class="min-h-47"
+													/>
 												</div>
 											{/snippet}
 										</Form.Control>
@@ -2725,6 +2712,7 @@
 	<NewIssueDialog
 		bind:open={addingChild}
 		workspaceId={data.workspace.id}
+		workspace={data.workspace.slug}
 		teams={data.teams ?? []}
 		states={{ [issue.teamId]: ready.states }}
 		members={ready.members.map((member) => ({

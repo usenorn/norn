@@ -46,6 +46,12 @@
 	},
 	"dependencies": {
 		"@sentry/sveltekit": "^10.70.0",
+		"@tiptap/core": "^3.31.3",
+		"@tiptap/extension-image": "^3.31.3",
+		"@tiptap/markdown": "^3.31.3",
+		"@tiptap/pm": "^3.31.3",
+		"@tiptap/starter-kit": "^3.31.3",
+		"@tiptap/suggestion": "^3.31.3",
 		"isomorphic-dompurify": "^3.21.0",
 		"marked": "^18.0.7",
 		"openapi-fetch": "^0.17.0",
