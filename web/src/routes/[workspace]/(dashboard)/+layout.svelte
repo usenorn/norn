@@ -159,28 +159,26 @@
 		return shortcuts.register("issue-new", () => raising.raise());
 	});
 
-	async function settled(outcome: CreationOutcome) {
-		const handled = raising.onsettled;
+	const settlement = $derived(raising.onsettled ?? settleHere(slug, data.workspace.id));
 
-		if (handled) {
-			await handled(outcome);
+	function settleHere(where: string, workspaceId: string) {
+		return (outcome: CreationOutcome) => settled(outcome, where, workspaceId);
+	}
 
-			return;
-		}
-
+	async function settled(outcome: CreationOutcome, where: string, workspaceId: string) {
 		if (outcome.kind === "refused") {
 			showToast(outcome.failure);
 
-			if (outcome.input) raising.raise(outcome.input);
+			if (outcome.input && !raising.open) raising.raise(outcome.input);
 
 			return;
 		}
 
 		showToast(`Created ${outcome.issue.reference}`, {
-			href: workspacePath(slug, `/issues/${outcome.issue.reference}`),
+			href: workspacePath(where, `/issues/${outcome.issue.reference}`),
 		});
 
-		await invalidate(keys.issues(data.workspace.id));
+		await invalidate(keys.issues(workspaceId));
 	}
 
 	$effect(() => {
@@ -470,7 +468,7 @@
 		now={data.now}
 		prefill={raising.prefill}
 		onraising={raising.onraising}
-		onsettled={settled}
+		onsettled={settlement}
 	/>
 {/if}
 

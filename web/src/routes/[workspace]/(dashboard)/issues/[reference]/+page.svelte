@@ -1145,6 +1145,7 @@
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
 	let addingChild = $state(false);
+	let filingUnder = $state.raw<{ id: string; reference: string } | null>(null);
 	let childPrefill = $state<Partial<NewIssueInput> | undefined>(undefined);
 	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
@@ -1169,35 +1170,51 @@
 		return member?.displayName || member?.email || "";
 	}
 
-	async function settle(outcome: CreationOutcome) {
+	function settleUnder(parent: { id: string; reference: string } | null, workspaceId: string) {
+		return (outcome: CreationOutcome) => settle(outcome, parent, workspaceId);
+	}
+
+	async function settle(
+		outcome: CreationOutcome,
+		parent: { id: string; reference: string } | null,
+		workspaceId: string
+	) {
 		if (outcome.kind === "refused") {
 			announce(outcome.failure);
 
-			if (outcome.input) {
+			if (outcome.input && !addingChild) {
 				childPrefill = outcome.input;
+				filingUnder = parent;
 				addingChild = true;
 			}
 
 			return;
 		}
 
-		await fileUnderThis(outcome.issue);
+		await fileUnderThis(outcome.issue, parent, workspaceId);
 	}
 
-	async function fileUnderThis(created: { id: string; reference: string; version: number }) {
-		if (!issue) return;
+	async function fileUnderThis(
+		created: { id: string; reference: string; version: number },
+		parent: { id: string; reference: string } | null,
+		workspaceId: string
+	) {
+		if (!parent) return;
 
 		working = true;
 
 		try {
 			const { error } = await api.POST("/workspaces/{workspaceId}/issues/{issueId}/parent", {
-				params: { path: { workspaceId: data.workspace.id, issueId: created.id } },
-				body: { expectedVersion: created.version, parentId: issue.id },
+				params: { path: { workspaceId, issueId: created.id } },
+				body: { expectedVersion: created.version, parentId: parent.id },
 			});
 
-			if (error) failure = readIssueFailure(error);
+			if (error) {
+				failure = readIssueFailure(error);
+			} else {
+				announce(`${created.reference} is filed under ${parent.reference}`);
+			}
 
-			announce(`${created.reference} is filed under ${issue.reference}`);
 			await invalidate(keys.page(page.route.id));
 		} catch {
 			failure = { kind: "unavailable" };
@@ -2020,6 +2037,9 @@
 									aria-label="Add a sub-issue"
 									onclick={() => {
 										childPrefill = undefined;
+										filingUnder = issue
+											? { id: issue.id, reference: issue.reference }
+											: null;
 										addingChild = true;
 									}}
 								>
@@ -2717,7 +2737,7 @@
 		today={calendarDate(data.now, data.workspace.timezone)}
 		now={data.now}
 		prefill={childPrefill ?? { teamId: issue.teamId, projectId: issue.projectId ?? "" }}
-		onsettled={settle}
+		onsettled={settleUnder(filingUnder, data.workspace.id)}
 	/>
 
 	<DelegateDialog
