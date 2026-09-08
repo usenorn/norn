@@ -12,6 +12,7 @@ package activity
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -70,6 +71,21 @@ func (m *MockActivity) ListBySubject(ctx context.Context, subject entity.Activit
 func (mr *MockActivityMockRecorder) ListBySubject(ctx, subject, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBySubject", reflect.TypeOf((*MockActivity)(nil).ListBySubject), ctx, subject, page)
+}
+
+// ListStateChanges mocks base method.
+func (m *MockActivity) ListStateChanges(ctx context.Context, issueIDs []uuid.UUID, since time.Time) ([]entity.CycleStateChange, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListStateChanges", ctx, issueIDs, since)
+	ret0, _ := ret[0].([]entity.CycleStateChange)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListStateChanges indicates an expected call of ListStateChanges.
+func (mr *MockActivityMockRecorder) ListStateChanges(ctx, issueIDs, since any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListStateChanges", reflect.TypeOf((*MockActivity)(nil).ListStateChanges), ctx, issueIDs, since)
 }
 
 // Record mocks base method.

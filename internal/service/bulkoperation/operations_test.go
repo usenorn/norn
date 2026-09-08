@@ -3,6 +3,7 @@ package bulkoperation_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -37,6 +38,9 @@ type harness struct {
 	members      *membershiprepo.MockMembership
 	accounts     *accountrepo.MockAccount
 	cycles       *cyclerepo.MockCycle
+	lockedCycles map[uuid.UUID]entity.Cycle
+	lockedIssues map[uuid.UUID]entity.Issue
+	acquired     []string
 	scopeChanges *cyclerepo.MockCycleScopeChange
 	jobs         *jobqueuerepo.MockJobProducer
 	codeLinks    *scmrepo.MockCodeLink
@@ -82,6 +86,69 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		}).
 		AnyTimes()
 
+	h.lockedCycles = map[uuid.UUID]entity.Cycle{}
+	h.lockedIssues = map[uuid.UUID]entity.Issue{}
+
+	h.cycles.EXPECT().
+		LockByID(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, cycleID uuid.UUID) (entity.Cycle, error) {
+			h.acquired = append(h.acquired, "cycle "+cycleID.String())
+
+			return h.lockedCycles[cycleID], nil
+		}).
+		AnyTimes()
+
+	h.states.EXPECT().
+		ShareByIDs(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ []uuid.UUID) ([]entity.WorkflowState, error) {
+			h.acquired = append(h.acquired, "state")
+
+			return nil, nil
+		}).
+		AnyTimes()
+
+	h.issues.EXPECT().
+		CyclesOf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ uuid.UUID, issueIDs []uuid.UUID, scope entity.TeamScope,
+		) (map[uuid.UUID]uuid.UUID, error) {
+			held := map[uuid.UUID]uuid.UUID{}
+
+			for _, issueID := range issueIDs {
+				issue, found := h.lockedIssues[issueID]
+				if !found || !scope.Covers(issue.TeamID) {
+					continue
+				}
+
+				held[issueID] = issue.CycleID
+			}
+
+			return held, nil
+		}).
+		AnyTimes()
+
+	h.issues.EXPECT().
+		LockByIDs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ uuid.UUID, issueIDs []uuid.UUID, scope entity.TeamScope,
+		) ([]entity.Issue, error) {
+			h.acquired = append(h.acquired, "issues")
+
+			held := make([]entity.Issue, 0, len(issueIDs))
+
+			for _, issueID := range entity.LockOrder(issueIDs) {
+				issue, found := h.lockedIssues[issueID]
+				if !found || !scope.Covers(issue.TeamID) {
+					continue
+				}
+
+				held = append(held, issue)
+			}
+
+			return held, nil
+		}).
+		AnyTimes()
+
 	h.service = bulksvc.New(
 		h.actions, h.agents, h.issues, h.states, h.labels, h.activity, h.members, h.accounts,
 		h.cycles, h.scopeChanges, h.jobs, h.authorizer, tx,
@@ -93,6 +160,12 @@ func newHarness(t *testing.T, scope entity.TeamScope) *harness {
 		AnyTimes()
 
 	return h
+}
+
+func (h *harness) lock(issues ...entity.Issue) {
+	for _, issue := range issues {
+		h.lockedIssues[issue.ID] = issue
+	}
 }
 
 func (h *harness) expectAction(workspaceID uuid.UUID, expected *int) uuid.UUID {
@@ -136,12 +209,7 @@ func TestABatchAppliesWhatItCanAndReportsEachFailureIndividually(t *testing.T) {
 
 	h.expectAction(workspaceID, ptr(4))
 
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, ok.ID, gomock.Any()).Return(ok, nil)
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, stale.ID, gomock.Any()).Return(stale, nil)
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, hidden.ID, gomock.Any()).Return(hidden, nil)
-	h.issues.EXPECT().
-		LockByID(gomock.Any(), workspaceID, missing, gomock.Any()).
-		Return(entity.Issue{}, entity.ErrIssueNotFound)
+	h.lock(ok, stale, hidden)
 
 	h.issues.EXPECT().Update(gomock.Any(), ok.ID, 1, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.issues.EXPECT().
@@ -172,7 +240,7 @@ func TestABatchAppliesWhatItCanAndReportsEachFailureIndividually(t *testing.T) {
 	want := map[uuid.UUID]entity.BulkOutcome{
 		ok.ID:     entity.BulkOutcomeApplied,
 		stale.ID:  entity.BulkOutcomeConflict,
-		hidden.ID: entity.BulkOutcomeForbidden,
+		hidden.ID: entity.BulkOutcomeNotFound,
 		missing:   entity.BulkOutcomeNotFound,
 	}
 
@@ -191,7 +259,7 @@ func TestABatchAppliesWhatItCanAndReportsEachFailureIndividually(t *testing.T) {
 	}
 }
 
-func TestAnIssueOnATeamOutsideTheScopeIsRefusedIndividuallyNotForTheWholeBatch(t *testing.T) {
+func TestAnIssueOnATeamOutsideTheScopeIsUnreadableNotMerelyRefused(t *testing.T) {
 	workspaceID, mine, theirs := uuid.New(), uuid.New(), uuid.New()
 
 	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{mine}})
@@ -200,8 +268,7 @@ func TestAnIssueOnATeamOutsideTheScopeIsRefusedIndividuallyNotForTheWholeBatch(t
 	hidden := issueOn(theirs, 2)
 
 	h.expectAction(workspaceID, ptr(2))
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, ok.ID, gomock.Any()).Return(ok, nil)
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, hidden.ID, gomock.Any()).Return(hidden, nil)
+	h.lock(ok, hidden)
 	h.issues.EXPECT().Update(gomock.Any(), ok.ID, 1, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	h.actions.EXPECT().RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
@@ -224,8 +291,12 @@ func TestAnIssueOnATeamOutsideTheScopeIsRefusedIndividuallyNotForTheWholeBatch(t
 	}
 
 	for _, outcome := range result.Outcomes {
-		if outcome.IssueID == hidden.ID && outcome.Outcome != entity.BulkOutcomeForbidden {
-			t.Errorf("an out-of-scope issue reported %q, want forbidden", outcome.Outcome)
+		if outcome.IssueID == hidden.ID && outcome.Outcome != entity.BulkOutcomeNotFound {
+			t.Errorf(
+				"an out-of-scope issue reported %q. Forbidden would confirm that the issue "+
+					"exists to somebody who cannot see it.",
+				outcome.Outcome,
+			)
 		}
 
 		if outcome.IssueID == ok.ID && !outcome.Outcome.Applied() {
@@ -243,7 +314,7 @@ func TestABulkAssignmentToAnAgentIsRefused(t *testing.T) {
 	agentID := uuid.New()
 
 	h.expectAction(workspaceID, ptr(1))
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, target.ID, gomock.Any()).Return(target, nil)
+	h.lock(target)
 	h.members.EXPECT().
 		Get(gomock.Any(), workspaceID, agentID).
 		Return(entity.Membership{WorkspaceID: workspaceID, AccountID: agentID}, nil)
@@ -358,8 +429,7 @@ func TestEveryChangeAnIssueReceivesIsAttributedToTheOneBulkAction(t *testing.T) 
 	first, second := issueOn(teamID, 1), issueOn(teamID, 2)
 	actionID := h.expectAction(workspaceID, ptr(2))
 
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, first.ID, gomock.Any()).Return(first, nil)
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, second.ID, gomock.Any()).Return(second, nil)
+	h.lock(first, second)
 	h.issues.EXPECT().Update(gomock.Any(), gomock.Any(), 1, gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).Times(2)
 	h.actions.EXPECT().RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
@@ -405,7 +475,7 @@ func TestMovingABatchIntoACycleCountsAsScopeAddedToAStartedCycle(t *testing.T) {
 	issue := issueOn(teamID, 1)
 
 	h.expectAction(workspaceID, ptr(1))
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, issue.ID, gomock.Any()).Return(issue, nil)
+	h.lock(issue)
 	h.cycles.EXPECT().
 		GetVisible(gomock.Any(), workspaceID, cycleID, gomock.Any()).
 		Return(entity.Cycle{
@@ -465,7 +535,7 @@ func TestAnIssueIsRefusedACycleBelongingToAnotherTeamWithoutFailingTheBatch(t *t
 	issue := issueOn(mine, 1)
 
 	h.expectAction(workspaceID, ptr(1))
-	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, issue.ID, gomock.Any()).Return(issue, nil)
+	h.lock(issue)
 	h.cycles.EXPECT().
 		GetVisible(gomock.Any(), workspaceID, cycleID, gomock.Any()).
 		Return(entity.Cycle{ID: cycleID, WorkspaceID: workspaceID, TeamID: theirs, Number: 24}, nil)
@@ -746,5 +816,130 @@ func TestTheAgentThatRanAnActionPollsItWithoutAskingWhoOwnsIt(t *testing.T) {
 
 	if _, _, err := h.service.Get(context.Background(), workspaceID, actionID); err != nil {
 		t.Fatalf("the credential that ran the action was refused its own operation: %v", err)
+	}
+}
+
+func TestABatchLocksEveryCycleItWillTouchBeforeTheFirstIssue(t *testing.T) {
+	workspaceID, teamID := uuid.New(), uuid.New()
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
+
+	destination := entity.Cycle{
+		ID: uuid.New(), WorkspaceID: workspaceID, TeamID: teamID, Number: 9, StartsOn: "2020-01-01",
+	}
+
+	first, second := issueOn(teamID, 1), issueOn(teamID, 2)
+	first.CycleID = uuid.New()
+	second.CycleID = uuid.New()
+
+	h.expectAction(workspaceID, ptr(2))
+	h.lock(first, second)
+
+	for _, cycleID := range []uuid.UUID{first.CycleID, second.CycleID, destination.ID} {
+		h.lockedCycles[cycleID] = entity.Cycle{
+			ID: cycleID, WorkspaceID: workspaceID, TeamID: teamID, StartsOn: "2020-01-01",
+		}
+	}
+
+	h.lockedCycles[destination.ID] = destination
+
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, cycleID uuid.UUID, _ entity.TeamScope) (entity.Cycle, error) {
+			return h.lockedCycles[cycleID], nil
+		}).
+		AnyTimes()
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	h.scopeChanges.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Advance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Claim(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.actions.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	if _, err := h.service.Apply(context.Background(), workspaceID, service.ApplyBulkInput{
+		Change: entity.BulkChange{CycleID: &destination.ID},
+		Set:    entity.BulkSet{IssueIDs: []uuid.UUID{second.ID, first.ID}},
+	}); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	locked := slices.Index(h.acquired, "issues")
+	if locked != len(h.acquired)-1 {
+		t.Fatalf(
+			"acquisition order %v. Every cycle the batch touches, including the one each issue "+
+				"is leaving, has to be held before the first issue row, or closing a cycle "+
+				"deadlocks against the batch that is emptying it.",
+			h.acquired,
+		)
+	}
+
+	wanted := entity.LockOrder([]uuid.UUID{first.CycleID, second.CycleID, destination.ID})
+
+	for at, cycleID := range wanted {
+		if h.acquired[at] != "cycle "+cycleID.String() {
+			t.Fatalf(
+				"acquisition order %v, want the cycles in %v. Two batches that disagree on the "+
+					"order deadlock on the pair they share.",
+				h.acquired, wanted,
+			)
+		}
+	}
+}
+
+func TestAnIssueRefusedAClosedCycleKeepsEverythingElseUnchanged(t *testing.T) {
+	workspaceID, teamID, cycleID := uuid.New(), uuid.New(), uuid.New()
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
+
+	issue := issueOn(teamID, 1)
+	closed := time.Now().UTC()
+
+	h.expectAction(workspaceID, ptr(1))
+	h.lock(issue)
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, cycleID, gomock.Any()).
+		Return(entity.Cycle{
+			ID:       cycleID,
+			TeamID:   teamID,
+			StartsOn: "2020-01-01",
+			ClosedAt: &closed,
+		}, nil)
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(0)
+	h.scopeChanges.EXPECT().Record(gomock.Any(), gomock.Any()).Times(0)
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Times(0)
+	h.actions.EXPECT().Advance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Claim(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.actions.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	var recorded []entity.BulkActionOutcome
+
+	h.actions.EXPECT().
+		RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, outcomes []entity.BulkActionOutcome) error {
+			recorded = outcomes
+
+			return nil
+		}).
+		AnyTimes()
+
+	if _, err := h.service.Apply(context.Background(), workspaceID, service.ApplyBulkInput{
+		Change: entity.BulkChange{CycleID: &cycleID},
+		Set:    entity.BulkSet{IssueIDs: []uuid.UUID{issue.ID}},
+	}); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	if len(recorded) != 1 || recorded[0].Outcome != entity.BulkOutcomeConflict {
+		t.Fatalf(
+			"outcomes %+v, want one conflict. A refused join that still commits the edit reports "+
+				"a failure the database disagrees with.",
+			recorded,
+		)
 	}
 }

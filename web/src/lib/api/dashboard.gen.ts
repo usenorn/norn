@@ -2742,6 +2742,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/cycles/{cycleId}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read what a cycle holds, what it achieved and how it burned down */
+        get: operations["getWorkspaceCycleReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/cycles/{cycleId}/owner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Name the person coordinating a cycle, or leave it unassigned */
+        put: operations["setWorkspaceCycleOwner"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/cycles/{cycleId}/scope": {
         parameters: {
             query?: never;
@@ -5578,7 +5612,7 @@ export interface components {
         };
         CycleConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "cycle_closed" | "cycle_overlaps" | "cycle_team_mismatch" | "cycle_rollover_required" | "cycle_not_ended" | "cycle_no_next_cycle";
+            code: "cycle_closed" | "cycle_overlaps" | "cycle_team_mismatch" | "cycle_rollover_required" | "cycle_not_ended" | "cycle_no_next_cycle" | "cycle_owner_not_on_team" | "cycle_stale";
             /** @description The unfinished issues that still need a destination */
             open?: components["schemas"]["Issue"][];
         };
@@ -5701,7 +5735,7 @@ export interface components {
         /** @enum {string} */
         CyclePhase: "upcoming" | "current" | "ended" | "closed";
         /** @enum {string} */
-        CycleRollover: "next" | "backlog";
+        CycleRollover: "next" | "backlog" | "keep";
         Cycle: {
             /** Format: uuid */
             id: string;
@@ -5722,6 +5756,13 @@ export interface components {
             closedAt?: string;
             /** Format: uuid */
             closedByAccountId?: string;
+            /** Format: uuid */
+            ownerAccountId?: string;
+            /**
+             * Format: date-time
+             * @description When this cycle's results were frozen. Absent for a cycle closed before results were kept.
+             */
+            resultsRecordedAt?: string;
             rollover?: components["schemas"]["CycleRollover"];
         };
         TeamCycle: {
@@ -5747,6 +5788,51 @@ export interface components {
             /** Format: int32 */
             startsOn: number;
         };
+        CycleOwnerRequest: {
+            /**
+             * Format: uuid
+             * @description The team member coordinating this cycle. Null leaves it unassigned.
+             */
+            ownerAccountId: string | null;
+        };
+        CycleBurndownPoint: {
+            /** Format: date */
+            on: string;
+            /** Format: int32 */
+            scope: number;
+            /** Format: int32 */
+            remaining: number;
+            /**
+             * Format: int32
+             * @description Issues whose standing on this day cannot be read from the record.
+             */
+            unknown: number;
+            /** @description True when this day predates the records the series is read from. */
+            unrecorded: boolean;
+        };
+        CycleBurndown: {
+            points: components["schemas"]["CycleBurndownPoint"][];
+            /** @description False when any day predates the records this series is read from. */
+            whole: boolean;
+        };
+        CycleResult: {
+            /** Format: uuid */
+            issueId: string;
+            /** Format: uuid */
+            teamId: string;
+            category: components["schemas"]["StateCategory"];
+            stateName: string;
+            decision?: components["schemas"]["CycleRollover"];
+        };
+        CycleReport: {
+            cycle: components["schemas"]["Cycle"];
+            phase: components["schemas"]["CyclePhase"];
+            issues: components["schemas"]["Issue"][];
+            results: components["schemas"]["CycleResult"][];
+            burndown: components["schemas"]["CycleBurndown"];
+            /** @description Whether this cycle's results were recorded when it closed. */
+            frozen: boolean;
+        };
         /** @enum {string} */
         CycleScopeChangeKind: "added" | "removed" | "rolled_over" | "returned";
         CycleScopeChange: {
@@ -5771,6 +5857,8 @@ export interface components {
             rollover?: components["schemas"]["CycleRollover"];
             /** @description Issues that go somewhere other than the rollover chosen for the rest */
             overrides?: components["schemas"]["CycleRolloverOverride"][];
+            /** @description The unfinished issues the close form showed, so a cycle whose membership changed since then is reported as a conflict instead of taking the default */
+            reviewedIssueIds?: string[];
         };
         CycleRolloverOverride: {
             /** Format: uuid */
@@ -5816,11 +5904,13 @@ export interface components {
             toValue?: string;
             fromState?: string;
             toState?: string;
+            fromCategory?: components["schemas"]["StateCategory"];
+            toCategory?: components["schemas"]["StateCategory"];
             /** Format: int32 */
             version?: number;
         };
         /** @enum {string} */
-        ActivityKind: "created" | "state_changed" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "question_asked" | "question_answered";
+        ActivityKind: "created" | "state_changed" | "state_reclassified" | "property_changed" | "team_moved" | "archived" | "unarchived" | "deleted" | "restored" | "child_added" | "child_removed" | "relation_added" | "relation_removed" | "triaged" | "commented" | "comment_deleted" | "member_added" | "member_removed" | "attachment_added" | "attachment_removed" | "code_linked" | "code_unlinked" | "delegated" | "recalled" | "question_asked" | "question_answered";
         /** @enum {string} */
         LicenceStatus: "absent" | "active" | "grace" | "expired";
         LicenceFeature: {
@@ -6219,6 +6309,11 @@ export interface components {
             stateId?: string;
             /** Format: uuid */
             projectId?: string;
+            /**
+             * Format: uuid
+             * @description A cycle on the same team; the issue is filed into it as it is raised
+             */
+            cycleId?: string;
             labelIds?: string[];
             reasoning?: components["schemas"]["AgentReasoning"];
         };
@@ -13926,6 +14021,66 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceCycleReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                cycleId: components["parameters"]["CycleId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cycle's report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CycleReport"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceCycleOwner: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                cycleId: components["parameters"]["CycleId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CycleOwnerRequest"];
+            };
+        };
+        responses: {
+            /** @description The cycle */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cycle"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["CycleConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

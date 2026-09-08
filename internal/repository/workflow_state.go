@@ -15,6 +15,8 @@ type WorkflowState interface {
 	CreateMany(ctx context.Context, states []entity.WorkflowState) ([]entity.WorkflowState, error)
 	ListByTeamID(ctx context.Context, teamID uuid.UUID) ([]entity.WorkflowState, error)
 	LockByTeamID(ctx context.Context, teamID uuid.UUID) ([]entity.WorkflowState, error)
+	ShareByTeamID(ctx context.Context, teamID uuid.UUID) ([]entity.WorkflowState, error)
+	ShareByIDs(ctx context.Context, stateIDs []uuid.UUID) ([]entity.WorkflowState, error)
 	DefaultForTeam(ctx context.Context, teamID uuid.UUID) (entity.WorkflowState, error)
 	UpdateSettings(ctx context.Context, id uuid.UUID, name string, category entity.StateCategory) (entity.WorkflowState, error)
 	Reposition(ctx context.Context, teamID uuid.UUID, orderedIDs []uuid.UUID) error

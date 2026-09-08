@@ -38,12 +38,7 @@ func (h *harness) completingBulk(
 		Return([]entity.WorkflowState{done}, nil).
 		AnyTimes()
 
-	for _, issue := range issues {
-		h.issues.EXPECT().
-			LockByID(gomock.Any(), workspaceID, issue.ID, gomock.Any()).
-			Return(issue, nil).
-			AnyTimes()
-	}
+	h.lock(issues...)
 
 	h.issues.EXPECT().
 		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).

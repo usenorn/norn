@@ -269,15 +269,15 @@ func TestMovingAnIssueToAnotherTeamTakesItOutOfItsCycle(t *testing.T) {
 
 	h.issues.EXPECT().
 		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
-		Return(entity.Issue{ID: issueID, TeamID: teamID}, nil).
+		Return(entity.Issue{ID: issueID, TeamID: teamID, CycleID: cycle.ID}, nil).
 		AnyTimes()
 
-	h.states.EXPECT().ListByTeamID(gomock.Any(), destinationID).Return([]entity.WorkflowState{{
+	h.teamStates[destinationID] = []entity.WorkflowState{{
 		ID:       stateID,
 		TeamID:   destinationID,
 		Name:     "Todo",
 		Category: entity.StateCategoryNotStarted,
-	}}, nil)
+	}}
 
 	h.issues.EXPECT().
 		MoveToTeam(gomock.Any(), issueID, 1, destinationID, stateID, gomock.Any(), gomock.Any()).
@@ -367,6 +367,16 @@ func TestAnImportedIssueIsRaisedInsideTheClosedCycleItCameFrom(t *testing.T) {
 	captured := h.expectRaising(workspaceID, teamID)
 	h.cycles.EXPECT().GetVisible(gomock.Any(), workspaceID, cycle.ID, gomock.Any()).Return(cycle, nil)
 
+	var arrivals []entity.CycleScopeChange
+
+	h.scope.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			arrivals = append(arrivals, change)
+
+			return nil
+		})
+
 	if _, err := h.service.Create(context.Background(), service.CreateIssueInput{
 		WorkspaceID: workspaceID,
 		TeamID:      teamID,
@@ -385,6 +395,15 @@ func TestAnImportedIssueIsRaisedInsideTheClosedCycleItCameFrom(t *testing.T) {
 		t.Fatalf(
 			"the issue reached the store in cycle %v, want %v",
 			captured.CycleID, cycle.ID,
+		)
+	}
+
+	if len(arrivals) != 1 || !arrivals[0].ChangedAt.After(time.Now().UTC().Add(-time.Minute)) {
+		t.Fatalf(
+			"importing an old issue into a cycle that has already closed recorded %v. Norn saw "+
+				"it now, and saying so is what keeps it off the days that cycle was actually "+
+				"running; the frozen results of that cycle are not touched by an arrival.",
+			arrivals,
 		)
 	}
 }
@@ -469,6 +488,16 @@ func TestARunningCycleTakesANewIssueWhetherOrNotItWasImported(t *testing.T) {
 				GetVisible(gomock.Any(), workspaceID, cycle.ID, gomock.Any()).
 				Return(cycle, nil)
 
+			var arrivals []entity.CycleScopeChange
+
+			h.scope.EXPECT().
+				Record(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+					arrivals = append(arrivals, change)
+
+					return nil
+				})
+
 			if _, err := h.service.Create(context.Background(), service.CreateIssueInput{
 				WorkspaceID: workspaceID,
 				TeamID:      teamID,
@@ -481,6 +510,16 @@ func TestARunningCycleTakesANewIssueWhetherOrNotItWasImported(t *testing.T) {
 
 			if captured.CycleID != cycle.ID {
 				t.Fatalf("the issue reached the store in cycle %v, want %v", captured.CycleID, cycle.ID)
+			}
+
+			if len(arrivals) != 1 || arrivals[0].CycleID != cycle.ID {
+				t.Fatalf(
+					"raising an issue (%s) into a running cycle recorded %v, want one arrival. "+
+						"An import keeps the date it was created elsewhere, but when Norn saw it "+
+						"in this cycle is Norn's own observation, and without it the chart shows "+
+						"the issue on days before anybody knew about it.",
+					name, arrivals,
+				)
 			}
 		})
 	}
@@ -520,5 +559,42 @@ func TestAnIssueCannotBeRaisedInAnotherTeamsCycle(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestAnIssueStillInTriageDoesNotJoinTheCycleItWasFiledAgainst(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID, issueID := uuid.New(), uuid.New(), uuid.New()
+	cycle := runningCycle(workspaceID, teamID)
+
+	h.expectDecision(workspaceID, teamID)
+
+	h.issues.EXPECT().
+		LockByID(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Return(entity.Issue{
+			ID:          issueID,
+			WorkspaceID: workspaceID,
+			TeamID:      teamID,
+			Version:     1,
+			TriageState: entity.TriageStateWaiting,
+			State:       entity.IssueState{ID: uuid.New(), Category: entity.StateCategoryNotStarted},
+		}, nil)
+
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, cycle.ID, gomock.Any()).
+		Return(cycle, nil)
+
+	h.issues.EXPECT().Update(gomock.Any(), issueID, 1, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).Return(entity.Issue{}, nil)
+
+	h.scope.EXPECT().Record(gomock.Any(), gomock.Any()).Times(0)
+
+	if _, err := h.service.Update(context.Background(), workspaceID, issueID, service.UpdateIssueInput{
+		ExpectedVersion: 1,
+		CycleID:         &cycle.ID,
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
 	}
 }

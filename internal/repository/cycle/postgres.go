@@ -29,6 +29,8 @@ const cycleColumns = `
        to_char(c.ends_on, 'YYYY-MM-DD'),
        c.closed_at,
        coalesce(c.closed_by::text, ''),
+       coalesce(c.owner_account_id::text, ''),
+       c.results_recorded_at,
        c.rollover,
        c.created_at,
        c.updated_at,
@@ -44,7 +46,8 @@ WITH inserted AS (
                                   closed_at, closed_by, rollover, created_at, updated_at)
     VALUES ($1, $2, $3, $4::date, $5::date, $6, $7::uuid, $8, $9, $10)
     RETURNING id, workspace_id, team_id, number, starts_on, ends_on,
-              closed_at, closed_by, rollover, created_at, updated_at
+              closed_at, closed_by, owner_account_id, results_recorded_at,
+              rollover, created_at, updated_at
 )
 SELECT` + cycleColumns + `
 FROM inserted c
@@ -75,6 +78,17 @@ SELECT` + cycleColumns + cycleJoins + `
 WHERE c.team_id = $1
 ORDER BY c.starts_on, c.number`
 
+const setCycleOwnerQuery = `
+WITH updated AS (
+    UPDATE workspace_cycles
+    SET owner_account_id = $2, updated_at = now()
+    WHERE id = $1
+    RETURNING *
+)
+SELECT` + cycleColumns + `
+FROM updated c
+JOIN workspace_teams t ON t.id = c.team_id`
+
 const lockCycleQuery = `
 SELECT` + cycleColumns + cycleJoins + `
 WHERE c.id = $1
@@ -83,13 +97,15 @@ FOR UPDATE OF c`
 const closeCycleQuery = `
 WITH closed AS (
     UPDATE workspace_cycles
-    SET closed_at  = $2,
-        closed_by  = $3::uuid,
-        rollover   = $4,
-        updated_at = $2
+    SET closed_at           = $2,
+        closed_by           = $3::uuid,
+        rollover            = $4,
+        results_recorded_at = $2,
+        updated_at          = $2
     WHERE id = $1 AND closed_at IS NULL
     RETURNING id, workspace_id, team_id, number, starts_on, ends_on,
-              closed_at, closed_by, rollover, created_at, updated_at
+              closed_at, closed_by, owner_account_id, results_recorded_at,
+              rollover, created_at, updated_at
 )
 SELECT` + cycleColumns + `
 FROM closed c
@@ -148,6 +164,31 @@ func teamIDs(scope entity.TeamScope) []string {
 	return ids
 }
 
+func (r *cycleRepository) SetOwner(
+	ctx context.Context,
+	cycleID uuid.UUID,
+	owner *uuid.UUID,
+) (entity.Cycle, error) {
+	var account any
+
+	if owner != nil {
+		account = owner.String()
+	}
+
+	cycle, err := scanCycle(r.db.Querier(ctx).QueryRowContext(
+		ctx, setCycleOwnerQuery, cycleID.String(), account,
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Cycle{}, entity.ErrCycleNotFound
+		}
+
+		return entity.Cycle{}, fmt.Errorf("set cycle owner: %w", err)
+	}
+
+	return cycle, nil
+}
+
 func scanCycle(row scanner) (entity.Cycle, error) {
 	var (
 		cycle     entity.Cycle
@@ -155,6 +196,7 @@ func scanCycle(row scanner) (entity.Cycle, error) {
 		workspace string
 		team      string
 		closedBy  string
+		owner     string
 		rollover  string
 	)
 
@@ -167,6 +209,8 @@ func scanCycle(row scanner) (entity.Cycle, error) {
 		&cycle.EndsOn,
 		&cycle.ClosedAt,
 		&closedBy,
+		&owner,
+		&cycle.ResultsRecordedAt,
 		&rollover,
 		&cycle.CreatedAt,
 		&cycle.UpdatedAt,
@@ -195,6 +239,12 @@ func scanCycle(row scanner) (entity.Cycle, error) {
 	if closedBy != "" {
 		if cycle.ClosedByAccountID, err = uuid.Parse(closedBy); err != nil {
 			return entity.Cycle{}, fmt.Errorf("parse cycle closing account id: %w", err)
+		}
+	}
+
+	if owner != "" {
+		if cycle.OwnerAccountID, err = uuid.Parse(owner); err != nil {
+			return entity.Cycle{}, fmt.Errorf("parse cycle owner account id: %w", err)
 		}
 	}
 

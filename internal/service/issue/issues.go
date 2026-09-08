@@ -115,8 +115,11 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		}
 	}
 
+	var joining entity.Cycle
+
 	if input.CycleID != uuid.Nil {
-		if err := s.cycleAccepts(ctx, input, decision); err != nil {
+		joining, err = s.cycleAccepts(ctx, input, decision)
+		if err != nil {
 			return entity.Issue{}, err
 		}
 	}
@@ -174,6 +177,21 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 	var created entity.Issue
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if _, err := s.states.ShareByIDs(ctx, []uuid.UUID{arriving.State.ID}); err != nil {
+			return err
+		}
+
+		if joining.ID != uuid.Nil {
+			gate, err := s.cycles.LockByID(ctx, joining.ID)
+			if err != nil {
+				return err
+			}
+
+			if gate.Closed() && !entity.OriginAttributed(input.Origin) {
+				return entity.ErrCycleClosed
+			}
+		}
+
 		created, err = s.issues.Create(ctx, arriving)
 		if err != nil {
 			return err
@@ -195,6 +213,17 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 			ToState:     created.State.Name,
 		}); err != nil {
 			return err
+		}
+
+		if joining.ID != uuid.Nil {
+			observed := time.Now().UTC()
+			today := entity.Today(observed, decision.Workspace.Timezone)
+
+			if err := s.markScope(
+				ctx, joining, created, decision, entity.CycleScopeChangeAdded, today, observed,
+			); err != nil {
+				return err
+			}
 		}
 
 		if err := s.follow(ctx, created, decision.Actor.AccountID); err != nil {
@@ -438,9 +467,24 @@ func (s *issuesService) Update(
 	)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if change.StateID != nil {
+			if _, err := s.states.ShareByIDs(ctx, []uuid.UUID{*change.StateID}); err != nil {
+				return err
+			}
+		}
+
+		gatedFrom, gated, err := s.gateCycles(ctx, workspaceID, issueID, input, decision)
+		if err != nil {
+			return err
+		}
+
 		issue, err := s.issues.LockByID(ctx, workspaceID, issueID, decision.Scope)
 		if err != nil {
 			return err
+		}
+
+		if gated && issue.CycleID != gatedFrom {
+			return entity.ErrIssueStale
 		}
 
 		conflicts := entity.IssueConflicts(issue.FieldVersions, issue.Version, input.ExpectedVersion, touched)
@@ -532,13 +576,15 @@ func (s *issuesService) Update(
 
 		if target.ID != uuid.Nil && target.ID != issue.State.ID {
 			if err := s.activity.Record(ctx, entity.Activity{
-				WorkspaceID: workspaceID,
-				Subject:     entity.IssueSubject(issueID),
-				Actor:       decision.ActivityActor(),
-				Kind:        entity.ActivityKindStateChanged,
-				FromState:   issue.State.Name,
-				ToState:     target.Name,
-				Version:     issue.Version + 1,
+				WorkspaceID:  workspaceID,
+				Subject:      entity.IssueSubject(issueID),
+				Actor:        decision.ActivityActor(),
+				Kind:         entity.ActivityKindStateChanged,
+				FromState:    issue.State.Name,
+				ToState:      target.Name,
+				FromCategory: issue.State.Category,
+				ToCategory:   target.Category,
+				Version:      issue.Version + 1,
 			}); err != nil {
 				return err
 			}
@@ -959,14 +1005,14 @@ func (s *issuesService) cycleAccepts(
 	ctx context.Context,
 	input service.CreateIssueInput,
 	decision entity.Decision,
-) error {
+) (entity.Cycle, error) {
 	cycle, err := s.cycles.GetVisible(ctx, input.WorkspaceID, input.CycleID, decision.Scope)
 	if err != nil {
-		return err
+		return entity.Cycle{}, err
 	}
 
 	if cycle.TeamID != input.TeamID {
-		return entity.ErrCycleTeamMismatch
+		return entity.Cycle{}, entity.ErrCycleTeamMismatch
 	}
 
 	// An import carries a team's finished cycles, and finished is exactly the state a historical
@@ -974,10 +1020,10 @@ func (s *issuesService) cycleAccepts(
 	// them. The test is attribution rather than presence: an origin decoded from a request body
 	// is non-nil and inert, so a nil check would hand this concession to any caller.
 	if cycle.Closed() && !entity.OriginAttributed(input.Origin) {
-		return entity.ErrCycleClosed
+		return entity.Cycle{}, entity.ErrCycleClosed
 	}
 
-	return nil
+	return cycle, nil
 }
 
 func (s *issuesService) projectOpen(
@@ -992,6 +1038,66 @@ func (s *issuesService) projectOpen(
 
 	if project.Archived() {
 		return entity.ErrProjectArchived
+	}
+
+	return nil
+}
+
+func (s *issuesService) gateCycles(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	input service.UpdateIssueInput,
+	decision entity.Decision,
+) (uuid.UUID, bool, error) {
+	if input.CycleID == nil && !slices.Contains(input.Clear, entity.IssueFieldCycle) {
+		return uuid.Nil, false, nil
+	}
+
+	from, err := s.issues.CycleOf(ctx, workspaceID, issueID, decision.Scope)
+	if err != nil {
+		return uuid.Nil, false, err
+	}
+
+	wanted := make([]uuid.UUID, 0, 2)
+
+	if from != uuid.Nil {
+		wanted = append(wanted, from)
+	}
+
+	if input.CycleID != nil && *input.CycleID != uuid.Nil && *input.CycleID != from {
+		wanted = append(wanted, *input.CycleID)
+	}
+
+	if err := s.lockCycles(ctx, wanted); err != nil {
+		return uuid.Nil, false, err
+	}
+
+	return from, true, nil
+}
+
+func (s *issuesService) shareStates(
+	ctx context.Context,
+	teamIDs ...uuid.UUID,
+) (map[uuid.UUID][]entity.WorkflowState, error) {
+	shared := map[uuid.UUID][]entity.WorkflowState{}
+
+	for _, teamID := range entity.LockOrder(teamIDs) {
+		states, err := s.states.ShareByTeamID(ctx, teamID)
+		if err != nil {
+			return nil, err
+		}
+
+		shared[teamID] = states
+	}
+
+	return shared, nil
+}
+
+func (s *issuesService) lockCycles(ctx context.Context, cycleIDs []uuid.UUID) error {
+	for _, cycleID := range entity.LockOrder(cycleIDs) {
+		if _, err := s.cycles.LockByID(ctx, cycleID); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1017,10 +1123,6 @@ func (s *issuesService) recordScope(
 			return err
 		}
 
-		if left.Closed() {
-			return entity.ErrCycleClosed
-		}
-
 		if err := s.markScope(ctx, left, issue, decision, entity.CycleScopeChangeRemoved, today, now); err != nil {
 			return err
 		}
@@ -1028,6 +1130,10 @@ func (s *issuesService) recordScope(
 
 	if joining.ID == uuid.Nil || joining.ID == issue.CycleID {
 		return nil
+	}
+
+	if joining.Closed() {
+		return entity.ErrCycleClosed
 	}
 
 	return s.markScope(ctx, joining, issue, decision, entity.CycleScopeChangeAdded, today, now)
@@ -1042,7 +1148,7 @@ func (s *issuesService) markScope(
 	today string,
 	now time.Time,
 ) error {
-	if !cycle.Started(today) {
+	if issue.Waiting() || !cycle.Started(today) {
 		return nil
 	}
 
@@ -1394,9 +1500,27 @@ func (s *issuesService) MoveToTeam(
 	var moved entity.Issue
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		observed, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+		if err != nil {
+			return err
+		}
+
+		shared, err := s.shareStates(ctx, observed.TeamID, input.TeamID)
+		if err != nil {
+			return err
+		}
+
+		if err := s.lockCycles(ctx, []uuid.UUID{observed.CycleID}); err != nil {
+			return err
+		}
+
 		issue, err := s.issues.LockByID(ctx, workspaceID, issueID, decision.Scope)
 		if err != nil {
 			return err
+		}
+
+		if issue.TeamID != observed.TeamID || issue.CycleID != observed.CycleID {
+			return entity.ErrIssueStale
 		}
 
 		if issue.TeamID == input.TeamID {
@@ -1420,12 +1544,7 @@ func (s *issuesService) MoveToTeam(
 			return entity.IssueLabelsOutOfScopeError{Labels: stranded}
 		}
 
-		states, err := s.states.ListByTeamID(ctx, input.TeamID)
-		if err != nil {
-			return err
-		}
-
-		target, found := entity.CounterpartState(states, issue.State.Category)
+		target, found := entity.CounterpartState(shared[input.TeamID], issue.State.Category)
 		if !found {
 			return entity.ErrIssueDestinationIncapable
 		}
@@ -1470,13 +1589,15 @@ func (s *issuesService) MoveToTeam(
 		}
 
 		if err := s.activity.Record(ctx, entity.Activity{
-			WorkspaceID: workspaceID,
-			Subject:     entity.IssueSubject(issueID),
-			Actor:       decision.ActivityActor(),
-			Kind:        entity.ActivityKindStateChanged,
-			FromState:   issue.State.Name,
-			ToState:     target.Name,
-			Version:     issue.Version + 1,
+			WorkspaceID:  workspaceID,
+			Subject:      entity.IssueSubject(issueID),
+			Actor:        decision.ActivityActor(),
+			Kind:         entity.ActivityKindStateChanged,
+			FromState:    issue.State.Name,
+			ToState:      target.Name,
+			FromCategory: issue.State.Category,
+			ToCategory:   target.Category,
+			Version:      issue.Version + 1,
 		}); err != nil {
 			return err
 		}

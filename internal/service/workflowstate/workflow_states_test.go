@@ -482,3 +482,112 @@ func TestAnImportedStateReachesTheRepositoryWithTheDatesItsSourceRecorded(t *tes
 		t.Fatalf("stamp = (%v, %v), want (%v, %v)", gotCreated, gotUpdated, createdAt, updatedAt)
 	}
 }
+
+func TestReclassifyingAStateLeavesEvidenceOnEveryIssueStandingInIt(t *testing.T) {
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	h := newHarness(t)
+	states := seededStates(workspaceID, teamID)
+	moving := byName(states, "In review")
+
+	h.expectActorMayManage(workspaceID, teamID)
+	h.expectLocked(teamID, states)
+
+	waiting := entity.Issue{
+		ID:          uuid.New(),
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Version:     4,
+		State:       entity.IssueState{ID: moving.ID, Name: moving.Name, Category: moving.Category},
+	}
+
+	h.inState[moving.ID] = []entity.Issue{waiting}
+	h.states.EXPECT().
+		UpdateSettings(gomock.Any(), moving.ID, moving.Name, entity.StateCategoryComplete).
+		Return(moving, nil)
+
+	category := entity.StateCategoryComplete
+
+	if _, err := h.service.Update(context.Background(), workspaceID, teamID, moving.ID, service.UpdateWorkflowStateInput{
+		Category: &category,
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	if len(h.recorded) != 1 {
+		t.Fatalf(
+			"changing what kind of state %q is left %d entries in the ledger, want one for the "+
+				"issue standing in it. Every issue in that state started counting as finished "+
+				"work that instant, and a burndown read afterwards would otherwise show them as "+
+				"having been finished all along.",
+			moving.Name, len(h.recorded),
+		)
+	}
+
+	entry := h.recorded[0]
+
+	if entry.Kind != entity.ActivityKindStateReclassified {
+		t.Errorf("the entry is a %q, want a reclassification: the issue did not move", entry.Kind)
+	}
+
+	if entry.FromCategory != moving.Category || entry.ToCategory != entity.StateCategoryComplete {
+		t.Errorf(
+			"the entry records %q to %q, want %q to %q",
+			entry.FromCategory, entry.ToCategory, moving.Category, entity.StateCategoryComplete,
+		)
+	}
+
+	if entry.FromState != moving.Name || entry.ToState != moving.Name {
+		t.Errorf("the entry renames the state from %q to %q, but only its kind changed", entry.FromState, entry.ToState)
+	}
+}
+
+func TestRemovingAStateRecordsWhereItsIssuesWent(t *testing.T) {
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	h := newHarness(t)
+	states := seededStates(workspaceID, teamID)
+	removed := byName(states, "In review")
+	replacement := byName(states, "In progress")
+
+	h.expectActorMayManage(workspaceID, teamID)
+	h.expectLocked(teamID, states)
+
+	stranded := entity.Issue{
+		ID:          uuid.New(),
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Version:     2,
+		State:       entity.IssueState{ID: removed.ID, Name: removed.Name, Category: removed.Category},
+	}
+
+	h.inState[removed.ID] = []entity.Issue{stranded}
+	h.issues.EXPECT().ReassignState(gomock.Any(), removed.ID, replacement.ID).Return(nil)
+	h.states.EXPECT().Delete(gomock.Any(), removed.ID).Return(nil)
+	h.states.EXPECT().Reposition(gomock.Any(), teamID, gomock.Any()).Return(nil)
+
+	if err := h.service.Remove(
+		context.Background(), workspaceID, teamID, removed.ID, replacement.ID,
+	); err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+
+	if len(h.recorded) != 1 {
+		t.Fatalf("removing a state left %d entries, want one per issue it held", len(h.recorded))
+	}
+
+	entry := h.recorded[0]
+
+	if entry.FromState != removed.Name || entry.ToState != replacement.Name {
+		t.Errorf("the entry records %q to %q, want %q to %q", entry.FromState, entry.ToState, removed.Name, replacement.Name)
+	}
+
+	if entry.FromCategory != removed.Category || entry.ToCategory != replacement.Category {
+		t.Errorf(
+			"the entry records the kinds %q to %q, want %q to %q. Deleting a state moves its "+
+				"work somewhere that may count differently, and the ledger is what stops a "+
+				"later reading of the cycle from pretending it was always there.",
+			entry.FromCategory, entry.ToCategory, removed.Category, replacement.Category,
+		)
+	}
+}

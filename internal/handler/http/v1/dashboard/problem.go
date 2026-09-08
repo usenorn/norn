@@ -679,6 +679,12 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrCycleNoNextCycle):
 		return cycleConflictProblem(api.CycleConflictProblemCodeCycleNoNextCycle, err), true
 
+	case errors.Is(err, entity.ErrCycleOwnerNotOnTeam):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleOwnerNotOnTeam, err), true
+
+	case errors.Is(err, entity.ErrCycleStale):
+		return cycleConflictProblem(api.CycleConflictProblemCodeCycleStale, err), true
+
 	case errors.Is(err, entity.ErrBreakGlassNotEnforcing):
 		return newProblem(http.StatusConflict, err.Error()), true
 
@@ -1789,6 +1795,14 @@ func (r problemResponse) VisitListCurrentWorkspaceCyclesResponse(w http.Response
 }
 
 func (r problemResponse) VisitGetWorkspaceCycleResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceCycleReportResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

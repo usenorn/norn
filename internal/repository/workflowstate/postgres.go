@@ -165,6 +165,46 @@ func (r *workflowStateRepository) ListByTeamID(
 	return toEntities(models)
 }
 
+func (r *workflowStateRepository) ShareByTeamID(
+	ctx context.Context,
+	teamID uuid.UUID,
+) ([]entity.WorkflowState, error) {
+	models, err := dbpostgres.WorkspaceWorkflowStates(
+		append(r.ordered(teamID), qm.For("KEY SHARE"))...,
+	).All(ctx, r.db.Querier(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("share workflow states of a team: %w", err)
+	}
+
+	return toEntities(models)
+}
+
+func (r *workflowStateRepository) ShareByIDs(
+	ctx context.Context,
+	stateIDs []uuid.UUID,
+) ([]entity.WorkflowState, error) {
+	ordered := entity.LockOrder(stateIDs)
+	if len(ordered) == 0 {
+		return nil, nil
+	}
+
+	keys := make([]string, 0, len(ordered))
+	for _, stateID := range ordered {
+		keys = append(keys, stateID.String())
+	}
+
+	models, err := dbpostgres.WorkspaceWorkflowStates(
+		dbpostgres.WorkspaceWorkflowStateWhere.ID.IN(keys),
+		qm.OrderBy(dbpostgres.WorkspaceWorkflowStateColumns.ID),
+		qm.For("KEY SHARE"),
+	).All(ctx, r.db.Querier(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("share workflow states: %w", err)
+	}
+
+	return toEntities(models)
+}
+
 func (r *workflowStateRepository) LockByTeamID(
 	ctx context.Context,
 	teamID uuid.UUID,

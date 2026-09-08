@@ -2,6 +2,7 @@ package workflowstate
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -13,6 +14,7 @@ import (
 type workflowStatesService struct {
 	states     repository.WorkflowState
 	issues     repository.Issue
+	activity   repository.Activity
 	teams      repository.Team
 	authorizer service.Authorizer
 	transactor repository.Transactor
@@ -21,6 +23,7 @@ type workflowStatesService struct {
 func New(
 	states repository.WorkflowState,
 	issues repository.Issue,
+	activity repository.Activity,
 	teams repository.Team,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -28,10 +31,76 @@ func New(
 	return &workflowStatesService{
 		states:     states,
 		issues:     issues,
+		activity:   activity,
 		teams:      teams,
 		authorizer: authorizer,
 		transactor: transactor,
 	}
+}
+
+func (s *workflowStatesService) reclassify(
+	ctx context.Context,
+	state entity.WorkflowState,
+	category entity.StateCategory,
+	decision entity.Decision,
+) error {
+	held, err := s.issues.ListByStateID(ctx, state.ID)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+
+	for _, issue := range held {
+		if err := s.activity.Record(ctx, entity.Activity{
+			WorkspaceID:  issue.WorkspaceID,
+			Subject:      entity.IssueSubject(issue.ID),
+			Actor:        decision.ActivityActor(),
+			Kind:         entity.ActivityKindStateReclassified,
+			FromState:    state.Name,
+			ToState:      state.Name,
+			FromCategory: state.Category,
+			ToCategory:   category,
+			Version:      issue.Version,
+			CreatedAt:    now,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *workflowStatesService) rehouse(
+	ctx context.Context,
+	leaving, joining entity.WorkflowState,
+	decision entity.Decision,
+) error {
+	held, err := s.issues.ListByStateID(ctx, leaving.ID)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+
+	for _, issue := range held {
+		if err := s.activity.Record(ctx, entity.Activity{
+			WorkspaceID:  issue.WorkspaceID,
+			Subject:      entity.IssueSubject(issue.ID),
+			Actor:        decision.ActivityActor(),
+			Kind:         entity.ActivityKindStateChanged,
+			FromState:    leaving.Name,
+			ToState:      joining.Name,
+			FromCategory: leaving.Category,
+			ToCategory:   joining.Category,
+			Version:      issue.Version,
+			CreatedAt:    now,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *workflowStatesService) decide(
@@ -226,6 +295,12 @@ func (s *workflowStatesService) Update(
 			}
 		}
 
+		if category != current.Category {
+			if err := s.reclassify(ctx, current, category, decision); err != nil {
+				return err
+			}
+		}
+
 		updated, err = s.states.UpdateSettings(ctx, stateID, name, category)
 
 		return err
@@ -416,6 +491,12 @@ func (s *workflowStatesService) Remove(
 
 		if !sharesCategory(states, target) {
 			return entity.ErrWorkflowStateLastInCategory
+		}
+
+		replacement, _ := find(states, replacementStateID)
+
+		if err := s.rehouse(ctx, target, replacement, decision); err != nil {
+			return err
 		}
 
 		if err := s.issues.ReassignState(ctx, stateID, replacementStateID); err != nil {

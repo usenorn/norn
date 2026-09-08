@@ -41,35 +41,38 @@ import (
 )
 
 type harness struct {
-	issues      *issuerepo.MockIssue
-	states      *workflowstaterepo.MockWorkflowState
-	activity    *activityrepo.MockActivity
-	labels      *labelrepo.MockLabel
-	accounts    *accountrepo.MockAccount
-	memberships *membershiprepo.MockMembership
-	cycles      *cyclerepo.MockCycle
-	scope       *cyclerepo.MockCycleScopeChange
-	projects    *projectrepo.MockProject
-	teams       *teamrepo.MockTeam
-	triage      *triagerepo.MockTriage
-	notify      *notificationeventrepo.MockNotificationEvent
-	delegations *delegationrepo.MockIssueDelegation
-	questions   *questionrepo.MockIssueQuestion
-	notified    []entity.NotificationEvent
-	delegatedBy uuid.UUID
-	asked       []entity.IssueQuestion
-	events      *eventsvc.MockEvents
-	followers   *issuefollowerrepo.MockIssueFollower
-	jobs        *jobqueuerepo.MockJobProducer
-	codeLinks   *scmrepo.MockCodeLink
-	transactor  *transactorrepo.MockTransactor
-	authorizer  *authorizersvc.MockAuthorizer
-	settings    *agentsettingrepo.MockAgentSetting
-	proposals   *agentproposalrepo.MockAgentProposal
-	agents      *agentrepo.MockAgent
-	actor       entity.Actor
-	holds       entity.AgentSettings
-	service     service.Issues
+	issues       *issuerepo.MockIssue
+	states       *workflowstaterepo.MockWorkflowState
+	activity     *activityrepo.MockActivity
+	labels       *labelrepo.MockLabel
+	accounts     *accountrepo.MockAccount
+	memberships  *membershiprepo.MockMembership
+	cycles       *cyclerepo.MockCycle
+	lockedCycles map[uuid.UUID]entity.Cycle
+	cycleOf      map[uuid.UUID]uuid.UUID
+	teamStates   map[uuid.UUID][]entity.WorkflowState
+	scope        *cyclerepo.MockCycleScopeChange
+	projects     *projectrepo.MockProject
+	teams        *teamrepo.MockTeam
+	triage       *triagerepo.MockTriage
+	notify       *notificationeventrepo.MockNotificationEvent
+	delegations  *delegationrepo.MockIssueDelegation
+	questions    *questionrepo.MockIssueQuestion
+	notified     []entity.NotificationEvent
+	delegatedBy  uuid.UUID
+	asked        []entity.IssueQuestion
+	events       *eventsvc.MockEvents
+	followers    *issuefollowerrepo.MockIssueFollower
+	jobs         *jobqueuerepo.MockJobProducer
+	codeLinks    *scmrepo.MockCodeLink
+	transactor   *transactorrepo.MockTransactor
+	authorizer   *authorizersvc.MockAuthorizer
+	settings     *agentsettingrepo.MockAgentSetting
+	proposals    *agentproposalrepo.MockAgentProposal
+	agents       *agentrepo.MockAgent
+	actor        entity.Actor
+	holds        entity.AgentSettings
+	service      service.Issues
 }
 
 func newHarness(t *testing.T) *harness {
@@ -108,6 +111,38 @@ func newHarness(t *testing.T) *harness {
 		WithTx(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
+		}).
+		AnyTimes()
+
+	h.lockedCycles = map[uuid.UUID]entity.Cycle{}
+	h.cycleOf = map[uuid.UUID]uuid.UUID{}
+	h.teamStates = map[uuid.UUID][]entity.WorkflowState{}
+
+	h.states.EXPECT().
+		ShareByIDs(gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+
+	h.states.EXPECT().
+		ShareByTeamID(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, teamID uuid.UUID) ([]entity.WorkflowState, error) {
+			return h.teamStates[teamID], nil
+		}).
+		AnyTimes()
+
+	h.issues.EXPECT().
+		CycleOf(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _, issueID uuid.UUID, _ entity.TeamScope,
+		) (uuid.UUID, error) {
+			return h.cycleOf[issueID], nil
+		}).
+		AnyTimes()
+
+	h.cycles.EXPECT().
+		LockByID(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, cycleID uuid.UUID) (entity.Cycle, error) {
+			return h.lockedCycles[cycleID], nil
 		}).
 		AnyTimes()
 
@@ -1155,4 +1190,135 @@ func (h *harness) expectStateWrite(issueID uuid.UUID) {
 		Update(gomock.Any(), issueID, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
+}
+
+func TestAnIssueRaisedIntoARunningCycleRecordsWhenItArrived(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID := uuid.New(), uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	started := time.Now().UTC().AddDate(0, 0, -3)
+	running := entity.Cycle{
+		ID:          uuid.New(),
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		StartsOn:    entity.Today(started, "UTC"),
+		EndsOn:      entity.Today(started.AddDate(0, 0, 13), "UTC"),
+	}
+
+	h.states.EXPECT().
+		DefaultForTeam(gomock.Any(), teamID).
+		Return(entity.WorkflowState{ID: uuid.New(), TeamID: teamID, IsDefault: true}, nil)
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, running.ID, gomock.Any()).
+		Return(running, nil)
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, issue entity.Issue) (entity.Issue, error) {
+			issue.ID = uuid.New()
+			issue.CreatedAt = time.Now().UTC()
+
+			return issue, nil
+		})
+
+	var arrivals []entity.CycleScopeChange
+
+	h.scope.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			arrivals = append(arrivals, change)
+
+			return nil
+		})
+
+	if _, err := h.service.Create(context.Background(), service.CreateIssueInput{
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		Title:       "Raised while the cycle was already running",
+		CycleID:     running.ID,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	if len(arrivals) != 1 || arrivals[0].Change != entity.CycleScopeChangeAdded ||
+		arrivals[0].CycleID != running.ID {
+		t.Fatalf(
+			"raising an issue straight into a running cycle recorded %v. Without an arrival the "+
+				"ledger says nothing, and a chart read afterwards counts the issue on the days "+
+				"before it existed.",
+			arrivals,
+		)
+	}
+}
+
+func TestWorkKeptInAClosedCycleCanBeMovedOutAfterwards(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID, issueID := uuid.New(), uuid.New(), uuid.New()
+
+	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, TeamIDs: []uuid.UUID{teamID}})
+
+	closedAt := time.Now().UTC().AddDate(0, 0, -1)
+	shut := entity.Cycle{
+		ID:          uuid.New(),
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		StartsOn:    entity.Today(time.Now().UTC().AddDate(0, 0, -14), "UTC"),
+		EndsOn:      entity.Today(time.Now().UTC().AddDate(0, 0, -1), "UTC"),
+		ClosedAt:    &closedAt,
+	}
+
+	kept := entity.Issue{
+		ID:          issueID,
+		WorkspaceID: workspaceID,
+		TeamID:      teamID,
+		CycleID:     shut.ID,
+		Version:     3,
+		State:       entity.IssueState{ID: uuid.New(), Name: "In progress", Category: entity.StateCategoryActive},
+	}
+
+	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, issueID, gomock.Any()).Return(kept, nil)
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, shut.ID, gomock.Any()).
+		Return(shut, nil)
+	h.lockedCycles[shut.ID] = shut
+	h.cycleOf[issueID] = shut.ID
+
+	var departures []entity.CycleScopeChange
+
+	h.scope.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			departures = append(departures, change)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.issues.EXPECT().Update(gomock.Any(), issueID, 3, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Return(kept, nil).
+		AnyTimes()
+	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	if _, err := h.service.Update(context.Background(), workspaceID, issueID, service.UpdateIssueInput{
+		ExpectedVersion: 3,
+		Clear:           []string{entity.IssueFieldCycle},
+	}); err != nil {
+		t.Fatalf(
+			"moving work out of a cycle that has closed: %v. Keeping an issue in a finished "+
+				"cycle records what that cycle achieved; it must not sentence the work itself "+
+				"to stay there for ever.",
+			err,
+		)
+	}
+
+	if len(departures) != 1 || departures[0].Change != entity.CycleScopeChangeRemoved ||
+		departures[0].CycleID != shut.ID {
+		t.Fatalf("leaving the closed cycle recorded %v, want one departure from it", departures)
+	}
 }

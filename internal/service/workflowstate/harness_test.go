@@ -8,6 +8,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -20,6 +21,9 @@ import (
 type harness struct {
 	states     *workflowstaterepo.MockWorkflowState
 	issues     *issuerepo.MockIssue
+	activity   *activityrepo.MockActivity
+	recorded   []entity.Activity
+	inState    map[uuid.UUID][]entity.Issue
 	teams      *teamrepo.MockTeam
 	authorizer *authorizersvc.MockAuthorizer
 	transactor *transactorrepo.MockTransactor
@@ -34,6 +38,7 @@ func newHarness(t *testing.T) *harness {
 	h := &harness{
 		states:     workflowstaterepo.NewMockWorkflowState(ctrl),
 		issues:     issuerepo.NewMockIssue(ctrl),
+		activity:   activityrepo.NewMockActivity(ctrl),
 		teams:      teamrepo.NewMockTeam(ctrl),
 		authorizer: authorizersvc.NewMockAuthorizer(ctrl),
 		transactor: transactorrepo.NewMockTransactor(ctrl),
@@ -46,7 +51,25 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
-	h.service = workflowstatesvc.New(h.states, h.issues, h.teams, h.authorizer, h.transactor)
+	h.inState = map[uuid.UUID][]entity.Issue{}
+
+	h.issues.EXPECT().
+		ListByStateID(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, stateID uuid.UUID) ([]entity.Issue, error) {
+			return h.inState[stateID], nil
+		}).
+		AnyTimes()
+
+	h.activity.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, activity entity.Activity) error {
+			h.recorded = append(h.recorded, activity)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.service = workflowstatesvc.New(h.states, h.issues, h.activity, h.teams, h.authorizer, h.transactor)
 
 	return h
 }

@@ -234,6 +234,7 @@ const (
 	ActivityKindRelationRemoved   ActivityKind = "relation_removed"
 	ActivityKindRestored          ActivityKind = "restored"
 	ActivityKindStateChanged      ActivityKind = "state_changed"
+	ActivityKindStateReclassified ActivityKind = "state_reclassified"
 	ActivityKindTeamMoved         ActivityKind = "team_moved"
 	ActivityKindTriaged           ActivityKind = "triaged"
 	ActivityKindUnarchived        ActivityKind = "unarchived"
@@ -285,6 +286,8 @@ func (e ActivityKind) Valid() bool {
 	case ActivityKindRestored:
 		return true
 	case ActivityKindStateChanged:
+		return true
+	case ActivityKindStateReclassified:
 		return true
 	case ActivityKindTeamMoved:
 		return true
@@ -1089,7 +1092,9 @@ const (
 	CycleConflictProblemCodeCycleNoNextCycle      CycleConflictProblemCode = "cycle_no_next_cycle"
 	CycleConflictProblemCodeCycleNotEnded         CycleConflictProblemCode = "cycle_not_ended"
 	CycleConflictProblemCodeCycleOverlaps         CycleConflictProblemCode = "cycle_overlaps"
+	CycleConflictProblemCodeCycleOwnerNotOnTeam   CycleConflictProblemCode = "cycle_owner_not_on_team"
 	CycleConflictProblemCodeCycleRolloverRequired CycleConflictProblemCode = "cycle_rollover_required"
+	CycleConflictProblemCodeCycleStale            CycleConflictProblemCode = "cycle_stale"
 	CycleConflictProblemCodeCycleTeamMismatch     CycleConflictProblemCode = "cycle_team_mismatch"
 )
 
@@ -1104,7 +1109,11 @@ func (e CycleConflictProblemCode) Valid() bool {
 		return true
 	case CycleConflictProblemCodeCycleOverlaps:
 		return true
+	case CycleConflictProblemCodeCycleOwnerNotOnTeam:
+		return true
 	case CycleConflictProblemCodeCycleRolloverRequired:
+		return true
+	case CycleConflictProblemCodeCycleStale:
 		return true
 	case CycleConflictProblemCodeCycleTeamMismatch:
 		return true
@@ -1140,6 +1149,7 @@ func (e CyclePhase) Valid() bool {
 // Defines values for CycleRollover.
 const (
 	Backlog CycleRollover = "backlog"
+	Keep    CycleRollover = "keep"
 	Next    CycleRollover = "next"
 )
 
@@ -1147,6 +1157,8 @@ const (
 func (e CycleRollover) Valid() bool {
 	switch e {
 	case Backlog:
+		return true
+	case Keep:
 		return true
 	case Next:
 		return true
@@ -4360,14 +4372,16 @@ type ActivityActorKind string
 
 // ActivityChange defines model for ActivityChange.
 type ActivityChange struct {
-	Field     *string            `json:"field,omitempty"`
-	FromState *string            `json:"fromState,omitempty"`
-	FromValue *string            `json:"fromValue,omitempty"`
-	Id        openapi_types.UUID `json:"id"`
-	Kind      ActivityKind       `json:"kind"`
-	ToState   *string            `json:"toState,omitempty"`
-	ToValue   *string            `json:"toValue,omitempty"`
-	Version   *int32             `json:"version,omitempty"`
+	Field        *string            `json:"field,omitempty"`
+	FromCategory *StateCategory     `json:"fromCategory,omitempty"`
+	FromState    *string            `json:"fromState,omitempty"`
+	FromValue    *string            `json:"fromValue,omitempty"`
+	Id           openapi_types.UUID `json:"id"`
+	Kind         ActivityKind       `json:"kind"`
+	ToCategory   *StateCategory     `json:"toCategory,omitempty"`
+	ToState      *string            `json:"toState,omitempty"`
+	ToValue      *string            `json:"toValue,omitempty"`
+	Version      *int32             `json:"version,omitempty"`
 }
 
 // ActivityEvent Everything one operation changed about one subject, read as a single event.
@@ -4818,7 +4832,10 @@ type ChangePasswordRequest struct {
 type CloseCycleRequest struct {
 	// Overrides Issues that go somewhere other than the rollover chosen for the rest
 	Overrides *[]CycleRolloverOverride `json:"overrides,omitempty"`
-	Rollover  *CycleRollover           `json:"rollover,omitempty"`
+
+	// ReviewedIssueIds The unfinished issues the close form showed, so a cycle whose membership changed since then is reported as a conflict instead of taking the default
+	ReviewedIssueIds *[]openapi_types.UUID `json:"reviewedIssueIds,omitempty"`
+	Rollover         *CycleRollover        `json:"rollover,omitempty"`
 }
 
 // CodeChangeState Where a change stands on the forge. Review and conflict are states a change is in rather than events that happened to it, which is what lets a rule fire on entering one and lets the issue read correctly after a reload.
@@ -5049,7 +5066,10 @@ type CreateInvitationsRequest struct {
 
 // CreateIssueRequest defines model for CreateIssueRequest.
 type CreateIssueRequest struct {
-	AssigneeId  *openapi_types.UUID   `json:"assigneeId,omitempty"`
+	AssigneeId *openapi_types.UUID `json:"assigneeId,omitempty"`
+
+	// CycleId A cycle on the same team; the issue is filed into it as it is raised
+	CycleId     *openapi_types.UUID   `json:"cycleId,omitempty"`
 	Description *string               `json:"description,omitempty"`
 	DueOn       *openapi_types.Date   `json:"dueOn,omitempty"`
 	Estimate    *int32                `json:"estimate,omitempty"`
@@ -5136,12 +5156,37 @@ type Cycle struct {
 	Id                openapi_types.UUID  `json:"id"`
 	Name              string              `json:"name"`
 	Number            int32               `json:"number"`
+	OwnerAccountId    *openapi_types.UUID `json:"ownerAccountId,omitempty"`
 	Phase             CyclePhase          `json:"phase"`
-	Rollover          *CycleRollover      `json:"rollover,omitempty"`
-	StartsOn          openapi_types.Date  `json:"startsOn"`
-	TeamId            openapi_types.UUID  `json:"teamId"`
-	TeamKey           string              `json:"teamKey"`
-	WorkspaceId       openapi_types.UUID  `json:"workspaceId"`
+
+	// ResultsRecordedAt When this cycle's results were frozen. Absent for a cycle closed before results were kept.
+	ResultsRecordedAt *time.Time         `json:"resultsRecordedAt,omitempty"`
+	Rollover          *CycleRollover     `json:"rollover,omitempty"`
+	StartsOn          openapi_types.Date `json:"startsOn"`
+	TeamId            openapi_types.UUID `json:"teamId"`
+	TeamKey           string             `json:"teamKey"`
+	WorkspaceId       openapi_types.UUID `json:"workspaceId"`
+}
+
+// CycleBurndown defines model for CycleBurndown.
+type CycleBurndown struct {
+	Points []CycleBurndownPoint `json:"points"`
+
+	// Whole False when any day predates the records this series is read from.
+	Whole bool `json:"whole"`
+}
+
+// CycleBurndownPoint defines model for CycleBurndownPoint.
+type CycleBurndownPoint struct {
+	On        openapi_types.Date `json:"on"`
+	Remaining int32              `json:"remaining"`
+	Scope     int32              `json:"scope"`
+
+	// Unknown Issues whose standing on this day cannot be read from the record.
+	Unknown int32 `json:"unknown"`
+
+	// Unrecorded True when this day predates the records the series is read from.
+	Unrecorded bool `json:"unrecorded"`
 }
 
 // CycleCadence defines model for CycleCadence.
@@ -5171,8 +5216,35 @@ type CycleConflictProblem struct {
 // CycleConflictProblemCode defines model for CycleConflictProblem.Code.
 type CycleConflictProblemCode string
 
+// CycleOwnerRequest defines model for CycleOwnerRequest.
+type CycleOwnerRequest struct {
+	// OwnerAccountId The team member coordinating this cycle. Null leaves it unassigned.
+	OwnerAccountId *openapi_types.UUID `json:"ownerAccountId"`
+}
+
 // CyclePhase defines model for CyclePhase.
 type CyclePhase string
+
+// CycleReport defines model for CycleReport.
+type CycleReport struct {
+	Burndown CycleBurndown `json:"burndown"`
+	Cycle    Cycle         `json:"cycle"`
+
+	// Frozen Whether this cycle's results were recorded when it closed.
+	Frozen  bool          `json:"frozen"`
+	Issues  []Issue       `json:"issues"`
+	Phase   CyclePhase    `json:"phase"`
+	Results []CycleResult `json:"results"`
+}
+
+// CycleResult defines model for CycleResult.
+type CycleResult struct {
+	Category  StateCategory      `json:"category"`
+	Decision  *CycleRollover     `json:"decision,omitempty"`
+	IssueId   openapi_types.UUID `json:"issueId"`
+	StateName string             `json:"stateName"`
+	TeamId    openapi_types.UUID `json:"teamId"`
+}
 
 // CycleRollover defines model for CycleRollover.
 type CycleRollover string
@@ -9034,6 +9106,9 @@ type SetWorkspaceAuthPolicyJSONRequestBody = SetWorkspaceAuthPolicyRequest
 // CloseWorkspaceCycleJSONRequestBody defines body for CloseWorkspaceCycle for application/json ContentType.
 type CloseWorkspaceCycleJSONRequestBody = CloseCycleRequest
 
+// SetWorkspaceCycleOwnerJSONRequestBody defines body for SetWorkspaceCycleOwner for application/json ContentType.
+type SetWorkspaceCycleOwnerJSONRequestBody = CycleOwnerRequest
+
 // ConfigureWorkspaceDirectoryJSONRequestBody defines body for ConfigureWorkspaceDirectory for application/json ContentType.
 type ConfigureWorkspaceDirectoryJSONRequestBody = ConfigureDirectoryRequest
 
@@ -10011,6 +10086,25 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/cycles/{cycleId}/close (the `CloseWorkspaceCycle` operationId).
 	CloseWorkspaceCycle(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, body CloseWorkspaceCycleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceCycleOwnerWithBody Name the person coordinating a cycle, or leave it unassigned
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+	SetWorkspaceCycleOwnerWithBody(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceCycleOwner Name the person coordinating a cycle, or leave it unassigned
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+	SetWorkspaceCycleOwner(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, body SetWorkspaceCycleOwnerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceCycleReport Read what a cycle holds, what it achieved and how it burned down
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/report (the `GetWorkspaceCycleReport` operationId).
+	GetWorkspaceCycleReport(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	//
@@ -13627,6 +13721,55 @@ func (c *Client) CloseWorkspaceCycleWithBody(ctx context.Context, workspaceId Wo
 // Corresponds with POST /workspaces/{workspaceId}/cycles/{cycleId}/close (the `CloseWorkspaceCycle` operationId).
 func (c *Client) CloseWorkspaceCycle(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, body CloseWorkspaceCycleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCloseWorkspaceCycleRequest(c.Server, workspaceId, cycleId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceCycleOwnerWithBody Name the person coordinating a cycle, or leave it unassigned
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+func (c *Client) SetWorkspaceCycleOwnerWithBody(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceCycleOwnerRequestWithBody(c.Server, workspaceId, cycleId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceCycleOwner Name the person coordinating a cycle, or leave it unassigned
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+func (c *Client) SetWorkspaceCycleOwner(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, body SetWorkspaceCycleOwnerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceCycleOwnerRequest(c.Server, workspaceId, cycleId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceCycleReport Read what a cycle holds, what it achieved and how it burned down
+//
+// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/report (the `GetWorkspaceCycleReport` operationId).
+func (c *Client) GetWorkspaceCycleReport(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceCycleReportRequest(c.Server, workspaceId, cycleId)
 	if err != nil {
 		return nil, err
 	}
@@ -21782,6 +21925,101 @@ func NewCloseWorkspaceCycleRequestWithBody(server string, workspaceId WorkspaceI
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSetWorkspaceCycleOwnerRequest calls the generic SetWorkspaceCycleOwner builder with application/json body
+func NewSetWorkspaceCycleOwnerRequest(server string, workspaceId WorkspaceId, cycleId CycleId, body SetWorkspaceCycleOwnerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceCycleOwnerRequestWithBody(server, workspaceId, cycleId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceCycleOwnerRequestWithBody constructs an http.Request for the SetWorkspaceCycleOwner method, with any body, and a specified content type
+func NewSetWorkspaceCycleOwnerRequestWithBody(server string, workspaceId WorkspaceId, cycleId CycleId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "cycleId", cycleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/cycles/%s/owner", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetWorkspaceCycleReportRequest constructs an http.Request for the GetWorkspaceCycleReport method
+func NewGetWorkspaceCycleReportRequest(server string, workspaceId WorkspaceId, cycleId CycleId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "cycleId", cycleId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/cycles/%s/report", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -33941,6 +34179,27 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/cycles/{cycleId}/close (the `CloseWorkspaceCycle` operationId).
 	CloseWorkspaceCycleWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, body CloseWorkspaceCycleJSONRequestBody, reqEditors ...RequestEditorFn) (*CloseWorkspaceCycleResponse, error)
 
+	// SetWorkspaceCycleOwnerWithBodyWithResponse Name the person coordinating a cycle, or leave it unassigned
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+	SetWorkspaceCycleOwnerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceCycleOwnerResponse, error)
+
+	// SetWorkspaceCycleOwnerWithResponse Name the person coordinating a cycle, or leave it unassigned
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+	SetWorkspaceCycleOwnerWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, body SetWorkspaceCycleOwnerJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceCycleOwnerResponse, error)
+
+	// GetWorkspaceCycleReportWithResponse Read what a cycle holds, what it achieved and how it burned down
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/report (the `GetWorkspaceCycleReport` operationId).
+	GetWorkspaceCycleReportWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*GetWorkspaceCycleReportResponse, error)
+
 	// GetWorkspaceCycleScopeWithResponse Separate the cycle's original scope from what changed after it started
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -41406,6 +41665,158 @@ func (r CloseWorkspaceCycleResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CloseWorkspaceCycleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceCycleOwnerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Cycle
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *CycleConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceCycleOwnerResponse) GetJSON200() *Cycle {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceCycleOwnerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceCycleOwnerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SetWorkspaceCycleOwnerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SetWorkspaceCycleOwnerResponse) GetApplicationproblemJSON409() *CycleConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceCycleOwnerResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceCycleOwnerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceCycleOwnerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceCycleOwnerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceCycleOwnerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceCycleOwnerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceCycleReportResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *CycleReport
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceCycleReportResponse) GetJSON200() *CycleReport {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceCycleReportResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceCycleReportResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceCycleReportResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceCycleReportResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceCycleReportResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceCycleReportResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceCycleReportResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceCycleReportResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -59762,6 +60173,45 @@ func (c *ClientWithResponses) CloseWorkspaceCycleWithResponse(ctx context.Contex
 	return ParseCloseWorkspaceCycleResponse(rsp)
 }
 
+// SetWorkspaceCycleOwnerWithBodyWithResponse Name the person coordinating a cycle, or leave it unassigned
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+func (c *ClientWithResponses) SetWorkspaceCycleOwnerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceCycleOwnerResponse, error) {
+	rsp, err := c.SetWorkspaceCycleOwnerWithBody(ctx, workspaceId, cycleId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceCycleOwnerResponse(rsp)
+}
+
+// SetWorkspaceCycleOwnerWithResponse Name the person coordinating a cycle, or leave it unassigned
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner (the `SetWorkspaceCycleOwner` operationId).
+func (c *ClientWithResponses) SetWorkspaceCycleOwnerWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, body SetWorkspaceCycleOwnerJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceCycleOwnerResponse, error) {
+	rsp, err := c.SetWorkspaceCycleOwner(ctx, workspaceId, cycleId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceCycleOwnerResponse(rsp)
+}
+
+// GetWorkspaceCycleReportWithResponse Read what a cycle holds, what it achieved and how it burned down
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/report (the `GetWorkspaceCycleReport` operationId).
+func (c *ClientWithResponses) GetWorkspaceCycleReportWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*GetWorkspaceCycleReportResponse, error) {
+	rsp, err := c.GetWorkspaceCycleReport(ctx, workspaceId, cycleId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceCycleReportResponse(rsp)
+}
+
 // GetWorkspaceCycleScopeWithResponse Separate the cycle's original scope from what changed after it started
 //
 // Returns a wrapper object for the known response body format(s).
@@ -68044,6 +68494,128 @@ func ParseCloseWorkspaceCycleResponse(rsp *http.Response) (*CloseWorkspaceCycleR
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceCycleOwnerResponse parses an HTTP response from a SetWorkspaceCycleOwnerWithResponse call
+func ParseSetWorkspaceCycleOwnerResponse(rsp *http.Response) (*SetWorkspaceCycleOwnerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceCycleOwnerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Cycle
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest CycleConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceCycleReportResponse parses an HTTP response from a GetWorkspaceCycleReportWithResponse call
+func ParseGetWorkspaceCycleReportResponse(rsp *http.Response) (*GetWorkspaceCycleReportResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceCycleReportResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CycleReport
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -81878,6 +82450,12 @@ type ServerInterface interface {
 	// CloseWorkspaceCycle Close an ended cycle, deciding where unfinished issues go
 	// (POST /workspaces/{workspaceId}/cycles/{cycleId}/close)
 	CloseWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
+	// SetWorkspaceCycleOwner Name the person coordinating a cycle, or leave it unassigned
+	// (PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner)
+	SetWorkspaceCycleOwner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
+	// GetWorkspaceCycleReport Read what a cycle holds, what it achieved and how it burned down
+	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/report)
+	GetWorkspaceCycleReport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
@@ -83042,6 +83620,18 @@ func (_ Unimplemented) GetWorkspaceCycle(w http.ResponseWriter, r *http.Request,
 // CloseWorkspaceCycle Close an ended cycle, deciding where unfinished issues go
 // (POST /workspaces/{workspaceId}/cycles/{cycleId}/close)
 func (_ Unimplemented) CloseWorkspaceCycle(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceCycleOwner Name the person coordinating a cycle, or leave it unassigned
+// (PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner)
+func (_ Unimplemented) SetWorkspaceCycleOwner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceCycleReport Read what a cycle holds, what it achieved and how it burned down
+// (GET /workspaces/{workspaceId}/cycles/{cycleId}/report)
+func (_ Unimplemented) GetWorkspaceCycleReport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -86393,6 +86983,76 @@ func (siw *ServerInterfaceWrapper) CloseWorkspaceCycle(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CloseWorkspaceCycle(w, r, workspaceId, cycleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceCycleOwner operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceCycleOwner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "cycleId" -------------
+	var cycleId CycleId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "cycleId", chi.URLParam(r, "cycleId"), &cycleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceCycleOwner(w, r, workspaceId, cycleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceCycleReport operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceCycleReport(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "cycleId" -------------
+	var cycleId CycleId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "cycleId", chi.URLParam(r, "cycleId"), &cycleId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cycleId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceCycleReport(w, r, workspaceId, cycleId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -95752,6 +96412,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/cycles/{cycleId}", wrapper.GetWorkspaceCycle)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/cycles/{cycleId}/report", wrapper.GetWorkspaceCycleReport)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/cycles/{cycleId}/owner", wrapper.SetWorkspaceCycleOwner)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/cycles/{cycleId}/scope", wrapper.GetWorkspaceCycleScope)
 	})
 	r.Group(func(r chi.Router) {
@@ -102428,6 +103094,203 @@ func (response CloseWorkspaceCycle422ApplicationProblemPlusJSONResponse) VisitCl
 type CloseWorkspaceCycle500ApplicationProblemPlusJSONResponse Problem
 
 func (response CloseWorkspaceCycle500ApplicationProblemPlusJSONResponse) VisitCloseWorkspaceCycleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceCycleOwnerRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	CycleId     CycleId     `json:"cycleId"`
+	Body        *SetWorkspaceCycleOwnerJSONRequestBody
+}
+
+type SetWorkspaceCycleOwnerResponseObject interface {
+	VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceCycleOwner200JSONResponse Cycle
+
+func (response SetWorkspaceCycleOwner200JSONResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceCycleOwner401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceCycleOwner401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceCycleOwner403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceCycleOwner403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceCycleOwner404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceCycleOwner404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceCycleOwner409ApplicationProblemPlusJSONResponse struct {
+	CycleConflictApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceCycleOwner409ApplicationProblemPlusJSONResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceCycleOwner422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceCycleOwner422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceCycleOwner500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceCycleOwner500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceCycleOwnerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleReportRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	CycleId     CycleId     `json:"cycleId"`
+}
+
+type GetWorkspaceCycleReportResponseObject interface {
+	VisitGetWorkspaceCycleReportResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceCycleReport200JSONResponse CycleReport
+
+func (response GetWorkspaceCycleReport200JSONResponse) VisitGetWorkspaceCycleReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleReport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceCycleReport401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleReport403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceCycleReport403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleReport404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceCycleReport404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleReportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceCycleReport500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceCycleReport500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleReportResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -124303,6 +125166,12 @@ type StrictServerInterface interface {
 	// CloseWorkspaceCycle Close an ended cycle, deciding where unfinished issues go
 	// (POST /workspaces/{workspaceId}/cycles/{cycleId}/close)
 	CloseWorkspaceCycle(ctx context.Context, request CloseWorkspaceCycleRequestObject) (CloseWorkspaceCycleResponseObject, error)
+	// SetWorkspaceCycleOwner Name the person coordinating a cycle, or leave it unassigned
+	// (PUT /workspaces/{workspaceId}/cycles/{cycleId}/owner)
+	SetWorkspaceCycleOwner(ctx context.Context, request SetWorkspaceCycleOwnerRequestObject) (SetWorkspaceCycleOwnerResponseObject, error)
+	// GetWorkspaceCycleReport Read what a cycle holds, what it achieved and how it burned down
+	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/report)
+	GetWorkspaceCycleReport(ctx context.Context, request GetWorkspaceCycleReportRequestObject) (GetWorkspaceCycleReportResponseObject, error)
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(ctx context.Context, request GetWorkspaceCycleScopeRequestObject) (GetWorkspaceCycleScopeResponseObject, error)
@@ -127180,6 +128049,67 @@ func (sh *strictHandler) CloseWorkspaceCycle(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CloseWorkspaceCycleResponseObject); ok {
 		if err := validResponse.VisitCloseWorkspaceCycleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceCycleOwner operation middleware
+func (sh *strictHandler) SetWorkspaceCycleOwner(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	var request SetWorkspaceCycleOwnerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.CycleId = cycleId
+
+	var body SetWorkspaceCycleOwnerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceCycleOwner(ctx, request.(SetWorkspaceCycleOwnerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceCycleOwner")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceCycleOwnerResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceCycleOwnerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceCycleReport operation middleware
+func (sh *strictHandler) GetWorkspaceCycleReport(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	var request GetWorkspaceCycleReportRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.CycleId = cycleId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceCycleReport(ctx, request.(GetWorkspaceCycleReportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceCycleReport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceCycleReportResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceCycleReportResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

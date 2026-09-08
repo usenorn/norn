@@ -17,6 +17,10 @@ type cyclesService struct {
 	cycles       repository.Cycle
 	cadences     repository.CycleCadence
 	scopeChanges repository.CycleScopeChange
+	results      repository.CycleResult
+	activity     repository.Activity
+	states       repository.WorkflowState
+	members      repository.TeamMember
 	issues       repository.Issue
 	teams        repository.Team
 	workspaces   repository.Workspace
@@ -29,6 +33,10 @@ func New(
 	cycles repository.Cycle,
 	cadences repository.CycleCadence,
 	scopeChanges repository.CycleScopeChange,
+	results repository.CycleResult,
+	activity repository.Activity,
+	states repository.WorkflowState,
+	members repository.TeamMember,
 	issues repository.Issue,
 	teams repository.Team,
 	workspaces repository.Workspace,
@@ -40,6 +48,10 @@ func New(
 		cycles:       cycles,
 		cadences:     cadences,
 		scopeChanges: scopeChanges,
+		results:      results,
+		activity:     activity,
+		states:       states,
+		members:      members,
 		issues:       issues,
 		teams:        teams,
 		workspaces:   workspaces,
@@ -588,13 +600,39 @@ func (s *cyclesService) Close(
 	var closed entity.Cycle
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		cycle, err := s.cycles.LockByID(ctx, cycleID)
+		observed, err := s.cycles.GetVisible(ctx, workspaceID, cycleID, decision.Scope)
 		if err != nil {
 			return err
 		}
 
+		if _, err := s.states.ShareByTeamID(ctx, observed.TeamID); err != nil {
+			return err
+		}
+
+		wanted := []uuid.UUID{observed.ID}
+
+		if onward(input) {
+			following, err := s.cycles.NextAfter(ctx, observed.TeamID, observed.EndsOn)
+			if err != nil && !errors.Is(err, entity.ErrCycleNoNextCycle) {
+				return err
+			}
+
+			wanted = append(wanted, following.ID)
+		}
+
+		locked, err := s.lockCycles(ctx, wanted)
+		if err != nil {
+			return err
+		}
+
+		cycle := locked[cycleID]
+
 		if cycle.WorkspaceID != workspaceID || !decision.Scope.Covers(cycle.TeamID) {
 			return entity.ErrCycleNotFound
+		}
+
+		if cycle.TeamID != observed.TeamID {
+			return entity.ErrCycleStale
 		}
 
 		switch cycle.PhaseOn(today) {
@@ -605,7 +643,7 @@ func (s *cyclesService) Close(
 		case entity.CyclePhaseEnded:
 		}
 
-		issues, err := s.membership(ctx, cycle, decision.Scope)
+		issues, err := s.issues.LockByCycleID(ctx, cycle.ID)
 		if err != nil {
 			return err
 		}
@@ -616,7 +654,16 @@ func (s *cyclesService) Close(
 			return entity.ErrCycleRolloverRequired
 		}
 
-		if err := s.roll(ctx, cycle, open, input, decision); err != nil {
+		if err := reviewed(input, open); err != nil {
+			return err
+		}
+
+		destinations, err := s.roll(ctx, cycle, open, input, decision, today, locked)
+		if err != nil {
+			return err
+		}
+
+		if err := s.freeze(ctx, cycle, issues, destinations); err != nil {
 			return err
 		}
 
@@ -646,15 +693,344 @@ func (s *cyclesService) Close(
 	return service.CycleView{Cycle: closed, Phase: entity.CyclePhaseClosed}, nil
 }
 
+func (s *cyclesService) SetOwner(
+	ctx context.Context,
+	workspaceID, cycleID uuid.UUID,
+	owner *uuid.UUID,
+) (service.CycleView, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
+	if err != nil {
+		return service.CycleView{}, err
+	}
+
+	today, err := s.today(ctx, workspaceID)
+	if err != nil {
+		return service.CycleView{}, err
+	}
+
+	var owned entity.Cycle
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		cycle, err := s.cycles.LockByID(ctx, cycleID)
+		if err != nil {
+			return err
+		}
+
+		if cycle.WorkspaceID != workspaceID || !decision.Scope.Covers(cycle.TeamID) {
+			return entity.ErrCycleNotFound
+		}
+
+		if cycle.Closed() {
+			return entity.ErrCycleClosed
+		}
+
+		if owner != nil {
+			if _, err := s.members.Get(ctx, cycle.TeamID, *owner); err != nil {
+				if errors.Is(err, entity.ErrTeamMembershipNotFound) {
+					return entity.ErrCycleOwnerNotOnTeam
+				}
+
+				return err
+			}
+		}
+
+		owned, err = s.cycles.SetOwner(ctx, cycle.ID, owner)
+
+		return err
+	}); err != nil {
+		return service.CycleView{}, err
+	}
+
+	return service.CycleView{Cycle: owned, Phase: owned.PhaseOn(today)}, nil
+}
+
+func (s *cyclesService) Report(
+	ctx context.Context,
+	workspaceID, cycleID uuid.UUID,
+) (service.CycleReport, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	cycle, err := s.cycles.GetVisible(ctx, workspaceID, cycleID, decision.Scope)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	zone, today, err := s.clock(ctx, workspaceID)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	members, err := s.membership(ctx, cycle, decision.Scope)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	changes, err := s.scopeChanges.ListByCycleID(ctx, cycle.ID, decision.Scope)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	results, err := s.results.ListByCycleID(ctx, cycle.ID)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	candidates, err := s.issues.ListVisibleByIDs(
+		ctx, decision.Scope, everyCandidate(members, results, changes),
+	)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	burndown, err := s.burndown(ctx, cycle, candidates, changes, today, zone)
+	if err != nil {
+		return service.CycleReport{}, err
+	}
+
+	held := make([]entity.CycleResult, 0, len(results))
+	shown := members
+
+	if cycle.Frozen() {
+		known := map[uuid.UUID]entity.Issue{}
+		for _, issue := range candidates {
+			known[issue.ID] = issue
+		}
+
+		shown = make([]entity.Issue, 0, len(results))
+
+		for _, result := range results {
+			issue, visible := known[result.IssueID]
+			if !visible {
+				continue
+			}
+
+			held = append(held, result)
+			shown = append(shown, issue)
+		}
+	}
+
+	return service.CycleReport{
+		View:     service.CycleView{Cycle: cycle, Phase: cycle.PhaseOn(today)},
+		Issues:   shown,
+		Results:  held,
+		Burndown: burndown,
+		Frozen:   cycle.Frozen(),
+	}, nil
+}
+
+func everyCandidate(
+	members []entity.Issue,
+	results []entity.CycleResult,
+	changes []entity.CycleScopeChange,
+) []uuid.UUID {
+	seen := map[uuid.UUID]bool{}
+	candidates := make([]uuid.UUID, 0, len(members)+len(results)+len(changes))
+
+	add := func(issueID uuid.UUID) {
+		if issueID == uuid.Nil || seen[issueID] {
+			return
+		}
+
+		seen[issueID] = true
+		candidates = append(candidates, issueID)
+	}
+
+	for _, issue := range members {
+		add(issue.ID)
+	}
+
+	for _, result := range results {
+		add(result.IssueID)
+	}
+
+	for _, change := range changes {
+		add(change.IssueID)
+	}
+
+	return candidates
+}
+
+func (s *cyclesService) clock(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) (*time.Location, string, error) {
+	workspace, err := s.workspaces.GetByID(ctx, workspaceID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	zone, err := time.LoadLocation(workspace.Timezone)
+	if err != nil {
+		zone = time.UTC
+	}
+
+	return zone, entity.Today(time.Now().UTC(), workspace.Timezone), nil
+}
+
+func (s *cyclesService) burndown(
+	ctx context.Context,
+	cycle entity.Cycle,
+	candidates []entity.Issue,
+	changes []entity.CycleScopeChange,
+	today string,
+	zone *time.Location,
+) (entity.CycleBurndown, error) {
+	last := cycle.EndsOn
+	if today < last {
+		last = today
+	}
+
+	days, err := entity.CalendarDaysBetween(cycle.StartsOn, last)
+	if err != nil || len(days) == 0 {
+		return entity.CycleBurndown{Points: []entity.CycleBurndownPoint{}}, nil
+	}
+
+	from, err := entity.ParseCalendarDate(cycle.StartsOn)
+	if err != nil {
+		return entity.CycleBurndown{}, err
+	}
+
+	issueIDs := make([]uuid.UUID, 0, len(candidates))
+	for _, issue := range candidates {
+		issueIDs = append(issueIDs, issue.ID)
+	}
+
+	states, err := s.activity.ListStateChanges(ctx, issueIDs, from)
+	if err != nil {
+		return entity.CycleBurndown{}, err
+	}
+
+	moves := map[uuid.UUID][]entity.CycleStateChange{}
+	for _, change := range states {
+		moves[change.IssueID] = append(moves[change.IssueID], change)
+	}
+
+	events := map[uuid.UUID][]entity.CycleScopeChange{}
+	for _, change := range changes {
+		events[change.IssueID] = append(events[change.IssueID], change)
+	}
+
+	histories := make([]entity.CycleHistory, 0, len(candidates))
+
+	for _, issue := range candidates {
+		histories = append(histories, entity.CycleHistory{
+			IssueID:   issue.ID,
+			Category:  issue.State.Category,
+			CreatedAt: issue.CreatedAt,
+			Spells:    entity.SpellsFrom(events[issue.ID]),
+			Changes:   moves[issue.ID],
+		})
+	}
+
+	recordingFrom, err := s.results.RecordingFrom(ctx)
+	if err != nil {
+		return entity.CycleBurndown{}, err
+	}
+
+	return entity.BurndownOver(days, histories, zone, recordingFrom), nil
+}
+
+func (s *cyclesService) freeze(
+	ctx context.Context,
+	cycle entity.Cycle,
+	issues []entity.Issue,
+	destinations map[uuid.UUID]entity.CycleRollover,
+) error {
+	results := make([]entity.CycleResult, 0, len(issues))
+
+	for _, issue := range issues {
+		results = append(results, entity.CycleResult{
+			CycleID:   cycle.ID,
+			IssueID:   issue.ID,
+			TeamID:    issue.TeamID,
+			Category:  issue.State.Category,
+			StateName: issue.State.Name,
+			Decision:  destinations[issue.ID],
+		})
+	}
+
+	return s.results.Record(ctx, results)
+}
+
+func onward(input service.CloseCycleInput) bool {
+	if input.Rollover == entity.CycleRolloverNext {
+		return true
+	}
+
+	for _, override := range input.Overrides {
+		if override.Destination == entity.CycleRolloverNext {
+			return true
+		}
+	}
+
+	return false
+}
+
+func reviewed(input service.CloseCycleInput, open []entity.Issue) error {
+	held := make(map[uuid.UUID]bool, len(open))
+	for _, issue := range open {
+		held[issue.ID] = true
+	}
+
+	for _, override := range input.Overrides {
+		if !held[override.IssueID] {
+			return entity.ErrCycleStale
+		}
+	}
+
+	if input.Reviewed == nil {
+		return nil
+	}
+
+	seen := map[uuid.UUID]bool{}
+
+	for _, issueID := range input.Reviewed {
+		if !held[issueID] {
+			return entity.ErrCycleStale
+		}
+
+		seen[issueID] = true
+	}
+
+	if len(seen) != len(held) {
+		return entity.ErrCycleStale
+	}
+
+	return nil
+}
+
+func (s *cyclesService) lockCycles(
+	ctx context.Context,
+	cycleIDs []uuid.UUID,
+) (map[uuid.UUID]entity.Cycle, error) {
+	locked := map[uuid.UUID]entity.Cycle{}
+
+	for _, cycleID := range entity.LockOrder(cycleIDs) {
+		cycle, err := s.cycles.LockByID(ctx, cycleID)
+		if err != nil {
+			return nil, err
+		}
+
+		locked[cycleID] = cycle
+	}
+
+	return locked, nil
+}
+
 func (s *cyclesService) roll(
 	ctx context.Context,
 	cycle entity.Cycle,
 	open []entity.Issue,
 	input service.CloseCycleInput,
 	decision entity.Decision,
-) error {
+	today string,
+	locked map[uuid.UUID]entity.Cycle,
+) (map[uuid.UUID]entity.CycleRollover, error) {
 	if len(open) == 0 {
-		return nil
+		return map[uuid.UUID]entity.CycleRollover{}, nil
 	}
 
 	destinations := map[uuid.UUID]entity.CycleRollover{}
@@ -664,12 +1040,8 @@ func (s *cyclesService) roll(
 	}
 
 	for _, override := range input.Overrides {
-		if _, member := destinations[override.IssueID]; !member {
-			continue
-		}
-
 		if !override.Destination.Valid() {
-			return entity.NewValidationError(entity.FieldError{
+			return nil, entity.NewValidationError(entity.FieldError{
 				Field: "overrides",
 				Code:  entity.ValidationCodeUnsupportedValue,
 			})
@@ -681,13 +1053,12 @@ func (s *cyclesService) roll(
 	var forward, backlog []uuid.UUID
 
 	for _, issue := range open {
-		if destinations[issue.ID] == entity.CycleRolloverNext {
+		switch destinations[issue.ID] {
+		case entity.CycleRolloverNext:
 			forward = append(forward, issue.ID)
-
-			continue
+		case entity.CycleRolloverBacklog:
+			backlog = append(backlog, issue.ID)
 		}
-
-		backlog = append(backlog, issue.ID)
 	}
 
 	now := time.Now().UTC()
@@ -695,27 +1066,52 @@ func (s *cyclesService) roll(
 	if len(forward) > 0 {
 		next, err := s.cycles.NextAfter(ctx, cycle.TeamID, cycle.EndsOn)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		if err := s.issues.MoveIssuesToCycle(ctx, forward, &next.ID, now); err != nil {
-			return err
+		following, gated := locked[next.ID]
+		if !gated || following.Closed() {
+			return nil, entity.ErrCycleStale
+		}
+
+		moved, err := s.issues.MoveIssuesToCycle(ctx, forward, cycle.ID, &following.ID, now)
+		if err != nil {
+			return nil, err
+		}
+
+		if moved != len(forward) {
+			return nil, entity.ErrCycleStale
 		}
 
 		if err := s.mark(ctx, cycle, forward, entity.CycleScopeChangeRolledOver, decision, now); err != nil {
-			return err
+			return nil, err
+		}
+
+		if following.Started(today) {
+			if err := s.mark(ctx, following, forward, entity.CycleScopeChangeAdded, decision, now); err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	if len(backlog) == 0 {
-		return nil
+		return destinations, nil
 	}
 
-	if err := s.issues.MoveIssuesToCycle(ctx, backlog, nil, now); err != nil {
-		return err
+	returned, err := s.issues.MoveIssuesToCycle(ctx, backlog, cycle.ID, nil, now)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.mark(ctx, cycle, backlog, entity.CycleScopeChangeReturned, decision, now)
+	if returned != len(backlog) {
+		return nil, entity.ErrCycleStale
+	}
+
+	if err := s.mark(ctx, cycle, backlog, entity.CycleScopeChangeReturned, decision, now); err != nil {
+		return nil, err
+	}
+
+	return destinations, nil
 }
 
 func (s *cyclesService) mark(

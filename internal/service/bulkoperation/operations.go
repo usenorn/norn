@@ -309,8 +309,15 @@ func (s *operationsService) process(
 		outcomes := make([]entity.BulkActionOutcome, 0, len(chunk))
 
 		err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+			locked, sources, err := s.hold(ctx, action, decision, chunk)
+			if err != nil {
+				return err
+			}
+
+			outcomes = outcomes[:0]
+
 			for _, issueID := range chunk {
-				outcomes = append(outcomes, s.applyOne(ctx, action, decision, issueID))
+				outcomes = append(outcomes, s.applyOne(ctx, action, decision, issueID, locked, sources))
 			}
 
 			return s.actions.RecordOutcomes(ctx, action.ID, outcomes)
@@ -329,25 +336,72 @@ func (s *operationsService) process(
 	return recorded, nil
 }
 
+func (s *operationsService) hold(
+	ctx context.Context,
+	action entity.BulkAction,
+	decision entity.Decision,
+	chunk []uuid.UUID,
+) (map[uuid.UUID]entity.Issue, map[uuid.UUID]uuid.UUID, error) {
+	if action.Change.StateID != nil {
+		if _, err := s.states.ShareByIDs(ctx, []uuid.UUID{*action.Change.StateID}); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	sources, err := s.issues.CyclesOf(ctx, action.WorkspaceID, chunk, decision.Scope)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	wanted := make([]uuid.UUID, 0, len(sources)+1)
+	for _, cycleID := range sources {
+		wanted = append(wanted, cycleID)
+	}
+
+	if action.Change.CycleID != nil {
+		wanted = append(wanted, *action.Change.CycleID)
+	}
+
+	for _, cycleID := range entity.LockOrder(wanted) {
+		if _, err := s.cycles.LockByID(ctx, cycleID); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	held, err := s.issues.LockByIDs(ctx, action.WorkspaceID, chunk, decision.Scope)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	locked := make(map[uuid.UUID]entity.Issue, len(held))
+	for _, issue := range held {
+		locked[issue.ID] = issue
+	}
+
+	return locked, sources, nil
+}
+
 func (s *operationsService) applyOne(
 	ctx context.Context,
 	action entity.BulkAction,
 	decision entity.Decision,
 	issueID uuid.UUID,
+	locked map[uuid.UUID]entity.Issue,
+	sources map[uuid.UUID]uuid.UUID,
 ) entity.BulkActionOutcome {
 	outcome := entity.BulkActionOutcome{IssueID: issueID}
 
-	issue, err := s.issues.LockByID(ctx, action.WorkspaceID, issueID, decision.Scope)
-	if err != nil {
-		outcome.Outcome = entity.OutcomeFor(err)
+	issue, found := locked[issueID]
+	if !found {
+		outcome.Outcome = entity.OutcomeFor(entity.ErrIssueNotFound)
 
 		return outcome
 	}
 
 	outcome.Reference = issue.Reference()
 
-	if !decision.Scope.Covers(issue.TeamID) {
-		outcome.Outcome = entity.BulkOutcomeForbidden
+	if issue.CycleID != sources[issueID] {
+		outcome.Outcome = entity.OutcomeFor(entity.ErrIssueStale)
 
 		return outcome
 	}
@@ -577,9 +631,11 @@ func (s *operationsService) edit(
 
 	if target.ID != uuid.Nil && target.ID != issue.State.ID {
 		if err := s.record(ctx, action, decision, issue, entity.Activity{
-			Kind:      entity.ActivityKindStateChanged,
-			FromState: issue.State.Name,
-			ToState:   target.Name,
+			Kind:         entity.ActivityKindStateChanged,
+			FromState:    issue.State.Name,
+			ToState:      target.Name,
+			FromCategory: issue.State.Category,
+			ToCategory:   target.Category,
 		}); err != nil {
 			return err
 		}
@@ -687,13 +743,13 @@ func (s *operationsService) rescope(
 			return err
 		}
 
-		if left.Closed() {
-			return entity.ErrCycleClosed
-		}
-
 		if err := s.markScope(ctx, left, issue, decision, entity.CycleScopeChangeRemoved, today, now); err != nil {
 			return err
 		}
+	}
+
+	if joining.ID == uuid.Nil {
+		return nil
 	}
 
 	return s.markScope(ctx, joining, issue, decision, entity.CycleScopeChangeAdded, today, now)
@@ -708,7 +764,7 @@ func (s *operationsService) markScope(
 	today string,
 	now time.Time,
 ) error {
-	if !cycle.Started(today) {
+	if issue.Waiting() || !cycle.Started(today) {
 		return nil
 	}
 

@@ -642,6 +642,16 @@ func cycleDTO(view service.CycleView) api.Cycle {
 		dto.ClosedByAccountId = &account
 	}
 
+	if view.Cycle.OwnerAccountID != uuid.Nil {
+		owner := view.Cycle.OwnerAccountID
+		dto.OwnerAccountId = &owner
+	}
+
+	if view.Cycle.ResultsRecordedAt != nil {
+		recorded := *view.Cycle.ResultsRecordedAt
+		dto.ResultsRecordedAt = &recorded
+	}
+
 	if view.Cycle.Rollover != entity.CycleRolloverNone {
 		rollover := api.CycleRollover(view.Cycle.Rollover)
 		dto.Rollover = &rollover
@@ -1179,6 +1189,16 @@ func activityChangeDTOs(changes []entity.Activity) []api.ActivityChange {
 			ToValue:   nilIfEmpty(change.ToValue),
 			FromState: nilIfEmpty(change.FromState),
 			ToState:   nilIfEmpty(change.ToState),
+		}
+
+		if change.FromCategory != "" {
+			from := api.StateCategory(change.FromCategory)
+			dto.FromCategory = &from
+		}
+
+		if change.ToCategory != "" {
+			to := api.StateCategory(change.ToCategory)
+			dto.ToCategory = &to
 		}
 
 		if change.Version > 0 {
@@ -2715,4 +2735,53 @@ func nilIfNoID(id uuid.UUID) *uuid.UUID {
 	}
 
 	return &id
+}
+
+func cycleBurndownDTO(burndown entity.CycleBurndown) api.CycleBurndown {
+	points := make([]api.CycleBurndownPoint, 0, len(burndown.Points))
+
+	for _, point := range burndown.Points {
+		points = append(points, api.CycleBurndownPoint{
+			On:         calendarDate(point.On),
+			Scope:      int32(point.Scope),
+			Remaining:  int32(point.Remaining),
+			Unknown:    int32(point.Unknown),
+			Unrecorded: point.Unrecorded,
+		})
+	}
+
+	return api.CycleBurndown{Points: points, Whole: burndown.Whole()}
+}
+
+func cycleResultDTOs(results []entity.CycleResult) []api.CycleResult {
+	dtos := make([]api.CycleResult, 0, len(results))
+
+	for _, result := range results {
+		dto := api.CycleResult{
+			IssueId:   result.IssueID,
+			TeamId:    result.TeamID,
+			Category:  api.StateCategory(result.Category),
+			StateName: result.StateName,
+		}
+
+		if result.Decision != entity.CycleRolloverNone {
+			decision := api.CycleRollover(result.Decision)
+			dto.Decision = &decision
+		}
+
+		dtos = append(dtos, dto)
+	}
+
+	return dtos
+}
+
+func cycleReportDTO(report service.CycleReport) api.CycleReport {
+	return api.CycleReport{
+		Cycle:    cycleDTO(report.View),
+		Phase:    api.CyclePhase(report.View.Phase),
+		Issues:   issueDTOs(report.Issues),
+		Results:  cycleResultDTOs(report.Results),
+		Burndown: cycleBurndownDTO(report.Burndown),
+		Frozen:   report.Frozen,
+	}
 }

@@ -201,6 +201,7 @@
 					stateId: pending.data.stateId || undefined,
 					assigneeId: pending.data.assigneeId || undefined,
 					projectId: pending.data.projectId || undefined,
+					cycleId: pending.data.cycleId || undefined,
 					labelIds: pending.data.labelIds.length > 0 ? pending.data.labelIds : undefined,
 					dueOn: pending.data.dueOn || undefined,
 				},
@@ -334,6 +335,7 @@
 				priority: prefill?.priority ?? "none",
 				assigneeId: prefill?.assigneeId ?? "",
 				projectId: prefill?.projectId ?? "",
+				cycleId: prefill?.cycleId ?? "",
 			}),
 			{ taint: false }
 		);
@@ -366,6 +368,7 @@
 		$formData.teamId = teamId;
 		$formData.stateId = "";
 		$formData.labelIds = [];
+		$formData.cycleId = "";
 		void loadStates(teamId);
 	}
 

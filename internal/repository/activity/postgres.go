@@ -17,10 +17,18 @@ INSERT INTO workspace_activity (
     id, operation_id, workspace_id, issue_id, project_id,
     actor_account_id, actor_kind, actor_token_id, actor_token_name,
     actor_connection_id, actor_connection_name, kind,
-    from_state_name, to_state_name,
+    from_state_name, to_state_name, from_state_category, to_state_category,
     field, from_value, to_value, version, bulk_action_id, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`
+
+const stateChangesQuery = `
+SELECT issue_id, from_state_category, to_state_category, created_at
+FROM workspace_activity
+WHERE kind IN ('state_changed', 'state_reclassified')
+  AND issue_id = ANY($1::uuid[])
+  AND created_at >= $2
+ORDER BY created_at`
 
 const activityColumns = `
 SELECT a.id,
@@ -38,6 +46,8 @@ SELECT a.id,
        a.kind,
        a.from_state_name,
        a.to_state_name,
+       a.from_state_category,
+       a.to_state_category,
        coalesce(a.field, ''),
        coalesce(a.from_value, ''),
        coalesce(a.to_value, ''),
@@ -166,6 +176,8 @@ func (r *activityRepository) Record(ctx context.Context, activity entity.Activit
 		string(activity.Kind),
 		activity.FromState,
 		activity.ToState,
+		string(activity.FromCategory),
+		string(activity.ToCategory),
 		nullIfEmpty(activity.Field),
 		nullIfEmpty(activity.FromValue),
 		nullIfEmpty(activity.ToValue),
@@ -177,6 +189,59 @@ func (r *activityRepository) Record(ctx context.Context, activity entity.Activit
 	}
 
 	return nil
+}
+
+func (r *activityRepository) ListStateChanges(
+	ctx context.Context,
+	issueIDs []uuid.UUID,
+	since time.Time,
+) ([]entity.CycleStateChange, error) {
+	if len(issueIDs) == 0 {
+		return []entity.CycleStateChange{}, nil
+	}
+
+	subjects := make([]string, 0, len(issueIDs))
+	for _, issueID := range issueIDs {
+		subjects = append(subjects, issueID.String())
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, stateChangesQuery, subjects, since)
+	if err != nil {
+		return nil, fmt.Errorf("list state changes: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	changes := make([]entity.CycleStateChange, 0)
+
+	for rows.Next() {
+		var (
+			change   entity.CycleStateChange
+			issueID  string
+			from, to string
+		)
+
+		if err := rows.Scan(&issueID, &from, &to, &change.At); err != nil {
+			return nil, fmt.Errorf("scan state change: %w", err)
+		}
+
+		parsed, err := uuid.Parse(issueID)
+		if err != nil {
+			return nil, fmt.Errorf("parse state change issue: %w", err)
+		}
+
+		change.IssueID = parsed
+		change.From = entity.StateCategory(from)
+		change.To = entity.StateCategory(to)
+
+		changes = append(changes, change)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read state changes: %w", err)
+	}
+
+	return changes, nil
 }
 
 func (r *activityRepository) ListBySubject(
@@ -329,6 +394,8 @@ func (r *activityRepository) query(
 			actorToken       string
 			actorConnection  string
 			kind, bulkAction string
+			fromCategory     string
+			toCategory       string
 		)
 
 		if err := rows.Scan(
@@ -336,6 +403,7 @@ func (r *activityRepository) query(
 			&actor, &activity.ActorName, &actorKind, &actorToken, &activity.Actor.TokenName,
 			&actorConnection, &activity.Actor.ConnectionName, &kind,
 			&activity.FromState, &activity.ToState,
+			&fromCategory, &toCategory,
 			&activity.Field, &activity.FromValue, &activity.ToValue,
 			&activity.Version, &bulkAction, &activity.CreatedAt,
 		); err != nil {
@@ -344,6 +412,8 @@ func (r *activityRepository) query(
 
 		activity.Kind = entity.ActivityKind(kind)
 		activity.Actor.Kind = entity.ActorKind(actorKind)
+		activity.FromCategory = entity.StateCategory(fromCategory)
+		activity.ToCategory = entity.StateCategory(toCategory)
 
 		if actorToken != "" {
 			tokenID, err := uuid.Parse(actorToken)

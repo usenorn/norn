@@ -19,8 +19,8 @@ func TestRecordingThatOneIssueBlocksAnotherWritesASingleRowNotTwo(t *testing.T) 
 	a, b := issue("MOB", 1), issue("MOB", 2)
 
 	h.expectScope(workspaceID)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, a.ID, gomock.Any()).Return(a, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, b.ID, gomock.Any()).Return(b, nil)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, a.ID, gomock.Any()).Return(a, nil).MinTimes(1)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, b.ID, gomock.Any()).Return(b, nil).MinTimes(1)
 
 	var written []entity.StoredIssueRelation
 
@@ -68,8 +68,8 @@ func TestSayingAnIssueIsBlockedByAnotherStoresTheBlockerAsTheSource(t *testing.T
 	mine, blocker := issue("MOB", 5), issue("PLT", 9)
 
 	h.expectScope(workspaceID)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, mine.ID, gomock.Any()).Return(mine, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, blocker.ID, gomock.Any()).Return(blocker, nil)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, mine.ID, gomock.Any()).Return(mine, nil).MinTimes(1)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, blocker.ID, gomock.Any()).Return(blocker, nil).MinTimes(1)
 
 	var written entity.StoredIssueRelation
 
@@ -115,8 +115,8 @@ func TestASymmetricRelationLandsOnTheSameRowFromEitherSide(t *testing.T) {
 		h := newHarness(t)
 
 		h.expectScope(workspaceID)
-		h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, subject.ID, gomock.Any()).Return(subject, nil)
-		h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, counterpart.ID, gomock.Any()).Return(counterpart, nil)
+		h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, subject.ID, gomock.Any()).Return(subject, nil).MinTimes(1)
+		h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, counterpart.ID, gomock.Any()).Return(counterpart, nil).MinTimes(1)
 
 		var written entity.StoredIssueRelation
 
@@ -161,7 +161,7 @@ func TestARelationToAnIssueTheActorCannotSeeIsReportedAsMissingNotForbidden(t *t
 	hidden := uuid.New()
 
 	h.expectScope(workspaceID)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, mine.ID, gomock.Any()).Return(mine, nil)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, mine.ID, gomock.Any()).Return(mine, nil).MinTimes(1)
 	h.issues.EXPECT().
 		GetVisible(gomock.Any(), workspaceID, hidden, gomock.Any()).
 		Return(entity.Issue{}, entity.ErrIssueNotFound)
@@ -190,8 +190,8 @@ func TestASecondRelationOnThePairIsRefusedAndNamesTheOneAlreadyHeld(t *testing.T
 	a, b := issue("MOB", 1), issue("MOB", 2)
 
 	h.expectScope(workspaceID)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, a.ID, gomock.Any()).Return(a, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, b.ID, gomock.Any()).Return(b, nil)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, a.ID, gomock.Any()).Return(a, nil).MinTimes(1)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, b.ID, gomock.Any()).Return(b, nil).MinTimes(1)
 	h.relations.EXPECT().
 		FindPair(gomock.Any(), workspaceID, a.ID, b.ID, gomock.Any()).
 		Return(entity.IssueRelation{Kind: entity.IssueRelationViewBlocks, Issue: b}, nil)
@@ -250,8 +250,8 @@ func TestRemovingFromEitherEndDeletesTheOneRowAndTellsBothIssues(t *testing.T) {
 			TargetIssueID: b.ID,
 			Kind:          entity.IssueRelationBlocks,
 		}, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, b.ID, gomock.Any()).Return(b, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, a.ID, gomock.Any()).Return(a, nil)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, b.ID, gomock.Any()).Return(b, nil).MinTimes(1)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, a.ID, gomock.Any()).Return(a, nil).MinTimes(1)
 
 	deleted := 0
 	h.relations.EXPECT().
@@ -300,15 +300,15 @@ func TestClosingADuplicateMovesOnlyTheDuplicate(t *testing.T) {
 	}
 
 	h.expectScope(workspaceID)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, dupe.ID, gomock.Any()).Return(dupe, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, survivor.ID, gomock.Any()).Return(survivor, nil)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, dupe.ID, gomock.Any()).Return(dupe, nil).MinTimes(1)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, survivor.ID, gomock.Any()).Return(survivor, nil).MinTimes(1)
 	h.expectNoRelationHeld()
 	h.relations.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, r entity.StoredIssueRelation) (entity.StoredIssueRelation, error) {
 			return r, nil
 		})
-	h.states.EXPECT().ListByTeamID(gomock.Any(), teamID).Return([]entity.WorkflowState{canceled}, nil)
+	h.states.EXPECT().ShareByTeamID(gomock.Any(), teamID).Return([]entity.WorkflowState{canceled}, nil)
 
 	moved := map[uuid.UUID]uuid.UUID{}
 
@@ -351,8 +351,8 @@ func TestRecordingADuplicateWithoutAskingLeavesBothIssuesAlone(t *testing.T) {
 	dupe, survivor := issue("MOB", 7), issue("MOB", 3)
 
 	h.expectScope(workspaceID)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, dupe.ID, gomock.Any()).Return(dupe, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, survivor.ID, gomock.Any()).Return(survivor, nil)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, dupe.ID, gomock.Any()).Return(dupe, nil).MinTimes(1)
+	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, survivor.ID, gomock.Any()).Return(survivor, nil).MinTimes(1)
 	h.expectNoRelationHeld()
 	h.relations.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
@@ -366,5 +366,78 @@ func TestRecordingADuplicateWithoutAskingLeavesBothIssuesAlone(t *testing.T) {
 		CounterpartID: survivor.ID,
 	}); err != nil {
 		t.Fatalf("Add: %v", err)
+	}
+}
+
+func TestADuplicateIsClosedFromTheCategoryReadUnderTheWorkflowGate(t *testing.T) {
+	h := newHarness(t)
+
+	workspaceID, teamID := uuid.New(), uuid.New()
+	dupe, survivor := issue("MOB", 7), issue("MOB", 3)
+	dupe.TeamID = teamID
+
+	reclassified := dupe
+	reclassified.State.Category = entity.StateCategoryComplete
+
+	canceled := entity.WorkflowState{
+		ID: uuid.New(), TeamID: teamID, Name: "Canceled", Category: entity.StateCategoryAbandoned,
+	}
+
+	h.expectScope(workspaceID)
+
+	gomock.InOrder(
+		h.issues.EXPECT().
+			GetVisible(gomock.Any(), workspaceID, dupe.ID, gomock.Any()).
+			Return(dupe, nil),
+		h.issues.EXPECT().
+			GetVisible(gomock.Any(), workspaceID, dupe.ID, gomock.Any()).
+			Return(reclassified, nil).
+			MinTimes(1),
+	)
+
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, survivor.ID, gomock.Any()).
+		Return(survivor, nil).
+		MinTimes(1)
+
+	h.expectNoRelationHeld()
+	h.relations.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, r entity.StoredIssueRelation) (entity.StoredIssueRelation, error) {
+			return r, nil
+		})
+	h.states.EXPECT().ShareByTeamID(gomock.Any(), teamID).Return([]entity.WorkflowState{canceled}, nil)
+	h.issues.EXPECT().
+		Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	var from entity.StateCategory
+
+	h.activity.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, entry entity.Activity) error {
+			if entry.Kind == entity.ActivityKindStateChanged {
+				from = entry.FromCategory
+			}
+
+			return nil
+		}).
+		AnyTimes()
+
+	if _, err := h.service.Add(context.Background(), workspaceID, dupe.ID, service.AddIssueRelationInput{
+		Kind:           entity.IssueRelationViewDuplicates,
+		CounterpartID:  survivor.ID,
+		CloseDuplicate: true,
+	}); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+
+	if from != entity.StateCategoryComplete {
+		t.Fatalf(
+			"the close was recorded as leaving %q, want %q. A reclassification leaves the issue "+
+				"version untouched, so a category read before the workflow gate writes a burndown "+
+				"history that never happened.",
+			from, entity.StateCategoryComplete,
+		)
 	}
 }

@@ -1,4 +1,4 @@
-import Item from "./radio-group-item.svelte";
+import Item, { radioGroupItemVariants } from "./radio-group-item.svelte";
 import Root from "./radio-group.svelte";
 
 export {
@@ -6,4 +6,5 @@ export {
 	Item,
 	Root as RadioGroup,
 	Item as RadioGroupItem,
+	radioGroupItemVariants,
 };

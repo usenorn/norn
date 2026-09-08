@@ -15,17 +15,19 @@ import (
 )
 
 type triagesService struct {
-	triage     repository.Triage
-	issues     repository.Issue
-	states     repository.WorkflowState
-	activity   repository.Activity
-	teams      repository.Team
-	relations  service.IssueRelations
-	issueMoves service.Issues
-	comments   service.IssueComments
-	authorizer service.Authorizer
-	emitter    service.WebhookEmitter
-	transactor repository.Transactor
+	triage       repository.Triage
+	issues       repository.Issue
+	states       repository.WorkflowState
+	activity     repository.Activity
+	teams        repository.Team
+	cycles       repository.Cycle
+	scopeChanges repository.CycleScopeChange
+	relations    service.IssueRelations
+	issueMoves   service.Issues
+	comments     service.IssueComments
+	authorizer   service.Authorizer
+	emitter      service.WebhookEmitter
+	transactor   repository.Transactor
 }
 
 func New(
@@ -34,6 +36,8 @@ func New(
 	states repository.WorkflowState,
 	activity repository.Activity,
 	teams repository.Team,
+	cycles repository.Cycle,
+	scopeChanges repository.CycleScopeChange,
 	relations service.IssueRelations,
 	issueMoves service.Issues,
 	comments service.IssueComments,
@@ -42,17 +46,19 @@ func New(
 	transactor repository.Transactor,
 ) service.Triages {
 	return &triagesService{
-		triage:     triage,
-		issues:     issues,
-		states:     states,
-		activity:   activity,
-		teams:      teams,
-		relations:  relations,
-		issueMoves: issueMoves,
-		comments:   comments,
-		authorizer: authorizer,
-		emitter:    emitter,
-		transactor: transactor,
+		triage:       triage,
+		issues:       issues,
+		states:       states,
+		activity:     activity,
+		teams:        teams,
+		cycles:       cycles,
+		scopeChanges: scopeChanges,
+		relations:    relations,
+		issueMoves:   issueMoves,
+		comments:     comments,
+		authorizer:   authorizer,
+		emitter:      emitter,
+		transactor:   transactor,
 	}
 }
 
@@ -129,17 +135,46 @@ func (s *triagesService) waiting(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
 	decision entity.Decision,
-) (entity.Issue, error) {
+	alongside ...uuid.UUID,
+) (entity.Issue, []entity.WorkflowState, error) {
+	observed, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+	if err != nil {
+		return entity.Issue{}, nil, err
+	}
+
+	var states []entity.WorkflowState
+
+	for _, teamID := range entity.LockOrder(append([]uuid.UUID{observed.TeamID}, alongside...)) {
+		shared, err := s.states.ShareByTeamID(ctx, teamID)
+		if err != nil {
+			return entity.Issue{}, nil, err
+		}
+
+		if teamID == observed.TeamID {
+			states = shared
+		}
+	}
+
+	if observed.CycleID != uuid.Nil {
+		if _, err := s.cycles.LockByID(ctx, observed.CycleID); err != nil {
+			return entity.Issue{}, nil, err
+		}
+	}
+
 	issue, err := s.issues.LockByID(ctx, workspaceID, issueID, decision.Scope)
 	if err != nil {
-		return entity.Issue{}, err
+		return entity.Issue{}, nil, err
 	}
 
 	if !issue.Waiting() {
-		return entity.Issue{}, entity.ErrIssueNotWaiting
+		return entity.Issue{}, nil, entity.ErrIssueNotWaiting
 	}
 
-	return issue, nil
+	if issue.TeamID != observed.TeamID || issue.CycleID != observed.CycleID {
+		return entity.Issue{}, nil, entity.ErrIssueStale
+	}
+
+	return issue, states, nil
 }
 
 func (s *triagesService) record(
@@ -155,6 +190,10 @@ func (s *triagesService) record(
 		return err
 	}
 
+	if err := s.join(ctx, issue, decision, now); err != nil {
+		return err
+	}
+
 	return s.activity.Record(ctx, entity.Activity{
 		WorkspaceID: issue.WorkspaceID,
 		Subject:     entity.IssueSubject(issue.ID),
@@ -163,6 +202,34 @@ func (s *triagesService) record(
 		Field:       string(state),
 		FromValue:   string(entity.TriageStateWaiting),
 		ToValue:     object,
+	})
+}
+
+func (s *triagesService) join(
+	ctx context.Context,
+	issue entity.Issue,
+	decision entity.Decision,
+	now time.Time,
+) error {
+	if issue.CycleID == uuid.Nil {
+		return nil
+	}
+
+	cycle, err := s.cycles.GetVisible(ctx, issue.WorkspaceID, issue.CycleID, decision.Scope)
+	if err != nil {
+		return err
+	}
+
+	if !cycle.Started(entity.Today(now, decision.Workspace.Timezone)) {
+		return nil
+	}
+
+	return s.scopeChanges.Record(ctx, entity.CycleScopeChange{
+		CycleID:        cycle.ID,
+		IssueID:        issue.ID,
+		Change:         entity.CycleScopeChangeAdded,
+		ActorAccountID: decision.Actor.AccountID,
+		ChangedAt:      now,
 	})
 }
 
@@ -186,7 +253,7 @@ func (s *triagesService) Accept(
 	var accepted entity.Issue
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		issue, err := s.waiting(ctx, workspaceID, issueID, decision)
+		issue, _, err := s.waiting(ctx, workspaceID, issueID, decision)
 		if err != nil {
 			return err
 		}
@@ -229,12 +296,12 @@ func (s *triagesService) Decline(
 	var declined entity.Issue
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		issue, err := s.waiting(ctx, workspaceID, issueID, decision)
+		issue, states, err := s.waiting(ctx, workspaceID, issueID, decision)
 		if err != nil {
 			return err
 		}
 
-		if err := s.close(ctx, issue, decision); err != nil {
+		if err := s.close(ctx, issue, states, decision); err != nil {
 			return err
 		}
 
@@ -287,13 +354,9 @@ func validateDeclineNote(field, note string) entity.FieldError {
 func (s *triagesService) close(
 	ctx context.Context,
 	issue entity.Issue,
+	states []entity.WorkflowState,
 	decision entity.Decision,
 ) error {
-	states, err := s.states.ListByTeamID(ctx, issue.TeamID)
-	if err != nil {
-		return err
-	}
-
 	target, found := entity.CounterpartState(states, entity.StateCategoryAbandoned)
 	if !found {
 		return entity.ErrIssueDestinationIncapable
@@ -315,13 +378,15 @@ func (s *triagesService) close(
 	}
 
 	return s.activity.Record(ctx, entity.Activity{
-		WorkspaceID: issue.WorkspaceID,
-		Subject:     entity.IssueSubject(issue.ID),
-		Actor:       decision.ActivityActor(),
-		Kind:        entity.ActivityKindStateChanged,
-		FromState:   issue.State.Name,
-		ToState:     target.Name,
-		Version:     issue.Version + 1,
+		WorkspaceID:  issue.WorkspaceID,
+		Subject:      entity.IssueSubject(issue.ID),
+		Actor:        decision.ActivityActor(),
+		Kind:         entity.ActivityKindStateChanged,
+		FromState:    issue.State.Name,
+		ToState:      target.Name,
+		FromCategory: issue.State.Category,
+		ToCategory:   target.Category,
+		Version:      issue.Version + 1,
 	})
 }
 
@@ -344,12 +409,12 @@ func (s *triagesService) Merge(
 	var merged entity.Issue
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		issue, err := s.waiting(ctx, workspaceID, issueID, decision)
+		survivor, err := s.issues.GetVisible(ctx, workspaceID, duplicateOfID, decision.Scope)
 		if err != nil {
 			return err
 		}
 
-		survivor, err := s.issues.GetVisible(ctx, workspaceID, duplicateOfID, decision.Scope)
+		issue, _, err := s.waiting(ctx, workspaceID, issueID, decision, survivor.TeamID)
 		if err != nil {
 			return err
 		}

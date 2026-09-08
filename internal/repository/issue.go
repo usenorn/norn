@@ -25,6 +25,12 @@ type Issue interface {
 	PurgeImported(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) (int, error)
 	StampLabels(ctx context.Context, issueID uuid.UUID, expectedVersion int, changedAt time.Time) error
 	ReassignState(ctx context.Context, fromStateID, toStateID uuid.UUID) error
+	ListByStateID(ctx context.Context, stateID uuid.UUID) ([]entity.Issue, error)
+	ListVisibleByIDs(ctx context.Context, scope entity.TeamScope, issueIDs []uuid.UUID) ([]entity.Issue, error)
+	LockByCycleID(ctx context.Context, cycleID uuid.UUID) ([]entity.Issue, error)
+	LockByIDs(ctx context.Context, workspaceID uuid.UUID, issueIDs []uuid.UUID, scope entity.TeamScope) ([]entity.Issue, error)
+	CyclesOf(ctx context.Context, workspaceID uuid.UUID, issueIDs []uuid.UUID, scope entity.TeamScope) (map[uuid.UUID]uuid.UUID, error)
+	CycleOf(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (uuid.UUID, error)
 	Ancestors(ctx context.Context, issueID uuid.UUID) ([]uuid.UUID, error)
 	SubtreeHeight(ctx context.Context, issueID uuid.UUID) (int, error)
 	SetParent(ctx context.Context, issueID uuid.UUID, expectedVersion int, parentID *uuid.UUID, depth int, changedAt time.Time) error
@@ -36,5 +42,5 @@ type Issue interface {
 	TallyByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupTally, error)
 	ListVisibleByGroup(ctx context.Context, scope entity.TeamScope, page entity.IssuePage, groupBy entity.IssueGroupBy) ([]entity.IssueGroupSlice, error)
 	LowestRank(ctx context.Context, workspaceID uuid.UUID) (string, error)
-	MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) error
+	MoveIssuesToCycle(ctx context.Context, issueIDs []uuid.UUID, from uuid.UUID, cycleID *uuid.UUID, changedAt time.Time) (int, error)
 }
