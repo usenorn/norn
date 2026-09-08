@@ -14,6 +14,7 @@ export type UploadTask = {
 	size: number;
 	sent: number;
 	state: UploadState;
+	attachmentId?: string;
 	failure?: AttachmentFailure;
 	attachment?: Attachment;
 };
@@ -61,48 +62,52 @@ export async function upload(
 	file: File,
 	task: UploadTask,
 	update: (task: UploadTask) => void,
-	register: (abort: () => void) => void
+	register: (abort: () => void) => void,
+	sentAlready?: string
 ): Promise<void> {
 	const path = { workspaceId: target.workspaceId, issueId: target.issueId };
+	let attachmentId = sentAlready;
 
-	const reserved = await api.POST("/workspaces/{workspaceId}/issues/{issueId}/attachments", {
-		params: { path },
-		body: { fileName: file.name, contentType: file.type || undefined, byteSize: file.size },
-	});
-
-	if (reserved.error || !reserved.data) {
-		update({ ...task, state: "failed", failure: readAttachmentFailure(reserved.error) });
-
-		return;
-	}
-
-	const attachmentId = reserved.data.attachment.id;
-	update({ ...task, state: "sending" });
-
-	try {
-		await send(
-			reserved.data.transfer,
-			file,
-			(sent) => update({ ...task, state: "sending", sent }),
-			register
-		);
-	} catch (failure) {
-		const cancelled = failure instanceof Error && failure.message === "aborted";
-
-		update({
-			...task,
-			state: cancelled ? "cancelled" : "failed",
-			failure: cancelled ? undefined : { kind: "unavailable" },
+	if (!attachmentId) {
+		const reserved = await api.POST("/workspaces/{workspaceId}/issues/{issueId}/attachments", {
+			params: { path },
+			body: { fileName: file.name, contentType: file.type || undefined, byteSize: file.size },
 		});
 
-		await api.DELETE("/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}", {
-			params: { path: { ...path, attachmentId } },
-		});
+		if (reserved.error || !reserved.data) {
+			update({ ...task, state: "failed", failure: readAttachmentFailure(reserved.error) });
 
-		return;
+			return;
+		}
+
+		attachmentId = reserved.data.attachment.id;
+		update({ ...task, state: "sending", attachmentId });
+
+		try {
+			await send(
+				reserved.data.transfer,
+				file,
+				(sent) => update({ ...task, state: "sending", attachmentId, sent }),
+				register
+			);
+		} catch (failure) {
+			const cancelled = failure instanceof Error && failure.message === "aborted";
+
+			update({
+				...task,
+				state: cancelled ? "cancelled" : "failed",
+				failure: cancelled ? undefined : { kind: "unavailable" },
+			});
+
+			await api.DELETE("/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}", {
+				params: { path: { ...path, attachmentId } },
+			});
+
+			return;
+		}
 	}
 
-	update({ ...task, state: "finalizing", sent: file.size });
+	update({ ...task, state: "finalizing", attachmentId, sent: file.size });
 
 	const finalized = await api.POST(
 		"/workspaces/{workspaceId}/issues/{issueId}/attachments/{attachmentId}/finalize",
@@ -110,10 +115,15 @@ export async function upload(
 	);
 
 	if (finalized.error || !finalized.data) {
-		update({ ...task, state: "failed", failure: readAttachmentFailure(finalized.error) });
+		update({
+			...task,
+			state: "failed",
+			attachmentId,
+			failure: readAttachmentFailure(finalized.error),
+		});
 
 		return;
 	}
 
-	update({ ...task, state: "done", sent: file.size, attachment: finalized.data });
+	update({ ...task, state: "done", attachmentId, sent: file.size, attachment: finalized.data });
 }

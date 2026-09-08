@@ -11,6 +11,7 @@
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import { api } from "$lib/api";
+	import { showToast } from "$lib/toast/toasts";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
@@ -26,7 +27,8 @@
 	import LabelDot from "$lib/labels/label-dot.svelte";
 	import { initialsOf } from "$lib/team/members";
 	import { onCalendarDate } from "$lib/time";
-	import { formatBytes } from "$lib/attachments/attachments";
+	import { formatBytes, type Attachment } from "$lib/attachments/attachments";
+	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import type { UploadTask } from "$lib/attachments/upload";
 	import { assignable, type AccountKind } from "$lib/workspace/members";
@@ -35,7 +37,10 @@
 	import {
 		attachFailureMessage,
 		attachPending,
+		describeFailureMessage,
 		describedWith,
+		markdownFor,
+		pendingFrom,
 		type PendingFile,
 	} from "./new-issue-attachments";
 	import type { Project } from "$lib/projects/projects";
@@ -82,12 +87,109 @@
 	let titleField = $state<HTMLInputElement | null>(null);
 	let attaching = $state.raw<PendingFile[]>([]);
 	let uploads = $state.raw<UploadTask[]>([]);
+	let dragging = $state(false);
+	let unconfirmed = $state(false);
+	let opening = $state(0);
+
+	const unknownCreate =
+		"We could not tell whether the issue was created. Check the issue list before trying again.";
+	let aborts = new Map<string, () => void>();
+
+	type Submission = {
+		key: string;
+		opening: number;
+		workspaceId: string;
+		consumer: ((outcome: CreationOutcome) => void | Promise<void>) | undefined;
+		files: PendingFile[];
+		description: string;
+		issue: Issue | null;
+		attached: Attachment[];
+		settled: boolean;
+		running: boolean;
+		unresolved: boolean;
+	};
+
+	let live = $state.raw<Submission | null>(null);
+	let holding = $state<{ issue: Issue | null; running: boolean }>({ issue: null, running: false });
+
+	const raised = $derived(holding.issue);
+
+	function settle(own: Submission) {
+		if (own.settled || !own.issue) return;
+
+		own.settled = true;
+		announce(own, { key: own.key, kind: "created", issue: own.issue });
+	}
+
+	function announce(own: Submission, outcome: CreationOutcome) {
+		try {
+			const handled = own.consumer?.(outcome);
+
+			if (handled) void handled.catch((reason: unknown) => reportConsumer(own, reason));
+		} catch (reason) {
+			reportConsumer(own, reason);
+		}
+	}
+
+	function reportConsumer(own: Submission, _reason: unknown) {
+		const reference = own.issue?.reference;
+
+		showToast(
+			reference
+				? `${reference} was created, but what should have happened next did not.`
+				: "The issue was created, but what should have happened next did not."
+		);
+	}
+
+	function abandon() {
+		const own = live;
+
+		live = null;
+		holding = { issue: null, running: false };
+
+		if (!own) return;
+
+		if (!own.unresolved) {
+			settle(own);
+
+			return;
+		}
+
+		void currentIssue(own).then((current) => {
+			if (current) {
+				own.issue = current;
+				own.unresolved = false;
+				settle(own);
+
+				return;
+			}
+
+			showToast(
+				own.issue
+					? `${own.issue.reference} was created and its files are attached, but we could not ` +
+							"confirm the rest. Open it to check."
+					: "The issue was created, but we could not confirm the rest."
+			);
+		});
+	}
 	let coined = $state.raw<Label[]>([]);
 	let labelSearch = $state("");
 	let coining = $state(false);
 	let labelFailure = $state<string | null>(null);
 	let resuming = $state(false);
-	let pasteSeq = 0;
+	let intake = 0;
+
+	function takeFiles(files: File[]) {
+		if (files.length === 0 || busy) return;
+
+		setPending([...attaching, ...pendingFrom(files, () => `${(intake += 1)}`)]);
+	}
+
+	function setPending(next: PendingFile[]) {
+		attaching = next;
+
+		if (live && !holding.running) live.files = next;
+	}
 
 	function pasteFiles(event: ClipboardEvent) {
 		const files = Array.from(event.clipboardData?.files ?? []);
@@ -99,16 +201,31 @@
 		}
 
 		event.preventDefault();
+		takeFiles(files);
+	}
 
-		attaching = [
-			...attaching,
-			...files.map((file) => ({
-				key: `${(pasteSeq += 1)}`,
-				name: file.name,
-				size: file.size,
-				file,
-			})),
-		];
+	function carriesFiles(event: DragEvent): boolean {
+		return Array.from(event.dataTransfer?.types ?? []).includes("Files");
+	}
+
+	function dragEnter(event: DragEvent) {
+		if (!carriesFiles(event)) return;
+
+		event.preventDefault();
+		dragging = !busy;
+	}
+
+	function dragLeave(event: DragEvent) {
+		if (event.currentTarget === event.target) dragging = false;
+	}
+
+	function dropFiles(event: DragEvent) {
+		if (!carriesFiles(event)) return;
+
+		event.preventDefault();
+		dragging = false;
+
+		takeFiles(Array.from(event.dataTransfer?.files ?? []));
 	}
 
 	function pasteMarkup(event: ClipboardEvent) {
@@ -128,7 +245,7 @@
 	}
 
 	function dropPending(key: string) {
-		attaching = attaching.filter((file) => file.key !== key);
+		setPending(attaching.filter((file) => file.key !== key));
 	}
 
 	async function coinLabel(name: string) {
@@ -167,119 +284,322 @@
 		SPA: true,
 		validators: zod4Client(newIssueSchema),
 		resetForm: false,
-		onUpdate: async ({ form: pending }) => {
+		onUpdate: async ({ form: pending, cancel }) => {
 			if (!pending.valid) return;
 
-			failure = null;
-
-			const key = crypto.randomUUID();
-			const opening = openState ?? available.find((state) => state.isDefault);
-			const draft =
-				team && opening
-					? draftIssue(key, pending.data, {
-							workspaceId,
-							team,
-							state: opening,
-							labels: known,
-							projects,
-							now,
-						})
-					: undefined;
-			const detached = Boolean(draft) && attaching.length === 0 && !pending.data.createMore;
-
-			if (draft) onraising?.(key, draft);
-
-			if (detached) open = false;
-
-			const { data: raised, error } = await api.POST("/workspaces/{workspaceId}/issues", {
-				params: { path: { workspaceId } },
-				body: {
-					teamId: pending.data.teamId,
-					title: pending.data.title,
-					description: pending.data.description || undefined,
-					priority: pending.data.priority,
-					stateId: pending.data.stateId || undefined,
-					assigneeId: pending.data.assigneeId || undefined,
-					projectId: pending.data.projectId || undefined,
-					cycleId: pending.data.cycleId || undefined,
-					labelIds: pending.data.labelIds.length > 0 ? pending.data.labelIds : undefined,
-					dueOn: pending.data.dueOn || undefined,
-				},
-			});
-
-			if (error || !raised) {
-				const read = readIssueFailure(error);
-				const refusal = issueFailureMessage(read);
-
-				if (detached) {
-					onsettled?.({ key, kind: "refused", failure: refusal, input: pending.data });
-
-					return;
-				}
-
-				onsettled?.({ key, kind: "refused", failure: refusal });
-
-				if (read.kind === "invalid") {
-					for (const field of read.fields) {
-						if (field === "title") setError(pending, "title", "Give the issue a title.");
-						if (field === "dueOn") setError(pending, "dueOn", "Use a date like 2026-09-01.");
-					}
-				}
-
-				failure = refusal;
+			if (unconfirmed) {
+				cancel();
 
 				return;
 			}
 
-			const settled: CreationOutcome = { key, kind: "created", issue: raised };
-			const held = attaching;
+			const own: Submission = live ?? {
+				key: crypto.randomUUID(),
+				opening,
+				workspaceId,
+				consumer: onsettled,
+				files: attaching,
+				description: pending.data.description,
+				issue: null,
+				attached: [],
+				settled: false,
+				running: false,
+				unresolved: false,
+			};
 
-			if (held.length > 0) {
-				const outcome = await attachPending(
-					workspaceId,
-					raised.id,
-					held,
-					(tasks) => (uploads = tasks)
-				);
+			const mine = () => live === own;
+			const showing = () => own.opening === opening;
 
-				attaching = [];
-				uploads = [];
+			own.running = true;
+			live = own;
+			holding = { issue: own.issue, running: true };
+			failure = null;
 
-				if (outcome.markdown) {
-					await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
-						params: { path: { workspaceId, issueId: raised.id } },
-						body: {
-							expectedVersion: raised.version,
-							description: describedWith(pending.data.description, outcome.markdown),
-						},
-					});
+			if (!own.issue) {
+				const filing = openState ?? available.find((state) => state.isDefault);
+				const draft =
+					team && filing
+						? draftIssue(own.key, pending.data, {
+								workspaceId,
+								team,
+								state: filing,
+								labels: known,
+								projects,
+								now,
+							})
+						: undefined;
+				const detached = Boolean(draft) && own.files.length === 0 && !pending.data.createMore;
+
+				if (draft) onraising?.(own.key, draft);
+
+				if (detached) {
+					live = null;
+					open = false;
 				}
 
-				if (outcome.failed.length > 0) {
-					failure = attachFailureMessage(outcome.failed);
-					onsettled?.(settled);
+				let created: Issue | undefined;
+				let error: unknown;
+
+				try {
+					const raisedIssue = await api.POST("/workspaces/{workspaceId}/issues", {
+						params: { path: { workspaceId: own.workspaceId } },
+						body: {
+							teamId: pending.data.teamId,
+							title: pending.data.title,
+							description: pending.data.description || undefined,
+							priority: pending.data.priority,
+							stateId: pending.data.stateId || undefined,
+							assigneeId: pending.data.assigneeId || undefined,
+							projectId: pending.data.projectId || undefined,
+							cycleId: pending.data.cycleId || undefined,
+							labelIds: pending.data.labelIds.length > 0 ? pending.data.labelIds : undefined,
+							dueOn: pending.data.dueOn || undefined,
+						},
+					});
+
+					created = raisedIssue.data;
+					error = raisedIssue.error;
+				} catch {
+					own.running = false;
+					own.settled = true;
+
+					announce(own, { key: own.key, kind: "refused", failure: unknownCreate });
+
+					if (showing()) {
+						holding = { issue: null, running: false };
+						unconfirmed = true;
+						failure = unknownCreate;
+					}
+
+					if (!mine()) {
+						cancel();
+
+						return;
+					}
+
+					live = null;
 
 					return;
 				}
+
+				own.running = false;
+
+				if (error || !created) {
+					const read = readIssueFailure(error);
+					const refusal = issueFailureMessage(read);
+
+					own.settled = true;
+					announce(own, {
+						key: own.key,
+						kind: "refused",
+						failure: refusal,
+						...(detached && showing() ? { input: pending.data } : {}),
+					});
+
+					if (!mine()) {
+						cancel();
+
+						return;
+					}
+
+					live = null;
+					holding = { issue: null, running: false };
+
+					if (read.kind === "invalid") {
+						for (const field of read.fields) {
+							if (field === "title") setError(pending, "title", "Give the issue a title.");
+							if (field === "dueOn") setError(pending, "dueOn", "Use a date like 2026-09-01.");
+						}
+					}
+
+					failure = refusal;
+
+					return;
+				}
+
+				own.issue = created;
+				own.running = true;
+
+				if (mine()) holding = { issue: created, running: true };
 			}
 
+			if (own.files.length > 0) {
+				const outcome = await attachPending(
+					own.workspaceId,
+					own.issue.id,
+					own.files,
+					(tasks) => {
+						if (mine()) uploads = tasks;
+					},
+					(key, abort) => aborts.set(key, abort)
+				);
+
+				aborts.clear();
+				own.attached = [...own.attached, ...outcome.attached];
+				own.files = [...outcome.failed, ...outcome.cancelled];
+
+				if (mine()) {
+					attaching = own.files;
+					uploads = [];
+				}
+			}
+
+			if (own.attached.length > 0 && own.files.length === 0) {
+				const saved = await describeIssue(own);
+
+				if (!saved) {
+					const unresolved = describeUncertain;
+
+					own.running = false;
+					own.unresolved = unresolved;
+
+					if (!unresolved) settle(own);
+
+					if (!mine()) {
+						cancel();
+
+						return;
+					}
+
+					holding = { issue: own.issue, running: false };
+					failure = unresolved
+						? describeFailureMessage("uncertain")
+						: describeFailureMessage(describeConflict ? "conflict" : "unavailable");
+
+					return;
+				}
+
+				own.issue = saved;
+				own.attached = [];
+				own.unresolved = false;
+			}
+
+			own.running = false;
+
+			if (mine()) holding = { issue: own.issue, running: false };
+
+			if (own.files.length > 0) {
+				if (!mine()) {
+					cancel();
+
+					return;
+				}
+
+				failure = attachFailureMessage(own.files);
+
+				return;
+			}
+
+			settle(own);
+
+			if (!mine()) {
+				cancel();
+
+				return;
+			}
+
+			live = null;
+			holding = { issue: null, running: false };
+
 			if (!pending.data.createMore) {
-				onsettled?.(settled);
 				open = false;
 
 				return;
 			}
 
+			attaching = [];
+			uploads = [];
 			pending.data.title = "";
 			pending.data.description = "";
 
 			resuming = true;
-
-			await onsettled?.(settled);
 		},
 	});
 
+	let describeConflict = false;
+	let describeUncertain = false;
+
+	async function describeIssue(own: Submission): Promise<Issue | null> {
+		if (!own.issue) return null;
+
+		describeConflict = false;
+		describeUncertain = false;
+
+		const links = markdownFor(own.attached);
+		const saved = await saveDescription(own, own.issue.version, describedWith(own.description, links));
+
+		if (saved) return saved;
+
+		if (!describeConflict && !describeUncertain) return null;
+
+		const current = await currentIssue(own);
+
+		if (!current) return null;
+
+		if (current.description.includes(links)) {
+			describeConflict = false;
+			describeUncertain = false;
+
+			return current;
+		}
+
+		if (describeUncertain) {
+			own.issue = current;
+			describeUncertain = false;
+			describeConflict = false;
+		}
+
+		return saveDescription(own, current.version, describedWith(current.description, links));
+	}
+
+	async function saveDescription(
+		own: Submission,
+		expectedVersion: number,
+		description: string
+	): Promise<Issue | null> {
+		if (!own.issue) return null;
+
+		try {
+			const described = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
+				params: { path: { workspaceId: own.workspaceId, issueId: own.issue.id } },
+				body: { expectedVersion, description },
+			});
+
+			if (described.data && "id" in described.data) return described.data;
+
+			describeConflict = readIssueFailure(described.error).kind === "stale";
+
+			return null;
+		} catch {
+			describeUncertain = true;
+
+			return null;
+		}
+	}
+
+	async function currentIssue(own: Submission): Promise<Issue | null> {
+		if (!own.issue) return null;
+
+		try {
+			const read = await api.GET("/workspaces/{workspaceId}/issues/{issueId}", {
+				params: { path: { workspaceId: own.workspaceId, issueId: own.issue.id } },
+			});
+
+			return read.data ?? null;
+		} catch {
+			return null;
+		}
+	}
+
 	const { form: formData, enhance, submitting } = form;
+
+	const busy = $derived(holding.running || $submitting);
+
+	$effect(() => {
+		if (open || busy) return;
+
+		abandon();
+	});
 
 	const team = $derived(teams.find((candidate) => candidate.id === $formData.teamId) ?? teams[0]);
 
@@ -309,15 +629,21 @@
 	);
 
 	$effect(() => {
-		const opening = open && !wasOpen;
+		const justOpened = open && !wasOpen;
 
 		wasOpen = open;
 
-		if (!opening) return;
+		if (!justOpened) return;
 
 		form.reset({ keepMessage: false });
+		opening += 1;
+		abandon();
 		failure = null;
+		unconfirmed = false;
 		attaching = [];
+		uploads = [];
+		dragging = false;
+		aborts.clear();
 		coined = [];
 		labelSearch = "";
 		labelFailure = null;
@@ -373,6 +699,8 @@
 	}
 
 	function submitOnMeta(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+		if (unconfirmed || busy) return;
+
 		if (!(event.metaKey || event.ctrlKey) || event.key !== "Enter") return;
 
 		event.preventDefault();
@@ -448,7 +776,7 @@
 		"h-control-sm gap-1.5 px-2 text-sm font-normal text-foreground data-[state=open]:border-ink-400";
 </script>
 
-<Dialog.Root bind:open>
+<Dialog.Root bind:open={() => open, (next) => (open = next || !busy ? next : open)}>
 	<Dialog.Content
 		class="top-21 grid-rows-[minmax(0,1fr)] max-h-[calc(100dvh-7.5rem)] overflow-hidden p-0 sm:max-w-162"
 		showCloseButton={false}
@@ -457,7 +785,22 @@
 			Raise an issue in a team you can see, and set its properties before it is created.
 		</Dialog.Description>
 
-		<form method="POST" use:enhance class="flex min-h-0 flex-col">
+		<form
+			method="POST"
+			use:enhance
+			class="relative flex min-h-0 w-full min-w-0 flex-col"
+			ondragenter={dragEnter}
+			ondragover={dragEnter}
+			ondragleave={dragLeave}
+			ondrop={dropFiles}
+		>
+			{#if dragging}
+				<div
+					class="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-paper-0/85 text-md text-ink-900"
+				>
+					Drop files to attach them
+				</div>
+			{/if}
 			<div
 				class="flex flex-none items-center gap-2 border-b border-line-subtle py-2.75 pr-2.5 pl-3.5"
 			>
@@ -468,7 +811,13 @@
 					class="w-51.5"
 				>
 					{#snippet trigger(props)}
-						<Button {...props} variant="ghost" size="sm" class="gap-1.5 px-1.5 font-medium">
+						<Button
+							{...props}
+							variant="ghost"
+							size="sm"
+							disabled={busy || Boolean(raised)}
+							class="gap-1.5 px-1.5 font-medium"
+						>
 							{#if team}
 								<TeamKey key={team.key} />
 								{team.name}
@@ -496,6 +845,7 @@
 					variant="ghost"
 					size="icon-sm"
 					aria-label="Close"
+					disabled={busy}
 					onclick={() => (open = false)}
 				>
 					<X aria-hidden="true" />
@@ -514,7 +864,7 @@
 									bind:value={$formData.title}
 									variant="seamless"
 									placeholder="Issue title"
-									disabled={$submitting}
+									disabled={busy || Boolean(raised)}
 									onkeydown={submitOnMeta}
 									class="h-auto p-0 text-xl font-medium tracking-snug"
 								/>
@@ -532,7 +882,7 @@
 									bind:value={$formData.description}
 									variant="seamless"
 									rows={3}
-									disabled={$submitting}
+									disabled={busy || Boolean(raised)}
 									onkeydown={submitOnMeta}
 									onpaste={pasteFiles}
 									placeholder="Add description… What is broken, what should happen instead."
@@ -544,7 +894,7 @@
 					</Form.Field>
 
 					{#if uploads.length > 0}
-						<UploadList {uploads} />
+						<UploadList {uploads} oncancel={(id) => aborts.get(id)?.()} />
 						<p class="text-xs text-muted-foreground">
 							The issue is created. Leave this open until the files finish, or they will not reach
 							it.
@@ -568,7 +918,7 @@
 										variant="ghost"
 										size="icon-sm"
 										aria-label="Remove {file.name}"
-										disabled={$submitting}
+										disabled={busy}
 										onclick={() => dropPending(file.key)}
 									>
 										<X aria-hidden="true" />
@@ -577,8 +927,14 @@
 							{/each}
 						</ul>
 						<p class="text-xs text-muted-foreground">
-							{attaching.length === 1 ? "This file is" : "These files are"} attached once the issue is
-							created.
+							{#if raised}
+								{attaching.length === 1 ? "This file" : "These files"} did not upload. The issue is
+								saved; Finish attaching tries {attaching.length === 1 ? "it" : "them"} again against
+								it, and the issue's own fields can no longer be changed here.
+							{:else}
+								{attaching.length === 1 ? "This file is" : "These files are"} attached once the issue
+								is created.
+							{/if}
 						</p>
 					{/if}
 				</div>
@@ -591,7 +947,13 @@
 						onpick={(value) => ($formData.stateId = value)}
 					>
 						{#snippet trigger(props)}
-							<Button {...props} variant="outline" size="sm" class={chipClass}>
+							<Button
+								{...props}
+								variant="outline"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class={chipClass}
+							>
 								{#if openState}
 									<StatusIcon category={openState.category} decorative />
 									{openState.name}
@@ -616,7 +978,13 @@
 						onpick={(value) => ($formData.priority = value as typeof $formData.priority)}
 					>
 						{#snippet trigger(props)}
-							<Button {...props} variant="outline" size="sm" class={chipClass}>
+							<Button
+								{...props}
+								variant="outline"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class={chipClass}
+							>
 								<PriorityIcon priority={$formData.priority} />
 								{$formData.priority === "none" ? "Priority" : priorityLabel($formData.priority)}
 							</Button>
@@ -632,7 +1000,13 @@
 						onpick={(value) => ($formData.assigneeId = value)}
 					>
 						{#snippet trigger(props)}
-							<Button {...props} variant="outline" size="sm" class={chipClass}>
+							<Button
+								{...props}
+								variant="outline"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class={chipClass}
+							>
 								{#if assignee}
 									<Avatar.Root size="xs">
 										<Avatar.Fallback>{initialsOf(assignee)}</Avatar.Fallback>
@@ -695,7 +1069,13 @@
 							{/if}
 						{/snippet}
 						{#snippet trigger(props)}
-							<Button {...props} variant="outline" size="sm" class={chipClass}>
+							<Button
+								{...props}
+								variant="outline"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class={chipClass}
+							>
 								<Tags class="text-muted-foreground" aria-hidden="true" />
 								{chosenLabels.length > 0
 									? chosenLabels.map((label) => label.name).join(", ")
@@ -714,7 +1094,13 @@
 						onpick={(value) => ($formData.projectId = value)}
 					>
 						{#snippet trigger(props)}
-							<Button {...props} variant="outline" size="sm" class={chipClass}>
+							<Button
+								{...props}
+								variant="outline"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class={chipClass}
+							>
 								{project ? project.name : "Project"}
 							</Button>
 						{/snippet}
@@ -726,7 +1112,13 @@
 						onpick={(value) => ($formData.dueOn = value)}
 					>
 						{#snippet trigger(props)}
-							<Button {...props} variant="outline" size="sm" class={chipClass}>
+							<Button
+								{...props}
+								variant="outline"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class={chipClass}
+							>
 								<CalendarDays class="text-muted-foreground" aria-hidden="true" />
 								{$formData.dueOn ? onCalendarDate($formData.dueOn) : "Due date"}
 							</Button>
@@ -743,10 +1135,11 @@
 			</div>
 
 			<div
-				class="flex flex-none items-center gap-3 border-t border-line-subtle py-2.5 pr-3 pl-4"
+				class="flex flex-none flex-wrap items-center gap-x-3 gap-y-2 border-t border-line-subtle py-2.5 pr-3 pl-4"
 			>
-				<label class="flex items-center gap-2 text-md text-foreground">
-					<Switch bind:checked={$formData.createMore} disabled={$submitting} />
+				<AttachmentPicker disabled={busy} onfiles={takeFiles} />
+				<label class="flex min-w-0 items-center gap-2 text-md text-foreground">
+					<Switch bind:checked={$formData.createMore} disabled={busy || Boolean(raised)} />
 					Create more
 				</label>
 				<span class="flex-1"></span>
@@ -754,20 +1147,27 @@
 					type="button"
 					variant="ghost"
 					size="sm"
-					disabled={$submitting}
+					disabled={busy}
 					onclick={() => (open = false)}
 				>
 					Cancel
 				</Button>
-				<Button type="submit" size="sm" disabled={$submitting || !$formData.title.trim()}>
+				<Button
+					type="submit"
+					size="sm"
+					class="ml-auto min-w-0"
+					disabled={busy || unconfirmed || !$formData.title.trim()}
+				>
 					{#if uploads.length > 0}
 						Attaching files
-					{:else if $submitting}
-						Creating issue
+					{:else if busy}
+						{raised ? "Finishing" : "Creating issue"}
+					{:else if raised}
+						Finish attaching
 					{:else}
 						Create issue
 					{/if}
-					<Kbd keys="⌘ ↵" tone="inverse" />
+					<Kbd keys="⌘ ↵" tone="inverse" class="hidden sm:inline-flex" />
 				</Button>
 			</div>
 		</form>
