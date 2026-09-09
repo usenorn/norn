@@ -13,6 +13,7 @@
 		count,
 		active = false,
 		indent = false,
+		size = "row",
 		onclick,
 		class: className,
 	}: {
@@ -26,6 +27,7 @@
 		count?: number;
 		active?: boolean;
 		indent?: boolean;
+		size?: "row" | "touch";
 		onclick?: (event: MouseEvent) => void;
 		class?: string;
 	} = $props();
@@ -42,8 +44,9 @@
 	onpointerleave={() => (hovered = false)}
 	{onclick}
 	class={cn(
-		"flex h-6.75 w-full items-center gap-2 rounded-xs px-2 text-md font-medium tracking-snug text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[active=true]:rule-inset data-[active=true]:bg-accent data-[active=true]:text-ink-900",
-		indent && "pl-6",
+		"flex w-full items-center gap-2 rounded-xs px-2 text-md font-medium tracking-snug text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[active=true]:rule-inset data-[active=true]:bg-accent data-[active=true]:text-ink-900",
+		size === "touch" ? "h-11 gap-3 rounded-sm" : "h-6.75",
+		indent && (size === "touch" ? "pl-9" : "pl-6"),
 		className
 	)}
 >
