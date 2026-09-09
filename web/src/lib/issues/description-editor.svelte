@@ -6,6 +6,7 @@
 	import Image from "@tiptap/extension-image";
 	import Suggestion from "@tiptap/suggestion";
 	import { PluginKey } from "@tiptap/pm/state";
+	import type { EditorView } from "@tiptap/pm/view";
 	import AtSign from "@lucide/svelte/icons/at-sign";
 	import Bold from "@lucide/svelte/icons/bold";
 	import Bot from "@lucide/svelte/icons/bot";
@@ -19,6 +20,13 @@
 	import Strikethrough from "@lucide/svelte/icons/strikethrough";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { markdownProse } from "$lib/issues/markdown";
+	import {
+		DescriptionUploads,
+		dropUpload,
+		placeUpload,
+		previewOf,
+		uploadPosition,
+	} from "$lib/issues/description-uploads";
 	import {
 		issueItems,
 		mentionItems,
@@ -51,7 +59,7 @@
 		disabled?: boolean;
 		autofocus?: boolean;
 		id?: string;
-		onfiles?: (files: File[]) => void;
+		onfiles?: (files: File[]) => string[] | void;
 		onmetaenter?: () => void;
 		class?: string;
 		"aria-describedby"?: string;
@@ -176,6 +184,39 @@
 		return Array.from(list ?? []);
 	}
 
+	function take(view: EditorView, dropped: File[], pos: number): boolean {
+		if (dropped.length === 0 || !onfiles) return false;
+
+		const ids = onfiles(dropped) ?? [];
+
+		ids.forEach((taskId, at) => {
+			const file = dropped[at];
+
+			placeUpload(view, { id: taskId, name: file.name, preview: previewOf(file) }, pos);
+		});
+
+		return true;
+	}
+
+	export function settle(taskId: string, markdown: string): boolean {
+		const within = editor;
+
+		if (!within) return false;
+
+		const pos = uploadPosition(within.state, taskId);
+
+		if (pos === null) return false;
+
+		dropUpload(within.view, taskId);
+		within.commands.insertContentAt(pos, markdown, { contentType: "markdown" });
+
+		return true;
+	}
+
+	export function abandon(taskId: string) {
+		if (editor) dropUpload(editor.view, taskId);
+	}
+
 	function written(within: Editor): string {
 		return within.getMarkdown().replace(/[ \t]+$/gm, "").trim();
 	}
@@ -194,6 +235,7 @@
 				Image.configure({ inline: false }),
 				completing("@", "mention"),
 				completing("#", "issue"),
+				DescriptionUploads,
 			],
 			editorProps: {
 				attributes: {
@@ -203,25 +245,25 @@
 					"aria-label": "Description",
 					...(id ? { id } : {}),
 				},
-				handlePaste: (_view, event) => {
-					const dropped = files(event.clipboardData?.files);
+				handlePaste: (view, event) => {
+					const taken = take(view, files(event.clipboardData?.files), view.state.selection.from);
 
-					if (dropped.length === 0 || !onfiles) return false;
+					if (taken) event.preventDefault();
 
-					event.preventDefault();
-					onfiles(dropped);
-
-					return true;
+					return taken;
 				},
-				handleDrop: (_view, event) => {
-					const dropped = files((event as DragEvent).dataTransfer?.files);
+				handleDrop: (view, event) => {
+					const dragged = event as DragEvent;
+					const landed = view.posAtCoords({ left: dragged.clientX, top: dragged.clientY });
+					const taken = take(
+						view,
+						files(dragged.dataTransfer?.files),
+						landed?.pos ?? view.state.selection.from
+					);
 
-					if (dropped.length === 0 || !onfiles) return false;
+					if (taken) event.preventDefault();
 
-					event.preventDefault();
-					onfiles(dropped);
-
-					return true;
+					return taken;
 				},
 				handleKeyDown: (_view, event) => {
 					if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && onmetaenter) {
@@ -235,8 +277,12 @@
 				},
 			},
 			onUpdate: ({ editor: within }) => {
-				emitted = written(within);
-				value = emitted;
+				const next = written(within);
+
+				if (next === emitted) return;
+
+				emitted = next;
+				value = next;
 			},
 			onTransaction: () => (revision += 1),
 		});
@@ -252,7 +298,9 @@
 		emitted = untrack(() => value);
 		editor = created;
 
-		if (untrack(() => autofocus)) created.commands.focus("end");
+		untrack(() => {
+			if (autofocus) created.commands.focus("end");
+		});
 
 		return () => {
 			created.destroy();
@@ -270,7 +318,7 @@
 	});
 
 	$effect(() => {
-		editor?.setEditable(!disabled);
+		editor?.setEditable(!disabled, false);
 	});
 
 	$effect(() => {
@@ -369,7 +417,7 @@
 	<div class="relative min-w-0">
 		<div
 			bind:this={host}
-			class="{markdownProse} min-w-0 py-2 text-md [&_.ProseMirror]:min-h-16 [&_.ProseMirror]:break-words"
+			class="{markdownProse} min-w-0 py-2 text-md [&_.ProseMirror]:min-h-16"
 			data-slot="description-editor"
 		></div>
 

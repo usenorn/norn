@@ -195,6 +195,9 @@
 	let loadedActivity = $state.raw<ActivityFeed | null>(null);
 	let commentUploads = $state.raw<UploadTask[]>([]);
 	let bodyUploads = $state.raw<UploadTask[]>([]);
+	let descriptionEditor = $state.raw<
+		{ settle: (taskId: string, markdown: string) => boolean; abandon: (taskId: string) => void } | undefined
+	>(undefined);
 	let attachmentFailure = $state<AttachmentFailure | null>(null);
 	let codeLinkFailure = $state<SourceControlFailure | null>(null);
 	let removedCodeLinks = $state.raw<string[]>([]);
@@ -1026,12 +1029,12 @@
 		}
 	}
 
-	function begin(into: "comment" | "body", files: File[]) {
-		if (!issue) return;
+	function begin(into: "comment" | "body", files: File[]): string[] {
+		if (!issue) return [];
 
 		attachmentFailure = null;
 
-		for (const file of files) {
+		return files.map((file) => {
 			const taskId = `upload-${(uploadSequence += 1)}`;
 			const task = newTask(taskId, file);
 
@@ -1039,7 +1042,9 @@
 			replaceTask(into, task);
 
 			void run(into, taskId, file, task);
-		}
+
+			return taskId;
+		});
 	}
 
 	async function run(into: "comment" | "body", taskId: string, file: File, task: UploadTask) {
@@ -1062,9 +1067,15 @@
 			(next) => {
 				replaceTask(into, next);
 
+				if (into === "body" && next.state === "cancelled") descriptionEditor?.abandon(taskId);
+
 				if (next.state === "done" && next.attachment) {
 					if (into === "body") {
-						$formData.description = joined($formData.description, attachmentMarkdown(next.attachment));
+						const markdown = attachmentMarkdown(next.attachment);
+
+						if (!descriptionEditor?.settle(taskId, markdown)) {
+							$formData.description = joined($formData.description, markdown);
+						}
 					}
 
 					void invalidate(keys.page(page.route.id));
@@ -1096,6 +1107,8 @@
 	}
 
 	function dismissUpload(into: "comment" | "body", taskId: string) {
+		if (into === "body") descriptionEditor?.abandon(taskId);
+
 		const list = into === "comment" ? commentUploads : bodyUploads;
 		const next = list.filter((entry) => entry.id !== taskId);
 
@@ -1887,6 +1900,7 @@
 												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5">
 													<DescriptionEditor
 														{...props}
+														bind:this={descriptionEditor}
 														bind:value={$formData.description}
 														workspaceId={data.workspace.id}
 														workspace={data.workspace.slug}
