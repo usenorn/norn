@@ -874,6 +874,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("epostix.webhook_secret", "")
 	v.SetDefault("epostix.request_timeout", 30*time.Second)
 	v.SetDefault("epostix.max_delivery_size", int64(1<<20))
+	v.SetDefault("epostix.max_message_bytes", int64(25<<20))
 	v.SetDefault("epostix.max_body_bytes", 60000)
 
 	v.SetDefault("attachments.reclaim_batch", 200)

@@ -25,6 +25,12 @@ type AdoptAttachmentInput struct {
 	Origin      *entity.ImportOrigin
 }
 
+type ReceiveAttachmentInput struct {
+	FileName    string
+	ContentType string
+	Content     []byte
+}
+
 type AttachmentReservation struct {
 	Attachment entity.Attachment
 	Transfer   entity.BlobTicket
@@ -33,6 +39,7 @@ type AttachmentReservation struct {
 type Attachments interface {
 	List(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Attachment, error)
 	Reserve(ctx context.Context, workspaceID, issueID uuid.UUID, input ReserveAttachmentInput) (AttachmentReservation, error)
+	Receive(ctx context.Context, workspaceID, issueID uuid.UUID, input ReceiveAttachmentInput) (entity.Attachment, error)
 	Adopt(ctx context.Context, workspaceID, issueID uuid.UUID, input AdoptAttachmentInput) (entity.Attachment, error)
 	Finalize(ctx context.Context, workspaceID, issueID, attachmentID uuid.UUID) (entity.Attachment, error)
 	Remove(ctx context.Context, workspaceID, issueID, attachmentID uuid.UUID) error

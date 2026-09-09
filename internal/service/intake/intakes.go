@@ -21,14 +21,15 @@ import (
 )
 
 type intakesService struct {
-	intake     repository.Intake
-	mail       repository.InboundMail
-	teams      repository.Team
-	jobs       repository.JobProducer
-	issues     service.Issues
-	authorizer service.Authorizer
-	transactor repository.Transactor
-	domain     string
+	intake      repository.Intake
+	mail        repository.InboundMail
+	teams       repository.Team
+	jobs        repository.JobProducer
+	issues      service.Issues
+	attachments service.Attachments
+	authorizer  service.Authorizer
+	transactor  repository.Transactor
+	domain      string
 }
 
 func New(
@@ -37,19 +38,21 @@ func New(
 	teams repository.Team,
 	jobs repository.JobProducer,
 	issues service.Issues,
+	attachments service.Attachments,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 	cfg config.Intake,
 ) service.Intakes {
 	return &intakesService{
-		intake:     intake,
-		mail:       mail,
-		teams:      teams,
-		jobs:       jobs,
-		issues:     issues,
-		authorizer: authorizer,
-		transactor: transactor,
-		domain:     cfg.Domain,
+		intake:      intake,
+		mail:        mail,
+		teams:       teams,
+		jobs:        jobs,
+		issues:      issues,
+		attachments: attachments,
+		authorizer:  authorizer,
+		transactor:  transactor,
+		domain:      cfg.Domain,
 	}
 }
 
@@ -348,20 +351,96 @@ func (s *intakesService) file(
 		OwnerAccountID: address.EnabledBy,
 	})
 
+	description := entity.IntakeDescription(message)
+
 	created, err := s.issues.Create(acting, service.CreateIssueInput{
 		WorkspaceID: delivery.WorkspaceID,
 		TeamID:      delivery.TeamID,
 		Title:       entity.IntakeTitle(message.Subject),
-		Description: entity.IntakeDescription(message),
+		Description: description,
 		Source:      entity.TriageSourceEmail,
 	})
 	if err != nil {
 		return err
 	}
 
+	if err := s.keep(acting, created, description, message); err != nil {
+		return err
+	}
+
 	return s.intake.Settle(
 		ctx, delivery.ID, entity.IntakeDeliveryFiled, created.ID, "", time.Now().UTC(),
 	)
+}
+
+// keep stores what came with the message and points the body at the files. A picture the
+// sender wrote into the message only becomes visible here: until the issue exists there is
+// nowhere to put the file, and until the file is stored the body has nothing to point at.
+func (s *intakesService) keep(
+	ctx context.Context,
+	issue entity.Issue,
+	description string,
+	message entity.InboundMessage,
+) error {
+	if len(message.Attachments) == 0 {
+		return nil
+	}
+
+	var (
+		stored  = make(map[string]string, len(message.Attachments))
+		refused []string
+	)
+
+	for _, attachment := range message.Attachments {
+		if len(attachment.Content) == 0 {
+			refused = append(refused, attachment.FileName)
+
+			continue
+		}
+
+		kept, err := s.attachments.Receive(ctx, issue.WorkspaceID, issue.ID, service.ReceiveAttachmentInput{
+			FileName:    attachment.FileName,
+			ContentType: attachment.ContentType,
+			Content:     attachment.Content,
+		})
+		if err != nil {
+			// A file too big for this instance, or for what the workspace has left, is named in
+			// the issue rather than dropped in silence. Anything else is a failure to store and
+			// the delivery is retried.
+			if !errors.Is(err, entity.ErrAttachmentTooLarge) && !errors.Is(err, entity.ErrStorageExhausted) {
+				return err
+			}
+
+			logging.From(ctx).InfoContext(
+				ctx,
+				"a file from an inbound message was not kept",
+				"issue_id", issue.ID.String(),
+				"file_name", attachment.FileName,
+				"reason", err.Error(),
+			)
+
+			refused = append(refused, attachment.FileName)
+
+			continue
+		}
+
+		if attachment.Embedded() {
+			stored[entity.IntakeContentReference(attachment.ContentID)] =
+				entity.AttachmentContentPath(issue.WorkspaceID, kept.ID)
+		}
+	}
+
+	embedded := entity.IntakeEmbed(description, stored, refused)
+	if embedded == description {
+		return nil
+	}
+
+	_, err := s.issues.Update(ctx, issue.WorkspaceID, issue.ID, service.UpdateIssueInput{
+		ExpectedVersion: issue.Version,
+		Description:     &embedded,
+	})
+
+	return err
 }
 
 func (s *intakesService) ignore(

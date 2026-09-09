@@ -118,6 +118,21 @@ func (mr *MockAttachmentsMockRecorder) List(ctx, workspaceID, issueID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockAttachments)(nil).List), ctx, workspaceID, issueID)
 }
 
+// Receive mocks base method.
+func (m *MockAttachments) Receive(ctx context.Context, workspaceID, issueID uuid.UUID, input service.ReceiveAttachmentInput) (entity.Attachment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Receive", ctx, workspaceID, issueID, input)
+	ret0, _ := ret[0].(entity.Attachment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Receive indicates an expected call of Receive.
+func (mr *MockAttachmentsMockRecorder) Receive(ctx, workspaceID, issueID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Receive", reflect.TypeOf((*MockAttachments)(nil).Receive), ctx, workspaceID, issueID, input)
+}
+
 // Reclaim mocks base method.
 func (m *MockAttachments) Reclaim(ctx context.Context) error {
 	m.ctrl.T.Helper()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
+	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	intakesvc "github.com/usenorn/norn/internal/service/intake"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
@@ -26,16 +28,17 @@ import (
 const domain = "submit.norn.so"
 
 type harness struct {
-	intake     *intakerepo.MockIntake
-	mail       *inboundmailrepo.MockInboundMail
-	teams      *teamrepo.MockTeam
-	jobs       *jobqueuerepo.MockJobProducer
-	issues     *issuesvc.MockIssues
-	authorizer *authorizersvc.MockAuthorizer
-	transactor *transactorrepo.MockTransactor
-	committed  []uuid.UUID
-	pending    []uuid.UUID
-	service    service.Intakes
+	intake      *intakerepo.MockIntake
+	mail        *inboundmailrepo.MockInboundMail
+	teams       *teamrepo.MockTeam
+	jobs        *jobqueuerepo.MockJobProducer
+	issues      *issuesvc.MockIssues
+	attachments *attachmentsvc.MockAttachments
+	authorizer  *authorizersvc.MockAuthorizer
+	transactor  *transactorrepo.MockTransactor
+	committed   []uuid.UUID
+	pending     []uuid.UUID
+	service     service.Intakes
 
 	workspaceID uuid.UUID
 	teamID      uuid.UUID
@@ -54,6 +57,7 @@ func newHarness(t *testing.T) *harness {
 		teams:       teamrepo.NewMockTeam(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		issues:      issuesvc.NewMockIssues(ctrl),
+		attachments: attachmentsvc.NewMockAttachments(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		workspaceID: uuid.New(),
@@ -84,7 +88,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = intakesvc.New(
-		h.intake, h.mail, h.teams, h.jobs, h.issues, h.authorizer, h.transactor,
+		h.intake, h.mail, h.teams, h.jobs, h.issues, h.attachments, h.authorizer, h.transactor,
 		config.Intake{Domain: domain},
 	)
 
@@ -202,7 +206,7 @@ func TestAnInstanceWithNoDomainCannotOfferAnAddress(t *testing.T) {
 	h := newHarness(t)
 
 	h.service = intakesvc.New(
-		h.intake, h.mail, h.teams, h.jobs, h.issues, h.authorizer, h.transactor, config.Intake{},
+		h.intake, h.mail, h.teams, h.jobs, h.issues, h.attachments, h.authorizer, h.transactor, config.Intake{},
 	)
 
 	if _, err := h.service.Enable(context.Background(), h.workspaceID, h.teamID); !errors.Is(
@@ -633,5 +637,195 @@ func TestAWorkerHeldUpDoesNotUndoWhatTheOtherFiled(t *testing.T) {
 
 	if len(h.committed) != 0 {
 		t.Fatalf("a settled delivery was filed again by the attempt that arrived second")
+	}
+}
+
+func TestAPictureInAMessageIsStoredAndShownWhereItWasWritten(t *testing.T) {
+	h := newHarness(t)
+
+	message := entity.InboundMessage{
+		ExternalID: "inb_1",
+		Sender:     "rae@northwind.co",
+		Recipients: []string{"core-649848208d3e@" + domain},
+		Subject:    "The stuck page",
+		Text:       "Here is what I see.",
+		HTML:       `<p>Here is what I see.</p><img src="cid:shot@mail" alt="Stuck">`,
+		Attachments: []entity.InboundAttachment{
+			{FileName: "shot.png", ContentType: "image/png", ContentID: "shot@mail", Content: []byte("png")},
+			{FileName: "report.pdf", ContentType: "application/pdf", Content: []byte("pdf")},
+		},
+	}
+
+	issueID := uuid.New()
+
+	h.intake.EXPECT().Delivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.mail.EXPECT().Fetch(gomock.Any(), "inb_1").Return(message, nil)
+	h.intake.EXPECT().LockDelivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.intake.EXPECT().Address(gomock.Any(), h.workspaceID, h.teamID).Return(h.address(), nil)
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		Return(entity.Issue{ID: issueID, WorkspaceID: h.workspaceID, Version: 1}, nil)
+
+	pictureID := uuid.New()
+	kept := map[string]int{}
+
+	h.attachments.EXPECT().
+		Receive(gomock.Any(), h.workspaceID, issueID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			workspaceID, _ uuid.UUID,
+			input service.ReceiveAttachmentInput,
+		) (entity.Attachment, error) {
+			kept[input.FileName] = len(input.Content)
+
+			if input.FileName == "shot.png" {
+				return entity.Attachment{ID: pictureID, WorkspaceID: workspaceID}, nil
+			}
+
+			return entity.Attachment{ID: uuid.New(), WorkspaceID: workspaceID}, nil
+		}).
+		Times(2)
+
+	var rewritten string
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), h.workspaceID, issueID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, _ uuid.UUID,
+			input service.UpdateIssueInput,
+		) (entity.Issue, error) {
+			if input.Description != nil {
+				rewritten = *input.Description
+			}
+
+			return entity.Issue{ID: issueID}, nil
+		})
+
+	h.intake.EXPECT().
+		Settle(gomock.Any(), h.deliveryID, entity.IntakeDeliveryFiled, issueID, gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	if err := h.service.Apply(context.Background(), h.deliveryID); err != nil {
+		t.Fatalf("filing refused: %v", err)
+	}
+
+	if kept["shot.png"] != 3 || kept["report.pdf"] != 3 {
+		t.Fatalf(
+			"stored %v, want both files with their bytes. Naming a file in the description while "+
+				"leaving the bytes behind is what this fixes.",
+			kept,
+		)
+	}
+
+	want := "![Stuck](" + entity.AttachmentContentPath(h.workspaceID, pictureID) + ")"
+
+	if !strings.Contains(rewritten, want) {
+		t.Fatalf(
+			"the description does not show the picture:\n%s\nwant %s",
+			rewritten, want,
+		)
+	}
+
+	if strings.Contains(rewritten, entity.IntakeContentScheme) {
+		t.Fatalf("a reference into the message was left in the issue:\n%s", rewritten)
+	}
+}
+
+func TestAFileTooBigToKeepIsNamedRatherThanDropped(t *testing.T) {
+	h := newHarness(t)
+
+	message := entity.InboundMessage{
+		ExternalID: "inb_1",
+		Sender:     "rae@northwind.co",
+		Recipients: []string{"core-649848208d3e@" + domain},
+		Subject:    "Logs",
+		Text:       "Everything is in the archive.",
+		Attachments: []entity.InboundAttachment{
+			{FileName: "huge.zip", ContentType: "application/zip", Content: []byte("zip")},
+		},
+	}
+
+	issueID := uuid.New()
+
+	h.intake.EXPECT().Delivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.mail.EXPECT().Fetch(gomock.Any(), "inb_1").Return(message, nil)
+	h.intake.EXPECT().LockDelivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.intake.EXPECT().Address(gomock.Any(), h.workspaceID, h.teamID).Return(h.address(), nil)
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		Return(entity.Issue{ID: issueID, WorkspaceID: h.workspaceID, Version: 1}, nil)
+	h.attachments.EXPECT().
+		Receive(gomock.Any(), h.workspaceID, issueID, gomock.Any()).
+		Return(entity.Attachment{}, entity.AttachmentTooLargeError{SizeBytes: 3, MaxBytes: 1})
+
+	var rewritten string
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), h.workspaceID, issueID, gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_, _ uuid.UUID,
+			input service.UpdateIssueInput,
+		) (entity.Issue, error) {
+			if input.Description != nil {
+				rewritten = *input.Description
+			}
+
+			return entity.Issue{ID: issueID}, nil
+		})
+
+	h.intake.EXPECT().
+		Settle(gomock.Any(), h.deliveryID, entity.IntakeDeliveryFiled, issueID, gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	if err := h.service.Apply(context.Background(), h.deliveryID); err != nil {
+		t.Fatalf("filing refused: %v", err)
+	}
+
+	if !strings.Contains(rewritten, "Not kept: huge.zip") {
+		t.Fatalf(
+			"the issue does not say the file was refused:\n%s\nA message that mentions an archive "+
+				"nobody can find reads as Norn losing it.",
+			rewritten,
+		)
+	}
+}
+
+func TestAFileThatCannotBeStoredStopsTheDeliveryRatherThanLosingIt(t *testing.T) {
+	h := newHarness(t)
+
+	message := entity.InboundMessage{
+		ExternalID: "inb_1",
+		Sender:     "rae@northwind.co",
+		Recipients: []string{"core-649848208d3e@" + domain},
+		Subject:    "Logs",
+		Attachments: []entity.InboundAttachment{
+			{FileName: "shot.png", ContentType: "image/png", Content: []byte("png")},
+		},
+	}
+
+	issueID := uuid.New()
+
+	h.intake.EXPECT().Delivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.mail.EXPECT().Fetch(gomock.Any(), "inb_1").Return(message, nil)
+	h.intake.EXPECT().LockDelivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.intake.EXPECT().Address(gomock.Any(), h.workspaceID, h.teamID).Return(h.address(), nil)
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		Return(entity.Issue{ID: issueID, WorkspaceID: h.workspaceID, Version: 1}, nil)
+	h.attachments.EXPECT().
+		Receive(gomock.Any(), h.workspaceID, issueID, gomock.Any()).
+		Return(entity.Attachment{}, errors.New("the bucket is unreachable"))
+
+	if err := h.service.Apply(context.Background(), h.deliveryID); err == nil {
+		t.Fatal(
+			"the delivery was settled although the file could not be stored. Storage being away " +
+				"for a moment must leave the message to be retried, not file it without its files.",
+		)
+	}
+
+	if len(h.committed) != 0 {
+		t.Fatalf("the issue was committed although the transaction failed")
 	}
 }
