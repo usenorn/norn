@@ -58,6 +58,7 @@ type Epostix struct {
 	WebhookSecret   string        `mapstructure:"webhook_secret"`
 	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
 	MaxDeliverySize int64         `mapstructure:"max_delivery_size"`
+	MaxMessageBytes int64         `mapstructure:"max_message_bytes"`
 	MaxBodyBytes    int           `mapstructure:"max_body_bytes"`
 }
 

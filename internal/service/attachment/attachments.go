@@ -1,6 +1,7 @@
 package attachment
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -90,9 +91,59 @@ func (s *attachmentsService) Reserve(
 	workspaceID, issueID uuid.UUID,
 	input service.ReserveAttachmentInput,
 ) (service.AttachmentReservation, error) {
-	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	created, err := s.reserve(ctx, workspaceID, issueID, input)
 	if err != nil {
 		return service.AttachmentReservation{}, err
+	}
+
+	ticket, err := s.blobs.PresignPut(ctx, created.ObjectKey, s.cfg.UploadTTL)
+	if err != nil {
+		return service.AttachmentReservation{}, err
+	}
+
+	return service.AttachmentReservation{Attachment: created, Transfer: ticket}, nil
+}
+
+// Receive stores a file nobody uploaded. Mail arrives at a worker with the bytes already in
+// hand, so there is no browser to hand a ticket to and no second request to settle the row:
+// the same reservation is made, the object is written here, and the same finish runs.
+func (s *attachmentsService) Receive(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	input service.ReceiveAttachmentInput,
+) (entity.Attachment, error) {
+	size := int64(len(input.Content))
+
+	reserved, err := s.reserve(ctx, workspaceID, issueID, service.ReserveAttachmentInput{
+		FileName:    input.FileName,
+		ContentType: input.ContentType,
+		SizeBytes:   size,
+	})
+	if err != nil {
+		return entity.Attachment{}, err
+	}
+
+	if err := s.blobs.Put(
+		ctx,
+		reserved.ObjectKey,
+		entity.AttachmentServedType(input.ContentType),
+		bytes.NewReader(input.Content),
+		size,
+	); err != nil {
+		return entity.Attachment{}, err
+	}
+
+	return s.Finalize(ctx, workspaceID, issueID, reserved.ID)
+}
+
+func (s *attachmentsService) reserve(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	input service.ReserveAttachmentInput,
+) (entity.Attachment, error) {
+	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	if err != nil {
+		return entity.Attachment{}, err
 	}
 
 	name := entity.AttachmentFileName(input.FileName)
@@ -100,11 +151,11 @@ func (s *attachmentsService) Reserve(
 	if err := entity.NewValidationError(
 		entity.ValidateAttachmentName("fileName", name),
 	); err != nil {
-		return service.AttachmentReservation{}, err
+		return entity.Attachment{}, err
 	}
 
 	if input.SizeBytes <= 0 || input.SizeBytes > s.cfg.MaxFileBytes {
-		return service.AttachmentReservation{}, entity.AttachmentTooLargeError{
+		return entity.Attachment{}, entity.AttachmentTooLargeError{
 			SizeBytes: input.SizeBytes,
 			MaxBytes:  s.cfg.MaxFileBytes,
 		}
@@ -139,15 +190,10 @@ func (s *attachmentsService) Reserve(
 
 		return err
 	}); err != nil {
-		return service.AttachmentReservation{}, err
+		return entity.Attachment{}, err
 	}
 
-	ticket, err := s.blobs.PresignPut(ctx, created.ObjectKey, s.cfg.UploadTTL)
-	if err != nil {
-		return service.AttachmentReservation{}, err
-	}
-
-	return service.AttachmentReservation{Attachment: created, Transfer: ticket}, nil
+	return created, nil
 }
 
 // Reserve mints a presigned PUT for a browser and settles the row only once the bytes have

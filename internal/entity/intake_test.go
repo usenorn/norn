@@ -105,19 +105,90 @@ func TestAMessageWithNoSubjectStillBecomesAReadableIssue(t *testing.T) {
 
 func TestTheDescriptionSaysWhoWroteInAndWhatTheySent(t *testing.T) {
 	description := entity.IntakeDescription(entity.InboundMessage{
-		Sender:      "Rae Whitfield <rae@northwind.co>",
-		Text:        "The export button does nothing.",
-		Attachments: []string{"screenshot.png"},
+		Sender: "Rae Whitfield <rae@northwind.co>",
+		Text:   "The export button does nothing.",
 	})
 
-	for _, want := range []string{"rae@northwind.co", "screenshot.png", "The export button does nothing."} {
+	for _, want := range []string{"rae@northwind.co", "The export button does nothing."} {
 		if !strings.Contains(description, want) {
 			t.Fatalf(
 				"description is missing %q:\n%s\nNobody can answer a report without knowing who "+
-					"sent it or what came with it.",
+					"sent it.",
 				want, description,
 			)
 		}
+	}
+}
+
+func TestAPictureKeepsItsPlaceInTheBody(t *testing.T) {
+	message := entity.InboundMessage{
+		Sender: "rae@northwind.co",
+		Text:   "The export button does nothing.",
+		HTML: `<p>Before</p><img src="cid:shot@mail" alt="The stuck page">` +
+			`<p>After</p><img src="https://northwind.co/logo.png">`,
+		Attachments: []entity.InboundAttachment{
+			{FileName: "shot.png", ContentType: "image/png", ContentID: "shot@mail"},
+		},
+	}
+
+	description := entity.IntakeDescription(message)
+
+	if !strings.Contains(description, "![The stuck page](cid:shot@mail)") {
+		t.Fatalf(
+			"the picture lost its reference:\n%s\nThe plain text alternative carries no pictures, "+
+				"so a message with one has to be read from the markup.",
+			description,
+		)
+	}
+
+	if strings.Index(description, "Before") > strings.Index(description, "![The stuck page]") {
+		t.Fatalf("the picture moved out of the place the sender put it:\n%s", description)
+	}
+
+	embedded := entity.IntakeEmbed(
+		description,
+		map[string]string{"cid:shot@mail": "/v1/workspaces/w/attachments/a/content"},
+		[]string{"huge.zip"},
+	)
+
+	if !strings.Contains(embedded, "![The stuck page](/v1/workspaces/w/attachments/a/content)") {
+		t.Fatalf("the stored file was not put where the picture was:\n%s", embedded)
+	}
+
+	if !strings.Contains(embedded, "https://northwind.co/logo.png") {
+		t.Fatalf("a picture hosted elsewhere was dropped:\n%s", embedded)
+	}
+
+	if !strings.Contains(embedded, "Not kept: huge.zip") {
+		t.Fatalf(
+			"nothing says a file was refused:\n%s\nA file silently missing is worse than one "+
+				"named as too big to keep.",
+			embedded,
+		)
+	}
+}
+
+func TestAPictureWithNoFileBehindItIsNotLeftBroken(t *testing.T) {
+	description := entity.IntakeDescription(entity.InboundMessage{
+		Sender: "rae@northwind.co",
+		HTML:   `<p>Look</p><img src="cid:missing@mail" alt="Gone">`,
+		Attachments: []entity.InboundAttachment{
+			{FileName: "gone.png", ContentID: "missing@mail"},
+		},
+	})
+
+	embedded := entity.IntakeEmbed(description, nil, nil)
+
+	if strings.Contains(embedded, "cid:") {
+		t.Fatalf(
+			"a reference into the message survived into the issue:\n%s\nIt renders as a broken "+
+				"image, which reads as Norn losing the file rather than never storing it.",
+			embedded,
+		)
+	}
+
+	if !strings.Contains(embedded, "Look") {
+		t.Fatalf("the words around the picture were dropped with it:\n%s", embedded)
 	}
 }
 

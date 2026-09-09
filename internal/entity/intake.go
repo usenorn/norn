@@ -18,6 +18,7 @@ const (
 	IntakeTokenBytes      = 6
 	IntakeLocalPartMaxLen = 64
 	IntakeSubjectFallback = "(no subject)"
+	IntakeContentScheme   = "cid:"
 	IntakeLabelFallback   = "team"
 )
 
@@ -30,6 +31,7 @@ var (
 	ErrIntakeSignatureInvalid  = errors.New("inbound mail delivery did not verify")
 	ErrIntakeUnroutable        = errors.New("inbound message reached no team address")
 	ErrIntakeDomainUnset       = errors.New("this instance has no domain for incoming mail")
+	ErrIntakeMessageTooLarge   = errors.New("message is larger than this instance reads")
 )
 
 type IntakeAddress struct {
@@ -144,6 +146,17 @@ func (n InboundNotice) Carries() bool {
 	return n.MessageID != ""
 }
 
+type InboundAttachment struct {
+	FileName    string
+	ContentType string
+	ContentID   string
+	Content     []byte
+}
+
+func (a InboundAttachment) Embedded() bool {
+	return a.ContentID != ""
+}
+
 type InboundMessage struct {
 	ExternalID  string
 	Sender      string
@@ -152,7 +165,17 @@ type InboundMessage struct {
 	Text        string
 	HTML        string
 	ReceivedAt  time.Time
-	Attachments []string
+	Attachments []InboundAttachment
+}
+
+func (m InboundMessage) Embeds() bool {
+	for _, attachment := range m.Attachments {
+		if attachment.Embedded() {
+			return true
+		}
+	}
+
+	return false
 }
 
 func IntakeTitle(subject string) string {
@@ -168,17 +191,19 @@ func IntakeTitle(subject string) string {
 	return title
 }
 
+// IntakeDescription writes the message as markdown. A picture the sender put in the body is
+// left as a reference to the part of the message it came from, because the file has nowhere to
+// live until the issue exists; IntakeEmbed swaps those references for the stored files.
 func IntakeDescription(message InboundMessage) string {
 	body := strings.TrimSpace(message.Text)
-	if body == "" {
+
+	// The markup carries where the pictures sit, and the plain text alternative does not, so a
+	// message with pictures is read from the markup even when both are offered.
+	if body == "" || (message.Embeds() && message.HTML != "") {
 		body = strings.TrimSpace(TextFromHTML(message.HTML))
 	}
 
 	lead := fmt.Sprintf("From: %s", strings.TrimSpace(message.Sender))
-
-	if len(message.Attachments) > 0 {
-		lead += "\nAttached: " + strings.Join(message.Attachments, ", ")
-	}
 
 	if body == "" {
 		return lead
@@ -187,12 +212,53 @@ func IntakeDescription(message InboundMessage) string {
 	return lead + "\n\n" + body
 }
 
+// IntakeAttachmentFallback names a file the sender's client did not name. A picture written
+// into a message often arrives nameless, and a file with no name cannot be stored or listed.
+func IntakeAttachmentFallback(contentType string) string {
+	extension := ""
+
+	if kind, _, found := strings.Cut(contentType, "/"); found && kind == "image" {
+		_, extension, _ = strings.Cut(contentType, "/")
+		extension = "." + strings.Split(extension, "+")[0]
+	}
+
+	return "attachment" + extension
+}
+
+func IntakeContentReference(contentID string) string {
+	return IntakeContentScheme + strings.Trim(strings.TrimSpace(contentID), "<>")
+}
+
+// IntakeEmbed points every reference at the file it now names, and says plainly which files
+// could not be kept rather than leaving somebody to notice the absence.
+func IntakeEmbed(description string, stored map[string]string, refused []string) string {
+	embedded := description
+
+	for reference, path := range stored {
+		embedded = strings.ReplaceAll(embedded, "("+reference+")", "("+path+")")
+	}
+
+	// A reference with no file behind it renders as a broken image, so what is left over is
+	// removed rather than shown.
+	embedded = intakeLeftoverEmbed.ReplaceAllString(embedded, "")
+	embedded = strings.TrimSpace(intakeBlankLines.ReplaceAllString(embedded, "\n\n"))
+
+	if len(refused) > 0 {
+		embedded += "\n\nNot kept: " + strings.Join(refused, ", ")
+	}
+
+	return embedded
+}
+
 var (
-	intakeStripped   = regexp.MustCompile(`(?is)<(script|style)\b[^>]*>.*?</(script|style)>`)
-	intakeBreaks     = regexp.MustCompile(`(?i)<(br|/p|/div|/tr|/li|/h[1-6])\s*/?>`)
-	intakeTags       = regexp.MustCompile(`(?s)<[^>]*>`)
-	intakeBlankLines = regexp.MustCompile(`\n{3,}`)
-	intakeSpaces     = regexp.MustCompile(`[ \t\x{00a0}]+`)
+	intakeStripped      = regexp.MustCompile(`(?is)<(script|style)\b[^>]*>.*?</(script|style)>`)
+	intakeBreaks        = regexp.MustCompile(`(?i)<(br|/p|/div|/tr|/li|/h[1-6])\s*/?>`)
+	intakeTags          = regexp.MustCompile(`(?s)<[^>]*>`)
+	intakeBlankLines    = regexp.MustCompile(`\n{3,}`)
+	intakeSpaces        = regexp.MustCompile(`[ \t\x{00a0}]+`)
+	intakeImages        = regexp.MustCompile(`(?is)<img\b[^>]*>`)
+	intakeAttribute     = regexp.MustCompile(`(?is)\b(src|alt)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)`)
+	intakeLeftoverEmbed = regexp.MustCompile(`!\[[^\]]*\]\(` + IntakeContentScheme + `[^)]*\)`)
 )
 
 func TextFromHTML(markup string) string {
@@ -201,6 +267,7 @@ func TextFromHTML(markup string) string {
 	}
 
 	text := intakeStripped.ReplaceAllString(markup, "")
+	text = intakeImages.ReplaceAllStringFunc(text, markdownImage)
 	text = intakeBreaks.ReplaceAllString(text, "\n")
 	text = intakeTags.ReplaceAllString(text, "")
 	text = html.UnescapeString(text)
@@ -213,6 +280,30 @@ func TextFromHTML(markup string) string {
 	}
 
 	return strings.TrimSpace(intakeBlankLines.ReplaceAllString(strings.Join(lines, "\n"), "\n\n"))
+}
+
+// markdownImage keeps a picture where the sender put it. The source is left exactly as written
+// so a reference into the message survives to be swapped for the stored file, and a picture
+// hosted elsewhere keeps pointing there.
+func markdownImage(tag string) string {
+	source, description := "", ""
+
+	for _, attribute := range intakeAttribute.FindAllStringSubmatch(tag, -1) {
+		value := strings.Trim(attribute[2], `"'`)
+
+		switch strings.ToLower(attribute[1]) {
+		case "src":
+			source = html.UnescapeString(strings.TrimSpace(value))
+		case "alt":
+			description = collapseIntakeSpace(html.UnescapeString(value))
+		}
+	}
+
+	if source == "" {
+		return ""
+	}
+
+	return "\n![" + strings.TrimSpace(description) + "](" + source + ")\n"
 }
 
 func collapseIntakeSpace(value string) string {
