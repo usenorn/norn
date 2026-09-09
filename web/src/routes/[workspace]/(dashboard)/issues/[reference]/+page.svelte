@@ -1394,17 +1394,11 @@
 	}
 
 	function onPointerDown(event: PointerEvent) {
-		if (editingField !== "description") return;
+		if (editingField !== "description" || dirty) return;
 
 		const target = event.target as HTMLElement | null;
 
 		if (target?.closest("[data-editing-region]")) return;
-
-		if (dirty) {
-			(document.getElementById("issue-edit-form") as HTMLFormElement | null)?.requestSubmit();
-
-			return;
-		}
 
 		editingField = null;
 	}
@@ -1924,6 +1918,24 @@
 										onretry={(taskId) => retryUpload("body", taskId)}
 										ondismiss={(taskId) => dismissUpload("body", taskId)}
 									/>
+
+									<div class="flex items-center gap-2">
+										<Button type="submit" size="sm" disabled={$submitting}>
+											{$submitting ? "Saving" : "Save description"}
+										</Button>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											disabled={$submitting}
+											onclick={discard}
+										>
+											Cancel
+										</Button>
+										<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+											<Kbd keys="⌘ ↵" /> save
+										</span>
+									</div>
 								</div>
 							{:else if issue.description.trim()}
 								<button

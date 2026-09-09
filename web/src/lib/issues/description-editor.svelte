@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { untrack } from "svelte";
 	import { Editor, Extension } from "@tiptap/core";
 	import StarterKit from "@tiptap/starter-kit";
 	import { Markdown } from "@tiptap/markdown";
@@ -74,7 +73,6 @@
 		take: (item: SuggestionItem) => void;
 	};
 
-	let host = $state<HTMLDivElement | null>(null);
 	let editor = $state.raw<Editor | null>(null);
 	let popup = $state.raw<Popup | null>(null);
 	let revision = $state(0);
@@ -284,29 +282,27 @@
 				emitted = next;
 				value = next;
 			},
-			onTransaction: () => (revision += 1),
+			// A transaction can be dispatched while Svelte is rendering — a blur fires one — and
+			// writing state there is refused. The toolbar only needs the new marks afterwards.
+			onTransaction: () => queueMicrotask(() => (revision += 1)),
 		});
 	}
 
-	$effect(() => {
-		const element = host;
+	function mount(element: HTMLElement) {
+		const created = build(element);
 
-		if (!element) return;
-
-		const created = untrack(() => build(element));
-
-		emitted = untrack(() => value);
+		emitted = value;
 		editor = created;
 
-		untrack(() => {
-			if (autofocus) created.commands.focus("end");
-		});
+		if (autofocus) created.commands.focus("end");
 
-		return () => {
-			created.destroy();
-			editor = null;
+		return {
+			destroy() {
+				created.destroy();
+				editor = null;
+			},
 		};
-	});
+	}
 
 	$effect(() => {
 		const next = value;
@@ -416,7 +412,7 @@
 
 	<div class="relative min-w-0">
 		<div
-			bind:this={host}
+			use:mount
 			class="{markdownProse} min-w-0 py-2 text-md [&_.ProseMirror]:min-h-16"
 			data-slot="description-editor"
 		></div>
