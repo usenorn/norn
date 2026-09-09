@@ -28,19 +28,36 @@
 		locked?: boolean;
 	} = $props();
 
-	let saved = $state<IntakeSetting | null>(null);
-	let failure = $state<IntakeFailure | null>(null);
-	let working = $state(false);
-	let copied = $state(false);
+	// SvelteKit keeps this component across a move from one team's settings to another's, so
+	// what was saved for the team just left would otherwise be shown, copied and rotated under
+	// the name of the team now on screen. Everything local is tied to the team it belongs to.
+	type Local = { at: string; setting?: IntakeSetting; failure?: IntakeFailure; copied?: boolean };
 
-	const current = $derived<IntakeSetting>(saved ?? setting);
+	let local = $state<Local | null>(null);
+	let working = $state(false);
+
+	const at = $derived(`${workspace.id}:${team.id}`);
+	const mine = $derived<Local>(local?.at === at ? local : { at });
+	const current = $derived<IntakeSetting>(mine.setting ?? setting);
+	const failure = $derived(mine.failure ?? null);
+	const copied = $derived(mine.copied ?? false);
 	const address = $derived(current.kind === "on" ? current.address : null);
 	const disabled = $derived(locked || working);
 	const path = $derived({ workspaceId: workspace.id, teamId: team.id });
 
+	function hold(held: Omit<Local, "at">, held_at: string) {
+		// A reply that arrives after the move belongs to the team it was asked about, not the
+		// one now on screen.
+		if (held_at !== at) return;
+
+		local = { at: held_at, ...held };
+	}
+
 	async function enable() {
+		const asked = at;
+
 		working = true;
-		failure = null;
+		hold({}, asked);
 
 		try {
 			const { data, error } = await api.POST(
@@ -49,24 +66,25 @@
 			);
 
 			if (error || !data) {
-				failure = readIntakeFailure(error);
+				hold({ failure: readIntakeFailure(error) }, asked);
 
 				return;
 			}
 
-			saved = { kind: "on", address: data };
-			copied = false;
+			hold({ setting: { kind: "on", address: data } }, asked);
 			await invalidate(keys.page(page.route.id));
 		} catch {
-			failure = { kind: "unavailable" };
+			hold({ failure: { kind: "unavailable" } }, asked);
 		} finally {
 			working = false;
 		}
 	}
 
 	async function rotate() {
+		const asked = at;
+
 		working = true;
-		failure = null;
+		hold({}, asked);
 
 		try {
 			const { data, error } = await api.POST(
@@ -75,24 +93,25 @@
 			);
 
 			if (error || !data) {
-				failure = readIntakeFailure(error);
+				hold({ failure: readIntakeFailure(error) }, asked);
 
 				return;
 			}
 
-			saved = { kind: "on", address: data };
-			copied = false;
+			hold({ setting: { kind: "on", address: data } }, asked);
 			await invalidate(keys.page(page.route.id));
 		} catch {
-			failure = { kind: "unavailable" };
+			hold({ failure: { kind: "unavailable" } }, asked);
 		} finally {
 			working = false;
 		}
 	}
 
 	async function stop() {
+		const asked = at;
+
 		working = true;
-		failure = null;
+		hold({}, asked);
 
 		try {
 			const { error } = await api.DELETE(
@@ -101,16 +120,15 @@
 			);
 
 			if (error) {
-				failure = readIntakeFailure(error);
+				hold({ failure: readIntakeFailure(error) }, asked);
 
 				return;
 			}
 
-			saved = { kind: "off" };
-			copied = false;
+			hold({ setting: { kind: "off" } }, asked);
 			await invalidate(keys.page(page.route.id));
 		} catch {
-			failure = { kind: "unavailable" };
+			hold({ failure: { kind: "unavailable" } }, asked);
 		} finally {
 			working = false;
 		}
@@ -120,7 +138,7 @@
 		if (!address) return;
 
 		await navigator.clipboard.writeText(address.email);
-		copied = true;
+		hold({ setting: mine.setting, copied: true }, at);
 	}
 </script>
 

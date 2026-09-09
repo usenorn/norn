@@ -18,6 +18,8 @@ type Intake interface {
 	Disable(ctx context.Context, workspaceID, teamID uuid.UUID) error
 	Record(ctx context.Context, delivery entity.IntakeDelivery) (uuid.UUID, error)
 	Delivery(ctx context.Context, deliveryID uuid.UUID) (entity.IntakeDelivery, error)
+	DeliveryOf(ctx context.Context, externalID string) (entity.IntakeDelivery, error)
+	LockDelivery(ctx context.Context, deliveryID uuid.UUID) (entity.IntakeDelivery, error)
 	Settle(
 		ctx context.Context,
 		deliveryID uuid.UUID,

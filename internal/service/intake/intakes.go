@@ -27,6 +27,7 @@ type intakesService struct {
 	jobs       repository.JobProducer
 	issues     service.Issues
 	authorizer service.Authorizer
+	transactor repository.Transactor
 	domain     string
 }
 
@@ -37,6 +38,7 @@ func New(
 	jobs repository.JobProducer,
 	issues service.Issues,
 	authorizer service.Authorizer,
+	transactor repository.Transactor,
 	cfg config.Intake,
 ) service.Intakes {
 	return &intakesService{
@@ -46,6 +48,7 @@ func New(
 		jobs:       jobs,
 		issues:     issues,
 		authorizer: authorizer,
+		transactor: transactor,
 		domain:     cfg.Domain,
 	}
 }
@@ -237,7 +240,13 @@ func (s *intakesService) Accept(
 		ReceivedAt:  message.ReceivedAt,
 	})
 	if err != nil {
-		return uuid.Nil, err
+		// A provider redelivers what it could not hand over, and the message it repeats is the
+		// one whose queueing failed. Recording it again is refused by the external id, so the
+		// redelivery has to adopt the stored delivery and queue that, or the mail is lost.
+		deliveryID, err = s.stored(ctx, err, message.ExternalID)
+		if err != nil {
+			return uuid.Nil, err
+		}
 	}
 
 	if err := s.jobs.EnqueueIntakeDelivery(ctx, entity.IntakeDeliveryPayload{
@@ -249,6 +258,33 @@ func (s *intakesService) Accept(
 	return deliveryID, nil
 }
 
+func (s *intakesService) stored(
+	ctx context.Context,
+	recorded error,
+	externalID string,
+) (uuid.UUID, error) {
+	if !errors.Is(recorded, entity.ErrIntakeDeliveryDuplicate) {
+		return uuid.Nil, recorded
+	}
+
+	delivery, err := s.intake.DeliveryOf(ctx, externalID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	if delivery.ProcessedAt != nil {
+		return uuid.Nil, entity.ErrIntakeDeliveryDuplicate
+	}
+
+	return delivery.ID, nil
+}
+
+// Apply files the message and settles the delivery in one transaction, so a failure anywhere
+// leaves the delivery unprocessed and the retry files it once rather than twice. The row is
+// held for the transaction, which is what stops a second worker filing it alongside.
+// Apply reads the message outside any transaction, then decides and settles inside one. Every
+// terminal write happens under the delivery's own lock and after re-reading it, so a worker
+// held up behind another cannot overwrite what that one already filed.
 func (s *intakesService) Apply(ctx context.Context, deliveryID uuid.UUID) error {
 	delivery, err := s.intake.Delivery(ctx, deliveryID)
 	if err != nil {
@@ -259,6 +295,33 @@ func (s *intakesService) Apply(ctx context.Context, deliveryID uuid.UUID) error 
 		return nil
 	}
 
+	message, err := s.mail.Fetch(ctx, delivery.ExternalID)
+	if err != nil {
+		return err
+	}
+
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		return s.file(ctx, deliveryID, message)
+	})
+}
+
+func (s *intakesService) file(
+	ctx context.Context,
+	deliveryID uuid.UUID,
+	message entity.InboundMessage,
+) error {
+	delivery, err := s.intake.LockDelivery(ctx, deliveryID)
+	if err != nil {
+		return err
+	}
+
+	if delivery.ProcessedAt != nil {
+		return nil
+	}
+
+	// The address is read again here rather than before the provider call: it can be rotated or
+	// retired while a message is being fetched, and the decision has to be the one that holds
+	// when the delivery is settled.
 	address, err := s.intake.Address(ctx, delivery.WorkspaceID, delivery.TeamID)
 	if err != nil {
 		if errors.Is(err, entity.ErrIntakeDisabled) {
@@ -274,11 +337,6 @@ func (s *intakesService) Apply(ctx context.Context, deliveryID uuid.UUID) error 
 
 	if address.EnabledBy == uuid.Nil {
 		return s.fail(ctx, delivery, "the account that turned this address on is gone")
-	}
-
-	message, err := s.mail.Fetch(ctx, delivery.ExternalID)
-	if err != nil {
-		return err
 	}
 
 	// Mail is filed in the name of whoever turned the address on, as an integration rather
