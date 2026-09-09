@@ -16,6 +16,7 @@ import (
 	intakerepo "github.com/usenorn/norn/internal/repository/intake"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
+	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	intakesvc "github.com/usenorn/norn/internal/service/intake"
@@ -31,6 +32,9 @@ type harness struct {
 	jobs       *jobqueuerepo.MockJobProducer
 	issues     *issuesvc.MockIssues
 	authorizer *authorizersvc.MockAuthorizer
+	transactor *transactorrepo.MockTransactor
+	committed  []uuid.UUID
+	pending    []uuid.UUID
 	service    service.Intakes
 
 	workspaceID uuid.UUID
@@ -51,14 +55,36 @@ func newHarness(t *testing.T) *harness {
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		issues:      issuesvc.NewMockIssues(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
+		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		workspaceID: uuid.New(),
 		teamID:      uuid.New(),
 		enablerID:   uuid.New(),
 		deliveryID:  uuid.New(),
 	}
 
+	// Work done inside a transaction only counts once it commits, and a failure rolls it back.
+	// Filing mail leans on that, so the harness keeps the distinction rather than passing the
+	// callback straight through.
+	h.transactor.EXPECT().
+		WithTx(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			h.pending = nil
+
+			if err := fn(ctx); err != nil {
+				h.pending = nil
+
+				return err
+			}
+
+			h.committed = append(h.committed, h.pending...)
+			h.pending = nil
+
+			return nil
+		}).
+		AnyTimes()
+
 	h.service = intakesvc.New(
-		h.intake, h.mail, h.teams, h.jobs, h.issues, h.authorizer,
+		h.intake, h.mail, h.teams, h.jobs, h.issues, h.authorizer, h.transactor,
 		config.Intake{Domain: domain},
 	)
 
@@ -176,7 +202,7 @@ func TestAnInstanceWithNoDomainCannotOfferAnAddress(t *testing.T) {
 	h := newHarness(t)
 
 	h.service = intakesvc.New(
-		h.intake, h.mail, h.teams, h.jobs, h.issues, h.authorizer, config.Intake{},
+		h.intake, h.mail, h.teams, h.jobs, h.issues, h.authorizer, h.transactor, config.Intake{},
 	)
 
 	if _, err := h.service.Enable(context.Background(), h.workspaceID, h.teamID); !errors.Is(
@@ -304,6 +330,7 @@ func TestAMessageBecomesAnIssueNobodyInTheWorkspaceIsCreditedWith(t *testing.T) 
 	h := newHarness(t)
 
 	h.intake.EXPECT().Delivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.intake.EXPECT().LockDelivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
 	h.intake.EXPECT().Address(gomock.Any(), h.workspaceID, h.teamID).Return(h.address(), nil)
 	h.mail.EXPECT().
 		Fetch(gomock.Any(), "inb_1").
@@ -380,6 +407,8 @@ func TestMailToAnAddressThatHasBeenReplacedIsNotFiled(t *testing.T) {
 	rotated.LocalPart = "core-1f0c74a91b52"
 
 	h.intake.EXPECT().Delivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.mail.EXPECT().Fetch(gomock.Any(), "inb_1").Return(entity.InboundMessage{ExternalID: "inb_1"}, nil)
+	h.intake.EXPECT().LockDelivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
 	h.intake.EXPECT().Address(gomock.Any(), h.workspaceID, h.teamID).Return(rotated, nil)
 	h.intake.EXPECT().
 		Settle(gomock.Any(), h.deliveryID, entity.IntakeDeliveryIgnored, uuid.Nil, gomock.Any(), gomock.Any()).
@@ -402,5 +431,207 @@ func TestADeliveryAlreadyDealtWithIsNotFiledAgain(t *testing.T) {
 
 	if err := h.service.Apply(context.Background(), h.deliveryID); err != nil {
 		t.Fatalf("applying refused: %v", err)
+	}
+}
+
+func TestMailIsNotLostWhenTheQueueRefusesItOnce(t *testing.T) {
+	h := newHarness(t)
+
+	message := entity.InboundMessage{
+		ExternalID: "inb_1",
+		Sender:     "rae@northwind.co",
+		Recipients: []string{"core-649848208d3e@" + domain},
+		Subject:    "Export does nothing",
+		ReceivedAt: time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC),
+	}
+
+	h.mail.EXPECT().
+		Verify(gomock.Any(), gomock.Any()).
+		Return(entity.InboundNotice{DeliveryID: "whd_1", MessageID: "inb_1"}, nil).
+		Times(2)
+	h.mail.EXPECT().Fetch(gomock.Any(), "inb_1").Return(message, nil).Times(2)
+	h.intake.EXPECT().
+		AddressOf(gomock.Any(), "core-649848208d3e", domain).
+		Return(h.address(), nil).
+		Times(2)
+
+	h.intake.EXPECT().Record(gomock.Any(), gomock.Any()).Return(h.deliveryID, nil)
+	h.intake.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		Return(uuid.Nil, entity.ErrIntakeDeliveryDuplicate)
+	h.intake.EXPECT().DeliveryOf(gomock.Any(), "inb_1").Return(h.delivery(), nil)
+
+	attempts := 0
+
+	h.jobs.EXPECT().
+		EnqueueIntakeDelivery(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, payload entity.IntakeDeliveryPayload) error {
+			attempts++
+
+			if attempts == 1 {
+				return errors.New("the queue is unreachable")
+			}
+
+			if payload.DeliveryID != h.deliveryID {
+				t.Errorf("queued %v, want the delivery already stored %v", payload.DeliveryID, h.deliveryID)
+			}
+
+			return nil
+		}).
+		Times(2)
+
+	if _, err := h.service.Accept(context.Background(), http.Header{}, nil); err == nil {
+		t.Fatal("a delivery whose queueing failed was reported as accepted, so nothing retries it")
+	}
+
+	deliveryID, err := h.service.Accept(context.Background(), http.Header{}, nil)
+	if err != nil {
+		t.Fatalf(
+			"the provider redelivered the message and was refused: %v. A queue outage lasting one "+
+				"delivery would silently drop the mail somebody wrote in.",
+			err,
+		)
+	}
+
+	if deliveryID != h.deliveryID {
+		t.Fatalf("second attempt answered %v, want the stored delivery %v", deliveryID, h.deliveryID)
+	}
+
+	if attempts != 2 {
+		t.Fatalf("the queue was asked %d times, want 2", attempts)
+	}
+}
+
+func TestMailAlreadyFiledIsNotQueuedAgainOnRedelivery(t *testing.T) {
+	h := newHarness(t)
+
+	filed := h.delivery()
+	at := time.Date(2026, 2, 12, 10, 5, 0, 0, time.UTC)
+	filed.ProcessedAt = &at
+	filed.Outcome = entity.IntakeDeliveryFiled
+
+	h.mail.EXPECT().
+		Verify(gomock.Any(), gomock.Any()).
+		Return(entity.InboundNotice{DeliveryID: "whd_1", MessageID: "inb_1"}, nil)
+	h.mail.EXPECT().
+		Fetch(gomock.Any(), "inb_1").
+		Return(entity.InboundMessage{
+			ExternalID: "inb_1",
+			Sender:     "rae@northwind.co",
+			Recipients: []string{"core-649848208d3e@" + domain},
+		}, nil)
+	h.intake.EXPECT().
+		AddressOf(gomock.Any(), "core-649848208d3e", domain).
+		Return(h.address(), nil)
+	h.intake.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		Return(uuid.Nil, entity.ErrIntakeDeliveryDuplicate)
+	h.intake.EXPECT().DeliveryOf(gomock.Any(), "inb_1").Return(filed, nil)
+
+	if _, err := h.service.Accept(context.Background(), http.Header{}, nil); !errors.Is(
+		err, entity.ErrIntakeDeliveryDuplicate,
+	) {
+		t.Fatalf(
+			"err=%v, want the duplicate. A message already turned into an issue must not be "+
+				"queued a second time because the provider repeated itself.",
+			err,
+		)
+	}
+}
+
+func TestAFailedSettlementFilesTheMailOnceInTotal(t *testing.T) {
+	h := newHarness(t)
+
+	message := entity.InboundMessage{
+		ExternalID: "inb_1",
+		Sender:     "rae@northwind.co",
+		Recipients: []string{"core-649848208d3e@" + domain},
+		Subject:    "Export does nothing",
+		Text:       "I press it and the page just sits there.",
+	}
+
+	h.intake.EXPECT().Delivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil).Times(2)
+	h.intake.EXPECT().LockDelivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil).Times(2)
+	h.intake.EXPECT().
+		Address(gomock.Any(), h.workspaceID, h.teamID).
+		Return(h.address(), nil).
+		Times(2)
+	h.mail.EXPECT().Fetch(gomock.Any(), "inb_1").Return(message, nil).Times(2)
+
+	h.issues.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ service.CreateIssueInput) (entity.Issue, error) {
+			created := entity.Issue{ID: uuid.New()}
+			h.pending = append(h.pending, created.ID)
+
+			return created, nil
+		}).
+		Times(2)
+
+	settlements := 0
+
+	h.intake.EXPECT().
+		Settle(gomock.Any(), h.deliveryID, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			_ uuid.UUID,
+			_ entity.IntakeDeliveryOutcome,
+			_ uuid.UUID,
+			_ string,
+			_ time.Time,
+		) error {
+			settlements++
+
+			if settlements == 1 {
+				return errors.New("the database went away")
+			}
+
+			return nil
+		}).
+		Times(2)
+
+	if err := h.service.Apply(context.Background(), h.deliveryID); err == nil {
+		t.Fatal("a delivery that could not be settled was reported as done, so nothing retries it")
+	}
+
+	if err := h.service.Apply(context.Background(), h.deliveryID); err != nil {
+		t.Fatalf("the retry refused to file the message: %v", err)
+	}
+
+	if len(h.committed) != 1 {
+		t.Fatalf(
+			"%d issues were committed for one message, want 1. The issue and the settlement have "+
+				"to land together, or a retry files what somebody wrote in a second time.",
+			len(h.committed),
+		)
+	}
+}
+
+func TestAWorkerHeldUpDoesNotUndoWhatTheOtherFiled(t *testing.T) {
+	h := newHarness(t)
+
+	filed := h.delivery()
+	at := time.Date(2026, 2, 12, 10, 5, 0, 0, time.UTC)
+	filed.ProcessedAt = &at
+	filed.Outcome = entity.IntakeDeliveryFiled
+	filed.IssueID = uuid.New()
+
+	rotated := h.address()
+	rotated.LocalPart = "core-1f0c74a91b52"
+
+	// The delivery was unprocessed when this attempt started and settled while it was reading
+	// the message, which is exactly the race the lock exists for.
+	h.intake.EXPECT().Delivery(gomock.Any(), h.deliveryID).Return(h.delivery(), nil)
+	h.mail.EXPECT().
+		Fetch(gomock.Any(), "inb_1").
+		Return(entity.InboundMessage{ExternalID: "inb_1"}, nil)
+	h.intake.EXPECT().LockDelivery(gomock.Any(), h.deliveryID).Return(filed, nil)
+
+	if err := h.service.Apply(context.Background(), h.deliveryID); err != nil {
+		t.Fatalf("applying refused: %v", err)
+	}
+
+	if len(h.committed) != 0 {
+		t.Fatalf("a settled delivery was filed again by the attempt that arrived second")
 	}
 }

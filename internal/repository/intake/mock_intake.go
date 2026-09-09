@@ -88,6 +88,21 @@ func (mr *MockIntakeMockRecorder) Delivery(ctx, deliveryID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delivery", reflect.TypeOf((*MockIntake)(nil).Delivery), ctx, deliveryID)
 }
 
+// DeliveryOf mocks base method.
+func (m *MockIntake) DeliveryOf(ctx context.Context, externalID string) (entity.IntakeDelivery, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeliveryOf", ctx, externalID)
+	ret0, _ := ret[0].(entity.IntakeDelivery)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeliveryOf indicates an expected call of DeliveryOf.
+func (mr *MockIntakeMockRecorder) DeliveryOf(ctx, externalID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeliveryOf", reflect.TypeOf((*MockIntake)(nil).DeliveryOf), ctx, externalID)
+}
+
 // Disable mocks base method.
 func (m *MockIntake) Disable(ctx context.Context, workspaceID, teamID uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -100,6 +115,21 @@ func (m *MockIntake) Disable(ctx context.Context, workspaceID, teamID uuid.UUID)
 func (mr *MockIntakeMockRecorder) Disable(ctx, workspaceID, teamID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Disable", reflect.TypeOf((*MockIntake)(nil).Disable), ctx, workspaceID, teamID)
+}
+
+// LockDelivery mocks base method.
+func (m *MockIntake) LockDelivery(ctx context.Context, deliveryID uuid.UUID) (entity.IntakeDelivery, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LockDelivery", ctx, deliveryID)
+	ret0, _ := ret[0].(entity.IntakeDelivery)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LockDelivery indicates an expected call of LockDelivery.
+func (mr *MockIntakeMockRecorder) LockDelivery(ctx, deliveryID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockDelivery", reflect.TypeOf((*MockIntake)(nil).LockDelivery), ctx, deliveryID)
 }
 
 // Record mocks base method.

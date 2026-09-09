@@ -77,6 +77,25 @@ SELECT id,
 FROM workspace_intake_deliveries
 WHERE id = $1`
 
+const deliveryByExternalQuery = `
+SELECT id,
+       workspace_id,
+       team_id,
+       external_id,
+       recipient,
+       sender,
+       subject,
+       received_at,
+       processed_at,
+       outcome,
+       coalesce(issue_id::text, ''),
+       failure
+FROM workspace_intake_deliveries
+WHERE external_id = $1`
+
+const lockDeliveryQuery = deliveryByIDQuery + `
+FOR UPDATE`
+
 const settleDeliveryQuery = `
 UPDATE workspace_intake_deliveries
 SET outcome      = $2,
@@ -248,6 +267,30 @@ func (r *intakeRepository) Delivery(
 	ctx context.Context,
 	deliveryID uuid.UUID,
 ) (entity.IntakeDelivery, error) {
+	return r.delivery(ctx, deliveryByIDQuery, deliveryID.String())
+}
+
+// LockDelivery holds the row for the rest of the transaction, so a second worker handed the
+// same message waits here and then reads it as settled rather than filing it a second time.
+func (r *intakeRepository) LockDelivery(
+	ctx context.Context,
+	deliveryID uuid.UUID,
+) (entity.IntakeDelivery, error) {
+	return r.delivery(ctx, lockDeliveryQuery, deliveryID.String())
+}
+
+func (r *intakeRepository) DeliveryOf(
+	ctx context.Context,
+	externalID string,
+) (entity.IntakeDelivery, error) {
+	return r.delivery(ctx, deliveryByExternalQuery, externalID)
+}
+
+func (r *intakeRepository) delivery(
+	ctx context.Context,
+	query string,
+	argument string,
+) (entity.IntakeDelivery, error) {
 	var (
 		delivery                     entity.IntakeDelivery
 		id, workspace, team, issueID string
@@ -256,7 +299,7 @@ func (r *intakeRepository) Delivery(
 	)
 
 	if err := r.db.Querier(ctx).QueryRowContext(
-		ctx, deliveryByIDQuery, deliveryID.String(),
+		ctx, query, argument,
 	).Scan(
 		&id, &workspace, &team, &delivery.ExternalID, &delivery.Recipient, &delivery.Sender,
 		&delivery.Subject, &delivery.ReceivedAt, &processed, &outcome, &issueID, &delivery.Failure,
