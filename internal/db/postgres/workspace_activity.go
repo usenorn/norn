@@ -44,6 +44,8 @@ type WorkspaceActivity struct {
 	ActorTokenName      null.String `boil:"actor_token_name" json:"actor_token_name,omitempty" toml:"actor_token_name" yaml:"actor_token_name,omitempty"`
 	ActorConnectionID   null.String `boil:"actor_connection_id" json:"actor_connection_id,omitempty" toml:"actor_connection_id" yaml:"actor_connection_id,omitempty"`
 	ActorConnectionName null.String `boil:"actor_connection_name" json:"actor_connection_name,omitempty" toml:"actor_connection_name" yaml:"actor_connection_name,omitempty"`
+	FromStateCategory   string      `boil:"from_state_category" json:"from_state_category" toml:"from_state_category" yaml:"from_state_category"`
+	ToStateCategory     string      `boil:"to_state_category" json:"to_state_category" toml:"to_state_category" yaml:"to_state_category"`
 
 	R *workspaceActivityR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceActivityL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -70,6 +72,8 @@ var WorkspaceActivityColumns = struct {
 	ActorTokenName      string
 	ActorConnectionID   string
 	ActorConnectionName string
+	FromStateCategory   string
+	ToStateCategory     string
 }{
 	ID:                  "id",
 	WorkspaceID:         "workspace_id",
@@ -91,6 +95,8 @@ var WorkspaceActivityColumns = struct {
 	ActorTokenName:      "actor_token_name",
 	ActorConnectionID:   "actor_connection_id",
 	ActorConnectionName: "actor_connection_name",
+	FromStateCategory:   "from_state_category",
+	ToStateCategory:     "to_state_category",
 }
 
 var WorkspaceActivityTableColumns = struct {
@@ -114,6 +120,8 @@ var WorkspaceActivityTableColumns = struct {
 	ActorTokenName      string
 	ActorConnectionID   string
 	ActorConnectionName string
+	FromStateCategory   string
+	ToStateCategory     string
 }{
 	ID:                  "workspace_activity.id",
 	WorkspaceID:         "workspace_activity.workspace_id",
@@ -135,6 +143,8 @@ var WorkspaceActivityTableColumns = struct {
 	ActorTokenName:      "workspace_activity.actor_token_name",
 	ActorConnectionID:   "workspace_activity.actor_connection_id",
 	ActorConnectionName: "workspace_activity.actor_connection_name",
+	FromStateCategory:   "workspace_activity.from_state_category",
+	ToStateCategory:     "workspace_activity.to_state_category",
 }
 
 // Generated where
@@ -160,6 +170,8 @@ var WorkspaceActivityWhere = struct {
 	ActorTokenName      whereHelpernull_String
 	ActorConnectionID   whereHelpernull_String
 	ActorConnectionName whereHelpernull_String
+	FromStateCategory   whereHelperstring
+	ToStateCategory     whereHelperstring
 }{
 	ID:                  whereHelperstring{field: "\"workspace_activity\".\"id\""},
 	WorkspaceID:         whereHelperstring{field: "\"workspace_activity\".\"workspace_id\""},
@@ -181,6 +193,8 @@ var WorkspaceActivityWhere = struct {
 	ActorTokenName:      whereHelpernull_String{field: "\"workspace_activity\".\"actor_token_name\""},
 	ActorConnectionID:   whereHelpernull_String{field: "\"workspace_activity\".\"actor_connection_id\""},
 	ActorConnectionName: whereHelpernull_String{field: "\"workspace_activity\".\"actor_connection_name\""},
+	FromStateCategory:   whereHelperstring{field: "\"workspace_activity\".\"from_state_category\""},
+	ToStateCategory:     whereHelperstring{field: "\"workspace_activity\".\"to_state_category\""},
 }
 
 // WorkspaceActivityRels is where relationship names are stored.
@@ -258,9 +272,9 @@ func (r *workspaceActivityR) GetBulkAction() *WorkspaceBulkAction {
 type workspaceActivityL struct{}
 
 var (
-	workspaceActivityAllColumns            = []string{"id", "workspace_id", "issue_id", "actor_account_id", "kind", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "operation_id", "actor_kind", "actor_token_id", "actor_token_name", "actor_connection_id", "actor_connection_name"}
+	workspaceActivityAllColumns            = []string{"id", "workspace_id", "issue_id", "actor_account_id", "kind", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "operation_id", "actor_kind", "actor_token_id", "actor_token_name", "actor_connection_id", "actor_connection_name", "from_state_category", "to_state_category"}
 	workspaceActivityColumnsWithoutDefault = []string{"workspace_id", "kind", "operation_id"}
-	workspaceActivityColumnsWithDefault    = []string{"id", "issue_id", "actor_account_id", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "actor_kind", "actor_token_id", "actor_token_name", "actor_connection_id", "actor_connection_name"}
+	workspaceActivityColumnsWithDefault    = []string{"id", "issue_id", "actor_account_id", "from_state_name", "to_state_name", "created_at", "field", "from_value", "to_value", "version", "bulk_action_id", "project_id", "actor_kind", "actor_token_id", "actor_token_name", "actor_connection_id", "actor_connection_name", "from_state_category", "to_state_category"}
 	workspaceActivityPrimaryKeyColumns     = []string{"id"}
 	workspaceActivityGeneratedColumns      = []string{}
 )

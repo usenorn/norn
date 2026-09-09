@@ -33,6 +33,7 @@ var Set = wire.NewSet(
 	NewImports,
 	NewLinear,
 	NewSourceControl,
+	NewIntake,
 	NewSession,
 	NewCasbin,
 	NewGeoIP,

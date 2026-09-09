@@ -125,7 +125,7 @@ func (h *harness) waiting() entity.Issue {
 		Number:       14,
 		Version:      1,
 		TriageState:  entity.TriageStateWaiting,
-		TriageSource: entity.ActorKindToken,
+		TriageSource: entity.TriageSourceToken,
 		State:        entity.IssueState{ID: uuid.New(), Name: "Todo", Category: entity.StateCategoryNotStarted},
 	}
 }

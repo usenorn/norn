@@ -97,7 +97,7 @@ type Issue struct {
 	Blocked                 bool
 	CreatedByAccountID      uuid.UUID
 	TriageState             TriageState
-	TriageSource            ActorKind
+	TriageSource            TriageSource
 	TriageDecidedBy         uuid.UUID
 	TriageDecidedName       string
 	TriageDecidedAt         *time.Time
@@ -105,6 +105,14 @@ type Issue struct {
 	UpdatedAt               time.Time
 	Rank                    string
 	Origin                  *ImportOrigin
+}
+
+func IssueAuthor(source TriageSource, origin *ImportOrigin, fallback uuid.UUID) uuid.UUID {
+	if source == TriageSourceEmail {
+		return uuid.Nil
+	}
+
+	return OriginAuthor(origin, fallback)
 }
 
 func (i Issue) Waiting() bool {

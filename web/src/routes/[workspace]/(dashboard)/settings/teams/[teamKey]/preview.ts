@@ -1,6 +1,7 @@
 import type { MemberFailure, TeamRoster } from "$lib/team/members";
 import type { CadenceSetting } from "$lib/cycles/cycles";
 import type { TeamNotificationSetting } from "$lib/notifications/notifications";
+import type { IntakeSetting } from "$lib/triage/intake";
 import type { TriageSetting } from "$lib/triage/triage";
 import type { StateList } from "$lib/team/states";
 import type { TeamSettings } from "$lib/team/team-settings";
@@ -11,6 +12,7 @@ export type TeamDetailPreview = {
 	states?: StateList;
 	cadence?: CadenceSetting;
 	triage?: TriageSetting;
+	intake?: IntakeSetting;
 	notifications?: TeamNotificationSetting;
 	failure?: MemberFailure;
 	busy?: boolean;
@@ -562,6 +564,125 @@ export const teamDetailPreviewStates: Record<string, TeamDetailPreview> = import
 				},
 				roster: { kind: "empty" },
 				cadence: { kind: "unavailable" },
+			},
+			intake_off: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				intake: { kind: "off" },
+			},
+			intake_on: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				intake: {
+					kind: "on",
+					address: {
+						teamId: "00000000-0000-4000-8000-000000000101",
+						email: "mobile-649848208d3e@submit.norn.so",
+						localPart: "mobile-649848208d3e",
+						domain: "submit.norn.so",
+						createdAt: "2026-02-11T09:00:00Z",
+					},
+				},
+			},
+			intake_rotated: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				intake: {
+					kind: "on",
+					address: {
+						teamId: "00000000-0000-4000-8000-000000000101",
+						email: "mobile-1f0c74a91b52@submit.norn.so",
+						localPart: "mobile-1f0c74a91b52",
+						domain: "submit.norn.so",
+						createdAt: "2026-02-11T09:00:00Z",
+						rotatedAt: "2026-03-02T11:30:00Z",
+					},
+				},
+			},
+			intake_unconfigured: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				intake: { kind: "unconfigured" },
+			},
+			intake_unavailable: {
+				settings: {
+					kind: "ready",
+					team: {
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				roster: { kind: "empty" },
+				intake: { kind: "unavailable" },
 			},
 			not_found: { settings: { kind: "not_found" }, roster: { kind: "unavailable" } },
 			unavailable: { settings: { kind: "unavailable" }, roster: { kind: "unavailable" } },

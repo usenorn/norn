@@ -793,6 +793,22 @@ func triageSettingsDTO(settings entity.TriageSettings) api.TriageSettings {
 	}
 }
 
+func intakeAddressDTO(address entity.IntakeAddress) api.TeamIntakeAddress {
+	dto := api.TeamIntakeAddress{
+		TeamId:    address.TeamID,
+		Email:     address.Email(),
+		LocalPart: address.LocalPart,
+		Domain:    address.Domain,
+		CreatedAt: address.CreatedAt,
+	}
+
+	if address.RotatedAt != nil {
+		dto.RotatedAt = address.RotatedAt
+	}
+
+	return dto
+}
+
 func savedViewDTO(summary service.SavedViewSummary) api.SavedView {
 	view := summary.View
 

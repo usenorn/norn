@@ -157,7 +157,7 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		CycleID:            input.CycleID,
 		ProjectID:          input.ProjectID,
 		State:              entity.IssueState{ID: state.ID},
-		CreatedByAccountID: entity.OriginAuthor(input.Origin, decision.Actor.AccountID),
+		CreatedByAccountID: entity.IssueAuthor(input.Source, input.Origin, decision.Actor.AccountID),
 		Origin:             input.Origin,
 	}
 
@@ -170,7 +170,7 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return entity.Issue{}, err
 	}
 
-	if err := s.route(ctx, &arriving, decision); err != nil {
+	if err := s.route(ctx, &arriving, decision, input.Source); err != nil {
 		return entity.Issue{}, err
 	}
 

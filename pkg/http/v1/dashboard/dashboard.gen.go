@@ -1923,6 +1923,24 @@ func (e ImportUnknownPolicy) Valid() bool {
 	}
 }
 
+// Defines values for IntakeConflictProblemCode.
+const (
+	IntakeAddressTaken IntakeConflictProblemCode = "intake_address_taken"
+	IntakeDomainUnset  IntakeConflictProblemCode = "intake_domain_unset"
+)
+
+// Valid indicates whether the value is a known member of the IntakeConflictProblemCode enum.
+func (e IntakeConflictProblemCode) Valid() bool {
+	switch e {
+	case IntakeAddressTaken:
+		return true
+	case IntakeDomainUnset:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InvalidCredentialsProblemCode.
 const (
 	InvalidCredentials InvalidCredentialsProblemCode = "invalid_credentials"
@@ -3783,6 +3801,7 @@ func (e TriageDeclineReason) Valid() bool {
 // Defines values for TriageSource.
 const (
 	TriageSourceAgent TriageSource = "agent"
+	TriageSourceEmail TriageSource = "email"
 	TriageSourceToken TriageSource = "token"
 	TriageSourceUser  TriageSource = "user"
 )
@@ -3791,6 +3810,8 @@ const (
 func (e TriageSource) Valid() bool {
 	switch e {
 	case TriageSourceAgent:
+		return true
+	case TriageSourceEmail:
 		return true
 	case TriageSourceToken:
 		return true
@@ -6121,6 +6142,20 @@ type InstanceSso struct {
 	Name string `json:"name"`
 }
 
+// IntakeConflictProblem defines model for IntakeConflictProblem.
+type IntakeConflictProblem struct {
+	Code     IntakeConflictProblemCode `json:"code"`
+	Detail   *string                   `json:"detail,omitempty"`
+	Errors   *[]FieldError             `json:"errors,omitempty"`
+	Instance *string                   `json:"instance,omitempty"`
+	Status   int32                     `json:"status"`
+	Title    string                    `json:"title"`
+	Type     string                    `json:"type"`
+}
+
+// IntakeConflictProblemCode defines model for IntakeConflictProblem.Code.
+type IntakeConflictProblemCode string
+
 // InvalidCredentialsProblem defines model for InvalidCredentialsProblem.
 type InvalidCredentialsProblem struct {
 	AttemptsLeft int32                         `json:"attemptsLeft"`
@@ -8005,6 +8040,20 @@ type TeamCycle struct {
 // TeamEstimation How this team reads an issue's estimate. The estimate itself is always a number; this only decides how it is shown, so changing it never rewrites work already estimated.
 type TeamEstimation string
 
+// TeamIntakeAddress defines model for TeamIntakeAddress.
+type TeamIntakeAddress struct {
+	CreatedAt time.Time `json:"createdAt"`
+	Domain    string    `json:"domain"`
+
+	// Email The address to write to, ready to copy
+	Email     string `json:"email"`
+	LocalPart string `json:"localPart"`
+
+	// RotatedAt When the previous address was replaced by this one
+	RotatedAt *time.Time         `json:"rotatedAt,omitempty"`
+	TeamId    openapi_types.UUID `json:"teamId"`
+}
+
 // TeamMember defines model for TeamMember.
 type TeamMember struct {
 	AccountId   openapi_types.UUID `json:"accountId"`
@@ -8672,6 +8721,9 @@ type ImportSourceRateLimited = RateLimitedProblem
 
 // ImportSourceRefused defines model for ImportSourceRefused.
 type ImportSourceRefused = ImportSourceRefusedProblem
+
+// IntakeConflict defines model for IntakeConflict.
+type IntakeConflict = IntakeConflictProblem
 
 // InvitationLinkExpired defines model for InvitationLinkExpired.
 type InvitationLinkExpired = InvitationExpiredProblem
@@ -11709,6 +11761,26 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence (the `SetTeamCycleCadence` operationId).
 	SetTeamCycleCadence(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, body SetTeamCycleCadenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DisableTeamIntakeAddress Stop taking issues by email, retiring the address
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `DisableTeamIntakeAddress` operationId).
+	DisableTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetTeamIntakeAddress Read the address this team takes issues at by email
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `GetTeamIntakeAddress` operationId).
+	GetTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EnableTeamIntakeAddress Start taking issues by email, answering with the address to write to
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `EnableTeamIntakeAddress` operationId).
+	EnableTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RotateTeamIntakeAddress Replace the address, so mail to the old one is no longer filed
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation (the `RotateTeamIntakeAddress` operationId).
+	RotateTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceTeamMembers List the accounts on the team
 	//
@@ -17954,6 +18026,66 @@ func (c *Client) SetTeamCycleCadenceWithBody(ctx context.Context, workspaceId Wo
 // Corresponds with PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence (the `SetTeamCycleCadence` operationId).
 func (c *Client) SetTeamCycleCadence(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, body SetTeamCycleCadenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetTeamCycleCadenceRequest(c.Server, workspaceId, teamId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DisableTeamIntakeAddress Stop taking issues by email, retiring the address
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `DisableTeamIntakeAddress` operationId).
+func (c *Client) DisableTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisableTeamIntakeAddressRequest(c.Server, workspaceId, teamId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetTeamIntakeAddress Read the address this team takes issues at by email
+//
+// Corresponds with GET /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `GetTeamIntakeAddress` operationId).
+func (c *Client) GetTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTeamIntakeAddressRequest(c.Server, workspaceId, teamId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EnableTeamIntakeAddress Start taking issues by email, answering with the address to write to
+//
+// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `EnableTeamIntakeAddress` operationId).
+func (c *Client) EnableTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableTeamIntakeAddressRequest(c.Server, workspaceId, teamId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RotateTeamIntakeAddress Replace the address, so mail to the old one is no longer filed
+//
+// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation (the `RotateTeamIntakeAddress` operationId).
+func (c *Client) RotateTeamIntakeAddress(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRotateTeamIntakeAddressRequest(c.Server, workspaceId, teamId)
 	if err != nil {
 		return nil, err
 	}
@@ -31458,6 +31590,170 @@ func NewSetTeamCycleCadenceRequestWithBody(server string, workspaceId WorkspaceI
 	return req, nil
 }
 
+// NewDisableTeamIntakeAddressRequest constructs an http.Request for the DisableTeamIntakeAddress method
+func NewDisableTeamIntakeAddressRequest(server string, workspaceId WorkspaceId, teamId TeamId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "teamId", teamId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/teams/%s/intake-address", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetTeamIntakeAddressRequest constructs an http.Request for the GetTeamIntakeAddress method
+func NewGetTeamIntakeAddressRequest(server string, workspaceId WorkspaceId, teamId TeamId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "teamId", teamId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/teams/%s/intake-address", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewEnableTeamIntakeAddressRequest constructs an http.Request for the EnableTeamIntakeAddress method
+func NewEnableTeamIntakeAddressRequest(server string, workspaceId WorkspaceId, teamId TeamId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "teamId", teamId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/teams/%s/intake-address", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRotateTeamIntakeAddressRequest constructs an http.Request for the RotateTeamIntakeAddress method
+func NewRotateTeamIntakeAddressRequest(server string, workspaceId WorkspaceId, teamId TeamId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "teamId", teamId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/teams/%s/intake-address/rotation", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceTeamMembersRequest constructs an http.Request for the ListWorkspaceTeamMembers method
 func NewListWorkspaceTeamMembersRequest(server string, workspaceId WorkspaceId, teamId TeamId) (*http.Request, error) {
 	var err error
@@ -36061,6 +36357,34 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence (the `SetTeamCycleCadence` operationId).
 	SetTeamCycleCadenceWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, body SetTeamCycleCadenceJSONRequestBody, reqEditors ...RequestEditorFn) (*SetTeamCycleCadenceResponse, error)
+
+	// DisableTeamIntakeAddressWithResponse Stop taking issues by email, retiring the address
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `DisableTeamIntakeAddress` operationId).
+	DisableTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*DisableTeamIntakeAddressResponse, error)
+
+	// GetTeamIntakeAddressWithResponse Read the address this team takes issues at by email
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `GetTeamIntakeAddress` operationId).
+	GetTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*GetTeamIntakeAddressResponse, error)
+
+	// EnableTeamIntakeAddressWithResponse Start taking issues by email, answering with the address to write to
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `EnableTeamIntakeAddress` operationId).
+	EnableTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*EnableTeamIntakeAddressResponse, error)
+
+	// RotateTeamIntakeAddressWithResponse Replace the address, so mail to the old one is no longer filed
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation (the `RotateTeamIntakeAddress` operationId).
+	RotateTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*RotateTeamIntakeAddressResponse, error)
 
 	// ListWorkspaceTeamMembersWithResponse List the accounts on the team
 	//
@@ -55955,6 +56279,289 @@ func (r SetTeamCycleCadenceResponse) ContentType() string {
 	return ""
 }
 
+type DisableTeamIntakeAddressResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *IntakeConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DisableTeamIntakeAddressResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DisableTeamIntakeAddressResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DisableTeamIntakeAddressResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r DisableTeamIntakeAddressResponse) GetApplicationproblemJSON409() *IntakeConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DisableTeamIntakeAddressResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DisableTeamIntakeAddressResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DisableTeamIntakeAddressResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisableTeamIntakeAddressResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DisableTeamIntakeAddressResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetTeamIntakeAddressResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *TeamIntakeAddress
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetTeamIntakeAddressResponse) GetJSON200() *TeamIntakeAddress {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetTeamIntakeAddressResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetTeamIntakeAddressResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetTeamIntakeAddressResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetTeamIntakeAddressResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTeamIntakeAddressResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTeamIntakeAddressResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetTeamIntakeAddressResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type EnableTeamIntakeAddressResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *TeamIntakeAddress
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *IntakeConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EnableTeamIntakeAddressResponse) GetJSON200() *TeamIntakeAddress {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r EnableTeamIntakeAddressResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r EnableTeamIntakeAddressResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r EnableTeamIntakeAddressResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r EnableTeamIntakeAddressResponse) GetApplicationproblemJSON409() *IntakeConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r EnableTeamIntakeAddressResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r EnableTeamIntakeAddressResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EnableTeamIntakeAddressResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EnableTeamIntakeAddressResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EnableTeamIntakeAddressResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RotateTeamIntakeAddressResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *TeamIntakeAddress
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *IntakeConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RotateTeamIntakeAddressResponse) GetJSON200() *TeamIntakeAddress {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RotateTeamIntakeAddressResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RotateTeamIntakeAddressResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RotateTeamIntakeAddressResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r RotateTeamIntakeAddressResponse) GetApplicationproblemJSON409() *IntakeConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RotateTeamIntakeAddressResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RotateTeamIntakeAddressResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RotateTeamIntakeAddressResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RotateTeamIntakeAddressResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RotateTeamIntakeAddressResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceTeamMembersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -63620,6 +64227,58 @@ func (c *ClientWithResponses) SetTeamCycleCadenceWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseSetTeamCycleCadenceResponse(rsp)
+}
+
+// DisableTeamIntakeAddressWithResponse Stop taking issues by email, retiring the address
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `DisableTeamIntakeAddress` operationId).
+func (c *ClientWithResponses) DisableTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*DisableTeamIntakeAddressResponse, error) {
+	rsp, err := c.DisableTeamIntakeAddress(ctx, workspaceId, teamId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisableTeamIntakeAddressResponse(rsp)
+}
+
+// GetTeamIntakeAddressWithResponse Read the address this team takes issues at by email
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `GetTeamIntakeAddress` operationId).
+func (c *ClientWithResponses) GetTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*GetTeamIntakeAddressResponse, error) {
+	rsp, err := c.GetTeamIntakeAddress(ctx, workspaceId, teamId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTeamIntakeAddressResponse(rsp)
+}
+
+// EnableTeamIntakeAddressWithResponse Start taking issues by email, answering with the address to write to
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address (the `EnableTeamIntakeAddress` operationId).
+func (c *ClientWithResponses) EnableTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*EnableTeamIntakeAddressResponse, error) {
+	rsp, err := c.EnableTeamIntakeAddress(ctx, workspaceId, teamId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableTeamIntakeAddressResponse(rsp)
+}
+
+// RotateTeamIntakeAddressWithResponse Replace the address, so mail to the old one is no longer filed
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation (the `RotateTeamIntakeAddress` operationId).
+func (c *ClientWithResponses) RotateTeamIntakeAddressWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*RotateTeamIntakeAddressResponse, error) {
+	rsp, err := c.RotateTeamIntakeAddress(ctx, workspaceId, teamId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRotateTeamIntakeAddressResponse(rsp)
 }
 
 // ListWorkspaceTeamMembersWithResponse List the accounts on the team
@@ -79956,6 +80615,235 @@ func ParseSetTeamCycleCadenceResponse(rsp *http.Response) (*SetTeamCycleCadenceR
 	return response, nil
 }
 
+// ParseDisableTeamIntakeAddressResponse parses an HTTP response from a DisableTeamIntakeAddressWithResponse call
+func ParseDisableTeamIntakeAddressResponse(rsp *http.Response) (*DisableTeamIntakeAddressResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisableTeamIntakeAddressResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest IntakeConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetTeamIntakeAddressResponse parses an HTTP response from a GetTeamIntakeAddressWithResponse call
+func ParseGetTeamIntakeAddressResponse(rsp *http.Response) (*GetTeamIntakeAddressResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTeamIntakeAddressResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TeamIntakeAddress
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case rsp.StatusCode == 404:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseEnableTeamIntakeAddressResponse parses an HTTP response from a EnableTeamIntakeAddressWithResponse call
+func ParseEnableTeamIntakeAddressResponse(rsp *http.Response) (*EnableTeamIntakeAddressResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EnableTeamIntakeAddressResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TeamIntakeAddress
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest IntakeConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRotateTeamIntakeAddressResponse parses an HTTP response from a RotateTeamIntakeAddressWithResponse call
+func ParseRotateTeamIntakeAddressResponse(rsp *http.Response) (*RotateTeamIntakeAddressResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RotateTeamIntakeAddressResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TeamIntakeAddress
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest IntakeConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceTeamMembersResponse parses an HTTP response from a ListWorkspaceTeamMembersWithResponse call
 func ParseListWorkspaceTeamMembersResponse(rsp *http.Response) (*ListWorkspaceTeamMembersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -83048,6 +83936,18 @@ type ServerInterface interface {
 	// SetTeamCycleCadence Start the team on cycles, or change how long they run
 	// (PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
 	SetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// DisableTeamIntakeAddress Stop taking issues by email, retiring the address
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+	DisableTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// GetTeamIntakeAddress Read the address this team takes issues at by email
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+	GetTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// EnableTeamIntakeAddress Start taking issues by email, answering with the address to write to
+	// (POST /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+	EnableTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// RotateTeamIntakeAddress Replace the address, so mail to the old one is no longer filed
+	// (POST /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation)
+	RotateTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
 	// ListWorkspaceTeamMembers List the accounts on the team
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/members)
 	ListWorkspaceTeamMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
@@ -84806,6 +85706,30 @@ func (_ Unimplemented) GetTeamCycleCadence(w http.ResponseWriter, r *http.Reques
 // SetTeamCycleCadence Start the team on cycles, or change how long they run
 // (PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
 func (_ Unimplemented) SetTeamCycleCadence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisableTeamIntakeAddress Stop taking issues by email, retiring the address
+// (DELETE /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+func (_ Unimplemented) DisableTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetTeamIntakeAddress Read the address this team takes issues at by email
+// (GET /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+func (_ Unimplemented) GetTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// EnableTeamIntakeAddress Start taking issues by email, answering with the address to write to
+// (POST /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+func (_ Unimplemented) EnableTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RotateTeamIntakeAddress Replace the address, so mail to the old one is no longer filed
+// (POST /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation)
+func (_ Unimplemented) RotateTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -94207,6 +95131,146 @@ func (siw *ServerInterfaceWrapper) SetTeamCycleCadence(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// DisableTeamIntakeAddress operation middleware
+func (siw *ServerInterfaceWrapper) DisableTeamIntakeAddress(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisableTeamIntakeAddress(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTeamIntakeAddress operation middleware
+func (siw *ServerInterfaceWrapper) GetTeamIntakeAddress(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTeamIntakeAddress(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnableTeamIntakeAddress operation middleware
+func (siw *ServerInterfaceWrapper) EnableTeamIntakeAddress(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnableTeamIntakeAddress(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RotateTeamIntakeAddress operation middleware
+func (siw *ServerInterfaceWrapper) RotateTeamIntakeAddress(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "teamId" -------------
+	var teamId TeamId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", chi.URLParam(r, "teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RotateTeamIntakeAddress(w, r, workspaceId, teamId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceTeamMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceTeamMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -96236,6 +97300,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/triage", wrapper.SetTeamTriageSettings)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/intake-address", wrapper.DisableTeamIntakeAddress)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/intake-address", wrapper.GetTeamIntakeAddress)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/intake-address", wrapper.EnableTeamIntakeAddress)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation", wrapper.RotateTeamIntakeAddress)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/saved-views", wrapper.ListWorkspaceSavedViews)
 	})
 	r.Group(func(r chi.Router) {
@@ -96801,6 +97877,8 @@ type ImportSourceRateLimitedApplicationProblemPlusJSONResponse struct {
 }
 
 type ImportSourceRefusedApplicationProblemPlusJSONResponse ImportSourceRefusedProblem
+
+type IntakeConflictApplicationProblemPlusJSONResponse IntakeConflictProblem
 
 type InvitationLinkExpiredApplicationProblemPlusJSONResponse InvitationExpiredProblem
 
@@ -121316,6 +122394,374 @@ func (response SetTeamCycleCadence500ApplicationProblemPlusJSONResponse) VisitSe
 	return err
 }
 
+type DisableTeamIntakeAddressRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type DisableTeamIntakeAddressResponseObject interface {
+	VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error
+}
+
+type DisableTeamIntakeAddress204Response struct {
+}
+
+func (response DisableTeamIntakeAddress204Response) VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisableTeamIntakeAddress401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisableTeamIntakeAddress401ApplicationProblemPlusJSONResponse) VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTeamIntakeAddress403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DisableTeamIntakeAddress403ApplicationProblemPlusJSONResponse) VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTeamIntakeAddress404ApplicationProblemPlusJSONResponse Problem
+
+func (response DisableTeamIntakeAddress404ApplicationProblemPlusJSONResponse) VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTeamIntakeAddress409ApplicationProblemPlusJSONResponse struct {
+	IntakeConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DisableTeamIntakeAddress409ApplicationProblemPlusJSONResponse) VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisableTeamIntakeAddress500ApplicationProblemPlusJSONResponse Problem
+
+func (response DisableTeamIntakeAddress500ApplicationProblemPlusJSONResponse) VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamIntakeAddressRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type GetTeamIntakeAddressResponseObject interface {
+	VisitGetTeamIntakeAddressResponse(w http.ResponseWriter) error
+}
+
+type GetTeamIntakeAddress200JSONResponse TeamIntakeAddress
+
+func (response GetTeamIntakeAddress200JSONResponse) VisitGetTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamIntakeAddress401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamIntakeAddress401ApplicationProblemPlusJSONResponse) VisitGetTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamIntakeAddress403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetTeamIntakeAddress403ApplicationProblemPlusJSONResponse) VisitGetTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTeamIntakeAddress404Response struct {
+}
+
+func (response GetTeamIntakeAddress404Response) VisitGetTeamIntakeAddressResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetTeamIntakeAddress500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTeamIntakeAddress500ApplicationProblemPlusJSONResponse) VisitGetTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableTeamIntakeAddressRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type EnableTeamIntakeAddressResponseObject interface {
+	VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error
+}
+
+type EnableTeamIntakeAddress200JSONResponse TeamIntakeAddress
+
+func (response EnableTeamIntakeAddress200JSONResponse) VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableTeamIntakeAddress401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response EnableTeamIntakeAddress401ApplicationProblemPlusJSONResponse) VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableTeamIntakeAddress403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response EnableTeamIntakeAddress403ApplicationProblemPlusJSONResponse) VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableTeamIntakeAddress404ApplicationProblemPlusJSONResponse Problem
+
+func (response EnableTeamIntakeAddress404ApplicationProblemPlusJSONResponse) VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableTeamIntakeAddress409ApplicationProblemPlusJSONResponse struct {
+	IntakeConflictApplicationProblemPlusJSONResponse
+}
+
+func (response EnableTeamIntakeAddress409ApplicationProblemPlusJSONResponse) VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableTeamIntakeAddress500ApplicationProblemPlusJSONResponse Problem
+
+func (response EnableTeamIntakeAddress500ApplicationProblemPlusJSONResponse) VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateTeamIntakeAddressRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TeamId      TeamId      `json:"teamId"`
+}
+
+type RotateTeamIntakeAddressResponseObject interface {
+	VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error
+}
+
+type RotateTeamIntakeAddress200JSONResponse TeamIntakeAddress
+
+func (response RotateTeamIntakeAddress200JSONResponse) VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateTeamIntakeAddress401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RotateTeamIntakeAddress401ApplicationProblemPlusJSONResponse) VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateTeamIntakeAddress403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RotateTeamIntakeAddress403ApplicationProblemPlusJSONResponse) VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateTeamIntakeAddress404ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateTeamIntakeAddress404ApplicationProblemPlusJSONResponse) VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateTeamIntakeAddress409ApplicationProblemPlusJSONResponse struct {
+	IntakeConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RotateTeamIntakeAddress409ApplicationProblemPlusJSONResponse) VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RotateTeamIntakeAddress500ApplicationProblemPlusJSONResponse Problem
+
+func (response RotateTeamIntakeAddress500ApplicationProblemPlusJSONResponse) VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceTeamMembersRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	TeamId      TeamId      `json:"teamId"`
@@ -125764,6 +127210,18 @@ type StrictServerInterface interface {
 	// SetTeamCycleCadence Start the team on cycles, or change how long they run
 	// (PUT /workspaces/{workspaceId}/teams/{teamId}/cycle-cadence)
 	SetTeamCycleCadence(ctx context.Context, request SetTeamCycleCadenceRequestObject) (SetTeamCycleCadenceResponseObject, error)
+	// DisableTeamIntakeAddress Stop taking issues by email, retiring the address
+	// (DELETE /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+	DisableTeamIntakeAddress(ctx context.Context, request DisableTeamIntakeAddressRequestObject) (DisableTeamIntakeAddressResponseObject, error)
+	// GetTeamIntakeAddress Read the address this team takes issues at by email
+	// (GET /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+	GetTeamIntakeAddress(ctx context.Context, request GetTeamIntakeAddressRequestObject) (GetTeamIntakeAddressResponseObject, error)
+	// EnableTeamIntakeAddress Start taking issues by email, answering with the address to write to
+	// (POST /workspaces/{workspaceId}/teams/{teamId}/intake-address)
+	EnableTeamIntakeAddress(ctx context.Context, request EnableTeamIntakeAddressRequestObject) (EnableTeamIntakeAddressResponseObject, error)
+	// RotateTeamIntakeAddress Replace the address, so mail to the old one is no longer filed
+	// (POST /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation)
+	RotateTeamIntakeAddress(ctx context.Context, request RotateTeamIntakeAddressRequestObject) (RotateTeamIntakeAddressResponseObject, error)
 	// ListWorkspaceTeamMembers List the accounts on the team
 	// (GET /workspaces/{workspaceId}/teams/{teamId}/members)
 	ListWorkspaceTeamMembers(ctx context.Context, request ListWorkspaceTeamMembersRequestObject) (ListWorkspaceTeamMembersResponseObject, error)
@@ -133802,6 +135260,114 @@ func (sh *strictHandler) SetTeamCycleCadence(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetTeamCycleCadenceResponseObject); ok {
 		if err := validResponse.VisitSetTeamCycleCadenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisableTeamIntakeAddress operation middleware
+func (sh *strictHandler) DisableTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request DisableTeamIntakeAddressRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisableTeamIntakeAddress(ctx, request.(DisableTeamIntakeAddressRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisableTeamIntakeAddress")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisableTeamIntakeAddressResponseObject); ok {
+		if err := validResponse.VisitDisableTeamIntakeAddressResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTeamIntakeAddress operation middleware
+func (sh *strictHandler) GetTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request GetTeamIntakeAddressRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTeamIntakeAddress(ctx, request.(GetTeamIntakeAddressRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTeamIntakeAddress")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTeamIntakeAddressResponseObject); ok {
+		if err := validResponse.VisitGetTeamIntakeAddressResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnableTeamIntakeAddress operation middleware
+func (sh *strictHandler) EnableTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request EnableTeamIntakeAddressRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnableTeamIntakeAddress(ctx, request.(EnableTeamIntakeAddressRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnableTeamIntakeAddress")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnableTeamIntakeAddressResponseObject); ok {
+		if err := validResponse.VisitEnableTeamIntakeAddressResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RotateTeamIntakeAddress operation middleware
+func (sh *strictHandler) RotateTeamIntakeAddress(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	var request RotateTeamIntakeAddressRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TeamId = teamId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RotateTeamIntakeAddress(ctx, request.(RotateTeamIntakeAddressRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RotateTeamIntakeAddress")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RotateTeamIntakeAddressResponseObject); ok {
+		if err := validResponse.VisitRotateTeamIntakeAddressResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

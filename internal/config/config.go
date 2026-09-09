@@ -30,6 +30,7 @@ type Config struct {
 	Imports       Imports       `mapstructure:"imports"`
 	Linear        Linear        `mapstructure:"linear"`
 	SourceControl SourceControl `mapstructure:"source_control"`
+	Intake        Intake        `mapstructure:"intake"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -44,6 +45,29 @@ type Config struct {
 	Questions     Questions     `mapstructure:"questions"`
 	Previews      Previews      `mapstructure:"previews"`
 	Gateway       Gateway       `mapstructure:"gateway"`
+}
+
+type Intake struct {
+	Domain          string        `mapstructure:"domain"`
+	Endpoint        string        `mapstructure:"endpoint"`
+	APIKey          string        `mapstructure:"api_key"`
+	WebhookSecret   string        `mapstructure:"webhook_secret"`
+	PreviousSecret  string        `mapstructure:"previous_webhook_secret"`
+	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
+	MaxDeliverySize int64         `mapstructure:"max_delivery_size"`
+	MaxBodyBytes    int           `mapstructure:"max_body_bytes"`
+}
+
+func (i Intake) Enabled() bool {
+	return i.Domain != "" && i.APIKey != "" && i.WebhookSecret != ""
+}
+
+func (i Intake) Secrets() []string {
+	if i.PreviousSecret == "" {
+		return []string{i.WebhookSecret}
+	}
+
+	return []string{i.WebhookSecret, i.PreviousSecret}
 }
 
 type Licence struct {

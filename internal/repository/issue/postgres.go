@@ -495,7 +495,7 @@ func scanIssue(row scanner) (entity.Issue, error) {
 	issue.Priority = entity.IssuePriority(priority)
 	issue.Status = entity.IssueStatus(status)
 	issue.TriageState = entity.TriageState(triageState)
-	issue.TriageSource = entity.ActorKind(triageSource)
+	issue.TriageSource = entity.TriageSource(triageSource)
 
 	if triageAt.Valid {
 		decided := triageAt.Time

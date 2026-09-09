@@ -11,6 +11,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/auditexport"
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
+	"github.com/usenorn/norn/internal/handler/http/inboundmail"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/previewgateway"
 	"github.com/usenorn/norn/internal/handler/http/runnerchannel"
@@ -43,6 +44,7 @@ func New(
 	eventsEdge *events.Edge,
 	auditEdge *auditexport.Edge,
 	scimEdge *scim.Edge,
+	inboundMailEdge *inboundmail.Edge,
 	sourceControlEdge *sourcecontrol.Edge,
 	sourceControlApps *sourcecontrol.AppEdge,
 	mcpEdge *mcpserver.Edge,
@@ -76,6 +78,7 @@ func New(
 	deliveries := base.With(chimiddleware.Timeout(cfg.RequestTimeout))
 	deliveries.Post(sourcecontrol.DeliveryPath, sourceControlEdge.Deliver)
 	deliveries.Post(sourcecontrol.AppDeliveryPath, sourceControlEdge.DeliverToApp)
+	deliveries.Post(inboundmail.DeliveryPath, inboundMailEdge.Deliver)
 
 	transfers := base.With(chimiddleware.Timeout(attachmentCfg.TransferTimeout))
 	transfers.Put(blob.UploadPath, blobEdge.Receive)

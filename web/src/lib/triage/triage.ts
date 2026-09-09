@@ -42,12 +42,13 @@ export const sourceLabels: Record<TriageSource, string> = {
 	user: "A person",
 	token: "An integration",
 	agent: "An agent",
+	email: "Email",
 };
 
 export const sourceSlots: TriageSourceSlot[] = [
 	{ kind: "live", value: "all", label: "All" },
 	{ kind: "soon", label: "Slack" },
-	{ kind: "soon", label: "Email" },
+	{ kind: "live", value: "email", label: "Email" },
 	{ kind: "live", value: "token", label: "API" },
 	{ kind: "live", value: "agent", label: "Agents" },
 	{ kind: "soon", label: "Form" },

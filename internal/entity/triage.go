@@ -12,6 +12,34 @@ var (
 	ErrIssueNotWaiting = errors.New("issue is not waiting in triage")
 )
 
+type TriageSource string
+
+const (
+	TriageSourceUser  TriageSource = "user"
+	TriageSourceToken TriageSource = "token"
+	TriageSourceAgent TriageSource = "agent"
+	TriageSourceEmail TriageSource = "email"
+)
+
+func TriageSources() []TriageSource {
+	return []TriageSource{TriageSourceUser, TriageSourceToken, TriageSourceAgent, TriageSourceEmail}
+}
+
+func (s TriageSource) Valid() bool {
+	return slices.Contains(TriageSources(), s)
+}
+
+func TriageSourceOf(kind ActorKind) TriageSource {
+	switch kind {
+	case ActorKindToken:
+		return TriageSourceToken
+	case ActorKindAgent:
+		return TriageSourceAgent
+	default:
+		return TriageSourceUser
+	}
+}
+
 type TriageState string
 
 const (
@@ -74,12 +102,14 @@ type TriageSettings struct {
 	RouteNonMembers   bool
 }
 
-func (s TriageSettings) Routes(source ActorKind, onTeam bool) bool {
+func (s TriageSettings) Routes(source TriageSource, onTeam bool) bool {
 	switch source {
-	case ActorKindAgent:
+	case TriageSourceAgent:
 		return s.RouteAgents
-	case ActorKindToken:
+	case TriageSourceToken:
 		return s.RouteIntegrations
+	case TriageSourceEmail:
+		return true
 	default:
 		return s.RouteNonMembers && !onTeam
 	}
