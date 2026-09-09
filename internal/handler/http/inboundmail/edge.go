@@ -21,8 +21,12 @@ type Edge struct {
 	enabled bool
 }
 
-func New(intakes service.Intakes, cfg config.Intake) *Edge {
-	return &Edge{intakes: intakes, limit: cfg.MaxDeliverySize, enabled: cfg.Enabled()}
+func New(intakes service.Intakes, intake config.Intake, provider config.Epostix) *Edge {
+	return &Edge{
+		intakes: intakes,
+		limit:   provider.MaxDeliverySize,
+		enabled: intake.Domain != "" && provider.Configured(),
+	}
 }
 
 func (e *Edge) Deliver(w http.ResponseWriter, r *http.Request) {

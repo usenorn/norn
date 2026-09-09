@@ -31,6 +31,7 @@ type Config struct {
 	Linear        Linear        `mapstructure:"linear"`
 	SourceControl SourceControl `mapstructure:"source_control"`
 	Intake        Intake        `mapstructure:"intake"`
+	Epostix       Epostix       `mapstructure:"epostix"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -48,7 +49,10 @@ type Config struct {
 }
 
 type Intake struct {
-	Domain          string        `mapstructure:"domain"`
+	Domain string `mapstructure:"domain"`
+}
+
+type Epostix struct {
 	Endpoint        string        `mapstructure:"endpoint"`
 	APIKey          string        `mapstructure:"api_key"`
 	WebhookSecret   string        `mapstructure:"webhook_secret"`
@@ -58,16 +62,16 @@ type Intake struct {
 	MaxBodyBytes    int           `mapstructure:"max_body_bytes"`
 }
 
-func (i Intake) Enabled() bool {
-	return i.Domain != "" && i.APIKey != "" && i.WebhookSecret != ""
+func (e Epostix) Configured() bool {
+	return e.APIKey != "" && e.WebhookSecret != ""
 }
 
-func (i Intake) Secrets() []string {
-	if i.PreviousSecret == "" {
-		return []string{i.WebhookSecret}
+func (e Epostix) Secrets() []string {
+	if e.PreviousSecret == "" {
+		return []string{e.WebhookSecret}
 	}
 
-	return []string{i.WebhookSecret, i.PreviousSecret}
+	return []string{e.WebhookSecret, e.PreviousSecret}
 }
 
 type Licence struct {

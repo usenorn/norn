@@ -20,7 +20,7 @@ type epostixMail struct {
 	maxBody  int
 }
 
-func New(cfg config.Intake) repository.InboundMail {
+func New(cfg config.Epostix) repository.InboundMail {
 	options := []epostix.Option{
 		epostix.WithHTTPClient(&http.Client{Timeout: cfg.RequestTimeout}),
 		epostix.WithUserAgentSuffix("norn"),

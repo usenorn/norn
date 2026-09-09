@@ -60,6 +60,8 @@ func NewSourceControl(cfg Config) SourceControl { return cfg.SourceControl }
 
 func NewIntake(cfg Config) Intake { return cfg.Intake }
 
+func NewEpostix(cfg Config) Epostix { return cfg.Epostix }
+
 func NewSession(cfg Config) Session { return cfg.Session }
 
 func NewCasbin(cfg Config) Casbin { return cfg.Casbin }

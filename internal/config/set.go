@@ -34,6 +34,7 @@ var Set = wire.NewSet(
 	NewLinear,
 	NewSourceControl,
 	NewIntake,
+	NewEpostix,
 	NewSession,
 	NewCasbin,
 	NewGeoIP,
