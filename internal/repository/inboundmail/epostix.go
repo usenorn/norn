@@ -32,7 +32,7 @@ func New(cfg config.Epostix) repository.InboundMail {
 
 	return &epostixMail{
 		client:   epostix.New(cfg.APIKey, options...),
-		verifier: epostix.NewWebhookVerifier(cfg.Secrets()),
+		verifier: epostix.NewWebhookVerifier([]string{cfg.WebhookSecret}),
 		maxBody:  cfg.MaxBodyBytes,
 	}
 }
