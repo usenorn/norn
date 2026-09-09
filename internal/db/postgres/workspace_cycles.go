@@ -24,114 +24,134 @@ import (
 
 // WorkspaceCycle is an object representing the database table.
 type WorkspaceCycle struct {
-	ID          string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	TeamID      string      `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
-	Number      int         `boil:"number" json:"number" toml:"number" yaml:"number"`
-	StartsOn    time.Time   `boil:"starts_on" json:"starts_on" toml:"starts_on" yaml:"starts_on"`
-	EndsOn      time.Time   `boil:"ends_on" json:"ends_on" toml:"ends_on" yaml:"ends_on"`
-	ClosedAt    null.Time   `boil:"closed_at" json:"closed_at,omitempty" toml:"closed_at" yaml:"closed_at,omitempty"`
-	ClosedBy    null.String `boil:"closed_by" json:"closed_by,omitempty" toml:"closed_by" yaml:"closed_by,omitempty"`
-	Rollover    string      `boil:"rollover" json:"rollover" toml:"rollover" yaml:"rollover"`
-	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID                string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID       string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	TeamID            string      `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
+	Number            int         `boil:"number" json:"number" toml:"number" yaml:"number"`
+	StartsOn          time.Time   `boil:"starts_on" json:"starts_on" toml:"starts_on" yaml:"starts_on"`
+	EndsOn            time.Time   `boil:"ends_on" json:"ends_on" toml:"ends_on" yaml:"ends_on"`
+	ClosedAt          null.Time   `boil:"closed_at" json:"closed_at,omitempty" toml:"closed_at" yaml:"closed_at,omitempty"`
+	ClosedBy          null.String `boil:"closed_by" json:"closed_by,omitempty" toml:"closed_by" yaml:"closed_by,omitempty"`
+	Rollover          string      `boil:"rollover" json:"rollover" toml:"rollover" yaml:"rollover"`
+	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt         time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	OwnerAccountID    null.String `boil:"owner_account_id" json:"owner_account_id,omitempty" toml:"owner_account_id" yaml:"owner_account_id,omitempty"`
+	ResultsRecordedAt null.Time   `boil:"results_recorded_at" json:"results_recorded_at,omitempty" toml:"results_recorded_at" yaml:"results_recorded_at,omitempty"`
 
 	R *workspaceCycleR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceCycleL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceCycleColumns = struct {
-	ID          string
-	WorkspaceID string
-	TeamID      string
-	Number      string
-	StartsOn    string
-	EndsOn      string
-	ClosedAt    string
-	ClosedBy    string
-	Rollover    string
-	CreatedAt   string
-	UpdatedAt   string
+	ID                string
+	WorkspaceID       string
+	TeamID            string
+	Number            string
+	StartsOn          string
+	EndsOn            string
+	ClosedAt          string
+	ClosedBy          string
+	Rollover          string
+	CreatedAt         string
+	UpdatedAt         string
+	OwnerAccountID    string
+	ResultsRecordedAt string
 }{
-	ID:          "id",
-	WorkspaceID: "workspace_id",
-	TeamID:      "team_id",
-	Number:      "number",
-	StartsOn:    "starts_on",
-	EndsOn:      "ends_on",
-	ClosedAt:    "closed_at",
-	ClosedBy:    "closed_by",
-	Rollover:    "rollover",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
+	ID:                "id",
+	WorkspaceID:       "workspace_id",
+	TeamID:            "team_id",
+	Number:            "number",
+	StartsOn:          "starts_on",
+	EndsOn:            "ends_on",
+	ClosedAt:          "closed_at",
+	ClosedBy:          "closed_by",
+	Rollover:          "rollover",
+	CreatedAt:         "created_at",
+	UpdatedAt:         "updated_at",
+	OwnerAccountID:    "owner_account_id",
+	ResultsRecordedAt: "results_recorded_at",
 }
 
 var WorkspaceCycleTableColumns = struct {
-	ID          string
-	WorkspaceID string
-	TeamID      string
-	Number      string
-	StartsOn    string
-	EndsOn      string
-	ClosedAt    string
-	ClosedBy    string
-	Rollover    string
-	CreatedAt   string
-	UpdatedAt   string
+	ID                string
+	WorkspaceID       string
+	TeamID            string
+	Number            string
+	StartsOn          string
+	EndsOn            string
+	ClosedAt          string
+	ClosedBy          string
+	Rollover          string
+	CreatedAt         string
+	UpdatedAt         string
+	OwnerAccountID    string
+	ResultsRecordedAt string
 }{
-	ID:          "workspace_cycles.id",
-	WorkspaceID: "workspace_cycles.workspace_id",
-	TeamID:      "workspace_cycles.team_id",
-	Number:      "workspace_cycles.number",
-	StartsOn:    "workspace_cycles.starts_on",
-	EndsOn:      "workspace_cycles.ends_on",
-	ClosedAt:    "workspace_cycles.closed_at",
-	ClosedBy:    "workspace_cycles.closed_by",
-	Rollover:    "workspace_cycles.rollover",
-	CreatedAt:   "workspace_cycles.created_at",
-	UpdatedAt:   "workspace_cycles.updated_at",
+	ID:                "workspace_cycles.id",
+	WorkspaceID:       "workspace_cycles.workspace_id",
+	TeamID:            "workspace_cycles.team_id",
+	Number:            "workspace_cycles.number",
+	StartsOn:          "workspace_cycles.starts_on",
+	EndsOn:            "workspace_cycles.ends_on",
+	ClosedAt:          "workspace_cycles.closed_at",
+	ClosedBy:          "workspace_cycles.closed_by",
+	Rollover:          "workspace_cycles.rollover",
+	CreatedAt:         "workspace_cycles.created_at",
+	UpdatedAt:         "workspace_cycles.updated_at",
+	OwnerAccountID:    "workspace_cycles.owner_account_id",
+	ResultsRecordedAt: "workspace_cycles.results_recorded_at",
 }
 
 // Generated where
 
 var WorkspaceCycleWhere = struct {
-	ID          whereHelperstring
-	WorkspaceID whereHelperstring
-	TeamID      whereHelperstring
-	Number      whereHelperint
-	StartsOn    whereHelpertime_Time
-	EndsOn      whereHelpertime_Time
-	ClosedAt    whereHelpernull_Time
-	ClosedBy    whereHelpernull_String
-	Rollover    whereHelperstring
-	CreatedAt   whereHelpertime_Time
-	UpdatedAt   whereHelpertime_Time
+	ID                whereHelperstring
+	WorkspaceID       whereHelperstring
+	TeamID            whereHelperstring
+	Number            whereHelperint
+	StartsOn          whereHelpertime_Time
+	EndsOn            whereHelpertime_Time
+	ClosedAt          whereHelpernull_Time
+	ClosedBy          whereHelpernull_String
+	Rollover          whereHelperstring
+	CreatedAt         whereHelpertime_Time
+	UpdatedAt         whereHelpertime_Time
+	OwnerAccountID    whereHelpernull_String
+	ResultsRecordedAt whereHelpernull_Time
 }{
-	ID:          whereHelperstring{field: "\"workspace_cycles\".\"id\""},
-	WorkspaceID: whereHelperstring{field: "\"workspace_cycles\".\"workspace_id\""},
-	TeamID:      whereHelperstring{field: "\"workspace_cycles\".\"team_id\""},
-	Number:      whereHelperint{field: "\"workspace_cycles\".\"number\""},
-	StartsOn:    whereHelpertime_Time{field: "\"workspace_cycles\".\"starts_on\""},
-	EndsOn:      whereHelpertime_Time{field: "\"workspace_cycles\".\"ends_on\""},
-	ClosedAt:    whereHelpernull_Time{field: "\"workspace_cycles\".\"closed_at\""},
-	ClosedBy:    whereHelpernull_String{field: "\"workspace_cycles\".\"closed_by\""},
-	Rollover:    whereHelperstring{field: "\"workspace_cycles\".\"rollover\""},
-	CreatedAt:   whereHelpertime_Time{field: "\"workspace_cycles\".\"created_at\""},
-	UpdatedAt:   whereHelpertime_Time{field: "\"workspace_cycles\".\"updated_at\""},
+	ID:                whereHelperstring{field: "\"workspace_cycles\".\"id\""},
+	WorkspaceID:       whereHelperstring{field: "\"workspace_cycles\".\"workspace_id\""},
+	TeamID:            whereHelperstring{field: "\"workspace_cycles\".\"team_id\""},
+	Number:            whereHelperint{field: "\"workspace_cycles\".\"number\""},
+	StartsOn:          whereHelpertime_Time{field: "\"workspace_cycles\".\"starts_on\""},
+	EndsOn:            whereHelpertime_Time{field: "\"workspace_cycles\".\"ends_on\""},
+	ClosedAt:          whereHelpernull_Time{field: "\"workspace_cycles\".\"closed_at\""},
+	ClosedBy:          whereHelpernull_String{field: "\"workspace_cycles\".\"closed_by\""},
+	Rollover:          whereHelperstring{field: "\"workspace_cycles\".\"rollover\""},
+	CreatedAt:         whereHelpertime_Time{field: "\"workspace_cycles\".\"created_at\""},
+	UpdatedAt:         whereHelpertime_Time{field: "\"workspace_cycles\".\"updated_at\""},
+	OwnerAccountID:    whereHelpernull_String{field: "\"workspace_cycles\".\"owner_account_id\""},
+	ResultsRecordedAt: whereHelpernull_Time{field: "\"workspace_cycles\".\"results_recorded_at\""},
 }
 
 // WorkspaceCycleRels is where relationship names are stored.
 var WorkspaceCycleRels = struct {
 	ClosedByAccount                 string
+	OwnerAccount                    string
+	CycleWorkspaceCycleResults      string
 	CycleWorkspaceCycleScopeChanges string
 }{
 	ClosedByAccount:                 "ClosedByAccount",
+	OwnerAccount:                    "OwnerAccount",
+	CycleWorkspaceCycleResults:      "CycleWorkspaceCycleResults",
 	CycleWorkspaceCycleScopeChanges: "CycleWorkspaceCycleScopeChanges",
 }
 
 // workspaceCycleR is where relationships are stored.
 type workspaceCycleR struct {
 	ClosedByAccount                 *Account                       `boil:"ClosedByAccount" json:"ClosedByAccount" toml:"ClosedByAccount" yaml:"ClosedByAccount"`
+	OwnerAccount                    *Account                       `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
+	CycleWorkspaceCycleResults      WorkspaceCycleResultSlice      `boil:"CycleWorkspaceCycleResults" json:"CycleWorkspaceCycleResults" toml:"CycleWorkspaceCycleResults" yaml:"CycleWorkspaceCycleResults"`
 	CycleWorkspaceCycleScopeChanges WorkspaceCycleScopeChangeSlice `boil:"CycleWorkspaceCycleScopeChanges" json:"CycleWorkspaceCycleScopeChanges" toml:"CycleWorkspaceCycleScopeChanges" yaml:"CycleWorkspaceCycleScopeChanges"`
 }
 
@@ -156,6 +176,38 @@ func (r *workspaceCycleR) GetClosedByAccount() *Account {
 	return r.ClosedByAccount
 }
 
+func (o *WorkspaceCycle) GetOwnerAccount() *Account {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetOwnerAccount()
+}
+
+func (r *workspaceCycleR) GetOwnerAccount() *Account {
+	if r == nil {
+		return nil
+	}
+
+	return r.OwnerAccount
+}
+
+func (o *WorkspaceCycle) GetCycleWorkspaceCycleResults() WorkspaceCycleResultSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetCycleWorkspaceCycleResults()
+}
+
+func (r *workspaceCycleR) GetCycleWorkspaceCycleResults() WorkspaceCycleResultSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.CycleWorkspaceCycleResults
+}
+
 func (o *WorkspaceCycle) GetCycleWorkspaceCycleScopeChanges() WorkspaceCycleScopeChangeSlice {
 	if o == nil {
 		return nil
@@ -176,9 +228,9 @@ func (r *workspaceCycleR) GetCycleWorkspaceCycleScopeChanges() WorkspaceCycleSco
 type workspaceCycleL struct{}
 
 var (
-	workspaceCycleAllColumns            = []string{"id", "workspace_id", "team_id", "number", "starts_on", "ends_on", "closed_at", "closed_by", "rollover", "created_at", "updated_at"}
+	workspaceCycleAllColumns            = []string{"id", "workspace_id", "team_id", "number", "starts_on", "ends_on", "closed_at", "closed_by", "rollover", "created_at", "updated_at", "owner_account_id", "results_recorded_at"}
 	workspaceCycleColumnsWithoutDefault = []string{"workspace_id", "team_id", "number", "starts_on", "ends_on"}
-	workspaceCycleColumnsWithDefault    = []string{"id", "closed_at", "closed_by", "rollover", "created_at", "updated_at"}
+	workspaceCycleColumnsWithDefault    = []string{"id", "closed_at", "closed_by", "rollover", "created_at", "updated_at", "owner_account_id", "results_recorded_at"}
 	workspaceCyclePrimaryKeyColumns     = []string{"id"}
 	workspaceCycleGeneratedColumns      = []string{}
 )
@@ -499,6 +551,31 @@ func (o *WorkspaceCycle) ClosedByAccount(mods ...qm.QueryMod) accountQuery {
 	return Accounts(queryMods...)
 }
 
+// OwnerAccount pointed to by the foreign key.
+func (o *WorkspaceCycle) OwnerAccount(mods ...qm.QueryMod) accountQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.OwnerAccountID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Accounts(queryMods...)
+}
+
+// CycleWorkspaceCycleResults retrieves all the workspace_cycle_result's WorkspaceCycleResults with an executor via cycle_id column.
+func (o *WorkspaceCycle) CycleWorkspaceCycleResults(mods ...qm.QueryMod) workspaceCycleResultQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_cycle_results\".\"cycle_id\"=?", o.ID),
+	)
+
+	return WorkspaceCycleResults(queryMods...)
+}
+
 // CycleWorkspaceCycleScopeChanges retrieves all the workspace_cycle_scope_change's WorkspaceCycleScopeChanges with an executor via cycle_id column.
 func (o *WorkspaceCycle) CycleWorkspaceCycleScopeChanges(mods ...qm.QueryMod) workspaceCycleScopeChangeQuery {
 	var queryMods []qm.QueryMod
@@ -629,6 +706,243 @@ func (workspaceCycleL) LoadClosedByAccount(ctx context.Context, e boil.ContextEx
 					foreign.R = &accountR{}
 				}
 				foreign.R.ClosedByWorkspaceCycles = append(foreign.R.ClosedByWorkspaceCycles, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadOwnerAccount allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceCycleL) LoadOwnerAccount(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCycle any, mods queries.Applicator) error {
+	var slice []*WorkspaceCycle
+	var object *WorkspaceCycle
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceCycle.(*WorkspaceCycle)
+		if !ok {
+			object = new(WorkspaceCycle)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceCycle)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceCycle))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceCycle.(*[]*WorkspaceCycle)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceCycle)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceCycle))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceCycleR{}
+		}
+		if !queries.IsNil(object.OwnerAccountID) {
+			args[object.OwnerAccountID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceCycleR{}
+			}
+
+			if !queries.IsNil(obj.OwnerAccountID) {
+				args[obj.OwnerAccountID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`accounts`),
+		qm.WhereIn(`accounts.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Account")
+	}
+
+	var resultSlice []*Account
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Account")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for accounts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for accounts")
+	}
+
+	if len(accountAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.OwnerAccount = foreign
+		if foreign.R == nil {
+			foreign.R = &accountR{}
+		}
+		foreign.R.OwnerAccountWorkspaceCycles = append(foreign.R.OwnerAccountWorkspaceCycles, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.OwnerAccountID, foreign.ID) {
+				local.R.OwnerAccount = foreign
+				if foreign.R == nil {
+					foreign.R = &accountR{}
+				}
+				foreign.R.OwnerAccountWorkspaceCycles = append(foreign.R.OwnerAccountWorkspaceCycles, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadCycleWorkspaceCycleResults allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceCycleL) LoadCycleWorkspaceCycleResults(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceCycle any, mods queries.Applicator) error {
+	var slice []*WorkspaceCycle
+	var object *WorkspaceCycle
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceCycle.(*WorkspaceCycle)
+		if !ok {
+			object = new(WorkspaceCycle)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceCycle)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceCycle))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceCycle.(*[]*WorkspaceCycle)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceCycle)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceCycle))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceCycleR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceCycleR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_cycle_results`),
+		qm.WhereIn(`workspace_cycle_results.cycle_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_cycle_results")
+	}
+
+	var resultSlice []*WorkspaceCycleResult
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_cycle_results")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_cycle_results")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_cycle_results")
+	}
+
+	if len(workspaceCycleResultAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CycleWorkspaceCycleResults = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceCycleResultR{}
+			}
+			foreign.R.Cycle = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.CycleID {
+				local.R.CycleWorkspaceCycleResults = append(local.R.CycleWorkspaceCycleResults, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceCycleResultR{}
+				}
+				foreign.R.Cycle = local
 				break
 			}
 		}
@@ -826,6 +1140,139 @@ func (o *WorkspaceCycle) RemoveClosedByAccount(ctx context.Context, exec boil.Co
 		}
 		related.R.ClosedByWorkspaceCycles = related.R.ClosedByWorkspaceCycles[:ln-1]
 		break
+	}
+	return nil
+}
+
+// SetOwnerAccount of the workspaceCycle to the related item.
+// Sets o.R.OwnerAccount to related.
+// Adds o to related.R.OwnerAccountWorkspaceCycles.
+func (o *WorkspaceCycle) SetOwnerAccount(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Account) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_cycles\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"owner_account_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceCyclePrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.OwnerAccountID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceCycleR{
+			OwnerAccount: related,
+		}
+	} else {
+		o.R.OwnerAccount = related
+	}
+
+	if related.R == nil {
+		related.R = &accountR{
+			OwnerAccountWorkspaceCycles: WorkspaceCycleSlice{o},
+		}
+	} else {
+		related.R.OwnerAccountWorkspaceCycles = append(related.R.OwnerAccountWorkspaceCycles, o)
+	}
+
+	return nil
+}
+
+// RemoveOwnerAccount relationship.
+// Sets o.R.OwnerAccount to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceCycle) RemoveOwnerAccount(ctx context.Context, exec boil.ContextExecutor, related *Account) error {
+	var err error
+
+	queries.SetScanner(&o.OwnerAccountID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("owner_account_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.OwnerAccount = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.OwnerAccountWorkspaceCycles {
+		if queries.Equal(o.OwnerAccountID, ri.OwnerAccountID) {
+			continue
+		}
+
+		ln := len(related.R.OwnerAccountWorkspaceCycles)
+		if ln > 1 && i < ln-1 {
+			related.R.OwnerAccountWorkspaceCycles[i] = related.R.OwnerAccountWorkspaceCycles[ln-1]
+		}
+		related.R.OwnerAccountWorkspaceCycles = related.R.OwnerAccountWorkspaceCycles[:ln-1]
+		break
+	}
+	return nil
+}
+
+// AddCycleWorkspaceCycleResults adds the given related objects to the existing relationships
+// of the workspace_cycle, optionally inserting them as new records.
+// Appends related to o.R.CycleWorkspaceCycleResults.
+// Sets related.R.Cycle appropriately.
+func (o *WorkspaceCycle) AddCycleWorkspaceCycleResults(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceCycleResult) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.CycleID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_cycle_results\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"cycle_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceCycleResultPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.CycleID, rel.IssueID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.CycleID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceCycleR{
+			CycleWorkspaceCycleResults: related,
+		}
+	} else {
+		o.R.CycleWorkspaceCycleResults = append(o.R.CycleWorkspaceCycleResults, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceCycleResultR{
+				Cycle: o,
+			}
+		} else {
+			rel.R.Cycle = o
+		}
 	}
 	return nil
 }

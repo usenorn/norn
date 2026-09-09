@@ -359,6 +359,29 @@ func (c *Client) EnqueueImportRescue(ctx context.Context) error {
 	return nil
 }
 
+func (c *Client) EnqueueIntakeDelivery(ctx context.Context, payload entity.IntakeDeliveryPayload) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode intake delivery payload: %w", err)
+	}
+
+	task := asynq.NewTask(entity.TaskTypeIntakeDelivery, encoded)
+
+	if _, err := c.producer.EnqueueContext(ctx, task,
+		asynq.Queue(entity.QueueDefault),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(fmt.Sprintf("intake-delivery:%s", payload.DeliveryID)),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue intake delivery: %w", err)
+	}
+
+	return nil
+}
+
 // EnqueueSCMDelivery keys a task by the delivery and the attempt, so a forge redelivering
 // the same event while the first attempt is still queued adds nothing, and a genuine retry
 // after a rate limit is a different task rather than a conflict.

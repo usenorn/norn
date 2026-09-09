@@ -68,6 +68,7 @@ func NewServeMux(
 	executionLeaseSweep *job.ExecutionLeaseSweepHandler,
 	executionUploadSweep *job.ExecutionUploadSweepHandler,
 	questionExpirySweep *job.QuestionExpirySweepHandler,
+	intakeDelivery *job.IntakeDeliveryHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -100,6 +101,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeExecutionLeaseSweep, executionLeaseSweep)
 	mux.Handle(entity.TaskTypeExecutionUploadSweep, executionUploadSweep)
 	mux.Handle(entity.TaskTypeQuestionExpirySweep, questionExpirySweep)
+	mux.Handle(entity.TaskTypeIntakeDelivery, intakeDelivery)
 
 	return mux
 }

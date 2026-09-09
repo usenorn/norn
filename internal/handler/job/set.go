@@ -27,6 +27,7 @@ var Set = wire.NewSet(
 	NewImportRevertHandler,
 	NewImportRescueHandler,
 	NewSCMDeliveryHandler,
+	NewIntakeDeliveryHandler,
 	NewSCMReconcileHandler,
 	NewSCMBackfillHandler,
 	NewSCMResumeHandler,

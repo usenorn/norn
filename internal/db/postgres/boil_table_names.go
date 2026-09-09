@@ -12,6 +12,7 @@ var TableNames = struct {
 	APITokenGrantTeams                string
 	APITokenGrants                    string
 	APITokens                         string
+	CycleHistoryCoverage              string
 	DirectoryGroupMembers             string
 	DirectoryGroups                   string
 	DirectorySyncChanges              string
@@ -32,6 +33,7 @@ var TableNames = struct {
 	WorkspaceCodebaseRepositories     string
 	WorkspaceCodebases                string
 	WorkspaceCommentMirrors           string
+	WorkspaceCycleResults             string
 	WorkspaceCycleScopeChanges        string
 	WorkspaceCycles                   string
 	WorkspaceDirectoryConnections     string
@@ -46,6 +48,7 @@ var TableNames = struct {
 	WorkspaceExecutionServices        string
 	WorkspaceExecutionValidations     string
 	WorkspaceExecutions               string
+	WorkspaceIntakeDeliveries         string
 	WorkspaceInvitationTeams          string
 	WorkspaceInvitations              string
 	WorkspaceIssueAttachments         string
@@ -93,6 +96,7 @@ var TableNames = struct {
 	WorkspaceStorageLedger            string
 	WorkspaceTeamAgentSettings        string
 	WorkspaceTeamCycleCadences        string
+	WorkspaceTeamIntakeAddresses      string
 	WorkspaceTeamMembers              string
 	WorkspaceTeamNotificationSettings string
 	WorkspaceTeamSCMSettings          string
@@ -109,6 +113,7 @@ var TableNames = struct {
 	APITokenGrantTeams:                "api_token_grant_teams",
 	APITokenGrants:                    "api_token_grants",
 	APITokens:                         "api_tokens",
+	CycleHistoryCoverage:              "cycle_history_coverage",
 	DirectoryGroupMembers:             "directory_group_members",
 	DirectoryGroups:                   "directory_groups",
 	DirectorySyncChanges:              "directory_sync_changes",
@@ -129,6 +134,7 @@ var TableNames = struct {
 	WorkspaceCodebaseRepositories:     "workspace_codebase_repositories",
 	WorkspaceCodebases:                "workspace_codebases",
 	WorkspaceCommentMirrors:           "workspace_comment_mirrors",
+	WorkspaceCycleResults:             "workspace_cycle_results",
 	WorkspaceCycleScopeChanges:        "workspace_cycle_scope_changes",
 	WorkspaceCycles:                   "workspace_cycles",
 	WorkspaceDirectoryConnections:     "workspace_directory_connections",
@@ -143,6 +149,7 @@ var TableNames = struct {
 	WorkspaceExecutionServices:        "workspace_execution_services",
 	WorkspaceExecutionValidations:     "workspace_execution_validations",
 	WorkspaceExecutions:               "workspace_executions",
+	WorkspaceIntakeDeliveries:         "workspace_intake_deliveries",
 	WorkspaceInvitationTeams:          "workspace_invitation_teams",
 	WorkspaceInvitations:              "workspace_invitations",
 	WorkspaceIssueAttachments:         "workspace_issue_attachments",
@@ -190,6 +197,7 @@ var TableNames = struct {
 	WorkspaceStorageLedger:            "workspace_storage_ledger",
 	WorkspaceTeamAgentSettings:        "workspace_team_agent_settings",
 	WorkspaceTeamCycleCadences:        "workspace_team_cycle_cadences",
+	WorkspaceTeamIntakeAddresses:      "workspace_team_intake_addresses",
 	WorkspaceTeamMembers:              "workspace_team_members",
 	WorkspaceTeamNotificationSettings: "workspace_team_notification_settings",
 	WorkspaceTeamSCMSettings:          "workspace_team_scm_settings",

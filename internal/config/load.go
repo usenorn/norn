@@ -867,6 +867,16 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("source_control.delivery_retention", 720*time.Hour)
 	v.SetDefault("source_control.allowed_destinations", []string{})
 
+	v.SetDefault("intake.domain", "")
+
+	v.SetDefault("epostix.endpoint", "")
+	v.SetDefault("epostix.api_key", "")
+	v.SetDefault("epostix.webhook_secret", "")
+	v.SetDefault("epostix.previous_webhook_secret", "")
+	v.SetDefault("epostix.request_timeout", 30*time.Second)
+	v.SetDefault("epostix.max_delivery_size", int64(1<<20))
+	v.SetDefault("epostix.max_body_bytes", 60000)
+
 	v.SetDefault("attachments.reclaim_batch", 200)
 
 	v.SetDefault("session.cookie_name", "norn_session")

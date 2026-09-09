@@ -13,6 +13,7 @@ func (s *issuesService) route(
 	ctx context.Context,
 	arriving *entity.Issue,
 	decision entity.Decision,
+	declared entity.TriageSource,
 ) error {
 	settings, err := s.triage.Settings(ctx, arriving.WorkspaceID, arriving.TeamID)
 	if err != nil {
@@ -28,12 +29,17 @@ func (s *issuesService) route(
 		return err
 	}
 
-	if !settings.Routes(decision.Actor.Kind, onTeam) {
+	source := declared
+	if source == "" {
+		source = entity.TriageSourceOf(decision.Actor.Kind)
+	}
+
+	if !settings.Routes(source, onTeam) {
 		return nil
 	}
 
 	arriving.TriageState = entity.TriageStateWaiting
-	arriving.TriageSource = decision.Actor.Kind
+	arriving.TriageSource = source
 
 	return nil
 }

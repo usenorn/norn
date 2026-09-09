@@ -8,6 +8,7 @@ import { statesFor, type StateList } from "$lib/team/states";
 import { settingsFor, type TeamSettings } from "$lib/team/team-settings";
 import { teamSettingsSchema } from "$lib/team/team-settings-schema";
 import { teamNameMessage, type Team } from "$lib/team/teams";
+import { intakeFor, type IntakeSetting } from "$lib/triage/intake";
 import { settingFor, type TriageSetting, type TriageSettings } from "$lib/triage/triage";
 import type {
 	SourceControlTransitionRule,
@@ -28,6 +29,7 @@ export type TeamPageData = {
 	states: StateList;
 	cadence: CadenceSetting;
 	triage: TriageSetting;
+	intake: IntakeSetting;
 	sourceControl: SourceControlTransitionRule[];
 	sourceControlSettings: TeamSourceControlSettings;
 	agents: AgentSettings | null;
@@ -40,6 +42,7 @@ const unavailable: TeamPageData = {
 	states: { kind: "unavailable" },
 	cadence: { kind: "unavailable" },
 	triage: { kind: "unavailable" },
+	intake: { kind: "unavailable" },
 	sourceControl: [],
 	sourceControlSettings: { teamId: "", branchTemplate: "{handle}/{reference}-{title}" },
 	agents: null,
@@ -63,12 +66,22 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 
 	const path = { workspaceId: workspace.id, teamId: team.id };
 
-	const [members, states, cadence, triage, agents, notifications, sourceControl, scmSettings] =
-		await Promise.all([
+	const [
+		members,
+		states,
+		cadence,
+		triage,
+		intake,
+		agents,
+		notifications,
+		sourceControl,
+		scmSettings,
+	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/members", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/cycle-cadence", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/triage", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/intake-address", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/agent-settings", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/notification-settings", {
 			params: { path },
@@ -87,6 +100,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 		states: statesFor(states.data),
 		cadence: cadenceFor(cadence.data, cadence.response.status),
 		triage: settingFor(triage.data, triage.response.status),
+		intake: intakeFor(intake.data, intake.response.status),
 		sourceControl: (sourceControl.data ?? []) as SourceControlTransitionRule[],
 		sourceControlSettings: scmSettings.data ?? {
 			teamId: team.id,

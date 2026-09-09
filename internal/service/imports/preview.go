@@ -693,7 +693,7 @@ func (s *importsService) triageTeams(
 			return nil, err
 		}
 
-		if !settings.Routes(run.Requester().Kind, member[teamID]) {
+		if !settings.Routes(entity.TriageSourceOf(run.Requester().Kind), member[teamID]) {
 			continue
 		}
 

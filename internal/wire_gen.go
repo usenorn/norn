@@ -13,6 +13,7 @@ import (
 	blob2 "github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/gatewayrouter"
+	inboundmail2 "github.com/usenorn/norn/internal/handler/http/inboundmail"
 	preview3 "github.com/usenorn/norn/internal/handler/http/preview"
 	previewgateway3 "github.com/usenorn/norn/internal/handler/http/previewgateway"
 	"github.com/usenorn/norn/internal/handler/http/previewtunnel"
@@ -66,6 +67,8 @@ import (
 	"github.com/usenorn/norn/internal/repository/executionupload"
 	"github.com/usenorn/norn/internal/repository/geolocation"
 	"github.com/usenorn/norn/internal/repository/imports"
+	"github.com/usenorn/norn/internal/repository/inboundmail"
+	"github.com/usenorn/norn/internal/repository/intake"
 	"github.com/usenorn/norn/internal/repository/invitation"
 	"github.com/usenorn/norn/internal/repository/issue"
 	"github.com/usenorn/norn/internal/repository/issuecomment"
@@ -137,6 +140,7 @@ import (
 	imports2 "github.com/usenorn/norn/internal/service/imports"
 	"github.com/usenorn/norn/internal/service/imports/csvfile"
 	"github.com/usenorn/norn/internal/service/imports/linear"
+	intake2 "github.com/usenorn/norn/internal/service/intake"
 	invitation2 "github.com/usenorn/norn/internal/service/invitation"
 	issue2 "github.com/usenorn/norn/internal/service/issue"
 	issuecomment2 "github.com/usenorn/norn/internal/service/issuecomment"
@@ -454,6 +458,11 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	issueFilterReference := issuefilterreference.New(postgresClient)
 	savedViews := savedview2.New(savedView, issueFilterReference, repositoryTeam, serviceAuthorizer, postgresClient)
 	triages := triage2.New(repositoryTriage, repositoryIssue, workflowState, repositoryActivity, repositoryTeam, repositoryCycle, cycleScopeChange, issueRelations, issues, issueComments, serviceAuthorizer, webhookEmitter, postgresClient)
+	repositoryIntake := intake.New(postgresClient)
+	epostix := config.NewEpostix(configConfig)
+	inboundMail := inboundmail.New(epostix)
+	configIntake := config.NewIntake(configConfig)
+	intakes := intake2.New(repositoryIntake, inboundMail, repositoryTeam, jobProducer, issues, serviceAuthorizer, configIntake)
 	repositoryNotification := notification.New(postgresClient)
 	notificationSetting := notificationsetting.New(postgresClient)
 	notifications := notification2.New(repositoryNotification, notificationEvent, issueFollower, notificationSetting, repositoryIssue, issueComment, teamMember, repositoryWorkspace, repositoryMailer, serviceEvents, serviceAuthorizer, app)
@@ -478,7 +487,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	importsService := imports2.New(importRun, importCursor, importRecord, importMapping, importLedger, importReport, repositoryMembership, repositoryTeam, workflowState, repositoryLabel, repositoryProject, repositoryCycle, repositoryIssue, issueComment, issueRelation, labelGroup, teamMember, repositoryTriage, repositoryAttachment, repositoryBlob, issues, projects, cycles, labels, workflowStates, issueComments, teams, issueRelations, serviceAttachments, importSources, serviceAuthorizer, jobProducer, postgresClient, configImports)
 	serviceImports := imports2.NewImports(importsService)
 	sourceControlApps := scm2.NewApps(scmApp, scmConnection, scmAppState, forges, serviceAuthorizer, sourceControl)
-	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, delegations, issueQuestions, runners, codebases, executions, executionServices, executionUploads, changeSets, servicePreviews, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, serviceWebhooks, webhookDeliveries, agents, sessions, ssoConnections, cycles, projects, savedViews, triages, notifications, searches, auditLog, directories, serviceLicensing, serviceImports, serviceSourceControl, sourceControlApps, sourceControl, app, instance, password, configSession, configImports, previews)
+	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueRelations, issueComments, delegations, issueQuestions, runners, codebases, executions, executionServices, executionUploads, changeSets, servicePreviews, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, serviceWebhooks, webhookDeliveries, agents, sessions, ssoConnections, cycles, projects, savedViews, triages, intakes, notifications, searches, auditLog, directories, serviceLicensing, serviceImports, serviceSourceControl, sourceControlApps, sourceControl, app, instance, password, configSession, configImports, previews)
 	callback := sso.NewCallback(ssoConnections, configSession)
 	ssoSAML := sso.NewSAML(ssoConnections, configSession)
 	edge := blob2.New(repositoryBlob, blobGrant, attachments)
@@ -486,6 +495,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	eventsEdge := events.New(serviceEvents, realtime)
 	auditexportEdge := auditexport.New(auditLog)
 	scimEdge := scim.New(directories)
+	inboundmailEdge := inboundmail2.New(intakes, configIntake, epostix)
 	sourceControlSync := scm2.NewSync(scmConnection, scmRepository, scmRoute, scmTransitionRule, scmTeamSetting, scmIdentity, mirrorConflict, repositoryLabel, repositoryAgent, gate, scmRelease, scmDeployment, scmDelivery, codeLink, issueMirror, workflowState, repositoryIssue, repositoryWorkspace, repositoryActivity, repositoryMembership, scmApp, forges, credentials, serviceAuthorizer, issues, issueComments, jobProducer, postgresClient, sourceControl, app)
 	sourcecontrolEdge := sourcecontrol.New(sourceControlSync, sourceControl)
 	appEdge := sourcecontrol.NewAppEdge(sourceControlApps, app)
@@ -495,7 +505,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	previewGateway := previewgateway.New(postgresClient)
 	previewGateways := previewgateway2.New(previewGateway, previewGrant, previews)
 	previewgatewayEdge := previewgateway3.New(servicePreviews, previewGateways, runners)
-	handler := router.New(http, configSession, attachments, app, mcp, sessions, apiTokens, runners, mcpThrottle, strictServerInterface, callback, ssoSAML, edge, eventsEdge, auditexportEdge, scimEdge, sourcecontrolEdge, appEdge, mcpserverEdge, runnerchannelEdge, previewgatewayEdge)
+	handler := router.New(http, configSession, attachments, app, mcp, sessions, apiTokens, runners, mcpThrottle, strictServerInterface, callback, ssoSAML, edge, eventsEdge, auditexportEdge, scimEdge, inboundmailEdge, sourcecontrolEdge, appEdge, mcpserverEdge, runnerchannelEdge, previewgatewayEdge)
 	logger, err := logging.New(app)
 	if err != nil {
 		cleanup8()
@@ -849,7 +859,13 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	executionUploadSweepHandler := job.NewExecutionUploadSweepHandler(executionUploads)
 	issueQuestions := issuequestion2.New(issueQuestion, repositoryIssue, issueDelegation, repositoryActivity, notificationEvent, serviceExecutions, serviceEvents, client, serviceAuthorizer)
 	questionExpirySweepHandler := job.NewQuestionExpirySweepHandler(issueQuestions)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, signInCodeHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler, executionUploadSweepHandler, questionExpirySweepHandler)
+	repositoryIntake := intake.New(client)
+	epostix := config.NewEpostix(configConfig)
+	inboundMail := inboundmail.New(epostix)
+	configIntake := config.NewIntake(configConfig)
+	intakes := intake2.New(repositoryIntake, inboundMail, repositoryTeam, jobProducer, issues, serviceAuthorizer, configIntake)
+	intakeDeliveryHandler := job.NewIntakeDeliveryHandler(intakes)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, signInCodeHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler, executionUploadSweepHandler, questionExpirySweepHandler, intakeDeliveryHandler)
 	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, configImports, sourceControl, executions, questions, server, scheduler, inspector, serveMux, logger)
 	return internalWorker, func() {
 		cleanup8()
@@ -1020,7 +1036,7 @@ func InitGateway(cfgFile string) (*Gateway, error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, executionservice.Set, executionpolicy.Set, executionupload.Set, changeset.Set, preview.Set, previewshare.Set, previewgrant.Set, previewgateway.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, executionservice2.Set, executionupload2.Set, changeset2.Set, preview2.Set, previewgateway2.Set, previewgateway3.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, mcpserver.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, executionservice.Set, executionpolicy.Set, executionupload.Set, changeset.Set, preview.Set, previewshare.Set, previewgrant.Set, previewgateway.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, intake.Set, inboundmail.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, attachment2.Set, issuecomment2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, executionservice2.Set, executionupload2.Set, changeset2.Set, preview2.Set, previewgateway2.Set, previewgateway3.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, event.Set, search2.Set, triage2.Set, intake2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, inboundmail2.Set, mcpserver.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

@@ -2793,6 +2793,78 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/teams/{teamId}/intake-address:
+    get:
+      tags: [triage]
+      operationId: getTeamIntakeAddress
+      summary: Read the address this team takes issues at by email
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The team's inbound address
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamIntakeAddress' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: The team does not take issues by email }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [triage]
+      operationId: enableTeamIntakeAddress
+      summary: Start taking issues by email, answering with the address to write to
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The address the team takes issues at
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamIntakeAddress' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IntakeConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [triage]
+      operationId: disableTeamIntakeAddress
+      summary: Stop taking issues by email, retiring the address
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '204':
+          description: Mail to the old address is no longer filed
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IntakeConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation:
+    post:
+      tags: [triage]
+      operationId: rotateTeamIntakeAddress
+      summary: Replace the address, so mail to the old one is no longer filed
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: The address the team now takes issues at
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TeamIntakeAddress' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IntakeConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/saved-views:
     get:
       tags: [saved-views]
@@ -6915,6 +6987,12 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
 
+    IntakeConflict:
+      description: The instance takes no mail yet, or the address could not be minted
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/IntakeConflictProblem' }
+
     TeamConflict:
       description: The key is taken, or the team or workspace refuses the change
       content:
@@ -9624,7 +9702,7 @@ components:
     TriageSource:
       type: string
       description: Who filed it, as the routing rules see them.
-      enum: [user, token, agent]
+      enum: [user, token, agent, email]
 
     TriageQueue:
       type: object
@@ -9649,6 +9727,22 @@ components:
         routeNonMembers:
           type: boolean
           description: Hold issues filed by someone who is not on this team
+
+    TeamIntakeAddress:
+      type: object
+      required: [teamId, email, localPart, domain, createdAt]
+      properties:
+        teamId: { type: string, format: uuid }
+        email:
+          type: string
+          description: The address to write to, ready to copy
+        localPart: { type: string }
+        domain: { type: string }
+        createdAt: { type: string, format: date-time }
+        rotatedAt:
+          type: string
+          format: date-time
+          description: When the previous address was replaced by this one
 
     SetTriageSettingsRequest:
       type: object
@@ -11463,6 +11557,16 @@ components:
               type: string
               enum: [team_key_taken, team_archived, team_not_archived, team_member_exists, workspace_deleted]
             purgeAfter: { type: string, format: date-time }
+
+    IntakeConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [intake_domain_unset, intake_address_taken]
 
     InvitationUnusableProblem:
       allOf:

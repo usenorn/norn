@@ -1905,6 +1905,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/teams/{teamId}/intake-address": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the address this team takes issues at by email */
+        get: operations["getTeamIntakeAddress"];
+        put?: never;
+        /** Start taking issues by email, answering with the address to write to */
+        post: operations["enableTeamIntakeAddress"];
+        /** Stop taking issues by email, retiring the address */
+        delete: operations["disableTeamIntakeAddress"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/teams/{teamId}/intake-address/rotation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace the address, so mail to the old one is no longer filed */
+        post: operations["rotateTeamIntakeAddress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/saved-views": {
         parameters: {
             query?: never;
@@ -6128,7 +6164,7 @@ export interface components {
          * @description Who filed it, as the routing rules see them.
          * @enum {string}
          */
-        TriageSource: "user" | "token" | "agent";
+        TriageSource: "user" | "token" | "agent" | "email";
         TriageQueue: {
             issues: components["schemas"]["Issue"][];
             nextCursor?: string;
@@ -6142,6 +6178,21 @@ export interface components {
             routeIntegrations: boolean;
             /** @description Hold issues filed by someone who is not on this team */
             routeNonMembers: boolean;
+        };
+        TeamIntakeAddress: {
+            /** Format: uuid */
+            teamId: string;
+            /** @description The address to write to, ready to copy */
+            email: string;
+            localPart: string;
+            domain: string;
+            /** Format: date-time */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description When the previous address was replaced by this one
+             */
+            rotatedAt?: string;
         };
         SetTriageSettingsRequest: {
             routeAgents: boolean;
@@ -7240,6 +7291,10 @@ export interface components {
             /** Format: date-time */
             purgeAfter?: string;
         };
+        IntakeConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "intake_domain_unset" | "intake_address_taken";
+        };
         InvitationUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "invitation_revoked" | "invitation_accepted" | "invitation_address_mismatch" | "account_exists";
@@ -7860,6 +7915,15 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
+        /** @description The instance takes no mail yet, or the address could not be minted */
+        IntakeConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["IntakeConflictProblem"];
             };
         };
         /** @description The key is taken, or the team or workspace refuses the change */
@@ -12186,6 +12250,121 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getTeamIntakeAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The team's inbound address */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamIntakeAddress"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            /** @description The team does not take issues by email */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            500: components["responses"]["Problem"];
+        };
+    };
+    enableTeamIntakeAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The address the team takes issues at */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamIntakeAddress"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IntakeConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    disableTeamIntakeAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mail to the old address is no longer filed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IntakeConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    rotateTeamIntakeAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                teamId: components["parameters"]["TeamId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The address the team now takes issues at */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamIntakeAddress"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IntakeConflict"];
             500: components["responses"]["Problem"];
         };
     };

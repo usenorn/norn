@@ -30,6 +30,8 @@ type Config struct {
 	Imports       Imports       `mapstructure:"imports"`
 	Linear        Linear        `mapstructure:"linear"`
 	SourceControl SourceControl `mapstructure:"source_control"`
+	Intake        Intake        `mapstructure:"intake"`
+	Epostix       Epostix       `mapstructure:"epostix"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
 	GeoIP         GeoIP         `mapstructure:"geoip"`
@@ -44,6 +46,32 @@ type Config struct {
 	Questions     Questions     `mapstructure:"questions"`
 	Previews      Previews      `mapstructure:"previews"`
 	Gateway       Gateway       `mapstructure:"gateway"`
+}
+
+type Intake struct {
+	Domain string `mapstructure:"domain"`
+}
+
+type Epostix struct {
+	Endpoint        string        `mapstructure:"endpoint"`
+	APIKey          string        `mapstructure:"api_key"`
+	WebhookSecret   string        `mapstructure:"webhook_secret"`
+	PreviousSecret  string        `mapstructure:"previous_webhook_secret"`
+	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
+	MaxDeliverySize int64         `mapstructure:"max_delivery_size"`
+	MaxBodyBytes    int           `mapstructure:"max_body_bytes"`
+}
+
+func (e Epostix) Configured() bool {
+	return e.APIKey != "" && e.WebhookSecret != ""
+}
+
+func (e Epostix) Secrets() []string {
+	if e.PreviousSecret == "" {
+		return []string{e.WebhookSecret}
+	}
+
+	return []string{e.WebhookSecret, e.PreviousSecret}
 }
 
 type Licence struct {

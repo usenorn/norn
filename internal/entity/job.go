@@ -38,6 +38,7 @@ const (
 	TaskTypeExecutionLeaseSweep     = "execution:lease_sweep"
 	TaskTypeExecutionUploadSweep    = "execution:upload_sweep"
 	TaskTypeQuestionExpirySweep     = "question:expiry_sweep"
+	TaskTypeIntakeDelivery          = "intake:delivery"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
@@ -113,6 +114,10 @@ type SCMResumePayload struct {
 type SCMDeliveryPayload struct {
 	DeliveryID uuid.UUID
 	Attempt    int
+}
+
+type IntakeDeliveryPayload struct {
+	DeliveryID uuid.UUID
 }
 
 type SCMBackfillPayload struct {

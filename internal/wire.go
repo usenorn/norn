@@ -10,6 +10,7 @@ import (
 	blobedge "github.com/usenorn/norn/internal/handler/http/blob"
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
 	gatewayrouteredge "github.com/usenorn/norn/internal/handler/http/gatewayrouter"
+	inboundmailedge "github.com/usenorn/norn/internal/handler/http/inboundmail"
 	previewbrowseredge "github.com/usenorn/norn/internal/handler/http/preview"
 	previewedge "github.com/usenorn/norn/internal/handler/http/previewgateway"
 	previewtunneledge "github.com/usenorn/norn/internal/handler/http/previewtunnel"
@@ -63,6 +64,8 @@ import (
 	executionuploadrepo "github.com/usenorn/norn/internal/repository/executionupload"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
 	importsrepo "github.com/usenorn/norn/internal/repository/imports"
+	inboundmailrepo "github.com/usenorn/norn/internal/repository/inboundmail"
+	intakerepo "github.com/usenorn/norn/internal/repository/intake"
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
@@ -134,6 +137,7 @@ import (
 	importssvc "github.com/usenorn/norn/internal/service/imports"
 	csvfilesvc "github.com/usenorn/norn/internal/service/imports/csvfile"
 	linearsvc "github.com/usenorn/norn/internal/service/imports/linear"
+	intakesvc "github.com/usenorn/norn/internal/service/intake"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
@@ -229,6 +233,8 @@ var baseSet = wire.NewSet(
 	eventstreamrepo.Set,
 	searchrepo.Set,
 	triagerepo.Set,
+	intakerepo.Set,
+	inboundmailrepo.Set,
 	issuefilterreferencerepo.Set,
 	labelrepo.Set,
 	labelgrouprepo.Set,
@@ -289,6 +295,7 @@ var baseSet = wire.NewSet(
 	eventsvc.Set,
 	searchsvc.Set,
 	triagesvc.Set,
+	intakesvc.Set,
 	labelsvc.Set,
 	workflowstatesvc.Set,
 	agentsvc.Set,
@@ -318,6 +325,7 @@ var baseSet = wire.NewSet(
 	auditexportedge.Set,
 	scimedge.Set,
 	sourcecontroledge.Set,
+	inboundmailedge.Set,
 	mcpserveredge.Set,
 	router.Set,
 	job.Set,

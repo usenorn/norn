@@ -47,6 +47,7 @@ type handler struct {
 	projects          service.Projects
 	savedViews        service.SavedViews
 	triages           service.Triages
+	intakes           service.Intakes
 	notifications     service.Notifications
 	searches          service.Searches
 	auditLog          service.AuditLog
@@ -95,6 +96,7 @@ func New(
 	projects service.Projects,
 	savedViews service.SavedViews,
 	triages service.Triages,
+	intakes service.Intakes,
 	notifications service.Notifications,
 	searches service.Searches,
 	auditLog service.AuditLog,
@@ -142,6 +144,7 @@ func New(
 		projects:          projects,
 		savedViews:        savedViews,
 		triages:           triages,
+		intakes:           intakes,
 		notifications:     notifications,
 		searches:          searches,
 		auditLog:          auditLog,

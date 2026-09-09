@@ -52,6 +52,22 @@ func (r problemResponse) write(w http.ResponseWriter) error {
 	return json.NewEncoder(w).Encode(r.body)
 }
 
+func intakeConflict(code api.IntakeConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.IntakeConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
 func problemFor(err error) (problemResponse, bool) {
 	var validation entity.ValidationError
 	if errors.As(err, &validation) {
@@ -606,9 +622,16 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrAttachmentNotFound),
 		errors.Is(err, entity.ErrBlobNotFound),
 		errors.Is(err, entity.ErrTriageDisabled),
+		errors.Is(err, entity.ErrIntakeDisabled),
 		errors.Is(err, entity.ErrNotificationNotFound),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrIntakeDomainUnset):
+		return intakeConflict(api.IntakeDomainUnset, err), true
+
+	case errors.Is(err, entity.ErrIntakeAddressTaken):
+		return intakeConflict(api.IntakeAddressTaken, err), true
 
 	case errors.Is(err, entity.ErrSnoozeNotInFuture),
 		errors.Is(err, entity.ErrNotificationCursorInvalid),
@@ -1691,6 +1714,22 @@ func (r problemResponse) VisitGetTeamTriageSettingsResponse(w http.ResponseWrite
 }
 
 func (r problemResponse) VisitSetTeamTriageSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetTeamIntakeAddressResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitEnableTeamIntakeAddressResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRotateTeamIntakeAddressResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDisableTeamIntakeAddressResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

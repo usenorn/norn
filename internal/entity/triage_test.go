@@ -12,32 +12,33 @@ func TestWhatEntersTriageIsDecidedByWhoFiledItAndNothingElse(t *testing.T) {
 
 	for name, expected := range map[string]struct {
 		settings entity.TriageSettings
-		source   entity.ActorKind
+		source   entity.TriageSource
 		onTeam   bool
 		routed   bool
 	}{
-		"an agent, when agents are routed": {all, entity.ActorKindAgent, false, true},
+		"an agent, when agents are routed": {all, entity.TriageSourceAgent, false, true},
 		"an agent on the team, when agents are routed": {
-			all, entity.ActorKindAgent, true, true,
+			all, entity.TriageSourceAgent, true, true,
 		},
 		"an agent, when agents are not routed": {
 			entity.TriageSettings{RouteIntegrations: true, RouteNonMembers: true},
-			entity.ActorKindAgent, false, false,
+			entity.TriageSourceAgent, false, false,
 		},
-		"an integration, when integrations are routed": {all, entity.ActorKindToken, false, true},
+		"an integration, when integrations are routed": {all, entity.TriageSourceToken, false, true},
 		"an integration, when integrations are not routed": {
 			entity.TriageSettings{RouteAgents: true, RouteNonMembers: true},
-			entity.ActorKindToken, false, false,
+			entity.TriageSourceToken, false, false,
 		},
-		"someone off the team, when outsiders are routed": {all, entity.ActorKindUser, false, true},
-		"someone on the team, when outsiders are routed":  {all, entity.ActorKindUser, true, false},
+		"someone off the team, when outsiders are routed": {all, entity.TriageSourceUser, false, true},
+		"someone on the team, when outsiders are routed":  {all, entity.TriageSourceUser, true, false},
 		"someone off the team, when outsiders are trusted": {
 			entity.TriageSettings{RouteAgents: true, RouteIntegrations: true},
-			entity.ActorKindUser, false, false,
+			entity.TriageSourceUser, false, false,
 		},
-		"anyone at all, when nothing is routed":  {none, entity.ActorKindUser, false, false},
-		"an agent, when nothing is routed":       {none, entity.ActorKindAgent, false, false},
-		"an integration, when nothing is routed": {none, entity.ActorKindToken, false, false},
+		"anyone at all, when nothing is routed":               {none, entity.TriageSourceUser, false, false},
+		"an agent, when nothing is routed":                    {none, entity.TriageSourceAgent, false, false},
+		"an integration, when nothing is routed":              {none, entity.TriageSourceToken, false, false},
+		"mail to the team's address, whatever else is routed": {none, entity.TriageSourceEmail, false, true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if routed := expected.settings.Routes(expected.source, expected.onTeam); routed != expected.routed {
@@ -55,7 +56,7 @@ func TestWhatEntersTriageIsDecidedByWhoFiledItAndNothingElse(t *testing.T) {
 func TestAnAgentOnTheTeamIsStillAnAgent(t *testing.T) {
 	settings := entity.TriageSettings{RouteAgents: true}
 
-	if !settings.Routes(entity.ActorKindAgent, true) {
+	if !settings.Routes(entity.TriageSourceAgent, true) {
 		t.Fatal(
 			"an agent that happens to be on the team skipped triage. Membership is what makes a " +
 				"person trusted; an agent is held for review because of what it is, and adding it " +

@@ -140,6 +140,20 @@ func (mr *MockJobProducerMockRecorder) EnqueueImportStage(ctx, payload, processA
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueImportStage", reflect.TypeOf((*MockJobProducer)(nil).EnqueueImportStage), ctx, payload, processAt)
 }
 
+// EnqueueIntakeDelivery mocks base method.
+func (m *MockJobProducer) EnqueueIntakeDelivery(ctx context.Context, payload entity.IntakeDeliveryPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueIntakeDelivery", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueIntakeDelivery indicates an expected call of EnqueueIntakeDelivery.
+func (mr *MockJobProducerMockRecorder) EnqueueIntakeDelivery(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueIntakeDelivery", reflect.TypeOf((*MockJobProducer)(nil).EnqueueIntakeDelivery), ctx, payload)
+}
+
 // EnqueueInvitation mocks base method.
 func (m *MockJobProducer) EnqueueInvitation(ctx context.Context, payload entity.InvitationPayload) error {
 	m.ctrl.T.Helper()

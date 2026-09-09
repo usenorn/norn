@@ -20,6 +20,7 @@ type CreateIssueInput struct {
 	ProjectID         uuid.UUID
 	LabelIDs          []uuid.UUID
 	Origin            *entity.ImportOrigin
+	Source            entity.TriageSource
 	Reasoning         entity.AgentReasoning
 }
 

@@ -171,3 +171,66 @@ func noteOf(note *string) string {
 
 	return *note
 }
+
+func (h *handler) GetTeamIntakeAddress(
+	ctx context.Context,
+	request api.GetTeamIntakeAddressRequestObject,
+) (api.GetTeamIntakeAddressResponseObject, error) {
+	address, err := h.intakes.Address(ctx, request.WorkspaceId, request.TeamId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetTeamIntakeAddress200JSONResponse(intakeAddressDTO(address)), nil
+}
+
+func (h *handler) EnableTeamIntakeAddress(
+	ctx context.Context,
+	request api.EnableTeamIntakeAddressRequestObject,
+) (api.EnableTeamIntakeAddressResponseObject, error) {
+	address, err := h.intakes.Enable(ctx, request.WorkspaceId, request.TeamId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.EnableTeamIntakeAddress200JSONResponse(intakeAddressDTO(address)), nil
+}
+
+func (h *handler) RotateTeamIntakeAddress(
+	ctx context.Context,
+	request api.RotateTeamIntakeAddressRequestObject,
+) (api.RotateTeamIntakeAddressResponseObject, error) {
+	address, err := h.intakes.Rotate(ctx, request.WorkspaceId, request.TeamId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RotateTeamIntakeAddress200JSONResponse(intakeAddressDTO(address)), nil
+}
+
+func (h *handler) DisableTeamIntakeAddress(
+	ctx context.Context,
+	request api.DisableTeamIntakeAddressRequestObject,
+) (api.DisableTeamIntakeAddressResponseObject, error) {
+	if err := h.intakes.Disable(ctx, request.WorkspaceId, request.TeamId); err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.DisableTeamIntakeAddress204Response{}, nil
+}

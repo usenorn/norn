@@ -20,6 +20,7 @@
 	import CycleCadence from "$lib/team/cycle-cadence.svelte";
 	import TeamNotifications from "$lib/notifications/team-notifications.svelte";
 	import TeamAgents from "$lib/team/team-agents.svelte";
+	import TeamIntake from "$lib/team/team-intake.svelte";
 	import TeamTriage from "$lib/team/team-triage.svelte";
 	import TeamSourceControl from "$lib/source-control/team-source-control.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -96,6 +97,7 @@
 	const states = $derived<StateList>(preview?.states ?? data.states);
 	const cadence = $derived<CadenceSetting>(preview?.cadence ?? data.cadence);
 	const triage = $derived(preview?.triage ?? data.triage);
+	const intake = $derived(preview?.intake ?? data.intake);
 	const notifications = $derived(preview?.notifications ?? data.notifications);
 	const failure = $derived<MemberFailure | null>(preview?.failure ?? memberFailure);
 	const team = $derived(teamOf(settings));
@@ -628,6 +630,13 @@
 					workspace={data.workspace}
 					{team}
 					setting={triage}
+					locked={busy || archived || readOnly}
+				/>
+
+				<TeamIntake
+					workspace={data.workspace}
+					{team}
+					setting={intake}
 					locked={busy || archived || readOnly}
 				/>
 

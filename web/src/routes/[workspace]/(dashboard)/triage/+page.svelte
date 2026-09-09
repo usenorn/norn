@@ -8,6 +8,7 @@
 	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import GitBranch from "@lucide/svelte/icons/git-branch";
 	import Info from "@lucide/svelte/icons/info";
+	import Mail from "@lucide/svelte/icons/mail";
 	import Plug from "@lucide/svelte/icons/plug";
 	import Settings from "@lucide/svelte/icons/settings";
 	import UserRound from "@lucide/svelte/icons/user-round";
@@ -96,6 +97,7 @@
 		user: waiting.filter((issue) => issue.triageSource === "user").length,
 		token: waiting.filter((issue) => issue.triageSource === "token").length,
 		agent: waiting.filter((issue) => issue.triageSource === "agent").length,
+		email: waiting.filter((issue) => issue.triageSource === "email").length,
 	});
 	const shown = $derived(
 		tab === "all" ? waiting : waiting.filter((issue) => issue.triageSource === tab)
@@ -255,7 +257,7 @@
 		return () => released.forEach((release) => release());
 	});
 
-	const sourceGlyph = { user: UserRound, token: Plug, agent: Bot };
+	const sourceGlyph = { user: UserRound, token: Plug, agent: Bot, email: Mail };
 </script>
 
 {#snippet sourceMark(source: TriageSource)}
