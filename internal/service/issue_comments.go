@@ -30,6 +30,7 @@ type CommentMentionInput struct {
 type PostCommentInput struct {
 	ParentCommentID uuid.UUID
 	Body            string
+	BodyDoc         *entity.Document
 	Mentions        []CommentMentionInput
 	AttachmentIDs   []uuid.UUID
 	Origin          *entity.ImportOrigin
@@ -42,7 +43,8 @@ type CommentPosted struct {
 }
 
 type EditCommentInput struct {
-	Body string
+	Body    string
+	BodyDoc *entity.Document
 }
 
 type IssueComments interface {

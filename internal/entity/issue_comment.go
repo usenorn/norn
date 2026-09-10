@@ -104,6 +104,7 @@ type IssueComment struct {
 	AuthorName      string
 	AuthorKind      AccountKind
 	Body            string
+	BodyDoc         Document
 	EditedAt        *time.Time
 	DeletedAt       *time.Time
 	Mentions        []CommentMention

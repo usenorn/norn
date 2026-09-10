@@ -11,6 +11,7 @@ type CreateIssueInput struct {
 	TeamID            uuid.UUID
 	Title             string
 	Description       string
+	DescriptionDoc    *entity.Document
 	Priority          entity.IssuePriority
 	AssigneeAccountID uuid.UUID
 	Estimate          int
@@ -81,6 +82,7 @@ type UpdateIssueInput struct {
 	Title                   *string
 	StateID                 *uuid.UUID
 	Description             *string
+	DescriptionDoc          *entity.Document
 	Priority                *entity.IssuePriority
 	AssigneeID              *uuid.UUID
 	Estimate                *int

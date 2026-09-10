@@ -117,16 +117,23 @@ func attributed(fieldVersions map[string]int, observed int) bool {
 }
 
 type IssueChange struct {
-	Title       *string
-	StateID     *uuid.UUID
-	Description *string
-	Priority    *IssuePriority
-	Assignee    *uuid.UUID
-	Estimate    *int
-	DueOn       *string
-	CycleID     *uuid.UUID
-	ProjectID   *uuid.UUID
-	Rank        *string
+	Title *string
+
+	StateID *uuid.UUID
+
+	// Description carries the markdown a change is projected to and DescriptionDoc the document
+	// it was written as. They travel together: the document is what is stored and edited, the
+	// markdown is what every reader outside the editor sees, and writing one without the other
+	// is how the two drift.
+	Description    *string
+	DescriptionDoc *Document
+	Priority       *IssuePriority
+	Assignee       *uuid.UUID
+	Estimate       *int
+	DueOn          *string
+	CycleID        *uuid.UUID
+	ProjectID      *uuid.UUID
+	Rank           *string
 
 	ClearAssignee bool
 	ClearEstimate bool

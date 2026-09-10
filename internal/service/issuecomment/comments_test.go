@@ -550,7 +550,7 @@ func TestOnlyTheAuthorMayEdit(t *testing.T) {
 
 			if actor.allowed {
 				h.comments.EXPECT().
-					Edit(gomock.Any(), h.commentID, "now with a stack trace", gomock.Any()).
+					Edit(gomock.Any(), h.commentID, "now with a stack trace", gomock.Any(), gomock.Any()).
 					Return(nil)
 			}
 

@@ -18,6 +18,7 @@ import (
 
 type issuesService struct {
 	issues       repository.Issue
+	revisions    repository.IssueRevision
 	states       repository.WorkflowState
 	activity     repository.Activity
 	labels       repository.Label
@@ -40,6 +41,7 @@ type issuesService struct {
 
 func New(
 	issues repository.Issue,
+	revisions repository.IssueRevision,
 	states repository.WorkflowState,
 	activity repository.Activity,
 	labels repository.Label,
@@ -61,6 +63,7 @@ func New(
 ) service.Issues {
 	return &issuesService{
 		issues:       issues,
+		revisions:    revisions,
 		states:       states,
 		activity:     activity,
 		labels:       labels,
@@ -80,6 +83,17 @@ func New(
 		authorizer:   authorizer,
 		transactor:   transactor,
 	}
+}
+
+// described settles the two forms a description arrives in. The document is what is stored and
+// edited; the markdown is the projection every other reader sees. A caller may send either, and
+// what it did not send is derived here rather than left for the next layer to guess at.
+func text(value *string) string {
+	if value == nil {
+		return ""
+	}
+
+	return *value
 }
 
 func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInput) (entity.Issue, error) {
@@ -145,11 +159,23 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return entity.Issue{}, err
 	}
 
+	markdown, document, err := entity.Described(input.Description, input.DescriptionDoc)
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateIssueDescription("description", markdown),
+	); err != nil {
+		return entity.Issue{}, err
+	}
+
 	arriving := entity.Issue{
 		WorkspaceID:        input.WorkspaceID,
 		TeamID:             input.TeamID,
 		Title:              input.Title,
-		Description:        input.Description,
+		Description:        markdown,
+		DescriptionDoc:     document,
 		Priority:           input.Priority,
 		AssigneeAccountID:  input.AssigneeAccountID,
 		Estimate:           input.Estimate,
@@ -195,6 +221,12 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		created, err = s.issues.Create(ctx, arriving)
 		if err != nil {
 			return err
+		}
+
+		if markdown != "" {
+			if err := s.remember(ctx, created, decision, input.Source, input.Origin); err != nil {
+				return err
+			}
 		}
 
 		if len(labels) > 0 {
@@ -430,21 +462,37 @@ func (s *issuesService) Update(
 		return entity.Issue{}, err
 	}
 
+	// A caller may send the document, the markdown or neither, and what it sends settles both:
+	// the stored document and the projection are written by one statement or not at all.
+	written := input.Description
+	documented := input.DescriptionDoc
+
+	if written != nil || documented != nil {
+		markdown, document, err := entity.Described(text(written), documented)
+		if err != nil {
+			return entity.Issue{}, err
+		}
+
+		written = &markdown
+		documented = &document
+	}
+
 	change := entity.IssueChange{
-		Title:         input.Title,
-		StateID:       input.StateID,
-		Description:   input.Description,
-		Priority:      input.Priority,
-		Assignee:      input.AssigneeID,
-		Estimate:      input.Estimate,
-		DueOn:         input.DueOn,
-		CycleID:       input.CycleID,
-		ProjectID:     input.ProjectID,
-		ClearAssignee: slices.Contains(input.Clear, entity.IssueFieldAssignee),
-		ClearEstimate: slices.Contains(input.Clear, entity.IssueFieldEstimate),
-		ClearDueOn:    slices.Contains(input.Clear, entity.IssueFieldDueOn),
-		ClearCycle:    slices.Contains(input.Clear, entity.IssueFieldCycle),
-		ClearProject:  slices.Contains(input.Clear, entity.IssueFieldProject),
+		Title:          input.Title,
+		StateID:        input.StateID,
+		Description:    written,
+		DescriptionDoc: documented,
+		Priority:       input.Priority,
+		Assignee:       input.AssigneeID,
+		Estimate:       input.Estimate,
+		DueOn:          input.DueOn,
+		CycleID:        input.CycleID,
+		ProjectID:      input.ProjectID,
+		ClearAssignee:  slices.Contains(input.Clear, entity.IssueFieldAssignee),
+		ClearEstimate:  slices.Contains(input.Clear, entity.IssueFieldEstimate),
+		ClearDueOn:     slices.Contains(input.Clear, entity.IssueFieldDueOn),
+		ClearCycle:     slices.Contains(input.Clear, entity.IssueFieldCycle),
+		ClearProject:   slices.Contains(input.Clear, entity.IssueFieldProject),
 	}
 
 	change.Rank, err = s.rankBetween(ctx, workspaceID, decision, input)
@@ -564,6 +612,17 @@ func (s *issuesService) Update(
 
 		if err := s.issues.Update(ctx, issueID, issue.Version, change, timestamps, now); err != nil {
 			return err
+		}
+
+		if change.DescriptionDoc != nil && *change.Description != issue.Description {
+			written := issue
+			written.Version = issue.Version + 1
+			written.Description = *change.Description
+			written.DescriptionDoc = *change.DescriptionDoc
+
+			if err := s.remember(ctx, written, decision, "", nil); err != nil {
+				return err
+			}
 		}
 
 		if err := s.recordChanges(ctx, issue, decision, change, joining); err != nil {

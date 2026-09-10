@@ -92,6 +92,24 @@ type Mark struct {
 	Attrs map[string]any `json:"attrs,omitempty"`
 }
 
+// Described settles the two forms a caller may send. Whichever arrives, the stored text is
+// rendered from the stored document, so the two can never disagree: markdown that came in with
+// its own spelling of a heading or a stray blank line comes back in the one this instance
+// writes, and an edit that changes nothing leaves the text alone rather than tidying it.
+func Described(markdown string, document *Document) (string, Document, error) {
+	if document == nil {
+		parsed := DocumentFromMarkdown(markdown)
+
+		return parsed.Markdown(), parsed, nil
+	}
+
+	if err := ValidateDocument(*document); err != nil {
+		return "", Document{}, err
+	}
+
+	return document.Markdown(), *document, nil
+}
+
 func NewDocument(content ...Node) Document {
 	return Document{Type: DocumentType, Content: content}
 }

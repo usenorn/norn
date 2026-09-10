@@ -23,7 +23,7 @@ type IssueComment interface {
 	LockByID(ctx context.Context, workspaceID, commentID uuid.UUID) (entity.IssueComment, error)
 	ListThread(ctx context.Context, issueID uuid.UUID, page entity.CommentPage) ([]entity.IssueComment, error)
 	CursorBefore(ctx context.Context, issueID, commentID uuid.UUID) (*entity.CommentCursor, error)
-	Edit(ctx context.Context, commentID uuid.UUID, body string, at time.Time) error
+	Edit(ctx context.Context, commentID uuid.UUID, body string, document entity.Document, at time.Time) error
 	Tombstone(ctx context.Context, commentID uuid.UUID, at time.Time) error
 	PurgeImported(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) error
 	RecordMentions(ctx context.Context, commentID uuid.UUID, mentions []entity.CommentMention) error

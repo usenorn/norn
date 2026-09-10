@@ -165,8 +165,13 @@ func (s *issueCommentsService) Post(
 		return service.CommentPosted{}, err
 	}
 
+	body, document, err := entity.Described(input.Body, input.BodyDoc)
+	if err != nil {
+		return service.CommentPosted{}, err
+	}
+
 	if err := entity.NewValidationError(
-		entity.ValidateCommentBody("body", input.Body),
+		entity.ValidateCommentBody("body", body),
 		entity.ValidateMentionCount(mentionsField, len(input.Mentions)),
 	); err != nil {
 		return service.CommentPosted{}, err
@@ -184,7 +189,7 @@ func (s *issueCommentsService) Post(
 	if proposal, held, err := s.gate.Hold(
 		ctx, decision, issue,
 		[]entity.AgentAction{entity.AgentActionComment},
-		entity.AgentChange{Body: input.Body},
+		entity.AgentChange{Body: body},
 		input.Reasoning,
 	); err != nil {
 		return service.CommentPosted{}, err
@@ -200,7 +205,8 @@ func (s *issueCommentsService) Post(
 			IssueID:         issueID,
 			ParentCommentID: input.ParentCommentID,
 			AuthorAccountID: entity.OriginAuthor(input.Origin, decision.Actor.AccountID),
-			Body:            input.Body,
+			Body:            body,
+			BodyDoc:         document,
 			Origin:          input.Origin,
 		})
 		if err != nil {
@@ -419,8 +425,13 @@ func (s *issueCommentsService) Edit(
 		return entity.IssueComment{}, entity.ErrIssueCommentNotAuthor
 	}
 
+	body, document, err := entity.Described(input.Body, input.BodyDoc)
+	if err != nil {
+		return entity.IssueComment{}, err
+	}
+
 	if err := entity.NewValidationError(
-		entity.ValidateCommentBody("body", input.Body),
+		entity.ValidateCommentBody("body", body),
 	); err != nil {
 		return entity.IssueComment{}, err
 	}
@@ -428,7 +439,7 @@ func (s *issueCommentsService) Edit(
 	var edited entity.IssueComment
 
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		if err := s.comments.Edit(ctx, commentID, input.Body, time.Now().UTC()); err != nil {
+		if err := s.comments.Edit(ctx, commentID, body, document, time.Now().UTC()); err != nil {
 			return err
 		}
 

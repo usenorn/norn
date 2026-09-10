@@ -74,6 +74,7 @@ import (
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
+	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
@@ -202,6 +203,7 @@ var baseSet = wire.NewSet(
 	passwordresetrepo.Set,
 	signuprepo.Set,
 	issuerepo.Set,
+	issuerevisionrepo.Set,
 	activityrepo.Set,
 	issuedelegationrepo.Set,
 	issuequestionrepo.Set,

@@ -59,6 +59,7 @@ type WorkspaceIssue struct {
 	SearchDocument           null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
 	Rank                     string      `boil:"rank" json:"rank" toml:"rank" yaml:"rank"`
 	SCMAutomationSuppressed  bool        `boil:"scm_automation_suppressed" json:"scm_automation_suppressed" toml:"scm_automation_suppressed" yaml:"scm_automation_suppressed"`
+	DescriptionDoc           null.JSON   `boil:"description_doc" json:"description_doc,omitempty" toml:"description_doc" yaml:"description_doc,omitempty"`
 
 	R *workspaceIssueR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -99,6 +100,7 @@ var WorkspaceIssueColumns = struct {
 	SearchDocument           string
 	Rank                     string
 	SCMAutomationSuppressed  string
+	DescriptionDoc           string
 }{
 	ID:                       "id",
 	WorkspaceID:              "workspace_id",
@@ -134,6 +136,7 @@ var WorkspaceIssueColumns = struct {
 	SearchDocument:           "search_document",
 	Rank:                     "rank",
 	SCMAutomationSuppressed:  "scm_automation_suppressed",
+	DescriptionDoc:           "description_doc",
 }
 
 var WorkspaceIssueTableColumns = struct {
@@ -171,6 +174,7 @@ var WorkspaceIssueTableColumns = struct {
 	SearchDocument           string
 	Rank                     string
 	SCMAutomationSuppressed  string
+	DescriptionDoc           string
 }{
 	ID:                       "workspace_issues.id",
 	WorkspaceID:              "workspace_issues.workspace_id",
@@ -206,6 +210,7 @@ var WorkspaceIssueTableColumns = struct {
 	SearchDocument:           "workspace_issues.search_document",
 	Rank:                     "workspace_issues.rank",
 	SCMAutomationSuppressed:  "workspace_issues.scm_automation_suppressed",
+	DescriptionDoc:           "workspace_issues.description_doc",
 }
 
 // Generated where
@@ -245,6 +250,7 @@ var WorkspaceIssueWhere = struct {
 	SearchDocument           whereHelpernull_String
 	Rank                     whereHelperstring
 	SCMAutomationSuppressed  whereHelperbool
+	DescriptionDoc           whereHelpernull_JSON
 }{
 	ID:                       whereHelperstring{field: "\"workspace_issues\".\"id\""},
 	WorkspaceID:              whereHelperstring{field: "\"workspace_issues\".\"workspace_id\""},
@@ -280,6 +286,7 @@ var WorkspaceIssueWhere = struct {
 	SearchDocument:           whereHelpernull_String{field: "\"workspace_issues\".\"search_document\""},
 	Rank:                     whereHelperstring{field: "\"workspace_issues\".\"rank\""},
 	SCMAutomationSuppressed:  whereHelperbool{field: "\"workspace_issues\".\"scm_automation_suppressed\""},
+	DescriptionDoc:           whereHelpernull_JSON{field: "\"workspace_issues\".\"description_doc\""},
 }
 
 // WorkspaceIssueRels is where relationship names are stored.
@@ -547,9 +554,9 @@ func (r *workspaceIssueR) GetIssueWorkspaceSCMReleaseLinks() WorkspaceSCMRelease
 type workspaceIssueL struct{}
 
 var (
-	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document", "rank", "scm_automation_suppressed"}
+	workspaceIssueAllColumns            = []string{"id", "workspace_id", "team_id", "number", "title", "created_by_account_id", "created_at", "updated_at", "state_id", "reference_key", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document", "rank", "scm_automation_suppressed", "description_doc"}
 	workspaceIssueColumnsWithoutDefault = []string{"workspace_id", "team_id", "number", "title", "state_id", "reference_key", "rank"}
-	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document", "scm_automation_suppressed"}
+	workspaceIssueColumnsWithDefault    = []string{"id", "created_by_account_id", "created_at", "updated_at", "version", "field_versions", "description", "priority", "assignee_account_id", "estimate", "due_on", "state_entered_at", "completed_at", "status", "archived_at", "deletion_requested_at", "purge_after", "parent_issue_id", "depth", "cycle_id", "project_id", "triage_state", "triage_source", "triage_decided_by_account_id", "triage_decided_at", "search_document", "scm_automation_suppressed", "description_doc"}
 	workspaceIssuePrimaryKeyColumns     = []string{"id"}
 	workspaceIssueGeneratedColumns      = []string{"search_document"}
 )

@@ -90,17 +90,17 @@ func (mr *MockIssueCommentMockRecorder) CursorBefore(ctx, issueID, commentID any
 }
 
 // Edit mocks base method.
-func (m *MockIssueComment) Edit(ctx context.Context, commentID uuid.UUID, body string, at time.Time) error {
+func (m *MockIssueComment) Edit(ctx context.Context, commentID uuid.UUID, body string, document entity.Document, at time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Edit", ctx, commentID, body, at)
+	ret := m.ctrl.Call(m, "Edit", ctx, commentID, body, document, at)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Edit indicates an expected call of Edit.
-func (mr *MockIssueCommentMockRecorder) Edit(ctx, commentID, body, at any) *gomock.Call {
+func (mr *MockIssueCommentMockRecorder) Edit(ctx, commentID, body, document, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockIssueComment)(nil).Edit), ctx, commentID, body, at)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Edit", reflect.TypeOf((*MockIssueComment)(nil).Edit), ctx, commentID, body, document, at)
 }
 
 // GetByID mocks base method.
