@@ -31,7 +31,8 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { showToast } from "$lib/toast/toasts";
+	import { showFailure, showToast } from "$lib/toast/toasts";
+	import { attempt, outcomeLine, unknownLine, type Outcome } from "$lib/api/attempt";
 	import { statusIndexOf } from "$lib/issues/set-status";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
@@ -139,7 +140,7 @@
 
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<DropTarget | null>(null);
-	let failure = $state<string | null>(null);
+	let viewFailure = $state<string | null>(null);
 
 	const team = $derived(preview?.team ?? data.team);
 	const states = $derived(preview?.states ?? data.states ?? []);
@@ -282,28 +283,35 @@
 		showToast(message, { href, onaction: undo && (() => void undo()) });
 	}
 
+	function refusedLine(outcome: Outcome<unknown>): string {
+		return outcome.kind === "refused"
+			? issueFailureMessage(readIssueFailure(outcome.problem))
+			: unknownLine;
+	}
+
 	async function patch(
 		issue: Issue,
 		body: Record<string, unknown>,
 		options: { reload?: boolean } = {}
-	): Promise<boolean> {
-		failure = null;
-
-		const { error } = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
-			params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-			body: { expectedVersion: issue.version, ...body },
+	): Promise<Outcome<unknown>> {
+		const outcome = await attempt({
+			run: () =>
+				api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
+					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+					body: { expectedVersion: issue.version, ...body },
+				}),
 		});
 
-		if (error) {
-			failure = issueFailureMessage(readIssueFailure(error));
+		if (outcome.kind !== "done") {
+			showFailure(refusedLine(outcome), { href: at(`/issues/${issue.reference}`) });
 			await invalidate(keys.page(page.route.id));
 
-			return false;
+			return outcome;
 		}
 
 		if (options.reload !== false) await invalidate(keys.page(page.route.id));
 
-		return true;
+		return outcome;
 	}
 
 	function asLoaded(issue: Issue): Issue {
@@ -319,7 +327,9 @@
 	) {
 		edits = withEdit(edits, issue.id, optimistic);
 
-		if (!(await patch(issue, body, { reload: false }))) {
+		const outcome = await patch(issue, body, { reload: false });
+
+		if (outcome.kind !== "done") {
 			edits = without(edits, issue.id);
 
 			return;
@@ -328,9 +338,12 @@
 		announce(
 			message,
 			async () => {
-				edits = without(edits, issue.id);
+				const undone = await patch(asLoaded(issue), previous, { reload: false });
 
-				await patch(asLoaded(issue), previous);
+				if (undone.kind !== "done") return;
+
+				edits = without(edits, issue.id);
+				await invalidate(keys.page(page.route.id));
 			},
 			at(`/issues/${issue.reference}`)
 		);
@@ -387,43 +400,55 @@
 		const next = carries ? held.filter((id) => id !== labelId) : [...held, labelId];
 		const name = labels.find((label) => label.id === labelId)?.name ?? "that label";
 
-		failure = null;
-		edits = withEdit(edits, issue.id, {
-			labels: labels.filter((label) => next.includes(label.id)),
-		});
+		const outcome = await setLabels(issue, next, () =>
+			withEdit(edits, issue.id, {
+				labels: labels.filter((label) => next.includes(label.id)),
+			})
+		);
 
-		const { error } = await api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
-			params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-			body: { expectedVersion: issue.version, labelIds: next },
-		});
-
-		if (error) {
-			failure = issueFailureMessage(readIssueFailure(error));
-			edits = without(edits, issue.id);
-
-			return;
-		}
+		if (outcome.kind !== "done") return;
 
 		announce(
 			carries
 				? `Removed ${name} from ${issue.reference}`
 				: `Added ${name} to ${issue.reference}`,
 			async () => {
-				const fresh = asLoaded(issue);
+				const undone = await setLabels(asLoaded(issue), held);
+
+				if (undone.kind !== "done") return;
 
 				edits = without(edits, issue.id);
-
-				await api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
-					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { expectedVersion: fresh.version, labelIds: held },
-				});
-
 				await invalidate(keys.page(page.route.id));
 			},
 			at(`/issues/${issue.reference}`)
 		);
 
 		await invalidate(keys.page(page.route.id));
+	}
+
+	async function setLabels(
+		issue: Issue,
+		labelIds: string[],
+		optimistic?: () => PendingEdit[]
+	): Promise<Outcome<unknown>> {
+		const held = edits;
+
+		const outcome = await attempt({
+			run: () =>
+				api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
+					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+					body: { expectedVersion: issue.version, labelIds },
+				}),
+			optimistic: optimistic && (() => (edits = optimistic())),
+			reconcile: () => (edits = held),
+		});
+
+		if (outcome.kind !== "done") {
+			showFailure(refusedLine(outcome), { href: at(`/issues/${issue.reference}`) });
+			await invalidate(keys.page(page.route.id));
+		}
+
+		return outcome;
 	}
 
 	async function loadColumn(column: IssueColumn) {
@@ -525,9 +550,9 @@
 
 		moves = [...moves.filter((held) => held.issueId !== issue.id), placed.pending];
 
-		const settled = await patch(issue, placed.move, { reload: false });
+		const outcome = await patch(issue, placed.move, { reload: false });
 
-		if (!settled) {
+		if (outcome.kind !== "done") {
 			moves = moves.filter((held) => held.issueId !== issue.id);
 
 			return;
@@ -537,9 +562,14 @@
 			announce(
 				movedMessage(issue, target.key),
 				async () => {
-					moves = moves.filter((held) => held.issueId !== issue.id);
+					const undone = await patch(asLoaded(issue), returning(issue, placed), {
+						reload: false,
+					});
 
-					await patch(asLoaded(issue), returning(issue, placed));
+					if (undone.kind !== "done") return;
+
+					moves = moves.filter((held) => held.issueId !== issue.id);
+					await invalidate(keys.page(page.route.id));
 				},
 				at(`/issues/${issue.reference}`)
 			);
@@ -606,34 +636,33 @@
 		if (!viewName.trim()) return;
 
 		savingView = true;
-		failure = null;
+		viewFailure = null;
 
-		try {
-			const { error } = await api.POST("/workspaces/{workspaceId}/saved-views", {
-				params: { path: { workspaceId: data.workspace.id } },
-				body: {
-					name: viewName.trim(),
-					sharing: "personal",
-					filter: data.query.filter,
-					sort: data.query.sort,
-					groupBy: data.query.groupBy,
-				},
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/saved-views", {
+					params: { path: { workspaceId: data.workspace.id } },
+					body: {
+						name: viewName.trim(),
+						sharing: "personal",
+						filter: data.query.filter,
+						sort: data.query.sort,
+						groupBy: data.query.groupBy,
+					},
+				}),
+		});
 
-			if (error) {
-				failure = "That view was not saved. Nothing changed — try again.";
+		savingView = false;
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			viewFailure = outcomeLine(outcome, "That view was not saved. Nothing changed — try again.");
 
-			viewName = "";
-			saving = false;
-			await invalidate(keys.page(page.route.id));
-		} catch {
-			failure = "That view was not saved. Nothing changed — try again.";
-		} finally {
-			savingView = false;
+			return;
 		}
+
+		viewName = "";
+		saving = false;
+		await invalidate(keys.page(page.route.id));
 	}
 
 	let selected = $state(new SvelteSet<string>());
@@ -725,33 +754,36 @@
 
 		if (polling) clearTimeout(polling);
 
-		try {
-			const { data: result, error } = await api.POST("/workspaces/{workspaceId}/issues/bulk", {
-				params: { path: { workspaceId: data.workspace.id } },
-				body: { change, issueIds: [...selected] },
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/issues/bulk", {
+					params: { path: { workspaceId: data.workspace.id } },
+					body: { change, issueIds: [...selected] },
+				}),
+		});
 
-			if (error || !result) {
-				failure = issueFailureMessage(readIssueFailure(error));
+		applying = false;
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			showFailure(refusedLine(outcome));
 
-			liveBulk = result;
-
-			if (settled(result.status)) {
-				selected.clear();
-				anchor = null;
-				await invalidate(keys.page(page.route.id));
-				await markChanged(touched);
-			} else {
-				polling = setTimeout(() => poll(result.id, touched), 700);
-			}
-		} catch {
-			failure = "Something went wrong and nothing changed. Wait a moment and try again.";
-		} finally {
-			applying = false;
+			return;
 		}
+
+		const result = outcome.value;
+
+		liveBulk = result;
+
+		if (settled(result.status)) {
+			selected.clear();
+			anchor = null;
+			await invalidate(keys.page(page.route.id));
+			await markChanged(touched);
+
+			return;
+		}
+
+		polling = setTimeout(() => poll(result.id, touched), 700);
 	}
 
 	async function settle(outcome: CreationOutcome) {
@@ -1271,12 +1303,12 @@
 			</div>
 		{/if}
 
-		{#if failure}
+		{#if viewFailure}
 			<div class="px-4 pt-3">
 				<Alert.Root variant="destructive">
 					<CircleX aria-hidden="true" />
 					<Alert.Title>That did not stick</Alert.Title>
-					<Alert.Description>{failure}</Alert.Description>
+					<Alert.Description>{viewFailure}</Alert.Description>
 				</Alert.Root>
 			</div>
 		{/if}

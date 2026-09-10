@@ -30,6 +30,7 @@
 	import { projectsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 	import Retry from "$lib/components/norn/retry.svelte";
+	import { attempt } from "$lib/api/attempt";
 
 	let { data }: PageProps = $props();
 
@@ -82,35 +83,33 @@
 		working = true;
 		failure = null;
 
-		try {
-			const { data: created, error } = await api.POST("/workspaces/{workspaceId}/projects", {
-				params: { path: { workspaceId: data.workspace.id } },
-				body: {
-					name: name.trim(),
-					slug: derivedAddress,
-					...(data.team ? { teamIds: [data.team.id] } : {}),
-				},
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/projects", {
+					params: { path: { workspaceId: data.workspace.id } },
+					body: {
+						name: name.trim(),
+						slug: derivedAddress,
+						...(data.team ? { teamIds: [data.team.id] } : {}),
+					},
+				}),
+		});
 
-			if (error) {
-				failure = readProjectFailure(error);
+		working = false;
 
-				return;
-			}
+		if (outcome.kind === "refused") {
+			failure = readProjectFailure(outcome.problem);
 
-			if (created) {
-				await goto(projectPath(slug, created));
-
-				return;
-			}
-
-			dismiss();
-			await invalidate(keys.projects(data.workspace.id));
-		} catch {
-			failure = { kind: "unavailable" };
-		} finally {
-			working = false;
+			return;
 		}
+
+		if (outcome.kind === "unknown") {
+			failure = { kind: "unavailable" };
+
+			return;
+		}
+
+		await goto(projectPath(slug, outcome.value));
 	}
 
 	function targetLabel(project: Project): string {

@@ -67,6 +67,7 @@
 	import { cyclePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 	import Retry from "$lib/components/norn/retry.svelte";
+	import { attempt } from "$lib/api/attempt";
 
 	let { data }: PageProps = $props();
 
@@ -190,29 +191,34 @@
 
 			const closing = ready.cycle.id;
 
-			try {
-				const { error } = await api.POST("/workspaces/{workspaceId}/cycles/{cycleId}/close", {
-					params: { path: { workspaceId: data.workspace.id, cycleId: closing } },
-					body: {
-						rollover: reviewed.length > 0 ? entered.data.decisions[reviewed[0]] : undefined,
-						overrides: reviewed.map((issueId) => ({
-							issueId,
-							destination: entered.data.decisions[issueId],
-						})),
-						reviewedIssueIds: reviewed,
-					},
-				});
+			const outcome = await attempt({
+				run: () =>
+					api.POST("/workspaces/{workspaceId}/cycles/{cycleId}/close", {
+						params: { path: { workspaceId: data.workspace.id, cycleId: closing } },
+						body: {
+							rollover: reviewed.length > 0 ? entered.data.decisions[reviewed[0]] : undefined,
+							overrides: reviewed.map((issueId) => ({
+								issueId,
+								destination: entered.data.decisions[issueId],
+							})),
+							reviewedIssueIds: reviewed,
+						},
+					}),
+			});
 
-				if (error) {
-					await settle(readCycleFailure(error), closing);
+			if (outcome.kind === "refused") {
+				await settle(readCycleFailure(outcome.problem), closing);
 
-					return;
-				}
-
-				await invalidate(keys.page(page.route.id));
-			} catch {
-				await settle({ kind: "unavailable" }, closing);
+				return;
 			}
+
+			if (outcome.kind === "unknown") {
+				await settle({ kind: "unavailable" }, closing);
+
+				return;
+			}
+
+			await invalidate(keys.page(page.route.id));
 		},
 	});
 
@@ -463,24 +469,29 @@
 		owning = true;
 		failure = null;
 
-		try {
-			const { error } = await api.PUT("/workspaces/{workspaceId}/cycles/{cycleId}/owner", {
-				params: { path: { workspaceId: data.workspace.id, cycleId: ready.cycle.id } },
-				body: { ownerAccountId: accountId || null },
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.PUT("/workspaces/{workspaceId}/cycles/{cycleId}/owner", {
+					params: { path: { workspaceId: data.workspace.id, cycleId: ready.cycle.id } },
+					body: { ownerAccountId: accountId || null },
+				}),
+		});
 
-			if (error) {
-				failure = readCycleFailure(error);
+		owning = false;
 
-				return;
-			}
+		if (outcome.kind === "refused") {
+			failure = readCycleFailure(outcome.problem);
 
-			await invalidate(keys.page(page.route.id));
-		} catch {
-			failure = { kind: "unavailable" };
-		} finally {
-			owning = false;
+			return;
 		}
+
+		if (outcome.kind === "unknown") {
+			failure = { kind: "uncertain" };
+
+			return;
+		}
+
+		await invalidate(keys.page(page.route.id));
 	}
 
 	const ownerName = $derived.by(() => {

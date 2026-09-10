@@ -38,6 +38,7 @@
 	} from "$lib/executions/executions";
 	import { runPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import { attempt, unknownLine, type ApiResult, type Outcome } from "$lib/api/attempt";
 
 	let { data }: PageProps = $props();
 
@@ -172,25 +173,29 @@
 		return () => clearInterval(timer);
 	});
 
-	async function act(call: () => Promise<{ error?: unknown }>) {
+	function failureLine(outcome: Outcome<unknown>): string {
+		return outcome.kind === "refused"
+			? runFailureMessage(readRunFailure(outcome.problem))
+			: unknownLine;
+	}
+
+	async function act(run: () => Promise<ApiResult<unknown>>): Promise<boolean> {
 		working = true;
 		failure = null;
 
-		try {
-			const { error } = await call();
+		const outcome = await attempt({ run });
 
-			if (error) {
-				failure = runFailureMessage(readRunFailure(error));
+		working = false;
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			failure = failureLine(outcome);
 
-			await invalidate(keys.execution(execution!.id));
-		} catch {
-			failure = runFailureMessage({ kind: "unavailable" });
-		} finally {
-			working = false;
+			return false;
 		}
+
+		await invalidate(keys.execution(execution!.id));
+
+		return true;
 	}
 
 	function pathOf(executionId: string) {
@@ -223,8 +228,8 @@
 		);
 	}
 
-	function requestChanges(feedback: string) {
-		void act(() =>
+	function requestChanges(feedback: string): Promise<boolean> {
+		return act(() =>
 			api.POST("/workspaces/{workspaceId}/executions/{executionId}/resume", {
 				params: { path: pathOf(execution!.id) },
 				body: { feedback },
@@ -232,25 +237,32 @@
 		);
 	}
 
-	function share(previewName: string, lifetimeSeconds: number, passcode: string) {
-		void act(async () => {
-			const { data: link, error } = await api.POST(
-				"/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share",
-				{
-					params: { path: { ...pathOf(execution!.id), previewName } },
-					body: { lifetimeSeconds, ...(passcode === "" ? {} : { passcode }) },
-				}
-			);
+	async function share(previewName: string, lifetimeSeconds: number, passcode: string) {
+		working = true;
+		failure = null;
 
-			if (link) {
-				minted = {
-					run: execution!.id,
-					held: { ...shownMinted, [previewName]: link.url },
-				};
-			}
-
-			return { error };
+		const outcome = await attempt({
+			run: () =>
+				api.POST(
+					"/workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share",
+					{
+						params: { path: { ...pathOf(execution!.id), previewName } },
+						body: { lifetimeSeconds, ...(passcode === "" ? {} : { passcode }) },
+					}
+				),
 		});
+
+		working = false;
+
+		if (outcome.kind !== "done") {
+			failure = failureLine(outcome);
+
+			return;
+		}
+
+		minted = { run: execution!.id, held: { ...shownMinted, [previewName]: outcome.value.url } };
+
+		await invalidate(keys.execution(execution!.id));
 	}
 
 	function revoke(previewName: string, shareLinkId: string) {
@@ -320,24 +332,22 @@
 		working = true;
 		failure = null;
 
-		try {
-			const { data: started, error } = await api.POST(
-				"/workspaces/{workspaceId}/executions/{executionId}/restart",
-				{ params: { path: pathOf(execution!.id) } }
-			);
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/executions/{executionId}/restart", {
+					params: { path: pathOf(execution!.id) },
+				}),
+		});
 
-			if (error || !started) {
-				failure = runFailureMessage(readRunFailure(error));
+		working = false;
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			failure = failureLine(outcome);
 
-			await goto(workspacePath(workspace.slug, `/executions/${started.id}`));
-		} catch {
-			failure = runFailureMessage({ kind: "unavailable" });
-		} finally {
-			working = false;
+			return;
 		}
+
+		await goto(workspacePath(workspace.slug, `/executions/${outcome.value.id}`));
 	}
 
 	function answer(question: IssueQuestion, given: string) {

@@ -1,3 +1,4 @@
+import { unknownLine } from "$lib/api/attempt";
 import type { components } from "$lib/api/dashboard.gen";
 import { teamSettingsPath } from "$lib/team/teams";
 
@@ -30,12 +31,14 @@ export type NotificationFailure =
 	| { kind: "snooze_past" }
 	| { kind: "gone" }
 	| { kind: "forbidden" }
+	| { kind: "uncertain" }
 	| { kind: "unavailable" };
 
 const failureMessages: Record<NotificationFailure["kind"], string> = {
 	snooze_past: "Pick a time that has not already passed.",
 	gone: "That has already left your inbox.",
 	forbidden: "You cannot change this.",
+	uncertain: unknownLine,
 	unavailable: "Nothing changed. Wait a moment and try again.",
 };
 

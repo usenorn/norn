@@ -56,6 +56,7 @@
 	import Soon from "$lib/triage/soon.svelte";
 	import { triagePreviewStates, type TriagePreview } from "./preview";
 	import type { PageProps } from "./$types";
+	import { attempt } from "$lib/api/attempt";
 
 	let { data }: PageProps = $props();
 
@@ -170,32 +171,37 @@
 		working = true;
 		localFailure = null;
 
-		try {
-			const { error } = await api.POST(
-				`/workspaces/{workspaceId}/triage/{issueId}/${path}` as
-					"/workspaces/{workspaceId}/triage/{issueId}/accept",
-				{
-					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: body as never,
-				}
-			);
+		const outcome = await attempt({
+			run: () =>
+				api.POST(
+					`/workspaces/{workspaceId}/triage/{issueId}/${path}` as
+						"/workspaces/{workspaceId}/triage/{issueId}/accept",
+					{
+						params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+						body: body as never,
+					}
+				),
+		});
 
-			if (error) {
-				localFailure = readTriageFailure(error);
+		working = false;
 
-				return;
-			}
+		if (outcome.kind === "refused") {
+			localFailure = readTriageFailure(outcome.problem);
 
-			closeFlow();
-			showToast(said ?? `${issue.reference} decided`, {
-				href: at(`/issues/${issue.reference}`),
-			});
-			await invalidate(keys.triage(data.workspace.id));
-		} catch {
-			localFailure = { kind: "unavailable" };
-		} finally {
-			working = false;
+			return;
 		}
+
+		if (outcome.kind === "unknown") {
+			localFailure = { kind: "uncertain" };
+
+			return;
+		}
+
+		closeFlow();
+		showToast(said ?? `${issue.reference} decided`, {
+			href: at(`/issues/${issue.reference}`),
+		});
+		await invalidate(keys.triage(data.workspace.id));
 	}
 
 	async function accept() {

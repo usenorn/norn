@@ -46,6 +46,12 @@ describe("attempt", () => {
 		expect(painted).toBe(false);
 	});
 
+	it("counts an answer with nothing to return as done", async () => {
+		const outcome = await attempt({ run: async () => ({ response: { status: 204 } as Response }) });
+
+		expect(outcome.kind).toBe("done");
+	});
+
 	it("treats an answer carrying neither data nor an error as unknown", async () => {
 		const outcome = await attempt({ run: async () => ({}) });
 

@@ -527,7 +527,7 @@
 							<ActivityFeedView
 								feed={activity}
 								{when}
-								{working}
+								paging={working ? { kind: "loading" } : { kind: "idle" }}
 								emptyLine="This agent has not done anything yet."
 								onmore={more}
 							/>
