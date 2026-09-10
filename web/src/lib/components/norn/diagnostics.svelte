@@ -3,6 +3,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { cn } from "$lib/utils.js";
+	import { copyText } from "$lib/clipboard";
 	import type { Diagnostic } from "$lib/auth/types";
 
 	let {
@@ -16,6 +17,10 @@
 		keyWidth?: string;
 		class?: string;
 	} = $props();
+
+	function lines(): string {
+		return entries.map((entry) => `${entry.key}: ${entry.value}`).join("\n");
+	}
 </script>
 
 <div
@@ -23,7 +28,11 @@
 >
 	<div class="flex h-7 items-center justify-between gap-2 border-b border-line-subtle pr-1 pl-2.5">
 		<Eyebrow>{label}</Eyebrow>
-		<Button variant="ghost" size="sm">
+		<Button
+			variant="ghost"
+			size="sm"
+			onclick={() => void copyText(lines(), `Copied ${label.toLowerCase()}`)}
+		>
 			<Copy aria-hidden="true" />
 			Copy
 		</Button>
