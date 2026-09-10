@@ -17,21 +17,24 @@
 		execution: Execution;
 		working: boolean;
 		onapprove: () => void;
-		onrequestchanges: (feedback: string) => void;
+		onrequestchanges: (feedback: string) => Promise<boolean>;
 	} = $props();
 
 	let confirming = $state(false);
 	let asking = $state(false);
 	let feedback = $state("");
 
-	function send() {
+	async function send() {
 		const said = feedback.trim();
 
 		if (said === "") return;
 
+		const sent = await onrequestchanges(said);
+
+		if (!sent) return;
+
 		asking = false;
 		feedback = "";
-		onrequestchanges(said);
 	}
 </script>
 

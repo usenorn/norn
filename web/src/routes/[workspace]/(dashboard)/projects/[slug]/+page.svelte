@@ -63,8 +63,9 @@
 	import { projectPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 	import { attempt, type ApiResult } from "$lib/api/attempt";
-	import { cursorOf, grew, moreFailedLine, rowsOf, type Listed } from "$lib/api/listed";
+	import { cursorOf, grew, moreFailedLine, rowsOf, taken, type Listed } from "$lib/api/listed";
 	import { Pending } from "$lib/api/pending.svelte";
+	import { copyText } from "$lib/clipboard";
 	import type { ColumnPaging } from "$lib/issues/paging";
 	import Retry from "$lib/components/norn/retry.svelte";
 
@@ -179,7 +180,8 @@
 	let failure = $state<ProjectFailure | null>(null);
 
 	let candidateQuery = $state("");
-	let candidates = $state<Membership[]>([]);
+	let candidates = $state<Listed<Membership>>({ kind: "empty" });
+	const offered = $derived(rowsOf(candidates));
 	let adding = $state("");
 	let candidateDebounce: ReturnType<typeof setTimeout> | undefined;
 
@@ -358,14 +360,10 @@
 	async function copyLink() {
 		if (!project) return;
 
-		try {
-			await navigator.clipboard.writeText(
-				`${page.url.origin}${workspacePath(slug, `/projects/${project.slug}`)}`
-			);
-			showToast(`Copied link to ${project.name}`);
-		} catch {
-			showToast("Your browser would not let us copy that");
-		}
+		await copyText(
+			`${page.url.origin}${workspacePath(slug, `/projects/${project.slug}`)}`,
+			`Copied link to ${project.name}`
+		);
 	}
 
 	async function setArchived(archive: boolean) {
@@ -395,23 +393,34 @@
 
 	async function findCandidates(query: string) {
 		if (!project || !query) {
-			candidates = [];
+			candidates = { kind: "empty" };
 
 			return;
 		}
 
-		try {
-			const { data: found } = await api.GET("/workspaces/{workspaceId}/members", {
-				params: { path: { workspaceId: data.workspace.id }, query: { query, limit: 8 } },
-			});
+		candidates = { kind: "loading" };
 
-			candidates = (found?.members ?? []).filter(
-				(candidate) =>
-					!members.some((member) => member.accountId === candidate.accountId)
-			);
-		} catch {
-			candidates = [];
+		const outcome = await attempt({
+			run: () =>
+				api.GET("/workspaces/{workspaceId}/members", {
+					params: { path: { workspaceId: data.workspace.id }, query: { query, limit: 8 } },
+				}),
+		});
+
+		if (candidateQuery !== query) return;
+
+		if (outcome.kind !== "done") {
+			candidates = { kind: "unavailable" };
+
+			return;
 		}
+
+		candidates = taken(
+			outcome.value.members.filter(
+				(candidate) => !members.some((member) => member.accountId === candidate.accountId)
+			),
+			true
+		);
 	}
 
 	function searchCandidates(value: string) {
@@ -432,7 +441,7 @@
 			})
 		);
 
-		if (added) candidates = candidates.filter((candidate) => candidate.accountId !== accountId);
+		if (added) candidates = taken(offered.filter((one) => one.accountId !== accountId), true);
 
 		adding = "";
 	}
@@ -835,9 +844,19 @@
 								value={candidateQuery}
 								oninput={(event) => searchCandidates(event.currentTarget.value)}
 							/>
-							{#if candidates.length > 0}
+							{#if candidates.kind === "loading"}
+								<p class="text-sm text-muted-foreground">Looking…</p>
+							{:else if candidates.kind === "unavailable"}
+								<p class="text-sm text-muted-foreground">
+									We could not search just now. Nothing changed &mdash; try again.
+								</p>
+							{:else if candidates.kind === "no_matches"}
+								<p class="text-sm text-muted-foreground">
+									Nobody in {data.workspace.name} matches that, or they are already here.
+								</p>
+							{:else if candidates.kind === "ready"}
 								<ul class="flex flex-col rounded-lg border border-line-default">
-									{#each candidates as candidate (candidate.accountId)}
+									{#each offered as candidate (candidate.accountId)}
 										<li class="border-b border-line-subtle last:border-b-0">
 											<Button
 												variant="ghost"
