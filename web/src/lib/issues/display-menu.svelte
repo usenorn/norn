@@ -50,6 +50,15 @@
 		linkWith({ order: ordering === defaults.ordering ? null : ordering })
 	);
 
+	const resetLink = $derived(
+		linkWith({
+			group: defaults.grouping,
+			order: defaults.ordering,
+			empty: defaults.showEmpty ? "1" : "0",
+			hide: rowProperties.filter((property) => !defaults.shown.includes(property)).join(",") || null,
+		})
+	);
+
 	$effect(() => {
 		if (!open) pane = "root";
 	});
@@ -152,10 +161,7 @@
 
 				<span class="-mx-3 mt-3 mb-2 h-px bg-line-subtle" aria-hidden="true"></span>
 
-				<a
-					href={linkWith({ group: null, order: null, empty: null, hide: null })}
-					class="text-sm text-muted-foreground hover:text-foreground"
-				>
+				<a href={resetLink} class="text-sm text-muted-foreground hover:text-foreground">
 					Reset display
 				</a>
 			</div>

@@ -21,6 +21,27 @@ export default defineConfig(({ mode }) => {
 				]
 			: [];
 
+	const proxy = {
+		'/v1': {
+			target: api,
+			changeOrigin: true,
+			proxyTimeout: 0,
+			timeout: 0
+		},
+		'/mcp': {
+			target: api,
+			changeOrigin: true
+		},
+		'/oauth': {
+			target: api,
+			changeOrigin: true
+		},
+		'/.well-known': {
+			target: api,
+			changeOrigin: true
+		}
+	};
+
 	return {
 		ssr: {
 			noExternal: ['morphicons']
@@ -29,26 +50,13 @@ export default defineConfig(({ mode }) => {
 			port,
 			strictPort: true,
 			allowedHosts: true,
-			proxy: {
-				'/v1': {
-					target: api,
-					changeOrigin: true,
-					proxyTimeout: 0,
-					timeout: 0
-				},
-				'/mcp': {
-					target: api,
-					changeOrigin: true
-				},
-				'/oauth': {
-					target: api,
-					changeOrigin: true
-				},
-				'/.well-known': {
-					target: api,
-					changeOrigin: true
-				}
-			}
+			proxy
+		},
+		preview: {
+			port: Number(env.NORN_PREVIEW_PORT ?? 4173),
+			strictPort: true,
+			allowedHosts: true,
+			proxy
 		},
 		plugins: [
 			...sourceMapUpload,
