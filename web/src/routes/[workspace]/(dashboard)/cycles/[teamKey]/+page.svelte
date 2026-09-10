@@ -14,6 +14,7 @@
 	import { teamSettingsPath } from "$lib/team/teams";
 	import { teamCyclesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -83,11 +84,14 @@
 					</div>
 				</div>
 			{:else if listing.kind === "unavailable"}
-				<Alert.Root variant="destructive">
-					<CircleX aria-hidden="true" />
-					<Alert.Title>We could not load these cycles</Alert.Title>
-					<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
-				</Alert.Root>
+				<div class="flex flex-col items-start gap-3">
+					<Alert.Root variant="destructive">
+						<CircleX aria-hidden="true" />
+						<Alert.Title>We could not load these cycles</Alert.Title>
+						<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+					</Alert.Root>
+					<Retry />
+				</div>
 			{:else if listing.kind === "disabled"}
 				<div class="flex flex-col gap-2">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">

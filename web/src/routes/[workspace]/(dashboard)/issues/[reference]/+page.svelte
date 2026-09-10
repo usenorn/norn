@@ -166,6 +166,7 @@
 	import type { IssueDetail } from "./+page.server";
 	import type { Issue, IssueComment } from "$lib/realtime/connection.svelte";
 	import type { PageProps } from "./$types";
+	import { copyText } from "$lib/clipboard";
 
 	let { data }: PageProps = $props();
 
@@ -1414,12 +1415,7 @@
 	}
 
 	async function copy(text: string, said: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-			announce(said);
-		} catch {
-			announce("Your browser would not let us copy that");
-		}
+		await copyText(text, said);
 	}
 
 	function startEditing(field: "title" | "description") {

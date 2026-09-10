@@ -14,15 +14,20 @@ export const issueLayouts = ["list", "board"] as const;
 
 export type IssueLayout = (typeof issueLayouts)[number];
 
-export const groupings = ["state", "priority", "assignee", "project", "none"] as const;
+export const groupings = ["state", "priority", "assignee", "project", "due", "none"] as const;
 
 export type Grouping = (typeof groupings)[number];
+
+export const boardGroupings: Grouping[] = ["state", "priority", "assignee", "project", "none"];
+
+export const taskGroupings: Grouping[] = ["due", "state", "priority", "project", "none"];
 
 export const groupingLabels: Record<Grouping, string> = {
 	state: "Status",
 	priority: "Priority",
 	assignee: "Assignee",
 	project: "Project",
+	due: "Due date",
 	none: "No grouping",
 };
 
@@ -31,6 +36,7 @@ export const groupingNouns: Record<Grouping, string> = {
 	priority: "priority",
 	assignee: "assignee",
 	project: "project",
+	due: "due date",
 	none: "none",
 };
 
@@ -60,23 +66,35 @@ export type Display = {
 	showEmpty: boolean;
 };
 
-export const defaultDisplay: Display = {
-	grouping: "state",
-	ordering: "manual",
-	shown: [...rowProperties],
-	showEmpty: false,
+export const displaySurfaces = ["issues", "tasks"] as const;
+
+export type DisplaySurface = (typeof displaySurfaces)[number];
+
+export const surfaceDefaults: Record<DisplaySurface, Display> = {
+	issues: { grouping: "state", ordering: "manual", shown: [...rowProperties], showEmpty: false },
+	tasks: { grouping: "due", ordering: "due", shown: [...rowProperties], showEmpty: false },
+};
+
+export const surfaceGroupings: Record<DisplaySurface, Grouping[]> = {
+	issues: boardGroupings,
+	tasks: taskGroupings,
+};
+
+export const surfaceOrderings: Record<DisplaySurface, Ordering[]> = {
+	issues: [...orderings],
+	tasks: ["due", "priority"],
 };
 
 function pick<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
 	return allowed.includes(value as T) ? (value as T) : fallback;
 }
 
-export function readDisplay(params: URLSearchParams): Display {
+export function readDisplay(params: URLSearchParams, defaults: Display): Display {
 	const hidden = (params.get("hide") ?? "").split(",");
 
 	return {
-		grouping: pick(params.get("group"), groupings, defaultDisplay.grouping),
-		ordering: pick(params.get("order"), orderings, defaultDisplay.ordering),
+		grouping: pick(params.get("group"), groupings, defaults.grouping),
+		ordering: pick(params.get("order"), orderings, defaults.ordering),
 		shown: rowProperties.filter((property) => !hidden.includes(property)),
 		showEmpty: params.get("empty") === "1",
 	};
@@ -98,8 +116,8 @@ export function carriesDisplay(params: URLSearchParams): boolean {
 
 export function writeDisplay(
 	display: Display,
-	layout: IssueLayout,
-	tab: IssueTab
+	layout?: IssueLayout,
+	tab?: IssueTab
 ): URLSearchParams {
 	const hidden = rowProperties.filter((property) => !display.shown.includes(property));
 	const params = new URLSearchParams();
@@ -108,14 +126,19 @@ export function writeDisplay(
 	params.set("order", display.ordering);
 	params.set("empty", display.showEmpty ? "1" : "0");
 	params.set("hide", hidden.join(","));
-	params.set("layout", layout);
-	params.set("tab", tab);
+
+	if (layout) params.set("layout", layout);
+	if (tab) params.set("tab", tab);
 
 	return params;
 }
 
-export function displayCookie(accountId: string, workspaceId: string): string {
-	return `norn.issues.${accountId}.${workspaceId}`;
+export function displayCookie(
+	surface: DisplaySurface,
+	accountId: string,
+	workspaceId: string
+): string {
+	return `norn.${surface}.${accountId}.${workspaceId}`;
 }
 
 export function hiddenParam(shown: RowProperty[], toggled: RowProperty): string | null {
@@ -126,17 +149,17 @@ export function hiddenParam(shown: RowProperty[], toggled: RowProperty): string 
 	return next.length > 0 ? next.join(",") : null;
 }
 
-export function atDefaults(display: Display): boolean {
+export function atDefaults(display: Display, defaults: Display): boolean {
 	return (
-		display.grouping === defaultDisplay.grouping &&
-		display.ordering === defaultDisplay.ordering &&
-		display.shown.length === rowProperties.length &&
-		!display.showEmpty
+		display.grouping === defaults.grouping &&
+		display.ordering === defaults.ordering &&
+		display.shown.length === defaults.shown.length &&
+		display.showEmpty === defaults.showEmpty
 	);
 }
 
 export function groupByFor(grouping: Grouping): IssueGroupBy {
-	return grouping === "none" ? "state" : grouping;
+	return grouping === "none" || grouping === "due" ? "state" : grouping;
 }
 
 export function sortFor(ordering: Ordering): IssueSort[] {

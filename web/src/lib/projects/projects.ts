@@ -1,5 +1,6 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { ActivityFeed } from "$lib/activity/activity";
+import type { Listed } from "$lib/api/listed";
 import type { Issue } from "$lib/issues/issues";
 import type { StateCategory } from "$lib/team/states";
 import type { Team } from "$lib/team/teams";
@@ -71,6 +72,7 @@ export type ProjectListing =
 	| { kind: "loading" }
 	| { kind: "unavailable" }
 	| { kind: "empty" }
+	| { kind: "no_matches" }
 	| { kind: "ready"; projects: Project[] };
 
 export type ProjectDetail =
@@ -83,8 +85,7 @@ export type ProjectDetail =
 			members: ProjectMember[];
 			links: ProjectLink[];
 			updates: ProjectStatusUpdate[];
-			issues: Issue[];
-			nextCursor: string | undefined;
+			rows: Listed<Issue>;
 			activity: ActivityFeed;
 	  };
 

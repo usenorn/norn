@@ -1,3 +1,4 @@
+import { unknownLine } from "$lib/api/attempt";
 import type { components } from "$lib/api/dashboard.gen";
 import type { Issue } from "$lib/issues/issues";
 import type { Team } from "$lib/team/teams";
@@ -28,6 +29,7 @@ export type TriageFailure =
 	| { kind: "stale" }
 	| { kind: "label_loss" }
 	| { kind: "forbidden" }
+	| { kind: "uncertain" }
 	| { kind: "unavailable" };
 
 export type TriageDeclineReason = components["schemas"]["TriageDeclineReason"];
@@ -95,6 +97,7 @@ const failureMessages: Record<TriageFailure["kind"], string> = {
 	stale: "Someone changed this issue while you were looking at it.",
 	label_loss: "Some of its labels belong to this team and cannot travel with it.",
 	forbidden: "You cannot decide about issues on this team.",
+	uncertain: unknownLine,
 	unavailable: "Nothing changed. Wait a moment and try again.",
 };
 

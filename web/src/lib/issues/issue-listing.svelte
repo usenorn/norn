@@ -3,32 +3,21 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import Bell from "@lucide/svelte/icons/bell";
-	import CalendarDays from "@lucide/svelte/icons/calendar-days";
-	import Check from "@lucide/svelte/icons/check";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
-	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import CircleHelp from "@lucide/svelte/icons/circle-help";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Folder from "@lucide/svelte/icons/folder";
-	import Funnel from "@lucide/svelte/icons/funnel";
 	import Kanban from "@lucide/svelte/icons/kanban";
 	import Layers from "@lucide/svelte/icons/layers";
 	import List from "@lucide/svelte/icons/list";
 	import Plus from "@lucide/svelte/icons/plus";
-	import Settings from "@lucide/svelte/icons/settings";
-	import Tags from "@lucide/svelte/icons/tags";
-	import Users from "@lucide/svelte/icons/users";
-	import X from "@lucide/svelte/icons/x";
 	import { SvelteSet } from "svelte/reactivity";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Popover from "$lib/components/ui/popover/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
-	import { Switch } from "$lib/components/ui/switch/index.js";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
@@ -41,13 +30,23 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { showToast } from "$lib/toast/toasts";
+	import { showFailure, showToast } from "$lib/toast/toasts";
+	import { attempt, outcomeLine, unknownLine, type Outcome } from "$lib/api/attempt";
 	import { statusIndexOf } from "$lib/issues/set-status";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
-	import { rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
+	import PropertyPicker from "$lib/issues/property-picker.svelte";
+	import DisplayMenu from "$lib/issues/display-menu.svelte";
+	import FilterBar from "$lib/issues/filter-bar.svelte";
+	import {
+		clearedLink,
+		dueEntries,
+		unassignedEntry,
+		type FacetCatalogue,
+	} from "$lib/issues/facet-options";
+	import { linkTo } from "$lib/issues/linking";
+	import { failures, rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
 	import { flash } from "$lib/motion";
 	import {
@@ -60,16 +59,12 @@
 	} from "$lib/issues/board";
 	import ColumnMore from "$lib/issues/column-more.svelte";
 	import {
-		atDefaults,
-		groupingLabels,
-		groupingNouns,
+		boardGroupings,
+		surfaceDefaults,
+		surfaceOrderings,
 		groupings,
-		hiddenParam,
 		issueTabs,
-		orderingLabels,
 		orderings,
-		rowProperties,
-		rowPropertyLabels,
 		tabLabels,
 		writeDisplay,
 	} from "$lib/issues/display";
@@ -102,13 +97,9 @@
 	} from "$lib/issues/drop";
 	import {
 		columnFilter,
-		dueWindowLabels,
-		dueWindows,
 		facetCount,
-		facetLabels,
 		pickableFacets,
 		unassigned,
-		type FacetKind,
 	} from "$lib/issues/facets";
 	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "$lib/issues/issues";
 	import type { IssuePriority } from "$lib/issues/issues";
@@ -120,6 +111,9 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { cycleWindow } from "$lib/time";
 	import type { IssuesListingData, IssuesListingScope, IssuesPreview } from "./listing";
+	import Retry from "$lib/components/norn/retry.svelte";
+	import { Pending } from "$lib/api/pending.svelte";
+	import { Watch } from "$lib/api/watch.svelte";
 
 	let {
 		data,
@@ -142,7 +136,8 @@
 
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<DropTarget | null>(null);
-	let failure = $state<string | null>(null);
+	let viewFailure = $state<string | null>(null);
+	const rowPending = new Pending();
 
 	const team = $derived(preview?.team ?? data.team);
 	const states = $derived(preview?.states ?? data.states ?? []);
@@ -259,56 +254,78 @@
 		return q;
 	});
 
-	const linkWith = $derived((changes: Record<string, string | null>) => {
-		const q = new URLSearchParams(params);
-
-		for (const [key, value] of Object.entries(changes)) {
-			if (value === null) q.delete(key);
-			else q.set(key, value);
-		}
-
-		const query = q.toString();
-
-		return `${basePath}${query ? `?${query}` : ""}`;
-	});
-
-	const cleared = $derived(
-		linkWith(Object.fromEntries(pickableFacets.map((kind) => [kind, null])) as Record<string, null>)
+	const linkWith = $derived((changes: Record<string, string | null>) =>
+		linkTo(basePath, params, changes)
 	);
+
+	const cleared = $derived(clearedLink(pickableFacets, linkWith));
+
+	const catalogue = $derived<FacetCatalogue>({
+		state: states.map((state) => ({ value: state.id, label: stateLabel(state) })),
+		assignee: [
+			...people.map((member) => ({
+				value: member.accountId,
+				label: member.displayName ?? "Someone",
+			})),
+			unassignedEntry(),
+		],
+		priority: priorities.map((entry) => ({ value: entry.value, label: entry.label })),
+		label: labels.map((label) => ({ value: label.id, label: label.name })),
+		project: (data.projects ?? []).map((project) => ({ value: project.id, label: project.name })),
+		cycle: teamCycles.map((cycle) => ({ value: cycle.id, label: cycle.name })),
+		due: dueEntries(),
+	});
 
 	function announce(message: string, undo?: () => Promise<void>, href?: string) {
 		showToast(message, { href, onaction: undo && (() => void undo()) });
+	}
+
+	function refusedLine(outcome: Outcome<unknown>): string {
+		return outcome.kind === "refused"
+			? issueFailureMessage(readIssueFailure(outcome.problem))
+			: unknownLine;
 	}
 
 	async function patch(
 		issue: Issue,
 		body: Record<string, unknown>,
 		options: { reload?: boolean } = {}
-	): Promise<boolean> {
-		failure = null;
-
-		const { error } = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
-			params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-			body: { expectedVersion: issue.version, ...body },
+	): Promise<Outcome<unknown>> {
+		const outcome = await attempt({
+			run: () =>
+				api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
+					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+					body: { expectedVersion: issue.version, ...body },
+				}),
 		});
 
-		if (error) {
-			failure = issueFailureMessage(readIssueFailure(error));
+		if (outcome.kind !== "done") {
+			showFailure(refusedLine(outcome), { href: at(`/issues/${issue.reference}`) });
 			await invalidate(keys.page(page.route.id));
 
-			return false;
+			return outcome;
 		}
 
 		if (options.reload !== false) await invalidate(keys.page(page.route.id));
 
-		return true;
+		return outcome;
 	}
 
 	function asLoaded(issue: Issue): Issue {
 		return flat.find((candidate) => candidate.id === issue.id) ?? issue;
 	}
 
-	async function change(
+	function change(
+		issue: Issue,
+		body: Record<string, unknown>,
+		previous: Record<string, unknown>,
+		message: string,
+		optimistic: Partial<Issue>
+	) {
+		return rowPending.once(issue.id, () => changing(issue, body, previous, message, optimistic));
+	}
+
+	async function changing(
 		issue: Issue,
 		body: Record<string, unknown>,
 		previous: Record<string, unknown>,
@@ -317,7 +334,9 @@
 	) {
 		edits = withEdit(edits, issue.id, optimistic);
 
-		if (!(await patch(issue, body, { reload: false }))) {
+		const outcome = await patch(issue, body, { reload: false });
+
+		if (outcome.kind !== "done") {
 			edits = without(edits, issue.id);
 
 			return;
@@ -326,9 +345,12 @@
 		announce(
 			message,
 			async () => {
-				edits = without(edits, issue.id);
+				const undone = await patch(asLoaded(issue), previous, { reload: false });
 
-				await patch(asLoaded(issue), previous);
+				if (undone.kind !== "done") return;
+
+				edits = without(edits, issue.id);
+				await invalidate(keys.page(page.route.id));
 			},
 			at(`/issues/${issue.reference}`)
 		);
@@ -379,49 +401,65 @@
 		);
 	}
 
-	async function toggleLabel(issue: Issue, labelId: string) {
+	function toggleLabel(issue: Issue, labelId: string) {
+		return rowPending.once(issue.id, () => togglingLabel(issue, labelId));
+	}
+
+	async function togglingLabel(issue: Issue, labelId: string) {
 		const held = issue.labels.map((label) => label.id);
 		const carries = held.includes(labelId);
 		const next = carries ? held.filter((id) => id !== labelId) : [...held, labelId];
 		const name = labels.find((label) => label.id === labelId)?.name ?? "that label";
 
-		failure = null;
-		edits = withEdit(edits, issue.id, {
-			labels: labels.filter((label) => next.includes(label.id)),
-		});
+		const outcome = await setLabels(issue, next, () =>
+			withEdit(edits, issue.id, {
+				labels: labels.filter((label) => next.includes(label.id)),
+			})
+		);
 
-		const { error } = await api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
-			params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-			body: { expectedVersion: issue.version, labelIds: next },
-		});
-
-		if (error) {
-			failure = issueFailureMessage(readIssueFailure(error));
-			edits = without(edits, issue.id);
-
-			return;
-		}
+		if (outcome.kind !== "done") return;
 
 		announce(
 			carries
 				? `Removed ${name} from ${issue.reference}`
 				: `Added ${name} to ${issue.reference}`,
 			async () => {
-				const fresh = asLoaded(issue);
+				const undone = await setLabels(asLoaded(issue), held);
+
+				if (undone.kind !== "done") return;
 
 				edits = without(edits, issue.id);
-
-				await api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
-					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { expectedVersion: fresh.version, labelIds: held },
-				});
-
 				await invalidate(keys.page(page.route.id));
 			},
 			at(`/issues/${issue.reference}`)
 		);
 
 		await invalidate(keys.page(page.route.id));
+	}
+
+	async function setLabels(
+		issue: Issue,
+		labelIds: string[],
+		optimistic?: () => PendingEdit[]
+	): Promise<Outcome<unknown>> {
+		const held = edits;
+
+		const outcome = await attempt({
+			run: () =>
+				api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
+					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+					body: { expectedVersion: issue.version, labelIds },
+				}),
+			optimistic: optimistic && (() => (edits = optimistic())),
+			reconcile: () => (edits = held),
+		});
+
+		if (outcome.kind !== "done") {
+			showFailure(refusedLine(outcome), { href: at(`/issues/${issue.reference}`) });
+			await invalidate(keys.page(page.route.id));
+		}
+
+		return outcome;
 	}
 
 	async function loadColumn(column: IssueColumn) {
@@ -521,11 +559,17 @@
 
 		if (!movedInto(placed.move)) return;
 
+		if (rowPending.busy(issue.id)) return;
+
 		moves = [...moves.filter((held) => held.issueId !== issue.id), placed.pending];
 
-		const settled = await patch(issue, placed.move, { reload: false });
+		const outcome = await rowPending.once(issue.id, () =>
+			patch(issue, placed.move, { reload: false })
+		);
 
-		if (!settled) {
+		if (!outcome) return;
+
+		if (outcome.kind !== "done") {
 			moves = moves.filter((held) => held.issueId !== issue.id);
 
 			return;
@@ -535,9 +579,14 @@
 			announce(
 				movedMessage(issue, target.key),
 				async () => {
-					moves = moves.filter((held) => held.issueId !== issue.id);
+					const undone = await patch(asLoaded(issue), returning(issue, placed), {
+						reload: false,
+					});
 
-					await patch(asLoaded(issue), returning(issue, placed));
+					if (undone.kind !== "done") return;
+
+					moves = moves.filter((held) => held.issueId !== issue.id);
+					await invalidate(keys.page(page.route.id));
 				},
 				at(`/issues/${issue.reference}`)
 			);
@@ -604,45 +653,64 @@
 		if (!viewName.trim()) return;
 
 		savingView = true;
-		failure = null;
+		viewFailure = null;
 
-		try {
-			const { error } = await api.POST("/workspaces/{workspaceId}/saved-views", {
-				params: { path: { workspaceId: data.workspace.id } },
-				body: {
-					name: viewName.trim(),
-					sharing: "personal",
-					filter: data.query.filter,
-					sort: data.query.sort,
-					groupBy: data.query.groupBy,
-				},
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/saved-views", {
+					params: { path: { workspaceId: data.workspace.id } },
+					body: {
+						name: viewName.trim(),
+						sharing: "personal",
+						filter: data.query.filter,
+						sort: data.query.sort,
+						groupBy: data.query.groupBy,
+					},
+				}),
+		});
 
-			if (error) {
-				failure = "That view was not saved. Nothing changed — try again.";
+		savingView = false;
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			viewFailure = outcomeLine(outcome, "That view was not saved. Nothing changed — try again.");
 
-			viewName = "";
-			saving = false;
-			await invalidate(keys.page(page.route.id));
-		} catch {
-			failure = "That view was not saved. Nothing changed — try again.";
-		} finally {
-			savingView = false;
+			return;
 		}
+
+		viewName = "";
+		saving = false;
+		await invalidate(keys.page(page.route.id));
 	}
 
 	let selected = $state(new SvelteSet<string>());
 	let anchor = $state<string | null>(null);
-	let liveBulk = $state<BulkActionResult | null>(null);
 	let applying = $state(false);
-	let polling = $state<ReturnType<typeof setTimeout> | null>(null);
+	let asked = $state.raw<{ change: Record<string, unknown>; issueIds: string[] } | null>(null);
+
+	const bulkWatch = new Watch<BulkActionResult>({
+		read: (bulkActionId) =>
+			api.GET("/workspaces/{workspaceId}/bulk-actions/{bulkActionId}", {
+				params: { path: { workspaceId: data.workspace.id, bulkActionId } },
+			}),
+		settled: (result) => settled(result.status),
+		identify: (result) => result.id,
+	});
+
+	let concluded = "";
+
+	$effect(() => () => bulkWatch.stop());
+
+	$effect(() => {
+		const result = bulkWatch.value;
+
+		if (!result || !settled(result.status) || concluded === result.id) return;
+
+		concluded = result.id;
+
+		void conclude();
+	});
 	let collapsed = $state(new SvelteSet<string>());
 	let filterOpen = $state(false);
-	let filterCategory = $state<FacetKind | null>(null);
-	let filterSearch = $state("");
 	let displayOpen = $state(false);
 	let displayPane = $state<"root" | "grouping" | "ordering">("root");
 
@@ -650,7 +718,7 @@
 		if (!displayOpen) displayPane = "root";
 	});
 
-	const bulk = $derived(preview?.bulk ?? liveBulk);
+	const bulk = $derived(preview?.bulk ?? bulkWatch.value ?? null);
 	const orderedIDs = $derived(
 		flat.filter((issue) => !draftIDs.has(issue.id)).map((issue) => issue.id)
 	);
@@ -684,27 +752,16 @@
 	function clearSelection() {
 		selected.clear();
 		anchor = null;
-		liveBulk = null;
+		asked = null;
+		bulkWatch.stop();
 	}
 
-	async function poll(actionId: string, touched: string[]) {
-		const { data: latest } = await api.GET(
-			"/workspaces/{workspaceId}/bulk-actions/{bulkActionId}",
-			{ params: { path: { workspaceId: data.workspace.id, bulkActionId: actionId } } }
-		);
+	async function conclude() {
+		selected.clear();
+		anchor = null;
 
-		if (!latest) return;
-
-		liveBulk = latest;
-
-		if (settled(latest.status)) {
-			await invalidate(keys.page(page.route.id));
-			await markChanged(touched);
-
-			return;
-		}
-
-		polling = setTimeout(() => poll(actionId, touched), 700);
+		await invalidate(keys.page(page.route.id));
+		await markChanged(asked?.issueIds ?? []);
 	}
 
 	async function markChanged(issueIds: string[]) {
@@ -715,43 +772,46 @@
 		}
 	}
 
-	async function applyBulk(change: Record<string, unknown>) {
-		if (selected.size === 0) return;
+	function applyBulk(change: Record<string, unknown>) {
+		return send(change, [...selected]);
+	}
 
-		const touched = [...selected];
+	function retryFailed() {
+		const result = bulk;
+
+		if (!result || !asked) return;
+
+		const again = failures(result).map((outcome) => outcome.issueId);
+
+		return send(asked.change, again);
+	}
+
+	async function send(change: Record<string, unknown>, issueIds: string[]) {
+		if (issueIds.length === 0) return;
 
 		applying = true;
-		liveBulk = null;
+		concluded = "";
+		bulkWatch.stop();
 
-		if (polling) clearTimeout(polling);
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/issues/bulk", {
+					params: { path: { workspaceId: data.workspace.id } },
+					body: { change, issueIds },
+				}),
+		});
 
-		try {
-			const { data: result, error } = await api.POST("/workspaces/{workspaceId}/issues/bulk", {
-				params: { path: { workspaceId: data.workspace.id } },
-				body: { change, issueIds: [...selected] },
-			});
+		applying = false;
 
-			if (error || !result) {
-				failure = issueFailureMessage(readIssueFailure(error));
+		if (outcome.kind !== "done") {
+			showFailure(refusedLine(outcome));
 
-				return;
-			}
-
-			liveBulk = result;
-
-			if (settled(result.status)) {
-				selected.clear();
-				anchor = null;
-				await invalidate(keys.page(page.route.id));
-				await markChanged(touched);
-			} else {
-				polling = setTimeout(() => poll(result.id, touched), 700);
-			}
-		} catch {
-			failure = "Something went wrong and nothing changed. Wait a moment and try again.";
-		} finally {
-			applying = false;
+			return;
 		}
+
+		asked = { change, issueIds };
+
+		bulkWatch.start(outcome.value.id, outcome.value);
 	}
 
 	async function settle(outcome: CreationOutcome) {
@@ -814,10 +874,7 @@
 
 			if (issue && !draftIDs.has(issue.id)) toggle(issue.id);
 		},
-		"issue-filter": () => {
-			filterCategory = null;
-			filterOpen = true;
-		},
+		"issue-filter": () => (filterOpen = true),
 		"issue-list": () => void goto(linkWith({ layout: null })),
 		"issue-board": () => void goto(linkWith({ layout: "board" })),
 		"status-set": (binding) => void pickStatus(statusIndexOf(binding)),
@@ -871,123 +928,6 @@
 		];
 
 		return () => released.forEach((release) => release());
-	});
-
-	const facetOptions = $derived.by((): PickerOption[] => {
-		const valuesFor = (kind: FacetKind): PickerOption[] => {
-			switch (kind) {
-				case "state":
-					return states.map((state) => ({
-						value: state.id,
-						label: stateLabel(state),
-						checked: facets.state === state.id,
-					}));
-				case "assignee":
-					return [
-						...people.map((member) => ({
-							value: member.accountId,
-							label: member.displayName ?? "Someone",
-							checked: facets.assignee === member.accountId,
-						})),
-						{ value: unassigned, label: "Unassigned", checked: facets.assignee === unassigned },
-					];
-				case "priority":
-					return priorities.map((entry) => ({
-						value: entry.value,
-						label: entry.label,
-						checked: facets.priority === entry.value,
-					}));
-				case "label":
-					return labels.map((label) => ({
-						value: label.id,
-						label: label.name,
-						checked: facets.label === label.id,
-					}));
-				case "project":
-					return (data.projects ?? []).map((project) => ({
-						value: project.id,
-						label: project.name,
-						checked: facets.project === project.id,
-					}));
-				default:
-					return dueWindows.map((window) => ({
-						value: window,
-						label: dueWindowLabels[window],
-						checked: facets.due === window,
-					}));
-			}
-		};
-
-		if (filterCategory) {
-			return [
-				{ value: "", label: "All properties" },
-				...valuesFor(filterCategory).map((option) => ({
-					...option,
-					href: linkWith({ [filterCategory as string]: option.checked ? null : option.value }),
-				})),
-			];
-		}
-
-		if (filterSearch.trim() === "") {
-			return pickableFacets.map((kind) => ({
-				value: kind,
-				label: facetLabels[kind],
-				trailing: true,
-			}));
-		}
-
-		return pickableFacets.flatMap((kind) =>
-			valuesFor(kind).map((option) => ({
-				...option,
-				value: `${kind}:${option.value}`,
-				label: `${facetLabels[kind]} · ${option.label}`,
-				href: linkWith({ [kind]: option.checked ? null : option.value }),
-			}))
-		);
-	});
-
-	function pickFacet(value: string) {
-		if (value === "") {
-			filterCategory = null;
-
-			return;
-		}
-
-		if (!filterCategory && pickableFacets.includes(value as FacetKind)) {
-			filterCategory = value as FacetKind;
-			filterOpen = true;
-		}
-	}
-
-	const chips = $derived.by(() => {
-		const named = (kind: FacetKind, value: string): string => {
-			switch (kind) {
-				case "state": {
-					const state = states.find((candidate) => candidate.id === value);
-
-					return state ? stateLabel(state) : "Unknown status";
-				}
-				case "assignee":
-					return value === unassigned ? "Unassigned" : (names.get(value) ?? "Unknown person");
-				case "priority":
-					return priorityLabel(value as IssuePriority);
-				case "label":
-					return labels.find((label) => label.id === value)?.name ?? "Unknown label";
-				case "project":
-					return (data.projects ?? []).find((project) => project.id === value)?.name ?? "Unknown project";
-				case "cycle":
-					return teamCycles.find((cycle) => cycle.id === value)?.name ?? "Unknown cycle";
-				default:
-					return dueWindowLabels[value as keyof typeof dueWindowLabels] ?? value;
-			}
-		};
-
-		return Object.entries(facets)
-			.filter(([, value]) => Boolean(value))
-			.map(([kind, value]) => ({
-				kind: kind as FacetKind,
-				label: `${facetLabels[kind as FacetKind]}: ${named(kind as FacetKind, value)}`,
-			}));
 	});
 
 	const filtered = $derived(facetCount(facets) > 0);
@@ -1275,67 +1215,13 @@
 		<div
 			class="flex min-h-8.5 flex-wrap items-center gap-x-3 gap-y-1 border-t border-line-subtle py-1 pr-3 pl-3.5"
 		>
-			<PropertyPicker
-				options={facetOptions}
+			<FilterBar
+				{facets}
+				offered={pickableFacets}
+				{catalogue}
+				{linkWith}
 				bind:open={filterOpen}
-				bind:search={filterSearch}
-				placeholder={filterCategory
-					? `Filter by ${facetLabels[filterCategory].toLowerCase()}…`
-					: "Filter by property or value…"}
-				class="w-59"
-				empty="No matching property"
-				onpick={pickFacet}
-			>
-				{#snippet trigger(props)}
-					<Button {...props} variant="ghost" size="sm" class="shrink-0">
-						<Funnel aria-hidden="true" />
-						Filter
-					</Button>
-				{/snippet}
-				{#snippet shortcut()}
-					<Kbd keys="F" />
-				{/snippet}
-				{#snippet mark(option)}
-					{#if !filterCategory && filterSearch.trim() === ""}
-						{#if option.value === "state"}
-							<StatusIcon category="not_started" decorative />
-						{:else if option.value === "assignee"}
-							<Users class="text-muted-foreground" aria-hidden="true" />
-						{:else if option.value === "priority"}
-							<PriorityIcon priority="high" />
-						{:else if option.value === "label"}
-							<Tags class="text-muted-foreground" aria-hidden="true" />
-						{:else if option.value === "project"}
-							<Folder class="text-muted-foreground" aria-hidden="true" />
-						{:else}
-							<CalendarDays class="text-muted-foreground" aria-hidden="true" />
-						{/if}
-					{:else if option.value === ""}
-						<ArrowLeft class="text-muted-foreground" aria-hidden="true" />
-					{/if}
-				{/snippet}
-			</PropertyPicker>
-
-			{#each chips as chip (chip.kind)}
-				<span
-					class="inline-flex shrink-0 items-center gap-1.5 border-b-2 border-line-strong pb-0.5 text-sm whitespace-nowrap text-foreground"
-				>
-					{chip.label}
-					<a
-						href={linkWith({ [chip.kind]: null })}
-						aria-label="Remove the {facetLabels[chip.kind].toLowerCase()} filter"
-						class="text-muted-foreground hover:text-ink-900"
-					>
-						<X class="size-3" aria-hidden="true" />
-					</a>
-				</span>
-			{/each}
-
-			{#if facetCount(facets) > 1}
-				<a href={cleared} class="shrink-0 text-sm text-muted-foreground hover:text-foreground">
-					Clear all
-				</a>
-			{/if}
+			/>
 
 			{#if applied.kind === "applied"}
 				{#each applied.references as reference (reference.field + reference.value)}
@@ -1371,155 +1257,13 @@
 			<div class="min-w-2 flex-1"></div>
 
 			<div class="flex shrink-0 items-center gap-1">
-			<DropdownMenu.Root>
-				<DropdownMenu.Trigger>
-					{#snippet child({ props })}
-						<Button {...props} variant="ghost" size="sm" class="shrink-0">
-							Grouped by {groupingNouns[display.grouping]}
-							<ChevronDown aria-hidden="true" />
-						</Button>
-					{/snippet}
-				</DropdownMenu.Trigger>
-				<DropdownMenu.Content align="end">
-					<DropdownMenu.Label>Group by</DropdownMenu.Label>
-					{#each groupings as grouping (grouping)}
-						<DropdownMenu.Item>
-							{#snippet child({ props })}
-								<a
-									href={linkWith({ group: grouping === "state" ? null : grouping })}
-									{...props}
-								>
-									<span class="flex-1">{groupingLabels[grouping]}</span>
-									{#if display.grouping === grouping}
-										<span class="font-mono text-2xs text-ink-600">✓</span>
-									{/if}
-								</a>
-							{/snippet}
-						</DropdownMenu.Item>
-					{/each}
-				</DropdownMenu.Content>
-			</DropdownMenu.Root>
-
-			<Popover.Root bind:open={displayOpen}>
-				<Popover.Trigger>
-					{#snippet child({ props })}
-						<Button
-							{...props}
-							variant="outline"
-							size="icon-sm"
-							aria-label="Display options"
-							class={atDefaults(display)
-								? ""
-								: "border-primary bg-primary text-primary-foreground hover:border-primary-active hover:bg-primary-active hover:text-primary-foreground"}
-						>
-							<Settings class="size-icon-toolbar" aria-hidden="true" />
-						</Button>
-					{/snippet}
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-69">
-					{#if displayPane === "root"}
-						<div class="flex flex-col p-3">
-							<button
-								type="button"
-								onclick={() => (displayPane = "grouping")}
-								class="flex h-7.5 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-							>
-								<span class="text-md text-foreground">Grouping</span>
-								<span class="flex-1"></span>
-								<span class="text-sm text-muted-foreground">{groupingLabels[display.grouping]}</span>
-								<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
-							</button>
-
-							<button
-								type="button"
-								onclick={() => (displayPane = "ordering")}
-								class="flex h-7.5 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-							>
-								<span class="text-md text-foreground">Ordering</span>
-								<span class="flex-1"></span>
-								<span class="text-sm text-muted-foreground">{orderingLabels[display.ordering]}</span>
-								<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
-							</button>
-
-							<label class="flex h-7.5 items-center gap-2 px-1.5 text-md text-foreground">
-								<span class="flex-1">Show empty groups</span>
-								<Switch
-									checked={display.showEmpty}
-									onCheckedChange={() =>
-										goto(linkWith({ empty: display.showEmpty ? null : "1" }), { noScroll: true })}
-								/>
-							</label>
-
-							<span class="-mx-3 my-2.5 h-px bg-line-subtle" aria-hidden="true"></span>
-
-							<span class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase">
-								Display properties
-							</span>
-							<div class="flex flex-wrap gap-1.5 pt-2">
-								{#each rowProperties as property (property)}
-									<a
-										href={linkWith({ hide: hiddenParam(display.shown, property) })}
-										data-on={display.shown.includes(property)}
-										class="inline-flex h-5.5 items-center rounded-sm border border-line-default bg-card px-2 text-xs font-medium text-ink-600 motion-control hover:text-ink-900 data-[on=true]:border-primary data-[on=true]:bg-primary data-[on=true]:text-primary-foreground"
-									>
-										{rowPropertyLabels[property]}
-									</a>
-								{/each}
-							</div>
-
-							<span class="-mx-3 mt-3 mb-2 h-px bg-line-subtle" aria-hidden="true"></span>
-
-							<a
-								href={linkWith({ group: null, order: null, empty: null, hide: null })}
-								class="text-sm text-muted-foreground hover:text-foreground"
-							>
-								Reset to defaults
-							</a>
-						</div>
-					{:else}
-						<div class="flex flex-col p-1.5">
-							<button
-								type="button"
-								onclick={() => (displayPane = "root")}
-								class="flex h-7 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-							>
-								<ArrowLeft class="size-3.25 text-muted-foreground" aria-hidden="true" />
-								<span class="text-sm text-muted-foreground">
-									{displayPane === "grouping" ? "Grouping" : "Ordering"}
-								</span>
-							</button>
-
-							<span class="-mx-1.5 my-1 h-px bg-line-subtle" aria-hidden="true"></span>
-
-							{#if displayPane === "grouping"}
-								{#each groupings as grouping (grouping)}
-									<a
-										href={linkWith({ group: grouping === "state" ? null : grouping })}
-										class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
-									>
-										<span class="flex-1">{groupingLabels[grouping]}</span>
-										{#if display.grouping === grouping}
-											<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-										{/if}
-									</a>
-								{/each}
-							{:else}
-								{#each orderings as ordering (ordering)}
-									<a
-										href={linkWith({ order: ordering === "manual" ? null : ordering })}
-										class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
-									>
-										<span class="flex-1">{orderingLabels[ordering]}</span>
-										{#if display.ordering === ordering}
-											<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-										{/if}
-									</a>
-								{/each}
-							{/if}
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
+			<DisplayMenu
+				{display}
+				defaults={surfaceDefaults.issues}
+				groupings={boardGroupings}
+				orderings={surfaceOrderings.issues}
+				{linkWith}
+			/>
 			</div>
 		</div>
 	</div>
@@ -1587,12 +1331,12 @@
 			</div>
 		{/if}
 
-		{#if failure}
+		{#if viewFailure}
 			<div class="px-4 pt-3">
 				<Alert.Root variant="destructive">
 					<CircleX aria-hidden="true" />
-					<Alert.Title>That did not stick</Alert.Title>
-					<Alert.Description>{failure}</Alert.Description>
+					<Alert.Title>We could not save that view</Alert.Title>
+					<Alert.Description>{viewFailure}</Alert.Description>
 				</Alert.Root>
 			</div>
 		{/if}
@@ -1603,6 +1347,7 @@
 				<p class="max-w-75 text-md leading-normal text-muted-foreground">
 					Nothing changed. Wait a moment and try again.
 				</p>
+				<Retry />
 			</div>
 		{:else if board.kind === "no_teams"}
 			<div class="my-auto flex flex-col items-center gap-3 px-6 py-10 text-center">
@@ -1822,7 +1567,13 @@
 
 	{#if bulk}
 		<div class="flex-none border-t border-line-default px-4 py-2">
-			<BulkResult result={bulk} />
+			<BulkResult
+				result={bulk}
+				unreadable={bulkWatch.state.kind === "unreadable"}
+				working={applying}
+				onretry={() => bulkWatch.retry()}
+				onretryfailed={retryFailed}
+			/>
 		</div>
 	{/if}
 
@@ -1855,10 +1606,12 @@
 			]}
 		>
 			{#snippet lead()}
-				<span class="font-mono text-xs text-muted-foreground tabular-nums">
-					{total}
-					{total === 1 ? "issue" : "issues"}
-				</span>
+				{#if board.kind !== "unavailable"}
+					<span class="font-mono text-xs text-muted-foreground tabular-nums">
+						{total}
+						{total === 1 ? "issue" : "issues"}
+					</span>
+				{/if}
 			{/snippet}
 		</ShortcutBar>
 	{/if}

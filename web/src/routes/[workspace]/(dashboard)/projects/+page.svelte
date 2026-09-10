@@ -29,6 +29,8 @@
 	import { slugFromName } from "$lib/workspace/create-workspace-schema";
 	import { projectsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import Retry from "$lib/components/norn/retry.svelte";
+	import { attempt } from "$lib/api/attempt";
 
 	let { data }: PageProps = $props();
 
@@ -81,35 +83,33 @@
 		working = true;
 		failure = null;
 
-		try {
-			const { data: created, error } = await api.POST("/workspaces/{workspaceId}/projects", {
-				params: { path: { workspaceId: data.workspace.id } },
-				body: {
-					name: name.trim(),
-					slug: derivedAddress,
-					...(data.team ? { teamIds: [data.team.id] } : {}),
-				},
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/projects", {
+					params: { path: { workspaceId: data.workspace.id } },
+					body: {
+						name: name.trim(),
+						slug: derivedAddress,
+						...(data.team ? { teamIds: [data.team.id] } : {}),
+					},
+				}),
+		});
 
-			if (error) {
-				failure = readProjectFailure(error);
+		working = false;
 
-				return;
-			}
+		if (outcome.kind === "refused") {
+			failure = readProjectFailure(outcome.problem);
 
-			if (created) {
-				await goto(projectPath(slug, created));
-
-				return;
-			}
-
-			dismiss();
-			await invalidate(keys.projects(data.workspace.id));
-		} catch {
-			failure = { kind: "unavailable" };
-		} finally {
-			working = false;
+			return;
 		}
+
+		if (outcome.kind === "unknown") {
+			failure = { kind: "unavailable" };
+
+			return;
+		}
+
+		await goto(projectPath(slug, outcome.value));
 	}
 
 	function targetLabel(project: Project): string {
@@ -215,11 +215,29 @@
 					{/each}
 				</ul>
 			{:else if listing.kind === "unavailable"}
-				<Alert.Root variant="destructive">
-					<CircleX aria-hidden="true" />
-					<Alert.Title>We could not load your projects</Alert.Title>
-					<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
-				</Alert.Root>
+				<div class="flex flex-col items-start gap-3">
+					<Alert.Root variant="destructive">
+						<CircleX aria-hidden="true" />
+						<Alert.Title>We could not load your projects</Alert.Title>
+						<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+					</Alert.Root>
+					<Retry />
+				</div>
+			{:else if listing.kind === "no_matches"}
+				<Empty.Root>
+					<Empty.Media variant="icon"><Folder aria-hidden="true" /></Empty.Media>
+					<Empty.Header>
+						<Empty.Title>No projects here</Empty.Title>
+						<Empty.Description>
+							{showingArchived
+								? "Nothing archived matches what you are looking at."
+								: "Nothing matches what you are looking at."}
+						</Empty.Description>
+					</Empty.Header>
+					<Empty.Content>
+						<Button size="sm" variant="secondary" href={projectsPath(slug)}>Every project</Button>
+					</Empty.Content>
+				</Empty.Root>
 			{:else if listing.kind === "empty"}
 				<Empty.Root>
 					<Empty.Media variant="icon"><Folder aria-hidden="true" /></Empty.Media>

@@ -23,7 +23,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts, holdShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
-	import { showToast } from "$lib/toast/toasts";
+	import { showFailure, showToast } from "$lib/toast/toasts";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
 	import { memberName } from "$lib/workspace/members";
@@ -66,6 +66,8 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { cyclePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import Retry from "$lib/components/norn/retry.svelte";
+	import { attempt } from "$lib/api/attempt";
 
 	let { data }: PageProps = $props();
 
@@ -151,18 +153,21 @@
 		if (!issue || !state) return;
 
 		const outcome = await setStatus(data.workspace.id, issue, state);
-
-		if (outcome.kind !== "unchanged") {
-			showToast(statusMessage(outcome, issue.reference), {
-				href: workspacePath(slug, `/issues/${issue.reference}`),
-			});
-		}
+		const href = workspacePath(slug, `/issues/${issue.reference}`);
 
 		if (outcome.kind === "changed") {
+			showToast(statusMessage(outcome, issue.reference), { href });
+
 			await Promise.all([
 				invalidate(keys.page(page.route.id)),
 				invalidate(keys.issues(data.workspace.id)),
 			]);
+
+			return;
+		}
+
+		if (outcome.kind !== "unchanged") {
+			showFailure(statusMessage(outcome, issue.reference), { href });
 		}
 	}
 
@@ -189,29 +194,34 @@
 
 			const closing = ready.cycle.id;
 
-			try {
-				const { error } = await api.POST("/workspaces/{workspaceId}/cycles/{cycleId}/close", {
-					params: { path: { workspaceId: data.workspace.id, cycleId: closing } },
-					body: {
-						rollover: reviewed.length > 0 ? entered.data.decisions[reviewed[0]] : undefined,
-						overrides: reviewed.map((issueId) => ({
-							issueId,
-							destination: entered.data.decisions[issueId],
-						})),
-						reviewedIssueIds: reviewed,
-					},
-				});
+			const outcome = await attempt({
+				run: () =>
+					api.POST("/workspaces/{workspaceId}/cycles/{cycleId}/close", {
+						params: { path: { workspaceId: data.workspace.id, cycleId: closing } },
+						body: {
+							rollover: reviewed.length > 0 ? entered.data.decisions[reviewed[0]] : undefined,
+							overrides: reviewed.map((issueId) => ({
+								issueId,
+								destination: entered.data.decisions[issueId],
+							})),
+							reviewedIssueIds: reviewed,
+						},
+					}),
+			});
 
-				if (error) {
-					await settle(readCycleFailure(error), closing);
+			if (outcome.kind === "refused") {
+				await settle(readCycleFailure(outcome.problem), closing);
 
-					return;
-				}
-
-				await invalidate(keys.page(page.route.id));
-			} catch {
-				await settle({ kind: "unavailable" }, closing);
+				return;
 			}
+
+			if (outcome.kind === "unknown") {
+				await settle({ kind: "unavailable" }, closing);
+
+				return;
+			}
+
+			await invalidate(keys.page(page.route.id));
 		},
 	});
 
@@ -462,24 +472,29 @@
 		owning = true;
 		failure = null;
 
-		try {
-			const { error } = await api.PUT("/workspaces/{workspaceId}/cycles/{cycleId}/owner", {
-				params: { path: { workspaceId: data.workspace.id, cycleId: ready.cycle.id } },
-				body: { ownerAccountId: accountId || null },
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.PUT("/workspaces/{workspaceId}/cycles/{cycleId}/owner", {
+					params: { path: { workspaceId: data.workspace.id, cycleId: ready.cycle.id } },
+					body: { ownerAccountId: accountId || null },
+				}),
+		});
 
-			if (error) {
-				failure = readCycleFailure(error);
+		owning = false;
 
-				return;
-			}
+		if (outcome.kind === "refused") {
+			failure = readCycleFailure(outcome.problem);
 
-			await invalidate(keys.page(page.route.id));
-		} catch {
-			failure = { kind: "unavailable" };
-		} finally {
-			owning = false;
+			return;
 		}
+
+		if (outcome.kind === "unknown") {
+			failure = { kind: "uncertain" };
+
+			return;
+		}
+
+		await invalidate(keys.page(page.route.id));
 	}
 
 	const ownerName = $derived.by(() => {
@@ -646,11 +661,14 @@
 					</div>
 				</div>
 			{:else if detail.kind === "unavailable"}
-				<Alert.Root variant="destructive" class="flex-1">
-					<CircleX aria-hidden="true" />
-					<Alert.Title>We could not load this cycle</Alert.Title>
-					<Alert.Description>Wait a moment and try again.</Alert.Description>
-				</Alert.Root>
+				<div class="flex flex-1 flex-col items-start gap-3">
+					<Alert.Root variant="destructive">
+						<CircleX aria-hidden="true" />
+						<Alert.Title>We could not load this cycle</Alert.Title>
+						<Alert.Description>Wait a moment and try again.</Alert.Description>
+					</Alert.Root>
+					<Retry />
+				</div>
 			{:else if ready && cycle && counts && results}
 				<div class="flex min-w-0 flex-1 flex-col gap-4">
 					{#if failure}

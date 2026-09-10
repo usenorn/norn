@@ -1,11 +1,15 @@
 import { toast } from "svelte-sonner";
-import Toast from "$lib/components/norn/toast.svelte";
+import Toast, { type ToastTone } from "$lib/components/norn/toast.svelte";
 
 export type Raised = {
 	href?: string;
 	action?: string;
+	tone?: ToastTone;
+	duration?: number;
 	onaction?: () => void;
 };
+
+const failureFor = 8000;
 
 let showing: number | string | undefined;
 
@@ -14,10 +18,12 @@ export function showToast(message: string, options: Raised = {}) {
 
 	const id = toast.custom(Toast, {
 		unstyled: true,
+		duration: options.duration,
 		componentProps: {
 			message,
 			href: options.href,
 			action: options.action,
+			tone: options.tone,
 			onaction:
 				options.onaction &&
 				(() => {
@@ -33,4 +39,8 @@ export function showToast(message: string, options: Raised = {}) {
 	showing = id;
 
 	return id;
+}
+
+export function showFailure(message: string, options: Omit<Raised, "tone"> = {}) {
+	return showToast(message, { ...options, tone: "failure", duration: failureFor });
 }

@@ -17,7 +17,6 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		actorKindLabels,
-		listingFor,
 		notificationFailureMessage,
 		readNotificationFailure,
 		reasonLabels,
@@ -32,6 +31,8 @@
 	import { inboxPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 	import { showToast } from "$lib/toast/toasts";
+	import Retry from "$lib/components/norn/retry.svelte";
+	import { attempt, type Outcome } from "$lib/api/attempt";
 
 	let { data }: PageProps = $props();
 
@@ -41,19 +42,28 @@
 
 	let localFailure = $state<NotificationFailure | null>(null);
 	let working = $state("");
-	let extra = $state.raw<Notification[]>([]);
-	let pageCursor = $state<string | undefined>(undefined);
+	let loadedMore = $state.raw<{
+		source: InboxListing;
+		rows: Notification[];
+		cursor: string | undefined;
+	} | null>(null);
 	let loadingMore = $state(false);
 
 	const slug = $derived(data.workspace.slug);
 
 	const filter = $derived(preview?.filter ?? data.filter);
-	const unread = $derived(preview?.unread ?? data.unread);
 	const failure = $derived<NotificationFailure | null>(preview?.failure ?? localFailure);
 	const busy = $derived(working !== "");
 
+	const base = $derived<InboxListing>(preview?.listing ?? data.listing);
 	const listing = $derived<InboxListing>(
-		mergeLoaded(preview?.listing ?? data.listing, extra, pageCursor)
+		loadedMore && loadedMore.source === base
+			? mergeLoaded(base, loadedMore.rows, loadedMore.cursor)
+			: base
+	);
+
+	const unread = $derived(
+		listing.kind === "unavailable" ? undefined : (preview?.unread ?? data.unread)
 	);
 
 	const rows = $derived(listing.kind === "ready" ? listing.notifications : []);
@@ -90,14 +100,19 @@
 		return `${notification.subjectKind}:${notification.subjectId}`;
 	}
 
+	function failureOf(outcome: Outcome<unknown>): NotificationFailure {
+		return outcome.kind === "refused"
+			? readNotificationFailure(outcome.problem)
+			: { kind: "uncertain" };
+	}
+
 	async function markRead(notification: Notification) {
 		working = key(notification);
 		localFailure = null;
 
-		try {
-			const { error } = await api.POST(
-				"/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read",
-				{
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/read", {
 					params: {
 						path: {
 							workspaceId: data.workspace.id,
@@ -105,58 +120,53 @@
 							subjectId: notification.subjectId,
 						},
 					},
-				}
-			);
+				}),
+		});
 
-			if (error) {
-				localFailure = readNotificationFailure(error);
+		working = "";
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			localFailure = failureOf(outcome);
 
-			showToast(`${notification.title} is marked read.`);
-			await reload();
-		} catch {
-			localFailure = { kind: "unavailable" };
-		} finally {
-			working = "";
+			return;
 		}
+
+		showToast(`${notification.title} is marked read.`);
+		await reload();
 	}
 
 	async function markAllRead() {
 		working = "all";
 		localFailure = null;
 
-		try {
-			const { error } = await api.POST("/workspaces/{workspaceId}/notifications/read", {
-				params: { path: { workspaceId: data.workspace.id } },
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/notifications/read", {
+					params: { path: { workspaceId: data.workspace.id } },
+				}),
+		});
 
-			if (error) {
-				localFailure = readNotificationFailure(error);
+		working = "";
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			localFailure = failureOf(outcome);
 
-			showToast("Your inbox is clear.");
-			await reload();
-		} catch {
-			localFailure = { kind: "unavailable" };
-		} finally {
-			working = "";
+			return;
 		}
+
+		showToast("Your inbox is clear.");
+		await reload();
 	}
 
 	async function snooze(notification: Notification, hours: number) {
 		working = key(notification);
 		localFailure = null;
 
-		try {
-			const until = new Date(Date.now() + hours * 3600_000).toISOString();
+		const until = new Date(Date.now() + hours * 3600_000).toISOString();
 
-			const { error } = await api.POST(
-				"/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze",
-				{
+		const outcome = await attempt({
+			run: () =>
+				api.POST("/workspaces/{workspaceId}/notifications/{subjectKind}/{subjectId}/snooze", {
 					params: {
 						path: {
 							workspaceId: data.workspace.id,
@@ -165,22 +175,19 @@
 						},
 					},
 					body: { until },
-				}
-			);
+				}),
+		});
 
-			if (error) {
-				localFailure = readNotificationFailure(error);
+		working = "";
 
-				return;
-			}
+		if (outcome.kind !== "done") {
+			localFailure = failureOf(outcome);
 
-			showToast(`${notification.title} is hidden for now.`);
-			await reload();
-		} catch {
-			localFailure = { kind: "unavailable" };
-		} finally {
-			working = "";
+			return;
 		}
+
+		showToast(`${notification.title} is hidden for now.`);
+		await reload();
 	}
 
 	async function loadMore() {
@@ -189,32 +196,33 @@
 		loadingMore = true;
 		localFailure = null;
 
-		try {
-			const { data: next, error } = await api.GET("/workspaces/{workspaceId}/notifications", {
-				params: {
-					path: { workspaceId: data.workspace.id },
-					query: { filter, cursor: listing.nextCursor },
-				},
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.GET("/workspaces/{workspaceId}/notifications", {
+					params: {
+						path: { workspaceId: data.workspace.id },
+						query: { filter, cursor: listing.nextCursor },
+					},
+				}),
+		});
 
-			if (error || !next) {
-				localFailure = { kind: "unavailable" };
+		loadingMore = false;
 
-				return;
-			}
-
-			extra = [...extra, ...next.notifications];
-			pageCursor = next.nextCursor;
-		} catch {
+		if (outcome.kind !== "done") {
 			localFailure = { kind: "unavailable" };
-		} finally {
-			loadingMore = false;
+
+			return;
 		}
+
+		loadedMore = {
+			source: base,
+			rows: [...(loadedMore?.source === base ? loadedMore.rows : []), ...outcome.value.notifications],
+			cursor: outcome.value.nextCursor,
+		};
 	}
 
 	async function reload() {
-		extra = [];
-		pageCursor = undefined;
+		loadedMore = null;
 		await invalidate(keys.inbox(data.workspace.id));
 	}
 </script>
@@ -226,9 +234,11 @@
 		<div class="flex h-11 flex-wrap items-center gap-2 pr-3 pl-4">
 			<Inbox class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Inbox</h1>
-			<span class="text-sm text-muted-foreground">
-				{unread === 0 ? "Nothing unread" : `${unread} unread`}
-			</span>
+			{#if unread !== undefined}
+				<span class="text-sm text-muted-foreground">
+					{unread === 0 ? "Nothing unread" : `${unread} unread`}
+				</span>
+			{/if}
 			<div class="ml-auto flex shrink-0 items-center gap-1">
 				<Button
 					href={workspacePath(slug, `/inbox?filter=${filter === "unread" ? "all" : "unread"}`)}
@@ -240,7 +250,7 @@
 				<Button
 					variant="secondary"
 					size="sm"
-					disabled={busy || unread === 0}
+					disabled={busy || !unread}
 					onclick={markAllRead}
 				>
 					Mark all read
@@ -265,9 +275,12 @@
 			{#if listing.kind === "loading"}
 				<div class="m-4 h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if listing.kind === "unavailable"}
-				<p class="p-6 text-md leading-normal text-muted-foreground">
-					We could not load your inbox. Nothing changed &mdash; wait a moment and try again.
-				</p>
+				<div class="flex flex-col items-start gap-3 p-6">
+					<p class="text-md leading-normal text-muted-foreground">
+						We could not load your inbox. Nothing changed &mdash; wait a moment and try again.
+					</p>
+					<Retry />
+				</div>
 			{:else if listing.kind === "caught_up"}
 				<div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
 					<p class="text-md font-medium tracking-snug text-ink-900">You are caught up</p>

@@ -97,3 +97,127 @@ jobs:
       - name: Build
         run: pnpm build
         working-directory: web
+
+  end-to-end:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_USER: norn
+          POSTGRES_PASSWORD: norn
+          POSTGRES_DB: norn
+        options: >-
+          --health-cmd "pg_isready -U norn"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+      valkey:
+        image: valkey/valkey:9.1.1-alpine
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 6379:6379
+
+      mailpit:
+        image: axllent/mailpit:v1.30.6
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: "1"
+          MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 1025:1025
+          - 8025:8025
+
+    env:
+      NORN_POSTGRES_DSN: postgres://norn:norn@127.0.0.1:5432/norn?sslmode=disable
+      NORN_VALKEY_ADDR: 127.0.0.1:6379
+      NORN_ASYNQ_ADDR: 127.0.0.1:6379
+      NORN_SMTP_HOST: 127.0.0.1
+      NORN_SMTP_PORT: "1025"
+      NORN_SMTP_FROM_ADDRESS: no-reply@norn.local
+      NORN_STORAGE_BACKEND: filesystem
+      NORN_STORAGE_ROOT: ./data/blobs
+      NORN_APP_BASE_URL: http://localhost:4173
+      NORN_HTTP_ADDR: 127.0.0.1:8080
+      NORN_E2E_API: http://localhost:8080
+      NORN_E2E_MAILPIT: http://localhost:8025
+      NORN_DEV_API_ORIGIN: http://127.0.0.1:8080
+      INTERNAL_API_ORIGIN: http://127.0.0.1:8080
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Apply migrations
+        run: go run . migrate
+
+      - name: Seed the authorisation policy
+        run: go run . seed
+
+      - name: Start the API
+        run: |
+          nohup go run . serve > /tmp/norn-serve.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:8080/v1/health >/dev/null && exit 0
+            sleep 2
+          done
+          echo "the API never came up" >&2
+          cat /tmp/norn-serve.log >&2
+          exit 1
+
+      - name: Start the worker
+        run: nohup go run . worker > /tmp/norn-worker.log 2>&1 &
+
+      - name: Use the pinned pnpm
+        run: corepack enable
+        working-directory: web
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        working-directory: web
+
+      - name: Install the browser
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: web
+
+      - name: Build
+        run: pnpm build
+        working-directory: web
+
+      - name: End to end
+        run: pnpm test:e2e
+        working-directory: web
+
+      - name: What the API and the worker said
+        if: failure()
+        run: cat /tmp/norn-serve.log /tmp/norn-worker.log
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 7

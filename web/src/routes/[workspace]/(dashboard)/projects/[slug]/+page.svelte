@@ -35,7 +35,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
-	import { showToast } from "$lib/toast/toasts";
+	import { showFailure, showToast } from "$lib/toast/toasts";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { issuePageSize } from "$lib/issues/filter";
 	import type { Issue } from "$lib/issues/issues";
@@ -62,6 +62,12 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { projectPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import { attempt, type ApiResult } from "$lib/api/attempt";
+	import { cursorOf, grew, moreFailedLine, rowsOf, taken, type Listed } from "$lib/api/listed";
+	import { Pending } from "$lib/api/pending.svelte";
+	import { copyText } from "$lib/clipboard";
+	import type { ColumnPaging } from "$lib/issues/paging";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -83,20 +89,14 @@
 			: false
 	);
 
-	type Loaded = { source: Issue[]; issues: Issue[]; nextCursor: string | undefined };
-	type Paging = { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+	let accumulated = $state.raw<{ source: Listed<Issue>; rows: Listed<Issue> } | null>(null);
+	let localPaging = $state<ColumnPaging>({ kind: "idle" });
 
-	let accumulated = $state.raw<Loaded | null>(null);
-	let localPaging = $state<Paging>({ kind: "idle" });
-
-	const base = $derived(ready?.issues ?? []);
-	const loaded = $derived(
-		accumulated && accumulated.source === base ? accumulated.issues : base
-	);
-	const nextCursor = $derived(
-		accumulated && accumulated.source === base ? accumulated.nextCursor : ready?.nextCursor
-	);
-	const paging = $derived<Paging>(preview?.paging ?? localPaging);
+	const base = $derived<Listed<Issue>>(ready?.rows ?? { kind: "loading" });
+	const listing = $derived(accumulated && accumulated.source === base ? accumulated.rows : base);
+	const loaded = $derived(rowsOf(listing));
+	const nextCursor = $derived(cursorOf(listing));
+	const paging = $derived<ColumnPaging>(preview?.paging ?? localPaging);
 	const groups = $derived(groupByCategory(loaded));
 
 	const rows = $derived(groups.flatMap((group) => group.issues));
@@ -117,18 +117,21 @@
 		if (!issue || !state) return;
 
 		const outcome = await setStatus(data.workspace.id, issue, state);
-
-		if (outcome.kind !== "unchanged") {
-			showToast(statusMessage(outcome, issue.reference), {
-				href: workspacePath(slug, `/issues/${issue.reference}`),
-			});
-		}
+		const href = workspacePath(slug, `/issues/${issue.reference}`);
 
 		if (outcome.kind === "changed") {
+			showToast(statusMessage(outcome, issue.reference), { href });
+
 			await Promise.all([
 				invalidate(keys.page(page.route.id)),
 				invalidate(keys.issues(data.workspace.id)),
 			]);
+
+			return;
+		}
+
+		if (outcome.kind !== "unchanged") {
+			showFailure(statusMessage(outcome, issue.reference), { href });
 		}
 	}
 
@@ -145,40 +148,43 @@
 		if (!nextCursor || !project) return;
 
 		const source = base;
+		const held = listing;
+
 		localPaging = { kind: "loading" };
 
-		try {
-			const { data: next, error } = await api.GET("/workspaces/{workspaceId}/issues", {
-				params: {
-					path: { workspaceId: data.workspace.id },
-					query: { projectId: project.id, limit: issuePageSize, cursor: nextCursor },
-				},
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.GET("/workspaces/{workspaceId}/issues", {
+					params: {
+						path: { workspaceId: data.workspace.id },
+						query: { projectId: project.id, limit: issuePageSize, cursor: nextCursor },
+					},
+				}),
+		});
 
-			if (error || !next) {
-				localPaging = { kind: "unavailable" };
-
-				return;
-			}
-
-			accumulated = {
-				source,
-				issues: [...loaded, ...next.issues],
-				nextCursor: next.nextCursor,
-			};
-			localPaging = { kind: "idle" };
-		} catch {
+		if (outcome.kind !== "done") {
 			localPaging = { kind: "unavailable" };
+
+			return;
 		}
+
+		accumulated = {
+			source,
+			rows: grew(held, { rows: outcome.value.issues, nextCursor: outcome.value.nextCursor }),
+		};
+		localPaging = { kind: "idle" };
 	}
 
 	let health = $state<ProjectHealth>("on_track");
 	let body = $state("");
-	let working = $state(false);
+	let feedPaging = $state<ColumnPaging>({ kind: "idle" });
+	const pending = new Pending();
+	const working = $derived(pending.any);
 	let failure = $state<ProjectFailure | null>(null);
 
 	let candidateQuery = $state("");
-	let candidates = $state<Membership[]>([]);
+	let candidates = $state<Listed<Membership>>({ kind: "empty" });
+	const offered = $derived(rowsOf(candidates));
 	let adding = $state("");
 	let candidateDebounce: ReturnType<typeof setTimeout> | undefined;
 
@@ -191,6 +197,7 @@
 	}
 
 	let loadedActivity = $state.raw<ActivityFeed | null>(null);
+
 
 	const activity = $derived<ActivityFeed>(
 		loadedActivity ?? (ready ? ready.activity : { kind: "loading" })
@@ -205,40 +212,46 @@
 
 		if (!ready || base.kind !== "ready" || !base.nextCursor) return;
 
-		working = true;
+		feedPaging = { kind: "loading" };
 
-		try {
-			const { data: page } = await api.GET(
-				"/workspaces/{workspaceId}/projects/{projectId}/activity",
-				{
+		const outcome = await attempt({
+			run: () =>
+				api.GET("/workspaces/{workspaceId}/projects/{projectId}/activity", {
 					params: {
 						path: { workspaceId: data.workspace.id, projectId: ready.project.id },
 						query: { cursor: base.nextCursor },
 					},
-				}
-			);
+				}),
+		});
 
-			if (page) {
-				loadedActivity = {
-					kind: "ready",
-					events: [...base.events, ...page.events],
-					nextCursor: page.nextCursor,
-				};
-			}
-		} finally {
-			working = false;
+		if (outcome.kind !== "done") {
+			feedPaging = { kind: "unavailable" };
+
+			return;
 		}
+
+		loadedActivity = {
+			kind: "ready",
+			events: [...base.events, ...outcome.value.events],
+			nextCursor: outcome.value.nextCursor,
+		};
+		feedPaging = { kind: "idle" };
 	}
 
-	async function act<T>(run: () => Promise<{ error?: unknown; data?: T }>) {
-		working = true;
+	async function act<T>(key: string, run: () => Promise<ApiResult<T>>): Promise<boolean> {
 		failure = null;
 
-		try {
-			const { error } = await run();
+		const done = await pending.once(key, async () => {
+			const outcome = await attempt({ run });
 
-			if (error) {
-				failure = readProjectFailure(error);
+			if (outcome.kind === "refused") {
+				failure = readProjectFailure(outcome.problem);
+
+				return false;
+			}
+
+			if (outcome.kind === "unknown") {
+				failure = { kind: "unavailable" };
 
 				return false;
 			}
@@ -246,19 +259,15 @@
 			await invalidate(keys.projects(data.workspace.id));
 
 			return true;
-		} catch {
-			failure = { kind: "unavailable" };
+		});
 
-			return false;
-		} finally {
-			working = false;
-		}
+		return done ?? false;
 	}
 
 	async function postStatus() {
 		if (!project || !body.trim()) return;
 
-		const done = await act(() =>
+		const done = await act("status", () =>
 			api.POST("/workspaces/{workspaceId}/projects/{projectId}/status", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { health, body: body.trim() },
@@ -274,7 +283,7 @@
 	async function pinLink(label: string, url: string) {
 		if (!project) return;
 
-		await act(() =>
+		await act("links", () =>
 			api.POST("/workspaces/{workspaceId}/projects/{projectId}/links", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { label, url },
@@ -285,7 +294,7 @@
 	async function unpinLink(linkId: string) {
 		if (!project) return;
 
-		await act(() =>
+		await act(`link:${linkId}`, () =>
 			api.DELETE("/workspaces/{workspaceId}/projects/{projectId}/links/{linkId}", {
 				params: {
 					path: { workspaceId: data.workspace.id, projectId: project.id, linkId },
@@ -303,7 +312,7 @@
 	}) {
 		if (!project) return false;
 
-		const saved = await act(() =>
+		const saved = await act("details", () =>
 			api.PATCH("/workspaces/{workspaceId}/projects/{projectId}", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: {
@@ -333,7 +342,7 @@
 	async function setState(next: ProjectState) {
 		if (!project || project.state === next) return;
 
-		await act(() =>
+		await act("state", () =>
 			api.PATCH("/workspaces/{workspaceId}/projects/{projectId}", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { state: next },
@@ -354,20 +363,16 @@
 	async function copyLink() {
 		if (!project) return;
 
-		try {
-			await navigator.clipboard.writeText(
-				`${page.url.origin}${workspacePath(slug, `/projects/${project.slug}`)}`
-			);
-			showToast(`Copied link to ${project.name}`);
-		} catch {
-			showToast("Your browser would not let us copy that");
-		}
+		await copyText(
+			`${page.url.origin}${workspacePath(slug, `/projects/${project.slug}`)}`,
+			`Copied link to ${project.name}`
+		);
 	}
 
 	async function setArchived(archive: boolean) {
 		if (!project) return;
 
-		await act(() =>
+		await act("archive", () =>
 			api.POST(
 				archive
 					? "/workspaces/{workspaceId}/projects/{projectId}/archive"
@@ -380,7 +385,7 @@
 	async function remove() {
 		if (!project) return;
 
-		const done = await act(() =>
+		const done = await act("delete", () =>
 			api.DELETE("/workspaces/{workspaceId}/projects/{projectId}", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 			})
@@ -391,23 +396,34 @@
 
 	async function findCandidates(query: string) {
 		if (!project || !query) {
-			candidates = [];
+			candidates = { kind: "empty" };
 
 			return;
 		}
 
-		try {
-			const { data: found } = await api.GET("/workspaces/{workspaceId}/members", {
-				params: { path: { workspaceId: data.workspace.id }, query: { query, limit: 8 } },
-			});
+		candidates = { kind: "loading" };
 
-			candidates = (found?.members ?? []).filter(
-				(candidate) =>
-					!members.some((member) => member.accountId === candidate.accountId)
-			);
-		} catch {
-			candidates = [];
+		const outcome = await attempt({
+			run: () =>
+				api.GET("/workspaces/{workspaceId}/members", {
+					params: { path: { workspaceId: data.workspace.id }, query: { query, limit: 8 } },
+				}),
+		});
+
+		if (candidateQuery !== query) return;
+
+		if (outcome.kind !== "done") {
+			candidates = { kind: "unavailable" };
+
+			return;
 		}
+
+		candidates = taken(
+			outcome.value.members.filter(
+				(candidate) => !members.some((member) => member.accountId === candidate.accountId)
+			),
+			true
+		);
 	}
 
 	function searchCandidates(value: string) {
@@ -421,21 +437,22 @@
 
 		adding = accountId;
 
-		await act(() =>
+		const added = await act(`member:${accountId}`, () =>
 			api.POST("/workspaces/{workspaceId}/projects/{projectId}/members", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { accountId },
 			})
 		);
 
-		candidates = candidates.filter((candidate) => candidate.accountId !== accountId);
+		if (added) candidates = taken(offered.filter((one) => one.accountId !== accountId), true);
+
 		adding = "";
 	}
 
 	async function removeMember(accountId: string) {
 		if (!project) return;
 
-		await act(() =>
+		await act(`member:${accountId}`, () =>
 			api.DELETE("/workspaces/{workspaceId}/projects/{projectId}/members/{accountId}", {
 				params: {
 					path: { workspaceId: data.workspace.id, projectId: project.id, accountId },
@@ -830,9 +847,19 @@
 								value={candidateQuery}
 								oninput={(event) => searchCandidates(event.currentTarget.value)}
 							/>
-							{#if candidates.length > 0}
+							{#if candidates.kind === "loading"}
+								<p class="text-sm text-muted-foreground">Looking…</p>
+							{:else if candidates.kind === "unavailable"}
+								<p class="text-sm text-muted-foreground">
+									We could not search just now. Nothing changed &mdash; try again.
+								</p>
+							{:else if candidates.kind === "no_matches"}
+								<p class="text-sm text-muted-foreground">
+									Nobody in {data.workspace.name} matches that, or they are already here.
+								</p>
+							{:else if candidates.kind === "ready"}
 								<ul class="flex flex-col rounded-lg border border-line-default">
-									{#each candidates as candidate (candidate.accountId)}
+									{#each offered as candidate (candidate.accountId)}
 										<li class="border-b border-line-subtle last:border-b-0">
 											<Button
 												variant="ghost"
@@ -871,7 +898,16 @@
 							</Button>
 						{/if}
 					</div>
-					{#if groups.length === 0}
+					{#if listing.kind === "unavailable"}
+						<div class="flex flex-col items-start gap-3">
+							<Alert.Root variant="destructive">
+								<CircleX aria-hidden="true" />
+								<Alert.Title>We could not load this project's issues</Alert.Title>
+								<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+							</Alert.Root>
+							<Retry />
+						</div>
+					{:else if groups.length === 0}
 						<Empty.Root>
 							<Empty.Media variant="icon"><List aria-hidden="true" /></Empty.Media>
 							<Empty.Header>
@@ -921,9 +957,7 @@
 					{#if nextCursor || paging.kind === "unavailable"}
 						<div class="flex flex-col items-start gap-2">
 							{#if paging.kind === "unavailable"}
-								<p role="status" class="text-sm text-muted-foreground">
-									We could not load any more. Nothing changed &mdash; try again.
-								</p>
+								<p role="status" class="text-sm text-muted-foreground">{moreFailedLine}</p>
 							{/if}
 							{#if nextCursor}
 								<Button
@@ -987,7 +1021,7 @@
 						<ActivityFeedView
 							feed={activity}
 							{when}
-							{working}
+							paging={feedPaging}
 							emptyLine="Nothing has changed since this project was created."
 							onmore={moreActivity}
 						/>
