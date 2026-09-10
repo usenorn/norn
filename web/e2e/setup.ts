@@ -27,7 +27,7 @@ async function call<T>(
 }
 
 async function confirmationToken(client: APIRequestContext, email: string): Promise<string> {
-	for (let asked = 0; asked < 40; asked += 1) {
+	for (let asked = 0; asked < 60; asked += 1) {
 		const box = await client.get(`${mail}/api/v1/messages?limit=30`);
 		const listing = (await box.json()) as { messages: { ID: string; To: { Address: string }[] }[] };
 		const held = listing.messages.find((message) =>

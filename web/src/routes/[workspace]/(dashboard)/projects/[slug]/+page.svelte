@@ -35,7 +35,7 @@
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
-	import { showToast } from "$lib/toast/toasts";
+	import { showFailure, showToast } from "$lib/toast/toasts";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { issuePageSize } from "$lib/issues/filter";
 	import type { Issue } from "$lib/issues/issues";
@@ -117,18 +117,21 @@
 		if (!issue || !state) return;
 
 		const outcome = await setStatus(data.workspace.id, issue, state);
-
-		if (outcome.kind !== "unchanged") {
-			showToast(statusMessage(outcome, issue.reference), {
-				href: workspacePath(slug, `/issues/${issue.reference}`),
-			});
-		}
+		const href = workspacePath(slug, `/issues/${issue.reference}`);
 
 		if (outcome.kind === "changed") {
+			showToast(statusMessage(outcome, issue.reference), { href });
+
 			await Promise.all([
 				invalidate(keys.page(page.route.id)),
 				invalidate(keys.issues(data.workspace.id)),
 			]);
+
+			return;
+		}
+
+		if (outcome.kind !== "unchanged") {
+			showFailure(statusMessage(outcome, issue.reference), { href });
 		}
 	}
 

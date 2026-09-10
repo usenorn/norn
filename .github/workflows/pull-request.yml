@@ -188,6 +188,9 @@ jobs:
           cat /tmp/norn-serve.log >&2
           exit 1
 
+      - name: Start the worker
+        run: nohup go run . worker > /tmp/norn-worker.log 2>&1 &
+
       - name: Use the pinned pnpm
         run: corepack enable
         working-directory: web
@@ -208,9 +211,9 @@ jobs:
         run: pnpm test:e2e
         working-directory: web
 
-      - name: What the API said
+      - name: What the API and the worker said
         if: failure()
-        run: cat /tmp/norn-serve.log
+        run: cat /tmp/norn-serve.log /tmp/norn-worker.log
 
       - uses: actions/upload-artifact@v4
         if: failure()

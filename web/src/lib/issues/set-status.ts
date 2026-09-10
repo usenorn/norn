@@ -1,4 +1,5 @@
 import { api } from "$lib/api";
+import { attempt, unknownLine } from "$lib/api/attempt";
 import type { WorkflowState } from "$lib/team/states";
 import type { Issue } from "./issues";
 
@@ -6,6 +7,7 @@ export type StatusOutcome =
 	| { kind: "changed"; state: WorkflowState }
 	| { kind: "unchanged" }
 	| { kind: "stale" }
+	| { kind: "uncertain" }
 	| { kind: "unavailable" };
 
 export function nthState(
@@ -29,19 +31,18 @@ export async function setStatus(
 ): Promise<StatusOutcome> {
 	if (issue.state.id === state.id) return { kind: "unchanged" };
 
-	try {
-		const { error, response } = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
-			params: { path: { workspaceId, issueId: issue.id } },
-			body: { stateId: state.id, expectedVersion: issue.version },
-		});
+	const outcome = await attempt({
+		run: () =>
+			api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
+				params: { path: { workspaceId, issueId: issue.id } },
+				body: { stateId: state.id, expectedVersion: issue.version },
+			}),
+	});
 
-		if (response.status === 409) return { kind: "stale" };
-		if (error) return { kind: "unavailable" };
+	if (outcome.kind === "done") return { kind: "changed", state };
+	if (outcome.kind === "unknown") return { kind: "uncertain" };
 
-		return { kind: "changed", state };
-	} catch {
-		return { kind: "unavailable" };
-	}
+	return outcome.status === 409 ? { kind: "stale" } : { kind: "unavailable" };
 }
 
 export function statusMessage(outcome: StatusOutcome, reference: string): string {
@@ -50,6 +51,8 @@ export function statusMessage(outcome: StatusOutcome, reference: string): string
 			return `Moved ${reference} to ${outcome.state.name}`;
 		case "stale":
 			return `${reference} changed while you were looking. Nothing moved — reload and try again.`;
+		case "uncertain":
+			return unknownLine;
 		case "unavailable":
 			return `${reference} did not move. Nothing changed — try again in a moment.`;
 		case "unchanged":

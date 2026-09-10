@@ -1313,7 +1313,7 @@
 			<div class="px-4 pt-3">
 				<Alert.Root variant="destructive">
 					<CircleX aria-hidden="true" />
-					<Alert.Title>That did not stick</Alert.Title>
+					<Alert.Title>We could not save that view</Alert.Title>
 					<Alert.Description>{viewFailure}</Alert.Description>
 				</Alert.Root>
 			</div>
