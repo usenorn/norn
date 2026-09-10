@@ -36,6 +36,7 @@ import (
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	requestkeyrepo "github.com/usenorn/norn/internal/repository/requestkey"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
@@ -498,6 +499,7 @@ func liveIssues(t *testing.T, client *postgres.Client, world *live) service.Issu
 	return issuesvc.New(
 		issuerepo.New(client),
 		issuerevisionrepo.New(client),
+		requestkeyrepo.New(client),
 		workflowstaterepo.New(client),
 		activityrepo.New(client),
 		labelrepo.New(client),

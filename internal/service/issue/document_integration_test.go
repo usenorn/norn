@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,6 +38,7 @@ import (
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	requestkeyrepo "github.com/usenorn/norn/internal/repository/requestkey"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -234,6 +236,7 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 	return issuesvc.New(
 		issuerepo.New(client),
 		revisions,
+		requestkeyrepo.New(client),
 		workflowstaterepo.New(client),
 		activityrepo.New(client),
 		labelrepo.New(client),
@@ -558,5 +561,169 @@ func TestRestoringARevisionFromAnotherIssueIsRefused(t *testing.T) {
 				"across issues through a path nobody can see",
 			err,
 		)
+	}
+}
+
+func TestAskingTwiceWithOneKeyRaisesOneIssue(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	asked := service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "The answer went missing",
+		Description: "Sent once, answered never.",
+		RequestKey:  "a-key-the-caller-invented",
+	}
+
+	first, err := issues.Create(ctx, asked)
+	if err != nil {
+		t.Fatalf("the first ask: %v", err)
+	}
+
+	second, err := issues.Create(ctx, asked)
+	if err != nil {
+		t.Fatalf("the second ask: %v", err)
+	}
+
+	if second.ID != first.ID {
+		t.Fatalf(
+			"asking twice with one key raised %s and %s. A dropped answer looks exactly like a "+
+				"dropped question, so a retry has to reach the issue already raised.",
+			first.ID, second.ID,
+		)
+	}
+
+	page, err := issues.List(ctx, place.workspace.ID, service.ListIssuesInput{Limit: 50})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(page.Issues) != 1 {
+		t.Fatalf("the workspace holds %d issues, want the one", len(page.Issues))
+	}
+}
+
+func TestTwoDifferentKeysRaiseTwoIssues(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	asked := service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Same words, meant twice",
+		RequestKey:  "first",
+	}
+
+	first, err := issues.Create(ctx, asked)
+	if err != nil {
+		t.Fatalf("the first ask: %v", err)
+	}
+
+	asked.RequestKey = "second"
+
+	second, err := issues.Create(ctx, asked)
+	if err != nil {
+		t.Fatalf("the second ask: %v", err)
+	}
+
+	if second.ID == first.ID {
+		t.Fatalf("two asks meant as two issues raised one")
+	}
+}
+
+func TestARefusedCreationLeavesItsKeyFreeToAskAgain(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	asked := service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Refused first",
+		StateID:     uuid.New(),
+		RequestKey:  "one-key",
+	}
+
+	if _, err := issues.Create(ctx, asked); err == nil {
+		t.Fatalf("creating into a state that does not exist was allowed")
+	}
+
+	asked.StateID = uuid.Nil
+
+	raised, err := issues.Create(ctx, asked)
+	if err != nil {
+		t.Fatalf(
+			"asking again after a refusal: %v. The refused attempt wrote nothing, so its key has "+
+				"to be free or the caller can never succeed.",
+			err,
+		)
+	}
+
+	if raised.ID == uuid.Nil {
+		t.Fatalf("nothing was raised")
+	}
+}
+
+func TestTwoAsksWithOneKeyArrivingAtOnceRaiseOneIssue(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	asked := service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Sent twice at once",
+		RequestKey:  "one-key-two-asks",
+	}
+
+	type outcome struct {
+		issue entity.Issue
+		err   error
+	}
+
+	answers := make(chan outcome, 2)
+
+	var ready sync.WaitGroup
+
+	ready.Add(2)
+
+	for range 2 {
+		go func() {
+			ready.Done()
+			ready.Wait()
+
+			raised, err := issues.Create(ctx, asked)
+			answers <- outcome{issue: raised, err: err}
+		}()
+	}
+
+	first, second := <-answers, <-answers
+
+	if first.err != nil || second.err != nil {
+		t.Fatalf("the asks returned %v and %v", first.err, second.err)
+	}
+
+	if first.issue.ID != second.issue.ID {
+		t.Fatalf(
+			"two asks arriving together raised %s and %s. The second has to wait for the first "+
+				"rather than racing past the key.",
+			first.issue.ID, second.issue.ID,
+		)
+	}
+
+	page, err := issues.List(ctx, place.workspace.ID, service.ListIssuesInput{Limit: 50})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(page.Issues) != 1 {
+		t.Fatalf("the workspace holds %d issues, want the one", len(page.Issues))
 	}
 }

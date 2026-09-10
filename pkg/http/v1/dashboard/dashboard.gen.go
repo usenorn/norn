@@ -5246,9 +5246,12 @@ type CreateIssueRequest struct {
 	Description *string `json:"description,omitempty"`
 
 	// DescriptionDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
-	DescriptionDoc *Document             `json:"descriptionDoc,omitempty"`
-	DueOn          *openapi_types.Date   `json:"dueOn,omitempty"`
-	Estimate       *int32                `json:"estimate,omitempty"`
+	DescriptionDoc *Document           `json:"descriptionDoc,omitempty"`
+	DueOn          *openapi_types.Date `json:"dueOn,omitempty"`
+	Estimate       *int32              `json:"estimate,omitempty"`
+
+	// IdempotencyKey A value the caller invents for this one issue. Sending the same request again with the same key answers with the issue the first one raised rather than raising a second, so a lost answer can be asked for again safely.
+	IdempotencyKey *string               `json:"idempotencyKey,omitempty"`
 	LabelIds       *[]openapi_types.UUID `json:"labelIds,omitempty"`
 	Priority       *IssuePriority        `json:"priority,omitempty"`
 	ProjectId      *openapi_types.UUID   `json:"projectId,omitempty"`

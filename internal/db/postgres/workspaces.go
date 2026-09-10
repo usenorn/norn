@@ -150,6 +150,7 @@ var WorkspaceRels = struct {
 	WorkspaceMemberships           string
 	WorkspaceNotificationEvents    string
 	WorkspaceProjects              string
+	WorkspaceRequestKeys           string
 	WorkspaceRunners               string
 	WorkspaceSavedViews            string
 	WorkspaceSCMConnections        string
@@ -192,6 +193,7 @@ var WorkspaceRels = struct {
 	WorkspaceMemberships:           "WorkspaceMemberships",
 	WorkspaceNotificationEvents:    "WorkspaceNotificationEvents",
 	WorkspaceProjects:              "WorkspaceProjects",
+	WorkspaceRequestKeys:           "WorkspaceRequestKeys",
 	WorkspaceRunners:               "WorkspaceRunners",
 	WorkspaceSavedViews:            "WorkspaceSavedViews",
 	WorkspaceSCMConnections:        "WorkspaceSCMConnections",
@@ -237,6 +239,7 @@ type workspaceR struct {
 	WorkspaceMemberships           WorkspaceMembershipSlice           `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
 	WorkspaceNotificationEvents    WorkspaceNotificationEventSlice    `boil:"WorkspaceNotificationEvents" json:"WorkspaceNotificationEvents" toml:"WorkspaceNotificationEvents" yaml:"WorkspaceNotificationEvents"`
 	WorkspaceProjects              WorkspaceProjectSlice              `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
+	WorkspaceRequestKeys           WorkspaceRequestKeySlice           `boil:"WorkspaceRequestKeys" json:"WorkspaceRequestKeys" toml:"WorkspaceRequestKeys" yaml:"WorkspaceRequestKeys"`
 	WorkspaceRunners               WorkspaceRunnerSlice               `boil:"WorkspaceRunners" json:"WorkspaceRunners" toml:"WorkspaceRunners" yaml:"WorkspaceRunners"`
 	WorkspaceSavedViews            WorkspaceSavedViewSlice            `boil:"WorkspaceSavedViews" json:"WorkspaceSavedViews" toml:"WorkspaceSavedViews" yaml:"WorkspaceSavedViews"`
 	WorkspaceSCMConnections        WorkspaceSCMConnectionSlice        `boil:"WorkspaceSCMConnections" json:"WorkspaceSCMConnections" toml:"WorkspaceSCMConnections" yaml:"WorkspaceSCMConnections"`
@@ -808,6 +811,22 @@ func (r *workspaceR) GetWorkspaceProjects() WorkspaceProjectSlice {
 	}
 
 	return r.WorkspaceProjects
+}
+
+func (o *Workspace) GetWorkspaceRequestKeys() WorkspaceRequestKeySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceRequestKeys()
+}
+
+func (r *workspaceR) GetWorkspaceRequestKeys() WorkspaceRequestKeySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceRequestKeys
 }
 
 func (o *Workspace) GetWorkspaceRunners() WorkspaceRunnerSlice {
@@ -1689,6 +1708,20 @@ func (o *Workspace) WorkspaceProjects(mods ...qm.QueryMod) workspaceProjectQuery
 	)
 
 	return WorkspaceProjects(queryMods...)
+}
+
+// WorkspaceRequestKeys retrieves all the workspace_request_key's WorkspaceRequestKeys with an executor.
+func (o *Workspace) WorkspaceRequestKeys(mods ...qm.QueryMod) workspaceRequestKeyQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_request_keys\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceRequestKeys(queryMods...)
 }
 
 // WorkspaceRunners retrieves all the workspace_runner's WorkspaceRunners with an executor.
@@ -5765,6 +5798,119 @@ func (workspaceL) LoadWorkspaceProjects(ctx context.Context, e boil.ContextExecu
 	return nil
 }
 
+// LoadWorkspaceRequestKeys allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceRequestKeys(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_request_keys`),
+		qm.WhereIn(`workspace_request_keys.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_request_keys")
+	}
+
+	var resultSlice []*WorkspaceRequestKey
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_request_keys")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_request_keys")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_request_keys")
+	}
+
+	if len(workspaceRequestKeyAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceRequestKeys = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceRequestKeyR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceRequestKeys = append(local.R.WorkspaceRequestKeys, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceRequestKeyR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceRunners allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceRunners(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -8298,6 +8444,59 @@ func (o *Workspace) AddWorkspaceProjects(ctx context.Context, exec boil.ContextE
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceProjectR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceRequestKeys adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceRequestKeys.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceRequestKeys(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceRequestKey) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_request_keys\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceRequestKeyPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceRequestKeys: related,
+		}
+	} else {
+		o.R.WorkspaceRequestKeys = append(o.R.WorkspaceRequestKeys, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceRequestKeyR{
 				Workspace: o,
 			}
 		} else {

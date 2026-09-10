@@ -6488,6 +6488,8 @@ export interface components {
              */
             cycleId?: string;
             labelIds?: string[];
+            /** @description A value the caller invents for this one issue. Sending the same request again with the same key answers with the issue the first one raised rather than raising a second, so a lost answer can be asked for again safely. */
+            idempotencyKey?: string;
             reasoning?: components["schemas"]["AgentReasoning"];
         };
         /**

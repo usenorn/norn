@@ -19,6 +19,7 @@ import (
 type issuesService struct {
 	issues       repository.Issue
 	revisions    repository.IssueRevision
+	requests     repository.RequestKey
 	states       repository.WorkflowState
 	activity     repository.Activity
 	labels       repository.Label
@@ -42,6 +43,7 @@ type issuesService struct {
 func New(
 	issues repository.Issue,
 	revisions repository.IssueRevision,
+	requests repository.RequestKey,
 	states repository.WorkflowState,
 	activity repository.Activity,
 	labels repository.Label,
@@ -64,6 +66,7 @@ func New(
 	return &issuesService{
 		issues:       issues,
 		revisions:    revisions,
+		requests:     requests,
 		states:       states,
 		activity:     activity,
 		labels:       labels,
@@ -107,7 +110,10 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return entity.Issue{}, err
 	}
 
-	if err := entity.NewValidationError(entity.ValidateIssueTitle("title", input.Title)); err != nil {
+	if err := entity.NewValidationError(
+		entity.ValidateIssueTitle("title", input.Title),
+		entity.ValidateRequestKey("idempotencyKey", input.RequestKey),
+	); err != nil {
 		return entity.Issue{}, err
 	}
 
@@ -202,7 +208,22 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 
 	var created entity.Issue
 
+	claim := entity.RequestKey{
+		ID:          uuid.New(),
+		WorkspaceID: input.WorkspaceID,
+		AccountID:   decision.Actor.AccountID,
+		Scope:       entity.RequestScopeIssue,
+		Key:         input.RequestKey,
+		CreatedAt:   time.Now().UTC(),
+	}
+
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if claim.Key != "" {
+			if err := s.requests.Claim(ctx, claim); err != nil {
+				return err
+			}
+		}
+
 		if _, err := s.states.ShareByIDs(ctx, []uuid.UUID{arriving.State.ID}); err != nil {
 			return err
 		}
@@ -221,6 +242,12 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		created, err = s.issues.Create(ctx, arriving)
 		if err != nil {
 			return err
+		}
+
+		if claim.Key != "" {
+			if err := s.requests.Settle(ctx, input.WorkspaceID, claim.ID, created.ID); err != nil {
+				return err
+			}
 		}
 
 		if markdown != "" {
@@ -275,6 +302,13 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return nil
 	})
 	if err != nil {
+		// A key that is already held means this request has been answered once. Nothing of this
+		// attempt was written, so the answer is the issue the first one raised rather than a
+		// second issue saying the same thing.
+		if errors.Is(err, entity.ErrRequestKeyTaken) {
+			return s.raisedBefore(ctx, claim, decision)
+		}
+
 		return entity.Issue{}, err
 	}
 
@@ -1871,4 +1905,21 @@ func restoring(decision entity.Decision, input service.UpdateIssueInput) entity.
 	}
 
 	return entity.RevisionSourceOf(decision.Actor.Kind, "", nil)
+}
+
+func (s *issuesService) raisedBefore(
+	ctx context.Context,
+	claim entity.RequestKey,
+	decision entity.Decision,
+) (entity.Issue, error) {
+	held, err := s.requests.Find(ctx, claim)
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	if held.IssueID == uuid.Nil {
+		return entity.Issue{}, entity.ErrRequestKeyTaken
+	}
+
+	return s.issues.GetVisible(ctx, claim.WorkspaceID, held.IssueID, decision.Scope)
 }

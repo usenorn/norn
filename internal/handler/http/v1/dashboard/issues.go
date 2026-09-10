@@ -103,6 +103,10 @@ func (h *handler) CreateWorkspaceIssue(
 		input.Description = *request.Body.Description
 	}
 
+	if request.Body.IdempotencyKey != nil {
+		input.RequestKey = *request.Body.IdempotencyKey
+	}
+
 	if request.Body.Priority != nil {
 		input.Priority = entity.IssuePriority(*request.Body.Priority)
 	}

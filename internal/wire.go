@@ -94,6 +94,7 @@ import (
 	previewgrantrepo "github.com/usenorn/norn/internal/repository/previewgrant"
 	previewsharerepo "github.com/usenorn/norn/internal/repository/previewshare"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	requestkeyrepo "github.com/usenorn/norn/internal/repository/requestkey"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	runnerchannelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
 	runnersessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
@@ -204,6 +205,7 @@ var baseSet = wire.NewSet(
 	signuprepo.Set,
 	issuerepo.Set,
 	issuerevisionrepo.Set,
+	requestkeyrepo.Set,
 	activityrepo.Set,
 	issuedelegationrepo.Set,
 	issuequestionrepo.Set,
