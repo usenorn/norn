@@ -361,7 +361,7 @@
 			],
 			editorProps: {
 				attributes: {
-					class: "outline-none",
+					class: `outline-none ${minHeight}`,
 					role: "textbox",
 					"aria-multiline": "true",
 					"aria-label": label,
@@ -462,7 +462,7 @@
 	<div class="relative min-w-0">
 		<div
 			use:mount
-			class="{markdownProse} min-w-0 py-2 text-md [&_.ProseMirror]:{minHeight}"
+			class="{markdownProse} min-w-0 py-2 text-md"
 			data-slot="editor"
 		></div>
 
