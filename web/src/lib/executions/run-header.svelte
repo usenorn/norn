@@ -59,6 +59,15 @@
 		{standingLine(execution)}
 	</p>
 
+	{#if execution.requirementsMoved}
+		<p
+			class="max-w-prose rounded-md border border-line-strong px-2.5 py-1.75 text-sm leading-normal text-ink-900 text-pretty"
+		>
+			The description has been written since this run was given it. What it built answers the
+			text it was handed, not the text the issue reads now.
+		</p>
+	{/if}
+
 	<dl class="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
 		{#each facts as fact (fact.label)}
 			<div class="flex min-w-0 flex-col gap-0.5">

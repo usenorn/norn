@@ -1480,6 +1480,44 @@
 		}
 	}
 
+	// A requirement broken out of a description becomes an issue that says where it came from,
+	// so reading the child answers what it is for without opening the parent.
+	function breakOut(selected: string) {
+		if (!issue) return;
+
+		const said = selected.trim();
+
+		childPrefill = {
+			teamId: issue.teamId,
+			projectId: issue.projectId ?? "",
+			title: said,
+			description: {
+				type: "doc",
+				content: [
+					{
+						type: "paragraph",
+						content: [
+							{ type: "text", text: "Broken out of " },
+							{
+								type: "issueRef",
+								attrs: {
+									issueId: issue.id,
+									reference: issue.reference,
+									title: issue.title,
+									href: at(`/issues/${issue.reference}`),
+								},
+							},
+							{ type: "text", text: "." },
+						],
+					},
+				],
+			},
+		};
+
+		filingUnder = { id: issue.id, reference: issue.reference };
+		addingChild = true;
+	}
+
 	function resumeEditing() {
 		if (!canEdit) return;
 
@@ -2083,6 +2121,7 @@
 
 															return true;
 														}}
+														onsubissue={breakOut}
 														placeholder="Describe the issue…"
 														minHeight="min-h-47"
 														label="Description"

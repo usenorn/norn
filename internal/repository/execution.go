@@ -19,10 +19,14 @@ type NewExecution struct {
 	AgentID      uuid.UUID
 	RunnerID     uuid.UUID
 	CodebaseID   uuid.UUID
-	Attempt      int
-	QueuedReason entity.ExecutionQueuedReason
-	Params       entity.ExecutionParams
-	QueuedAt     time.Time
+
+	// The description revision this run was handed. It is what the run is judged against, so
+	// requirements that move afterwards can be told apart from requirements it was given.
+	DescriptionRevisionID uuid.UUID
+	Attempt               int
+	QueuedReason          entity.ExecutionQueuedReason
+	Params                entity.ExecutionParams
+	QueuedAt              time.Time
 }
 
 type ExecutionBinding struct {

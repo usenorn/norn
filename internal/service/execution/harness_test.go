@@ -16,6 +16,7 @@ import (
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
 	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	channelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
@@ -38,6 +39,7 @@ type harness struct {
 	runners     *runnerrepo.MockRunner
 	codebases   *codebaserepo.MockCodebase
 	issues      *issuerepo.MockIssue
+	revisions   *issuerevisionrepo.MockIssueRevision
 	states      *statesrepo.MockWorkflowState
 	channels    *channelrepo.MockRunnerChannel
 	writer      *issuesvc.MockIssues
@@ -79,6 +81,7 @@ func newHarness(t *testing.T) *harness {
 		codebases:   codebaserepo.NewMockCodebase(ctrl),
 		codebase:    uuid.New(),
 		issues:      issuerepo.NewMockIssue(ctrl),
+		revisions:   issuerevisionrepo.NewMockIssueRevision(ctrl),
 		states:      statesrepo.NewMockWorkflowState(ctrl),
 		channels:    channelrepo.NewMockRunnerChannel(ctrl),
 		writer:      issuesvc.NewMockIssues(ctrl),
@@ -191,9 +194,14 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.revisions.EXPECT().
+		Latest(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.IssueDescriptionRevision{}, entity.ErrIssueRevisionNotFound).
+		AnyTimes()
+
 	h.service = executionsvc.New(
 		h.executions, h.changesets, h.previews, h.services, h.runners, h.codebases, h.issues,
-		h.states,
+		h.revisions, h.states,
 		h.channels, h.writer, h.source, h.events, h.authorizer, h.audit, transactor,
 	)
 

@@ -47,6 +47,13 @@ const executionColumns = `
        coalesce(e.codebase_id::text, ''),
        coalesce(r.name, ''),
        coalesce(c.name, ''),
+       coalesce(e.description_revision_id::text, ''),
+       coalesce(
+           (SELECT max(later.issue_version)
+            FROM workspace_issue_description_revisions later
+            WHERE later.issue_id = e.issue_id) > ran.issue_version,
+           false
+       ),
        e.attempt,
        e.state,
        e.reason,
@@ -61,6 +68,7 @@ const executionColumns = `
 
 const executionNames = `
 JOIN workspace_issues i ON i.id = e.issue_id
+LEFT JOIN workspace_issue_description_revisions ran ON ran.id = e.description_revision_id
 JOIN workspace_agents a ON a.id = e.agent_id
 LEFT JOIN workspace_runners r ON r.id = e.runner_id
 LEFT JOIN workspace_codebases c ON c.id = e.codebase_id`
@@ -72,9 +80,9 @@ const insertExecutionQuery = `
 WITH inserted AS (
     INSERT INTO workspace_executions
         (id, workspace_id, issue_id, delegation_id, agent_id, runner_id, codebase_id,
-         attempt, state, queued_reason, params, queued_at, updated_at)
+         description_revision_id, attempt, state, queued_reason, params, queued_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, nullif($6, '')::uuid, nullif($7, '')::uuid,
-            $8, $9, $10, $11::jsonb, $12, $12)
+            nullif($13, '')::uuid, $8, $9, $10, $11::jsonb, $12, $12)
     RETURNING *
 )
 SELECT` + executionColumns + `
@@ -267,6 +275,7 @@ func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 		codebaseID   string
 		state        string
 		queuedReason string
+		revision     string
 		params       []byte
 	)
 
@@ -285,6 +294,8 @@ func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 		&codebaseID,
 		&execution.RunnerName,
 		&execution.CodebaseName,
+		&revision,
+		&execution.RequirementsMoved,
 		&execution.Attempt,
 		&state,
 		&execution.Reason,
@@ -330,6 +341,10 @@ func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 
 	if execution.CodebaseID, err = parseOptionalID(codebaseID); err != nil {
 		return entity.Execution{}, fmt.Errorf("parse execution codebase id: %w", err)
+	}
+
+	if execution.DescriptionRevisionID, err = parseOptionalID(revision); err != nil {
+		return entity.Execution{}, fmt.Errorf("parse execution description revision id: %w", err)
 	}
 
 	execution.IssueReference = entity.Issue{ReferenceKey: referenceKey, Number: number}.Reference()
@@ -587,6 +602,7 @@ func (r *executionRepository) Create(
 		string(execution.QueuedReason),
 		params,
 		execution.QueuedAt,
+		optionalID(execution.DescriptionRevisionID),
 	))
 	if err != nil {
 		var pgErr *pgconn.PgError

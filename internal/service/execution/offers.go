@@ -240,17 +240,18 @@ func (s *executionsService) open(
 		}
 
 		opened, err = s.executions.Create(ctx, repository.NewExecution{
-			ID:           entity.NewExecutionID(ulid.Make().String()),
-			WorkspaceID:  request.issue.WorkspaceID,
-			IssueID:      request.issue.ID,
-			DelegationID: request.delegationID,
-			AgentID:      request.agentID,
-			RunnerID:     request.placed.runner.ID,
-			CodebaseID:   request.placed.codebase,
-			Attempt:      attempt,
-			QueuedReason: request.placed.waiting,
-			Params:       request.params,
-			QueuedAt:     now,
+			ID:                    entity.NewExecutionID(ulid.Make().String()),
+			WorkspaceID:           request.issue.WorkspaceID,
+			IssueID:               request.issue.ID,
+			DelegationID:          request.delegationID,
+			AgentID:               request.agentID,
+			RunnerID:              request.placed.runner.ID,
+			CodebaseID:            request.placed.codebase,
+			DescriptionRevisionID: s.requirements(ctx, request.issue),
+			Attempt:               attempt,
+			QueuedReason:          request.placed.waiting,
+			Params:                request.params,
+			QueuedAt:              now,
 		})
 		if err != nil {
 			return err
@@ -403,4 +404,16 @@ func (s *executionsService) tell(
 	}
 
 	return nil
+}
+
+// requirements notes which description this run was handed. A description that has never been
+// written since versions were kept has none, and the run is judged against the issue as it
+// stands, which is the same thing.
+func (s *executionsService) requirements(ctx context.Context, issue entity.Issue) uuid.UUID {
+	held, err := s.revisions.Latest(ctx, issue.WorkspaceID, issue.ID)
+	if err != nil {
+		return uuid.Nil
+	}
+
+	return held.ID
 }

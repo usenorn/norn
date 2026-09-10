@@ -135,17 +135,25 @@ type Execution struct {
 	RunnerName     string
 	CodebaseID     uuid.UUID
 	CodebaseName   string
-	Attempt        int
-	State          ExecutionState
-	Reason         string
-	QueuedReason   ExecutionQueuedReason
-	Params         ExecutionParams
-	LeaseExpiresAt *time.Time
-	KeepUntil      *time.Time
-	QueuedAt       time.Time
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	UpdatedAt      time.Time
+
+	// The description this run was given. Requirements move while work is under way, and a run
+	// judged against text it never saw is judged against somebody else's later mind.
+	DescriptionRevisionID uuid.UUID
+
+	// Whether the description has been written since. A run that is judged against text it was
+	// never given is judged against somebody's later mind, so the reader is told.
+	RequirementsMoved bool
+	Attempt           int
+	State             ExecutionState
+	Reason            string
+	QueuedReason      ExecutionQueuedReason
+	Params            ExecutionParams
+	LeaseExpiresAt    *time.Time
+	KeepUntil         *time.Time
+	QueuedAt          time.Time
+	StartedAt         *time.Time
+	FinishedAt        *time.Time
+	UpdatedAt         time.Time
 }
 
 type ExecutionPage struct {

@@ -5611,6 +5611,13 @@ export interface components {
             codebaseId?: string;
             /** @description The folder the run was taken from, named for the same reason */
             codebaseName?: string;
+            /**
+             * Format: uuid
+             * @description The version of the description this run was handed. What it built is judged against this text rather than against whatever the description says now.
+             */
+            descriptionRevisionId?: string;
+            /** @description Whether the description has been written since this run was given it. A run judged against text it never saw is judged against somebody's later mind. */
+            requirementsMoved?: boolean;
             attempt: number;
             state: components["schemas"]["ExecutionState"];
             reason?: string;

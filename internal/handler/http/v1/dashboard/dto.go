@@ -2133,6 +2133,7 @@ func nilIfNilID(id uuid.UUID) *uuid.UUID {
 
 func executionDTO(execution entity.Execution) api.Execution {
 	restartable := execution.Restartable()
+	moved := execution.RequirementsMoved
 
 	return api.Execution{
 		Id:             execution.ID,
@@ -2149,6 +2150,10 @@ func executionDTO(execution entity.Execution) api.Execution {
 		RunnerName:     nilIfEmpty(execution.RunnerName),
 		CodebaseId:     nilIfNilID(execution.CodebaseID),
 		CodebaseName:   nilIfEmpty(execution.CodebaseName),
+
+		DescriptionRevisionId: nilIfNilID(execution.DescriptionRevisionID),
+		RequirementsMoved:     &moved,
+
 		Attempt:        execution.Attempt,
 		State:          api.ExecutionState(execution.State),
 		Reason:         nilIfEmpty(execution.Reason),

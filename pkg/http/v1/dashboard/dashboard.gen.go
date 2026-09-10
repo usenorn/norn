@@ -5768,12 +5768,15 @@ type Execution struct {
 	CodebaseId *openapi_types.UUID `json:"codebaseId,omitempty"`
 
 	// CodebaseName The folder the run was taken from, named for the same reason
-	CodebaseName   *string             `json:"codebaseName,omitempty"`
-	DelegationId   *openapi_types.UUID `json:"delegationId,omitempty"`
-	FinishedAt     *time.Time          `json:"finishedAt,omitempty"`
-	Id             string              `json:"id"`
-	IssueId        openapi_types.UUID  `json:"issueId"`
-	IssueReference string              `json:"issueReference"`
+	CodebaseName *string             `json:"codebaseName,omitempty"`
+	DelegationId *openapi_types.UUID `json:"delegationId,omitempty"`
+
+	// DescriptionRevisionId The version of the description this run was handed. What it built is judged against this text rather than against whatever the description says now.
+	DescriptionRevisionId *openapi_types.UUID `json:"descriptionRevisionId,omitempty"`
+	FinishedAt            *time.Time          `json:"finishedAt,omitempty"`
+	Id                    string              `json:"id"`
+	IssueId               openapi_types.UUID  `json:"issueId"`
+	IssueReference        string              `json:"issueReference"`
 
 	// IssueTitle The issue this run was taken from, named here so a list of runs reads
 	IssueTitle *string `json:"issueTitle,omitempty"`
@@ -5792,6 +5795,9 @@ type Execution struct {
 
 	// Reference The issue reference, suffixed with the attempt from the second run on
 	Reference string `json:"reference"`
+
+	// RequirementsMoved Whether the description has been written since this run was given it. A run judged against text it never saw is judged against somebody's later mind.
+	RequirementsMoved *bool `json:"requirementsMoved,omitempty"`
 
 	// Restartable Whether this run can be offered again as a fresh attempt
 	Restartable *bool               `json:"restartable,omitempty"`

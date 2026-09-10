@@ -235,7 +235,10 @@
 			const selected = within.state.doc.textBetween(from, to, " ").trim();
 
 			within.chain().focus().deleteRange(range).run();
-			onsubissue?.(selected);
+
+			// With nothing selected the line the caret sits on is what the writer meant: a
+			// checklist item or a requirement, typed and then broken out.
+			onsubissue?.(selected === "" ? within.state.selection.$from.parent.textContent.trim() : selected);
 
 			return;
 		}
