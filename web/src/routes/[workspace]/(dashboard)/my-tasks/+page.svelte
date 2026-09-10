@@ -14,6 +14,7 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { attempt } from "$lib/api/attempt";
+	import { Pending } from "$lib/api/pending.svelte";
 	import { cursorOf, grew, moreFailedLine, rowsOf, type Listed } from "$lib/api/listed";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { bucketsOf, groupsOf } from "$lib/tasks/tasks";
@@ -42,6 +43,7 @@
 
 	let accumulated = $state.raw<{ source: Listed<Issue>; rows: Listed<Issue> } | null>(null);
 	let localPaging = $state<ColumnPaging>({ kind: "idle" });
+	const moving = new Pending();
 
 	const rows = $derived<Listed<Issue>>(
 		preview?.rows ??
@@ -145,9 +147,11 @@
 		const issue = task && issueOf.get(task.id);
 		const state = issue && nthState(data.states, issue.teamId, nth);
 
-		if (!issue || !state) return;
+		if (!issue || !state || moving.busy(issue.id)) return;
 
-		const outcome = await setStatus(data.workspace.id, issue, state);
+		const outcome = await moving.once(issue.id, () => setStatus(data.workspace.id, issue, state));
+
+		if (!outcome) return;
 		const href = workspacePath(data.workspace.slug, `/issues/${issue.reference}`);
 
 		if (outcome.kind === "changed") {

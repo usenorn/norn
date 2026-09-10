@@ -112,6 +112,7 @@
 	import { cycleWindow } from "$lib/time";
 	import type { IssuesListingData, IssuesListingScope, IssuesPreview } from "./listing";
 	import Retry from "$lib/components/norn/retry.svelte";
+	import { Pending } from "$lib/api/pending.svelte";
 	import { Watch } from "$lib/api/watch.svelte";
 
 	let {
@@ -136,6 +137,7 @@
 	let dragging = $state<string | null>(null);
 	let dropTarget = $state<DropTarget | null>(null);
 	let viewFailure = $state<string | null>(null);
+	const rowPending = new Pending();
 
 	const team = $derived(preview?.team ?? data.team);
 	const states = $derived(preview?.states ?? data.states ?? []);
@@ -313,7 +315,17 @@
 		return flat.find((candidate) => candidate.id === issue.id) ?? issue;
 	}
 
-	async function change(
+	function change(
+		issue: Issue,
+		body: Record<string, unknown>,
+		previous: Record<string, unknown>,
+		message: string,
+		optimistic: Partial<Issue>
+	) {
+		return rowPending.once(issue.id, () => changing(issue, body, previous, message, optimistic));
+	}
+
+	async function changing(
 		issue: Issue,
 		body: Record<string, unknown>,
 		previous: Record<string, unknown>,
@@ -389,7 +401,11 @@
 		);
 	}
 
-	async function toggleLabel(issue: Issue, labelId: string) {
+	function toggleLabel(issue: Issue, labelId: string) {
+		return rowPending.once(issue.id, () => togglingLabel(issue, labelId));
+	}
+
+	async function togglingLabel(issue: Issue, labelId: string) {
 		const held = issue.labels.map((label) => label.id);
 		const carries = held.includes(labelId);
 		const next = carries ? held.filter((id) => id !== labelId) : [...held, labelId];
@@ -543,9 +559,15 @@
 
 		if (!movedInto(placed.move)) return;
 
+		if (rowPending.busy(issue.id)) return;
+
 		moves = [...moves.filter((held) => held.issueId !== issue.id), placed.pending];
 
-		const outcome = await patch(issue, placed.move, { reload: false });
+		const outcome = await rowPending.once(issue.id, () =>
+			patch(issue, placed.move, { reload: false })
+		);
+
+		if (!outcome) return;
 
 		if (outcome.kind !== "done") {
 			moves = moves.filter((held) => held.issueId !== issue.id);

@@ -42,8 +42,11 @@
 
 	let localFailure = $state<NotificationFailure | null>(null);
 	let working = $state("");
-	let extra = $state.raw<Notification[]>([]);
-	let pageCursor = $state<string | undefined>(undefined);
+	let loadedMore = $state.raw<{
+		source: InboxListing;
+		rows: Notification[];
+		cursor: string | undefined;
+	} | null>(null);
 	let loadingMore = $state(false);
 
 	const slug = $derived(data.workspace.slug);
@@ -52,8 +55,11 @@
 	const failure = $derived<NotificationFailure | null>(preview?.failure ?? localFailure);
 	const busy = $derived(working !== "");
 
+	const base = $derived<InboxListing>(preview?.listing ?? data.listing);
 	const listing = $derived<InboxListing>(
-		mergeLoaded(preview?.listing ?? data.listing, extra, pageCursor)
+		loadedMore && loadedMore.source === base
+			? mergeLoaded(base, loadedMore.rows, loadedMore.cursor)
+			: base
 	);
 
 	const unread = $derived(
@@ -208,13 +214,15 @@
 			return;
 		}
 
-		extra = [...extra, ...outcome.value.notifications];
-		pageCursor = outcome.value.nextCursor;
+		loadedMore = {
+			source: base,
+			rows: [...(loadedMore?.source === base ? loadedMore.rows : []), ...outcome.value.notifications],
+			cursor: outcome.value.nextCursor,
+		};
 	}
 
 	async function reload() {
-		extra = [];
-		pageCursor = undefined;
+		loadedMore = null;
 		await invalidate(keys.inbox(data.workspace.id));
 	}
 </script>
