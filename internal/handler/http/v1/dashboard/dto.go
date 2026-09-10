@@ -1712,6 +1712,41 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 	dto.Title = proposal.Change.Title
 	dto.Description = proposal.Change.Description
 
+	if proposal.Change.Priority != nil {
+		priority := api.IssuePriority(*proposal.Change.Priority)
+		dto.Priority = &priority
+	}
+
+	if proposal.Change.Estimate != nil {
+		estimate := int32(*proposal.Change.Estimate)
+		dto.Estimate = &estimate
+	}
+
+	if proposal.Change.DueOn != nil {
+		if due, err := time.Parse(time.DateOnly, *proposal.Change.DueOn); err == nil {
+			on := openapi_types.Date{Time: due}
+			dto.DueOn = &on
+		}
+	}
+
+	if len(proposal.Change.Clear) > 0 {
+		cleared := make([]api.ChangePart, 0, len(proposal.Change.Clear))
+		for _, part := range proposal.Change.Clear {
+			cleared = append(cleared, api.ChangePart(part))
+		}
+
+		dto.Cleared = &cleared
+	}
+
+	if asked := proposal.Change.Parts(); len(asked) > 0 {
+		parts := make([]api.ChangePart, 0, len(asked))
+		for _, part := range asked {
+			parts = append(parts, api.ChangePart(part))
+		}
+
+		dto.Parts = &parts
+	}
+
 	dto.Failure = nilIfEmpty(proposal.Failure)
 	dto.Reasoning = agentReasoningDTO(proposal.Reasoning)
 	dto.DecidedAt = proposal.DecidedAt
@@ -1762,6 +1797,22 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 		reference := waiting.Issue.Reference()
 		dto.IssueReference = &reference
 		dto.IssueTitle = &waiting.Issue.Title
+
+		// What the issue says now travels with what the proposal would make it say, so nobody
+		// approves a description they have not read against the one it replaces.
+		priority := api.IssuePriority(waiting.Issue.Priority)
+
+		held := api.AgentProposalHeld{
+			Title:       nilIfEmpty(waiting.Issue.Title),
+			Description: nilIfEmpty(waiting.Issue.Description),
+			Priority:    &priority,
+		}
+
+		if waiting.Issue.State.Name != "" {
+			held.StateName = &waiting.Issue.State.Name
+		}
+
+		dto.Held = &held
 	}
 
 	if len(waiting.Questions) > 0 {

@@ -855,6 +855,48 @@ func (e BulkOutcome) Valid() bool {
 	}
 }
 
+// Defines values for ChangePart.
+const (
+	ChangePartAssignee    ChangePart = "assignee"
+	ChangePartCycle       ChangePart = "cycle"
+	ChangePartDescription ChangePart = "description"
+	ChangePartDueOn       ChangePart = "dueOn"
+	ChangePartEstimate    ChangePart = "estimate"
+	ChangePartLabels      ChangePart = "labels"
+	ChangePartPriority    ChangePart = "priority"
+	ChangePartProject     ChangePart = "project"
+	ChangePartState       ChangePart = "state"
+	ChangePartTitle       ChangePart = "title"
+)
+
+// Valid indicates whether the value is a known member of the ChangePart enum.
+func (e ChangePart) Valid() bool {
+	switch e {
+	case ChangePartAssignee:
+		return true
+	case ChangePartCycle:
+		return true
+	case ChangePartDescription:
+		return true
+	case ChangePartDueOn:
+		return true
+	case ChangePartEstimate:
+		return true
+	case ChangePartLabels:
+		return true
+	case ChangePartPriority:
+		return true
+	case ChangePartProject:
+		return true
+	case ChangePartState:
+		return true
+	case ChangePartTitle:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CodeChangeState.
 const (
 	CodeChangeStateApproved         CodeChangeState = "approved"
@@ -4719,16 +4761,24 @@ type AgentIcon string
 
 // AgentProposal defines model for AgentProposal.
 type AgentProposal struct {
-	Action             AgentAction         `json:"action"`
-	AgentId            openapi_types.UUID  `json:"agentId"`
-	AgentName          string              `json:"agentName"`
-	Body               *string             `json:"body,omitempty"`
+	Action    AgentAction        `json:"action"`
+	AgentId   openapi_types.UUID `json:"agentId"`
+	AgentName string             `json:"agentName"`
+	Body      *string            `json:"body,omitempty"`
+
+	// Cleared The parts this proposal asks to empty rather than to set.
+	Cleared            *[]ChangePart       `json:"cleared,omitempty"`
 	CreatedAt          time.Time           `json:"createdAt"`
 	DecidedAt          *time.Time          `json:"decidedAt,omitempty"`
 	DecidedByAccountId *openapi_types.UUID `json:"decidedByAccountId,omitempty"`
 	Description        *string             `json:"description,omitempty"`
+	DueOn              *openapi_types.Date `json:"dueOn,omitempty"`
+	Estimate           *int32              `json:"estimate,omitempty"`
 	Failure            *string             `json:"failure,omitempty"`
-	Id                 openapi_types.UUID  `json:"id"`
+
+	// Held What the issue says now, beside what the proposal would make it say. Approving without this is approving text nobody read.
+	Held *AgentProposalHeld `json:"held,omitempty"`
+	Id   openapi_types.UUID `json:"id"`
 
 	// IssueId Absent on a held issue creation, where the issue does not exist yet
 	IssueId *openapi_types.UUID `json:"issueId,omitempty"`
@@ -4736,6 +4786,10 @@ type AgentProposal struct {
 	// IssueReference So an approver can open the issue the proposal is about
 	IssueReference *string `json:"issueReference,omitempty"`
 	IssueTitle     *string `json:"issueTitle,omitempty"`
+
+	// Parts What this proposal actually asks to change, so an approver is shown the four things it proposes rather than the ten it could have.
+	Parts    *[]ChangePart  `json:"parts,omitempty"`
+	Priority *IssuePriority `json:"priority,omitempty"`
 
 	// Questions Questions the agent asked on this issue that nobody answered, so approving the proposal also ratifies the default it worked on.
 	Questions *[]IssueQuestion `json:"questions,omitempty"`
@@ -4752,6 +4806,14 @@ type AgentProposal struct {
 	// TeamKey The team a held issue creation would file its issue on
 	TeamKey *string `json:"teamKey,omitempty"`
 	Title   *string `json:"title,omitempty"`
+}
+
+// AgentProposalHeld What the issue says now, beside what the proposal would make it say. Approving without this is approving text nobody read.
+type AgentProposalHeld struct {
+	Description *string        `json:"description,omitempty"`
+	Priority    *IssuePriority `json:"priority,omitempty"`
+	StateName   *string        `json:"stateName,omitempty"`
+	Title       *string        `json:"title,omitempty"`
 }
 
 // AgentProposalStatus defines model for AgentProposalStatus.
@@ -4805,6 +4867,12 @@ type AgentUnusableProblemCode string
 // AnswerIssueQuestionRequest defines model for AnswerIssueQuestionRequest.
 type AnswerIssueQuestionRequest struct {
 	Answer string `json:"answer"`
+}
+
+// ApproveAgentProposalRequest defines model for ApproveAgentProposalRequest.
+type ApproveAgentProposalRequest struct {
+	// Accept The parts of the change to take. Naming none takes all of it, which is what an approver who did not choose meant.
+	Accept *[]ChangePart `json:"accept,omitempty"`
 }
 
 // AskIssueQuestionRequest defines model for AskIssueQuestionRequest.
@@ -5025,6 +5093,9 @@ type CancelExecutionRequest struct {
 type ChangeMemberRoleRequest struct {
 	Role MembershipRole `json:"role"`
 }
+
+// ChangePart One thing a proposal asks to change, decided on its own.
+type ChangePart string
 
 // ChangePasswordRequest defines model for ChangePasswordRequest.
 type ChangePasswordRequest struct {
@@ -9587,6 +9658,9 @@ type CreateWorkspaceJSONRequestBody = CreateWorkspaceRequest
 // UpdateWorkspaceJSONRequestBody defines body for UpdateWorkspace for application/json ContentType.
 type UpdateWorkspaceJSONRequestBody = UpdateWorkspaceRequest
 
+// ApproveWorkspaceAgentProposalJSONRequestBody defines body for ApproveWorkspaceAgentProposal for application/json ContentType.
+type ApproveWorkspaceAgentProposalJSONRequestBody = ApproveAgentProposalRequest
+
 // RegisterWorkspaceAgentJSONRequestBody defines body for RegisterWorkspaceAgent for application/json ContentType.
 type RegisterWorkspaceAgentJSONRequestBody = RegisterAgentRequest
 
@@ -10441,10 +10515,19 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/agent-proposals (the `ListWorkspaceAgentProposals` operationId).
 	ListWorkspaceAgentProposals(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApproveWorkspaceAgentProposal Let a held agent action take effect, still attributed to the agent
+	// ApproveWorkspaceAgentProposalWithBody Let a held agent action take effect, still attributed to the agent
+	//
+	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
-	ApproveWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ApproveWorkspaceAgentProposalWithBody(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ApproveWorkspaceAgentProposal Let a held agent action take effect, still attributed to the agent
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
+	ApproveWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, body ApproveWorkspaceAgentProposalJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RejectWorkspaceAgentProposal Refuse a held agent action so nothing is applied
 	//
@@ -13930,11 +14013,30 @@ func (c *Client) ListWorkspaceAgentProposals(ctx context.Context, workspaceId Wo
 	return c.Client.Do(req)
 }
 
-// ApproveWorkspaceAgentProposal Let a held agent action take effect, still attributed to the agent
+// ApproveWorkspaceAgentProposalWithBody Let a held agent action take effect, still attributed to the agent
+//
+// Takes any type of body and a specified content type.
 //
 // Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
-func (c *Client) ApproveWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApproveWorkspaceAgentProposalRequest(c.Server, workspaceId, proposalId)
+func (c *Client) ApproveWorkspaceAgentProposalWithBody(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewApproveWorkspaceAgentProposalRequestWithBody(c.Server, workspaceId, proposalId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ApproveWorkspaceAgentProposal Let a held agent action take effect, still attributed to the agent
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
+func (c *Client) ApproveWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, body ApproveWorkspaceAgentProposalJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewApproveWorkspaceAgentProposalRequest(c.Server, workspaceId, proposalId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -21694,8 +21796,19 @@ func NewListWorkspaceAgentProposalsRequest(server string, workspaceId WorkspaceI
 	return req, nil
 }
 
-// NewApproveWorkspaceAgentProposalRequest constructs an http.Request for the ApproveWorkspaceAgentProposal method
-func NewApproveWorkspaceAgentProposalRequest(server string, workspaceId WorkspaceId, proposalId ProposalId) (*http.Request, error) {
+// NewApproveWorkspaceAgentProposalRequest calls the generic ApproveWorkspaceAgentProposal builder with application/json body
+func NewApproveWorkspaceAgentProposalRequest(server string, workspaceId WorkspaceId, proposalId ProposalId, body ApproveWorkspaceAgentProposalJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewApproveWorkspaceAgentProposalRequestWithBody(server, workspaceId, proposalId, "application/json", bodyReader)
+}
+
+// NewApproveWorkspaceAgentProposalRequestWithBody constructs an http.Request for the ApproveWorkspaceAgentProposal method, with any body, and a specified content type
+func NewApproveWorkspaceAgentProposalRequestWithBody(server string, workspaceId WorkspaceId, proposalId ProposalId, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -21727,10 +21840,12 @@ func NewApproveWorkspaceAgentProposalRequest(server string, workspaceId Workspac
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -35399,12 +35514,19 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/agent-proposals (the `ListWorkspaceAgentProposals` operationId).
 	ListWorkspaceAgentProposalsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceAgentProposalsResponse, error)
 
-	// ApproveWorkspaceAgentProposalWithResponse Let a held agent action take effect, still attributed to the agent
+	// ApproveWorkspaceAgentProposalWithBodyWithResponse Let a held agent action take effect, still attributed to the agent
 	//
-	// Returns a wrapper object for the known response body format(s).
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
-	ApproveWorkspaceAgentProposalWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*ApproveWorkspaceAgentProposalResponse, error)
+	ApproveWorkspaceAgentProposalWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApproveWorkspaceAgentProposalResponse, error)
+
+	// ApproveWorkspaceAgentProposalWithResponse Let a held agent action take effect, still attributed to the agent
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
+	ApproveWorkspaceAgentProposalWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, body ApproveWorkspaceAgentProposalJSONRequestBody, reqEditors ...RequestEditorFn) (*ApproveWorkspaceAgentProposalResponse, error)
 
 	// RejectWorkspaceAgentProposalWithResponse Refuse a held agent action so nothing is applied
 	//
@@ -62212,13 +62334,26 @@ func (c *ClientWithResponses) ListWorkspaceAgentProposalsWithResponse(ctx contex
 	return ParseListWorkspaceAgentProposalsResponse(rsp)
 }
 
-// ApproveWorkspaceAgentProposalWithResponse Let a held agent action take effect, still attributed to the agent
+// ApproveWorkspaceAgentProposalWithBodyWithResponse Let a held agent action take effect, still attributed to the agent
 //
-// Returns a wrapper object for the known response body format(s).
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
-func (c *ClientWithResponses) ApproveWorkspaceAgentProposalWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*ApproveWorkspaceAgentProposalResponse, error) {
-	rsp, err := c.ApproveWorkspaceAgentProposal(ctx, workspaceId, proposalId, reqEditors...)
+func (c *ClientWithResponses) ApproveWorkspaceAgentProposalWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApproveWorkspaceAgentProposalResponse, error) {
+	rsp, err := c.ApproveWorkspaceAgentProposalWithBody(ctx, workspaceId, proposalId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseApproveWorkspaceAgentProposalResponse(rsp)
+}
+
+// ApproveWorkspaceAgentProposalWithResponse Let a held agent action take effect, still attributed to the agent
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/approve (the `ApproveWorkspaceAgentProposal` operationId).
+func (c *ClientWithResponses) ApproveWorkspaceAgentProposalWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, body ApproveWorkspaceAgentProposalJSONRequestBody, reqEditors ...RequestEditorFn) (*ApproveWorkspaceAgentProposalResponse, error) {
+	rsp, err := c.ApproveWorkspaceAgentProposal(ctx, workspaceId, proposalId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -104996,6 +105131,7 @@ func (response ListWorkspaceAgentProposals500ApplicationProblemPlusJSONResponse)
 type ApproveWorkspaceAgentProposalRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	ProposalId  ProposalId  `json:"proposalId"`
+	Body        *ApproveWorkspaceAgentProposalJSONRequestBody
 }
 
 type ApproveWorkspaceAgentProposalResponseObject interface {
@@ -132416,6 +132552,16 @@ func (sh *strictHandler) ApproveWorkspaceAgentProposal(w http.ResponseWriter, r 
 
 	request.WorkspaceId = workspaceId
 	request.ProposalId = proposalId
+
+	var body ApproveWorkspaceAgentProposalJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ApproveWorkspaceAgentProposal(ctx, request.(ApproveWorkspaceAgentProposalRequestObject))

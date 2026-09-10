@@ -247,6 +247,21 @@ export function failureMessage(failure: AgentFailure): string {
 	}
 }
 
+export type ChangePart = components["schemas"]["ChangePart"];
+
+export const changePartLabels: Record<ChangePart, string> = {
+	title: "Title",
+	description: "Description",
+	state: "Status",
+	priority: "Priority",
+	assignee: "Assignee",
+	estimate: "Estimate",
+	dueOn: "Due date",
+	cycle: "Cycle",
+	project: "Project",
+	labels: "Labels",
+};
+
 export function proposalSummary(proposal: AgentProposal): string {
 	switch (proposal.action) {
 		case "comment":

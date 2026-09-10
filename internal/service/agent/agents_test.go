@@ -595,7 +595,7 @@ func TestAnApprovedProposalCannotBeApprovedTwice(t *testing.T) {
 			Status:      entity.AgentProposalApplied,
 		}, nil)
 
-	_, err := h.service.Approve(context.Background(), h.workspaceID, proposalID)
+	_, err := h.service.Approve(context.Background(), h.workspaceID, proposalID, nil)
 
 	if !errors.Is(err, entity.ErrAgentProposalSettled) {
 		t.Fatalf(
@@ -897,7 +897,7 @@ func TestAMemberDoesNotRatifyWhatATeamHeld(t *testing.T) {
 	}
 
 	if _, err := h.service.Approve(
-		context.Background(), h.workspaceID, uuid.New(),
+		context.Background(), h.workspaceID, uuid.New(), nil,
 	); !errors.Is(err, entity.ErrAccountForbidden) {
 		t.Fatalf(
 			"a member approved a held write: err = %v, want forbidden. A team holds an agent's "+

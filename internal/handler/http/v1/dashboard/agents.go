@@ -242,7 +242,15 @@ func (h *handler) ApproveWorkspaceAgentProposal(
 	ctx context.Context,
 	request api.ApproveWorkspaceAgentProposalRequestObject,
 ) (api.ApproveWorkspaceAgentProposalResponseObject, error) {
-	proposal, err := h.agents.Approve(ctx, request.WorkspaceId, request.ProposalId)
+	var accepted []entity.ChangePart
+
+	if request.Body != nil && request.Body.Accept != nil {
+		for _, part := range *request.Body.Accept {
+			accepted = append(accepted, entity.ChangePart(part))
+		}
+	}
+
+	proposal, err := h.agents.Approve(ctx, request.WorkspaceId, request.ProposalId, accepted)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil

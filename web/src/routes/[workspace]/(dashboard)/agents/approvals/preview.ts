@@ -22,6 +22,16 @@ export const approvalsPreviewStates: Record<string, ApprovalsPreview> = import.m
 							action: "issue_edit",
 							status: "pending",
 							title: "Payment retries drop the idempotency key",
+							description:
+								"## What happens\n\nThe retry sends a fresh key, so the gateway takes it as a new payment.\n\n## What should happen\n\nThe key from the first attempt travels with every retry.",
+							priority: "high",
+							parts: ["title", "description", "priority"],
+							held: {
+								title: "Payments retry weirdly",
+								description: "Sometimes a card is charged twice. Not sure why yet.",
+								stateName: "Todo",
+								priority: "none",
+							},
 							createdAt: "2026-08-05T11:40:00Z",
 						},
 						{

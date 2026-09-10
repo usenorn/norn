@@ -2285,6 +2285,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/ProposalId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApproveAgentProposalRequest' }
       responses:
         '200':
           description: The settled proposal, applied or carrying why it could not be
@@ -10698,6 +10703,21 @@ components:
       type: string
       enum: [pending, rejected, applied, failed]
 
+    ApproveAgentProposalRequest:
+      type: object
+      properties:
+        accept:
+          type: array
+          description: >-
+            The parts of the change to take. Naming none takes all of it, which is what an
+            approver who did not choose meant.
+          items: { $ref: '#/components/schemas/ChangePart' }
+
+    ChangePart:
+      type: string
+      description: One thing a proposal asks to change, decided on its own.
+      enum: [title, description, state, priority, assignee, estimate, dueOn, cycle, project, labels]
+
     AgentProposal:
       type: object
       required: [id, agentId, agentName, teamId, action, status, createdAt]
@@ -10716,6 +10736,13 @@ components:
         stateId: { type: string, format: uuid }
         title: { type: string }
         description: { type: string }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+        cleared:
+          type: array
+          description: The parts this proposal asks to empty rather than to set.
+          items: { $ref: '#/components/schemas/ChangePart' }
         reasoning: { $ref: '#/components/schemas/AgentReasoning' }
         issueReference:
           type: string
@@ -10727,6 +10754,14 @@ components:
         stateName:
           type: string
           description: The state a state change would move the issue to
+        parts:
+          type: array
+          description: >-
+            What this proposal actually asks to change, so an approver is shown the four things
+            it proposes rather than the ten it could have.
+          items: { $ref: '#/components/schemas/ChangePart' }
+        held:
+          $ref: '#/components/schemas/AgentProposalHeld'
         questions:
           type: array
           description: >-
@@ -10737,6 +10772,17 @@ components:
         decidedAt: { type: string, format: date-time }
         failure: { type: string }
         createdAt: { type: string, format: date-time }
+
+    AgentProposalHeld:
+      type: object
+      description: >-
+        What the issue says now, beside what the proposal would make it say. Approving without
+        this is approving text nobody read.
+      properties:
+        title: { type: string }
+        description: { type: string }
+        stateName: { type: string }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
 
     AgentUnusableProblem:
       allOf:

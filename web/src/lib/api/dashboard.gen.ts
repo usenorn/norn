@@ -6805,6 +6805,15 @@ export interface components {
         AgentAction: "comment" | "state_change" | "issue_edit" | "issue_create";
         /** @enum {string} */
         AgentProposalStatus: "pending" | "rejected" | "applied" | "failed";
+        ApproveAgentProposalRequest: {
+            /** @description The parts of the change to take. Naming none takes all of it, which is what an approver who did not choose meant. */
+            accept?: components["schemas"]["ChangePart"][];
+        };
+        /**
+         * @description One thing a proposal asks to change, decided on its own.
+         * @enum {string}
+         */
+        ChangePart: "title" | "description" | "state" | "priority" | "assignee" | "estimate" | "dueOn" | "cycle" | "project" | "labels";
         AgentProposal: {
             /** Format: uuid */
             id: string;
@@ -6825,6 +6834,13 @@ export interface components {
             stateId?: string;
             title?: string;
             description?: string;
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+            /** @description The parts this proposal asks to empty rather than to set. */
+            cleared?: components["schemas"]["ChangePart"][];
             reasoning?: components["schemas"]["AgentReasoning"];
             /** @description So an approver can open the issue the proposal is about */
             issueReference?: string;
@@ -6833,6 +6849,9 @@ export interface components {
             teamKey?: string;
             /** @description The state a state change would move the issue to */
             stateName?: string;
+            /** @description What this proposal actually asks to change, so an approver is shown the four things it proposes rather than the ten it could have. */
+            parts?: components["schemas"]["ChangePart"][];
+            held?: components["schemas"]["AgentProposalHeld"];
             /** @description Questions the agent asked on this issue that nobody answered, so approving the proposal also ratifies the default it worked on. */
             questions?: components["schemas"]["IssueQuestion"][];
             /** Format: uuid */
@@ -6842,6 +6861,13 @@ export interface components {
             failure?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        /** @description What the issue says now, beside what the proposal would make it say. Approving without this is approving text nobody read. */
+        AgentProposalHeld: {
+            title?: string;
+            description?: string;
+            stateName?: string;
+            priority?: components["schemas"]["IssuePriority"];
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -11954,7 +11980,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApproveAgentProposalRequest"];
+            };
+        };
         responses: {
             /** @description The settled proposal, applied or carrying why it could not be */
             200: {
