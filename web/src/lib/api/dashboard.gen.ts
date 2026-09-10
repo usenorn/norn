@@ -2540,6 +2540,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issue-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read the issues you have started writing and not raised */
+        get: operations["listWorkspaceIssueDrafts"];
+        /**
+         * Keep what has been written so far
+         * @description Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+         */
+        put: operations["saveWorkspaceIssueDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issue-drafts/{draftId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                draftId: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Throw away a draft */
+        delete: operations["deleteWorkspaceIssueDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/status": {
         parameters: {
             query?: never;
@@ -4970,6 +5013,70 @@ export interface components {
             beforeIssueId?: string;
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
             clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
+        };
+        IssueDraftList: {
+            drafts: components["schemas"]["IssueDraft"][];
+        };
+        IssueDraft: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            teamId?: string;
+            title: string;
+            description: string;
+            descriptionDoc?: components["schemas"]["Document"];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            /** Format: uuid */
+            parentIssueId?: string;
+            labelIds?: string[];
+            attachmentIds?: string[];
+            priority: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SaveIssueDraftRequest: {
+            /**
+             * Format: uuid
+             * @description The draft to keep writing; absent starts another.
+             */
+            draftId?: string;
+            /** Format: uuid */
+            teamId?: string;
+            title?: string;
+            description?: string;
+            descriptionDoc?: components["schemas"]["Document"];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            /** Format: uuid */
+            parentIssueId?: string;
+            labelIds?: string[];
+            attachmentIds?: string[];
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
         };
         DescriptionRevisionList: {
             revisions: components["schemas"]["DescriptionRevision"][];
@@ -8482,6 +8589,7 @@ export interface components {
         RunnerId: string;
         ProposalId: string;
         StateId: string;
+        DraftId: string;
         RevisionId: string;
         /** @description How many revisions to return, newest first. */
         RevisionLimit: number;
@@ -13826,6 +13934,88 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["IssueConflict"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your drafts, most recently written first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDraftList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    saveWorkspaceIssueDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveIssueDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description The draft as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDraft"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceIssueDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                draftId: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The draft is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

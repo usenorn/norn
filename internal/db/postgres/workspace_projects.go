@@ -131,11 +131,13 @@ var WorkspaceProjectWhere = struct {
 var WorkspaceProjectRels = struct {
 	LeadAccount                          string
 	Workspace                            string
+	ProjectWorkspaceIssueDrafts          string
 	ProjectWorkspaceProjectLinks         string
 	ProjectWorkspaceProjectStatusUpdates string
 }{
 	LeadAccount:                          "LeadAccount",
 	Workspace:                            "Workspace",
+	ProjectWorkspaceIssueDrafts:          "ProjectWorkspaceIssueDrafts",
 	ProjectWorkspaceProjectLinks:         "ProjectWorkspaceProjectLinks",
 	ProjectWorkspaceProjectStatusUpdates: "ProjectWorkspaceProjectStatusUpdates",
 }
@@ -144,6 +146,7 @@ var WorkspaceProjectRels = struct {
 type workspaceProjectR struct {
 	LeadAccount                          *Account                          `boil:"LeadAccount" json:"LeadAccount" toml:"LeadAccount" yaml:"LeadAccount"`
 	Workspace                            *Workspace                        `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	ProjectWorkspaceIssueDrafts          WorkspaceIssueDraftSlice          `boil:"ProjectWorkspaceIssueDrafts" json:"ProjectWorkspaceIssueDrafts" toml:"ProjectWorkspaceIssueDrafts" yaml:"ProjectWorkspaceIssueDrafts"`
 	ProjectWorkspaceProjectLinks         WorkspaceProjectLinkSlice         `boil:"ProjectWorkspaceProjectLinks" json:"ProjectWorkspaceProjectLinks" toml:"ProjectWorkspaceProjectLinks" yaml:"ProjectWorkspaceProjectLinks"`
 	ProjectWorkspaceProjectStatusUpdates WorkspaceProjectStatusUpdateSlice `boil:"ProjectWorkspaceProjectStatusUpdates" json:"ProjectWorkspaceProjectStatusUpdates" toml:"ProjectWorkspaceProjectStatusUpdates" yaml:"ProjectWorkspaceProjectStatusUpdates"`
 }
@@ -183,6 +186,22 @@ func (r *workspaceProjectR) GetWorkspace() *Workspace {
 	}
 
 	return r.Workspace
+}
+
+func (o *WorkspaceProject) GetProjectWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetProjectWorkspaceIssueDrafts()
+}
+
+func (r *workspaceProjectR) GetProjectWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ProjectWorkspaceIssueDrafts
 }
 
 func (o *WorkspaceProject) GetProjectWorkspaceProjectLinks() WorkspaceProjectLinkSlice {
@@ -555,6 +574,20 @@ func (o *WorkspaceProject) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	return Workspaces(queryMods...)
 }
 
+// ProjectWorkspaceIssueDrafts retrieves all the workspace_issue_draft's WorkspaceIssueDrafts with an executor via project_id column.
+func (o *WorkspaceProject) ProjectWorkspaceIssueDrafts(mods ...qm.QueryMod) workspaceIssueDraftQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_drafts\".\"project_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueDrafts(queryMods...)
+}
+
 // ProjectWorkspaceProjectLinks retrieves all the workspace_project_link's WorkspaceProjectLinks with an executor via project_id column.
 func (o *WorkspaceProject) ProjectWorkspaceProjectLinks(mods ...qm.QueryMod) workspaceProjectLinkQuery {
 	var queryMods []qm.QueryMod
@@ -819,6 +852,119 @@ func (workspaceProjectL) LoadWorkspace(ctx context.Context, e boil.ContextExecut
 					foreign.R = &workspaceR{}
 				}
 				foreign.R.WorkspaceProjects = append(foreign.R.WorkspaceProjects, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadProjectWorkspaceIssueDrafts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceProjectL) LoadProjectWorkspaceIssueDrafts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceProject any, mods queries.Applicator) error {
+	var slice []*WorkspaceProject
+	var object *WorkspaceProject
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceProject.(*WorkspaceProject)
+		if !ok {
+			object = new(WorkspaceProject)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceProject)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceProject))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceProject.(*[]*WorkspaceProject)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceProject)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceProject))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceProjectR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceProjectR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_drafts`),
+		qm.WhereIn(`workspace_issue_drafts.project_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_drafts")
+	}
+
+	var resultSlice []*WorkspaceIssueDraft
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_drafts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_drafts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_drafts")
+	}
+
+	if len(workspaceIssueDraftAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ProjectWorkspaceIssueDrafts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueDraftR{}
+			}
+			foreign.R.Project = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ProjectID) {
+				local.R.ProjectWorkspaceIssueDrafts = append(local.R.ProjectWorkspaceIssueDrafts, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueDraftR{}
+				}
+				foreign.R.Project = local
 				break
 			}
 		}
@@ -1175,6 +1321,133 @@ func (o *WorkspaceProject) SetWorkspace(ctx context.Context, exec boil.ContextEx
 		}
 	} else {
 		related.R.WorkspaceProjects = append(related.R.WorkspaceProjects, o)
+	}
+
+	return nil
+}
+
+// AddProjectWorkspaceIssueDrafts adds the given related objects to the existing relationships
+// of the workspace_project, optionally inserting them as new records.
+// Appends related to o.R.ProjectWorkspaceIssueDrafts.
+// Sets related.R.Project appropriately.
+func (o *WorkspaceProject) AddProjectWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueDraft) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ProjectID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_drafts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"project_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueDraftPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ProjectID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceProjectR{
+			ProjectWorkspaceIssueDrafts: related,
+		}
+	} else {
+		o.R.ProjectWorkspaceIssueDrafts = append(o.R.ProjectWorkspaceIssueDrafts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueDraftR{
+				Project: o,
+			}
+		} else {
+			rel.R.Project = o
+		}
+	}
+	return nil
+}
+
+// SetProjectWorkspaceIssueDrafts removes all previously related items of the
+// workspace_project replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Project's ProjectWorkspaceIssueDrafts accordingly.
+// Replaces o.R.ProjectWorkspaceIssueDrafts with related.
+// Sets related.R.Project's ProjectWorkspaceIssueDrafts accordingly.
+func (o *WorkspaceProject) SetProjectWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueDraft) error {
+	query := "update \"workspace_issue_drafts\" set \"project_id\" = null where \"project_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ProjectWorkspaceIssueDrafts {
+			queries.SetScanner(&rel.ProjectID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Project = nil
+		}
+		o.R.ProjectWorkspaceIssueDrafts = nil
+	}
+
+	return o.AddProjectWorkspaceIssueDrafts(ctx, exec, insert, related...)
+}
+
+// RemoveProjectWorkspaceIssueDrafts relationships from objects passed in.
+// Removes related items from R.ProjectWorkspaceIssueDrafts (uses pointer comparison, removal does not keep order)
+// Sets related.R.Project.
+func (o *WorkspaceProject) RemoveProjectWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueDraft) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ProjectID, nil)
+		if rel.R != nil {
+			rel.R.Project = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("project_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ProjectWorkspaceIssueDrafts {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ProjectWorkspaceIssueDrafts)
+			if ln > 1 && i < ln-1 {
+				o.R.ProjectWorkspaceIssueDrafts[i] = o.R.ProjectWorkspaceIssueDrafts[ln-1]
+			}
+			o.R.ProjectWorkspaceIssueDrafts = o.R.ProjectWorkspaceIssueDrafts[:ln-1]
+			break
+		}
 	}
 
 	return nil

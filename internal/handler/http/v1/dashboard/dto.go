@@ -2955,3 +2955,70 @@ func descriptionRevisionDTOs(revisions []entity.IssueDescriptionRevision) []api.
 
 	return converted
 }
+
+func issueDraftDTOs(drafts []entity.IssueDraft) []api.IssueDraft {
+	converted := make([]api.IssueDraft, 0, len(drafts))
+
+	for _, draft := range drafts {
+		converted = append(converted, issueDraftDTO(draft))
+	}
+
+	return converted
+}
+
+func issueDraftDTO(draft entity.IssueDraft) api.IssueDraft {
+	dto := api.IssueDraft{
+		Id:             draft.ID,
+		WorkspaceId:    draft.WorkspaceID,
+		Title:          draft.Title,
+		Description:    draft.Description,
+		DescriptionDoc: documentDTO(draft.DescriptionDoc),
+		LabelIds:       identifierDTOs(draft.LabelIDs),
+		AttachmentIds:  identifierDTOs(draft.AttachmentIDs),
+		Priority:       api.IssuePriority(draft.Priority),
+		CreatedAt:      draft.CreatedAt,
+		UpdatedAt:      draft.UpdatedAt,
+	}
+
+	for target, held := range map[**uuid.UUID]uuid.UUID{
+		&dto.TeamId:        draft.TeamID,
+		&dto.StateId:       draft.StateID,
+		&dto.ProjectId:     draft.ProjectID,
+		&dto.CycleId:       draft.CycleID,
+		&dto.AssigneeId:    draft.AssigneeAccountID,
+		&dto.ParentIssueId: draft.ParentIssueID,
+	} {
+		if held != uuid.Nil {
+			named := held
+			*target = &named
+		}
+	}
+
+	if draft.Estimate > 0 {
+		estimate := int32(draft.Estimate)
+		dto.Estimate = &estimate
+	}
+
+	if due, err := time.Parse(time.DateOnly, draft.DueOn); err == nil {
+		on := openapi_types.Date{Time: due}
+		dto.DueOn = &on
+	}
+
+	return dto
+}
+
+func identifierDTOs(ids []uuid.UUID) *[]uuid.UUID {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	return &ids
+}
+
+func identifiersOf(ids *[]uuid.UUID) []uuid.UUID {
+	if ids == nil {
+		return nil
+	}
+
+	return *ids
+}

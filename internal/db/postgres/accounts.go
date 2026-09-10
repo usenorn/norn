@@ -224,6 +224,8 @@ var AccountRels = struct {
 	DelegatedByAccountWorkspaceIssueDelegations     string
 	RecalledByAccountWorkspaceIssueDelegations      string
 	AuthorAccountWorkspaceIssueDescriptionRevisions string
+	WorkspaceIssueDrafts                            string
+	AssigneeAccountWorkspaceIssueDrafts             string
 	AnsweredByAccountWorkspaceIssueQuestions        string
 	AskedByAccountWorkspaceIssueQuestions           string
 	SettledByAccountWorkspaceIssueQuestions         string
@@ -266,6 +268,8 @@ var AccountRels = struct {
 	DelegatedByAccountWorkspaceIssueDelegations:     "DelegatedByAccountWorkspaceIssueDelegations",
 	RecalledByAccountWorkspaceIssueDelegations:      "RecalledByAccountWorkspaceIssueDelegations",
 	AuthorAccountWorkspaceIssueDescriptionRevisions: "AuthorAccountWorkspaceIssueDescriptionRevisions",
+	WorkspaceIssueDrafts:                            "WorkspaceIssueDrafts",
+	AssigneeAccountWorkspaceIssueDrafts:             "AssigneeAccountWorkspaceIssueDrafts",
 	AnsweredByAccountWorkspaceIssueQuestions:        "AnsweredByAccountWorkspaceIssueQuestions",
 	AskedByAccountWorkspaceIssueQuestions:           "AskedByAccountWorkspaceIssueQuestions",
 	SettledByAccountWorkspaceIssueQuestions:         "SettledByAccountWorkspaceIssueQuestions",
@@ -311,6 +315,8 @@ type accountR struct {
 	DelegatedByAccountWorkspaceIssueDelegations     WorkspaceIssueDelegationSlice          `boil:"DelegatedByAccountWorkspaceIssueDelegations" json:"DelegatedByAccountWorkspaceIssueDelegations" toml:"DelegatedByAccountWorkspaceIssueDelegations" yaml:"DelegatedByAccountWorkspaceIssueDelegations"`
 	RecalledByAccountWorkspaceIssueDelegations      WorkspaceIssueDelegationSlice          `boil:"RecalledByAccountWorkspaceIssueDelegations" json:"RecalledByAccountWorkspaceIssueDelegations" toml:"RecalledByAccountWorkspaceIssueDelegations" yaml:"RecalledByAccountWorkspaceIssueDelegations"`
 	AuthorAccountWorkspaceIssueDescriptionRevisions WorkspaceIssueDescriptionRevisionSlice `boil:"AuthorAccountWorkspaceIssueDescriptionRevisions" json:"AuthorAccountWorkspaceIssueDescriptionRevisions" toml:"AuthorAccountWorkspaceIssueDescriptionRevisions" yaml:"AuthorAccountWorkspaceIssueDescriptionRevisions"`
+	WorkspaceIssueDrafts                            WorkspaceIssueDraftSlice               `boil:"WorkspaceIssueDrafts" json:"WorkspaceIssueDrafts" toml:"WorkspaceIssueDrafts" yaml:"WorkspaceIssueDrafts"`
+	AssigneeAccountWorkspaceIssueDrafts             WorkspaceIssueDraftSlice               `boil:"AssigneeAccountWorkspaceIssueDrafts" json:"AssigneeAccountWorkspaceIssueDrafts" toml:"AssigneeAccountWorkspaceIssueDrafts" yaml:"AssigneeAccountWorkspaceIssueDrafts"`
 	AnsweredByAccountWorkspaceIssueQuestions        WorkspaceIssueQuestionSlice            `boil:"AnsweredByAccountWorkspaceIssueQuestions" json:"AnsweredByAccountWorkspaceIssueQuestions" toml:"AnsweredByAccountWorkspaceIssueQuestions" yaml:"AnsweredByAccountWorkspaceIssueQuestions"`
 	AskedByAccountWorkspaceIssueQuestions           WorkspaceIssueQuestionSlice            `boil:"AskedByAccountWorkspaceIssueQuestions" json:"AskedByAccountWorkspaceIssueQuestions" toml:"AskedByAccountWorkspaceIssueQuestions" yaml:"AskedByAccountWorkspaceIssueQuestions"`
 	SettledByAccountWorkspaceIssueQuestions         WorkspaceIssueQuestionSlice            `boil:"SettledByAccountWorkspaceIssueQuestions" json:"SettledByAccountWorkspaceIssueQuestions" toml:"SettledByAccountWorkspaceIssueQuestions" yaml:"SettledByAccountWorkspaceIssueQuestions"`
@@ -702,6 +708,38 @@ func (r *accountR) GetAuthorAccountWorkspaceIssueDescriptionRevisions() Workspac
 	}
 
 	return r.AuthorAccountWorkspaceIssueDescriptionRevisions
+}
+
+func (o *Account) GetWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceIssueDrafts()
+}
+
+func (r *accountR) GetWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceIssueDrafts
+}
+
+func (o *Account) GetAssigneeAccountWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAssigneeAccountWorkspaceIssueDrafts()
+}
+
+func (r *accountR) GetAssigneeAccountWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.AssigneeAccountWorkspaceIssueDrafts
 }
 
 func (o *Account) GetAnsweredByAccountWorkspaceIssueQuestions() WorkspaceIssueQuestionSlice {
@@ -1625,6 +1663,34 @@ func (o *Account) AuthorAccountWorkspaceIssueDescriptionRevisions(mods ...qm.Que
 	)
 
 	return WorkspaceIssueDescriptionRevisions(queryMods...)
+}
+
+// WorkspaceIssueDrafts retrieves all the workspace_issue_draft's WorkspaceIssueDrafts with an executor.
+func (o *Account) WorkspaceIssueDrafts(mods ...qm.QueryMod) workspaceIssueDraftQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_drafts\".\"account_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueDrafts(queryMods...)
+}
+
+// AssigneeAccountWorkspaceIssueDrafts retrieves all the workspace_issue_draft's WorkspaceIssueDrafts with an executor via assignee_account_id column.
+func (o *Account) AssigneeAccountWorkspaceIssueDrafts(mods ...qm.QueryMod) workspaceIssueDraftQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_drafts\".\"assignee_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueDrafts(queryMods...)
 }
 
 // AnsweredByAccountWorkspaceIssueQuestions retrieves all the workspace_issue_question's WorkspaceIssueQuestions with an executor via answered_by_account_id column.
@@ -4474,6 +4540,232 @@ func (accountL) LoadAuthorAccountWorkspaceIssueDescriptionRevisions(ctx context.
 					foreign.R = &workspaceIssueDescriptionRevisionR{}
 				}
 				foreign.R.AuthorAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceIssueDrafts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadWorkspaceIssueDrafts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_drafts`),
+		qm.WhereIn(`workspace_issue_drafts.account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_drafts")
+	}
+
+	var resultSlice []*WorkspaceIssueDraft
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_drafts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_drafts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_drafts")
+	}
+
+	if len(workspaceIssueDraftAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceIssueDrafts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueDraftR{}
+			}
+			foreign.R.Account = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AccountID {
+				local.R.WorkspaceIssueDrafts = append(local.R.WorkspaceIssueDrafts, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueDraftR{}
+				}
+				foreign.R.Account = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadAssigneeAccountWorkspaceIssueDrafts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadAssigneeAccountWorkspaceIssueDrafts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_drafts`),
+		qm.WhereIn(`workspace_issue_drafts.assignee_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_drafts")
+	}
+
+	var resultSlice []*WorkspaceIssueDraft
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_drafts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_drafts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_drafts")
+	}
+
+	if len(workspaceIssueDraftAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.AssigneeAccountWorkspaceIssueDrafts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueDraftR{}
+			}
+			foreign.R.AssigneeAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.AssigneeAccountID) {
+				local.R.AssigneeAccountWorkspaceIssueDrafts = append(local.R.AssigneeAccountWorkspaceIssueDrafts, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueDraftR{}
+				}
+				foreign.R.AssigneeAccount = local
 				break
 			}
 		}
@@ -8835,6 +9127,186 @@ func (o *Account) RemoveAuthorAccountWorkspaceIssueDescriptionRevisions(ctx cont
 				o.R.AuthorAccountWorkspaceIssueDescriptionRevisions[i] = o.R.AuthorAccountWorkspaceIssueDescriptionRevisions[ln-1]
 			}
 			o.R.AuthorAccountWorkspaceIssueDescriptionRevisions = o.R.AuthorAccountWorkspaceIssueDescriptionRevisions[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddWorkspaceIssueDrafts adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceIssueDrafts.
+// Sets related.R.Account appropriately.
+func (o *Account) AddWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueDraft) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_drafts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueDraftPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			WorkspaceIssueDrafts: related,
+		}
+	} else {
+		o.R.WorkspaceIssueDrafts = append(o.R.WorkspaceIssueDrafts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueDraftR{
+				Account: o,
+			}
+		} else {
+			rel.R.Account = o
+		}
+	}
+	return nil
+}
+
+// AddAssigneeAccountWorkspaceIssueDrafts adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.AssigneeAccountWorkspaceIssueDrafts.
+// Sets related.R.AssigneeAccount appropriately.
+func (o *Account) AddAssigneeAccountWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueDraft) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.AssigneeAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_drafts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"assignee_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueDraftPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.AssigneeAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			AssigneeAccountWorkspaceIssueDrafts: related,
+		}
+	} else {
+		o.R.AssigneeAccountWorkspaceIssueDrafts = append(o.R.AssigneeAccountWorkspaceIssueDrafts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueDraftR{
+				AssigneeAccount: o,
+			}
+		} else {
+			rel.R.AssigneeAccount = o
+		}
+	}
+	return nil
+}
+
+// SetAssigneeAccountWorkspaceIssueDrafts removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.AssigneeAccount's AssigneeAccountWorkspaceIssueDrafts accordingly.
+// Replaces o.R.AssigneeAccountWorkspaceIssueDrafts with related.
+// Sets related.R.AssigneeAccount's AssigneeAccountWorkspaceIssueDrafts accordingly.
+func (o *Account) SetAssigneeAccountWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueDraft) error {
+	query := "update \"workspace_issue_drafts\" set \"assignee_account_id\" = null where \"assignee_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.AssigneeAccountWorkspaceIssueDrafts {
+			queries.SetScanner(&rel.AssigneeAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.AssigneeAccount = nil
+		}
+		o.R.AssigneeAccountWorkspaceIssueDrafts = nil
+	}
+
+	return o.AddAssigneeAccountWorkspaceIssueDrafts(ctx, exec, insert, related...)
+}
+
+// RemoveAssigneeAccountWorkspaceIssueDrafts relationships from objects passed in.
+// Removes related items from R.AssigneeAccountWorkspaceIssueDrafts (uses pointer comparison, removal does not keep order)
+// Sets related.R.AssigneeAccount.
+func (o *Account) RemoveAssigneeAccountWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueDraft) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.AssigneeAccountID, nil)
+		if rel.R != nil {
+			rel.R.AssigneeAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("assignee_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.AssigneeAccountWorkspaceIssueDrafts {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.AssigneeAccountWorkspaceIssueDrafts)
+			if ln > 1 && i < ln-1 {
+				o.R.AssigneeAccountWorkspaceIssueDrafts[i] = o.R.AssigneeAccountWorkspaceIssueDrafts[ln-1]
+			}
+			o.R.AssigneeAccountWorkspaceIssueDrafts = o.R.AssigneeAccountWorkspaceIssueDrafts[:ln-1]
 			break
 		}
 	}

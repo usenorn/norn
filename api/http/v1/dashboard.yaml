@@ -3866,6 +3866,62 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issue-drafts:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueDrafts
+      summary: Read the issues you have started writing and not raised
+      responses:
+        '200':
+          description: Your drafts, most recently written first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueDraftList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [issues]
+      operationId: saveWorkspaceIssueDraft
+      summary: Keep what has been written so far
+      description: >-
+        Send the draft's own id to keep writing one that exists, and none to start another. A
+        draft belongs to whoever wrote it and is never read by anybody else.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaveIssueDraftRequest' }
+      responses:
+        '200':
+          description: The draft as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueDraft' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issue-drafts/{draftId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DraftId'
+    delete:
+      tags: [issues]
+      operationId: deleteWorkspaceIssueDraft
+      summary: Throw away a draft
+      responses:
+        '204': { description: The draft is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/status:
     post:
       tags: [issues]
@@ -6826,6 +6882,12 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    DraftId:
+      name: draftId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
     RevisionId:
       name: revisionId
       in: path
@@ -7933,6 +7995,67 @@ components:
           items:
             type: string
             enum: [assignee, estimate, dueOn, cycle, project]
+
+    IssueDraftList:
+      type: object
+      required: [drafts]
+      properties:
+        drafts:
+          type: array
+          items: { $ref: '#/components/schemas/IssueDraft' }
+
+    IssueDraft:
+      type: object
+      required: [id, workspaceId, title, description, priority, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        parentIssueId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        attachmentIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SaveIssueDraftRequest:
+      type: object
+      properties:
+        draftId:
+          type: string
+          format: uuid
+          description: The draft to keep writing; absent starts another.
+        teamId: { type: string, format: uuid }
+        title: { type: string, maxLength: 256 }
+        description: { type: string }
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        parentIssueId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        attachmentIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
 
     DescriptionRevisionList:
       type: object

@@ -70,6 +70,7 @@ import (
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
+	issuedraftrepo "github.com/usenorn/norn/internal/repository/issuedraft"
 	issuefilterreferencerepo "github.com/usenorn/norn/internal/repository/issuefilterreference"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
@@ -143,6 +144,7 @@ import (
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
+	issuedraftsvc "github.com/usenorn/norn/internal/service/issuedraft"
 	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
@@ -204,6 +206,7 @@ var baseSet = wire.NewSet(
 	passwordresetrepo.Set,
 	signuprepo.Set,
 	issuerepo.Set,
+	issuedraftrepo.Set,
 	issuerevisionrepo.Set,
 	requestkeyrepo.Set,
 	activityrepo.Set,
@@ -283,6 +286,7 @@ var baseSet = wire.NewSet(
 	projectsvc.Set,
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
+	issuedraftsvc.Set,
 	issuequestionsvc.Set,
 	runnersvc.Set,
 	codebasesvc.Set,

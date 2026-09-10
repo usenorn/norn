@@ -6629,6 +6629,35 @@ type IssueDelegation struct {
 	RecalledByAccountId *openapi_types.UUID `json:"recalledByAccountId,omitempty"`
 }
 
+// IssueDraft defines model for IssueDraft.
+type IssueDraft struct {
+	AssigneeId    *openapi_types.UUID   `json:"assigneeId,omitempty"`
+	AttachmentIds *[]openapi_types.UUID `json:"attachmentIds,omitempty"`
+	CreatedAt     time.Time             `json:"createdAt"`
+	CycleId       *openapi_types.UUID   `json:"cycleId,omitempty"`
+	Description   string                `json:"description"`
+
+	// DescriptionDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	DescriptionDoc *Document             `json:"descriptionDoc,omitempty"`
+	DueOn          *openapi_types.Date   `json:"dueOn,omitempty"`
+	Estimate       *int32                `json:"estimate,omitempty"`
+	Id             openapi_types.UUID    `json:"id"`
+	LabelIds       *[]openapi_types.UUID `json:"labelIds,omitempty"`
+	ParentIssueId  *openapi_types.UUID   `json:"parentIssueId,omitempty"`
+	Priority       IssuePriority         `json:"priority"`
+	ProjectId      *openapi_types.UUID   `json:"projectId,omitempty"`
+	StateId        *openapi_types.UUID   `json:"stateId,omitempty"`
+	TeamId         *openapi_types.UUID   `json:"teamId,omitempty"`
+	Title          string                `json:"title"`
+	UpdatedAt      time.Time             `json:"updatedAt"`
+	WorkspaceId    openapi_types.UUID    `json:"workspaceId"`
+}
+
+// IssueDraftList defines model for IssueDraftList.
+type IssueDraftList struct {
+	Drafts []IssueDraft `json:"drafts"`
+}
+
 // IssueFilter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
 type IssueFilter struct {
 	All   *[]IssueFilter    `json:"all,omitempty"`
@@ -7662,6 +7691,29 @@ type SamlDescriptor struct {
 	ExpiresAt    time.Time `json:"expiresAt"`
 	SloUrl       *string   `json:"sloUrl,omitempty"`
 	SsoUrl       string    `json:"ssoUrl"`
+}
+
+// SaveIssueDraftRequest defines model for SaveIssueDraftRequest.
+type SaveIssueDraftRequest struct {
+	AssigneeId    *openapi_types.UUID   `json:"assigneeId,omitempty"`
+	AttachmentIds *[]openapi_types.UUID `json:"attachmentIds,omitempty"`
+	CycleId       *openapi_types.UUID   `json:"cycleId,omitempty"`
+	Description   *string               `json:"description,omitempty"`
+
+	// DescriptionDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	DescriptionDoc *Document `json:"descriptionDoc,omitempty"`
+
+	// DraftId The draft to keep writing; absent starts another.
+	DraftId       *openapi_types.UUID   `json:"draftId,omitempty"`
+	DueOn         *openapi_types.Date   `json:"dueOn,omitempty"`
+	Estimate      *int32                `json:"estimate,omitempty"`
+	LabelIds      *[]openapi_types.UUID `json:"labelIds,omitempty"`
+	ParentIssueId *openapi_types.UUID   `json:"parentIssueId,omitempty"`
+	Priority      *IssuePriority        `json:"priority,omitempty"`
+	ProjectId     *openapi_types.UUID   `json:"projectId,omitempty"`
+	StateId       *openapi_types.UUID   `json:"stateId,omitempty"`
+	TeamId        *openapi_types.UUID   `json:"teamId,omitempty"`
+	Title         *string               `json:"title,omitempty"`
 }
 
 // SavedView defines model for SavedView.
@@ -8825,6 +8877,9 @@ type DirectoryCursor = time.Time
 // DirectoryLimit defines model for DirectoryLimit.
 type DirectoryLimit = int32
 
+// DraftId defines model for DraftId.
+type DraftId = openapi_types.UUID
+
 // ExecutionId defines model for ExecutionId.
 type ExecutionId = string
 
@@ -9465,6 +9520,9 @@ type ConfigureWorkspaceImportJSONRequestBody = ConfigureImportRequest
 
 // CreateWorkspaceInvitationsJSONRequestBody defines body for CreateWorkspaceInvitations for application/json ContentType.
 type CreateWorkspaceInvitationsJSONRequestBody = CreateInvitationsRequest
+
+// SaveWorkspaceIssueDraftJSONRequestBody defines body for SaveWorkspaceIssueDraft for application/json ContentType.
+type SaveWorkspaceIssueDraftJSONRequestBody = SaveIssueDraftRequest
 
 // CreateWorkspaceIssueJSONRequestBody defines body for CreateWorkspaceIssue for application/json ContentType.
 type CreateWorkspaceIssueJSONRequestBody = CreateIssueRequest
@@ -10790,6 +10848,34 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/invitations/{invitationId}/resend (the `ResendWorkspaceInvitation` operationId).
 	ResendWorkspaceInvitation(ctx context.Context, workspaceId WorkspaceId, invitationId InvitationId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceIssueDrafts Read the issues you have started writing and not raised
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issue-drafts (the `ListWorkspaceIssueDrafts` operationId).
+	ListWorkspaceIssueDrafts(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SaveWorkspaceIssueDraftWithBody Keep what has been written so far
+	//
+	// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+	SaveWorkspaceIssueDraftWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SaveWorkspaceIssueDraft Keep what has been written so far
+	//
+	// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+	SaveWorkspaceIssueDraft(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteWorkspaceIssueDraft Throw away a draft
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/issue-drafts/{draftId} (the `DeleteWorkspaceIssueDraft` operationId).
+	DeleteWorkspaceIssueDraft(ctx context.Context, workspaceId WorkspaceId, draftId DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceIssues List the issues the caller may see, newest first
 	//
@@ -15068,6 +15154,74 @@ func (c *Client) RevokeWorkspaceInvitation(ctx context.Context, workspaceId Work
 // Corresponds with POST /workspaces/{workspaceId}/invitations/{invitationId}/resend (the `ResendWorkspaceInvitation` operationId).
 func (c *Client) ResendWorkspaceInvitation(ctx context.Context, workspaceId WorkspaceId, invitationId InvitationId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewResendWorkspaceInvitationRequest(c.Server, workspaceId, invitationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceIssueDrafts Read the issues you have started writing and not raised
+//
+// Corresponds with GET /workspaces/{workspaceId}/issue-drafts (the `ListWorkspaceIssueDrafts` operationId).
+func (c *Client) ListWorkspaceIssueDrafts(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceIssueDraftsRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SaveWorkspaceIssueDraftWithBody Keep what has been written so far
+//
+// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+func (c *Client) SaveWorkspaceIssueDraftWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSaveWorkspaceIssueDraftRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SaveWorkspaceIssueDraft Keep what has been written so far
+//
+// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+func (c *Client) SaveWorkspaceIssueDraft(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSaveWorkspaceIssueDraftRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteWorkspaceIssueDraft Throw away a draft
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/issue-drafts/{draftId} (the `DeleteWorkspaceIssueDraft` operationId).
+func (c *Client) DeleteWorkspaceIssueDraft(ctx context.Context, workspaceId WorkspaceId, draftId DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWorkspaceIssueDraftRequest(c.Server, workspaceId, draftId)
 	if err != nil {
 		return nil, err
 	}
@@ -24712,6 +24866,128 @@ func NewResendWorkspaceInvitationRequest(server string, workspaceId WorkspaceId,
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListWorkspaceIssueDraftsRequest constructs an http.Request for the ListWorkspaceIssueDrafts method
+func NewListWorkspaceIssueDraftsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issue-drafts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSaveWorkspaceIssueDraftRequest calls the generic SaveWorkspaceIssueDraft builder with application/json body
+func NewSaveWorkspaceIssueDraftRequest(server string, workspaceId WorkspaceId, body SaveWorkspaceIssueDraftJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSaveWorkspaceIssueDraftRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewSaveWorkspaceIssueDraftRequestWithBody constructs an http.Request for the SaveWorkspaceIssueDraft method, with any body, and a specified content type
+func NewSaveWorkspaceIssueDraftRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issue-drafts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteWorkspaceIssueDraftRequest constructs an http.Request for the DeleteWorkspaceIssueDraft method
+func NewDeleteWorkspaceIssueDraftRequest(server string, workspaceId WorkspaceId, draftId DraftId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "draftId", draftId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issue-drafts/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -35402,6 +35678,38 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/invitations/{invitationId}/resend (the `ResendWorkspaceInvitation` operationId).
 	ResendWorkspaceInvitationWithResponse(ctx context.Context, workspaceId WorkspaceId, invitationId InvitationId, reqEditors ...RequestEditorFn) (*ResendWorkspaceInvitationResponse, error)
 
+	// ListWorkspaceIssueDraftsWithResponse Read the issues you have started writing and not raised
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issue-drafts (the `ListWorkspaceIssueDrafts` operationId).
+	ListWorkspaceIssueDraftsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDraftsResponse, error)
+
+	// SaveWorkspaceIssueDraftWithBodyWithResponse Keep what has been written so far
+	//
+	// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+	SaveWorkspaceIssueDraftWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueDraftResponse, error)
+
+	// SaveWorkspaceIssueDraftWithResponse Keep what has been written so far
+	//
+	// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+	SaveWorkspaceIssueDraftWithResponse(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueDraftResponse, error)
+
+	// DeleteWorkspaceIssueDraftWithResponse Throw away a draft
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/issue-drafts/{draftId} (the `DeleteWorkspaceIssueDraft` operationId).
+	DeleteWorkspaceIssueDraftWithResponse(ctx context.Context, workspaceId WorkspaceId, draftId DraftId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueDraftResponse, error)
+
 	// ListWorkspaceIssuesWithResponse List the issues the caller may see, newest first
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -46014,6 +46322,213 @@ func (r ResendWorkspaceInvitationResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ResendWorkspaceInvitationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceIssueDraftsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *IssueDraftList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceIssueDraftsResponse) GetJSON200() *IssueDraftList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceIssueDraftsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceIssueDraftsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceIssueDraftsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceIssueDraftsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceIssueDraftsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceIssueDraftsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceIssueDraftsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceIssueDraftsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SaveWorkspaceIssueDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *IssueDraft
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SaveWorkspaceIssueDraftResponse) GetJSON200() *IssueDraft {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SaveWorkspaceIssueDraftResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SaveWorkspaceIssueDraftResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SaveWorkspaceIssueDraftResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SaveWorkspaceIssueDraftResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SaveWorkspaceIssueDraftResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SaveWorkspaceIssueDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SaveWorkspaceIssueDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SaveWorkspaceIssueDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SaveWorkspaceIssueDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteWorkspaceIssueDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteWorkspaceIssueDraftResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteWorkspaceIssueDraftResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteWorkspaceIssueDraftResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteWorkspaceIssueDraftResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteWorkspaceIssueDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteWorkspaceIssueDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteWorkspaceIssueDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteWorkspaceIssueDraftResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -62244,6 +62759,62 @@ func (c *ClientWithResponses) ResendWorkspaceInvitationWithResponse(ctx context.
 	return ParseResendWorkspaceInvitationResponse(rsp)
 }
 
+// ListWorkspaceIssueDraftsWithResponse Read the issues you have started writing and not raised
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issue-drafts (the `ListWorkspaceIssueDrafts` operationId).
+func (c *ClientWithResponses) ListWorkspaceIssueDraftsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDraftsResponse, error) {
+	rsp, err := c.ListWorkspaceIssueDrafts(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceIssueDraftsResponse(rsp)
+}
+
+// SaveWorkspaceIssueDraftWithBodyWithResponse Keep what has been written so far
+//
+// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+func (c *ClientWithResponses) SaveWorkspaceIssueDraftWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueDraftResponse, error) {
+	rsp, err := c.SaveWorkspaceIssueDraftWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSaveWorkspaceIssueDraftResponse(rsp)
+}
+
+// SaveWorkspaceIssueDraftWithResponse Keep what has been written so far
+//
+// Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-drafts (the `SaveWorkspaceIssueDraft` operationId).
+func (c *ClientWithResponses) SaveWorkspaceIssueDraftWithResponse(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueDraftResponse, error) {
+	rsp, err := c.SaveWorkspaceIssueDraft(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSaveWorkspaceIssueDraftResponse(rsp)
+}
+
+// DeleteWorkspaceIssueDraftWithResponse Throw away a draft
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/issue-drafts/{draftId} (the `DeleteWorkspaceIssueDraft` operationId).
+func (c *ClientWithResponses) DeleteWorkspaceIssueDraftWithResponse(ctx context.Context, workspaceId WorkspaceId, draftId DraftId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueDraftResponse, error) {
+	rsp, err := c.DeleteWorkspaceIssueDraft(ctx, workspaceId, draftId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteWorkspaceIssueDraftResponse(rsp)
+}
+
 // ListWorkspaceIssuesWithResponse List the issues the caller may see, newest first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -72683,6 +73254,171 @@ func ParseResendWorkspaceInvitationResponse(rsp *http.Response) (*ResendWorkspac
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceIssueDraftsResponse parses an HTTP response from a ListWorkspaceIssueDraftsWithResponse call
+func ParseListWorkspaceIssueDraftsResponse(rsp *http.Response) (*ListWorkspaceIssueDraftsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceIssueDraftsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest IssueDraftList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSaveWorkspaceIssueDraftResponse parses an HTTP response from a SaveWorkspaceIssueDraftWithResponse call
+func ParseSaveWorkspaceIssueDraftResponse(rsp *http.Response) (*SaveWorkspaceIssueDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SaveWorkspaceIssueDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest IssueDraft
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteWorkspaceIssueDraftResponse parses an HTTP response from a DeleteWorkspaceIssueDraftWithResponse call
+func ParseDeleteWorkspaceIssueDraftResponse(rsp *http.Response) (*DeleteWorkspaceIssueDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteWorkspaceIssueDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -84301,6 +85037,15 @@ type ServerInterface interface {
 	// ResendWorkspaceInvitation Issue a fresh link for a pending invitation, invalidating the previous one
 	// (POST /workspaces/{workspaceId}/invitations/{invitationId}/resend)
 	ResendWorkspaceInvitation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, invitationId InvitationId)
+	// ListWorkspaceIssueDrafts Read the issues you have started writing and not raised
+	// (GET /workspaces/{workspaceId}/issue-drafts)
+	ListWorkspaceIssueDrafts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SaveWorkspaceIssueDraft Keep what has been written so far
+	// (PUT /workspaces/{workspaceId}/issue-drafts)
+	SaveWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DeleteWorkspaceIssueDraft Throw away a draft
+	// (DELETE /workspaces/{workspaceId}/issue-drafts/{draftId})
+	DeleteWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, draftId DraftId)
 	// ListWorkspaceIssues List the issues the caller may see, newest first
 	// (GET /workspaces/{workspaceId}/issues)
 	ListWorkspaceIssues(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceIssuesParams)
@@ -85633,6 +86378,24 @@ func (_ Unimplemented) RevokeWorkspaceInvitation(w http.ResponseWriter, r *http.
 // ResendWorkspaceInvitation Issue a fresh link for a pending invitation, invalidating the previous one
 // (POST /workspaces/{workspaceId}/invitations/{invitationId}/resend)
 func (_ Unimplemented) ResendWorkspaceInvitation(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, invitationId InvitationId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueDrafts Read the issues you have started writing and not raised
+// (GET /workspaces/{workspaceId}/issue-drafts)
+func (_ Unimplemented) ListWorkspaceIssueDrafts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SaveWorkspaceIssueDraft Keep what has been written so far
+// (PUT /workspaces/{workspaceId}/issue-drafts)
+func (_ Unimplemented) SaveWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteWorkspaceIssueDraft Throw away a draft
+// (DELETE /workspaces/{workspaceId}/issue-drafts/{draftId})
+func (_ Unimplemented) DeleteWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, draftId DraftId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -90515,6 +91278,93 @@ func (siw *ServerInterfaceWrapper) ResendWorkspaceInvitation(w http.ResponseWrit
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ResendWorkspaceInvitation(w, r, workspaceId, invitationId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueDrafts operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueDrafts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueDrafts(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveWorkspaceIssueDraft operation middleware
+func (siw *ServerInterfaceWrapper) SaveWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveWorkspaceIssueDraft(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceIssueDraft operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "draftId" -------------
+	var draftId DraftId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "draftId", chi.URLParam(r, "draftId"), &draftId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "draftId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceIssueDraft(w, r, workspaceId, draftId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -98367,6 +99217,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore", wrapper.RestoreWorkspaceIssueDescriptionRevision)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issue-drafts", wrapper.ListWorkspaceIssueDrafts)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issue-drafts", wrapper.SaveWorkspaceIssueDraft)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issue-drafts/{draftId}", wrapper.DeleteWorkspaceIssueDraft)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/status", wrapper.SetWorkspaceIssueStatus)
@@ -109586,6 +110445,262 @@ func (response ResendWorkspaceInvitation409ApplicationProblemPlusJSONResponse) V
 type ResendWorkspaceInvitation500ApplicationProblemPlusJSONResponse Problem
 
 func (response ResendWorkspaceInvitation500ApplicationProblemPlusJSONResponse) VisitResendWorkspaceInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDraftsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceIssueDraftsResponseObject interface {
+	VisitListWorkspaceIssueDraftsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueDrafts200JSONResponse IssueDraftList
+
+func (response ListWorkspaceIssueDrafts200JSONResponse) VisitListWorkspaceIssueDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDrafts401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDrafts401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDrafts403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDrafts403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDrafts404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDrafts404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDrafts500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDrafts500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDraftsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueDraftRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SaveWorkspaceIssueDraftJSONRequestBody
+}
+
+type SaveWorkspaceIssueDraftResponseObject interface {
+	VisitSaveWorkspaceIssueDraftResponse(w http.ResponseWriter) error
+}
+
+type SaveWorkspaceIssueDraft200JSONResponse IssueDraft
+
+func (response SaveWorkspaceIssueDraft200JSONResponse) VisitSaveWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueDraft401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SaveWorkspaceIssueDraft401ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueDraft403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SaveWorkspaceIssueDraft403ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueDraft404ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveWorkspaceIssueDraft404ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueDraft422ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveWorkspaceIssueDraft422ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueDraft500ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveWorkspaceIssueDraft500ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueDraftRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DraftId     DraftId     `json:"draftId"`
+}
+
+type DeleteWorkspaceIssueDraftResponseObject interface {
+	VisitDeleteWorkspaceIssueDraftResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceIssueDraft204Response struct {
+}
+
+func (response DeleteWorkspaceIssueDraft204Response) VisitDeleteWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkspaceIssueDraft401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceIssueDraft401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueDraft403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceIssueDraft403ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueDraft404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceIssueDraft404ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueDraft500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceIssueDraft500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -127893,6 +129008,15 @@ type StrictServerInterface interface {
 	// ResendWorkspaceInvitation Issue a fresh link for a pending invitation, invalidating the previous one
 	// (POST /workspaces/{workspaceId}/invitations/{invitationId}/resend)
 	ResendWorkspaceInvitation(ctx context.Context, request ResendWorkspaceInvitationRequestObject) (ResendWorkspaceInvitationResponseObject, error)
+	// ListWorkspaceIssueDrafts Read the issues you have started writing and not raised
+	// (GET /workspaces/{workspaceId}/issue-drafts)
+	ListWorkspaceIssueDrafts(ctx context.Context, request ListWorkspaceIssueDraftsRequestObject) (ListWorkspaceIssueDraftsResponseObject, error)
+	// SaveWorkspaceIssueDraft Keep what has been written so far
+	// (PUT /workspaces/{workspaceId}/issue-drafts)
+	SaveWorkspaceIssueDraft(ctx context.Context, request SaveWorkspaceIssueDraftRequestObject) (SaveWorkspaceIssueDraftResponseObject, error)
+	// DeleteWorkspaceIssueDraft Throw away a draft
+	// (DELETE /workspaces/{workspaceId}/issue-drafts/{draftId})
+	DeleteWorkspaceIssueDraft(ctx context.Context, request DeleteWorkspaceIssueDraftRequestObject) (DeleteWorkspaceIssueDraftResponseObject, error)
 	// ListWorkspaceIssues List the issues the caller may see, newest first
 	// (GET /workspaces/{workspaceId}/issues)
 	ListWorkspaceIssues(ctx context.Context, request ListWorkspaceIssuesRequestObject) (ListWorkspaceIssuesResponseObject, error)
@@ -132039,6 +133163,92 @@ func (sh *strictHandler) ResendWorkspaceInvitation(w http.ResponseWriter, r *htt
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ResendWorkspaceInvitationResponseObject); ok {
 		if err := validResponse.VisitResendWorkspaceInvitationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueDrafts operation middleware
+func (sh *strictHandler) ListWorkspaceIssueDrafts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceIssueDraftsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueDrafts(ctx, request.(ListWorkspaceIssueDraftsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueDrafts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueDraftsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueDraftsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveWorkspaceIssueDraft operation middleware
+func (sh *strictHandler) SaveWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SaveWorkspaceIssueDraftRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SaveWorkspaceIssueDraftJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveWorkspaceIssueDraft(ctx, request.(SaveWorkspaceIssueDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveWorkspaceIssueDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveWorkspaceIssueDraftResponseObject); ok {
+		if err := validResponse.VisitSaveWorkspaceIssueDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceIssueDraft operation middleware
+func (sh *strictHandler) DeleteWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, draftId DraftId) {
+	var request DeleteWorkspaceIssueDraftRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DraftId = draftId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceIssueDraft(ctx, request.(DeleteWorkspaceIssueDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceIssueDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceIssueDraftResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceIssueDraftResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
