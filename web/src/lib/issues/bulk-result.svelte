@@ -30,7 +30,11 @@
 	});
 </script>
 
-<Alert.Root variant={(notApplied.length > 0 || unreadable) && !running ? "destructive" : "default"}>
+<Alert.Root
+	variant={(notApplied.length > 0 || unreadable) && !running ? "destructive" : "default"}
+	role={running ? "status" : "alert"}
+	aria-live={running ? "polite" : undefined}
+>
 	{#if running}
 		<CircleCheck aria-hidden="true" />
 		<Alert.Title>Working through the selection</Alert.Title>
