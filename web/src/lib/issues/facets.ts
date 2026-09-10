@@ -49,6 +49,25 @@ export const dueWindowLabels: Record<DueWindow, string> = {
 	later: "Later",
 };
 
+export const dueBuckets = [...dueWindows, "none"] as const;
+
+export type DueBucket = (typeof dueBuckets)[number];
+
+export const dueBucketLabels: Record<DueBucket, string> = {
+	...dueWindowLabels,
+	none: "No due date",
+};
+
+export const thisWeekDays = 7;
+
+export function dueBucketOf(due: string | undefined, today: string): DueBucket {
+	if (!due) return "none";
+	if (due < today) return "overdue";
+	if (due === today) return "today";
+
+	return due <= shiftDays(today, thisWeekDays) ? "week" : "later";
+}
+
 export type DuePreset = { label: string; value: string; hint: string };
 
 export function duePresets(today: string): DuePreset[] {
@@ -82,7 +101,7 @@ export function facetCount(facets: Facets): number {
 }
 
 function dueFilter(window: string, today: string): IssueFilter | undefined {
-	const weekEnd = shiftDays(today, 7);
+	const weekEnd = shiftDays(today, thisWeekDays);
 
 	switch (window) {
 		case "overdue":
@@ -90,9 +109,14 @@ function dueFilter(window: string, today: string): IssueFilter | undefined {
 		case "today":
 			return { field: "dueOn", op: "on", values: [today] };
 		case "week":
-			return { field: "dueOn", op: "before", values: [weekEnd] };
+			return {
+				all: [
+					{ field: "dueOn", op: "after", values: [today] },
+					{ field: "dueOn", op: "before", values: [shiftDays(weekEnd, 1)] },
+				],
+			};
 		case "later":
-			return { field: "dueOn", op: "after", values: [shiftDays(weekEnd, -1)] };
+			return { field: "dueOn", op: "after", values: [weekEnd] };
 		default:
 			return undefined;
 	}

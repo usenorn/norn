@@ -148,6 +148,7 @@ export const unknownNames: Record<Grouping, string> = {
 	priority: "Unknown priority",
 	assignee: "Unknown person",
 	project: "Unknown project",
+	due: "No due date",
 	none: "All issues",
 };
 
