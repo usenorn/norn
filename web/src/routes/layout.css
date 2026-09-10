@@ -336,8 +336,8 @@
 
 @utility notch-ink {
 	clip-path: var(--clip-notch);
-	background: var(--primary);
-	color: var(--primary-foreground);
+	background: var(--notch-ink-surface, var(--primary));
+	color: var(--notch-ink-fg, var(--primary-foreground));
 }
 
 @utility keycap {

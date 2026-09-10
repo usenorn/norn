@@ -1,3 +1,21 @@
+<script lang="ts" module>
+	import { tv, type VariantProps } from "tailwind-variants";
+
+	export const toastVariants = tv({
+		base: "notch-ink flex max-w-full items-center gap-2.5 px-3 py-2 text-md",
+		variants: {
+			tone: {
+				default: "[--keycap-lip:var(--ink-700)]",
+				failure:
+					"[--notch-ink-surface:var(--destructive)] [--notch-ink-fg:var(--destructive-foreground)] [--keycap-lip:var(--red-600)]",
+			},
+		},
+		defaultVariants: { tone: "default" },
+	});
+
+	export type ToastTone = VariantProps<typeof toastVariants>["tone"];
+</script>
+
 <script lang="ts">
 	import { cn } from "$lib/utils.js";
 
@@ -5,6 +23,7 @@
 		message,
 		href,
 		action = "Undo",
+		tone = "default",
 		onaction,
 		onnavigate,
 		class: className,
@@ -12,6 +31,7 @@
 		message: string;
 		href?: string;
 		action?: string;
+		tone?: ToastTone;
 		onaction?: () => void;
 		onnavigate?: () => void;
 		class?: string;
@@ -19,10 +39,10 @@
 </script>
 
 <div
-	class={cn(
-		"notch-ink flex max-w-full items-center gap-2.5 px-3 py-2 text-md [--keycap-lip:var(--ink-700)]",
-		className
-	)}
+	role={tone === "failure" ? "alert" : "status"}
+	aria-live={tone === "failure" ? "assertive" : "polite"}
+	aria-atomic="true"
+	class={cn(toastVariants({ tone }), className)}
 >
 	{#if href}
 		<a
