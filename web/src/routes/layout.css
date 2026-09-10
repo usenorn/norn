@@ -423,3 +423,107 @@
 		border: 3px solid transparent;
 	}
 }
+
+/* The editor writes blocks the prose plugin has no opinion about: a checklist item is a list
+   item whose marker is a real checkbox, a toggle is a details element the writer folds, and a
+   table needs its own borders. Placing these here keeps every editor and every rendered
+   description looking alike. */
+[data-slot="editor"] .ProseMirror ul[data-type="taskList"] {
+	list-style: none;
+	padding-left: 0;
+}
+
+[data-slot="editor"] .ProseMirror ul[data-type="taskList"] li {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	padding-left: 0;
+}
+
+[data-slot="editor"] .ProseMirror ul[data-type="taskList"] li > label {
+	display: inline-flex;
+	align-items: center;
+	margin-top: 0.3rem;
+	user-select: none;
+}
+
+[data-slot="editor"] .ProseMirror ul[data-type="taskList"] li > div {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+[data-slot="editor"] .ProseMirror ul[data-type="taskList"] li > div > p {
+	margin: 0;
+}
+
+/* A table wider than the column scrolls inside its own box rather than pushing the page sideways;
+   at 360px almost every table is wider than the column. */
+[data-slot="editor"] .ProseMirror .tableWrapper {
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+[data-slot="editor"] .ProseMirror table {
+	width: 100%;
+	table-layout: fixed;
+	border-collapse: collapse;
+	overflow: hidden;
+}
+
+[data-slot="editor"] .ProseMirror th,
+[data-slot="editor"] .ProseMirror td {
+	border: 1px solid var(--line-subtle);
+	padding: 0.35rem 0.5rem;
+	vertical-align: top;
+}
+
+[data-slot="editor"] .ProseMirror th {
+	background: var(--paper-2);
+	font-weight: 500;
+	text-align: left;
+}
+
+[data-slot="editor"] .ProseMirror .norn-details {
+	display: flex;
+	gap: 0.5rem;
+	border: 1px solid var(--line-subtle);
+	border-radius: var(--radius-md);
+	padding: 0.5rem 0.65rem;
+}
+
+[data-slot="editor"] .ProseMirror .norn-details > button {
+	align-self: flex-start;
+	margin-top: 0.35rem;
+	cursor: pointer;
+	background: none;
+	border: 0;
+	color: var(--text-muted);
+	line-height: 1;
+}
+
+[data-slot="editor"] .ProseMirror .norn-details > button::before {
+	content: "▸";
+}
+
+[data-slot="editor"] .ProseMirror .norn-details.is-open > button::before {
+	content: "▾";
+}
+
+[data-slot="editor"] .ProseMirror .norn-details > div {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+[data-slot="editor"] .ProseMirror .norn-details > div > [data-type="detailsSummary"] {
+	margin: 0;
+	font-weight: 500;
+}
+
+[data-slot="editor"] .ProseMirror p.is-editor-empty:first-child::before,
+[data-slot="editor"] .ProseMirror [data-type="detailsSummary"].is-empty::before {
+	content: attr(data-placeholder);
+	float: left;
+	height: 0;
+	pointer-events: none;
+	color: var(--text-muted);
+}

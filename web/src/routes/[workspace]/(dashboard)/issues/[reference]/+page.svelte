@@ -80,10 +80,18 @@
 	import Target from "@lucide/svelte/icons/target";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
-	import DescriptionEditor from "$lib/issues/description-editor.svelte";
+	import Editor from "$lib/editor/editor.svelte";
+	import {
+		asDocument,
+		documentEmpty,
+		documentText,
+		emptyDocument,
+		sameDocument,
+		type Document,
+	} from "$lib/editor/document";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import type { CreationOutcome } from "$lib/issues/creating";
-	import type { NewIssueInput } from "$lib/issues/new-issue-schema";
+	import type { NewIssuePrefill } from "$lib/issues/new-issue-schema";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
 	import {
@@ -117,7 +125,7 @@
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import {
-		attachmentMarkdown,
+		attachmentNode,
 		attachmentFailureMessage,
 		readAttachmentFailure,
 		type AttachmentFailure,
@@ -195,9 +203,19 @@
 	let loadedActivity = $state.raw<ActivityFeed | null>(null);
 	let commentUploads = $state.raw<UploadTask[]>([]);
 	let bodyUploads = $state.raw<UploadTask[]>([]);
-	let descriptionEditor = $state.raw<
-		{ settle: (taskId: string, markdown: string) => boolean; abandon: (taskId: string) => void } | undefined
-	>(undefined);
+
+	// The version an edit is measured against is taken when the edit begins, never afterwards.
+	// Reading it live means an update arriving over the wire quietly moves the ground under an
+	// open editor, and the save that follows overwrites what arrived without anybody being told.
+	let editingVersion = $state(0);
+	let describing = $state.raw<Document>(emptyDocument);
+	let describedBase = $state.raw<Document>(emptyDocument);
+	let describedConflict = $state.raw<{ mine: Document; theirs: Document } | null>(null);
+	let descriptionEditor = $state.raw<{
+		settle: (taskId: string, content: unknown) => boolean;
+		abandon: (taskId: string) => void;
+		focus: () => void;
+	} | null>(null);
 	let attachmentFailure = $state<AttachmentFailure | null>(null);
 	let codeLinkFailure = $state<SourceControlFailure | null>(null);
 	let removedCodeLinks = $state.raw<string[]>([]);
@@ -433,7 +451,8 @@
 			const body: Record<string, unknown> = {};
 
 			if (pending.data.title !== issue.title) body.title = pending.data.title;
-			if (pending.data.description !== issue.description) body.description = pending.data.description;
+
+			if (!sameDocument(describing, describedBase)) body.descriptionDoc = describing;
 
 			if (pending.data.estimate === "") {
 				if (issue.estimate) clear.push("estimate");
@@ -455,11 +474,19 @@
 				return;
 			}
 
-			if (await patch(body)) {
+			if (await patch(body, editingVersion)) {
 				editingField = null;
+				describedConflict = null;
 				announce(`Saved ${issue.reference}.`);
 
 				return;
+			}
+
+			// Nothing this editor holds is thrown away on a refusal. A stale version means
+			// somebody else wrote in the meantime, and both texts are worth reading before one
+			// of them is chosen.
+			if (failure?.kind === "stale" && failure.fields.includes("description")) {
+				describedConflict = { mine: describing, theirs: asDocument(issue.descriptionDoc) };
 			}
 
 			if (failure?.kind === "invalid") {
@@ -567,7 +594,7 @@
 		}
 	}
 
-	async function patch(body: Record<string, unknown>): Promise<boolean> {
+	async function patch(body: Record<string, unknown>, expected?: number): Promise<boolean> {
 		if (!issue) return false;
 
 		working = true;
@@ -577,7 +604,7 @@
 		try {
 			const { error } = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
 				params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-				body: { expectedVersion: issue.version, ...body },
+				body: { expectedVersion: expected ?? issue.version, ...body },
 			});
 
 			if (error) {
@@ -838,61 +865,69 @@
 	}
 
 	async function comment(
-		body: string,
-		mentions: MentionTarget[],
+		body: Document,
 		attachmentIds: string[],
 		parentCommentId?: string
-	): Promise<void> {
-		if (!issue) return;
+	): Promise<boolean> {
+		if (!issue) return false;
 
-		await act(async () => {
+		return filing(async () => {
 			const { data: posted, error } = await api.POST(
 				"/workspaces/{workspaceId}/issues/{issueId}/comments",
 				{
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { body, parentCommentId, mentions, attachmentIds },
+					body: {
+						body: documentText(body),
+						bodyDoc: body,
+						parentCommentId,
+						attachmentIds,
+					},
 				}
 			);
 
 			if (error || !posted) {
 				commentFailure = readCommentFailure(error);
 
-				return;
+				return false;
 			}
 
 			if (!("unreachable" in posted)) {
 				commentFailure = readCommentFailure(undefined);
 
-				return;
+				return false;
 			}
 
 			unreachable = posted.unreachable;
 			loadedComments = null;
 			commentUploads = [];
 			await invalidate(keys.page(page.route.id));
+
+			return true;
 		});
 	}
 
-	async function editComment(commentId: string, body: string): Promise<void> {
-		if (!issue) return;
+	async function editComment(commentId: string, body: Document): Promise<boolean> {
+		if (!issue) return false;
 
-		await act(async () => {
+		return filing(async () => {
 			const { error } = await api.PATCH(
 				"/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}",
 				{
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id, commentId } },
-					body: { body },
+					body: { body: documentText(body), bodyDoc: body },
 				}
 			);
 
 			if (error) {
 				commentFailure = readCommentFailure(error);
 
-				return;
+				return false;
 			}
 
 			loadedComments = null;
 			await invalidate(keys.page(page.route.id));
+
+			return true;
 		});
 	}
 
@@ -1004,13 +1039,25 @@
 	}
 
 	async function act(run: () => Promise<void>): Promise<void> {
+		await filing(async () => {
+			await run();
+
+			return true;
+		});
+	}
+
+	// A comment is only cleared once it is filed, so what writes one answers whether it landed
+	// rather than leaving the composer to assume it did.
+	async function filing(run: () => Promise<boolean>): Promise<boolean> {
 		working = true;
 		commentFailure = null;
 
 		try {
-			await run();
+			return await run();
 		} catch {
 			commentFailure = { kind: "unavailable" };
+
+			return false;
 		} finally {
 			working = false;
 		}
@@ -1070,25 +1117,16 @@
 				if (into === "body" && next.state === "cancelled") descriptionEditor?.abandon(taskId);
 
 				if (next.state === "done" && next.attachment) {
-					if (into === "body") {
-						const markdown = attachmentMarkdown(next.attachment);
-
-						if (!descriptionEditor?.settle(taskId, markdown)) {
-							$formData.description = joined($formData.description, markdown);
-						}
-					}
+					// A placeholder somebody removed while the bytes were still travelling is a
+					// decision, so the file that lands afterwards has nowhere to go rather than
+					// reappearing in text that was written without it.
+					if (into === "body") descriptionEditor?.settle(taskId, attachmentNode(next.attachment));
 
 					void invalidate(keys.page(page.route.id));
 				}
 			},
 			(abort) => aborts.set(taskId, abort)
 		);
-	}
-
-	function joined(body: string, markdown: string): string {
-		if (body.trim() === "") return markdown;
-
-		return body.endsWith("\n") ? body + markdown : `${body}\n${markdown}`;
 	}
 
 	function cancelUpload(taskId: string) {
@@ -1152,7 +1190,7 @@
 	let pickingDue = $state(false);
 	let addingChild = $state(false);
 	let filingUnder = $state.raw<{ id: string; reference: string } | null>(null);
-	let childPrefill = $state<Partial<NewIssueInput> | undefined>(undefined);
+	let childPrefill = $state<NewIssuePrefill | undefined>(undefined);
 	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
 
@@ -1261,10 +1299,13 @@
 
 		await patch(date === "" ? { clear: ["dueOn"] } : { dueOn: date });
 	}
+	// Dirtiness is measured against the text this edit started from, not against what the issue
+	// says now. Measuring against the live value turns somebody else's edit into "unsaved
+	// changes" here, and closes the editor at a moment nobody chose.
 	const dirty = $derived(
 		Boolean(issue) &&
 			(($formData.title !== issue?.title && editingField === "title") ||
-				($formData.description !== issue?.description && editingField === "description"))
+				(!sameDocument(describing, describedBase) && editingField === "description"))
 	);
 
 	const watchers = $derived(
@@ -1330,10 +1371,12 @@
 	function startEditing(field: "title" | "description") {
 		if (!canEdit || !issue) return;
 
-		formData.update(
-			(current) => ({ ...current, title: issue.title, description: issue.description }),
-			{ taint: false }
-		);
+		formData.update((current) => ({ ...current, title: issue.title }), { taint: false });
+
+		describedBase = asDocument(issue.descriptionDoc);
+		describing = describedBase;
+		editingVersion = issue.version;
+		describedConflict = null;
 		editingField = field;
 	}
 
@@ -1349,11 +1392,32 @@
 	function discard() {
 		if (!issue) return;
 
-		formData.update(
-			(current) => ({ ...current, title: issue.title, description: issue.description }),
-			{ taint: false }
-		);
+		formData.update((current) => ({ ...current, title: issue.title }), { taint: false });
+
+		describing = asDocument(issue.descriptionDoc);
+		describedBase = describing;
+		describedConflict = null;
 		editingField = null;
+		failure = null;
+	}
+
+	function keepMine() {
+		if (!issue) return;
+
+		describedBase = asDocument(issue.descriptionDoc);
+		editingVersion = issue.version;
+		describedConflict = null;
+		failure = null;
+		(document.getElementById("issue-edit-form") as HTMLFormElement | null)?.requestSubmit();
+	}
+
+	function takeTheirs() {
+		if (!issue) return;
+
+		describing = asDocument(issue.descriptionDoc);
+		describedBase = describing;
+		editingVersion = issue.version;
+		describedConflict = null;
 		failure = null;
 	}
 
@@ -1892,19 +1956,27 @@
 											{#snippet children({ props })}
 												<Form.Label class="sr-only">Description</Form.Label>
 												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5">
-													<DescriptionEditor
+													<Editor
 														{...props}
 														bind:this={descriptionEditor}
-														bind:value={$formData.description}
+														bind:document={describing}
 														workspaceId={data.workspace.id}
 														workspace={data.workspace.slug}
-														members={ready?.members ?? []}
-														teams={data.teams ?? []}
 														disabled={$submitting}
 														autofocus
 														onfiles={(files) => begin("body", files)}
+														onmetaenter={() => {
+															(
+																window.document.getElementById(
+																	"issue-edit-form"
+																) as HTMLFormElement | null
+															)?.requestSubmit();
+
+															return true;
+														}}
 														placeholder="Describe the issue…"
-														class="min-h-47"
+														minHeight="min-h-47"
+														label="Description"
 													/>
 												</div>
 											{/snippet}
@@ -1918,6 +1990,68 @@
 										onretry={(taskId) => retryUpload("body", taskId)}
 										ondismiss={(taskId) => dismissUpload("body", taskId)}
 									/>
+
+									{#if describedConflict}
+										<div class="flex flex-col gap-2 rounded-md border border-line-strong p-2.5">
+											<p class="text-sm text-ink-900">
+												Somebody saved a different description while you were writing. Neither
+												has been thrown away.
+											</p>
+											<div class="grid gap-2.5 sm:grid-cols-2">
+												<div class="flex min-w-0 flex-col gap-1">
+													<Eyebrow class="text-ink-600">Yours</Eyebrow>
+													<div
+														class="max-h-40 min-w-0 overflow-y-auto rounded-sm border border-line-subtle p-2"
+													>
+														<Editor
+															document={describedConflict.mine}
+															workspaceId={data.workspace.id}
+															workspace={data.workspace.slug}
+															disabled
+															toolbar={false}
+															minHeight="min-h-0"
+															label="The description you wrote"
+														/>
+													</div>
+												</div>
+												<div class="flex min-w-0 flex-col gap-1">
+													<Eyebrow class="text-ink-600">Theirs</Eyebrow>
+													<div
+														class="max-h-40 min-w-0 overflow-y-auto rounded-sm border border-line-subtle p-2"
+													>
+														<Editor
+															document={describedConflict.theirs}
+															workspaceId={data.workspace.id}
+															workspace={data.workspace.slug}
+															disabled
+															toolbar={false}
+															minHeight="min-h-0"
+															label="The description that was saved"
+														/>
+													</div>
+												</div>
+											</div>
+											<div class="flex flex-wrap items-center gap-2">
+												<Button
+													type="button"
+													size="sm"
+													disabled={$submitting}
+													onclick={keepMine}
+												>
+													Keep mine
+												</Button>
+												<Button
+													type="button"
+													variant="secondary"
+													size="sm"
+													disabled={$submitting}
+													onclick={takeTheirs}
+												>
+													Take theirs
+												</Button>
+											</div>
+										</div>
+									{/if}
 
 									<div class="flex items-center gap-2">
 										<Button type="submit" size="sm" disabled={$submitting}>
@@ -2258,8 +2392,8 @@
 							oncancelupload={cancelUpload}
 							onretryupload={(taskId) => retryUpload("comment", taskId)}
 							ondismissupload={(taskId) => dismissUpload("comment", taskId)}
-							members={ready.members}
-							teams={data.teams ?? []}
+							workspaceId={data.workspace.id}
+							workspace={data.workspace.slug}
 							accountId={data.member.id}
 							{when}
 							{canEdit}

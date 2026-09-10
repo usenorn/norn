@@ -1,29 +1,20 @@
 <script lang="ts">
-	import { tick, untrack } from "svelte";
-	import AtSign from "@lucide/svelte/icons/at-sign";
-	import Bot from "@lucide/svelte/icons/bot";
-	import X from "@lucide/svelte/icons/x";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { untrack } from "svelte";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
-	import { caretAfterPaste, pastedMarkdown, withPasted } from "$lib/issues/paste";
-	import { attachmentMarkdown } from "$lib/attachments/attachments";
+	import { Button } from "$lib/components/ui/button/index.js";
+	import { Label } from "$lib/components/ui/label/index.js";
+	import { attachmentNode } from "$lib/attachments/attachments";
 	import { settled, type UploadTask } from "$lib/attachments/upload";
-	import type { MentionTarget } from "$lib/comments/comments";
-	import type { Member } from "$lib/issues/members";
-	import type { Team } from "$lib/team/teams";
-
-	type Candidate = { key: string; name: string; agent?: boolean; target: MentionTarget };
+	import Editor from "$lib/editor/editor.svelte";
+	import { documentEmpty, emptyDocument, type Document } from "$lib/editor/document";
 
 	let {
-		members,
-		teams,
+		workspaceId,
+		workspace,
 		working = false,
-		body = "",
+		body = emptyDocument,
 		placeholder = "Leave a comment",
 		submitLabel = "Comment",
 		onsubmit,
@@ -34,16 +25,16 @@
 		onretryupload,
 		ondismissupload,
 	}: {
-		members: Member[];
-		teams: Team[];
+		workspaceId: string;
+		workspace: string;
 		working?: boolean;
-		body?: string;
+		body?: Document;
 		placeholder?: string;
 		submitLabel?: string;
-		onsubmit: (body: string, mentions: MentionTarget[], attachmentIds: string[]) => void;
+		onsubmit: (body: Document, attachmentIds: string[]) => Promise<boolean> | boolean;
 		oncancel?: () => void;
 		uploads?: UploadTask[];
-		onfiles?: (files: File[]) => void;
+		onfiles?: (files: File[]) => string[] | void;
 		oncancelupload?: (id: string) => void;
 		onretryupload?: (id: string) => void;
 		ondismissupload?: (id: string) => void;
@@ -51,59 +42,32 @@
 
 	const id = $props.id();
 
-	let draft = $state(untrack(() => body));
-	let chosen = $state.raw<Candidate[]>([]);
-	let field = $state<HTMLTextAreaElement | null>(null);
+	let draft = $state.raw<Document>(untrack(() => body));
 	let dropping = $state(false);
+	let sending = $state(false);
+	let editor = $state.raw<{
+		settle: (taskId: string, content: unknown) => boolean;
+		abandon: (taskId: string) => void;
+	} | null>(null);
 
-	const candidates = $derived<Candidate[]>([
-		...members
-			.filter((member) => Boolean(member.displayName))
-			.map((member) => ({
-				key: `account:${member.accountId}`,
-				name: member.displayName ?? "",
-				agent: member.kind === "agent",
-				target: { kind: "account" as const, accountId: member.accountId },
-			})),
-		...teams.map((team) => ({
-			key: `team:${team.id}`,
-			name: team.name,
-			target: { kind: "team" as const, teamId: team.id },
-		})),
-	]);
-
-	const picked = $derived(new Set(chosen.map((candidate) => candidate.key)));
-	const available = $derived(candidates.filter((candidate) => !picked.has(candidate.key)));
-	const empty = $derived(draft.trim() === "");
+	const empty = $derived(documentEmpty(draft));
 	const inFlight = $derived((uploads ?? []).some((task) => !settled(task)));
 	const attached = $derived(
 		(uploads ?? []).filter((task) => task.state === "done" && task.attachment)
 	);
 
-	const spliced = new Set<string>();
+	const placed = new Set<string>();
 
+	// A file that lands after its placeholder was removed has nowhere to go. Putting it back
+	// would undo a removal somebody meant, so a settle that finds no placeholder does nothing.
 	$effect(() => {
 		for (const task of uploads ?? []) {
-			if (task.state !== "done" || !task.attachment || spliced.has(task.id)) continue;
+			if (task.state !== "done" || !task.attachment || placed.has(task.id)) continue;
 
-			spliced.add(task.id);
-			insert(attachmentMarkdown(task.attachment));
+			placed.add(task.id);
+			editor?.settle(task.id, attachmentNode(task.attachment));
 		}
 	});
-
-	function insert(text: string) {
-		const at = field?.selectionStart ?? draft.length;
-		const spaced = draft === "" || draft.endsWith("\n") ? text : `\n${text}`;
-
-		draft = draft.slice(0, at) + spaced + draft.slice(at);
-
-		if (field) {
-			const caret = at + spaced.length;
-
-			field.focus();
-			requestAnimationFrame(() => field?.setSelectionRange(caret, caret));
-		}
-	}
 
 	function take(files: File[]) {
 		if (files.length === 0 || !onfiles) return;
@@ -111,56 +75,24 @@
 		onfiles(files);
 	}
 
-	function dropped(event: DragEvent) {
-		dropping = false;
+	// Nothing written here is cleared until the comment is actually filed. Clearing on the way
+	// out means a refused send leaves the writer with an empty box and nothing to retry.
+	async function send(): Promise<boolean> {
+		if (empty || working || sending || inFlight) return false;
 
-		take(Array.from(event.dataTransfer?.files ?? []));
-	}
+		sending = true;
 
-	function pasted(event: ClipboardEvent) {
-		const files = Array.from(event.clipboardData?.files ?? []);
+		try {
+			const attachmentIds = attached.map((task) => task.attachment?.id ?? "").filter(Boolean);
+			const filed = await onsubmit(draft, attachmentIds);
 
-		if (files.length > 0) {
-			event.preventDefault();
-			take(files);
+			if (!filed) return false;
 
-			return;
-		}
+			if (!oncancel) draft = emptyDocument;
 
-		const markdown = pastedMarkdown(event);
-
-		if (!markdown) return;
-
-		event.preventDefault();
-
-		const field = event.currentTarget as HTMLTextAreaElement;
-		const caret = caretAfterPaste(field, markdown);
-
-		draft = withPasted(field, markdown);
-
-		tick().then(() => field.setSelectionRange(caret, caret));
-	}
-
-	function mention(candidate: Candidate) {
-		chosen = [...chosen, candidate];
-		draft = draft === "" ? `@${candidate.name} ` : `${draft} @${candidate.name} `;
-	}
-
-	function drop(key: string) {
-		chosen = chosen.filter((candidate) => candidate.key !== key);
-	}
-
-	function send() {
-		if (empty || working || inFlight) return;
-
-		const mentions = chosen.map((candidate) => candidate.target);
-		const attachmentIds = attached.map((task) => task.attachment?.id ?? "").filter(Boolean);
-
-		onsubmit(draft.trim(), mentions, attachmentIds);
-
-		if (!oncancel) {
-			draft = "";
-			chosen = [];
+			return true;
+		} finally {
+			sending = false;
 		}
 	}
 </script>
@@ -177,101 +109,62 @@
 	ondrop={(event) => {
 		if (!onfiles) return;
 		event.preventDefault();
-		dropped(event);
+		dropping = false;
+		take(Array.from(event.dataTransfer?.files ?? []));
 	}}
 >
 	<Label for="comment-{id}" class="sr-only">{placeholder}</Label>
-	<Textarea
-		bind:ref={field}
-		id="comment-{id}"
-		bind:value={draft}
-		{placeholder}
-		rows={3}
-		disabled={working}
-		class="min-h-17.5 text-base leading-normal"
-		onkeydown={(event) => {
-			if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-				event.preventDefault();
-				event.stopPropagation();
-				send();
-			}
-		}}
-		onpaste={pasted}
-	/>
+	<div class="rounded-md border border-line-default px-2.5 pb-1">
+		<Editor
+			bind:this={editor}
+			bind:document={draft}
+			id="comment-{id}"
+			{workspaceId}
+			{workspace}
+			{placeholder}
+			label={placeholder}
+			disabled={working || sending}
+			minHeight="min-h-17.5"
+			onfiles={onfiles ? (files) => onfiles(files) : undefined}
+			onmetaenter={() => {
+				void send();
+
+				return true;
+			}}
+		/>
+	</div>
 
 	{#if uploads && uploads.length > 0}
 		<UploadList
 			{uploads}
 			oncancel={(taskId) => oncancelupload?.(taskId)}
 			onretry={(taskId) => onretryupload?.(taskId)}
-			ondismiss={(taskId) => ondismissupload?.(taskId)}
+			ondismiss={(taskId) => {
+				editor?.abandon(taskId);
+				ondismissupload?.(taskId);
+			}}
 		/>
-	{/if}
-
-	{#if chosen.length > 0}
-		<ul class="flex flex-wrap gap-1">
-			{#each chosen as candidate (candidate.key)}
-				<li>
-					<Button
-						variant="secondary"
-						size="sm"
-						disabled={working}
-						aria-label="Stop mentioning {candidate.name}"
-						onclick={() => drop(candidate.key)}
-					>
-						{candidate.name}
-						<X aria-hidden="true" />
-					</Button>
-				</li>
-			{/each}
-		</ul>
 	{/if}
 
 	<div class="flex flex-wrap items-center gap-2">
 		{#if onfiles}
-			<AttachmentPicker disabled={working} onfiles={take} iconOnly />
+			<AttachmentPicker disabled={working || sending} onfiles={take} iconOnly />
 		{/if}
-
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger>
-				{#snippet child({ props })}
-					<Button
-						{...props}
-						variant="ghost"
-						size="sm"
-						disabled={working || available.length === 0}
-					>
-						<AtSign aria-hidden="true" />
-						Mention
-					</Button>
-				{/snippet}
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content align="start" class="max-h-64 overflow-y-auto">
-				{#each available as candidate (candidate.key)}
-					<DropdownMenu.Item onSelect={() => mention(candidate)}>
-						<span class="flex items-center gap-1.5">
-							{#if candidate.agent}
-								<Bot class="size-3.5 text-muted-foreground" aria-label="An agent" />
-							{/if}
-							{candidate.name}
-						</span>
-					</DropdownMenu.Item>
-				{/each}
-			</DropdownMenu.Content>
-		</DropdownMenu.Root>
 
 		<div class="flex-1"></div>
 
 		{#if oncancel}
-			<Button variant="ghost" size="sm" disabled={working} onclick={oncancel}>Cancel</Button>
+			<Button variant="ghost" size="sm" disabled={working || sending} onclick={oncancel}>
+				Cancel
+			</Button>
 		{/if}
 
 		<span class="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
 			<Kbd keys="⌘ ↵" /> {submitLabel.toLowerCase()}
 		</span>
 
-		<Button size="sm" disabled={working || empty || inFlight} onclick={send}>
-			{working ? "Working" : inFlight ? "Uploading" : submitLabel}
+		<Button size="sm" disabled={working || sending || empty || inFlight} onclick={() => void send()}>
+			{working || sending ? "Working" : inFlight ? "Uploading" : submitLabel}
 		</Button>
 	</div>
 </div>

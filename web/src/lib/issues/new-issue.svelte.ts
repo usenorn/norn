@@ -1,19 +1,19 @@
 import { getContext, setContext } from "svelte";
 import type { CreationOutcome } from "./creating";
 import type { Issue } from "./issues";
-import type { NewIssueInput } from "./new-issue-schema";
+import type { NewIssuePrefill } from "./new-issue-schema";
 
 const key = Symbol("norn.new-issue");
 
 export type NewIssueSurface = {
-	seed?: Partial<NewIssueInput>;
+	seed?: NewIssuePrefill;
 	onraising?: (key: string, draft: Issue) => void;
 	onsettled?: (outcome: CreationOutcome) => void | Promise<void>;
 };
 
 export class NewIssue {
 	#open = $state(false);
-	#prefill = $state.raw<Partial<NewIssueInput>>({});
+	#prefill = $state.raw<NewIssuePrefill>({});
 	#surface = $state.raw<NewIssueSurface>({});
 	#held = $state.raw<NewIssueSurface>({});
 
@@ -25,7 +25,7 @@ export class NewIssue {
 		this.#open = next;
 	}
 
-	get prefill(): Partial<NewIssueInput> {
+	get prefill(): NewIssuePrefill {
 		return this.#prefill;
 	}
 
@@ -37,7 +37,7 @@ export class NewIssue {
 		return this.#held.onsettled;
 	}
 
-	raise(seed?: Partial<NewIssueInput>) {
+	raise(seed?: NewIssuePrefill) {
 		this.#prefill = { ...this.#surface.seed, ...seed };
 		this.#held = this.#surface;
 		this.#open = true;

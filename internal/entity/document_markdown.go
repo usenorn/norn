@@ -100,7 +100,7 @@ func writeBlock(builder *strings.Builder, node Node, prefix string) {
 		writeLine(builder, prefix, "```"+language)
 
 		for _, line := range strings.Split(textOf(node.Content), "\n") {
-			writeLine(builder, prefix, line)
+			writeVerbatim(builder, prefix, line)
 		}
 
 		writeLine(builder, prefix, "```")
@@ -381,7 +381,24 @@ func attachmentLabel(node Node) string {
 	return "attachment"
 }
 
+// writeLine drops space left at the end of a line. Nobody types it on purpose, it is invisible
+// to a reader, and leaving it there makes an edit that changed nothing look like a change.
 func writeLine(builder *strings.Builder, prefix, line string) {
+	for index, part := range strings.Split(line, "\n") {
+		if index > 0 {
+			builder.WriteString("\n")
+		}
+
+		builder.WriteString(prefix)
+		builder.WriteString(strings.TrimRight(part, " \t"))
+	}
+
+	builder.WriteString("\n")
+}
+
+// writeVerbatim keeps a line as it was written. Inside a code block trailing space can be the
+// point — a fixture, a diff — so it is the one place this instance does not tidy.
+func writeVerbatim(builder *strings.Builder, prefix, line string) {
 	builder.WriteString(prefix)
 	builder.WriteString(line)
 	builder.WriteString("\n")

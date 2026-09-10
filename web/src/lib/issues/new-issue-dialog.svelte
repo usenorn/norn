@@ -36,8 +36,8 @@
 		attachFailureMessage,
 		attachPending,
 		describeFailureMessage,
+		describedAll,
 		describedWith,
-		markdownFor,
 		pendingFrom,
 		type PendingFile,
 	} from "./new-issue-attachments";
@@ -46,9 +46,16 @@
 	import type { Team } from "$lib/team/teams";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { duePresets } from "./facets";
-	import { newIssueSchema, type NewIssueInput } from "./new-issue-schema";
+	import { newIssueSchema, type NewIssuePrefill } from "./new-issue-schema";
 	import { draftIssue, type CreationOutcome } from "./creating";
-	import DescriptionEditor from "$lib/issues/description-editor.svelte";
+	import Editor from "$lib/editor/editor.svelte";
+	import {
+		asDocument,
+		documentEmpty,
+		documentText,
+		emptyDocument,
+		type Document,
+	} from "$lib/editor/document";
 	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "./issues";
 	import type { Issue } from "./issues";
 
@@ -77,7 +84,7 @@
 		projects: Project[];
 		today: string;
 		now: string;
-		prefill?: Partial<NewIssueInput>;
+		prefill?: NewIssuePrefill;
 		onraising?: (key: string, draft: Issue) => void;
 		onsettled?: (outcome: CreationOutcome) => void | Promise<void>;
 	} = $props();
@@ -91,6 +98,7 @@
 	let uploads = $state.raw<UploadTask[]>([]);
 	let dragging = $state(false);
 	let unconfirmed = $state(false);
+	let describing = $state.raw<Document>(emptyDocument);
 	let opening = $state(0);
 
 	const unknownCreate =
@@ -103,7 +111,7 @@
 		workspaceId: string;
 		consumer: ((outcome: CreationOutcome) => void | Promise<void>) | undefined;
 		files: PendingFile[];
-		description: string;
+		description: Document;
 		issue: Issue | null;
 		attached: Attachment[];
 		settled: boolean;
@@ -272,7 +280,7 @@
 				workspaceId,
 				consumer: onsettled,
 				files: attaching,
-				description: pending.data.description,
+				description: describing,
 				issue: null,
 				attached: [],
 				settled: false,
@@ -292,7 +300,7 @@
 				const filing = openState ?? available.find((state) => state.isDefault);
 				const draft =
 					team && filing
-						? draftIssue(own.key, pending.data, {
+						? draftIssue(own.key, pending.data, own.description, {
 								workspaceId,
 								team,
 								state: filing,
@@ -319,7 +327,12 @@
 						body: {
 							teamId: pending.data.teamId,
 							title: pending.data.title,
-							description: pending.data.description || undefined,
+							// The key travels with every attempt at this one issue, so a lost answer
+							// can be asked for again and reaches the issue already raised rather
+							// than raising a second one saying the same thing.
+							idempotencyKey: own.key,
+							description: documentText(own.description) || undefined,
+							descriptionDoc: documentEmpty(own.description) ? undefined : own.description,
 							priority: pending.data.priority,
 							stateId: pending.data.stateId || undefined,
 							assigneeId: pending.data.assigneeId || undefined,
@@ -366,7 +379,9 @@
 						key: own.key,
 						kind: "refused",
 						failure: refusal,
-						...(detached && showing() ? { input: pending.data } : {}),
+						...(detached && showing()
+							? { input: { ...pending.data, description: own.description } }
+							: {}),
 					});
 
 					if (!mine()) {
@@ -483,7 +498,7 @@
 			attaching = [];
 			uploads = [];
 			pending.data.title = "";
-			pending.data.description = "";
+			describing = emptyDocument;
 
 			resuming = true;
 		},
@@ -498,8 +513,11 @@
 		describeConflict = false;
 		describeUncertain = false;
 
-		const links = markdownFor(own.attached);
-		const saved = await saveDescription(own, own.issue.version, describedWith(own.description, links));
+		const saved = await saveDescription(
+			own,
+			own.issue.version,
+			describedWith(own.description, own.attached)
+		);
 
 		if (saved) return saved;
 
@@ -509,7 +527,9 @@
 
 		if (!current) return null;
 
-		if (current.description.includes(links)) {
+		const held = asDocument(current.descriptionDoc);
+
+		if (describedAll(held, own.attached)) {
 			describeConflict = false;
 			describeUncertain = false;
 
@@ -522,20 +542,20 @@
 			describeConflict = false;
 		}
 
-		return saveDescription(own, current.version, describedWith(current.description, links));
+		return saveDescription(own, current.version, describedWith(held, own.attached));
 	}
 
 	async function saveDescription(
 		own: Submission,
 		expectedVersion: number,
-		description: string
+		description: Document
 	): Promise<Issue | null> {
 		if (!own.issue) return null;
 
 		try {
 			const described = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
 				params: { path: { workspaceId: own.workspaceId, issueId: own.issue.id } },
-				body: { expectedVersion, description },
+				body: { expectedVersion, descriptionDoc: description },
 			});
 
 			if (described.data && "id" in described.data) return described.data;
@@ -609,6 +629,7 @@
 		if (!justOpened) return;
 
 		form.reset({ keepMessage: false });
+		describing = asDocument(prefill?.description ?? emptyDocument);
 		opening += 1;
 		abandon();
 		failure = null;
@@ -625,7 +646,6 @@
 			(current) => ({
 				...current,
 				title: prefill?.title ?? "",
-				description: prefill?.description ?? "",
 				labelIds: prefill?.labelIds ?? [],
 				dueOn: prefill?.dueOn ?? "",
 				createMore: false,
@@ -759,6 +779,13 @@
 	<Dialog.Content
 		class="top-21 grid-rows-[minmax(0,1fr)] max-h-[calc(100dvh-7.5rem)] overflow-hidden p-0 sm:max-w-162"
 		showCloseButton={false}
+		onOpenAutoFocus={(event) => {
+			// Opening lands in the title, because that is where writing an issue starts. Left to
+			// itself the dialog focuses whichever control comes first, and the first thing typed
+			// goes nowhere.
+			event.preventDefault();
+			titleField?.focus();
+		}}
 	>
 		<Dialog.Description class="sr-only">
 			Raise an issue in a team you can see, and set its properties before it is created.
@@ -853,26 +880,20 @@
 						<Form.FieldErrors />
 					</Form.Field>
 
-					<Form.Field {form} name="description">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label class="sr-only">Description</Form.Label>
-								<DescriptionEditor
-									{...props}
-									bind:value={$formData.description}
-									{workspaceId}
-									{workspace}
-									{members}
-									{teams}
-									disabled={busy || Boolean(raised)}
-									onfiles={takeFiles}
-									onmetaenter={submitForm}
-									placeholder="Add description… What is broken, what should happen instead."
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.FieldErrors />
-					</Form.Field>
+					<Editor
+						bind:document={describing}
+						{workspaceId}
+						{workspace}
+						disabled={busy || Boolean(raised)}
+						onfiles={takeFiles}
+						onmetaenter={() => {
+							submitForm();
+
+							return true;
+						}}
+						placeholder="Add description… What is broken, what should happen instead."
+						label="Description"
+					/>
 
 					{#if uploads.length > 0}
 						<UploadList {uploads} oncancel={(id) => aborts.get(id)?.()} />

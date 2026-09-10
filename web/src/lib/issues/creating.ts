@@ -3,13 +3,14 @@ import type { Project } from "$lib/projects/projects";
 import type { WorkflowState } from "$lib/team/states";
 import type { Team } from "$lib/team/teams";
 import type { Issue } from "./issues";
-import type { NewIssueInput } from "./new-issue-schema";
+import { documentText, type Document } from "$lib/editor/document";
+import type { NewIssueInput, NewIssuePrefill } from "./new-issue-schema";
 
 export type IssueCreation = { key: string; issue: Issue; settled: boolean };
 
 export type CreationOutcome =
 	| { key: string; kind: "created"; issue: Issue }
-	| { key: string; kind: "refused"; failure: string; input?: NewIssueInput };
+	| { key: string; kind: "refused"; failure: string; input?: NewIssuePrefill };
 
 export type DraftContext = {
 	workspaceId: string;
@@ -20,7 +21,12 @@ export type DraftContext = {
 	now: string;
 };
 
-export function draftIssue(key: string, input: NewIssueInput, context: DraftContext): Issue {
+export function draftIssue(
+	key: string,
+	input: NewIssueInput,
+	description: Document,
+	context: DraftContext
+): Issue {
 	return {
 		id: key,
 		workspaceId: context.workspaceId,
@@ -31,7 +37,8 @@ export function draftIssue(key: string, input: NewIssueInput, context: DraftCont
 		reference: context.team.key,
 		version: 0,
 		title: input.title.trim(),
-		description: input.description,
+		description: documentText(description),
+		descriptionDoc: description,
 		priority: input.priority,
 		assigneeAccountId: input.assigneeId || undefined,
 		dueOn: input.dueOn || undefined,

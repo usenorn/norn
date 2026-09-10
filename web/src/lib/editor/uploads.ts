@@ -10,7 +10,7 @@ export type UploadPlaceholder = {
 
 type Placement = { add: UploadPlaceholder & { pos: number } } | { remove: string };
 
-const key = new PluginKey<DecorationSet>("describe-uploads");
+const key = new PluginKey<DecorationSet>("editor-uploads");
 
 const imageClass =
 	"pointer-events-none inline-block max-w-full animate-pulse opacity-60 select-none";
@@ -51,8 +51,8 @@ function held(set: DecorationSet, id: string): Decoration[] {
 	return set.find(undefined, undefined, (spec) => spec.id === id);
 }
 
-export const DescriptionUploads = Extension.create({
-	name: "describe-uploads",
+export const EditorUploads = Extension.create({
+	name: "editor-uploads",
 
 	addProseMirrorPlugins() {
 		return [

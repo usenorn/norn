@@ -51,7 +51,12 @@
 	"dependencies": {
 		"@sentry/sveltekit": "^10.70.0",
 		"@tiptap/core": "^3.31.3",
+		"@tiptap/extension-details": "3.31.3",
 		"@tiptap/extension-image": "^3.31.3",
+		"@tiptap/extension-list": "3.31.3",
+		"@tiptap/extension-mention": "3.31.3",
+		"@tiptap/extension-table": "3.31.3",
+		"@tiptap/extensions": "3.31.3",
 		"@tiptap/markdown": "^3.31.3",
 		"@tiptap/pm": "^3.31.3",
 		"@tiptap/starter-kit": "^3.31.3",

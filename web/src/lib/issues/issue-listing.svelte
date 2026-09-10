@@ -83,7 +83,7 @@
 	} from "$lib/issues/paging";
 	import { columnQuery, tallyTotal } from "$lib/issues/filter";
 	import { withEdit, without, type PendingEdit } from "$lib/issues/pending";
-	import type { NewIssueInput } from "$lib/issues/new-issue-schema";
+	import type { NewIssuePrefill } from "$lib/issues/new-issue-schema";
 	import {
 		settledWith,
 		unsettled,
@@ -770,7 +770,7 @@
 		await invalidate(keys.page(page.route.id));
 	}
 
-	function seedFor(key: string): Partial<NewIssueInput> {
+	function seedFor(key: string): NewIssuePrefill {
 		switch (display.grouping) {
 			case "state":
 				return { stateId: key, teamId: states.find((state) => state.id === key)?.teamId };
