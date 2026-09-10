@@ -30,6 +30,7 @@
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
 	import type { ColumnPaging } from "$lib/issues/paging";
 	import type { Issue } from "$lib/issues/issues";
+	import type { TeamCycle } from "$lib/cycles/cycles";
 	import { myTasksPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -75,7 +76,23 @@
 		linkTo(basePath, params, changes)
 	);
 
-	const offered = $derived<FacetKind[]>(pickableFacets.filter((kind) => kind !== "assignee"));
+	const cycles = $derived(
+		(data.cycles ?? []).map((entry) => ({
+			value: entry.cycle.id,
+			label: cycleLabel(entry),
+		}))
+	);
+
+	function cycleLabel(entry: TeamCycle): string {
+		const key = (data.teams ?? []).find((team) => team.id === entry.teamId)?.key;
+
+		return key ? `${entry.cycle.name} · ${key}` : entry.cycle.name;
+	}
+
+	const offered = $derived<FacetKind[]>([
+		...pickableFacets.filter((kind) => kind !== "assignee"),
+		...(cycles.length > 0 ? (["cycle"] as FacetKind[]) : []),
+	]);
 
 	const catalogue = $derived<FacetCatalogue>({
 		state: data.states.map((state) => ({ value: state.id, label: state.name })),
@@ -83,6 +100,7 @@
 		label: (data.labels ?? []).map((label) => ({ value: label.id, label: label.name })),
 		project: (data.projects ?? []).map((project) => ({ value: project.id, label: project.name })),
 		due: dueEntries(),
+		cycle: cycles,
 	});
 
 	const cleared = $derived(clearedLink(offered, linkWith));
