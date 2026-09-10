@@ -246,7 +246,7 @@
 			</div>
 		{:else}
 			{#each buckets as bucket (bucket.key)}
-				<section>
+				<section aria-label={bucket.label}>
 					<div
 						class="sticky top-0 z-1 flex h-7.5 items-center gap-2 border-b border-line-default bg-background pr-3 pl-3.5"
 					>
