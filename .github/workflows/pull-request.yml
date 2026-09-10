@@ -90,6 +90,10 @@ jobs:
         run: pnpm check
         working-directory: web
 
+      - name: Tests
+        run: pnpm test
+        working-directory: web
+
       - name: Build
         run: pnpm build
         working-directory: web
