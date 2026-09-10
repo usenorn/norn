@@ -57,6 +57,21 @@ func (mr *MockIssueRevisionMockRecorder) GetByID(ctx, workspaceID, revisionID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockIssueRevision)(nil).GetByID), ctx, workspaceID, revisionID)
 }
 
+// Latest mocks base method.
+func (m *MockIssueRevision) Latest(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueDescriptionRevision, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Latest", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(entity.IssueDescriptionRevision)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Latest indicates an expected call of Latest.
+func (mr *MockIssueRevisionMockRecorder) Latest(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Latest", reflect.TypeOf((*MockIssueRevision)(nil).Latest), ctx, workspaceID, issueID)
+}
+
 // List mocks base method.
 func (m *MockIssueRevision) List(ctx context.Context, workspaceID, issueID uuid.UUID, limit int) ([]entity.IssueDescriptionRevision, error) {
 	m.ctrl.T.Helper()
@@ -84,4 +99,18 @@ func (m *MockIssueRevision) Record(ctx context.Context, revision entity.IssueDes
 func (mr *MockIssueRevisionMockRecorder) Record(ctx, revision any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Record", reflect.TypeOf((*MockIssueRevision)(nil).Record), ctx, revision)
+}
+
+// Replace mocks base method.
+func (m *MockIssueRevision) Replace(ctx context.Context, revision entity.IssueDescriptionRevision) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Replace", ctx, revision)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Replace indicates an expected call of Replace.
+func (mr *MockIssueRevisionMockRecorder) Replace(ctx, revision any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Replace", reflect.TypeOf((*MockIssueRevision)(nil).Replace), ctx, revision)
 }

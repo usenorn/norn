@@ -12,6 +12,8 @@ import (
 
 type IssueRevision interface {
 	Record(ctx context.Context, revision entity.IssueDescriptionRevision) error
+	Latest(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueDescriptionRevision, error)
+	Replace(ctx context.Context, revision entity.IssueDescriptionRevision) error
 	List(ctx context.Context, workspaceID, issueID uuid.UUID, limit int) ([]entity.IssueDescriptionRevision, error)
 	GetByID(ctx context.Context, workspaceID, revisionID uuid.UUID) (entity.IssueDescriptionRevision, error)
 }

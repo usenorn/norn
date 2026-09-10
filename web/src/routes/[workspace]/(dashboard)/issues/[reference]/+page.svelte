@@ -83,6 +83,7 @@
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import Editor from "$lib/editor/editor.svelte";
 	import DescriptionHistory from "$lib/issues/description-history.svelte";
+	import { Autosave, saveLine, type SaveOutcome } from "$lib/editor/autosave.svelte";
 	import {
 		asDocument,
 		documentEmpty,
@@ -214,6 +215,45 @@
 	let describedBase = $state.raw<Document>(emptyDocument);
 	let describedConflict = $state.raw<{ mine: Document; theirs: Document } | null>(null);
 	let showingHistory = $state(false);
+
+	// The description saves itself as it is written. Typing is never blocked while a save runs,
+	// and the line beside the editor says what has actually happened rather than assuming.
+	const describeSaver = new Autosave(() => saveDescribed());
+
+	async function saveDescribed(): Promise<SaveOutcome> {
+		if (!issue || sameDocument(describing, describedBase)) return "saved";
+
+		const writing = describing;
+		const against = editingVersion;
+
+		const saved = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
+			params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+			body: { expectedVersion: against, descriptionDoc: writing },
+		});
+
+		const error = saved.error;
+
+		if (error) {
+			const read = readIssueFailure(error);
+
+			if (read.kind === "stale") {
+				describedConflict = { mine: writing, theirs: asDocument(issue.descriptionDoc) };
+
+				return "conflict";
+			}
+
+			return read.kind === "unavailable" ? "unknown" : "failed";
+		}
+
+		if (!saved.data || !("version" in saved.data)) return "unknown";
+
+		describedBase = writing;
+		editingVersion = saved.data.version;
+
+		await invalidate(keys.page(page.route.id));
+
+		return "saved";
+	}
 	let descriptionEditor = $state.raw<{
 		settle: (taskId: string, content: unknown) => boolean;
 		abandon: (taskId: string) => void;
@@ -450,6 +490,10 @@
 		onUpdate: async ({ form: pending }) => {
 			if (!pending.valid || !issue) return;
 
+			// An autosave already on its way would write the same version and lose the race with
+			// this one, so the explicit save takes the pen.
+			describeSaver.stop();
+
 			const clear: string[] = [];
 			const body: Record<string, unknown> = {};
 
@@ -477,9 +521,13 @@
 				return;
 			}
 
+			const written = describing;
+
 			if (await patch(body, editingVersion)) {
+				describedBase = written;
 				editingField = null;
 				describedConflict = null;
+				describeSaver.rest();
 				announce(`Saved ${issue.reference}.`);
 
 				return;
@@ -1311,6 +1359,24 @@
 				(!sameDocument(describing, describedBase) && editingField === "description"))
 	);
 
+	$effect(() => {
+		const writing = describing;
+
+		if (editingField !== "description" || !issue) return;
+
+		if (sameDocument(writing, describedBase)) return;
+
+		if (describedConflict) return;
+
+		describeSaver.schedule();
+	});
+
+	$effect(() => {
+		if (editingField === "description") return;
+
+		describeSaver.stop();
+	});
+
 	// Writing that has not been saved and is not on screen: the editor is closed but the words
 	// are still held, so the page has to say so rather than looking as if nothing happened.
 	const unsaved = $derived(
@@ -1406,6 +1472,12 @@
 	function stopEditing() {
 		editingField = null;
 		failure = null;
+
+		// Leaving with something unsaved writes it now rather than holding it until somebody
+		// comes back: the words are on the server whether or not this tab survives.
+		if (!sameDocument(describing, describedBase) && !describedConflict) {
+			void describeSaver.flush();
+		}
 	}
 
 	function resumeEditing() {
@@ -1424,6 +1496,7 @@
 		describedConflict = null;
 		editingField = null;
 		failure = null;
+		describeSaver.rest();
 	}
 
 	function keepMine() {
@@ -1433,6 +1506,7 @@
 		editingVersion = issue.version;
 		describedConflict = null;
 		failure = null;
+		describeSaver.rest();
 		(document.getElementById("issue-edit-form") as HTMLFormElement | null)?.requestSubmit();
 	}
 
@@ -1444,6 +1518,7 @@
 		editingVersion = issue.version;
 		describedConflict = null;
 		failure = null;
+		describeSaver.rest();
 	}
 
 	async function reopen() {
@@ -2087,7 +2162,7 @@
 										</div>
 									{/if}
 
-									<div class="flex items-center gap-2">
+									<div class="flex flex-wrap items-center gap-2">
 										<Button type="submit" size="sm" disabled={$submitting}>
 											{$submitting ? "Saving" : "Save description"}
 										</Button>
@@ -2103,6 +2178,30 @@
 										<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
 											<Kbd keys="⌘ ↵" /> save
 										</span>
+										<span class="flex-1"></span>
+										{#if saveLine(describeSaver.state)}
+											<span
+												class="text-xs {describeSaver.state.kind === 'saved'
+													? 'text-muted-foreground'
+													: describeSaver.state.kind === 'waiting' ||
+														  describeSaver.state.kind === 'saving'
+														? 'text-muted-foreground'
+														: 'text-destructive'}"
+												aria-live="polite"
+											>
+												{saveLine(describeSaver.state)}
+											</span>
+										{/if}
+										{#if describeSaver.state.kind === "failed" || describeSaver.state.kind === "unknown"}
+											<Button
+												type="button"
+												variant="secondary"
+												size="sm"
+												onclick={() => void describeSaver.flush()}
+											>
+												Try again
+											</Button>
+										{/if}
 									</div>
 								</div>
 							{:else if issue.description.trim() || unsaved}

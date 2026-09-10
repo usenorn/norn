@@ -58,6 +58,8 @@ type world struct {
 	team      entity.Team
 	state     entity.WorkflowState
 	account   uuid.UUID
+	other     uuid.UUID
+	asOther   service.Issues
 }
 
 func documentDatabase(t *testing.T) *postgres.Client {
@@ -166,16 +168,20 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 
 	ctx := context.Background()
 
-	account, err := accountrepo.New(client).Create(ctx, entity.Account{
-		ID: uuid.New(), Status: entity.AccountStatusActive, Kind: entity.AccountKindPerson,
-		Email: "writer-" + uuid.NewString()[:8] + "@northwind.co", DisplayName: "Writer",
-		Timezone: "UTC",
-	})
-	if err != nil {
-		t.Fatalf("create the account: %v", err)
-	}
+	accounts := accountrepo.New(client)
 
-	place.account = account.ID
+	for _, target := range []*uuid.UUID{&place.account, &place.other} {
+		account, err := accounts.Create(ctx, entity.Account{
+			ID: uuid.New(), Status: entity.AccountStatusActive, Kind: entity.AccountKindPerson,
+			Email: "writer-" + uuid.NewString()[:8] + "@northwind.co", DisplayName: "Writer",
+			Timezone: "UTC",
+		})
+		if err != nil {
+			t.Fatalf("create the account: %v", err)
+		}
+
+		*target = account.ID
+	}
 
 	workspace, err := workspacerepo.New(client).Create(ctx, entity.Workspace{
 		ID: uuid.New(), Slug: "docs-" + uuid.NewString()[:8], Name: "Writing",
@@ -202,26 +208,33 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 		t.Fatalf("create the state: %v", err)
 	}
 
-	if _, err := membershiprepo.New(client).Create(ctx, entity.Membership{
-		WorkspaceID: workspace.ID, AccountID: account.ID,
-		Role: entity.MembershipRoleAdmin, Source: entity.DefaultMembershipSource,
-	}); err != nil {
-		t.Fatalf("join the workspace: %v", err)
+	for _, accountID := range []uuid.UUID{place.account, place.other} {
+		if _, err := membershiprepo.New(client).Create(ctx, entity.Membership{
+			WorkspaceID: workspace.ID, AccountID: accountID,
+			Role: entity.MembershipRoleAdmin, Source: entity.DefaultMembershipSource,
+		}); err != nil {
+			t.Fatalf("join the workspace: %v", err)
+		}
 	}
 
 	place.workspace, place.team, place.state = workspace, team, state
 
-	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
-	authorizer.EXPECT().
-		Decide(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ entity.AccessRequest) (entity.Decision, error) {
-			return entity.Decision{
-				Actor:     entity.Actor{Kind: entity.ActorKindUser, AccountID: place.account},
-				Workspace: workspace,
-				Scope:     entity.TeamScope{WorkspaceID: workspace.ID, AllTeams: true},
-			}, nil
-		}).
-		AnyTimes()
+	deciding := func(accountID uuid.UUID) service.Authorizer {
+		authorizer := authorizersvc.NewMockAuthorizer(ctrl)
+
+		authorizer.EXPECT().
+			Decide(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(_ context.Context, _ entity.AccessRequest) (entity.Decision, error) {
+				return entity.Decision{
+					Actor:     entity.Actor{Kind: entity.ActorKindUser, AccountID: accountID},
+					Workspace: workspace,
+					Scope:     entity.TeamScope{WorkspaceID: workspace.ID, AllTeams: true},
+				}, nil
+			}).
+			AnyTimes()
+
+		return authorizer
+	}
 
 	events := eventsvc.NewMockEvents(ctrl)
 	events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
@@ -234,38 +247,44 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 
 	revisions := issuerevisionrepo.New(client)
 
-	return issuesvc.New(
-		issuerepo.New(client),
-		revisions,
-		issuetemplaterepo.New(client),
-		requestkeyrepo.New(client),
-		workflowstaterepo.New(client),
-		activityrepo.New(client),
-		labelrepo.New(client),
-		accountrepo.New(client),
-		membershiprepo.New(client),
-		cyclerepo.New(client),
-		cyclerepo.NewScopeChange(client),
-		projectrepo.New(client),
-		teamrepo.New(client),
-		triagerepo.New(client),
-		notificationeventrepo.New(client),
-		events,
-		emitter,
-		issuefollowerrepo.New(client),
-		jobs,
-		agenthold.New(
-			agentsettingrepo.New(client),
-			agentproposalrepo.New(client),
-			agentrepo.New(client),
+	built := func(authorizer service.Authorizer) service.Issues {
+		return issuesvc.New(
+			issuerepo.New(client),
+			revisions,
+			issuetemplaterepo.New(client),
+			requestkeyrepo.New(client),
 			workflowstaterepo.New(client),
-			issuedelegationrepo.New(client),
-			issuequestionrepo.New(client),
+			activityrepo.New(client),
+			labelrepo.New(client),
+			accountrepo.New(client),
+			membershiprepo.New(client),
+			cyclerepo.New(client),
+			cyclerepo.NewScopeChange(client),
+			projectrepo.New(client),
+			teamrepo.New(client),
+			triagerepo.New(client),
 			notificationeventrepo.New(client),
-		),
-		authorizer,
-		client,
-	), revisions, place
+			events,
+			emitter,
+			issuefollowerrepo.New(client),
+			jobs,
+			agenthold.New(
+				agentsettingrepo.New(client),
+				agentproposalrepo.New(client),
+				agentrepo.New(client),
+				workflowstaterepo.New(client),
+				issuedelegationrepo.New(client),
+				issuequestionrepo.New(client),
+				notificationeventrepo.New(client),
+			),
+			authorizer,
+			client,
+		)
+	}
+
+	place.asOther = built(deciding(place.other))
+
+	return built(deciding(place.account)), revisions, place
 }
 
 const writtenDescription = `## What is wrong
@@ -370,7 +389,7 @@ func TestEditingADescriptionKeepsWhatItReplaced(t *testing.T) {
 
 	second := "Ship the importer **and** the attachments."
 
-	edited, err := issues.Update(ctx, place.workspace.ID, created.ID, service.UpdateIssueInput{
+	edited, err := place.asOther.Update(ctx, place.workspace.ID, created.ID, service.UpdateIssueInput{
 		ExpectedVersion: created.Version,
 		Description:     &second,
 	})
@@ -398,7 +417,7 @@ func TestEditingADescriptionKeepsWhatItReplaced(t *testing.T) {
 		t.Fatalf("the replaced text reads %q", kept[1].Markdown)
 	}
 
-	if kept[0].AuthorAccountID != place.account || kept[0].Source != entity.RevisionSourcePerson {
+	if kept[0].AuthorAccountID != place.other || kept[0].Source != entity.RevisionSourcePerson {
 		t.Fatalf("the revision was filed under %s as %q", kept[0].AuthorAccountID, kept[0].Source)
 	}
 
@@ -456,8 +475,16 @@ func TestASecondWriterOnTheSameVersionIsToldRatherThanOverwriting(t *testing.T) 
 		t.Fatalf("List: %v", err)
 	}
 
-	if len(kept) != 2 {
-		t.Fatalf("kept %d revisions, want the refused write to have left none", len(kept))
+	if len(kept) != 1 {
+		t.Fatalf(
+			"kept %d entries, want the one this writer's sitting left: the refused write must "+
+				"leave nothing behind",
+			len(kept),
+		)
+	}
+
+	if kept[0].Markdown != mine {
+		t.Fatalf("the entry reads %q, want the write that stood", kept[0].Markdown)
 	}
 }
 
@@ -479,7 +506,7 @@ func TestRestoringADescriptionWritesTheOldTextForwardRatherThanRewinding(t *test
 
 	second := "A worse second sentence."
 
-	edited, err := issues.Update(ctx, place.workspace.ID, created.ID, service.UpdateIssueInput{
+	edited, err := place.asOther.Update(ctx, place.workspace.ID, created.ID, service.UpdateIssueInput{
 		ExpectedVersion: created.Version,
 		Description:     &second,
 	})
@@ -805,5 +832,60 @@ func TestATemplateThatInsistsOnAnEstimateRefusesAnAskWithout(t *testing.T) {
 
 	if len(missing.Fields) != 1 || missing.Fields[0] != entity.TemplateFieldEstimate {
 		t.Fatalf("the refusal named %v", missing.Fields)
+	}
+}
+
+func TestOneSittingLeavesOneEntryInTheHistory(t *testing.T) {
+	client := documentDatabase(t)
+	issues, revisions, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	created, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Written in one go",
+		Description: "The",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	version := created.Version
+
+	for _, written := range []string{"The export", "The export button", "The export button does nothing"} {
+		text := written
+
+		edited, err := issues.Update(ctx, place.workspace.ID, created.ID, service.UpdateIssueInput{
+			ExpectedVersion: version,
+			Description:     &text,
+		})
+		if err != nil {
+			t.Fatalf("Update to %q: %v", text, err)
+		}
+
+		version = edited.Version
+	}
+
+	kept, err := revisions.List(ctx, place.workspace.ID, created.ID, 20)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(kept) != 1 {
+		t.Fatalf(
+			"a description saved four times while one person wrote it left %d entries. The "+
+				"history is read to see what a requirement said, and one entry per pause makes "+
+				"that unreadable.",
+			len(kept),
+		)
+	}
+
+	if kept[0].Markdown != "The export button does nothing" {
+		t.Fatalf("the entry reads %q, want what the sitting ended on", kept[0].Markdown)
+	}
+
+	if kept[0].IssueVersion != version {
+		t.Fatalf("the entry is filed at version %d, want %d", kept[0].IssueVersion, version)
 	}
 }

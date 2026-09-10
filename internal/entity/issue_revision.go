@@ -11,6 +11,10 @@ import (
 const (
 	IssueRevisionPageDefaultSize = 25
 	IssueRevisionPageMaxSize     = 100
+
+	// A description written over several minutes is one rewriting, not thirty. Beyond this the
+	// writer has stopped and come back, which is a version worth telling apart.
+	IssueRevisionSameSitting = 5 * time.Minute
 )
 
 var ErrIssueRevisionNotFound = errors.New("description revision not found")
@@ -58,6 +62,18 @@ func RevisionSourceOf(kind ActorKind, source TriageSource, origin *ImportOrigin)
 // IssueDescriptionRevision is what a description was at one point, kept so an edit can be
 // compared, attributed and undone. An issue keeps its current text in its own row; this is the
 // trail behind it.
+// Continues reads whether a new version of a description belongs to the entry already open
+// rather than starting another: the same writer, the same origin, still in the same sitting.
+func (r IssueDescriptionRevision) Continues(
+	author uuid.UUID,
+	source RevisionSource,
+	now time.Time,
+) bool {
+	return r.AuthorAccountID == author &&
+		r.Source == source &&
+		now.Sub(r.CreatedAt) < IssueRevisionSameSitting
+}
+
 type IssueDescriptionRevision struct {
 	ID              uuid.UUID
 	WorkspaceID     uuid.UUID

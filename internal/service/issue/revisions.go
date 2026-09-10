@@ -2,6 +2,7 @@ package issue
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,7 +20,9 @@ func (s *issuesService) remember(
 	decision entity.Decision,
 	source entity.RevisionSource,
 ) error {
-	return s.revisions.Record(ctx, entity.IssueDescriptionRevision{
+	now := time.Now().UTC()
+
+	writing := entity.IssueDescriptionRevision{
 		WorkspaceID:     issue.WorkspaceID,
 		IssueID:         issue.ID,
 		IssueVersion:    issue.Version,
@@ -27,8 +30,23 @@ func (s *issuesService) remember(
 		Markdown:        issue.Description,
 		AuthorAccountID: decision.Actor.AccountID,
 		Source:          source,
-		CreatedAt:       time.Now().UTC(),
-	})
+		CreatedAt:       now,
+	}
+
+	// A description saved as it is typed would leave an entry per pause. One sitting by one
+	// person is one entry, so the history reads as the times the text was rewritten.
+	held, err := s.revisions.Latest(ctx, issue.WorkspaceID, issue.ID)
+	if err == nil && held.Continues(decision.Actor.AccountID, source, now) {
+		writing.ID = held.ID
+
+		return s.revisions.Replace(ctx, writing)
+	}
+
+	if err != nil && !errors.Is(err, entity.ErrIssueRevisionNotFound) {
+		return err
+	}
+
+	return s.revisions.Record(ctx, writing)
 }
 
 func (s *issuesService) DescriptionRevisions(

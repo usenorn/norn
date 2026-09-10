@@ -41,6 +41,21 @@ WHERE r.issue_id = $1 AND r.workspace_id = $2
 ORDER BY r.created_at DESC, r.id DESC
 LIMIT $3`
 
+const latestRevisionQuery = `
+SELECT` + revisionColumns + `
+FROM workspace_issue_description_revisions r
+LEFT JOIN accounts a ON a.id = r.author_account_id
+WHERE r.issue_id = $1 AND r.workspace_id = $2
+ORDER BY r.created_at DESC, r.id DESC
+LIMIT 1`
+
+// replaceRevisionQuery folds a run of edits by one person into the entry they started, so the
+// history reads as the times somebody rewrote the description rather than as every keystroke.
+const replaceRevisionQuery = `
+UPDATE workspace_issue_description_revisions
+SET issue_version = $3, doc = $4::jsonb, markdown = $5
+WHERE id = $1 AND workspace_id = $2`
+
 const revisionByIDQuery = `
 SELECT` + revisionColumns + `
 FROM workspace_issue_description_revisions r
@@ -164,6 +179,44 @@ func (r *revisionRepository) List(
 	}
 
 	return revisions, nil
+}
+
+func (r *revisionRepository) Latest(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) (entity.IssueDescriptionRevision, error) {
+	revision, err := scanRevision(r.db.Querier(ctx).QueryRowContext(
+		ctx, latestRevisionQuery, issueID.String(), workspaceID.String(),
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.IssueDescriptionRevision{}, entity.ErrIssueRevisionNotFound
+		}
+
+		return entity.IssueDescriptionRevision{}, fmt.Errorf("read the latest description revision: %w", err)
+	}
+
+	return revision, nil
+}
+
+func (r *revisionRepository) Replace(
+	ctx context.Context,
+	revision entity.IssueDescriptionRevision,
+) error {
+	encoded, err := revision.Doc.Encode()
+	if err != nil {
+		return fmt.Errorf("encode revision document: %w", err)
+	}
+
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, replaceRevisionQuery,
+		revision.ID.String(), revision.WorkspaceID.String(), revision.IssueVersion,
+		string(encoded), revision.Markdown,
+	); err != nil {
+		return fmt.Errorf("replace description revision: %w", err)
+	}
+
+	return nil
 }
 
 func (r *revisionRepository) GetByID(
