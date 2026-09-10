@@ -47,6 +47,14 @@
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { duePresets } from "./facets";
 	import { newIssueSchema, type NewIssuePrefill } from "./new-issue-schema";
+	import {
+		draftLabel,
+		dropDraft,
+		keepDraft,
+		readDrafts,
+		worthKeeping,
+		type IssueDraft,
+	} from "./drafts";
 	import { draftIssue, type CreationOutcome } from "./creating";
 	import Editor from "$lib/editor/editor.svelte";
 	import {
@@ -99,6 +107,9 @@
 	let dragging = $state(false);
 	let unconfirmed = $state(false);
 	let describing = $state.raw<Document>(emptyDocument);
+	let draftId = $state("");
+	let drafts = $state.raw<IssueDraft[]>([]);
+	let resumable = $state(false);
 	let opening = $state(0);
 
 	const unknownCreate =
@@ -480,6 +491,14 @@
 
 			settle(own);
 
+			// The draft this was written in is finished: it became the issue.
+			if (draftId) {
+				const kept = draftId;
+
+				draftId = "";
+				void dropDraft(own.workspaceId, kept);
+			}
+
 			if (!mine()) {
 				cancel();
 
@@ -621,6 +640,82 @@
 			)
 	);
 
+	// Closing the dialog with something written keeps it on the server rather than losing it.
+	// The dialog is not where the writing lives; it is only where it is done.
+	$effect(() => {
+		const justClosed = !open && wasOpen;
+
+		if (!justClosed) return;
+
+		void setAside();
+	});
+
+	async function setAside() {
+		if (live?.issue) return;
+
+		const fields = {
+			draftId: draftId || undefined,
+			teamId: $formData.teamId,
+			title: $formData.title,
+			description: describing,
+			stateId: $formData.stateId,
+			projectId: $formData.projectId,
+			cycleId: $formData.cycleId,
+			assigneeId: $formData.assigneeId,
+			labelIds: $formData.labelIds,
+			priority: $formData.priority,
+			dueOn: $formData.dueOn,
+		};
+
+		if (!worthKeeping(fields)) {
+			if (draftId) await dropDraft(workspaceId, draftId);
+
+			return;
+		}
+
+		const kept = await keepDraft(workspaceId, fields);
+
+		if (kept) draftId = kept.id;
+	}
+
+	async function offerDrafts() {
+		const held = await readDrafts(workspaceId);
+
+		drafts = held;
+		resumable = held.length > 0;
+	}
+
+	function resume(draft: IssueDraft) {
+		draftId = draft.id;
+		describing = asDocument(draft.descriptionDoc ?? emptyDocument);
+		resumable = false;
+
+		formData.update(
+			(current) => ({
+				...current,
+				title: draft.title,
+				teamId: draft.teamId ?? current.teamId,
+				stateId: draft.stateId ?? "",
+				projectId: draft.projectId ?? "",
+				cycleId: draft.cycleId ?? "",
+				assigneeId: draft.assigneeId ?? "",
+				labelIds: draft.labelIds ?? [],
+				priority: draft.priority,
+				dueOn: draft.dueOn ?? "",
+			}),
+			{ taint: false }
+		);
+	}
+
+	async function forget(draft: IssueDraft) {
+		if (await dropDraft(workspaceId, draft.id)) {
+			drafts = drafts.filter((held) => held.id !== draft.id);
+			resumable = drafts.length > 0;
+
+			if (draftId === draft.id) draftId = "";
+		}
+	}
+
 	$effect(() => {
 		const justOpened = open && !wasOpen;
 
@@ -630,7 +725,12 @@
 
 		form.reset({ keepMessage: false });
 		describing = asDocument(prefill?.description ?? emptyDocument);
+		draftId = "";
+		drafts = [];
+		resumable = false;
 		opening += 1;
+
+		void offerDrafts();
 		abandon();
 		failure = null;
 		unconfirmed = false;
@@ -861,6 +961,48 @@
 
 			<div class="min-h-0 flex-1 overflow-y-auto">
 				<div class="flex flex-col gap-2.5 px-4 pt-4 pb-3">
+					{#if resumable && drafts.length > 0}
+						<div class="flex flex-col gap-1.5 rounded-md border border-line-strong p-2.5">
+							<div class="flex items-center gap-2">
+								<span class="min-w-0 flex-1 text-sm text-ink-900">
+									{drafts.length === 1
+										? "You left one issue unfinished."
+										: `You left ${drafts.length} issues unfinished.`}
+								</span>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onclick={() => (resumable = false)}
+								>
+									Start fresh
+								</Button>
+							</div>
+							<ul class="flex flex-col gap-0.5">
+								{#each drafts as draft (draft.id)}
+									<li class="flex items-center gap-2">
+										<button
+											type="button"
+											onclick={() => resume(draft)}
+											class="min-w-0 flex-1 cursor-pointer truncate rounded-sm px-1.5 py-1 text-left text-md text-ink-900 motion-control hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+										>
+											{draftLabel(draft)}
+										</button>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											aria-label="Throw away {draftLabel(draft)}"
+											onclick={() => forget(draft)}
+										>
+											<X aria-hidden="true" />
+										</Button>
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
+
 					<Form.Field {form} name="title">
 						<Form.Control>
 							{#snippet children({ props })}

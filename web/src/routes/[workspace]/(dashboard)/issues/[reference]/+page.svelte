@@ -19,6 +19,7 @@
 	import Folder from "@lucide/svelte/icons/folder";
 	import Info from "@lucide/svelte/icons/info";
 	import Link2 from "@lucide/svelte/icons/link-2";
+	import History from "@lucide/svelte/icons/history";
 	import Pencil from "@lucide/svelte/icons/pencil";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Tags from "@lucide/svelte/icons/tags";
@@ -81,6 +82,7 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import Editor from "$lib/editor/editor.svelte";
+	import DescriptionHistory from "$lib/issues/description-history.svelte";
 	import {
 		asDocument,
 		documentEmpty,
@@ -211,6 +213,7 @@
 	let describing = $state.raw<Document>(emptyDocument);
 	let describedBase = $state.raw<Document>(emptyDocument);
 	let describedConflict = $state.raw<{ mine: Document; theirs: Document } | null>(null);
+	let showingHistory = $state(false);
 	let descriptionEditor = $state.raw<{
 		settle: (taskId: string, content: unknown) => boolean;
 		abandon: (taskId: string) => void;
@@ -1308,6 +1311,12 @@
 				(!sameDocument(describing, describedBase) && editingField === "description"))
 	);
 
+	// Writing that has not been saved and is not on screen: the editor is closed but the words
+	// are still held, so the page has to say so rather than looking as if nothing happened.
+	const unsaved = $derived(
+		Boolean(issue) && editingField !== "description" && !sameDocument(describing, describedBase)
+	);
+
 	const watchers = $derived(
 		(ready?.watchers ?? [])
 			.map((accountId) => ({ accountId, name: nameOf(accountId) }))
@@ -1373,10 +1382,13 @@
 
 		formData.update((current) => ({ ...current, title: issue.title }), { taint: false });
 
-		describedBase = asDocument(issue.descriptionDoc);
-		describing = describedBase;
-		editingVersion = issue.version;
-		describedConflict = null;
+		if (!unsaved) {
+			describedBase = asDocument(issue.descriptionDoc);
+			describing = describedBase;
+			editingVersion = issue.version;
+			describedConflict = null;
+		}
+
 		editingField = field;
 	}
 
@@ -1388,6 +1400,19 @@
 		editedField.focus();
 		editedField.setSelectionRange(editedField.value.length, editedField.value.length);
 	});
+
+	// Leaving the editor keeps what was written. The text is still there to come back to, and
+	// only Cancel — which somebody chose — throws it away.
+	function stopEditing() {
+		editingField = null;
+		failure = null;
+	}
+
+	function resumeEditing() {
+		if (!canEdit) return;
+
+		editingField = "description";
+	}
 
 	function discard() {
 		if (!issue) return;
@@ -1458,13 +1483,13 @@
 	}
 
 	function onPointerDown(event: PointerEvent) {
-		if (editingField !== "description" || dirty) return;
+		if (editingField !== "description") return;
 
 		const target = event.target as HTMLElement | null;
 
 		if (target?.closest("[data-editing-region]")) return;
 
-		editingField = null;
+		stopEditing();
 	}
 
 	const shortcuts = useShortcuts();
@@ -1488,10 +1513,13 @@
 			return;
 		}
 
+		// Escape dismisses the innermost thing that is open. Inside the editor that is a
+		// suggestion list, which the editor closes itself; out here it is the editing session,
+		// and closing it must not take the writing with it.
 		if (event.key === "Escape") {
 			if (editingField) {
 				event.preventDefault();
-				discard();
+				stopEditing();
 			}
 
 			return;
@@ -1941,6 +1969,12 @@
 								<h2 class="min-w-0 flex-1">
 									<Eyebrow rule class="text-ink-600">Description</Eyebrow>
 								</h2>
+								{#if editingField !== "description"}
+									<Button variant="ghost" size="sm" onclick={() => (showingHistory = true)}>
+										<History aria-hidden="true" />
+										History
+									</Button>
+								{/if}
 								{#if canEdit && editingField !== "description"}
 									<Button variant="ghost" size="sm" onclick={() => startEditing("description")}>
 										<Pencil aria-hidden="true" />
@@ -2071,7 +2105,20 @@
 										</span>
 									</div>
 								</div>
-							{:else if issue.description.trim()}
+							{:else if issue.description.trim() || unsaved}
+								{#if unsaved}
+									<div
+										class="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-line-strong px-2.5 py-1.75"
+									>
+										<span class="min-w-0 flex-1 text-sm text-ink-900">
+											You have unsaved changes to this description.
+										</span>
+										<Button variant="secondary" size="sm" onclick={resumeEditing}>
+											Keep writing
+										</Button>
+										<Button variant="ghost" size="sm" onclick={discard}>Discard</Button>
+									</div>
+								{/if}
 								<button
 									type="button"
 									disabled={!canEdit}
@@ -2867,6 +2914,24 @@
 		</div>
 	{/if}
 </div>
+
+{#if issue}
+	<DescriptionHistory
+		bind:open={showingHistory}
+		workspaceId={data.workspace.id}
+		workspace={data.workspace.slug}
+		issueId={issue.id}
+		version={issue.version}
+		{when}
+		{nameOf}
+		{working}
+		onrestored={async () => {
+			describedConflict = null;
+			await invalidate(keys.page(page.route.id));
+			announce("The description was put back.");
+		}}
+	/>
+{/if}
 
 {#if ready && issue}
 	<NewIssueDialog
