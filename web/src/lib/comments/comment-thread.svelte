@@ -44,6 +44,7 @@
 		onremove,
 		onreact,
 		onmore,
+		onpromote,
 		uploads,
 		onfiles,
 		oncancelupload,
@@ -70,6 +71,7 @@
 		onremove: (commentId: string) => void;
 		onreact: (commentId: string, reaction: CommentReaction, on: boolean) => void;
 		onmore: () => void;
+		onpromote?: (comment: IssueComment, into: "issue" | "description") => void;
 		uploads?: UploadTask[];
 		onfiles?: (files: File[]) => string[] | void;
 		oncancelupload?: (id: string) => void;
@@ -213,6 +215,24 @@
 				<Button variant="ghost" size="sm" disabled={working} onclick={() => onremove(comment.id)}>
 					Delete
 				</Button>
+			{/if}
+
+			{#if onpromote && !comment.deleted}
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						{#snippet child({ props })}
+							<Button {...props} variant="ghost" size="sm" disabled={working}>Turn into</Button>
+						{/snippet}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content align="start">
+						<DropdownMenu.Item onSelect={() => onpromote(comment, "issue")}>
+							A sub-issue
+						</DropdownMenu.Item>
+						<DropdownMenu.Item onSelect={() => onpromote(comment, "description")}>
+							Part of the description
+						</DropdownMenu.Item>
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
 			{/if}
 		</div>
 

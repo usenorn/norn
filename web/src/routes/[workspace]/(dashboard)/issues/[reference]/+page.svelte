@@ -136,12 +136,12 @@
 	} from "$lib/attachments/attachments";
 	import { newTask, settled, upload, type UploadTask } from "$lib/attachments/upload";
 	import {
+		authorLabel,
 		readCommentFailure,
 		type CommentFailure,
 		type CommentMention,
 		type CommentReaction,
 		type CommentThread,
-		type MentionTarget,
 	} from "$lib/comments/comments";
 	import {
 		conflictFailure,
@@ -1518,6 +1518,60 @@
 		addingChild = true;
 	}
 
+	// A decision reached in the conversation is worth more where the work is read than where it
+	// was said, so it moves with a link back to the comment it came from.
+	function promote(comment: IssueComment, into: "issue" | "description") {
+		if (!issue) return;
+
+		const said = asDocument(comment.bodyDoc);
+		const source: Document = {
+			type: "doc",
+			content: [
+				...(said.content ?? []),
+				{
+					type: "paragraph",
+					content: [
+						{ type: "text", text: "Said by " },
+						{ type: "text", text: authorLabel(comment) },
+						{ type: "text", text: " in " },
+						{
+							type: "text",
+							text: "the conversation",
+							marks: [
+								{
+									type: "link",
+									attrs: { href: `${at(`/issues/${issue.reference}`)}#comment-${comment.id}` },
+								},
+							],
+						},
+						{ type: "text", text: "." },
+					],
+				},
+			],
+		};
+
+		if (into === "issue") {
+			childPrefill = {
+				teamId: issue.teamId,
+				projectId: issue.projectId ?? "",
+				title: documentText(said).slice(0, 200),
+				description: source,
+			};
+
+			filingUnder = { id: issue.id, reference: issue.reference };
+			addingChild = true;
+
+			return;
+		}
+
+		startEditing("description");
+
+		describing = {
+			type: "doc",
+			content: [...(describing.content ?? []), ...(source.content ?? [])],
+		};
+	}
+
 	function resumeEditing() {
 		if (!canEdit) return;
 
@@ -2593,6 +2647,7 @@
 							onremove={removeComment}
 							onreact={react}
 							onmore={loadEarlier}
+							onpromote={canEdit ? promote : undefined}
 						/>
 					</section>
 				</div>
