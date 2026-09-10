@@ -20,6 +20,7 @@ type CreateIssueInput struct {
 	CycleID           uuid.UUID
 	ProjectID         uuid.UUID
 	LabelIDs          []uuid.UUID
+	TemplateID        uuid.UUID
 	Origin            *entity.ImportOrigin
 	Source            entity.TriageSource
 	RequestKey        string

@@ -23,6 +23,7 @@ type handler struct {
 	invitations       service.Invitations
 	issues            service.Issues
 	drafts            service.IssueDrafts
+	templates         service.IssueTemplates
 	issueRelations    service.IssueRelations
 	issueComments     service.IssueComments
 	delegations       service.Delegations
@@ -73,6 +74,7 @@ func New(
 	invitations service.Invitations,
 	issues service.Issues,
 	drafts service.IssueDrafts,
+	templates service.IssueTemplates,
 	issueRelations service.IssueRelations,
 	issueComments service.IssueComments,
 	delegations service.Delegations,
@@ -122,6 +124,7 @@ func New(
 		invitations:       invitations,
 		issues:            issues,
 		drafts:            drafts,
+		templates:         templates,
 		issueRelations:    issueRelations,
 		issueComments:     issueComments,
 		delegations:       delegations,

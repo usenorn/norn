@@ -3922,6 +3922,62 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issue-templates:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueTemplates
+      summary: Read the shapes a team keeps for the issues it raises again and again
+      parameters:
+        - $ref: '#/components/parameters/TemplateTeamId'
+      responses:
+        '200':
+          description: The templates on the team, and those the whole workspace keeps
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueTemplateList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [issues]
+      operationId: saveWorkspaceIssueTemplate
+      summary: Keep a template, or change one that exists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaveIssueTemplateRequest' }
+      responses:
+        '200':
+          description: The template as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueTemplate' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issue-templates/{templateId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TemplateId'
+    delete:
+      tags: [issues]
+      operationId: deleteWorkspaceIssueTemplate
+      summary: Stop keeping a template
+      responses:
+        '204': { description: The template is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/status:
     post:
       tags: [issues]
@@ -6882,6 +6938,19 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    TemplateId:
+      name: templateId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    TemplateTeamId:
+      name: teamId
+      in: query
+      required: false
+      description: Read the templates this team keeps as well as the workspace's own.
+      schema: { type: string, format: uuid }
+
     DraftId:
       name: draftId
       in: path
@@ -7995,6 +8064,79 @@ components:
           items:
             type: string
             enum: [assignee, estimate, dueOn, cycle, project]
+
+    IssueTemplateList:
+      type: object
+      required: [templates]
+      properties:
+        templates:
+          type: array
+          items: { $ref: '#/components/schemas/IssueTemplate' }
+
+    IssueTemplate:
+      type: object
+      required: [id, workspaceId, name, title, body, requiredFields, priority, position, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        teamId:
+          type: string
+          format: uuid
+          description: The team that keeps this template; absent means the whole workspace does.
+        name: { type: string }
+        description:
+          type: string
+          description: What this template is for, shown beside its name when choosing one.
+        title: { type: string }
+        body: { type: string }
+        bodyDoc: { $ref: '#/components/schemas/Document' }
+        requiredFields:
+          type: array
+          items: { $ref: '#/components/schemas/TemplateField' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        position: { type: integer, format: int32 }
+        createdByAccountId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TemplateField:
+      type: string
+      description: A property a template insists on before an issue may be raised from it.
+      enum: [assignee, project, cycle, estimate, dueOn, labels, priority]
+
+    SaveIssueTemplateRequest:
+      type: object
+      required: [name]
+      properties:
+        templateId:
+          type: string
+          format: uuid
+          description: The template to change; absent keeps a new one.
+        teamId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 128 }
+        description: { type: string }
+        title: { type: string }
+        body: { type: string }
+        bodyDoc: { $ref: '#/components/schemas/Document' }
+        requiredFields:
+          type: array
+          items: { $ref: '#/components/schemas/TemplateField' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        position: { type: integer, format: int32 }
 
     IssueDraftList:
       type: object
@@ -10389,6 +10531,12 @@ components:
         labelIds:
           type: array
           items: { type: string, format: uuid }
+        templateId:
+          type: string
+          format: uuid
+          description: >-
+            A template on this team, or on the workspace. It fills in what this request does not
+            send; anything the request does send wins over what the template offers.
         idempotencyKey:
           type: string
           maxLength: 128

@@ -19,6 +19,7 @@ import (
 type issuesService struct {
 	issues       repository.Issue
 	revisions    repository.IssueRevision
+	templates    repository.IssueTemplate
 	requests     repository.RequestKey
 	states       repository.WorkflowState
 	activity     repository.Activity
@@ -43,6 +44,7 @@ type issuesService struct {
 func New(
 	issues repository.Issue,
 	revisions repository.IssueRevision,
+	templates repository.IssueTemplate,
 	requests repository.RequestKey,
 	states repository.WorkflowState,
 	activity repository.Activity,
@@ -66,6 +68,7 @@ func New(
 	return &issuesService{
 		issues:       issues,
 		revisions:    revisions,
+		templates:    templates,
 		requests:     requests,
 		states:       states,
 		activity:     activity,
@@ -163,6 +166,12 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 
 	if err := s.heldCreation(ctx, decision, input); err != nil {
 		return entity.Issue{}, err
+	}
+
+	if input.TemplateID != uuid.Nil {
+		if err := s.shapedBy(ctx, &input); err != nil {
+			return entity.Issue{}, err
+		}
 	}
 
 	markdown, document, err := entity.Described(input.Description, input.DescriptionDoc)

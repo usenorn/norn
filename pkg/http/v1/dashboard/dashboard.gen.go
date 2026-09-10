@@ -3482,37 +3482,37 @@ func (e SourceControlBrokenReason) Valid() bool {
 
 // Defines values for SourceControlCapability.
 const (
-	Assignees    SourceControlCapability = "assignees"
-	ChangedPaths SourceControlCapability = "changed_paths"
-	Checks       SourceControlCapability = "checks"
-	Deployments  SourceControlCapability = "deployments"
-	Issues       SourceControlCapability = "issues"
-	Labels       SourceControlCapability = "labels"
-	Releases     SourceControlCapability = "releases"
-	Reviews      SourceControlCapability = "reviews"
-	Webhooks     SourceControlCapability = "webhooks"
+	SourceControlCapabilityAssignees    SourceControlCapability = "assignees"
+	SourceControlCapabilityChangedPaths SourceControlCapability = "changed_paths"
+	SourceControlCapabilityChecks       SourceControlCapability = "checks"
+	SourceControlCapabilityDeployments  SourceControlCapability = "deployments"
+	SourceControlCapabilityIssues       SourceControlCapability = "issues"
+	SourceControlCapabilityLabels       SourceControlCapability = "labels"
+	SourceControlCapabilityReleases     SourceControlCapability = "releases"
+	SourceControlCapabilityReviews      SourceControlCapability = "reviews"
+	SourceControlCapabilityWebhooks     SourceControlCapability = "webhooks"
 )
 
 // Valid indicates whether the value is a known member of the SourceControlCapability enum.
 func (e SourceControlCapability) Valid() bool {
 	switch e {
-	case Assignees:
+	case SourceControlCapabilityAssignees:
 		return true
-	case ChangedPaths:
+	case SourceControlCapabilityChangedPaths:
 		return true
-	case Checks:
+	case SourceControlCapabilityChecks:
 		return true
-	case Deployments:
+	case SourceControlCapabilityDeployments:
 		return true
-	case Issues:
+	case SourceControlCapabilityIssues:
 		return true
-	case Labels:
+	case SourceControlCapabilityLabels:
 		return true
-	case Releases:
+	case SourceControlCapabilityReleases:
 		return true
-	case Reviews:
+	case SourceControlCapabilityReviews:
 		return true
-	case Webhooks:
+	case SourceControlCapabilityWebhooks:
 		return true
 	default:
 		return false
@@ -3918,6 +3918,39 @@ func (e TelemetryMode) Valid() bool {
 	case Full:
 		return true
 	case Minimal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TemplateField.
+const (
+	TemplateFieldAssignee TemplateField = "assignee"
+	TemplateFieldCycle    TemplateField = "cycle"
+	TemplateFieldDueOn    TemplateField = "dueOn"
+	TemplateFieldEstimate TemplateField = "estimate"
+	TemplateFieldLabels   TemplateField = "labels"
+	TemplateFieldPriority TemplateField = "priority"
+	TemplateFieldProject  TemplateField = "project"
+)
+
+// Valid indicates whether the value is a known member of the TemplateField enum.
+func (e TemplateField) Valid() bool {
+	switch e {
+	case TemplateFieldAssignee:
+		return true
+	case TemplateFieldCycle:
+		return true
+	case TemplateFieldDueOn:
+		return true
+	case TemplateFieldEstimate:
+		return true
+	case TemplateFieldLabels:
+		return true
+	case TemplateFieldPriority:
+		return true
+	case TemplateFieldProject:
 		return true
 	default:
 		return false
@@ -5262,7 +5295,10 @@ type CreateIssueRequest struct {
 	// StateId A state on the team; absent files the issue into the team's default state
 	StateId *openapi_types.UUID `json:"stateId,omitempty"`
 	TeamId  openapi_types.UUID  `json:"teamId"`
-	Title   string              `json:"title"`
+
+	// TemplateId A template on this team, or on the workspace. It fills in what this request does not send; anything the request does send wins over what the template offers.
+	TemplateId *openapi_types.UUID `json:"templateId,omitempty"`
+	Title      string              `json:"title"`
 }
 
 // CreateLabelRequest defines model for CreateLabelRequest.
@@ -6931,6 +6967,40 @@ type IssueState struct {
 // IssueStatus defines model for IssueStatus.
 type IssueStatus string
 
+// IssueTemplate defines model for IssueTemplate.
+type IssueTemplate struct {
+	AssigneeId *openapi_types.UUID `json:"assigneeId,omitempty"`
+	Body       string              `json:"body"`
+
+	// BodyDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	BodyDoc            *Document           `json:"bodyDoc,omitempty"`
+	CreatedAt          time.Time           `json:"createdAt"`
+	CreatedByAccountId *openapi_types.UUID `json:"createdByAccountId,omitempty"`
+
+	// Description What this template is for, shown beside its name when choosing one.
+	Description    *string               `json:"description,omitempty"`
+	Estimate       *int32                `json:"estimate,omitempty"`
+	Id             openapi_types.UUID    `json:"id"`
+	LabelIds       *[]openapi_types.UUID `json:"labelIds,omitempty"`
+	Name           string                `json:"name"`
+	Position       int32                 `json:"position"`
+	Priority       IssuePriority         `json:"priority"`
+	ProjectId      *openapi_types.UUID   `json:"projectId,omitempty"`
+	RequiredFields []TemplateField       `json:"requiredFields"`
+	StateId        *openapi_types.UUID   `json:"stateId,omitempty"`
+
+	// TeamId The team that keeps this template; absent means the whole workspace does.
+	TeamId      *openapi_types.UUID `json:"teamId,omitempty"`
+	Title       string              `json:"title"`
+	UpdatedAt   time.Time           `json:"updatedAt"`
+	WorkspaceId openapi_types.UUID  `json:"workspaceId"`
+}
+
+// IssueTemplateList defines model for IssueTemplateList.
+type IssueTemplateList struct {
+	Templates []IssueTemplate `json:"templates"`
+}
+
 // IssuedInvitation defines model for IssuedInvitation.
 type IssuedInvitation struct {
 	Invitation Invitation `json:"invitation"`
@@ -7716,6 +7786,29 @@ type SaveIssueDraftRequest struct {
 	Title         *string               `json:"title,omitempty"`
 }
 
+// SaveIssueTemplateRequest defines model for SaveIssueTemplateRequest.
+type SaveIssueTemplateRequest struct {
+	AssigneeId *openapi_types.UUID `json:"assigneeId,omitempty"`
+	Body       *string             `json:"body,omitempty"`
+
+	// BodyDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	BodyDoc        *Document             `json:"bodyDoc,omitempty"`
+	Description    *string               `json:"description,omitempty"`
+	Estimate       *int32                `json:"estimate,omitempty"`
+	LabelIds       *[]openapi_types.UUID `json:"labelIds,omitempty"`
+	Name           string                `json:"name"`
+	Position       *int32                `json:"position,omitempty"`
+	Priority       *IssuePriority        `json:"priority,omitempty"`
+	ProjectId      *openapi_types.UUID   `json:"projectId,omitempty"`
+	RequiredFields *[]TemplateField      `json:"requiredFields,omitempty"`
+	StateId        *openapi_types.UUID   `json:"stateId,omitempty"`
+	TeamId         *openapi_types.UUID   `json:"teamId,omitempty"`
+
+	// TemplateId The template to change; absent keeps a new one.
+	TemplateId *openapi_types.UUID `json:"templateId,omitempty"`
+	Title      *string             `json:"title,omitempty"`
+}
+
 // SavedView defines model for SavedView.
 type SavedView struct {
 	CreatedAt          time.Time           `json:"createdAt"`
@@ -8372,6 +8465,9 @@ type TeamVisibility string
 // TelemetryMode defines model for TelemetryMode.
 type TelemetryMode string
 
+// TemplateField A property a template insists on before an issue may be raised from it.
+type TemplateField string
+
 // TriageDeclineReason defines model for TriageDeclineReason.
 type TriageDeclineReason string
 
@@ -8958,6 +9054,12 @@ type StateId = openapi_types.UUID
 // TeamId defines model for TeamId.
 type TeamId = openapi_types.UUID
 
+// TemplateId defines model for TemplateId.
+type TemplateId = openapi_types.UUID
+
+// TemplateTeamId defines model for TemplateTeamId.
+type TemplateTeamId = openapi_types.UUID
+
 // TokenId defines model for TokenId.
 type TokenId = openapi_types.UUID
 
@@ -9231,6 +9333,12 @@ type UploadWorkspaceImportFileMultipartBody struct {
 // ListWorkspaceInvitationsParams defines parameters for ListWorkspaceInvitations.
 type ListWorkspaceInvitationsParams struct {
 	Status *InvitationStatus `form:"status,omitempty" json:"status,omitempty"`
+}
+
+// ListWorkspaceIssueTemplatesParams defines parameters for ListWorkspaceIssueTemplates.
+type ListWorkspaceIssueTemplatesParams struct {
+	// TeamId Read the templates this team keeps as well as the workspace's own.
+	TeamId *TemplateTeamId `form:"teamId,omitempty" json:"teamId,omitempty"`
 }
 
 // ListWorkspaceIssuesParams defines parameters for ListWorkspaceIssues.
@@ -9523,6 +9631,9 @@ type CreateWorkspaceInvitationsJSONRequestBody = CreateInvitationsRequest
 
 // SaveWorkspaceIssueDraftJSONRequestBody defines body for SaveWorkspaceIssueDraft for application/json ContentType.
 type SaveWorkspaceIssueDraftJSONRequestBody = SaveIssueDraftRequest
+
+// SaveWorkspaceIssueTemplateJSONRequestBody defines body for SaveWorkspaceIssueTemplate for application/json ContentType.
+type SaveWorkspaceIssueTemplateJSONRequestBody = SaveIssueTemplateRequest
 
 // CreateWorkspaceIssueJSONRequestBody defines body for CreateWorkspaceIssue for application/json ContentType.
 type CreateWorkspaceIssueJSONRequestBody = CreateIssueRequest
@@ -10876,6 +10987,30 @@ type ClientInterface interface {
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/issue-drafts/{draftId} (the `DeleteWorkspaceIssueDraft` operationId).
 	DeleteWorkspaceIssueDraft(ctx context.Context, workspaceId WorkspaceId, draftId DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceIssueTemplates Read the shapes a team keeps for the issues it raises again and again
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issue-templates (the `ListWorkspaceIssueTemplates` operationId).
+	ListWorkspaceIssueTemplates(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceIssueTemplatesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SaveWorkspaceIssueTemplateWithBody Keep a template, or change one that exists
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+	SaveWorkspaceIssueTemplateWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SaveWorkspaceIssueTemplate Keep a template, or change one that exists
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+	SaveWorkspaceIssueTemplate(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteWorkspaceIssueTemplate Stop keeping a template
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/issue-templates/{templateId} (the `DeleteWorkspaceIssueTemplate` operationId).
+	DeleteWorkspaceIssueTemplate(ctx context.Context, workspaceId WorkspaceId, templateId TemplateId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceIssues List the issues the caller may see, newest first
 	//
@@ -15222,6 +15357,70 @@ func (c *Client) SaveWorkspaceIssueDraft(ctx context.Context, workspaceId Worksp
 // Corresponds with DELETE /workspaces/{workspaceId}/issue-drafts/{draftId} (the `DeleteWorkspaceIssueDraft` operationId).
 func (c *Client) DeleteWorkspaceIssueDraft(ctx context.Context, workspaceId WorkspaceId, draftId DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteWorkspaceIssueDraftRequest(c.Server, workspaceId, draftId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceIssueTemplates Read the shapes a team keeps for the issues it raises again and again
+//
+// Corresponds with GET /workspaces/{workspaceId}/issue-templates (the `ListWorkspaceIssueTemplates` operationId).
+func (c *Client) ListWorkspaceIssueTemplates(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceIssueTemplatesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceIssueTemplatesRequest(c.Server, workspaceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SaveWorkspaceIssueTemplateWithBody Keep a template, or change one that exists
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+func (c *Client) SaveWorkspaceIssueTemplateWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSaveWorkspaceIssueTemplateRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SaveWorkspaceIssueTemplate Keep a template, or change one that exists
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+func (c *Client) SaveWorkspaceIssueTemplate(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSaveWorkspaceIssueTemplateRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteWorkspaceIssueTemplate Stop keeping a template
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/issue-templates/{templateId} (the `DeleteWorkspaceIssueTemplate` operationId).
+func (c *Client) DeleteWorkspaceIssueTemplate(ctx context.Context, workspaceId WorkspaceId, templateId TemplateId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWorkspaceIssueTemplateRequest(c.Server, workspaceId, templateId)
 	if err != nil {
 		return nil, err
 	}
@@ -24978,6 +25177,155 @@ func NewDeleteWorkspaceIssueDraftRequest(server string, workspaceId WorkspaceId,
 	}
 
 	operationPath := fmt.Sprintf("/workspaces/%s/issue-drafts/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListWorkspaceIssueTemplatesRequest constructs an http.Request for the ListWorkspaceIssueTemplates method
+func NewListWorkspaceIssueTemplatesRequest(server string, workspaceId WorkspaceId, params *ListWorkspaceIssueTemplatesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issue-templates", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.TeamId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "teamId", *params.TeamId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSaveWorkspaceIssueTemplateRequest calls the generic SaveWorkspaceIssueTemplate builder with application/json body
+func NewSaveWorkspaceIssueTemplateRequest(server string, workspaceId WorkspaceId, body SaveWorkspaceIssueTemplateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSaveWorkspaceIssueTemplateRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewSaveWorkspaceIssueTemplateRequestWithBody constructs an http.Request for the SaveWorkspaceIssueTemplate method, with any body, and a specified content type
+func NewSaveWorkspaceIssueTemplateRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issue-templates", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteWorkspaceIssueTemplateRequest constructs an http.Request for the DeleteWorkspaceIssueTemplate method
+func NewDeleteWorkspaceIssueTemplateRequest(server string, workspaceId WorkspaceId, templateId TemplateId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "templateId", templateId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issue-templates/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -35709,6 +36057,34 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/issue-drafts/{draftId} (the `DeleteWorkspaceIssueDraft` operationId).
 	DeleteWorkspaceIssueDraftWithResponse(ctx context.Context, workspaceId WorkspaceId, draftId DraftId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueDraftResponse, error)
+
+	// ListWorkspaceIssueTemplatesWithResponse Read the shapes a team keeps for the issues it raises again and again
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issue-templates (the `ListWorkspaceIssueTemplates` operationId).
+	ListWorkspaceIssueTemplatesWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceIssueTemplatesParams, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueTemplatesResponse, error)
+
+	// SaveWorkspaceIssueTemplateWithBodyWithResponse Keep a template, or change one that exists
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+	SaveWorkspaceIssueTemplateWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueTemplateResponse, error)
+
+	// SaveWorkspaceIssueTemplateWithResponse Keep a template, or change one that exists
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+	SaveWorkspaceIssueTemplateWithResponse(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueTemplateResponse, error)
+
+	// DeleteWorkspaceIssueTemplateWithResponse Stop keeping a template
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/issue-templates/{templateId} (the `DeleteWorkspaceIssueTemplate` operationId).
+	DeleteWorkspaceIssueTemplateWithResponse(ctx context.Context, workspaceId WorkspaceId, templateId TemplateId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueTemplateResponse, error)
 
 	// ListWorkspaceIssuesWithResponse List the issues the caller may see, newest first
 	//
@@ -46529,6 +46905,220 @@ func (r DeleteWorkspaceIssueDraftResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r DeleteWorkspaceIssueDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceIssueTemplatesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *IssueTemplateList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceIssueTemplatesResponse) GetJSON200() *IssueTemplateList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceIssueTemplatesResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceIssueTemplatesResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceIssueTemplatesResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceIssueTemplatesResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceIssueTemplatesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceIssueTemplatesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceIssueTemplatesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceIssueTemplatesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SaveWorkspaceIssueTemplateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *IssueTemplate
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SaveWorkspaceIssueTemplateResponse) GetJSON200() *IssueTemplate {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SaveWorkspaceIssueTemplateResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SaveWorkspaceIssueTemplateResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SaveWorkspaceIssueTemplateResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SaveWorkspaceIssueTemplateResponse) GetApplicationproblemJSON409() *Problem {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SaveWorkspaceIssueTemplateResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SaveWorkspaceIssueTemplateResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SaveWorkspaceIssueTemplateResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SaveWorkspaceIssueTemplateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SaveWorkspaceIssueTemplateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SaveWorkspaceIssueTemplateResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteWorkspaceIssueTemplateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteWorkspaceIssueTemplateResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteWorkspaceIssueTemplateResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteWorkspaceIssueTemplateResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteWorkspaceIssueTemplateResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteWorkspaceIssueTemplateResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteWorkspaceIssueTemplateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteWorkspaceIssueTemplateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteWorkspaceIssueTemplateResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -62815,6 +63405,58 @@ func (c *ClientWithResponses) DeleteWorkspaceIssueDraftWithResponse(ctx context.
 	return ParseDeleteWorkspaceIssueDraftResponse(rsp)
 }
 
+// ListWorkspaceIssueTemplatesWithResponse Read the shapes a team keeps for the issues it raises again and again
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issue-templates (the `ListWorkspaceIssueTemplates` operationId).
+func (c *ClientWithResponses) ListWorkspaceIssueTemplatesWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceIssueTemplatesParams, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueTemplatesResponse, error) {
+	rsp, err := c.ListWorkspaceIssueTemplates(ctx, workspaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceIssueTemplatesResponse(rsp)
+}
+
+// SaveWorkspaceIssueTemplateWithBodyWithResponse Keep a template, or change one that exists
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+func (c *ClientWithResponses) SaveWorkspaceIssueTemplateWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueTemplateResponse, error) {
+	rsp, err := c.SaveWorkspaceIssueTemplateWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSaveWorkspaceIssueTemplateResponse(rsp)
+}
+
+// SaveWorkspaceIssueTemplateWithResponse Keep a template, or change one that exists
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/issue-templates (the `SaveWorkspaceIssueTemplate` operationId).
+func (c *ClientWithResponses) SaveWorkspaceIssueTemplateWithResponse(ctx context.Context, workspaceId WorkspaceId, body SaveWorkspaceIssueTemplateJSONRequestBody, reqEditors ...RequestEditorFn) (*SaveWorkspaceIssueTemplateResponse, error) {
+	rsp, err := c.SaveWorkspaceIssueTemplate(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSaveWorkspaceIssueTemplateResponse(rsp)
+}
+
+// DeleteWorkspaceIssueTemplateWithResponse Stop keeping a template
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/issue-templates/{templateId} (the `DeleteWorkspaceIssueTemplate` operationId).
+func (c *ClientWithResponses) DeleteWorkspaceIssueTemplateWithResponse(ctx context.Context, workspaceId WorkspaceId, templateId TemplateId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueTemplateResponse, error) {
+	rsp, err := c.DeleteWorkspaceIssueTemplate(ctx, workspaceId, templateId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteWorkspaceIssueTemplateResponse(rsp)
+}
+
 // ListWorkspaceIssuesWithResponse List the issues the caller may see, newest first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -73391,6 +74033,178 @@ func ParseDeleteWorkspaceIssueDraftResponse(rsp *http.Response) (*DeleteWorkspac
 	}
 
 	response := &DeleteWorkspaceIssueDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceIssueTemplatesResponse parses an HTTP response from a ListWorkspaceIssueTemplatesWithResponse call
+func ParseListWorkspaceIssueTemplatesResponse(rsp *http.Response) (*ListWorkspaceIssueTemplatesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceIssueTemplatesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest IssueTemplateList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSaveWorkspaceIssueTemplateResponse parses an HTTP response from a SaveWorkspaceIssueTemplateWithResponse call
+func ParseSaveWorkspaceIssueTemplateResponse(rsp *http.Response) (*SaveWorkspaceIssueTemplateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SaveWorkspaceIssueTemplateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest IssueTemplate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteWorkspaceIssueTemplateResponse parses an HTTP response from a DeleteWorkspaceIssueTemplateWithResponse call
+func ParseDeleteWorkspaceIssueTemplateResponse(rsp *http.Response) (*DeleteWorkspaceIssueTemplateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteWorkspaceIssueTemplateResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -85046,6 +85860,15 @@ type ServerInterface interface {
 	// DeleteWorkspaceIssueDraft Throw away a draft
 	// (DELETE /workspaces/{workspaceId}/issue-drafts/{draftId})
 	DeleteWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, draftId DraftId)
+	// ListWorkspaceIssueTemplates Read the shapes a team keeps for the issues it raises again and again
+	// (GET /workspaces/{workspaceId}/issue-templates)
+	ListWorkspaceIssueTemplates(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceIssueTemplatesParams)
+	// SaveWorkspaceIssueTemplate Keep a template, or change one that exists
+	// (PUT /workspaces/{workspaceId}/issue-templates)
+	SaveWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DeleteWorkspaceIssueTemplate Stop keeping a template
+	// (DELETE /workspaces/{workspaceId}/issue-templates/{templateId})
+	DeleteWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, templateId TemplateId)
 	// ListWorkspaceIssues List the issues the caller may see, newest first
 	// (GET /workspaces/{workspaceId}/issues)
 	ListWorkspaceIssues(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceIssuesParams)
@@ -86396,6 +87219,24 @@ func (_ Unimplemented) SaveWorkspaceIssueDraft(w http.ResponseWriter, r *http.Re
 // DeleteWorkspaceIssueDraft Throw away a draft
 // (DELETE /workspaces/{workspaceId}/issue-drafts/{draftId})
 func (_ Unimplemented) DeleteWorkspaceIssueDraft(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, draftId DraftId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueTemplates Read the shapes a team keeps for the issues it raises again and again
+// (GET /workspaces/{workspaceId}/issue-templates)
+func (_ Unimplemented) ListWorkspaceIssueTemplates(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceIssueTemplatesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SaveWorkspaceIssueTemplate Keep a template, or change one that exists
+// (PUT /workspaces/{workspaceId}/issue-templates)
+func (_ Unimplemented) SaveWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteWorkspaceIssueTemplate Stop keeping a template
+// (DELETE /workspaces/{workspaceId}/issue-templates/{templateId})
+func (_ Unimplemented) DeleteWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, templateId TemplateId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -91365,6 +92206,109 @@ func (siw *ServerInterfaceWrapper) DeleteWorkspaceIssueDraft(w http.ResponseWrit
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteWorkspaceIssueDraft(w, r, workspaceId, draftId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueTemplates operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueTemplates(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceIssueTemplatesParams
+
+	// ------------- Optional query parameter "teamId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "teamId", r.URL.Query(), &params.TeamId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "teamId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueTemplates(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveWorkspaceIssueTemplate operation middleware
+func (siw *ServerInterfaceWrapper) SaveWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveWorkspaceIssueTemplate(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceIssueTemplate operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "templateId" -------------
+	var templateId TemplateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "templateId", chi.URLParam(r, "templateId"), &templateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "templateId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceIssueTemplate(w, r, workspaceId, templateId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -99226,6 +100170,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issue-drafts/{draftId}", wrapper.DeleteWorkspaceIssueDraft)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issue-templates", wrapper.ListWorkspaceIssueTemplates)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issue-templates", wrapper.SaveWorkspaceIssueTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issue-templates/{templateId}", wrapper.DeleteWorkspaceIssueTemplate)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/status", wrapper.SetWorkspaceIssueStatus)
@@ -110701,6 +111654,277 @@ func (response DeleteWorkspaceIssueDraft404ApplicationProblemPlusJSONResponse) V
 type DeleteWorkspaceIssueDraft500ApplicationProblemPlusJSONResponse Problem
 
 func (response DeleteWorkspaceIssueDraft500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueTemplatesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceIssueTemplatesParams
+}
+
+type ListWorkspaceIssueTemplatesResponseObject interface {
+	VisitListWorkspaceIssueTemplatesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueTemplates200JSONResponse IssueTemplateList
+
+func (response ListWorkspaceIssueTemplates200JSONResponse) VisitListWorkspaceIssueTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueTemplates401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueTemplates401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueTemplates403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueTemplates403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueTemplates404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueTemplates404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueTemplates500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueTemplates500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueTemplatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueTemplateRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SaveWorkspaceIssueTemplateJSONRequestBody
+}
+
+type SaveWorkspaceIssueTemplateResponseObject interface {
+	VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error
+}
+
+type SaveWorkspaceIssueTemplate200JSONResponse IssueTemplate
+
+func (response SaveWorkspaceIssueTemplate200JSONResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueTemplate401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SaveWorkspaceIssueTemplate401ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueTemplate403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SaveWorkspaceIssueTemplate403ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueTemplate404ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveWorkspaceIssueTemplate404ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueTemplate409ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveWorkspaceIssueTemplate409ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueTemplate422ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveWorkspaceIssueTemplate422ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveWorkspaceIssueTemplate500ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveWorkspaceIssueTemplate500ApplicationProblemPlusJSONResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueTemplateRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	TemplateId  TemplateId  `json:"templateId"`
+}
+
+type DeleteWorkspaceIssueTemplateResponseObject interface {
+	VisitDeleteWorkspaceIssueTemplateResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceIssueTemplate204Response struct {
+}
+
+func (response DeleteWorkspaceIssueTemplate204Response) VisitDeleteWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkspaceIssueTemplate401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceIssueTemplate401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueTemplate403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceIssueTemplate403ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueTemplate404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceIssueTemplate404ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueTemplate500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceIssueTemplate500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -129017,6 +130241,15 @@ type StrictServerInterface interface {
 	// DeleteWorkspaceIssueDraft Throw away a draft
 	// (DELETE /workspaces/{workspaceId}/issue-drafts/{draftId})
 	DeleteWorkspaceIssueDraft(ctx context.Context, request DeleteWorkspaceIssueDraftRequestObject) (DeleteWorkspaceIssueDraftResponseObject, error)
+	// ListWorkspaceIssueTemplates Read the shapes a team keeps for the issues it raises again and again
+	// (GET /workspaces/{workspaceId}/issue-templates)
+	ListWorkspaceIssueTemplates(ctx context.Context, request ListWorkspaceIssueTemplatesRequestObject) (ListWorkspaceIssueTemplatesResponseObject, error)
+	// SaveWorkspaceIssueTemplate Keep a template, or change one that exists
+	// (PUT /workspaces/{workspaceId}/issue-templates)
+	SaveWorkspaceIssueTemplate(ctx context.Context, request SaveWorkspaceIssueTemplateRequestObject) (SaveWorkspaceIssueTemplateResponseObject, error)
+	// DeleteWorkspaceIssueTemplate Stop keeping a template
+	// (DELETE /workspaces/{workspaceId}/issue-templates/{templateId})
+	DeleteWorkspaceIssueTemplate(ctx context.Context, request DeleteWorkspaceIssueTemplateRequestObject) (DeleteWorkspaceIssueTemplateResponseObject, error)
 	// ListWorkspaceIssues List the issues the caller may see, newest first
 	// (GET /workspaces/{workspaceId}/issues)
 	ListWorkspaceIssues(ctx context.Context, request ListWorkspaceIssuesRequestObject) (ListWorkspaceIssuesResponseObject, error)
@@ -133249,6 +134482,93 @@ func (sh *strictHandler) DeleteWorkspaceIssueDraft(w http.ResponseWriter, r *htt
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteWorkspaceIssueDraftResponseObject); ok {
 		if err := validResponse.VisitDeleteWorkspaceIssueDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueTemplates operation middleware
+func (sh *strictHandler) ListWorkspaceIssueTemplates(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceIssueTemplatesParams) {
+	var request ListWorkspaceIssueTemplatesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueTemplates(ctx, request.(ListWorkspaceIssueTemplatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueTemplates")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueTemplatesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueTemplatesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveWorkspaceIssueTemplate operation middleware
+func (sh *strictHandler) SaveWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SaveWorkspaceIssueTemplateRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SaveWorkspaceIssueTemplateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveWorkspaceIssueTemplate(ctx, request.(SaveWorkspaceIssueTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveWorkspaceIssueTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveWorkspaceIssueTemplateResponseObject); ok {
+		if err := validResponse.VisitSaveWorkspaceIssueTemplateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceIssueTemplate operation middleware
+func (sh *strictHandler) DeleteWorkspaceIssueTemplate(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, templateId TemplateId) {
+	var request DeleteWorkspaceIssueTemplateRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.TemplateId = templateId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceIssueTemplate(ctx, request.(DeleteWorkspaceIssueTemplateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceIssueTemplate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceIssueTemplateResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceIssueTemplateResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

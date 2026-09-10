@@ -3022,3 +3022,56 @@ func identifiersOf(ids *[]uuid.UUID) []uuid.UUID {
 
 	return *ids
 }
+
+func issueTemplateDTOs(templates []entity.IssueTemplate) []api.IssueTemplate {
+	converted := make([]api.IssueTemplate, 0, len(templates))
+
+	for _, template := range templates {
+		converted = append(converted, issueTemplateDTO(template))
+	}
+
+	return converted
+}
+
+func issueTemplateDTO(template entity.IssueTemplate) api.IssueTemplate {
+	required := make([]api.TemplateField, 0, len(template.RequiredFields))
+	for _, field := range template.RequiredFields {
+		required = append(required, api.TemplateField(field))
+	}
+
+	dto := api.IssueTemplate{
+		Id:             template.ID,
+		WorkspaceId:    template.WorkspaceID,
+		Name:           template.Name,
+		Description:    nilIfEmpty(template.Description),
+		Title:          template.Title,
+		Body:           template.Body,
+		BodyDoc:        documentDTO(template.BodyDoc),
+		RequiredFields: required,
+		LabelIds:       identifierDTOs(template.LabelIDs),
+		Priority:       api.IssuePriority(template.Priority),
+		Position:       int32(template.Position),
+		CreatedAt:      template.CreatedAt,
+		UpdatedAt:      template.UpdatedAt,
+	}
+
+	for target, held := range map[**uuid.UUID]uuid.UUID{
+		&dto.TeamId:             template.TeamID,
+		&dto.StateId:            template.StateID,
+		&dto.ProjectId:          template.ProjectID,
+		&dto.AssigneeId:         template.AssigneeAccountID,
+		&dto.CreatedByAccountId: template.CreatedByAccountID,
+	} {
+		if held != uuid.Nil {
+			named := held
+			*target = &named
+		}
+	}
+
+	if template.Estimate > 0 {
+		estimate := int32(template.Estimate)
+		dto.Estimate = &estimate
+	}
+
+	return dto
+}

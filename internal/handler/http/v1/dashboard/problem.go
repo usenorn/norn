@@ -132,6 +132,23 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var missing entity.TemplateFieldsMissingError
+	if errors.As(err, &missing) {
+		problem := baseProblem(http.StatusUnprocessableEntity, missing.Error())
+
+		fields := make([]api.FieldError, 0, len(missing.Fields))
+		for _, field := range missing.Fields {
+			fields = append(fields, api.FieldError{
+				Field: string(field),
+				Code:  entity.ValidationCodeRequired,
+			})
+		}
+
+		problem.Errors = &fields
+
+		return problemResponse{status: http.StatusUnprocessableEntity, body: problem}, true
+	}
+
 	var childrenOpen entity.IssueChildrenOpenError
 	if errors.As(err, &childrenOpen) {
 		base := baseProblem(http.StatusConflict, childrenOpen.Error())
@@ -608,6 +625,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrIssueRelationNotFound),
 		errors.Is(err, entity.ErrIssueRevisionNotFound),
 		errors.Is(err, entity.ErrIssueDraftNotFound),
+		errors.Is(err, entity.ErrIssueTemplateNotFound),
 		errors.Is(err, entity.ErrBulkActionNotFound),
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing),
@@ -1680,6 +1698,18 @@ func (r problemResponse) VisitListWorkspaceIssueDescriptionRevisionsResponse(w h
 }
 
 func (r problemResponse) VisitListWorkspaceIssueDraftsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueTemplatesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSaveWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteWorkspaceIssueTemplateResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

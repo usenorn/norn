@@ -76,6 +76,7 @@ import (
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
+	issuetemplaterepo "github.com/usenorn/norn/internal/repository/issuetemplate"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
@@ -147,6 +148,7 @@ import (
 	issuedraftsvc "github.com/usenorn/norn/internal/service/issuedraft"
 	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
+	issuetemplatesvc "github.com/usenorn/norn/internal/service/issuetemplate"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
@@ -208,6 +210,7 @@ var baseSet = wire.NewSet(
 	issuerepo.Set,
 	issuedraftrepo.Set,
 	issuerevisionrepo.Set,
+	issuetemplaterepo.Set,
 	requestkeyrepo.Set,
 	activityrepo.Set,
 	issuedelegationrepo.Set,
@@ -287,6 +290,7 @@ var baseSet = wire.NewSet(
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
 	issuedraftsvc.Set,
+	issuetemplatesvc.Set,
 	issuequestionsvc.Set,
 	runnersvc.Set,
 	codebasesvc.Set,

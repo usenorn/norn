@@ -2583,6 +2583,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issue-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read the shapes a team keeps for the issues it raises again and again */
+        get: operations["listWorkspaceIssueTemplates"];
+        /** Keep a template, or change one that exists */
+        put: operations["saveWorkspaceIssueTemplate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issue-templates/{templateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop keeping a template */
+        delete: operations["deleteWorkspaceIssueTemplate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/status": {
         parameters: {
             query?: never;
@@ -5014,6 +5054,77 @@ export interface components {
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
             clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
         };
+        IssueTemplateList: {
+            templates: components["schemas"]["IssueTemplate"][];
+        };
+        IssueTemplate: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /**
+             * Format: uuid
+             * @description The team that keeps this template; absent means the whole workspace does.
+             */
+            teamId?: string;
+            name: string;
+            /** @description What this template is for, shown beside its name when choosing one. */
+            description?: string;
+            title: string;
+            body: string;
+            bodyDoc?: components["schemas"]["Document"];
+            requiredFields: components["schemas"]["TemplateField"][];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            labelIds?: string[];
+            priority: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: int32 */
+            position: number;
+            /** Format: uuid */
+            createdByAccountId?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @description A property a template insists on before an issue may be raised from it.
+         * @enum {string}
+         */
+        TemplateField: "assignee" | "project" | "cycle" | "estimate" | "dueOn" | "labels" | "priority";
+        SaveIssueTemplateRequest: {
+            /**
+             * Format: uuid
+             * @description The template to change; absent keeps a new one.
+             */
+            templateId?: string;
+            /** Format: uuid */
+            teamId?: string;
+            name: string;
+            description?: string;
+            title?: string;
+            body?: string;
+            bodyDoc?: components["schemas"]["Document"];
+            requiredFields?: components["schemas"]["TemplateField"][];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            labelIds?: string[];
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: int32 */
+            position?: number;
+        };
         IssueDraftList: {
             drafts: components["schemas"]["IssueDraft"][];
         };
@@ -6595,6 +6706,11 @@ export interface components {
              */
             cycleId?: string;
             labelIds?: string[];
+            /**
+             * Format: uuid
+             * @description A template on this team, or on the workspace. It fills in what this request does not send; anything the request does send wins over what the template offers.
+             */
+            templateId?: string;
             /** @description A value the caller invents for this one issue. Sending the same request again with the same key answers with the issue the first one raised rather than raising a second, so a lost answer can be asked for again safely. */
             idempotencyKey?: string;
             reasoning?: components["schemas"]["AgentReasoning"];
@@ -8589,6 +8705,9 @@ export interface components {
         RunnerId: string;
         ProposalId: string;
         StateId: string;
+        TemplateId: string;
+        /** @description Read the templates this team keeps as well as the workspace's own. */
+        TemplateTeamId: string;
         DraftId: string;
         RevisionId: string;
         /** @description How many revisions to return, newest first. */
@@ -14007,6 +14126,92 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The draft is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueTemplates: {
+        parameters: {
+            query?: {
+                /** @description Read the templates this team keeps as well as the workspace's own. */
+                teamId?: components["parameters"]["TemplateTeamId"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The templates on the team, and those the whole workspace keeps */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueTemplateList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    saveWorkspaceIssueTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveIssueTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description The template as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueTemplate"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceIssueTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The template is gone */
             204: {
                 headers: {
                     [name: string]: unknown;

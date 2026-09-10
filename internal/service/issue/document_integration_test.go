@@ -33,6 +33,7 @@ import (
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
+	issuetemplaterepo "github.com/usenorn/norn/internal/repository/issuetemplate"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
@@ -236,6 +237,7 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 	return issuesvc.New(
 		issuerepo.New(client),
 		revisions,
+		issuetemplaterepo.New(client),
 		requestkeyrepo.New(client),
 		workflowstaterepo.New(client),
 		activityrepo.New(client),
@@ -725,5 +727,83 @@ func TestTwoAsksWithOneKeyArrivingAtOnceRaiseOneIssue(t *testing.T) {
 
 	if len(page.Issues) != 1 {
 		t.Fatalf("the workspace holds %d issues, want the one", len(page.Issues))
+	}
+}
+
+func TestRaisingFromATemplateFillsInWhatTheAskDidNotSend(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	kept, err := issuetemplaterepo.New(client).Create(ctx, entity.IssueTemplate{
+		WorkspaceID:    place.workspace.ID,
+		TeamID:         place.team.ID,
+		Name:           "Bug report",
+		Title:          "Something is broken",
+		Body:           "## What happened\n\n## What should have happened",
+		BodyDoc:        entity.DocumentFromMarkdown("## What happened\n\n## What should have happened"),
+		Priority:       entity.IssuePriorityHigh,
+		Estimate:       2,
+		RequiredFields: []entity.TemplateField{entity.TemplateFieldEstimate},
+		UpdatedAt:      time.Now().UTC(),
+	})
+	if err != nil {
+		t.Fatalf("keep the template: %v", err)
+	}
+
+	raised, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "The export button does nothing",
+		TemplateID:  kept.ID,
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	switch {
+	case raised.Title != "The export button does nothing":
+		t.Fatalf("the template overwrote the title with %q", raised.Title)
+	case raised.Description != "## What happened\n\n## What should have happened":
+		t.Fatalf("the description came back as %q", raised.Description)
+	case raised.Priority != entity.IssuePriorityHigh:
+		t.Fatalf("the priority came back as %q", raised.Priority)
+	case raised.Estimate != 2:
+		t.Fatalf("the estimate came back as %d", raised.Estimate)
+	}
+}
+
+func TestATemplateThatInsistsOnAnEstimateRefusesAnAskWithout(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	kept, err := issuetemplaterepo.New(client).Create(ctx, entity.IssueTemplate{
+		WorkspaceID:    place.workspace.ID,
+		TeamID:         place.team.ID,
+		Name:           "Sized work",
+		RequiredFields: []entity.TemplateField{entity.TemplateFieldEstimate},
+		UpdatedAt:      time.Now().UTC(),
+	})
+	if err != nil {
+		t.Fatalf("keep the template: %v", err)
+	}
+
+	_, err = issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Unsized",
+		TemplateID:  kept.ID,
+	})
+
+	var missing entity.TemplateFieldsMissingError
+	if !errors.As(err, &missing) {
+		t.Fatalf("raising without the estimate the template insists on returned %v", err)
+	}
+
+	if len(missing.Fields) != 1 || missing.Fields[0] != entity.TemplateFieldEstimate {
+		t.Fatalf("the refusal named %v", missing.Fields)
 	}
 }
