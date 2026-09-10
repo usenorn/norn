@@ -119,4 +119,27 @@ test("no editor carries a formatting toolbar any more", async ({ page }) => {
 
 	await expect(page.getByRole("textbox", { name: "Description" })).toBeVisible();
 	await expect(page.getByRole("toolbar", { name: "Formatting" })).toHaveCount(0);
+
+	await expect(page.getByRole("textbox", { name: "Write a comment" })).toBeVisible();
+	await expect(page.getByRole("toolbar", { name: "Formatting" })).toHaveCount(0);
+
+	await openComposer(page);
+
+	await expect(page.getByRole("toolbar", { name: "Formatting" })).toHaveCount(0);
+});
+
+test("a mark the toolbar used to carry is applied from the slash menu", async ({ page }) => {
+	await openComposer(page);
+
+	await page.keyboard.type("/bold");
+	await expect(page.getByRole("option", { name: /Bold/ }).first()).toBeVisible();
+
+	await page.keyboard.press("Enter");
+	await page.keyboard.type("heavy");
+
+	const written = await page
+		.getByRole("textbox", { name: "Description" })
+		.evaluate((node) => node.innerHTML);
+
+	expect(written).toContain("<strong>heavy</strong>");
 });
