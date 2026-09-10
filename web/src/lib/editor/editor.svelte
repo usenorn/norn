@@ -11,7 +11,7 @@
 		type DocumentNode,
 	} from "$lib/editor/document";
 	import { editorExtensions } from "$lib/editor/schema";
-	import { completing, type SuggestionSession } from "$lib/editor/suggest";
+	import { completing, type SuggestionAnchor, type SuggestionSession } from "$lib/editor/suggest";
 	import { insertIssueRef, insertLink, insertMention, runBlock } from "$lib/editor/blocks";
 	import { matchingCommands, type SlashCommand } from "$lib/editor/slash";
 	import { findIssues, findMentions, type Suggestion } from "$lib/editor/search";
@@ -60,8 +60,7 @@
 		rows: PopupRow[];
 		chosen: (Suggestion | SlashCommand)[];
 		index: number;
-		left: number;
-		top: number;
+		anchor: SuggestionAnchor;
 		state: "ready" | "loading" | "typing" | "empty" | "failed";
 		take: (chosen: unknown) => void;
 	};
@@ -77,7 +76,11 @@
 	const optionId = (at: number) => `${listId}-option-${at}`;
 
 	function place(session: SuggestionSession) {
-		return { left: session.rect.left, top: session.rect.bottom + 4 };
+		return { anchor: session.anchor };
+	}
+
+	function closing(kind: Popup["kind"]) {
+		if (popup?.kind === kind) popup = null;
 	}
 
 	function slashRows(commands: SlashCommand[]): PopupRow[] {
@@ -209,6 +212,7 @@
 
 		if (event.key === "Escape") {
 			popup = null;
+			event.stopPropagation();
 
 			return true;
 		}
@@ -344,19 +348,19 @@
 					onOpen: openSlash,
 					onQuery: openSlash,
 					onKey: steer,
-					onClose: () => (popup = null),
+					onClose: () => closing("slash"),
 				}, { command: taken }),
 				completing("mention", "@", {
 					onOpen: (session) => void openSearch("mention", session),
 					onQuery: (session) => void openSearch("mention", session),
 					onKey: steer,
-					onClose: () => (popup = null),
+					onClose: () => closing("mention"),
 				}, { command: taken }),
 				completing("issue", "#", {
 					onOpen: (session) => void openSearch("issue", session),
 					onQuery: (session) => void openSearch("issue", session),
 					onKey: steer,
-					onClose: () => (popup = null),
+					onClose: () => closing("issue"),
 				}, { command: taken }),
 			],
 			editorProps: {
@@ -443,6 +447,7 @@
 			["aria-invalid", invalid === undefined ? undefined : String(invalid)],
 			["aria-activedescendant", active],
 			["aria-controls", popup ? listId : undefined],
+			["aria-owns", popup ? listId : undefined],
 			["aria-expanded", popup ? "true" : undefined],
 			["aria-autocomplete", popup ? "list" : undefined],
 		] as const) {
@@ -473,8 +478,7 @@
 				id={listId}
 				rows={popup.rows}
 				index={popup.index}
-				left={popup.left}
-				top={popup.top}
+				anchor={popup.anchor}
 				state={popup.state}
 				label={popup.kind === "slash" ? "Blocks" : "Suggestions"}
 				typingHint={popup.kind === "issue"

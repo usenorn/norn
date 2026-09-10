@@ -3,9 +3,11 @@ import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
 import { PluginKey } from "@tiptap/pm/state";
 import { opensMenu } from "$lib/editor/slash";
 
+export type SuggestionAnchor = { getBoundingClientRect: () => DOMRect };
+
 export type SuggestionSession = {
 	query: string;
-	rect: DOMRect;
+	anchor: SuggestionAnchor;
 	take: (chosen: unknown) => void;
 };
 
@@ -30,7 +32,6 @@ export function completing(
 					editor: this.editor,
 					char,
 					pluginKey: new PluginKey(`editor-${name}`),
-					allowSpaces: char !== "/",
 					items: () => [],
 					allow: ({ state, range }) => {
 						const before = state.doc.textBetween(
@@ -60,9 +61,11 @@ function sessionOf(props: {
 	command: (chosen: unknown) => void;
 	clientRect?: (() => DOMRect | null) | null;
 }): SuggestionSession {
+	const measure = props.clientRect;
+
 	return {
 		query: props.query,
-		rect: props.clientRect?.() ?? new DOMRect(),
+		anchor: { getBoundingClientRect: () => measure?.() ?? new DOMRect() },
 		take: props.command,
 	};
 }

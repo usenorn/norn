@@ -3,10 +3,17 @@ import Mention from "@tiptap/extension-mention";
 export const WorkspaceMention = Mention.extend({
 	addAttributes() {
 		return {
-			id: { default: "" },
-			label: { default: "" },
-			kind: { default: "account" },
+			...this.parent?.(),
+			kind: {
+				default: "account",
+				parseHTML: (element) => element.getAttribute("data-kind") ?? "account",
+				renderHTML: (attributes) => ({ "data-kind": attributes.kind }),
+			},
 		};
+	},
+
+	addProseMirrorPlugins() {
+		return [];
 	},
 
 	renderText({ node }) {
