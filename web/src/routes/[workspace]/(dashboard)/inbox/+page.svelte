@@ -17,7 +17,6 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		actorKindLabels,
-		listingFor,
 		notificationFailureMessage,
 		readNotificationFailure,
 		reasonLabels,
