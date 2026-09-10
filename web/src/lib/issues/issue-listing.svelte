@@ -12,7 +12,6 @@
 	import Layers from "@lucide/svelte/icons/layers";
 	import List from "@lucide/svelte/icons/list";
 	import Plus from "@lucide/svelte/icons/plus";
-	import X from "@lucide/svelte/icons/x";
 	import { SvelteSet } from "svelte/reactivity";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
@@ -60,14 +59,12 @@
 	} from "$lib/issues/board";
 	import ColumnMore from "$lib/issues/column-more.svelte";
 	import {
-		atDefaults,
 		boardGroupings,
 		surfaceDefaults,
 		surfaceOrderings,
 		groupings,
 		issueTabs,
 		orderings,
-		rowProperties,
 		tabLabels,
 		writeDisplay,
 	} from "$lib/issues/display";
@@ -100,12 +97,9 @@
 	} from "$lib/issues/drop";
 	import {
 		columnFilter,
-		dueWindowLabels,
-		dueWindows,
 		facetCount,
 		pickableFacets,
 		unassigned,
-		type FacetKind,
 	} from "$lib/issues/facets";
 	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "$lib/issues/issues";
 	import type { IssuePriority } from "$lib/issues/issues";
