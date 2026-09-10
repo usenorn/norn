@@ -4,9 +4,9 @@
 	import { markdownProse } from "$lib/issues/markdown";
 	import {
 		asDocument,
-		documentEmpty,
 		emptyDocument,
 		sameDocument,
+		withParagraph,
 		type Document,
 		type DocumentNode,
 	} from "$lib/editor/document";
@@ -337,7 +337,7 @@
 	function build(element: HTMLElement): Editor {
 		return new Editor({
 			element,
-			content: document,
+			content: withParagraph(document),
 			editable: !disabled,
 			extensions: [
 				...editorExtensions({
@@ -426,7 +426,7 @@
 		if (!editor || sameDocument(next, held)) return;
 
 		held = next;
-		editor.commands.setContent(next, { emitUpdate: false });
+		editor.commands.setContent(withParagraph(next), { emitUpdate: false });
 	});
 
 	$effect(() => {
@@ -461,7 +461,6 @@
 		}
 	});
 
-	const blank = $derived(documentEmpty(document));
 </script>
 
 <div class="flex min-w-0 flex-col {className}">
@@ -470,7 +469,6 @@
 			use:mount
 			class="{markdownProse} min-w-0 py-2 text-md [&_.ProseMirror]:{minHeight}"
 			data-slot="editor"
-			data-empty={blank}
 		></div>
 
 		{#if popup}
