@@ -250,7 +250,9 @@
 		describedBase = writing;
 		editingVersion = saved.data.version;
 
-		await invalidate(keys.page(page.route.id));
+		// Nothing else on the page is reloaded for a save the person is still typing into.
+		// Reloading here blocks the keystroke that follows it, which is the one thing autosave
+		// must never do.
 
 		return "saved";
 	}
