@@ -16,6 +16,7 @@
 	import { matchingCommands, type SlashCommand } from "$lib/editor/slash";
 	import { findIssues, findMentions, type Suggestion } from "$lib/editor/search";
 	import { combination, composing } from "$lib/editor/keys";
+	import { searchDebounceMs } from "$lib/workspace/members";
 	import { dropUpload, placeUpload, previewOf, uploadPosition } from "$lib/editor/uploads";
 	import SuggestionPopup, { type PopupRow } from "$lib/editor/suggestion-popup.svelte";
 
@@ -67,6 +68,8 @@
 	let filing = $state.raw<HTMLInputElement | null>(null);
 	let held: Document = emptyDocument;
 	let asked = 0;
+	let searching: ReturnType<typeof setTimeout> | null = null;
+	let abandoning: AbortController | null = null;
 
 	const listId = $props.id();
 	const optionId = (at: number) => `${listId}-option-${at}`;
@@ -126,9 +129,8 @@
 		};
 	}
 
-	async function openSearch(kind: "mention" | "issue", session: SuggestionSession) {
+	function openSearch(kind: "mention" | "issue", session: SuggestionSession) {
 		const mine = (asked += 1);
-		const standing = popup?.kind === kind ? popup.rows[popup.index]?.key : undefined;
 
 		popup = {
 			kind,
@@ -140,10 +142,22 @@
 			...place(session),
 		};
 
+		if (searching !== null) clearTimeout(searching);
+
+		abandoning?.abort();
+		searching = setTimeout(() => void runSearch(kind, session, mine), searchDebounceMs);
+	}
+
+	async function runSearch(kind: "mention" | "issue", session: SuggestionSession, mine: number) {
+		const standing = popup?.kind === kind ? popup.rows[popup.index]?.key : undefined;
+		const abandon = new AbortController();
+
+		abandoning = abandon;
+
 		const outcome =
 			kind === "mention"
-				? await findMentions(workspaceId, workspace, session.query)
-				: await findIssues(workspaceId, workspace, session.query);
+				? await findMentions(workspaceId, workspace, session.query, abandon.signal)
+				: await findIssues(workspaceId, workspace, session.query, abandon.signal);
 
 		if (mine !== asked || popup?.kind !== kind) return;
 
@@ -347,14 +361,14 @@
 					onClose: () => closing("slash"),
 				}, { command: taken }),
 				completing("mention", "@", {
-					onOpen: (session) => void openSearch("mention", session),
-					onQuery: (session) => void openSearch("mention", session),
+					onOpen: (session) => openSearch("mention", session),
+					onQuery: (session) => openSearch("mention", session),
 					onKey: steer,
 					onClose: () => closing("mention"),
 				}, { command: taken }),
 				completing("issue", "#", {
-					onOpen: (session) => void openSearch("issue", session),
-					onQuery: (session) => void openSearch("issue", session),
+					onOpen: (session) => openSearch("issue", session),
+					onQuery: (session) => openSearch("issue", session),
 					onKey: steer,
 					onClose: () => closing("issue"),
 				}, { command: taken }),
