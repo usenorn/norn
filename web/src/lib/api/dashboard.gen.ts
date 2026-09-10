@@ -2623,6 +2623,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read the acceptance criteria and what proves each of them */
+        get: operations["listWorkspaceIssueCriteria"];
+        put?: never;
+        /**
+         * File what proves an acceptance criterion
+         * @description Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+         */
+        post: operations["recordWorkspaceIssueEvidence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                evidenceId: components["parameters"]["EvidenceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take back a piece of evidence */
+        delete: operations["deleteWorkspaceIssueEvidence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/status": {
         parameters: {
             query?: never;
@@ -5188,6 +5233,51 @@ export interface components {
             estimate?: number;
             /** Format: date */
             dueOn?: string;
+        };
+        AcceptanceCriterionList: {
+            criteria: components["schemas"]["AcceptanceCriterion"][];
+        };
+        AcceptanceCriterion: {
+            /** @description The identifier the checklist item carries in the description. */
+            id: string;
+            text: string;
+            checked: boolean;
+            /** @description Whether any evidence answers the criterion as it reads now. */
+            proven: boolean;
+            evidence: components["schemas"]["CriterionEvidence"][];
+        };
+        CriterionEvidence: {
+            /** Format: uuid */
+            id: string;
+            criterionId: string;
+            kind: components["schemas"]["EvidenceKind"];
+            label: string;
+            url?: string;
+            /** Format: uuid */
+            attachmentId?: string;
+            /** @description Whether the criterion has been rewritten since this was filed, so it answers wording that no longer stands. */
+            stale: boolean;
+            /** @description What the criterion said when this evidence was filed. */
+            criterionText?: string;
+            /** Format: uuid */
+            recordedByAccountId?: string;
+            recordedByName?: string;
+            /** Format: date-time */
+            recordedAt: string;
+        };
+        /**
+         * @description What kind of proof this is.
+         * @enum {string}
+         */
+        EvidenceKind: "test" | "screenshot" | "pull_request" | "person";
+        RecordEvidenceRequest: {
+            criterionId: string;
+            kind: components["schemas"]["EvidenceKind"];
+            label: string;
+            /** @description Required for every kind but a person, who is named in the label. */
+            url?: string;
+            /** Format: uuid */
+            attachmentId?: string;
         };
         DescriptionRevisionList: {
             revisions: components["schemas"]["DescriptionRevision"][];
@@ -8742,6 +8832,7 @@ export interface components {
         /** @description Read the templates this team keeps as well as the workspace's own. */
         TemplateTeamId: string;
         DraftId: string;
+        EvidenceId: string;
         RevisionId: string;
         /** @description How many revisions to return, newest first. */
         RevisionLimit: number;
@@ -14249,6 +14340,91 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The template is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueCriteria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The checklist in the description, with the evidence filed against it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptanceCriterionList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    recordWorkspaceIssueEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordEvidenceRequest"];
+            };
+        };
+        responses: {
+            /** @description The evidence as it was filed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CriterionEvidence"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceIssueEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                evidenceId: components["parameters"]["EvidenceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The evidence is gone */
             204: {
                 headers: {
                     [name: string]: unknown;

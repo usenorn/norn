@@ -1,11 +1,12 @@
 import { Extension, type Extensions } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { TaskList } from "@tiptap/extension-list";
 import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table";
 import { Placeholder } from "@tiptap/extensions";
 import { Attachment } from "$lib/editor/nodes/attachment";
+import { NamedTaskItem } from "$lib/editor/nodes/task";
 import { IssueRef } from "$lib/editor/nodes/issue-ref";
 import { WorkspaceMention } from "$lib/editor/nodes/mention";
 import { EditorUploads } from "$lib/editor/uploads";
@@ -23,7 +24,7 @@ export function editorExtensions(options: SchemaOptions): Extensions {
 		}),
 		Image.configure({ inline: false }),
 		TaskList,
-		TaskItem.configure({ nested: true }),
+		NamedTaskItem.configure({ nested: true }),
 		Details.configure({ persist: true, HTMLAttributes: { class: "norn-details" } }),
 		DetailsSummary,
 		DetailsContent,

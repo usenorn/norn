@@ -136,14 +136,17 @@ var WorkspaceIssueAttachmentWhere = struct {
 
 // WorkspaceIssueAttachmentRels is where relationship names are stored.
 var WorkspaceIssueAttachmentRels = struct {
-	Workspace string
+	Workspace                                  string
+	AttachmentWorkspaceIssueCriterionEvidences string
 }{
 	Workspace: "Workspace",
+	AttachmentWorkspaceIssueCriterionEvidences: "AttachmentWorkspaceIssueCriterionEvidences",
 }
 
 // workspaceIssueAttachmentR is where relationships are stored.
 type workspaceIssueAttachmentR struct {
-	Workspace *Workspace `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	Workspace                                  *Workspace                           `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	AttachmentWorkspaceIssueCriterionEvidences WorkspaceIssueCriterionEvidenceSlice `boil:"AttachmentWorkspaceIssueCriterionEvidences" json:"AttachmentWorkspaceIssueCriterionEvidences" toml:"AttachmentWorkspaceIssueCriterionEvidences" yaml:"AttachmentWorkspaceIssueCriterionEvidences"`
 }
 
 // NewStruct creates a new relationship struct
@@ -165,6 +168,22 @@ func (r *workspaceIssueAttachmentR) GetWorkspace() *Workspace {
 	}
 
 	return r.Workspace
+}
+
+func (o *WorkspaceIssueAttachment) GetAttachmentWorkspaceIssueCriterionEvidences() WorkspaceIssueCriterionEvidenceSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAttachmentWorkspaceIssueCriterionEvidences()
+}
+
+func (r *workspaceIssueAttachmentR) GetAttachmentWorkspaceIssueCriterionEvidences() WorkspaceIssueCriterionEvidenceSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.AttachmentWorkspaceIssueCriterionEvidences
 }
 
 // workspaceIssueAttachmentL is where Load methods for each relationship are stored.
@@ -494,6 +513,20 @@ func (o *WorkspaceIssueAttachment) Workspace(mods ...qm.QueryMod) workspaceQuery
 	return Workspaces(queryMods...)
 }
 
+// AttachmentWorkspaceIssueCriterionEvidences retrieves all the workspace_issue_criterion_evidence's WorkspaceIssueCriterionEvidences with an executor via attachment_id column.
+func (o *WorkspaceIssueAttachment) AttachmentWorkspaceIssueCriterionEvidences(mods ...qm.QueryMod) workspaceIssueCriterionEvidenceQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_criterion_evidence\".\"attachment_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueCriterionEvidences(queryMods...)
+}
+
 // LoadWorkspace allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (workspaceIssueAttachmentL) LoadWorkspace(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueAttachment any, mods queries.Applicator) error {
@@ -614,6 +647,119 @@ func (workspaceIssueAttachmentL) LoadWorkspace(ctx context.Context, e boil.Conte
 	return nil
 }
 
+// LoadAttachmentWorkspaceIssueCriterionEvidences allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceIssueAttachmentL) LoadAttachmentWorkspaceIssueCriterionEvidences(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueAttachment any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueAttachment
+	var object *WorkspaceIssueAttachment
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueAttachment.(*WorkspaceIssueAttachment)
+		if !ok {
+			object = new(WorkspaceIssueAttachment)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueAttachment)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueAttachment))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueAttachment.(*[]*WorkspaceIssueAttachment)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueAttachment)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueAttachment))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueAttachmentR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueAttachmentR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_criterion_evidence`),
+		qm.WhereIn(`workspace_issue_criterion_evidence.attachment_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_criterion_evidence")
+	}
+
+	var resultSlice []*WorkspaceIssueCriterionEvidence
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_criterion_evidence")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_criterion_evidence")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_criterion_evidence")
+	}
+
+	if len(workspaceIssueCriterionEvidenceAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.AttachmentWorkspaceIssueCriterionEvidences = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueCriterionEvidenceR{}
+			}
+			foreign.R.Attachment = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.AttachmentID) {
+				local.R.AttachmentWorkspaceIssueCriterionEvidences = append(local.R.AttachmentWorkspaceIssueCriterionEvidences, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueCriterionEvidenceR{}
+				}
+				foreign.R.Attachment = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetWorkspace of the workspaceIssueAttachment to the related item.
 // Sets o.R.Workspace to related.
 // Adds o to related.R.WorkspaceIssueAttachments.
@@ -656,6 +802,133 @@ func (o *WorkspaceIssueAttachment) SetWorkspace(ctx context.Context, exec boil.C
 		}
 	} else {
 		related.R.WorkspaceIssueAttachments = append(related.R.WorkspaceIssueAttachments, o)
+	}
+
+	return nil
+}
+
+// AddAttachmentWorkspaceIssueCriterionEvidences adds the given related objects to the existing relationships
+// of the workspace_issue_attachment, optionally inserting them as new records.
+// Appends related to o.R.AttachmentWorkspaceIssueCriterionEvidences.
+// Sets related.R.Attachment appropriately.
+func (o *WorkspaceIssueAttachment) AddAttachmentWorkspaceIssueCriterionEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCriterionEvidence) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.AttachmentID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_criterion_evidence\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"attachment_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueCriterionEvidencePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.AttachmentID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceIssueAttachmentR{
+			AttachmentWorkspaceIssueCriterionEvidences: related,
+		}
+	} else {
+		o.R.AttachmentWorkspaceIssueCriterionEvidences = append(o.R.AttachmentWorkspaceIssueCriterionEvidences, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueCriterionEvidenceR{
+				Attachment: o,
+			}
+		} else {
+			rel.R.Attachment = o
+		}
+	}
+	return nil
+}
+
+// SetAttachmentWorkspaceIssueCriterionEvidences removes all previously related items of the
+// workspace_issue_attachment replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Attachment's AttachmentWorkspaceIssueCriterionEvidences accordingly.
+// Replaces o.R.AttachmentWorkspaceIssueCriterionEvidences with related.
+// Sets related.R.Attachment's AttachmentWorkspaceIssueCriterionEvidences accordingly.
+func (o *WorkspaceIssueAttachment) SetAttachmentWorkspaceIssueCriterionEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCriterionEvidence) error {
+	query := "update \"workspace_issue_criterion_evidence\" set \"attachment_id\" = null where \"attachment_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.AttachmentWorkspaceIssueCriterionEvidences {
+			queries.SetScanner(&rel.AttachmentID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Attachment = nil
+		}
+		o.R.AttachmentWorkspaceIssueCriterionEvidences = nil
+	}
+
+	return o.AddAttachmentWorkspaceIssueCriterionEvidences(ctx, exec, insert, related...)
+}
+
+// RemoveAttachmentWorkspaceIssueCriterionEvidences relationships from objects passed in.
+// Removes related items from R.AttachmentWorkspaceIssueCriterionEvidences (uses pointer comparison, removal does not keep order)
+// Sets related.R.Attachment.
+func (o *WorkspaceIssueAttachment) RemoveAttachmentWorkspaceIssueCriterionEvidences(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueCriterionEvidence) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.AttachmentID, nil)
+		if rel.R != nil {
+			rel.R.Attachment = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("attachment_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.AttachmentWorkspaceIssueCriterionEvidences {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.AttachmentWorkspaceIssueCriterionEvidences)
+			if ln > 1 && i < ln-1 {
+				o.R.AttachmentWorkspaceIssueCriterionEvidences[i] = o.R.AttachmentWorkspaceIssueCriterionEvidences[ln-1]
+			}
+			o.R.AttachmentWorkspaceIssueCriterionEvidences = o.R.AttachmentWorkspaceIssueCriterionEvidences[:ln-1]
+			break
+		}
 	}
 
 	return nil

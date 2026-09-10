@@ -82,6 +82,7 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import Editor from "$lib/editor/editor.svelte";
+	import CriteriaPanel from "$lib/issues/criteria-panel.svelte";
 	import DescriptionHistory from "$lib/issues/description-history.svelte";
 	import { Autosave, saveLine, type SaveOutcome } from "$lib/editor/autosave.svelte";
 	import {
@@ -2366,6 +2367,14 @@
 							/>
 						</section>
 					{/if}
+
+					<CriteriaPanel
+						workspaceId={data.workspace.id}
+						issueId={issue.id}
+						issueVersion={issue.version}
+						{canEdit}
+						{when}
+					/>
 
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">

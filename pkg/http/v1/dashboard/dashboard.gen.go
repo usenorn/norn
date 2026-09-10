@@ -1491,6 +1491,30 @@ func (e EnforcementRefusedProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for EvidenceKind.
+const (
+	EvidenceKindPerson      EvidenceKind = "person"
+	EvidenceKindPullRequest EvidenceKind = "pull_request"
+	EvidenceKindScreenshot  EvidenceKind = "screenshot"
+	EvidenceKindTest        EvidenceKind = "test"
+)
+
+// Valid indicates whether the value is a known member of the EvidenceKind enum.
+func (e EvidenceKind) Valid() bool {
+	switch e {
+	case EvidenceKindPerson:
+		return true
+	case EvidenceKindPullRequest:
+		return true
+	case EvidenceKindScreenshot:
+		return true
+	case EvidenceKindTest:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExecutionEventKind.
 const (
 	Command    ExecutionEventKind = "command"
@@ -4571,6 +4595,24 @@ type AcceptInvitationRequest struct {
 	Token       string  `json:"token"`
 }
 
+// AcceptanceCriterion defines model for AcceptanceCriterion.
+type AcceptanceCriterion struct {
+	Checked  bool                `json:"checked"`
+	Evidence []CriterionEvidence `json:"evidence"`
+
+	// Id The identifier the checklist item carries in the description.
+	Id string `json:"id"`
+
+	// Proven Whether any evidence answers the criterion as it reads now.
+	Proven bool   `json:"proven"`
+	Text   string `json:"text"`
+}
+
+// AcceptanceCriterionList defines model for AcceptanceCriterionList.
+type AcceptanceCriterionList struct {
+	Criteria []AcceptanceCriterion `json:"criteria"`
+}
+
 // AcceptedInvitation defines model for AcceptedInvitation.
 type AcceptedInvitation struct {
 	Membership Membership `json:"membership"`
@@ -5434,6 +5476,27 @@ type CreateWorkspaceTeam struct {
 	Name string `json:"name"`
 }
 
+// CriterionEvidence defines model for CriterionEvidence.
+type CriterionEvidence struct {
+	AttachmentId *openapi_types.UUID `json:"attachmentId,omitempty"`
+	CriterionId  string              `json:"criterionId"`
+
+	// CriterionText What the criterion said when this evidence was filed.
+	CriterionText *string            `json:"criterionText,omitempty"`
+	Id            openapi_types.UUID `json:"id"`
+
+	// Kind What kind of proof this is.
+	Kind                EvidenceKind        `json:"kind"`
+	Label               string              `json:"label"`
+	RecordedAt          time.Time           `json:"recordedAt"`
+	RecordedByAccountId *openapi_types.UUID `json:"recordedByAccountId,omitempty"`
+	RecordedByName      *string             `json:"recordedByName,omitempty"`
+
+	// Stale Whether the criterion has been rewritten since this was filed, so it answers wording that no longer stands.
+	Stale bool    `json:"stale"`
+	Url   *string `json:"url,omitempty"`
+}
+
 // Cycle defines model for Cycle.
 type Cycle struct {
 	ClosedAt          *time.Time          `json:"closedAt,omitempty"`
@@ -5812,6 +5875,9 @@ type EnrolledRunner struct {
 	RefreshToken string `json:"refreshToken"`
 	Runner       Runner `json:"runner"`
 }
+
+// EvidenceKind What kind of proof this is.
+type EvidenceKind string
 
 // ExchangeRunnerTokenRequest defines model for ExchangeRunnerTokenRequest.
 type ExchangeRunnerTokenRequest struct {
@@ -7564,6 +7630,19 @@ type ReassignTriageIssueRequest struct {
 	TeamId               openapi_types.UUID `json:"teamId"`
 }
 
+// RecordEvidenceRequest defines model for RecordEvidenceRequest.
+type RecordEvidenceRequest struct {
+	AttachmentId *openapi_types.UUID `json:"attachmentId,omitempty"`
+	CriterionId  string              `json:"criterionId"`
+
+	// Kind What kind of proof this is.
+	Kind  EvidenceKind `json:"kind"`
+	Label string       `json:"label"`
+
+	// Url Required for every kind but a person, who is named in the label.
+	Url *string `json:"url,omitempty"`
+}
+
 // RedeemRecoveryCodeRequest defines model for RedeemRecoveryCodeRequest.
 type RedeemRecoveryCodeRequest struct {
 	Code      string `json:"code"`
@@ -9053,6 +9132,9 @@ type DirectoryLimit = int32
 // DraftId defines model for DraftId.
 type DraftId = openapi_types.UUID
 
+// EvidenceId defines model for EvidenceId.
+type EvidenceId = openapi_types.UUID
+
 // ExecutionId defines model for ExecutionId.
 type ExecutionId = string
 
@@ -9741,6 +9823,9 @@ type PostWorkspaceIssueCommentJSONRequestBody = PostCommentRequest
 
 // EditWorkspaceIssueCommentJSONRequestBody defines body for EditWorkspaceIssueComment for application/json ContentType.
 type EditWorkspaceIssueCommentJSONRequestBody = EditCommentRequest
+
+// RecordWorkspaceIssueEvidenceJSONRequestBody defines body for RecordWorkspaceIssueEvidence for application/json ContentType.
+type RecordWorkspaceIssueEvidenceJSONRequestBody = RecordEvidenceRequest
 
 // DelegateWorkspaceIssueJSONRequestBody defines body for DelegateWorkspaceIssue for application/json ContentType.
 type DelegateWorkspaceIssueJSONRequestBody = DelegateIssueRequest
@@ -11317,6 +11402,34 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction} (the `ReactToWorkspaceIssueComment` operationId).
 	ReactToWorkspaceIssueComment(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceIssueCriteria Read the acceptance criteria and what proves each of them
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/criteria (the `ListWorkspaceIssueCriteria` operationId).
+	ListWorkspaceIssueCriteria(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RecordWorkspaceIssueEvidenceWithBody File what proves an acceptance criterion
+	//
+	// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+	RecordWorkspaceIssueEvidenceWithBody(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RecordWorkspaceIssueEvidence File what proves an acceptance criterion
+	//
+	// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+	RecordWorkspaceIssueEvidence(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body RecordWorkspaceIssueEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteWorkspaceIssueEvidence Take back a piece of evidence
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
+	DeleteWorkspaceIssueEvidence(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	//
@@ -16096,6 +16209,74 @@ func (c *Client) UnreactToWorkspaceIssueComment(ctx context.Context, workspaceId
 // Corresponds with PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction} (the `ReactToWorkspaceIssueComment` operationId).
 func (c *Client) ReactToWorkspaceIssueComment(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewReactToWorkspaceIssueCommentRequest(c.Server, workspaceId, issueId, commentId, reaction)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceIssueCriteria Read the acceptance criteria and what proves each of them
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/criteria (the `ListWorkspaceIssueCriteria` operationId).
+func (c *Client) ListWorkspaceIssueCriteria(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceIssueCriteriaRequest(c.Server, workspaceId, issueId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RecordWorkspaceIssueEvidenceWithBody File what proves an acceptance criterion
+//
+// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+func (c *Client) RecordWorkspaceIssueEvidenceWithBody(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRecordWorkspaceIssueEvidenceRequestWithBody(c.Server, workspaceId, issueId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RecordWorkspaceIssueEvidence File what proves an acceptance criterion
+//
+// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+func (c *Client) RecordWorkspaceIssueEvidence(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body RecordWorkspaceIssueEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRecordWorkspaceIssueEvidenceRequest(c.Server, workspaceId, issueId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteWorkspaceIssueEvidence Take back a piece of evidence
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
+func (c *Client) DeleteWorkspaceIssueEvidence(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWorkspaceIssueEvidenceRequest(c.Server, workspaceId, issueId, evidenceId)
 	if err != nil {
 		return nil, err
 	}
@@ -26915,6 +27096,149 @@ func NewReactToWorkspaceIssueCommentRequest(server string, workspaceId Workspace
 	return req, nil
 }
 
+// NewListWorkspaceIssueCriteriaRequest constructs an http.Request for the ListWorkspaceIssueCriteria method
+func NewListWorkspaceIssueCriteriaRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/criteria", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRecordWorkspaceIssueEvidenceRequest calls the generic RecordWorkspaceIssueEvidence builder with application/json body
+func NewRecordWorkspaceIssueEvidenceRequest(server string, workspaceId WorkspaceId, issueId IssueId, body RecordWorkspaceIssueEvidenceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRecordWorkspaceIssueEvidenceRequestWithBody(server, workspaceId, issueId, "application/json", bodyReader)
+}
+
+// NewRecordWorkspaceIssueEvidenceRequestWithBody constructs an http.Request for the RecordWorkspaceIssueEvidence method, with any body, and a specified content type
+func NewRecordWorkspaceIssueEvidenceRequestWithBody(server string, workspaceId WorkspaceId, issueId IssueId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/criteria", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteWorkspaceIssueEvidenceRequest constructs an http.Request for the DeleteWorkspaceIssueEvidence method
+func NewDeleteWorkspaceIssueEvidenceRequest(server string, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "evidenceId", evidenceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/criteria/evidence/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewRecallWorkspaceIssueRequest constructs an http.Request for the RecallWorkspaceIssue method
 func NewRecallWorkspaceIssueRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
 	var err error
@@ -36464,6 +36788,38 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction} (the `ReactToWorkspaceIssueComment` operationId).
 	ReactToWorkspaceIssueCommentWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction, reqEditors ...RequestEditorFn) (*ReactToWorkspaceIssueCommentResponse, error)
+
+	// ListWorkspaceIssueCriteriaWithResponse Read the acceptance criteria and what proves each of them
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/criteria (the `ListWorkspaceIssueCriteria` operationId).
+	ListWorkspaceIssueCriteriaWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueCriteriaResponse, error)
+
+	// RecordWorkspaceIssueEvidenceWithBodyWithResponse File what proves an acceptance criterion
+	//
+	// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+	RecordWorkspaceIssueEvidenceWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RecordWorkspaceIssueEvidenceResponse, error)
+
+	// RecordWorkspaceIssueEvidenceWithResponse File what proves an acceptance criterion
+	//
+	// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+	RecordWorkspaceIssueEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body RecordWorkspaceIssueEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*RecordWorkspaceIssueEvidenceResponse, error)
+
+	// DeleteWorkspaceIssueEvidenceWithResponse Take back a piece of evidence
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
+	DeleteWorkspaceIssueEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueEvidenceResponse, error)
 
 	// RecallWorkspaceIssueWithResponse Take this issue back from the agent holding it
 	//
@@ -49174,6 +49530,213 @@ func (r ReactToWorkspaceIssueCommentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ReactToWorkspaceIssueCommentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceIssueCriteriaResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AcceptanceCriterionList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceIssueCriteriaResponse) GetJSON200() *AcceptanceCriterionList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceIssueCriteriaResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceIssueCriteriaResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceIssueCriteriaResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceIssueCriteriaResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceIssueCriteriaResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceIssueCriteriaResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceIssueCriteriaResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceIssueCriteriaResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RecordWorkspaceIssueEvidenceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *CriterionEvidence
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r RecordWorkspaceIssueEvidenceResponse) GetJSON201() *CriterionEvidence {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RecordWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RecordWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RecordWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r RecordWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RecordWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RecordWorkspaceIssueEvidenceResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RecordWorkspaceIssueEvidenceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RecordWorkspaceIssueEvidenceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RecordWorkspaceIssueEvidenceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteWorkspaceIssueEvidenceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteWorkspaceIssueEvidenceResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteWorkspaceIssueEvidenceResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteWorkspaceIssueEvidenceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteWorkspaceIssueEvidenceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteWorkspaceIssueEvidenceResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -64059,6 +64622,62 @@ func (c *ClientWithResponses) ReactToWorkspaceIssueCommentWithResponse(ctx conte
 	return ParseReactToWorkspaceIssueCommentResponse(rsp)
 }
 
+// ListWorkspaceIssueCriteriaWithResponse Read the acceptance criteria and what proves each of them
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/criteria (the `ListWorkspaceIssueCriteria` operationId).
+func (c *ClientWithResponses) ListWorkspaceIssueCriteriaWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueCriteriaResponse, error) {
+	rsp, err := c.ListWorkspaceIssueCriteria(ctx, workspaceId, issueId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceIssueCriteriaResponse(rsp)
+}
+
+// RecordWorkspaceIssueEvidenceWithBodyWithResponse File what proves an acceptance criterion
+//
+// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+func (c *ClientWithResponses) RecordWorkspaceIssueEvidenceWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RecordWorkspaceIssueEvidenceResponse, error) {
+	rsp, err := c.RecordWorkspaceIssueEvidenceWithBody(ctx, workspaceId, issueId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRecordWorkspaceIssueEvidenceResponse(rsp)
+}
+
+// RecordWorkspaceIssueEvidenceWithResponse File what proves an acceptance criterion
+//
+// Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/criteria (the `RecordWorkspaceIssueEvidence` operationId).
+func (c *ClientWithResponses) RecordWorkspaceIssueEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body RecordWorkspaceIssueEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*RecordWorkspaceIssueEvidenceResponse, error) {
+	rsp, err := c.RecordWorkspaceIssueEvidence(ctx, workspaceId, issueId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRecordWorkspaceIssueEvidenceResponse(rsp)
+}
+
+// DeleteWorkspaceIssueEvidenceWithResponse Take back a piece of evidence
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
+func (c *ClientWithResponses) DeleteWorkspaceIssueEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueEvidenceResponse, error) {
+	rsp, err := c.DeleteWorkspaceIssueEvidence(ctx, workspaceId, issueId, evidenceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteWorkspaceIssueEvidenceResponse(rsp)
+}
+
 // RecallWorkspaceIssueWithResponse Take this issue back from the agent holding it
 //
 // Returns a wrapper object for the known response body format(s).
@@ -75936,6 +76555,171 @@ func ParseReactToWorkspaceIssueCommentResponse(rsp *http.Response) (*ReactToWork
 	return response, nil
 }
 
+// ParseListWorkspaceIssueCriteriaResponse parses an HTTP response from a ListWorkspaceIssueCriteriaWithResponse call
+func ParseListWorkspaceIssueCriteriaResponse(rsp *http.Response) (*ListWorkspaceIssueCriteriaResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceIssueCriteriaResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AcceptanceCriterionList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRecordWorkspaceIssueEvidenceResponse parses an HTTP response from a RecordWorkspaceIssueEvidenceWithResponse call
+func ParseRecordWorkspaceIssueEvidenceResponse(rsp *http.Response) (*RecordWorkspaceIssueEvidenceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RecordWorkspaceIssueEvidenceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CriterionEvidence
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteWorkspaceIssueEvidenceResponse parses an HTTP response from a DeleteWorkspaceIssueEvidenceWithResponse call
+func ParseDeleteWorkspaceIssueEvidenceResponse(rsp *http.Response) (*DeleteWorkspaceIssueEvidenceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteWorkspaceIssueEvidenceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseRecallWorkspaceIssueResponse parses an HTTP response from a RecallWorkspaceIssueWithResponse call
 func ParseRecallWorkspaceIssueResponse(rsp *http.Response) (*RecallWorkspaceIssueResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -86088,6 +86872,15 @@ type ServerInterface interface {
 	// ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 	ReactToWorkspaceIssueComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction)
+	// ListWorkspaceIssueCriteria Read the acceptance criteria and what proves each of them
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/criteria)
+	ListWorkspaceIssueCriteria(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// RecordWorkspaceIssueEvidence File what proves an acceptance criterion
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/criteria)
+	RecordWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// DeleteWorkspaceIssueEvidence Take back a piece of evidence
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
+	DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId)
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -87534,6 +88327,24 @@ func (_ Unimplemented) UnreactToWorkspaceIssueComment(w http.ResponseWriter, r *
 // ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 // (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 func (_ Unimplemented) ReactToWorkspaceIssueComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, commentId CommentId, reaction Reaction) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueCriteria Read the acceptance criteria and what proves each of them
+// (GET /workspaces/{workspaceId}/issues/{issueId}/criteria)
+func (_ Unimplemented) ListWorkspaceIssueCriteria(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RecordWorkspaceIssueEvidence File what proves an acceptance criterion
+// (POST /workspaces/{workspaceId}/issues/{issueId}/criteria)
+func (_ Unimplemented) RecordWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteWorkspaceIssueEvidence Take back a piece of evidence
+// (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
+func (_ Unimplemented) DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -93603,6 +94414,120 @@ func (siw *ServerInterfaceWrapper) ReactToWorkspaceIssueComment(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ReactToWorkspaceIssueComment(w, r, workspaceId, issueId, commentId, reaction)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueCriteria operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueCriteria(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueCriteria(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RecordWorkspaceIssueEvidence operation middleware
+func (siw *ServerInterfaceWrapper) RecordWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecordWorkspaceIssueEvidence(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceIssueEvidence operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "evidenceId" -------------
+	var evidenceId EvidenceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "evidenceId", chi.URLParam(r, "evidenceId"), &evidenceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "evidenceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceIssueEvidence(w, r, workspaceId, issueId, evidenceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -100320,6 +101245,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issue-templates/{templateId}", wrapper.DeleteWorkspaceIssueTemplate)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/criteria", wrapper.ListWorkspaceIssueCriteria)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/criteria", wrapper.RecordWorkspaceIssueEvidence)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId}", wrapper.DeleteWorkspaceIssueEvidence)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/status", wrapper.SetWorkspaceIssueStatus)
@@ -114560,6 +115494,265 @@ func (response ReactToWorkspaceIssueComment422ApplicationProblemPlusJSONResponse
 type ReactToWorkspaceIssueComment500ApplicationProblemPlusJSONResponse Problem
 
 func (response ReactToWorkspaceIssueComment500ApplicationProblemPlusJSONResponse) VisitReactToWorkspaceIssueCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCriteriaRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueCriteriaResponseObject interface {
+	VisitListWorkspaceIssueCriteriaResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueCriteria200JSONResponse AcceptanceCriterionList
+
+func (response ListWorkspaceIssueCriteria200JSONResponse) VisitListWorkspaceIssueCriteriaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCriteria401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueCriteria401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCriteriaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCriteria403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueCriteria403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCriteriaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCriteria404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueCriteria404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCriteriaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueCriteria500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueCriteria500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueCriteriaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordWorkspaceIssueEvidenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Body        *RecordWorkspaceIssueEvidenceJSONRequestBody
+}
+
+type RecordWorkspaceIssueEvidenceResponseObject interface {
+	VisitRecordWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error
+}
+
+type RecordWorkspaceIssueEvidence201JSONResponse CriterionEvidence
+
+func (response RecordWorkspaceIssueEvidence201JSONResponse) VisitRecordWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordWorkspaceIssueEvidence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RecordWorkspaceIssueEvidence401ApplicationProblemPlusJSONResponse) VisitRecordWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordWorkspaceIssueEvidence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RecordWorkspaceIssueEvidence403ApplicationProblemPlusJSONResponse) VisitRecordWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordWorkspaceIssueEvidence404ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordWorkspaceIssueEvidence404ApplicationProblemPlusJSONResponse) VisitRecordWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordWorkspaceIssueEvidence422ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordWorkspaceIssueEvidence422ApplicationProblemPlusJSONResponse) VisitRecordWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordWorkspaceIssueEvidence500ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordWorkspaceIssueEvidence500ApplicationProblemPlusJSONResponse) VisitRecordWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueEvidenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	EvidenceId  EvidenceId  `json:"evidenceId"`
+}
+
+type DeleteWorkspaceIssueEvidenceResponseObject interface {
+	VisitDeleteWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceIssueEvidence204Response struct {
+}
+
+func (response DeleteWorkspaceIssueEvidence204Response) VisitDeleteWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkspaceIssueEvidence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceIssueEvidence401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueEvidence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceIssueEvidence403ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueEvidence404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceIssueEvidence404ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceIssueEvidence500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceIssueEvidence500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -130470,6 +131663,15 @@ type StrictServerInterface interface {
 	// ReactToWorkspaceIssueComment React to a comment, once, whatever you already did
 	// (PUT /workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}/reactions/{reaction})
 	ReactToWorkspaceIssueComment(ctx context.Context, request ReactToWorkspaceIssueCommentRequestObject) (ReactToWorkspaceIssueCommentResponseObject, error)
+	// ListWorkspaceIssueCriteria Read the acceptance criteria and what proves each of them
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/criteria)
+	ListWorkspaceIssueCriteria(ctx context.Context, request ListWorkspaceIssueCriteriaRequestObject) (ListWorkspaceIssueCriteriaResponseObject, error)
+	// RecordWorkspaceIssueEvidence File what proves an acceptance criterion
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/criteria)
+	RecordWorkspaceIssueEvidence(ctx context.Context, request RecordWorkspaceIssueEvidenceRequestObject) (RecordWorkspaceIssueEvidenceResponseObject, error)
+	// DeleteWorkspaceIssueEvidence Take back a piece of evidence
+	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
+	DeleteWorkspaceIssueEvidence(ctx context.Context, request DeleteWorkspaceIssueEvidenceRequestObject) (DeleteWorkspaceIssueEvidenceResponseObject, error)
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	RecallWorkspaceIssue(ctx context.Context, request RecallWorkspaceIssueRequestObject) (RecallWorkspaceIssueResponseObject, error)
@@ -135494,6 +136696,95 @@ func (sh *strictHandler) ReactToWorkspaceIssueComment(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ReactToWorkspaceIssueCommentResponseObject); ok {
 		if err := validResponse.VisitReactToWorkspaceIssueCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueCriteria operation middleware
+func (sh *strictHandler) ListWorkspaceIssueCriteria(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueCriteriaRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueCriteria(ctx, request.(ListWorkspaceIssueCriteriaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueCriteria")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueCriteriaResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueCriteriaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecordWorkspaceIssueEvidence operation middleware
+func (sh *strictHandler) RecordWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request RecordWorkspaceIssueEvidenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	var body RecordWorkspaceIssueEvidenceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecordWorkspaceIssueEvidence(ctx, request.(RecordWorkspaceIssueEvidenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecordWorkspaceIssueEvidence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecordWorkspaceIssueEvidenceResponseObject); ok {
+		if err := validResponse.VisitRecordWorkspaceIssueEvidenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceIssueEvidence operation middleware
+func (sh *strictHandler) DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId) {
+	var request DeleteWorkspaceIssueEvidenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.EvidenceId = evidenceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceIssueEvidence(ctx, request.(DeleteWorkspaceIssueEvidenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceIssueEvidence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceIssueEvidenceResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceIssueEvidenceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

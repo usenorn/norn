@@ -3126,3 +3126,54 @@ func issueTemplateDTO(template entity.IssueTemplate) api.IssueTemplate {
 
 	return dto
 }
+
+func acceptanceCriterionDTOs(criteria []entity.AcceptanceCriterion) []api.AcceptanceCriterion {
+	converted := make([]api.AcceptanceCriterion, 0, len(criteria))
+
+	for _, criterion := range criteria {
+		evidence := make([]api.CriterionEvidence, 0, len(criterion.Evidence))
+
+		for _, held := range criterion.Evidence {
+			evidence = append(evidence, criterionEvidenceDTO(held, criterion.Text))
+		}
+
+		converted = append(converted, api.AcceptanceCriterion{
+			Id:       criterion.ID,
+			Text:     criterion.Text,
+			Checked:  criterion.Checked,
+			Proven:   criterion.Proven(),
+			Evidence: evidence,
+		})
+	}
+
+	return converted
+}
+
+func criterionEvidenceDTO(
+	evidence entity.CriterionEvidence,
+	criterion string,
+) api.CriterionEvidence {
+	dto := api.CriterionEvidence{
+		Id:             evidence.ID,
+		CriterionId:    evidence.CriterionID,
+		Kind:           api.EvidenceKind(evidence.Kind),
+		Label:          evidence.Label,
+		Url:            nilIfEmpty(evidence.URL),
+		Stale:          evidence.Stale(criterion),
+		CriterionText:  nilIfEmpty(evidence.CriterionText),
+		RecordedByName: nilIfEmpty(evidence.RecordedByName),
+		RecordedAt:     evidence.RecordedAt,
+	}
+
+	if evidence.AttachmentID != uuid.Nil {
+		attachment := evidence.AttachmentID
+		dto.AttachmentId = &attachment
+	}
+
+	if evidence.RecordedByAccountID != uuid.Nil {
+		recorder := evidence.RecordedByAccountID
+		dto.RecordedByAccountId = &recorder
+	}
+
+	return dto
+}

@@ -3983,6 +3983,64 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/criteria:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueCriteria
+      summary: Read the acceptance criteria and what proves each of them
+      responses:
+        '200':
+          description: The checklist in the description, with the evidence filed against it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptanceCriterionList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [issues]
+      operationId: recordWorkspaceIssueEvidence
+      summary: File what proves an acceptance criterion
+      description: >-
+        Evidence is filed against the words the criterion said at the time. Rewriting the
+        criterion afterwards leaves the evidence marked as answering the older wording.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordEvidenceRequest' }
+      responses:
+        '201':
+          description: The evidence as it was filed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CriterionEvidence' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/EvidenceId'
+    delete:
+      tags: [issues]
+      operationId: deleteWorkspaceIssueEvidence
+      summary: Take back a piece of evidence
+      responses:
+        '204': { description: The evidence is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/status:
     post:
       tags: [issues]
@@ -6962,6 +7020,12 @@ components:
       required: true
       schema: { type: string, format: uuid }
 
+    EvidenceId:
+      name: evidenceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
     RevisionId:
       name: revisionId
       in: path
@@ -8203,6 +8267,70 @@ components:
         priority: { $ref: '#/components/schemas/IssuePriority' }
         estimate: { type: integer, format: int32 }
         dueOn: { type: string, format: date }
+
+    AcceptanceCriterionList:
+      type: object
+      required: [criteria]
+      properties:
+        criteria:
+          type: array
+          items: { $ref: '#/components/schemas/AcceptanceCriterion' }
+
+    AcceptanceCriterion:
+      type: object
+      required: [id, text, checked, proven, evidence]
+      properties:
+        id:
+          type: string
+          description: The identifier the checklist item carries in the description.
+        text: { type: string }
+        checked: { type: boolean }
+        proven:
+          type: boolean
+          description: Whether any evidence answers the criterion as it reads now.
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/CriterionEvidence' }
+
+    CriterionEvidence:
+      type: object
+      required: [id, criterionId, kind, label, stale, recordedAt]
+      properties:
+        id: { type: string, format: uuid }
+        criterionId: { type: string }
+        kind: { $ref: '#/components/schemas/EvidenceKind' }
+        label: { type: string }
+        url: { type: string }
+        attachmentId: { type: string, format: uuid }
+        stale:
+          type: boolean
+          description: >-
+            Whether the criterion has been rewritten since this was filed, so it answers wording
+            that no longer stands.
+        criterionText:
+          type: string
+          description: What the criterion said when this evidence was filed.
+        recordedByAccountId: { type: string, format: uuid }
+        recordedByName: { type: string }
+        recordedAt: { type: string, format: date-time }
+
+    EvidenceKind:
+      type: string
+      description: What kind of proof this is.
+      enum: [test, screenshot, pull_request, person]
+
+    RecordEvidenceRequest:
+      type: object
+      required: [criterionId, kind, label]
+      properties:
+        criterionId: { type: string, maxLength: 64 }
+        kind: { $ref: '#/components/schemas/EvidenceKind' }
+        label: { type: string, minLength: 1, maxLength: 200 }
+        url:
+          type: string
+          maxLength: 2048
+          description: Required for every kind but a person, who is named in the label.
+        attachmentId: { type: string, format: uuid }
 
     DescriptionRevisionList:
       type: object

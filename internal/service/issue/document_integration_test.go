@@ -29,6 +29,7 @@ import (
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	issuecriterionrepo "github.com/usenorn/norn/internal/repository/issuecriterion"
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
@@ -49,17 +50,19 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
+	issuecriterionsvc "github.com/usenorn/norn/internal/service/issuecriterion"
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 )
 
 type world struct {
-	client    *postgres.Client
-	workspace entity.Workspace
-	team      entity.Team
-	state     entity.WorkflowState
-	account   uuid.UUID
-	other     uuid.UUID
-	asOther   service.Issues
+	client     *postgres.Client
+	workspace  entity.Workspace
+	team       entity.Team
+	state      entity.WorkflowState
+	account    uuid.UUID
+	other      uuid.UUID
+	asOther    service.Issues
+	authorizer service.Authorizer
 }
 
 func documentDatabase(t *testing.T) *postgres.Client {
@@ -282,6 +285,7 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 		)
 	}
 
+	place.authorizer = deciding(place.account)
 	place.asOther = built(deciding(place.other))
 
 	return built(deciding(place.account)), revisions, place
@@ -887,5 +891,136 @@ func TestOneSittingLeavesOneEntryInTheHistory(t *testing.T) {
 
 	if kept[0].IssueVersion != version {
 		t.Fatalf("the entry is filed at version %d, want %d", kept[0].IssueVersion, version)
+	}
+}
+
+func TestEvidenceIsFiledAgainstTheWordsTheCriterionSaid(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	written := entity.NewDocument(entity.Node{
+		Type: entity.NodeTaskList,
+		Content: []entity.Node{{
+			Type:  entity.NodeTaskItem,
+			Attrs: map[string]any{"id": "criterion-one", "checked": false},
+			Content: []entity.Node{{
+				Type:    entity.NodeParagraph,
+				Content: []entity.Node{{Type: entity.NodeText, Text: "The export writes a file"}},
+			}},
+		}},
+	})
+
+	created, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID:    place.workspace.ID,
+		TeamID:         place.team.ID,
+		Title:          "Export",
+		DescriptionDoc: &written,
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	criteria := issuecriterionsvc.New(
+		issuecriterionrepo.New(client),
+		issuerepo.New(client),
+		issuerevisionrepo.New(client),
+		place.authorizer,
+	)
+
+	if _, err := criteria.Record(ctx, place.workspace.ID, created.ID, service.RecordEvidenceInput{
+		CriterionID: "criterion-one",
+		Kind:        entity.EvidenceTest,
+		Label:       "TestExportWritesAFile",
+		URL:         "https://ci.northwind.co/runs/9",
+	}); err != nil {
+		t.Fatalf("Record: %v", err)
+	}
+
+	held, err := criteria.List(ctx, place.workspace.ID, created.ID)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(held) != 1 || len(held[0].Evidence) != 1 {
+		t.Fatalf("read %+v, want one criterion carrying one piece of evidence", held)
+	}
+
+	if !held[0].Proven() {
+		t.Fatalf("evidence answering the criterion as it reads did not count as proof")
+	}
+
+	rewritten := entity.NewDocument(entity.Node{
+		Type: entity.NodeTaskList,
+		Content: []entity.Node{{
+			Type:  entity.NodeTaskItem,
+			Attrs: map[string]any{"id": "criterion-one", "checked": false},
+			Content: []entity.Node{{
+				Type:    entity.NodeParagraph,
+				Content: []entity.Node{{Type: entity.NodeText, Text: "The export writes a valid file"}},
+			}},
+		}},
+	})
+
+	if _, err := issues.Update(ctx, place.workspace.ID, created.ID, service.UpdateIssueInput{
+		ExpectedVersion: created.Version,
+		DescriptionDoc:  &rewritten,
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	after, err := criteria.List(ctx, place.workspace.ID, created.ID)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(after) != 1 || len(after[0].Evidence) != 1 {
+		t.Fatalf("rewriting the criterion lost its evidence: %+v", after)
+	}
+
+	if !after[0].Evidence[0].Stale(after[0].Text) {
+		t.Fatalf(
+			"evidence filed against the older wording still reads as current. What it proves is " +
+				"the sentence it answered, not the one that replaced it.",
+		)
+	}
+
+	if after[0].Proven() {
+		t.Fatalf("a rewritten criterion counted as proven by evidence for what it used to say")
+	}
+}
+
+func TestEvidenceForACriterionTheIssueDoesNotCarryIsRefused(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	created, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "No criteria here",
+		Description: "Just prose.",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	criteria := issuecriterionsvc.New(
+		issuecriterionrepo.New(client),
+		issuerepo.New(client),
+		issuerevisionrepo.New(client),
+		place.authorizer,
+	)
+
+	_, err = criteria.Record(ctx, place.workspace.ID, created.ID, service.RecordEvidenceInput{
+		CriterionID: "invented",
+		Kind:        entity.EvidencePerson,
+		Label:       "Somebody said so",
+	})
+
+	if !errors.Is(err, entity.ErrCriterionNotFound) {
+		t.Fatalf("filing evidence against a criterion nobody wrote returned %v, want a refusal", err)
 	}
 }

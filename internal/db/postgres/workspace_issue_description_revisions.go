@@ -109,17 +109,20 @@ var WorkspaceIssueDescriptionRevisionWhere = struct {
 
 // WorkspaceIssueDescriptionRevisionRels is where relationship names are stored.
 var WorkspaceIssueDescriptionRevisionRels = struct {
-	AuthorAccount                          string
-	DescriptionRevisionWorkspaceExecutions string
+	AuthorAccount                                       string
+	DescriptionRevisionWorkspaceExecutions              string
+	DescriptionRevisionWorkspaceIssueCriterionEvidences string
 }{
-	AuthorAccount:                          "AuthorAccount",
-	DescriptionRevisionWorkspaceExecutions: "DescriptionRevisionWorkspaceExecutions",
+	AuthorAccount:                                       "AuthorAccount",
+	DescriptionRevisionWorkspaceExecutions:              "DescriptionRevisionWorkspaceExecutions",
+	DescriptionRevisionWorkspaceIssueCriterionEvidences: "DescriptionRevisionWorkspaceIssueCriterionEvidences",
 }
 
 // workspaceIssueDescriptionRevisionR is where relationships are stored.
 type workspaceIssueDescriptionRevisionR struct {
-	AuthorAccount                          *Account                `boil:"AuthorAccount" json:"AuthorAccount" toml:"AuthorAccount" yaml:"AuthorAccount"`
-	DescriptionRevisionWorkspaceExecutions WorkspaceExecutionSlice `boil:"DescriptionRevisionWorkspaceExecutions" json:"DescriptionRevisionWorkspaceExecutions" toml:"DescriptionRevisionWorkspaceExecutions" yaml:"DescriptionRevisionWorkspaceExecutions"`
+	AuthorAccount                                       *Account                             `boil:"AuthorAccount" json:"AuthorAccount" toml:"AuthorAccount" yaml:"AuthorAccount"`
+	DescriptionRevisionWorkspaceExecutions              WorkspaceExecutionSlice              `boil:"DescriptionRevisionWorkspaceExecutions" json:"DescriptionRevisionWorkspaceExecutions" toml:"DescriptionRevisionWorkspaceExecutions" yaml:"DescriptionRevisionWorkspaceExecutions"`
+	DescriptionRevisionWorkspaceIssueCriterionEvidences WorkspaceIssueCriterionEvidenceSlice `boil:"DescriptionRevisionWorkspaceIssueCriterionEvidences" json:"DescriptionRevisionWorkspaceIssueCriterionEvidences" toml:"DescriptionRevisionWorkspaceIssueCriterionEvidences" yaml:"DescriptionRevisionWorkspaceIssueCriterionEvidences"`
 }
 
 // NewStruct creates a new relationship struct
@@ -157,6 +160,22 @@ func (r *workspaceIssueDescriptionRevisionR) GetDescriptionRevisionWorkspaceExec
 	}
 
 	return r.DescriptionRevisionWorkspaceExecutions
+}
+
+func (o *WorkspaceIssueDescriptionRevision) GetDescriptionRevisionWorkspaceIssueCriterionEvidences() WorkspaceIssueCriterionEvidenceSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetDescriptionRevisionWorkspaceIssueCriterionEvidences()
+}
+
+func (r *workspaceIssueDescriptionRevisionR) GetDescriptionRevisionWorkspaceIssueCriterionEvidences() WorkspaceIssueCriterionEvidenceSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.DescriptionRevisionWorkspaceIssueCriterionEvidences
 }
 
 // workspaceIssueDescriptionRevisionL is where Load methods for each relationship are stored.
@@ -500,6 +519,20 @@ func (o *WorkspaceIssueDescriptionRevision) DescriptionRevisionWorkspaceExecutio
 	return WorkspaceExecutions(queryMods...)
 }
 
+// DescriptionRevisionWorkspaceIssueCriterionEvidences retrieves all the workspace_issue_criterion_evidence's WorkspaceIssueCriterionEvidences with an executor via description_revision_id column.
+func (o *WorkspaceIssueDescriptionRevision) DescriptionRevisionWorkspaceIssueCriterionEvidences(mods ...qm.QueryMod) workspaceIssueCriterionEvidenceQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_criterion_evidence\".\"description_revision_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueCriterionEvidences(queryMods...)
+}
+
 // LoadAuthorAccount allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (workspaceIssueDescriptionRevisionL) LoadAuthorAccount(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueDescriptionRevision any, mods queries.Applicator) error {
@@ -737,6 +770,119 @@ func (workspaceIssueDescriptionRevisionL) LoadDescriptionRevisionWorkspaceExecut
 	return nil
 }
 
+// LoadDescriptionRevisionWorkspaceIssueCriterionEvidences allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceIssueDescriptionRevisionL) LoadDescriptionRevisionWorkspaceIssueCriterionEvidences(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueDescriptionRevision any, mods queries.Applicator) error {
+	var slice []*WorkspaceIssueDescriptionRevision
+	var object *WorkspaceIssueDescriptionRevision
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceIssueDescriptionRevision.(*WorkspaceIssueDescriptionRevision)
+		if !ok {
+			object = new(WorkspaceIssueDescriptionRevision)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceIssueDescriptionRevision)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceIssueDescriptionRevision))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceIssueDescriptionRevision.(*[]*WorkspaceIssueDescriptionRevision)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceIssueDescriptionRevision)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceIssueDescriptionRevision))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceIssueDescriptionRevisionR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceIssueDescriptionRevisionR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_criterion_evidence`),
+		qm.WhereIn(`workspace_issue_criterion_evidence.description_revision_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_criterion_evidence")
+	}
+
+	var resultSlice []*WorkspaceIssueCriterionEvidence
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_criterion_evidence")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_criterion_evidence")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_criterion_evidence")
+	}
+
+	if len(workspaceIssueCriterionEvidenceAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.DescriptionRevisionWorkspaceIssueCriterionEvidences = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueCriterionEvidenceR{}
+			}
+			foreign.R.DescriptionRevision = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.DescriptionRevisionID) {
+				local.R.DescriptionRevisionWorkspaceIssueCriterionEvidences = append(local.R.DescriptionRevisionWorkspaceIssueCriterionEvidences, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueCriterionEvidenceR{}
+				}
+				foreign.R.DescriptionRevision = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAuthorAccount of the workspaceIssueDescriptionRevision to the related item.
 // Sets o.R.AuthorAccount to related.
 // Adds o to related.R.AuthorAccountWorkspaceIssueDescriptionRevisions.
@@ -937,6 +1083,133 @@ func (o *WorkspaceIssueDescriptionRevision) RemoveDescriptionRevisionWorkspaceEx
 				o.R.DescriptionRevisionWorkspaceExecutions[i] = o.R.DescriptionRevisionWorkspaceExecutions[ln-1]
 			}
 			o.R.DescriptionRevisionWorkspaceExecutions = o.R.DescriptionRevisionWorkspaceExecutions[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddDescriptionRevisionWorkspaceIssueCriterionEvidences adds the given related objects to the existing relationships
+// of the workspace_issue_description_revision, optionally inserting them as new records.
+// Appends related to o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences.
+// Sets related.R.DescriptionRevision appropriately.
+func (o *WorkspaceIssueDescriptionRevision) AddDescriptionRevisionWorkspaceIssueCriterionEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCriterionEvidence) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.DescriptionRevisionID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_criterion_evidence\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"description_revision_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueCriterionEvidencePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.DescriptionRevisionID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceIssueDescriptionRevisionR{
+			DescriptionRevisionWorkspaceIssueCriterionEvidences: related,
+		}
+	} else {
+		o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences = append(o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueCriterionEvidenceR{
+				DescriptionRevision: o,
+			}
+		} else {
+			rel.R.DescriptionRevision = o
+		}
+	}
+	return nil
+}
+
+// SetDescriptionRevisionWorkspaceIssueCriterionEvidences removes all previously related items of the
+// workspace_issue_description_revision replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.DescriptionRevision's DescriptionRevisionWorkspaceIssueCriterionEvidences accordingly.
+// Replaces o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences with related.
+// Sets related.R.DescriptionRevision's DescriptionRevisionWorkspaceIssueCriterionEvidences accordingly.
+func (o *WorkspaceIssueDescriptionRevision) SetDescriptionRevisionWorkspaceIssueCriterionEvidences(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueCriterionEvidence) error {
+	query := "update \"workspace_issue_criterion_evidence\" set \"description_revision_id\" = null where \"description_revision_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences {
+			queries.SetScanner(&rel.DescriptionRevisionID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.DescriptionRevision = nil
+		}
+		o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences = nil
+	}
+
+	return o.AddDescriptionRevisionWorkspaceIssueCriterionEvidences(ctx, exec, insert, related...)
+}
+
+// RemoveDescriptionRevisionWorkspaceIssueCriterionEvidences relationships from objects passed in.
+// Removes related items from R.DescriptionRevisionWorkspaceIssueCriterionEvidences (uses pointer comparison, removal does not keep order)
+// Sets related.R.DescriptionRevision.
+func (o *WorkspaceIssueDescriptionRevision) RemoveDescriptionRevisionWorkspaceIssueCriterionEvidences(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceIssueCriterionEvidence) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.DescriptionRevisionID, nil)
+		if rel.R != nil {
+			rel.R.DescriptionRevision = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("description_revision_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences)
+			if ln > 1 && i < ln-1 {
+				o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences[i] = o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences[ln-1]
+			}
+			o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences = o.R.DescriptionRevisionWorkspaceIssueCriterionEvidences[:ln-1]
 			break
 		}
 	}
