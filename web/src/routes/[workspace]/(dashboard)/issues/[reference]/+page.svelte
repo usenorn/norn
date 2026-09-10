@@ -91,6 +91,7 @@
 		emptyDocument,
 		sameDocument,
 		type Document,
+		type DocumentNode,
 	} from "$lib/editor/document";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import type { CreationOutcome } from "$lib/issues/creating";
@@ -257,7 +258,7 @@
 		return "saved";
 	}
 	let descriptionEditor = $state.raw<{
-		settle: (taskId: string, content: unknown) => boolean;
+		settle: (taskId: string, content: DocumentNode) => boolean;
 		abandon: (taskId: string) => void;
 		focus: () => void;
 	} | null>(null);

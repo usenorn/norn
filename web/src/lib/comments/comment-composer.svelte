@@ -8,7 +8,12 @@
 	import { attachmentNode } from "$lib/attachments/attachments";
 	import { settled, type UploadTask } from "$lib/attachments/upload";
 	import Editor from "$lib/editor/editor.svelte";
-	import { documentEmpty, emptyDocument, type Document } from "$lib/editor/document";
+	import {
+		documentEmpty,
+		emptyDocument,
+		type Document,
+		type DocumentNode,
+	} from "$lib/editor/document";
 
 	let {
 		workspaceId,
@@ -46,7 +51,7 @@
 	let dropping = $state(false);
 	let sending = $state(false);
 	let editor = $state.raw<{
-		settle: (taskId: string, content: unknown) => boolean;
+		settle: (taskId: string, content: DocumentNode) => boolean;
 		abandon: (taskId: string) => void;
 	} | null>(null);
 

@@ -503,7 +503,6 @@
 
 			settle(own);
 
-			// The draft this was written in is finished: it became the issue.
 			if (draftId) {
 				const kept = draftId;
 

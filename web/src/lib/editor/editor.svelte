@@ -2,7 +2,14 @@
 	import { Editor } from "@tiptap/core";
 	import type { EditorView } from "@tiptap/pm/view";
 	import { markdownProse } from "$lib/issues/markdown";
-	import { asDocument, documentEmpty, emptyDocument, sameDocument, type Document } from "$lib/editor/document";
+	import {
+		asDocument,
+		documentEmpty,
+		emptyDocument,
+		sameDocument,
+		type Document,
+		type DocumentNode,
+	} from "$lib/editor/document";
 	import { editorExtensions } from "$lib/editor/schema";
 	import { completing, type SuggestionSession } from "$lib/editor/suggest";
 	import { insertIssueRef, insertLink, insertMention, runBlock } from "$lib/editor/blocks";
@@ -301,7 +308,7 @@
 		return ids.length > 0;
 	}
 
-	export function settle(taskId: string, content: unknown): boolean {
+	export function settle(taskId: string, content: DocumentNode): boolean {
 		const within = editor;
 
 		if (!within) return false;
@@ -311,7 +318,7 @@
 		if (pos === null) return false;
 
 		dropUpload(within.view, taskId);
-		within.commands.insertContentAt(pos, content as never);
+		within.commands.insertContentAt(pos, content);
 
 		return true;
 	}
