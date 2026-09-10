@@ -14,13 +14,15 @@
 		"test": "svelte-kit sync && vitest run",
 		"test:watch": "svelte-kit sync && vitest",
 		"gen:api": "openapi-typescript ../api/http/v1/dashboard.yaml -o src/lib/api/dashboard.gen.ts",
-		"gen:api:check": "openapi-typescript ../api/http/v1/dashboard.yaml | diff -u src/lib/api/dashboard.gen.ts -"
+		"gen:api:check": "openapi-typescript ../api/http/v1/dashboard.yaml | diff -u src/lib/api/dashboard.gen.ts -",
+		"test:e2e": "playwright test"
 	},
 	"devDependencies": {
 		"@fontsource/ibm-plex-mono": "^5.3.0",
 		"@fontsource/ibm-plex-sans": "^5.3.0",
 		"@internationalized/date": "^3.12.2",
 		"@lucide/svelte": "^1.27.0",
+		"@playwright/test": "^1.63.0",
 		"@sveltejs/adapter-node": "^5.5.7",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
