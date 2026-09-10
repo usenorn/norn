@@ -11,18 +11,20 @@
 		type ActivityEvent,
 		type ActivityFeed,
 	} from "$lib/activity/activity";
+	import { moreFailedLine } from "$lib/api/listed";
+	import type { ColumnPaging } from "$lib/issues/paging";
 
 	let {
 		feed,
 		when,
-		working = false,
+		paging = { kind: "idle" },
 		hideComments = false,
 		emptyLine = "Nothing has happened yet.",
 		onmore,
 	}: {
 		feed: ActivityFeed;
 		when: (instant: string) => string;
-		working?: boolean;
+		paging?: ColumnPaging;
 		hideComments?: boolean;
 		emptyLine?: string;
 		onmore: () => void;
@@ -86,11 +88,21 @@
 		{/each}
 	</ol>
 
-	{#if ready?.nextCursor}
-		<div>
-			<Button variant="secondary" size="sm" disabled={working} onclick={onmore}>
-				{working ? "Loading" : "Load more history"}
-			</Button>
+	{#if ready?.nextCursor || paging.kind === "unavailable"}
+		<div class="flex flex-col items-start gap-2">
+			{#if paging.kind === "unavailable"}
+				<p role="status" class="text-sm text-muted-foreground">{moreFailedLine}</p>
+			{/if}
+			{#if ready?.nextCursor}
+				<Button
+					variant="secondary"
+					size="sm"
+					disabled={paging.kind === "loading"}
+					onclick={onmore}
+				>
+					{paging.kind === "loading" ? "Loading" : "Load more history"}
+				</Button>
+			{/if}
 		</div>
 	{/if}
 {/if}

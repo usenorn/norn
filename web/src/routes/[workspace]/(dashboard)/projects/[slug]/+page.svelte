@@ -62,8 +62,9 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { projectPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { attempt } from "$lib/api/attempt";
+	import { attempt, type ApiResult } from "$lib/api/attempt";
 	import { cursorOf, grew, moreFailedLine, rowsOf, type Listed } from "$lib/api/listed";
+	import { Pending } from "$lib/api/pending.svelte";
 	import type { ColumnPaging } from "$lib/issues/paging";
 	import Retry from "$lib/components/norn/retry.svelte";
 
@@ -172,7 +173,9 @@
 
 	let health = $state<ProjectHealth>("on_track");
 	let body = $state("");
-	let working = $state(false);
+	let feedPaging = $state<ColumnPaging>({ kind: "idle" });
+	const pending = new Pending();
+	const working = $derived(pending.any);
 	let failure = $state<ProjectFailure | null>(null);
 
 	let candidateQuery = $state("");
@@ -190,6 +193,7 @@
 
 	let loadedActivity = $state.raw<ActivityFeed | null>(null);
 
+
 	const activity = $derived<ActivityFeed>(
 		loadedActivity ?? (ready ? ready.activity : { kind: "loading" })
 	);
@@ -203,40 +207,46 @@
 
 		if (!ready || base.kind !== "ready" || !base.nextCursor) return;
 
-		working = true;
+		feedPaging = { kind: "loading" };
 
-		try {
-			const { data: page } = await api.GET(
-				"/workspaces/{workspaceId}/projects/{projectId}/activity",
-				{
+		const outcome = await attempt({
+			run: () =>
+				api.GET("/workspaces/{workspaceId}/projects/{projectId}/activity", {
 					params: {
 						path: { workspaceId: data.workspace.id, projectId: ready.project.id },
 						query: { cursor: base.nextCursor },
 					},
-				}
-			);
+				}),
+		});
 
-			if (page) {
-				loadedActivity = {
-					kind: "ready",
-					events: [...base.events, ...page.events],
-					nextCursor: page.nextCursor,
-				};
-			}
-		} finally {
-			working = false;
+		if (outcome.kind !== "done") {
+			feedPaging = { kind: "unavailable" };
+
+			return;
 		}
+
+		loadedActivity = {
+			kind: "ready",
+			events: [...base.events, ...outcome.value.events],
+			nextCursor: outcome.value.nextCursor,
+		};
+		feedPaging = { kind: "idle" };
 	}
 
-	async function act<T>(run: () => Promise<{ error?: unknown; data?: T }>) {
-		working = true;
+	async function act<T>(key: string, run: () => Promise<ApiResult<T>>): Promise<boolean> {
 		failure = null;
 
-		try {
-			const { error } = await run();
+		const done = await pending.once(key, async () => {
+			const outcome = await attempt({ run });
 
-			if (error) {
-				failure = readProjectFailure(error);
+			if (outcome.kind === "refused") {
+				failure = readProjectFailure(outcome.problem);
+
+				return false;
+			}
+
+			if (outcome.kind === "unknown") {
+				failure = { kind: "unavailable" };
 
 				return false;
 			}
@@ -244,19 +254,15 @@
 			await invalidate(keys.projects(data.workspace.id));
 
 			return true;
-		} catch {
-			failure = { kind: "unavailable" };
+		});
 
-			return false;
-		} finally {
-			working = false;
-		}
+		return done ?? false;
 	}
 
 	async function postStatus() {
 		if (!project || !body.trim()) return;
 
-		const done = await act(() =>
+		const done = await act("status", () =>
 			api.POST("/workspaces/{workspaceId}/projects/{projectId}/status", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { health, body: body.trim() },
@@ -272,7 +278,7 @@
 	async function pinLink(label: string, url: string) {
 		if (!project) return;
 
-		await act(() =>
+		await act("links", () =>
 			api.POST("/workspaces/{workspaceId}/projects/{projectId}/links", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { label, url },
@@ -283,7 +289,7 @@
 	async function unpinLink(linkId: string) {
 		if (!project) return;
 
-		await act(() =>
+		await act(`link:${linkId}`, () =>
 			api.DELETE("/workspaces/{workspaceId}/projects/{projectId}/links/{linkId}", {
 				params: {
 					path: { workspaceId: data.workspace.id, projectId: project.id, linkId },
@@ -301,7 +307,7 @@
 	}) {
 		if (!project) return false;
 
-		const saved = await act(() =>
+		const saved = await act("details", () =>
 			api.PATCH("/workspaces/{workspaceId}/projects/{projectId}", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: {
@@ -331,7 +337,7 @@
 	async function setState(next: ProjectState) {
 		if (!project || project.state === next) return;
 
-		await act(() =>
+		await act("state", () =>
 			api.PATCH("/workspaces/{workspaceId}/projects/{projectId}", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { state: next },
@@ -365,7 +371,7 @@
 	async function setArchived(archive: boolean) {
 		if (!project) return;
 
-		await act(() =>
+		await act("archive", () =>
 			api.POST(
 				archive
 					? "/workspaces/{workspaceId}/projects/{projectId}/archive"
@@ -378,7 +384,7 @@
 	async function remove() {
 		if (!project) return;
 
-		const done = await act(() =>
+		const done = await act("delete", () =>
 			api.DELETE("/workspaces/{workspaceId}/projects/{projectId}", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 			})
@@ -419,21 +425,22 @@
 
 		adding = accountId;
 
-		await act(() =>
+		const added = await act(`member:${accountId}`, () =>
 			api.POST("/workspaces/{workspaceId}/projects/{projectId}/members", {
 				params: { path: { workspaceId: data.workspace.id, projectId: project.id } },
 				body: { accountId },
 			})
 		);
 
-		candidates = candidates.filter((candidate) => candidate.accountId !== accountId);
+		if (added) candidates = candidates.filter((candidate) => candidate.accountId !== accountId);
+
 		adding = "";
 	}
 
 	async function removeMember(accountId: string) {
 		if (!project) return;
 
-		await act(() =>
+		await act(`member:${accountId}`, () =>
 			api.DELETE("/workspaces/{workspaceId}/projects/{projectId}/members/{accountId}", {
 				params: {
 					path: { workspaceId: data.workspace.id, projectId: project.id, accountId },
@@ -992,7 +999,7 @@
 						<ActivityFeedView
 							feed={activity}
 							{when}
-							{working}
+							paging={feedPaging}
 							emptyLine="Nothing has changed since this project was created."
 							onmore={moreActivity}
 						/>

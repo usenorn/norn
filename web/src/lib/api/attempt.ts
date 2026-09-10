@@ -24,9 +24,7 @@ export async function attempt<T>(asked: Attempt<T>): Promise<Outcome<T>> {
 		return { kind: "unknown" };
 	}
 
-	if (result.data !== undefined && result.error === undefined) {
-		return { kind: "done", value: result.data };
-	}
+	if (answered(result)) return { kind: "done", value: result.data as T };
 
 	asked.reconcile?.();
 
@@ -35,6 +33,14 @@ export async function attempt<T>(asked: Attempt<T>): Promise<Outcome<T>> {
 	if (decided(status)) return { kind: "refused", problem: result.error, status };
 
 	return { kind: "unknown" };
+}
+
+function answered(result: ApiResult<unknown>): boolean {
+	if (result.error !== undefined) return false;
+
+	const status = result.response?.status;
+
+	return status === undefined ? result.data !== undefined : status < 300;
 }
 
 export function decided(status: number): boolean {
