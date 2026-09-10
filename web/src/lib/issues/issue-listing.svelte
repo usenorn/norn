@@ -47,7 +47,7 @@
 		type FacetCatalogue,
 	} from "$lib/issues/facet-options";
 	import { linkTo } from "$lib/issues/linking";
-	import { rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
+	import { failures, rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
 	import { flash } from "$lib/motion";
 	import {
@@ -118,6 +118,7 @@
 	import { cycleWindow } from "$lib/time";
 	import type { IssuesListingData, IssuesListingScope, IssuesPreview } from "./listing";
 	import Retry from "$lib/components/norn/retry.svelte";
+	import { Watch } from "$lib/api/watch.svelte";
 
 	let {
 		data,
@@ -667,9 +668,31 @@
 
 	let selected = $state(new SvelteSet<string>());
 	let anchor = $state<string | null>(null);
-	let liveBulk = $state<BulkActionResult | null>(null);
 	let applying = $state(false);
-	let polling = $state<ReturnType<typeof setTimeout> | null>(null);
+	let asked = $state.raw<{ change: Record<string, unknown>; issueIds: string[] } | null>(null);
+
+	const bulkWatch = new Watch<BulkActionResult>({
+		read: (bulkActionId) =>
+			api.GET("/workspaces/{workspaceId}/bulk-actions/{bulkActionId}", {
+				params: { path: { workspaceId: data.workspace.id, bulkActionId } },
+			}),
+		settled: (result) => settled(result.status),
+		identify: (result) => result.id,
+	});
+
+	let concluded = "";
+
+	$effect(() => () => bulkWatch.stop());
+
+	$effect(() => {
+		const result = bulkWatch.value;
+
+		if (!result || !settled(result.status) || concluded === result.id) return;
+
+		concluded = result.id;
+
+		void conclude();
+	});
 	let collapsed = $state(new SvelteSet<string>());
 	let filterOpen = $state(false);
 	let displayOpen = $state(false);
@@ -679,7 +702,7 @@
 		if (!displayOpen) displayPane = "root";
 	});
 
-	const bulk = $derived(preview?.bulk ?? liveBulk);
+	const bulk = $derived(preview?.bulk ?? bulkWatch.value ?? null);
 	const orderedIDs = $derived(
 		flat.filter((issue) => !draftIDs.has(issue.id)).map((issue) => issue.id)
 	);
@@ -713,27 +736,16 @@
 	function clearSelection() {
 		selected.clear();
 		anchor = null;
-		liveBulk = null;
+		asked = null;
+		bulkWatch.stop();
 	}
 
-	async function poll(actionId: string, touched: string[]) {
-		const { data: latest } = await api.GET(
-			"/workspaces/{workspaceId}/bulk-actions/{bulkActionId}",
-			{ params: { path: { workspaceId: data.workspace.id, bulkActionId: actionId } } }
-		);
+	async function conclude() {
+		selected.clear();
+		anchor = null;
 
-		if (!latest) return;
-
-		liveBulk = latest;
-
-		if (settled(latest.status)) {
-			await invalidate(keys.page(page.route.id));
-			await markChanged(touched);
-
-			return;
-		}
-
-		polling = setTimeout(() => poll(actionId, touched), 700);
+		await invalidate(keys.page(page.route.id));
+		await markChanged(asked?.issueIds ?? []);
 	}
 
 	async function markChanged(issueIds: string[]) {
@@ -744,21 +756,32 @@
 		}
 	}
 
-	async function applyBulk(change: Record<string, unknown>) {
-		if (selected.size === 0) return;
+	function applyBulk(change: Record<string, unknown>) {
+		return send(change, [...selected]);
+	}
 
-		const touched = [...selected];
+	function retryFailed() {
+		const result = bulk;
+
+		if (!result || !asked) return;
+
+		const again = failures(result).map((outcome) => outcome.issueId);
+
+		return send(asked.change, again);
+	}
+
+	async function send(change: Record<string, unknown>, issueIds: string[]) {
+		if (issueIds.length === 0) return;
 
 		applying = true;
-		liveBulk = null;
-
-		if (polling) clearTimeout(polling);
+		concluded = "";
+		bulkWatch.stop();
 
 		const outcome = await attempt({
 			run: () =>
 				api.POST("/workspaces/{workspaceId}/issues/bulk", {
 					params: { path: { workspaceId: data.workspace.id } },
-					body: { change, issueIds: [...selected] },
+					body: { change, issueIds },
 				}),
 		});
 
@@ -770,20 +793,9 @@
 			return;
 		}
 
-		const result = outcome.value;
+		asked = { change, issueIds };
 
-		liveBulk = result;
-
-		if (settled(result.status)) {
-			selected.clear();
-			anchor = null;
-			await invalidate(keys.page(page.route.id));
-			await markChanged(touched);
-
-			return;
-		}
-
-		polling = setTimeout(() => poll(result.id, touched), 700);
+		bulkWatch.start(outcome.value.id, outcome.value);
 	}
 
 	async function settle(outcome: CreationOutcome) {
@@ -1539,7 +1551,13 @@
 
 	{#if bulk}
 		<div class="flex-none border-t border-line-default px-4 py-2">
-			<BulkResult result={bulk} />
+			<BulkResult
+				result={bulk}
+				unreadable={bulkWatch.state.kind === "unreadable"}
+				working={applying}
+				onretry={() => bulkWatch.retry()}
+				onretryfailed={retryFailed}
+			/>
 		</div>
 	{/if}
 

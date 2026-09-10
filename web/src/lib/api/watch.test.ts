@@ -32,6 +32,31 @@ describe("Watch", () => {
 		vi.useRealTimers();
 	});
 
+	it("asks for nothing when the seed has already settled", async () => {
+		vi.useFakeTimers();
+
+		let asked = 0;
+
+		const watch = new Watch<Run>({
+			read: async () => {
+				asked += 1;
+
+				return { data: { id: "one", status: "complete" } };
+			},
+			settled: (value) => value.status === "complete",
+			identify: (value) => value.id,
+			every: 10,
+		});
+
+		watch.start("one", { id: "one", status: "complete" });
+		await vi.advanceTimersByTimeAsync(100);
+
+		expect(asked).toBe(0);
+		expect(watch.value?.status).toBe("complete");
+
+		vi.useRealTimers();
+	});
+
 	it("keeps trying a readable failure rather than stopping silently", async () => {
 		vi.useFakeTimers();
 

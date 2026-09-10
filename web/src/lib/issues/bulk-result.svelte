@@ -3,11 +3,24 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
+	import { Button } from "$lib/components/ui/button/index.js";
 	import { failures, outcomeLabel, settled, summary, type BulkActionResult } from "$lib/issues/bulk";
 
-	let { result }: { result: BulkActionResult } = $props();
+	let {
+		result,
+		unreadable = false,
+		working = false,
+		onretry,
+		onretryfailed,
+	}: {
+		result: BulkActionResult;
+		unreadable?: boolean;
+		working?: boolean;
+		onretry?: () => void;
+		onretryfailed?: () => void;
+	} = $props();
 
-	const running = $derived(!settled(result.status));
+	const running = $derived(!settled(result.status) && !unreadable);
 	const notApplied = $derived(failures(result));
 	const progress = $derived({
 		notStarted: Math.max((result.expected ?? result.processed) - result.processed, 0),
@@ -17,10 +30,13 @@
 	});
 </script>
 
-<Alert.Root variant={notApplied.length > 0 && !running ? "destructive" : "default"}>
+<Alert.Root variant={(notApplied.length > 0 || unreadable) && !running ? "destructive" : "default"}>
 	{#if running}
 		<CircleCheck aria-hidden="true" />
 		<Alert.Title>Working through the selection</Alert.Title>
+	{:else if unreadable}
+		<CircleX aria-hidden="true" />
+		<Alert.Title>We lost sight of this change</Alert.Title>
 	{:else if notApplied.length > 0}
 		<CircleX aria-hidden="true" />
 		<Alert.Title>Some issues did not change</Alert.Title>
@@ -30,7 +46,11 @@
 	{/if}
 
 	<Alert.Description>
-		<span class="block">{summary(result)}</span>
+		<span class="block">
+			{unreadable
+				? "It may still be running. Nothing was undone, and asking again is safe."
+				: summary(result)}
+		</span>
 
 		{#if running}
 			<span class="mt-2 block">
@@ -52,6 +72,20 @@
 					</li>
 				{/each}
 			</ul>
+		{/if}
+
+		{#if unreadable && onretry}
+			<span class="mt-2 block">
+				<Button variant="secondary" size="sm" disabled={working} onclick={onretry}>
+					Check again
+				</Button>
+			</span>
+		{:else if !running && notApplied.length > 0 && onretryfailed}
+			<span class="mt-2 block">
+				<Button variant="secondary" size="sm" disabled={working} onclick={onretryfailed}>
+					Try the {notApplied.length === 1 ? "one" : `${notApplied.length}`} that did not change
+				</Button>
+			</span>
 		{/if}
 	</Alert.Description>
 </Alert.Root>

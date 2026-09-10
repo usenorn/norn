@@ -38,6 +38,12 @@ export class Watch<T> {
 		this.#missed = 0;
 		this.#state = { kind: "watching", value: seed };
 
+		if (seed !== undefined && this.#watching.settled(seed)) {
+			this.#id = "";
+
+			return;
+		}
+
 		this.#later();
 	}
 
