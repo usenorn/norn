@@ -6,6 +6,7 @@ import {
 	carriesDisplay,
 	displayCookie,
 	readDisplay,
+	surfaceDefaults,
 	readLayout,
 	readTab,
 	writeDisplay,
@@ -43,11 +44,11 @@ export async function issuesListing(request: ListingRequest): Promise<IssuesList
 	const { api, workspaceId, timezone, now, memberId, teams, scope, url, cookies } = request;
 
 	const q = url.searchParams;
-	const remembered = displayCookie(memberId, workspaceId);
+	const remembered = displayCookie("issues", memberId, workspaceId);
 	const chosen = carriesDisplay(q) ? q : new URLSearchParams(cookies.get(remembered) ?? "");
 
 	const facets = readFacets(q);
-	const display = readDisplay(chosen);
+	const display = readDisplay(chosen, surfaceDefaults.issues);
 	const layout = readLayout(chosen);
 	const tab = readTab(chosen);
 	const today = calendarDate(now, timezone);

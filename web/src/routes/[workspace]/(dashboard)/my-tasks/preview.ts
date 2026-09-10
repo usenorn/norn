@@ -1,13 +1,46 @@
+import type { Listed } from "$lib/api/listed";
+import type { Issue } from "$lib/issues/issues";
+import type { ColumnPaging } from "$lib/issues/paging";
 import type { TaskBucket } from "$lib/tasks/types";
 
 export type MyTasksPreview = {
-	buckets: TaskBucket[];
-	paging?: { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+	rows?: Listed<Issue>;
+	buckets?: TaskBucket[];
+	paging?: ColumnPaging;
 };
 
 export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.env.DEV
 	? {
+			loading: { rows: { kind: "loading" } },
+			unavailable: { rows: { kind: "unavailable" } },
+			no_matches: { rows: { kind: "no_matches" } },
+			empty: { rows: { kind: "empty" } },
+			more_failed: {
+				rows: { kind: "ready", rows: [], nextCursor: "next" },
+				paging: { kind: "unavailable" },
+				buckets: [
+					{
+						key: "today",
+						label: "Today",
+						emphasis: true,
+						tasks: [
+							{
+								id: "BIL-112",
+								title: "Proration is off by one day on annual plans",
+								state: { name: "In review", category: "active" },
+								priority: "urgent",
+								assignee: "Rae Okafor",
+								date: "Jul 28",
+								labels: [{ name: "Bug", color: "magenta" }],
+								project: "Billing",
+								cycle: "24",
+							},
+						],
+					},
+				],
+			},
 			default: {
+				rows: { kind: "ready", rows: [] },
 				buckets: [
 					{
 						key: "overdue",
@@ -149,6 +182,5 @@ export const myTasksPreviewStates: Record<string, MyTasksPreview> = import.meta.
 					},
 				],
 			},
-			empty: { buckets: [] },
 		}
 	: {};

@@ -3,32 +3,22 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import Bell from "@lucide/svelte/icons/bell";
-	import CalendarDays from "@lucide/svelte/icons/calendar-days";
-	import Check from "@lucide/svelte/icons/check";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
-	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import CircleHelp from "@lucide/svelte/icons/circle-help";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Folder from "@lucide/svelte/icons/folder";
-	import Funnel from "@lucide/svelte/icons/funnel";
 	import Kanban from "@lucide/svelte/icons/kanban";
 	import Layers from "@lucide/svelte/icons/layers";
 	import List from "@lucide/svelte/icons/list";
 	import Plus from "@lucide/svelte/icons/plus";
-	import Settings from "@lucide/svelte/icons/settings";
-	import Tags from "@lucide/svelte/icons/tags";
-	import Users from "@lucide/svelte/icons/users";
 	import X from "@lucide/svelte/icons/x";
 	import { SvelteSet } from "svelte/reactivity";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Popover from "$lib/components/ui/popover/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
-	import { Switch } from "$lib/components/ui/switch/index.js";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
@@ -46,7 +36,16 @@
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
+	import PropertyPicker from "$lib/issues/property-picker.svelte";
+	import DisplayMenu from "$lib/issues/display-menu.svelte";
+	import FilterBar from "$lib/issues/filter-bar.svelte";
+	import {
+		clearedLink,
+		dueEntries,
+		unassignedEntry,
+		type FacetCatalogue,
+	} from "$lib/issues/facet-options";
+	import { linkTo } from "$lib/issues/linking";
 	import { rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
 	import { flash } from "$lib/motion";
@@ -61,15 +60,13 @@
 	import ColumnMore from "$lib/issues/column-more.svelte";
 	import {
 		atDefaults,
-		groupingLabels,
-		groupingNouns,
+		boardGroupings,
+		surfaceDefaults,
+		surfaceOrderings,
 		groupings,
-		hiddenParam,
 		issueTabs,
-		orderingLabels,
 		orderings,
 		rowProperties,
-		rowPropertyLabels,
 		tabLabels,
 		writeDisplay,
 	} from "$lib/issues/display";
@@ -105,7 +102,6 @@
 		dueWindowLabels,
 		dueWindows,
 		facetCount,
-		facetLabels,
 		pickableFacets,
 		unassigned,
 		type FacetKind,
@@ -259,22 +255,27 @@
 		return q;
 	});
 
-	const linkWith = $derived((changes: Record<string, string | null>) => {
-		const q = new URLSearchParams(params);
-
-		for (const [key, value] of Object.entries(changes)) {
-			if (value === null) q.delete(key);
-			else q.set(key, value);
-		}
-
-		const query = q.toString();
-
-		return `${basePath}${query ? `?${query}` : ""}`;
-	});
-
-	const cleared = $derived(
-		linkWith(Object.fromEntries(pickableFacets.map((kind) => [kind, null])) as Record<string, null>)
+	const linkWith = $derived((changes: Record<string, string | null>) =>
+		linkTo(basePath, params, changes)
 	);
+
+	const cleared = $derived(clearedLink(pickableFacets, linkWith));
+
+	const catalogue = $derived<FacetCatalogue>({
+		state: states.map((state) => ({ value: state.id, label: stateLabel(state) })),
+		assignee: [
+			...people.map((member) => ({
+				value: member.accountId,
+				label: member.displayName ?? "Someone",
+			})),
+			unassignedEntry(),
+		],
+		priority: priorities.map((entry) => ({ value: entry.value, label: entry.label })),
+		label: labels.map((label) => ({ value: label.id, label: label.name })),
+		project: (data.projects ?? []).map((project) => ({ value: project.id, label: project.name })),
+		cycle: teamCycles.map((cycle) => ({ value: cycle.id, label: cycle.name })),
+		due: dueEntries(),
+	});
 
 	function announce(message: string, undo?: () => Promise<void>, href?: string) {
 		showToast(message, { href, onaction: undo && (() => void undo()) });
@@ -641,8 +642,6 @@
 	let polling = $state<ReturnType<typeof setTimeout> | null>(null);
 	let collapsed = $state(new SvelteSet<string>());
 	let filterOpen = $state(false);
-	let filterCategory = $state<FacetKind | null>(null);
-	let filterSearch = $state("");
 	let displayOpen = $state(false);
 	let displayPane = $state<"root" | "grouping" | "ordering">("root");
 
@@ -814,10 +813,7 @@
 
 			if (issue && !draftIDs.has(issue.id)) toggle(issue.id);
 		},
-		"issue-filter": () => {
-			filterCategory = null;
-			filterOpen = true;
-		},
+		"issue-filter": () => (filterOpen = true),
 		"issue-list": () => void goto(linkWith({ layout: null })),
 		"issue-board": () => void goto(linkWith({ layout: "board" })),
 		"status-set": (binding) => void pickStatus(statusIndexOf(binding)),
@@ -871,123 +867,6 @@
 		];
 
 		return () => released.forEach((release) => release());
-	});
-
-	const facetOptions = $derived.by((): PickerOption[] => {
-		const valuesFor = (kind: FacetKind): PickerOption[] => {
-			switch (kind) {
-				case "state":
-					return states.map((state) => ({
-						value: state.id,
-						label: stateLabel(state),
-						checked: facets.state === state.id,
-					}));
-				case "assignee":
-					return [
-						...people.map((member) => ({
-							value: member.accountId,
-							label: member.displayName ?? "Someone",
-							checked: facets.assignee === member.accountId,
-						})),
-						{ value: unassigned, label: "Unassigned", checked: facets.assignee === unassigned },
-					];
-				case "priority":
-					return priorities.map((entry) => ({
-						value: entry.value,
-						label: entry.label,
-						checked: facets.priority === entry.value,
-					}));
-				case "label":
-					return labels.map((label) => ({
-						value: label.id,
-						label: label.name,
-						checked: facets.label === label.id,
-					}));
-				case "project":
-					return (data.projects ?? []).map((project) => ({
-						value: project.id,
-						label: project.name,
-						checked: facets.project === project.id,
-					}));
-				default:
-					return dueWindows.map((window) => ({
-						value: window,
-						label: dueWindowLabels[window],
-						checked: facets.due === window,
-					}));
-			}
-		};
-
-		if (filterCategory) {
-			return [
-				{ value: "", label: "All properties" },
-				...valuesFor(filterCategory).map((option) => ({
-					...option,
-					href: linkWith({ [filterCategory as string]: option.checked ? null : option.value }),
-				})),
-			];
-		}
-
-		if (filterSearch.trim() === "") {
-			return pickableFacets.map((kind) => ({
-				value: kind,
-				label: facetLabels[kind],
-				trailing: true,
-			}));
-		}
-
-		return pickableFacets.flatMap((kind) =>
-			valuesFor(kind).map((option) => ({
-				...option,
-				value: `${kind}:${option.value}`,
-				label: `${facetLabels[kind]} · ${option.label}`,
-				href: linkWith({ [kind]: option.checked ? null : option.value }),
-			}))
-		);
-	});
-
-	function pickFacet(value: string) {
-		if (value === "") {
-			filterCategory = null;
-
-			return;
-		}
-
-		if (!filterCategory && pickableFacets.includes(value as FacetKind)) {
-			filterCategory = value as FacetKind;
-			filterOpen = true;
-		}
-	}
-
-	const chips = $derived.by(() => {
-		const named = (kind: FacetKind, value: string): string => {
-			switch (kind) {
-				case "state": {
-					const state = states.find((candidate) => candidate.id === value);
-
-					return state ? stateLabel(state) : "Unknown status";
-				}
-				case "assignee":
-					return value === unassigned ? "Unassigned" : (names.get(value) ?? "Unknown person");
-				case "priority":
-					return priorityLabel(value as IssuePriority);
-				case "label":
-					return labels.find((label) => label.id === value)?.name ?? "Unknown label";
-				case "project":
-					return (data.projects ?? []).find((project) => project.id === value)?.name ?? "Unknown project";
-				case "cycle":
-					return teamCycles.find((cycle) => cycle.id === value)?.name ?? "Unknown cycle";
-				default:
-					return dueWindowLabels[value as keyof typeof dueWindowLabels] ?? value;
-			}
-		};
-
-		return Object.entries(facets)
-			.filter(([, value]) => Boolean(value))
-			.map(([kind, value]) => ({
-				kind: kind as FacetKind,
-				label: `${facetLabels[kind as FacetKind]}: ${named(kind as FacetKind, value)}`,
-			}));
 	});
 
 	const filtered = $derived(facetCount(facets) > 0);
@@ -1275,67 +1154,13 @@
 		<div
 			class="flex min-h-8.5 flex-wrap items-center gap-x-3 gap-y-1 border-t border-line-subtle py-1 pr-3 pl-3.5"
 		>
-			<PropertyPicker
-				options={facetOptions}
+			<FilterBar
+				{facets}
+				offered={pickableFacets}
+				{catalogue}
+				{linkWith}
 				bind:open={filterOpen}
-				bind:search={filterSearch}
-				placeholder={filterCategory
-					? `Filter by ${facetLabels[filterCategory].toLowerCase()}…`
-					: "Filter by property or value…"}
-				class="w-59"
-				empty="No matching property"
-				onpick={pickFacet}
-			>
-				{#snippet trigger(props)}
-					<Button {...props} variant="ghost" size="sm" class="shrink-0">
-						<Funnel aria-hidden="true" />
-						Filter
-					</Button>
-				{/snippet}
-				{#snippet shortcut()}
-					<Kbd keys="F" />
-				{/snippet}
-				{#snippet mark(option)}
-					{#if !filterCategory && filterSearch.trim() === ""}
-						{#if option.value === "state"}
-							<StatusIcon category="not_started" decorative />
-						{:else if option.value === "assignee"}
-							<Users class="text-muted-foreground" aria-hidden="true" />
-						{:else if option.value === "priority"}
-							<PriorityIcon priority="high" />
-						{:else if option.value === "label"}
-							<Tags class="text-muted-foreground" aria-hidden="true" />
-						{:else if option.value === "project"}
-							<Folder class="text-muted-foreground" aria-hidden="true" />
-						{:else}
-							<CalendarDays class="text-muted-foreground" aria-hidden="true" />
-						{/if}
-					{:else if option.value === ""}
-						<ArrowLeft class="text-muted-foreground" aria-hidden="true" />
-					{/if}
-				{/snippet}
-			</PropertyPicker>
-
-			{#each chips as chip (chip.kind)}
-				<span
-					class="inline-flex shrink-0 items-center gap-1.5 border-b-2 border-line-strong pb-0.5 text-sm whitespace-nowrap text-foreground"
-				>
-					{chip.label}
-					<a
-						href={linkWith({ [chip.kind]: null })}
-						aria-label="Remove the {facetLabels[chip.kind].toLowerCase()} filter"
-						class="text-muted-foreground hover:text-ink-900"
-					>
-						<X class="size-3" aria-hidden="true" />
-					</a>
-				</span>
-			{/each}
-
-			{#if facetCount(facets) > 1}
-				<a href={cleared} class="shrink-0 text-sm text-muted-foreground hover:text-foreground">
-					Clear all
-				</a>
-			{/if}
+			/>
 
 			{#if applied.kind === "applied"}
 				{#each applied.references as reference (reference.field + reference.value)}
@@ -1371,155 +1196,13 @@
 			<div class="min-w-2 flex-1"></div>
 
 			<div class="flex shrink-0 items-center gap-1">
-			<DropdownMenu.Root>
-				<DropdownMenu.Trigger>
-					{#snippet child({ props })}
-						<Button {...props} variant="ghost" size="sm" class="shrink-0">
-							Grouped by {groupingNouns[display.grouping]}
-							<ChevronDown aria-hidden="true" />
-						</Button>
-					{/snippet}
-				</DropdownMenu.Trigger>
-				<DropdownMenu.Content align="end">
-					<DropdownMenu.Label>Group by</DropdownMenu.Label>
-					{#each groupings as grouping (grouping)}
-						<DropdownMenu.Item>
-							{#snippet child({ props })}
-								<a
-									href={linkWith({ group: grouping === "state" ? null : grouping })}
-									{...props}
-								>
-									<span class="flex-1">{groupingLabels[grouping]}</span>
-									{#if display.grouping === grouping}
-										<span class="font-mono text-2xs text-ink-600">✓</span>
-									{/if}
-								</a>
-							{/snippet}
-						</DropdownMenu.Item>
-					{/each}
-				</DropdownMenu.Content>
-			</DropdownMenu.Root>
-
-			<Popover.Root bind:open={displayOpen}>
-				<Popover.Trigger>
-					{#snippet child({ props })}
-						<Button
-							{...props}
-							variant="outline"
-							size="icon-sm"
-							aria-label="Display options"
-							class={atDefaults(display)
-								? ""
-								: "border-primary bg-primary text-primary-foreground hover:border-primary-active hover:bg-primary-active hover:text-primary-foreground"}
-						>
-							<Settings class="size-icon-toolbar" aria-hidden="true" />
-						</Button>
-					{/snippet}
-				</Popover.Trigger>
-				<Popover.Content align="end" class="w-69">
-					{#if displayPane === "root"}
-						<div class="flex flex-col p-3">
-							<button
-								type="button"
-								onclick={() => (displayPane = "grouping")}
-								class="flex h-7.5 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-							>
-								<span class="text-md text-foreground">Grouping</span>
-								<span class="flex-1"></span>
-								<span class="text-sm text-muted-foreground">{groupingLabels[display.grouping]}</span>
-								<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
-							</button>
-
-							<button
-								type="button"
-								onclick={() => (displayPane = "ordering")}
-								class="flex h-7.5 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-							>
-								<span class="text-md text-foreground">Ordering</span>
-								<span class="flex-1"></span>
-								<span class="text-sm text-muted-foreground">{orderingLabels[display.ordering]}</span>
-								<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
-							</button>
-
-							<label class="flex h-7.5 items-center gap-2 px-1.5 text-md text-foreground">
-								<span class="flex-1">Show empty groups</span>
-								<Switch
-									checked={display.showEmpty}
-									onCheckedChange={() =>
-										goto(linkWith({ empty: display.showEmpty ? null : "1" }), { noScroll: true })}
-								/>
-							</label>
-
-							<span class="-mx-3 my-2.5 h-px bg-line-subtle" aria-hidden="true"></span>
-
-							<span class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase">
-								Display properties
-							</span>
-							<div class="flex flex-wrap gap-1.5 pt-2">
-								{#each rowProperties as property (property)}
-									<a
-										href={linkWith({ hide: hiddenParam(display.shown, property) })}
-										data-on={display.shown.includes(property)}
-										class="inline-flex h-5.5 items-center rounded-sm border border-line-default bg-card px-2 text-xs font-medium text-ink-600 motion-control hover:text-ink-900 data-[on=true]:border-primary data-[on=true]:bg-primary data-[on=true]:text-primary-foreground"
-									>
-										{rowPropertyLabels[property]}
-									</a>
-								{/each}
-							</div>
-
-							<span class="-mx-3 mt-3 mb-2 h-px bg-line-subtle" aria-hidden="true"></span>
-
-							<a
-								href={linkWith({ group: null, order: null, empty: null, hide: null })}
-								class="text-sm text-muted-foreground hover:text-foreground"
-							>
-								Reset to defaults
-							</a>
-						</div>
-					{:else}
-						<div class="flex flex-col p-1.5">
-							<button
-								type="button"
-								onclick={() => (displayPane = "root")}
-								class="flex h-7 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-							>
-								<ArrowLeft class="size-3.25 text-muted-foreground" aria-hidden="true" />
-								<span class="text-sm text-muted-foreground">
-									{displayPane === "grouping" ? "Grouping" : "Ordering"}
-								</span>
-							</button>
-
-							<span class="-mx-1.5 my-1 h-px bg-line-subtle" aria-hidden="true"></span>
-
-							{#if displayPane === "grouping"}
-								{#each groupings as grouping (grouping)}
-									<a
-										href={linkWith({ group: grouping === "state" ? null : grouping })}
-										class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
-									>
-										<span class="flex-1">{groupingLabels[grouping]}</span>
-										{#if display.grouping === grouping}
-											<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-										{/if}
-									</a>
-								{/each}
-							{:else}
-								{#each orderings as ordering (ordering)}
-									<a
-										href={linkWith({ order: ordering === "manual" ? null : ordering })}
-										class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
-									>
-										<span class="flex-1">{orderingLabels[ordering]}</span>
-										{#if display.ordering === ordering}
-											<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-										{/if}
-									</a>
-								{/each}
-							{/if}
-						</div>
-					{/if}
-				</Popover.Content>
-			</Popover.Root>
+			<DisplayMenu
+				{display}
+				defaults={surfaceDefaults.issues}
+				groupings={boardGroupings}
+				orderings={surfaceOrderings.issues}
+				{linkWith}
+			/>
 			</div>
 		</div>
 	</div>
