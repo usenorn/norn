@@ -455,3 +455,108 @@ func TestASecondWriterOnTheSameVersionIsToldRatherThanOverwriting(t *testing.T) 
 		t.Fatalf("kept %d revisions, want the refused write to have left none", len(kept))
 	}
 }
+
+func TestRestoringADescriptionWritesTheOldTextForwardRatherThanRewinding(t *testing.T) {
+	client := documentDatabase(t)
+	issues, revisions, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	created, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Requirements move back",
+		Description: "The first sentence.",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	second := "A worse second sentence."
+
+	edited, err := issues.Update(ctx, place.workspace.ID, created.ID, service.UpdateIssueInput{
+		ExpectedVersion: created.Version,
+		Description:     &second,
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	kept, err := revisions.List(ctx, place.workspace.ID, created.ID, 10)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	restored, err := issues.RestoreDescription(
+		ctx, place.workspace.ID, created.ID, kept[1].ID, edited.Version,
+	)
+	if err != nil {
+		t.Fatalf("RestoreDescription: %v", err)
+	}
+
+	if restored.Description != "The first sentence." {
+		t.Fatalf("the restored description reads %q", restored.Description)
+	}
+
+	if restored.Version <= edited.Version {
+		t.Fatalf(
+			"restoring left the issue at version %d, want a version past %d: putting text back is "+
+				"a write like any other, not a rewind",
+			restored.Version, edited.Version,
+		)
+	}
+
+	after, err := revisions.List(ctx, place.workspace.ID, created.ID, 10)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(after) != 3 {
+		t.Fatalf("kept %d revisions after the restore, want the replaced text kept as well", len(after))
+	}
+
+	if after[0].Source != entity.RevisionSourceRestore {
+		t.Fatalf("the restore was filed as %q", after[0].Source)
+	}
+
+	if after[1].Markdown != second {
+		t.Fatalf("the text the restore replaced reads %q, want %q", after[1].Markdown, second)
+	}
+}
+
+func TestRestoringARevisionFromAnotherIssueIsRefused(t *testing.T) {
+	client := documentDatabase(t)
+	issues, revisions, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	mine, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID, TeamID: place.team.ID,
+		Title: "Mine", Description: "Mine.",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	theirs, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID, TeamID: place.team.ID,
+		Title: "Theirs", Description: "Theirs.",
+	})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	kept, err := revisions.List(ctx, place.workspace.ID, theirs.ID, 10)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	_, err = issues.RestoreDescription(ctx, place.workspace.ID, mine.ID, kept[0].ID, mine.Version)
+	if !errors.Is(err, entity.ErrIssueRevisionNotFound) {
+		t.Fatalf(
+			"restoring another issue's revision returned %v, want a refusal: it would copy text "+
+				"across issues through a path nobody can see",
+			err,
+		)
+	}
+}

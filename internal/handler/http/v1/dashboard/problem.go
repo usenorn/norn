@@ -606,6 +606,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrTeamMembershipNotFound),
 		errors.Is(err, entity.ErrIssueNotFound),
 		errors.Is(err, entity.ErrIssueRelationNotFound),
+		errors.Is(err, entity.ErrIssueRevisionNotFound),
 		errors.Is(err, entity.ErrBulkActionNotFound),
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing),
@@ -1670,6 +1671,14 @@ func (r problemResponse) VisitMoveWorkspaceIssueResponse(w http.ResponseWriter) 
 }
 
 func (r problemResponse) VisitListWorkspaceIssueActivityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueDescriptionRevisionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

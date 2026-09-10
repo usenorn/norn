@@ -3815,6 +3815,57 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/description/revisions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueDescriptionRevisions
+      summary: Read what the description said before, newest first
+      parameters:
+        - $ref: '#/components/parameters/RevisionLimit'
+      responses:
+        '200':
+          description: What the description has said, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DescriptionRevisionList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/RevisionId'
+    post:
+      tags: [issues]
+      operationId: restoreWorkspaceIssueDescriptionRevision
+      summary: Put back what the description said, as a new revision
+      description: >-
+        Restoring writes the old text forward rather than rewinding to it, so what it replaced is
+        kept too and the restore itself can be undone.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RestoreDescriptionRequest' }
+      responses:
+        '200':
+          description: The issue as it now reads
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/status:
     post:
       tags: [issues]
@@ -6775,6 +6826,19 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    RevisionId:
+      name: revisionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    RevisionLimit:
+      name: limit
+      in: query
+      required: false
+      description: How many revisions to return, newest first.
+      schema: { type: integer, format: int32, minimum: 1, maximum: 100, default: 25 }
+
     IssueId:
       name: issueId
       in: path
@@ -7839,7 +7903,12 @@ components:
         expectedVersion: { type: integer, format: int32 }
         title: { type: string }
         stateId: { type: string, format: uuid }
-        description: { type: string }
+        description:
+          type: string
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `descriptionDoc` alongside it settles both, and this is then ignored.
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         assigneeId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }
@@ -7864,6 +7933,116 @@ components:
           items:
             type: string
             enum: [assignee, estimate, dueOn, cycle, project]
+
+    DescriptionRevisionList:
+      type: object
+      required: [revisions]
+      properties:
+        revisions:
+          type: array
+          items: { $ref: '#/components/schemas/DescriptionRevision' }
+
+    DescriptionRevision:
+      type: object
+      required: [id, issueId, issueVersion, markdown, source, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        issueVersion:
+          type: integer
+          format: int32
+          description: The version of the issue this text was written as.
+        markdown: { type: string }
+        doc: { $ref: '#/components/schemas/Document' }
+        authorAccountId: { type: string, format: uuid }
+        authorName: { type: string }
+        source: { $ref: '#/components/schemas/DescriptionRevisionSource' }
+        createdAt: { type: string, format: date-time }
+
+    DescriptionRevisionSource:
+      type: string
+      description: >-
+        Who wrote this text. It names the actor rather than the person who allowed it: a
+        description an agent wrote and somebody approved is still the agent's writing.
+      enum: [person, agent, import, intake, restore]
+
+    RestoreDescriptionRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32 }
+
+    Document:
+      type: object
+      description: >-
+        The authoritative form of a description or a comment body: the same shape the editor
+        holds, so text travels from the caret to storage without being translated on the way.
+        The markdown alongside it is rendered from this and is never read back, so send this
+        whenever the text was written in an editor and send markdown when it was not.
+      required: [type]
+      properties:
+        type: { type: string, enum: [doc] }
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentNode' }
+
+    DocumentNode:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: >-
+            One of the blocks and inline pieces this instance renders. A node of any other kind
+            is refused rather than stored, because storing it would break the issue on opening.
+          enum:
+            - paragraph
+            - heading
+            - bulletList
+            - orderedList
+            - listItem
+            - taskList
+            - taskItem
+            - blockquote
+            - horizontalRule
+            - codeBlock
+            - table
+            - tableRow
+            - tableHeader
+            - tableCell
+            - details
+            - detailsSummary
+            - detailsContent
+            - image
+            - attachment
+            - mention
+            - issueRef
+            - hardBreak
+            - text
+        attrs:
+          type: object
+          additionalProperties: true
+          description: >-
+            What the node needs beyond its kind — a heading's level, a mention's account, an
+            attachment's file. Read by the node type; unknown keys are kept as sent.
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentNode' }
+        marks:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentMark' }
+        text: { type: string }
+
+    DocumentMark:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [bold, italic, strike, code, link]
+        attrs:
+          type: object
+          additionalProperties: true
 
     Attachment:
       type: object
@@ -7972,7 +8151,10 @@ components:
         authorAccountId: { type: string, format: uuid }
         authorName: { type: string }
         authorKind: { $ref: '#/components/schemas/CommentAuthorKind' }
-        body: { type: string }
+        body:
+          type: string
+          description: The text as markdown, rendered from `bodyDoc`.
+        bodyDoc: { $ref: '#/components/schemas/Document' }
         edited: { type: boolean }
         deleted: { type: boolean }
         editedAt: { type: string, format: date-time }
@@ -8031,7 +8213,14 @@ components:
       type: object
       required: [body]
       properties:
-        body: { type: string, minLength: 1, maxLength: 20000 }
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `bodyDoc` alongside it settles both, and this is then ignored.
+        bodyDoc: { $ref: '#/components/schemas/Document' }
         reasoning: { $ref: '#/components/schemas/AgentReasoning' }
         parentCommentId: { type: string, format: uuid }
         attachmentIds:
@@ -8047,7 +8236,14 @@ components:
       type: object
       required: [body]
       properties:
-        body: { type: string, minLength: 1, maxLength: 20000 }
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `bodyDoc` alongside it settles both, and this is then ignored.
+        bodyDoc: { $ref: '#/components/schemas/Document' }
 
     PostedComment:
       type: object
@@ -9651,7 +9847,10 @@ components:
         teamKey: { type: string }
         referenceKey: { type: string }
         version: { type: integer, format: int32 }
-        description: { type: string }
+        description:
+          type: string
+          description: The text as markdown, rendered from `descriptionDoc`.
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         assigneeAccountId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }
@@ -10045,7 +10244,12 @@ components:
       properties:
         teamId: { type: string, format: uuid }
         title: { type: string }
-        description: { type: string }
+        description:
+          type: string
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `descriptionDoc` alongside it settles both, and this is then ignored.
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         assigneeId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }

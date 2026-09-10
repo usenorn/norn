@@ -4,7 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/service"
 )
 
 // remember keeps what a description said at this version. The issue row holds only the text as
@@ -14,8 +17,7 @@ func (s *issuesService) remember(
 	ctx context.Context,
 	issue entity.Issue,
 	decision entity.Decision,
-	source entity.TriageSource,
-	origin *entity.ImportOrigin,
+	source entity.RevisionSource,
 ) error {
 	return s.revisions.Record(ctx, entity.IssueDescriptionRevision{
 		WorkspaceID:     issue.WorkspaceID,
@@ -24,7 +26,58 @@ func (s *issuesService) remember(
 		Doc:             issue.DescriptionDoc,
 		Markdown:        issue.Description,
 		AuthorAccountID: decision.Actor.AccountID,
-		Source:          entity.RevisionSourceOf(decision.Actor.Kind, source, origin),
+		Source:          source,
 		CreatedAt:       time.Now().UTC(),
+	})
+}
+
+func (s *issuesService) DescriptionRevisions(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	limit int,
+) ([]entity.IssueDescriptionRevision, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceIssue,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope); err != nil {
+		return nil, err
+	}
+
+	if limit <= 0 || limit > entity.IssueRevisionPageMaxSize {
+		limit = entity.IssueRevisionPageDefaultSize
+	}
+
+	return s.revisions.List(ctx, workspaceID, issueID, limit)
+}
+
+// RestoreDescription writes the old text forward rather than rewinding to it, so the text it
+// replaced is kept as well and the restore itself can be undone.
+func (s *issuesService) RestoreDescription(
+	ctx context.Context,
+	workspaceID, issueID, revisionID uuid.UUID,
+	expectedVersion int,
+) (entity.Issue, error) {
+	revision, err := s.revisions.GetByID(ctx, workspaceID, revisionID)
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	if revision.IssueID != issueID {
+		return entity.Issue{}, entity.ErrIssueRevisionNotFound
+	}
+
+	restored := revision.Doc
+
+	return s.Update(ctx, workspaceID, issueID, service.UpdateIssueInput{
+		ExpectedVersion: expectedVersion,
+		DescriptionDoc:  &restored,
+		Restoring:       true,
 	})
 }

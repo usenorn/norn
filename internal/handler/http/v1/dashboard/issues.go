@@ -92,10 +92,11 @@ func (h *handler) CreateWorkspaceIssue(
 	request api.CreateWorkspaceIssueRequestObject,
 ) (api.CreateWorkspaceIssueResponseObject, error) {
 	input := service.CreateIssueInput{
-		WorkspaceID: request.WorkspaceId,
-		TeamID:      request.Body.TeamId,
-		Title:       request.Body.Title,
-		Reasoning:   agentReasoningFrom(request.Body.Reasoning),
+		WorkspaceID:    request.WorkspaceId,
+		TeamID:         request.Body.TeamId,
+		Title:          request.Body.Title,
+		DescriptionDoc: documentOf(request.Body.DescriptionDoc),
+		Reasoning:      agentReasoningFrom(request.Body.Reasoning),
 	}
 
 	if request.Body.Description != nil {
@@ -170,11 +171,12 @@ func (h *handler) UpdateWorkspaceIssue(
 		ExpectedVersion: int(request.Body.ExpectedVersion),
 		AcknowledgeOpenChildren: request.Body.AcknowledgeOpenChildren != nil &&
 			*request.Body.AcknowledgeOpenChildren,
-		Reasoning:   agentReasoningFrom(request.Body.Reasoning),
-		Title:       request.Body.Title,
-		StateID:     request.Body.StateId,
-		Description: request.Body.Description,
-		AssigneeID:  request.Body.AssigneeId,
+		Reasoning:      agentReasoningFrom(request.Body.Reasoning),
+		Title:          request.Body.Title,
+		StateID:        request.Body.StateId,
+		Description:    request.Body.Description,
+		DescriptionDoc: documentOf(request.Body.DescriptionDoc),
+		AssigneeID:     request.Body.AssigneeId,
 	}
 
 	if request.Body.Priority != nil {
@@ -384,4 +386,46 @@ func (h *handler) ListWorkspaceIssueChildren(
 		Issues:   issueDTOs(children),
 		Progress: issueProgressDTO(progress),
 	}, nil
+}
+
+func (h *handler) ListWorkspaceIssueDescriptionRevisions(
+	ctx context.Context,
+	request api.ListWorkspaceIssueDescriptionRevisionsRequestObject,
+) (api.ListWorkspaceIssueDescriptionRevisionsResponseObject, error) {
+	limit := 0
+	if request.Params.Limit != nil {
+		limit = int(*request.Params.Limit)
+	}
+
+	revisions, err := h.issues.DescriptionRevisions(ctx, request.WorkspaceId, request.IssueId, limit)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceIssueDescriptionRevisions200JSONResponse{
+		Revisions: descriptionRevisionDTOs(revisions),
+	}, nil
+}
+
+func (h *handler) RestoreWorkspaceIssueDescriptionRevision(
+	ctx context.Context,
+	request api.RestoreWorkspaceIssueDescriptionRevisionRequestObject,
+) (api.RestoreWorkspaceIssueDescriptionRevisionResponseObject, error) {
+	issue, err := h.issues.RestoreDescription(
+		ctx, request.WorkspaceId, request.IssueId, request.RevisionId,
+		int(request.Body.ExpectedVersion),
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RestoreWorkspaceIssueDescriptionRevision200JSONResponse(issueDTO(issue)), nil
 }

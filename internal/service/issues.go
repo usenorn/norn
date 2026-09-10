@@ -25,5 +25,7 @@ type Issues interface {
 	SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueLabelsInput) ([]entity.Label, error)
 	Progress(ctx context.Context, workspaceID uuid.UUID, input ProgressInput) (entity.IssueProgress, error)
 	ProjectProgress(ctx context.Context, workspaceID, projectID uuid.UUID) (entity.ProjectIssueProgress, error)
+	DescriptionRevisions(ctx context.Context, workspaceID, issueID uuid.UUID, limit int) ([]entity.IssueDescriptionRevision, error)
+	RestoreDescription(ctx context.Context, workspaceID, issueID, revisionID uuid.UUID, expectedVersion int) (entity.Issue, error)
 	Activity(ctx context.Context, workspaceID, issueID uuid.UUID, input ListActivityInput) (ActivityPage, error)
 }

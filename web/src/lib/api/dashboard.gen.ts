@@ -2496,6 +2496,50 @@ export interface paths {
         patch: operations["renameWorkspaceLabelGroup"];
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/description/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read what the description said before, newest first */
+        get: operations["listWorkspaceIssueDescriptionRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put back what the description said, as a new revision
+         * @description Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+         */
+        post: operations["restoreWorkspaceIssueDescriptionRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/status": {
         parameters: {
             query?: never;
@@ -4900,7 +4944,9 @@ export interface components {
             title?: string;
             /** Format: uuid */
             stateId?: string;
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `descriptionDoc` alongside it settles both, and this is then ignored. */
             description?: string;
+            descriptionDoc?: components["schemas"]["Document"];
             priority?: components["schemas"]["IssuePriority"];
             /** Format: uuid */
             assigneeId?: string;
@@ -4924,6 +4970,64 @@ export interface components {
             beforeIssueId?: string;
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
             clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
+        };
+        DescriptionRevisionList: {
+            revisions: components["schemas"]["DescriptionRevision"][];
+        };
+        DescriptionRevision: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            /**
+             * Format: int32
+             * @description The version of the issue this text was written as.
+             */
+            issueVersion: number;
+            markdown: string;
+            doc?: components["schemas"]["Document"];
+            /** Format: uuid */
+            authorAccountId?: string;
+            authorName?: string;
+            source: components["schemas"]["DescriptionRevisionSource"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @description Who wrote this text. It names the actor rather than the person who allowed it: a description an agent wrote and somebody approved is still the agent's writing.
+         * @enum {string}
+         */
+        DescriptionRevisionSource: "person" | "agent" | "import" | "intake" | "restore";
+        RestoreDescriptionRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        /** @description The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not. */
+        Document: {
+            /** @enum {string} */
+            type: "doc";
+            content?: components["schemas"]["DocumentNode"][];
+        };
+        DocumentNode: {
+            /**
+             * @description One of the blocks and inline pieces this instance renders. A node of any other kind is refused rather than stored, because storing it would break the issue on opening.
+             * @enum {string}
+             */
+            type: "paragraph" | "heading" | "bulletList" | "orderedList" | "listItem" | "taskList" | "taskItem" | "blockquote" | "horizontalRule" | "codeBlock" | "table" | "tableRow" | "tableHeader" | "tableCell" | "details" | "detailsSummary" | "detailsContent" | "image" | "attachment" | "mention" | "issueRef" | "hardBreak" | "text";
+            /** @description What the node needs beyond its kind — a heading's level, a mention's account, an attachment's file. Read by the node type; unknown keys are kept as sent. */
+            attrs?: {
+                [key: string]: unknown;
+            };
+            content?: components["schemas"]["DocumentNode"][];
+            marks?: components["schemas"]["DocumentMark"][];
+            text?: string;
+        };
+        DocumentMark: {
+            /** @enum {string} */
+            type: "bold" | "italic" | "strike" | "code" | "link";
+            attrs?: {
+                [key: string]: unknown;
+            };
         };
         Attachment: {
             /** Format: uuid */
@@ -5011,7 +5115,9 @@ export interface components {
             authorAccountId?: string;
             authorName?: string;
             authorKind: components["schemas"]["CommentAuthorKind"];
+            /** @description The text as markdown, rendered from `bodyDoc`. */
             body: string;
+            bodyDoc?: components["schemas"]["Document"];
             edited: boolean;
             deleted: boolean;
             /** Format: date-time */
@@ -5051,7 +5157,9 @@ export interface components {
             teamId?: string;
         };
         PostCommentRequest: {
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `bodyDoc` alongside it settles both, and this is then ignored. */
             body: string;
+            bodyDoc?: components["schemas"]["Document"];
             reasoning?: components["schemas"]["AgentReasoning"];
             /** Format: uuid */
             parentCommentId?: string;
@@ -5059,7 +5167,9 @@ export interface components {
             mentions?: components["schemas"]["MentionTarget"][];
         };
         EditCommentRequest: {
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `bodyDoc` alongside it settles both, and this is then ignored. */
             body: string;
+            bodyDoc?: components["schemas"]["Document"];
         };
         PostedComment: {
             comment: components["schemas"]["IssueComment"];
@@ -6099,7 +6209,9 @@ export interface components {
             referenceKey: string;
             /** Format: int32 */
             version: number;
+            /** @description The text as markdown, rendered from `descriptionDoc`. */
             description: string;
+            descriptionDoc?: components["schemas"]["Document"];
             priority: components["schemas"]["IssuePriority"];
             /** Format: uuid */
             assigneeAccountId?: string;
@@ -6353,7 +6465,9 @@ export interface components {
             /** Format: uuid */
             teamId: string;
             title: string;
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `descriptionDoc` alongside it settles both, and this is then ignored. */
             description?: string;
+            descriptionDoc?: components["schemas"]["Document"];
             priority?: components["schemas"]["IssuePriority"];
             /** Format: uuid */
             assigneeId?: string;
@@ -8366,6 +8480,9 @@ export interface components {
         RunnerId: string;
         ProposalId: string;
         StateId: string;
+        RevisionId: string;
+        /** @description How many revisions to return, newest first. */
+        RevisionLimit: number;
         IssueId: string;
         QuestionId: string;
         CycleId: string;
@@ -13642,6 +13759,70 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["LabelConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueDescriptionRevisions: {
+        parameters: {
+            query?: {
+                /** @description How many revisions to return, newest first. */
+                limit?: components["parameters"]["RevisionLimit"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the description has said, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DescriptionRevisionList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    restoreWorkspaceIssueDescriptionRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreDescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue as it now reads */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };

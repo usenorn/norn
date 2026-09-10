@@ -354,6 +354,7 @@ func issueDTO(issue entity.Issue) api.Issue {
 		Title:          issue.Title,
 		Labels:         labelDTOs(issue.Labels),
 		Description:    issue.Description,
+		DescriptionDoc: documentDTO(issue.DescriptionDoc),
 		Priority:       api.IssuePriority(issue.Priority),
 		Status:         api.IssueStatus(issue.Status),
 		Depth:          &depth,
@@ -1267,6 +1268,7 @@ func commentDTO(comment entity.IssueComment) api.IssueComment {
 		IssueId:    comment.IssueID,
 		AuthorKind: api.CommentAuthorKind(comment.AuthorKind),
 		Body:       comment.Body,
+		BodyDoc:    documentDTO(comment.BodyDoc),
 		Edited:     comment.Edited(),
 		Deleted:    comment.Deleted(),
 		EditedAt:   comment.EditedAt,
@@ -2811,4 +2813,145 @@ func cycleReportDTO(report service.CycleReport) api.CycleReport {
 		Stale:    cycleStaleDTOs(report.Stale),
 		Frozen:   report.Frozen,
 	}
+}
+
+func documentDTO(document entity.Document) *api.Document {
+	if document.Type == "" {
+		return nil
+	}
+
+	return &api.Document{
+		Type:    api.DocumentType(document.Type),
+		Content: documentNodeDTOs(document.Content),
+	}
+}
+
+func documentNodeDTOs(nodes []entity.Node) *[]api.DocumentNode {
+	if len(nodes) == 0 {
+		return nil
+	}
+
+	converted := make([]api.DocumentNode, 0, len(nodes))
+
+	for _, node := range nodes {
+		converted = append(converted, api.DocumentNode{
+			Type:    api.DocumentNodeType(node.Type),
+			Attrs:   attrsDTO(node.Attrs),
+			Content: documentNodeDTOs(node.Content),
+			Marks:   documentMarkDTOs(node.Marks),
+			Text:    nilIfEmpty(node.Text),
+		})
+	}
+
+	return &converted
+}
+
+func documentMarkDTOs(marks []entity.Mark) *[]api.DocumentMark {
+	if len(marks) == 0 {
+		return nil
+	}
+
+	converted := make([]api.DocumentMark, 0, len(marks))
+
+	for _, mark := range marks {
+		converted = append(converted, api.DocumentMark{
+			Type:  api.DocumentMarkType(mark.Type),
+			Attrs: attrsDTO(mark.Attrs),
+		})
+	}
+
+	return &converted
+}
+
+func attrsDTO(attrs map[string]any) *map[string]any {
+	if len(attrs) == 0 {
+		return nil
+	}
+
+	return &attrs
+}
+
+// documentOf reads a document a caller sent. It carries the caller's shape no further than
+// this: what the node types mean, and which of them this instance will store, is settled in the
+// domain layer, so a request cannot introduce a node the editor cannot render.
+func documentOf(document *api.Document) *entity.Document {
+	if document == nil {
+		return nil
+	}
+
+	return &entity.Document{
+		Type:    string(document.Type),
+		Content: documentNodesOf(document.Content),
+	}
+}
+
+func documentNodesOf(nodes *[]api.DocumentNode) []entity.Node {
+	if nodes == nil || len(*nodes) == 0 {
+		return nil
+	}
+
+	converted := make([]entity.Node, 0, len(*nodes))
+
+	for _, node := range *nodes {
+		converted = append(converted, entity.Node{
+			Type:    string(node.Type),
+			Attrs:   attrsOf(node.Attrs),
+			Content: documentNodesOf(node.Content),
+			Marks:   documentMarksOf(node.Marks),
+			Text:    textOf(node.Text),
+		})
+	}
+
+	return converted
+}
+
+func documentMarksOf(marks *[]api.DocumentMark) []entity.Mark {
+	if marks == nil || len(*marks) == 0 {
+		return nil
+	}
+
+	converted := make([]entity.Mark, 0, len(*marks))
+
+	for _, mark := range *marks {
+		converted = append(converted, entity.Mark{
+			Type:  string(mark.Type),
+			Attrs: attrsOf(mark.Attrs),
+		})
+	}
+
+	return converted
+}
+
+func attrsOf(attrs *map[string]any) map[string]any {
+	if attrs == nil || len(*attrs) == 0 {
+		return nil
+	}
+
+	return *attrs
+}
+
+func descriptionRevisionDTOs(revisions []entity.IssueDescriptionRevision) []api.DescriptionRevision {
+	converted := make([]api.DescriptionRevision, 0, len(revisions))
+
+	for _, revision := range revisions {
+		dto := api.DescriptionRevision{
+			Id:           revision.ID,
+			IssueId:      revision.IssueID,
+			IssueVersion: int32(revision.IssueVersion),
+			Markdown:     revision.Markdown,
+			Doc:          documentDTO(revision.Doc),
+			AuthorName:   nilIfEmpty(revision.AuthorName),
+			Source:       api.DescriptionRevisionSource(revision.Source),
+			CreatedAt:    revision.CreatedAt,
+		}
+
+		if revision.AuthorAccountID != uuid.Nil {
+			author := revision.AuthorAccountID
+			dto.AuthorAccountId = &author
+		}
+
+		converted = append(converted, dto)
+	}
+
+	return converted
 }

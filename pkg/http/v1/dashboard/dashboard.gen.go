@@ -1191,6 +1191,33 @@ func (e CycleScopeChangeKind) Valid() bool {
 	}
 }
 
+// Defines values for DescriptionRevisionSource.
+const (
+	DescriptionRevisionSourceAgent   DescriptionRevisionSource = "agent"
+	DescriptionRevisionSourceImport  DescriptionRevisionSource = "import"
+	DescriptionRevisionSourceIntake  DescriptionRevisionSource = "intake"
+	DescriptionRevisionSourcePerson  DescriptionRevisionSource = "person"
+	DescriptionRevisionSourceRestore DescriptionRevisionSource = "restore"
+)
+
+// Valid indicates whether the value is a known member of the DescriptionRevisionSource enum.
+func (e DescriptionRevisionSource) Valid() bool {
+	switch e {
+	case DescriptionRevisionSourceAgent:
+		return true
+	case DescriptionRevisionSourceImport:
+		return true
+	case DescriptionRevisionSourceIntake:
+		return true
+	case DescriptionRevisionSourcePerson:
+		return true
+	case DescriptionRevisionSourceRestore:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DirectoryAbsentPolicy.
 const (
 	Deactivate DirectoryAbsentPolicy = "deactivate"
@@ -1257,6 +1284,129 @@ const (
 func (e DirectoryUnlicensedProblemCode) Valid() bool {
 	switch e {
 	case DirectoryUnlicensedProblemCodeDirectoryUnlicensed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocumentType.
+const (
+	Doc DocumentType = "doc"
+)
+
+// Valid indicates whether the value is a known member of the DocumentType enum.
+func (e DocumentType) Valid() bool {
+	switch e {
+	case Doc:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocumentMarkType.
+const (
+	Bold   DocumentMarkType = "bold"
+	Code   DocumentMarkType = "code"
+	Italic DocumentMarkType = "italic"
+	Link   DocumentMarkType = "link"
+	Strike DocumentMarkType = "strike"
+)
+
+// Valid indicates whether the value is a known member of the DocumentMarkType enum.
+func (e DocumentMarkType) Valid() bool {
+	switch e {
+	case Bold:
+		return true
+	case Code:
+		return true
+	case Italic:
+		return true
+	case Link:
+		return true
+	case Strike:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocumentNodeType.
+const (
+	DocumentNodeTypeAttachment     DocumentNodeType = "attachment"
+	DocumentNodeTypeBlockquote     DocumentNodeType = "blockquote"
+	DocumentNodeTypeBulletList     DocumentNodeType = "bulletList"
+	DocumentNodeTypeCodeBlock      DocumentNodeType = "codeBlock"
+	DocumentNodeTypeDetails        DocumentNodeType = "details"
+	DocumentNodeTypeDetailsContent DocumentNodeType = "detailsContent"
+	DocumentNodeTypeDetailsSummary DocumentNodeType = "detailsSummary"
+	DocumentNodeTypeHardBreak      DocumentNodeType = "hardBreak"
+	DocumentNodeTypeHeading        DocumentNodeType = "heading"
+	DocumentNodeTypeHorizontalRule DocumentNodeType = "horizontalRule"
+	DocumentNodeTypeImage          DocumentNodeType = "image"
+	DocumentNodeTypeIssueRef       DocumentNodeType = "issueRef"
+	DocumentNodeTypeListItem       DocumentNodeType = "listItem"
+	DocumentNodeTypeMention        DocumentNodeType = "mention"
+	DocumentNodeTypeOrderedList    DocumentNodeType = "orderedList"
+	DocumentNodeTypeParagraph      DocumentNodeType = "paragraph"
+	DocumentNodeTypeTable          DocumentNodeType = "table"
+	DocumentNodeTypeTableCell      DocumentNodeType = "tableCell"
+	DocumentNodeTypeTableHeader    DocumentNodeType = "tableHeader"
+	DocumentNodeTypeTableRow       DocumentNodeType = "tableRow"
+	DocumentNodeTypeTaskItem       DocumentNodeType = "taskItem"
+	DocumentNodeTypeTaskList       DocumentNodeType = "taskList"
+	DocumentNodeTypeText           DocumentNodeType = "text"
+)
+
+// Valid indicates whether the value is a known member of the DocumentNodeType enum.
+func (e DocumentNodeType) Valid() bool {
+	switch e {
+	case DocumentNodeTypeAttachment:
+		return true
+	case DocumentNodeTypeBlockquote:
+		return true
+	case DocumentNodeTypeBulletList:
+		return true
+	case DocumentNodeTypeCodeBlock:
+		return true
+	case DocumentNodeTypeDetails:
+		return true
+	case DocumentNodeTypeDetailsContent:
+		return true
+	case DocumentNodeTypeDetailsSummary:
+		return true
+	case DocumentNodeTypeHardBreak:
+		return true
+	case DocumentNodeTypeHeading:
+		return true
+	case DocumentNodeTypeHorizontalRule:
+		return true
+	case DocumentNodeTypeImage:
+		return true
+	case DocumentNodeTypeIssueRef:
+		return true
+	case DocumentNodeTypeListItem:
+		return true
+	case DocumentNodeTypeMention:
+		return true
+	case DocumentNodeTypeOrderedList:
+		return true
+	case DocumentNodeTypeParagraph:
+		return true
+	case DocumentNodeTypeTable:
+		return true
+	case DocumentNodeTypeTableCell:
+		return true
+	case DocumentNodeTypeTableHeader:
+		return true
+	case DocumentNodeTypeTableRow:
+		return true
+	case DocumentNodeTypeTaskItem:
+		return true
+	case DocumentNodeTypeTaskList:
+		return true
+	case DocumentNodeTypeText:
 		return true
 	default:
 		return false
@@ -5090,13 +5240,18 @@ type CreateIssueRequest struct {
 	AssigneeId *openapi_types.UUID `json:"assigneeId,omitempty"`
 
 	// CycleId A cycle on the same team; the issue is filed into it as it is raised
-	CycleId     *openapi_types.UUID   `json:"cycleId,omitempty"`
-	Description *string               `json:"description,omitempty"`
-	DueOn       *openapi_types.Date   `json:"dueOn,omitempty"`
-	Estimate    *int32                `json:"estimate,omitempty"`
-	LabelIds    *[]openapi_types.UUID `json:"labelIds,omitempty"`
-	Priority    *IssuePriority        `json:"priority,omitempty"`
-	ProjectId   *openapi_types.UUID   `json:"projectId,omitempty"`
+	CycleId *openapi_types.UUID `json:"cycleId,omitempty"`
+
+	// Description The text as markdown. Send this only when the text was not written in an editor; sending `descriptionDoc` alongside it settles both, and this is then ignored.
+	Description *string `json:"description,omitempty"`
+
+	// DescriptionDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	DescriptionDoc *Document             `json:"descriptionDoc,omitempty"`
+	DueOn          *openapi_types.Date   `json:"dueOn,omitempty"`
+	Estimate       *int32                `json:"estimate,omitempty"`
+	LabelIds       *[]openapi_types.UUID `json:"labelIds,omitempty"`
+	Priority       *IssuePriority        `json:"priority,omitempty"`
+	ProjectId      *openapi_types.UUID   `json:"projectId,omitempty"`
 
 	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
 	Reasoning *AgentReasoning `json:"reasoning,omitempty"`
@@ -5358,6 +5513,33 @@ type DelegationTargets struct {
 	Warnings []SharedRepositoryWarning `json:"warnings"`
 }
 
+// DescriptionRevision defines model for DescriptionRevision.
+type DescriptionRevision struct {
+	AuthorAccountId *openapi_types.UUID `json:"authorAccountId,omitempty"`
+	AuthorName      *string             `json:"authorName,omitempty"`
+	CreatedAt       time.Time           `json:"createdAt"`
+
+	// Doc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	Doc     *Document          `json:"doc,omitempty"`
+	Id      openapi_types.UUID `json:"id"`
+	IssueId openapi_types.UUID `json:"issueId"`
+
+	// IssueVersion The version of the issue this text was written as.
+	IssueVersion int32  `json:"issueVersion"`
+	Markdown     string `json:"markdown"`
+
+	// Source Who wrote this text. It names the actor rather than the person who allowed it: a description an agent wrote and somebody approved is still the agent's writing.
+	Source DescriptionRevisionSource `json:"source"`
+}
+
+// DescriptionRevisionList defines model for DescriptionRevisionList.
+type DescriptionRevisionList struct {
+	Revisions []DescriptionRevision `json:"revisions"`
+}
+
+// DescriptionRevisionSource Who wrote this text. It names the actor rather than the person who allowed it: a description an agent wrote and somebody approved is still the agent's writing.
+type DescriptionRevisionSource string
+
 // DirectoryAbsentPolicy defines model for DirectoryAbsentPolicy.
 type DirectoryAbsentPolicy string
 
@@ -5435,9 +5617,46 @@ type DiscoverOidcRequest struct {
 	Issuer string `json:"issuer"`
 }
 
+// Document The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+type Document struct {
+	Content *[]DocumentNode `json:"content,omitempty"`
+	Type    DocumentType    `json:"type"`
+}
+
+// DocumentType defines model for Document.Type.
+type DocumentType string
+
+// DocumentMark defines model for DocumentMark.
+type DocumentMark struct {
+	Attrs *map[string]interface{} `json:"attrs,omitempty"`
+	Type  DocumentMarkType        `json:"type"`
+}
+
+// DocumentMarkType defines model for DocumentMark.Type.
+type DocumentMarkType string
+
+// DocumentNode defines model for DocumentNode.
+type DocumentNode struct {
+	// Attrs What the node needs beyond its kind — a heading's level, a mention's account, an attachment's file. Read by the node type; unknown keys are kept as sent.
+	Attrs   *map[string]interface{} `json:"attrs,omitempty"`
+	Content *[]DocumentNode         `json:"content,omitempty"`
+	Marks   *[]DocumentMark         `json:"marks,omitempty"`
+	Text    *string                 `json:"text,omitempty"`
+
+	// Type One of the blocks and inline pieces this instance renders. A node of any other kind is refused rather than stored, because storing it would break the issue on opening.
+	Type DocumentNodeType `json:"type"`
+}
+
+// DocumentNodeType One of the blocks and inline pieces this instance renders. A node of any other kind is refused rather than stored, because storing it would break the issue on opening.
+type DocumentNodeType string
+
 // EditCommentRequest defines model for EditCommentRequest.
 type EditCommentRequest struct {
+	// Body The text as markdown. Send this only when the text was not written in an editor; sending `bodyDoc` alongside it settles both, and this is then ignored.
 	Body string `json:"body"`
+
+	// BodyDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	BodyDoc *Document `json:"bodyDoc,omitempty"`
 }
 
 // EmailChange defines model for EmailChange.
@@ -6271,17 +6490,22 @@ type InvitationWorkspace struct {
 
 // Issue defines model for Issue.
 type Issue struct {
-	ArchivedAt               *time.Time          `json:"archivedAt,omitempty"`
-	AssigneeAccountId        *openapi_types.UUID `json:"assigneeAccountId,omitempty"`
-	Blocked                  *bool               `json:"blocked,omitempty"`
-	ChildProgress            *IssueProgress      `json:"childProgress,omitempty"`
-	CompletedAt              *time.Time          `json:"completedAt,omitempty"`
-	CreatedAt                time.Time           `json:"createdAt"`
-	CreatedByAccountId       *openapi_types.UUID `json:"createdByAccountId,omitempty"`
-	CycleId                  *openapi_types.UUID `json:"cycleId,omitempty"`
-	CycleNumber              *int32              `json:"cycleNumber,omitempty"`
-	Depth                    *int32              `json:"depth,omitempty"`
-	Description              string              `json:"description"`
+	ArchivedAt         *time.Time          `json:"archivedAt,omitempty"`
+	AssigneeAccountId  *openapi_types.UUID `json:"assigneeAccountId,omitempty"`
+	Blocked            *bool               `json:"blocked,omitempty"`
+	ChildProgress      *IssueProgress      `json:"childProgress,omitempty"`
+	CompletedAt        *time.Time          `json:"completedAt,omitempty"`
+	CreatedAt          time.Time           `json:"createdAt"`
+	CreatedByAccountId *openapi_types.UUID `json:"createdByAccountId,omitempty"`
+	CycleId            *openapi_types.UUID `json:"cycleId,omitempty"`
+	CycleNumber        *int32              `json:"cycleNumber,omitempty"`
+	Depth              *int32              `json:"depth,omitempty"`
+
+	// Description The text as markdown, rendered from `descriptionDoc`.
+	Description string `json:"description"`
+
+	// DescriptionDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	DescriptionDoc           *Document           `json:"descriptionDoc,omitempty"`
 	DueOn                    *openapi_types.Date `json:"dueOn,omitempty"`
 	Estimate                 *int32              `json:"estimate,omitempty"`
 	Id                       openapi_types.UUID  `json:"id"`
@@ -6333,10 +6557,15 @@ type IssueChildren struct {
 
 // IssueComment defines model for IssueComment.
 type IssueComment struct {
-	AuthorAccountId *openapi_types.UUID    `json:"authorAccountId,omitempty"`
-	AuthorKind      CommentAuthorKind      `json:"authorKind"`
-	AuthorName      *string                `json:"authorName,omitempty"`
-	Body            string                 `json:"body"`
+	AuthorAccountId *openapi_types.UUID `json:"authorAccountId,omitempty"`
+	AuthorKind      CommentAuthorKind   `json:"authorKind"`
+	AuthorName      *string             `json:"authorName,omitempty"`
+
+	// Body The text as markdown, rendered from `bodyDoc`.
+	Body string `json:"body"`
+
+	// BodyDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	BodyDoc         *Document              `json:"bodyDoc,omitempty"`
 	CreatedAt       time.Time              `json:"createdAt"`
 	Deleted         bool                   `json:"deleted"`
 	DeletedAt       *time.Time             `json:"deletedAt,omitempty"`
@@ -6979,10 +7208,15 @@ type PermissionProfile string
 
 // PostCommentRequest defines model for PostCommentRequest.
 type PostCommentRequest struct {
-	AttachmentIds   *[]openapi_types.UUID `json:"attachmentIds,omitempty"`
-	Body            string                `json:"body"`
-	Mentions        *[]MentionTarget      `json:"mentions,omitempty"`
-	ParentCommentId *openapi_types.UUID   `json:"parentCommentId,omitempty"`
+	AttachmentIds *[]openapi_types.UUID `json:"attachmentIds,omitempty"`
+
+	// Body The text as markdown. Send this only when the text was not written in an editor; sending `bodyDoc` alongside it settles both, and this is then ignored.
+	Body string `json:"body"`
+
+	// BodyDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	BodyDoc         *Document           `json:"bodyDoc,omitempty"`
+	Mentions        *[]MentionTarget    `json:"mentions,omitempty"`
+	ParentCommentId *openapi_types.UUID `json:"parentCommentId,omitempty"`
 
 	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
 	Reasoning *AgentReasoning `json:"reasoning,omitempty"`
@@ -7247,6 +7481,11 @@ type ResetLinkUsedProblem struct {
 
 // ResetLinkUsedProblemCode defines model for ResetLinkUsedProblem.Code.
 type ResetLinkUsedProblemCode string
+
+// RestoreDescriptionRequest defines model for RestoreDescriptionRequest.
+type RestoreDescriptionRequest struct {
+	ExpectedVersion int32 `json:"expectedVersion"`
+}
 
 // ResumeExecutionRequest defines model for ResumeExecutionRequest.
 type ResumeExecutionRequest struct {
@@ -8119,14 +8358,19 @@ type UpdateIssueRequest struct {
 	BeforeIssueId *openapi_types.UUID `json:"beforeIssueId,omitempty"`
 
 	// Clear Properties to reset; absent means unchanged, which a nullable field cannot express
-	Clear           *[]UpdateIssueRequestClear `json:"clear,omitempty"`
-	CycleId         *openapi_types.UUID        `json:"cycleId,omitempty"`
-	Description     *string                    `json:"description,omitempty"`
-	DueOn           *openapi_types.Date        `json:"dueOn,omitempty"`
-	Estimate        *int32                     `json:"estimate,omitempty"`
-	ExpectedVersion int32                      `json:"expectedVersion"`
-	Priority        *IssuePriority             `json:"priority,omitempty"`
-	ProjectId       *openapi_types.UUID        `json:"projectId,omitempty"`
+	Clear   *[]UpdateIssueRequestClear `json:"clear,omitempty"`
+	CycleId *openapi_types.UUID        `json:"cycleId,omitempty"`
+
+	// Description The text as markdown. Send this only when the text was not written in an editor; sending `descriptionDoc` alongside it settles both, and this is then ignored.
+	Description *string `json:"description,omitempty"`
+
+	// DescriptionDoc The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	DescriptionDoc  *Document           `json:"descriptionDoc,omitempty"`
+	DueOn           *openapi_types.Date `json:"dueOn,omitempty"`
+	Estimate        *int32              `json:"estimate,omitempty"`
+	ExpectedVersion int32               `json:"expectedVersion"`
+	Priority        *IssuePriority      `json:"priority,omitempty"`
+	ProjectId       *openapi_types.UUID `json:"projectId,omitempty"`
 
 	// Reasoning What the agent saw, what it read, and what it is unsure about, so deciding a proposal is a read rather than an investigation.
 	Reasoning *AgentReasoning     `json:"reasoning,omitempty"`
@@ -8623,6 +8867,12 @@ type QuestionId = openapi_types.UUID
 // Reaction defines model for Reaction.
 type Reaction = CommentReaction
 
+// RevisionId defines model for RevisionId.
+type RevisionId = openapi_types.UUID
+
+// RevisionLimit defines model for RevisionLimit.
+type RevisionLimit = int32
+
 // RunId defines model for RunId.
 type RunId = openapi_types.UUID
 
@@ -8973,6 +9223,12 @@ type GetWorkspaceIssueDelegationTargetsParams struct {
 	AgentAccountId openapi_types.UUID `form:"agentAccountId" json:"agentAccountId"`
 }
 
+// ListWorkspaceIssueDescriptionRevisionsParams defines parameters for ListWorkspaceIssueDescriptionRevisions.
+type ListWorkspaceIssueDescriptionRevisionsParams struct {
+	// Limit How many revisions to return, newest first.
+	Limit *RevisionLimit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // RemoveWorkspaceLabelParams defines parameters for RemoveWorkspaceLabel.
 type RemoveWorkspaceLabelParams struct {
 	// AcknowledgedIssues The number of issues the caller was told this label is on
@@ -9236,6 +9492,9 @@ type EditWorkspaceIssueCommentJSONRequestBody = EditCommentRequest
 
 // DelegateWorkspaceIssueJSONRequestBody defines body for DelegateWorkspaceIssue for application/json ContentType.
 type DelegateWorkspaceIssueJSONRequestBody = DelegateIssueRequest
+
+// RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody defines body for RestoreWorkspaceIssueDescriptionRevision for application/json ContentType.
+type RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody = RestoreDescriptionRequest
 
 // SetWorkspaceIssueFollowJSONRequestBody defines body for SetWorkspaceIssueFollow for application/json ContentType.
 type SetWorkspaceIssueFollowJSONRequestBody = IssueFollow
@@ -10778,6 +11037,29 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets (the `GetWorkspaceIssueDelegationTargets` operationId).
 	GetWorkspaceIssueDelegationTargets(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceIssueDescriptionRevisions Read what the description said before, newest first
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/description/revisions (the `ListWorkspaceIssueDescriptionRevisions` operationId).
+	ListWorkspaceIssueDescriptionRevisions(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *ListWorkspaceIssueDescriptionRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RestoreWorkspaceIssueDescriptionRevisionWithBody Put back what the description said, as a new revision
+	//
+	// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+	RestoreWorkspaceIssueDescriptionRevisionWithBody(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RestoreWorkspaceIssueDescriptionRevision Put back what the description said, as a new revision
+	//
+	// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+	RestoreWorkspaceIssueDescriptionRevision(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	//
@@ -15433,6 +15715,59 @@ func (c *Client) DelegateWorkspaceIssue(ctx context.Context, workspaceId Workspa
 // Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets (the `GetWorkspaceIssueDelegationTargets` operationId).
 func (c *Client) GetWorkspaceIssueDelegationTargets(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetWorkspaceIssueDelegationTargetsRequest(c.Server, workspaceId, issueId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceIssueDescriptionRevisions Read what the description said before, newest first
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/description/revisions (the `ListWorkspaceIssueDescriptionRevisions` operationId).
+func (c *Client) ListWorkspaceIssueDescriptionRevisions(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *ListWorkspaceIssueDescriptionRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceIssueDescriptionRevisionsRequest(c.Server, workspaceId, issueId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RestoreWorkspaceIssueDescriptionRevisionWithBody Put back what the description said, as a new revision
+//
+// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+func (c *Client) RestoreWorkspaceIssueDescriptionRevisionWithBody(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRestoreWorkspaceIssueDescriptionRevisionRequestWithBody(c.Server, workspaceId, issueId, revisionId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RestoreWorkspaceIssueDescriptionRevision Put back what the description said, as a new revision
+//
+// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+func (c *Client) RestoreWorkspaceIssueDescriptionRevision(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRestoreWorkspaceIssueDescriptionRevisionRequest(c.Server, workspaceId, issueId, revisionId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -26032,6 +26367,135 @@ func NewGetWorkspaceIssueDelegationTargetsRequest(server string, workspaceId Wor
 	return req, nil
 }
 
+// NewListWorkspaceIssueDescriptionRevisionsRequest constructs an http.Request for the ListWorkspaceIssueDescriptionRevisions method
+func NewListWorkspaceIssueDescriptionRevisionsRequest(server string, workspaceId WorkspaceId, issueId IssueId, params *ListWorkspaceIssueDescriptionRevisionsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/description/revisions", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRestoreWorkspaceIssueDescriptionRevisionRequest calls the generic RestoreWorkspaceIssueDescriptionRevision builder with application/json body
+func NewRestoreWorkspaceIssueDescriptionRevisionRequest(server string, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRestoreWorkspaceIssueDescriptionRevisionRequestWithBody(server, workspaceId, issueId, revisionId, "application/json", bodyReader)
+}
+
+// NewRestoreWorkspaceIssueDescriptionRevisionRequestWithBody constructs an http.Request for the RestoreWorkspaceIssueDescriptionRevision method, with any body, and a specified content type
+func NewRestoreWorkspaceIssueDescriptionRevisionRequestWithBody(server string, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "revisionId", revisionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/description/revisions/%s/restore", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListWorkspaceIssueExecutionsRequest constructs an http.Request for the ListWorkspaceIssueExecutions method
 func NewListWorkspaceIssueExecutionsRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
 	var err error
@@ -35224,6 +35688,31 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets (the `GetWorkspaceIssueDelegationTargets` operationId).
 	GetWorkspaceIssueDelegationTargetsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *GetWorkspaceIssueDelegationTargetsParams, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueDelegationTargetsResponse, error)
+
+	// ListWorkspaceIssueDescriptionRevisionsWithResponse Read what the description said before, newest first
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/description/revisions (the `ListWorkspaceIssueDescriptionRevisions` operationId).
+	ListWorkspaceIssueDescriptionRevisionsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *ListWorkspaceIssueDescriptionRevisionsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDescriptionRevisionsResponse, error)
+
+	// RestoreWorkspaceIssueDescriptionRevisionWithBodyWithResponse Put back what the description said, as a new revision
+	//
+	// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+	RestoreWorkspaceIssueDescriptionRevisionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RestoreWorkspaceIssueDescriptionRevisionResponse, error)
+
+	// RestoreWorkspaceIssueDescriptionRevisionWithResponse Put back what the description said, as a new revision
+	//
+	// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+	RestoreWorkspaceIssueDescriptionRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*RestoreWorkspaceIssueDescriptionRevisionResponse, error)
 
 	// ListWorkspaceIssueExecutionsWithResponse Every run this issue has had, newest attempt first
 	//
@@ -47746,6 +48235,158 @@ func (r GetWorkspaceIssueDelegationTargetsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetWorkspaceIssueDelegationTargetsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceIssueDescriptionRevisionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DescriptionRevisionList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) GetJSON200() *DescriptionRevisionList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceIssueDescriptionRevisionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RestoreWorkspaceIssueDescriptionRevisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Issue
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *IssueConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetJSON200() *Issue {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetApplicationproblemJSON409() *IssueConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RestoreWorkspaceIssueDescriptionRevisionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -62130,6 +62771,49 @@ func (c *ClientWithResponses) GetWorkspaceIssueDelegationTargetsWithResponse(ctx
 	return ParseGetWorkspaceIssueDelegationTargetsResponse(rsp)
 }
 
+// ListWorkspaceIssueDescriptionRevisionsWithResponse Read what the description said before, newest first
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/description/revisions (the `ListWorkspaceIssueDescriptionRevisions` operationId).
+func (c *ClientWithResponses) ListWorkspaceIssueDescriptionRevisionsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, params *ListWorkspaceIssueDescriptionRevisionsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDescriptionRevisionsResponse, error) {
+	rsp, err := c.ListWorkspaceIssueDescriptionRevisions(ctx, workspaceId, issueId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceIssueDescriptionRevisionsResponse(rsp)
+}
+
+// RestoreWorkspaceIssueDescriptionRevisionWithBodyWithResponse Put back what the description said, as a new revision
+//
+// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+func (c *ClientWithResponses) RestoreWorkspaceIssueDescriptionRevisionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RestoreWorkspaceIssueDescriptionRevisionResponse, error) {
+	rsp, err := c.RestoreWorkspaceIssueDescriptionRevisionWithBody(ctx, workspaceId, issueId, revisionId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRestoreWorkspaceIssueDescriptionRevisionResponse(rsp)
+}
+
+// RestoreWorkspaceIssueDescriptionRevisionWithResponse Put back what the description said, as a new revision
+//
+// Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
+func (c *ClientWithResponses) RestoreWorkspaceIssueDescriptionRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*RestoreWorkspaceIssueDescriptionRevisionResponse, error) {
+	rsp, err := c.RestoreWorkspaceIssueDescriptionRevision(ctx, workspaceId, issueId, revisionId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRestoreWorkspaceIssueDescriptionRevisionResponse(rsp)
+}
+
 // ListWorkspaceIssueExecutionsWithResponse Every run this issue has had, newest attempt first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -73795,6 +74479,128 @@ func ParseGetWorkspaceIssueDelegationTargetsResponse(rsp *http.Response) (*GetWo
 	return response, nil
 }
 
+// ParseListWorkspaceIssueDescriptionRevisionsResponse parses an HTTP response from a ListWorkspaceIssueDescriptionRevisionsWithResponse call
+func ParseListWorkspaceIssueDescriptionRevisionsResponse(rsp *http.Response) (*ListWorkspaceIssueDescriptionRevisionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceIssueDescriptionRevisionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DescriptionRevisionList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRestoreWorkspaceIssueDescriptionRevisionResponse parses an HTTP response from a RestoreWorkspaceIssueDescriptionRevisionWithResponse call
+func ParseRestoreWorkspaceIssueDescriptionRevisionResponse(rsp *http.Response) (*RestoreWorkspaceIssueDescriptionRevisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RestoreWorkspaceIssueDescriptionRevisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Issue
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest IssueConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceIssueExecutionsResponse parses an HTTP response from a ListWorkspaceIssueExecutionsWithResponse call
 func ParseListWorkspaceIssueExecutionsResponse(rsp *http.Response) (*ListWorkspaceIssueExecutionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -83582,6 +84388,12 @@ type ServerInterface interface {
 	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
 	GetWorkspaceIssueDelegationTargets(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params GetWorkspaceIssueDelegationTargetsParams)
+	// ListWorkspaceIssueDescriptionRevisions Read what the description said before, newest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/description/revisions)
+	ListWorkspaceIssueDescriptionRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueDescriptionRevisionsParams)
+	// RestoreWorkspaceIssueDescriptionRevision Put back what the description said, as a new revision
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore)
+	RestoreWorkspaceIssueDescriptionRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId)
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 	ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -84998,6 +85810,18 @@ func (_ Unimplemented) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Req
 // GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
 // (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
 func (_ Unimplemented) GetWorkspaceIssueDelegationTargets(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params GetWorkspaceIssueDelegationTargetsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueDescriptionRevisions Read what the description said before, newest first
+// (GET /workspaces/{workspaceId}/issues/{issueId}/description/revisions)
+func (_ Unimplemented) ListWorkspaceIssueDescriptionRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueDescriptionRevisionsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RestoreWorkspaceIssueDescriptionRevision Put back what the description said, as a new revision
+// (POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore)
+func (_ Unimplemented) RestoreWorkspaceIssueDescriptionRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -90997,6 +91821,101 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceIssueDelegationTargets(w http.Res
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceIssueDelegationTargets(w, r, workspaceId, issueId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueDescriptionRevisions operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueDescriptionRevisions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceIssueDescriptionRevisionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueDescriptionRevisions(w, r, workspaceId, issueId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RestoreWorkspaceIssueDescriptionRevision operation middleware
+func (siw *ServerInterfaceWrapper) RestoreWorkspaceIssueDescriptionRevision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "revisionId" -------------
+	var revisionId RevisionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "revisionId", chi.URLParam(r, "revisionId"), &revisionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "revisionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestoreWorkspaceIssueDescriptionRevision(w, r, workspaceId, issueId, revisionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -97439,6 +98358,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/label-groups/{groupId}", wrapper.RenameWorkspaceLabelGroup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/description/revisions", wrapper.ListWorkspaceIssueDescriptionRevisions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore", wrapper.RestoreWorkspaceIssueDescriptionRevision)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/status", wrapper.SetWorkspaceIssueStatus)
@@ -111529,6 +112454,205 @@ func (response GetWorkspaceIssueDelegationTargets422ApplicationProblemPlusJSONRe
 type GetWorkspaceIssueDelegationTargets500ApplicationProblemPlusJSONResponse Problem
 
 func (response GetWorkspaceIssueDelegationTargets500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDelegationTargetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDescriptionRevisionsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	Params      ListWorkspaceIssueDescriptionRevisionsParams
+}
+
+type ListWorkspaceIssueDescriptionRevisionsResponseObject interface {
+	VisitListWorkspaceIssueDescriptionRevisionsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueDescriptionRevisions200JSONResponse DescriptionRevisionList
+
+func (response ListWorkspaceIssueDescriptionRevisions200JSONResponse) VisitListWorkspaceIssueDescriptionRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDescriptionRevisions401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDescriptionRevisions401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDescriptionRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDescriptionRevisions403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDescriptionRevisions403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDescriptionRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDescriptionRevisions404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDescriptionRevisions404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDescriptionRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDescriptionRevisions500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDescriptionRevisions500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDescriptionRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceIssueDescriptionRevisionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+	RevisionId  RevisionId  `json:"revisionId"`
+	Body        *RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody
+}
+
+type RestoreWorkspaceIssueDescriptionRevisionResponseObject interface {
+	VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error
+}
+
+type RestoreWorkspaceIssueDescriptionRevision200JSONResponse Issue
+
+func (response RestoreWorkspaceIssueDescriptionRevision200JSONResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceIssueDescriptionRevision401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RestoreWorkspaceIssueDescriptionRevision401ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceIssueDescriptionRevision403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RestoreWorkspaceIssueDescriptionRevision403ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceIssueDescriptionRevision404ApplicationProblemPlusJSONResponse Problem
+
+func (response RestoreWorkspaceIssueDescriptionRevision404ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceIssueDescriptionRevision409ApplicationProblemPlusJSONResponse struct {
+	IssueConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RestoreWorkspaceIssueDescriptionRevision409ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceIssueDescriptionRevision422ApplicationProblemPlusJSONResponse Problem
+
+func (response RestoreWorkspaceIssueDescriptionRevision422ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceIssueDescriptionRevision500ApplicationProblemPlusJSONResponse Problem
+
+func (response RestoreWorkspaceIssueDescriptionRevision500ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -126856,6 +127980,12 @@ type StrictServerInterface interface {
 	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
 	GetWorkspaceIssueDelegationTargets(ctx context.Context, request GetWorkspaceIssueDelegationTargetsRequestObject) (GetWorkspaceIssueDelegationTargetsResponseObject, error)
+	// ListWorkspaceIssueDescriptionRevisions Read what the description said before, newest first
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/description/revisions)
+	ListWorkspaceIssueDescriptionRevisions(ctx context.Context, request ListWorkspaceIssueDescriptionRevisionsRequestObject) (ListWorkspaceIssueDescriptionRevisionsResponseObject, error)
+	// RestoreWorkspaceIssueDescriptionRevision Put back what the description said, as a new revision
+	// (POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore)
+	RestoreWorkspaceIssueDescriptionRevision(ctx context.Context, request RestoreWorkspaceIssueDescriptionRevisionRequestObject) (RestoreWorkspaceIssueDescriptionRevisionResponseObject, error)
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 	ListWorkspaceIssueExecutions(ctx context.Context, request ListWorkspaceIssueExecutionsRequestObject) (ListWorkspaceIssueExecutionsResponseObject, error)
@@ -131795,6 +132925,69 @@ func (sh *strictHandler) GetWorkspaceIssueDelegationTargets(w http.ResponseWrite
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceIssueDelegationTargetsResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceIssueDelegationTargetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueDescriptionRevisions operation middleware
+func (sh *strictHandler) ListWorkspaceIssueDescriptionRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params ListWorkspaceIssueDescriptionRevisionsParams) {
+	var request ListWorkspaceIssueDescriptionRevisionsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueDescriptionRevisions(ctx, request.(ListWorkspaceIssueDescriptionRevisionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueDescriptionRevisions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueDescriptionRevisionsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueDescriptionRevisionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RestoreWorkspaceIssueDescriptionRevision operation middleware
+func (sh *strictHandler) RestoreWorkspaceIssueDescriptionRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId) {
+	var request RestoreWorkspaceIssueDescriptionRevisionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+	request.RevisionId = revisionId
+
+	var body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreWorkspaceIssueDescriptionRevision(ctx, request.(RestoreWorkspaceIssueDescriptionRevisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreWorkspaceIssueDescriptionRevision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RestoreWorkspaceIssueDescriptionRevisionResponseObject); ok {
+		if err := validResponse.VisitRestoreWorkspaceIssueDescriptionRevisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

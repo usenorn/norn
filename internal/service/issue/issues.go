@@ -224,7 +224,7 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		}
 
 		if markdown != "" {
-			if err := s.remember(ctx, created, decision, input.Source, input.Origin); err != nil {
+			if err := s.remember(ctx, created, decision, entity.RevisionSourceOf(decision.Actor.Kind, input.Source, input.Origin)); err != nil {
 				return err
 			}
 		}
@@ -620,7 +620,7 @@ func (s *issuesService) Update(
 			written.Description = *change.Description
 			written.DescriptionDoc = *change.DescriptionDoc
 
-			if err := s.remember(ctx, written, decision, "", nil); err != nil {
+			if err := s.remember(ctx, written, decision, restoring(decision, input)); err != nil {
 				return err
 			}
 		}
@@ -1861,4 +1861,14 @@ func labelNames(labels []entity.Label) string {
 	slices.Sort(names)
 
 	return strings.Join(names, ", ")
+}
+
+// restoring tells a description put back from the history apart from one somebody typed, so the
+// trail reads as what happened rather than crediting the restorer with writing the text again.
+func restoring(decision entity.Decision, input service.UpdateIssueInput) entity.RevisionSource {
+	if input.Restoring {
+		return entity.RevisionSourceRestore
+	}
+
+	return entity.RevisionSourceOf(decision.Actor.Kind, "", nil)
 }

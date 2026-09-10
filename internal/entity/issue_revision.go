@@ -8,6 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	IssueRevisionPageDefaultSize = 25
+	IssueRevisionPageMaxSize     = 100
+)
+
 var ErrIssueRevisionNotFound = errors.New("description revision not found")
 
 type RevisionSource string

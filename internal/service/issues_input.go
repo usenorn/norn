@@ -92,6 +92,7 @@ type UpdateIssueInput struct {
 	AfterIssueID            *uuid.UUID
 	BeforeIssueID           *uuid.UUID
 	Clear                   []string
+	Restoring               bool
 	Reasoning               entity.AgentReasoning
 }
 
