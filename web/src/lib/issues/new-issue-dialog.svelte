@@ -2,6 +2,7 @@
 	import { tick } from "svelte";
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
+	import FileText from "@lucide/svelte/icons/file-text";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import Paperclip from "@lucide/svelte/icons/paperclip";
 	import Plus from "@lucide/svelte/icons/plus";
@@ -47,6 +48,13 @@
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { duePresets } from "./facets";
 	import { newIssueSchema, type NewIssuePrefill } from "./new-issue-schema";
+	import {
+		readTemplates,
+		templatesFor,
+		templatesOf,
+		type IssueTemplate,
+		type TemplateList,
+	} from "./templates";
 	import {
 		draftLabel,
 		dropDraft,
@@ -108,6 +116,9 @@
 	let unconfirmed = $state(false);
 	let describing = $state.raw<Document>(emptyDocument);
 	let draftId = $state("");
+	let templateList = $state.raw<TemplateList>({ kind: "loading" });
+	let templateId = $state("");
+	let replacing = $state.raw<IssueTemplate | null>(null);
 	let drafts = $state.raw<IssueDraft[]>([]);
 	let resumable = $state(false);
 	let opening = $state(0);
@@ -342,6 +353,7 @@
 							// can be asked for again and reaches the issue already raised rather
 							// than raising a second one saying the same thing.
 							idempotencyKey: own.key,
+							templateId: templateId || undefined,
 							description: documentText(own.description) || undefined,
 							descriptionDoc: documentEmpty(own.description) ? undefined : own.description,
 							priority: pending.data.priority,
@@ -678,6 +690,67 @@
 		if (kept) draftId = kept.id;
 	}
 
+	// Templates are read for the team the issue is going to, because a template belongs to the
+	// team that keeps it and offering another team's would raise the wrong shape of issue.
+	$effect(() => {
+		const chosen = $formData.teamId;
+
+		if (!open || chosen === "") return;
+
+		void loadTemplates(chosen);
+	});
+
+	async function loadTemplates(forTeam: string) {
+		templateList = templatesFor(await readTemplates(workspaceId, forTeam));
+	}
+
+	const templates = $derived(templatesOf(templateList));
+	const templateOptions = $derived<PickerOption[]>(
+		templates.map((template) => ({
+			value: template.id,
+			label: template.name,
+			checked: template.id === templateId,
+		}))
+	);
+	const chosenTemplate = $derived(templates.find((template) => template.id === templateId));
+
+	function chooseTemplate(id: string) {
+		const template = templates.find((held) => held.id === id);
+
+		if (!template) return;
+
+		// A template applied over writing would take it away, so what is there is shown against
+		// what the template offers and somebody decides which one stands.
+		if ($formData.title.trim() !== "" || !documentEmpty(describing)) {
+			replacing = template;
+
+			return;
+		}
+
+		apply(template);
+	}
+
+	function apply(template: IssueTemplate) {
+		templateId = template.id;
+		replacing = null;
+
+		if (template.title) $formData.title = template.title;
+
+		describing = asDocument(template.bodyDoc ?? emptyDocument);
+
+		formData.update(
+			(current) => ({
+				...current,
+				stateId: template.stateId ?? current.stateId,
+				projectId: template.projectId ?? current.projectId,
+				assigneeId: template.assigneeId ?? current.assigneeId,
+				labelIds: template.labelIds?.length ? template.labelIds : current.labelIds,
+				priority: template.priority ?? current.priority,
+			}),
+			{ taint: false }
+		);
+	}
+
 	async function offerDrafts() {
 		const held = await readDrafts(workspaceId);
 
@@ -938,6 +1011,29 @@
 
 				<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
 				<Dialog.Title class="text-md font-medium text-muted-foreground">New issue</Dialog.Title>
+
+				{#if templates.length > 0}
+					<PropertyPicker
+						options={templateOptions}
+						placeholder="Choose a template…"
+						onpick={chooseTemplate}
+						class="w-51.5"
+					>
+						{#snippet trigger(props)}
+							<Button
+								{...props}
+								variant="ghost"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class="gap-1.5 px-1.5"
+							>
+								<FileText class="text-muted-foreground" aria-hidden="true" />
+								{chosenTemplate?.name ?? "Template"}
+								<ChevronDown class="text-muted-foreground" aria-hidden="true" />
+							</Button>
+						{/snippet}
+					</PropertyPicker>
+				{/if}
 				<span class="flex-1"></span>
 				{#if team}
 					<span
@@ -961,6 +1057,41 @@
 
 			<div class="min-h-0 flex-1 overflow-y-auto">
 				<div class="flex flex-col gap-2.5 px-4 pt-4 pb-3">
+					{#if replacing}
+						<div class="flex flex-col gap-2 rounded-md border border-line-strong p-2.5">
+							<p class="text-sm text-ink-900">
+								Using <span class="font-medium">{replacing.name}</span> replaces what you have
+								written here. Nothing is replaced until you say so.
+							</p>
+							<div class="flex flex-wrap items-center gap-2">
+								<Button
+									type="button"
+									size="sm"
+									disabled={busy}
+									onclick={() => replacing && apply(replacing)}
+								>
+									Replace it
+								</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									disabled={busy}
+									onclick={() => (replacing = null)}
+								>
+									Keep what I wrote
+								</Button>
+							</div>
+						</div>
+					{/if}
+
+					{#if chosenTemplate && chosenTemplate.requiredFields.length > 0}
+						<p class="text-sm text-muted-foreground">
+							{chosenTemplate.name} needs {chosenTemplate.requiredFields.join(", ")} before this
+							issue can be raised.
+						</p>
+					{/if}
+
 					{#if resumable && drafts.length > 0}
 						<div class="flex flex-col gap-1.5 rounded-md border border-line-strong p-2.5">
 							<div class="flex items-center gap-2">
