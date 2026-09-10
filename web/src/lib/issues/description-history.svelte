@@ -179,7 +179,6 @@
 								{workspaceId}
 								{workspace}
 								disabled
-								toolbar={false}
 								minHeight="min-h-0"
 								label="What the description said"
 							/>

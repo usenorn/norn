@@ -15,10 +15,9 @@
 	import { insertIssueRef, insertLink, insertMention, runBlock } from "$lib/editor/blocks";
 	import { matchingCommands, type SlashCommand } from "$lib/editor/slash";
 	import { findIssues, findMentions, type Suggestion } from "$lib/editor/search";
-	import { composing } from "$lib/editor/keys";
+	import { combination, composing } from "$lib/editor/keys";
 	import { dropUpload, placeUpload, previewOf, uploadPosition } from "$lib/editor/uploads";
 	import SuggestionPopup, { type PopupRow } from "$lib/editor/suggestion-popup.svelte";
-	import Toolbar from "$lib/editor/toolbar.svelte";
 
 	let {
 		document = $bindable(emptyDocument),
@@ -27,7 +26,6 @@
 		placeholder = "Write something…",
 		disabled = false,
 		autofocus = false,
-		toolbar = true,
 		minHeight = "min-h-16",
 		id,
 		label = "Description",
@@ -43,7 +41,6 @@
 		placeholder?: string;
 		disabled?: boolean;
 		autofocus?: boolean;
-		toolbar?: boolean;
 		minHeight?: string;
 		id?: string;
 		label?: string;
@@ -67,7 +64,6 @@
 
 	let editor = $state.raw<Editor | null>(null);
 	let popup = $state.raw<Popup | null>(null);
-	let revision = $state(0);
 	let filing = $state.raw<HTMLInputElement | null>(null);
 	let held: Document = emptyDocument;
 	let asked = 0;
@@ -89,7 +85,7 @@
 			label: command.label,
 			hint: command.hint,
 			group: command.group,
-			shortcut: command.shortcut,
+			shortcut: command.keys ? combination(command.keys) : undefined,
 		}));
 	}
 
@@ -400,7 +396,6 @@
 				held = next;
 				document = next;
 			},
-			onTransaction: () => queueMicrotask(() => (revision += 1)),
 		});
 	}
 
@@ -487,15 +482,6 @@
 			/>
 		{/if}
 	</div>
-
-	{#if toolbar}
-		<Toolbar
-			{editor}
-			{revision}
-			{disabled}
-			onattach={onfiles ? () => filing?.click() : undefined}
-		/>
-	{/if}
 
 	{#if onfiles}
 		<input
