@@ -66,6 +66,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { cyclePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -646,11 +647,14 @@
 					</div>
 				</div>
 			{:else if detail.kind === "unavailable"}
-				<Alert.Root variant="destructive" class="flex-1">
-					<CircleX aria-hidden="true" />
-					<Alert.Title>We could not load this cycle</Alert.Title>
-					<Alert.Description>Wait a moment and try again.</Alert.Description>
-				</Alert.Root>
+				<div class="flex flex-1 flex-col items-start gap-3">
+					<Alert.Root variant="destructive">
+						<CircleX aria-hidden="true" />
+						<Alert.Title>We could not load this cycle</Alert.Title>
+						<Alert.Description>Wait a moment and try again.</Alert.Description>
+					</Alert.Root>
+					<Retry />
+				</div>
 			{:else if ready && cycle && counts && results}
 				<div class="flex min-w-0 flex-1 flex-col gap-4">
 					{#if failure}

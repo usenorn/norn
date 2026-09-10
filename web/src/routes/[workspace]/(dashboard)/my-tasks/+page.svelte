@@ -8,6 +8,7 @@
 	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
 	import { showFailure, showToast } from "$lib/toast/toasts";
+	import Retry from "$lib/components/norn/retry.svelte";
 	import TaskRow from "$lib/components/norn/task-row.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { goto, invalidate } from "$app/navigation";
@@ -222,13 +223,7 @@
 				<p class="max-w-75 text-md leading-normal text-muted-foreground">
 					Nothing has changed. This is a problem reaching Norn, not an empty workload.
 				</p>
-				<Button
-					variant="secondary"
-					size="sm"
-					onclick={() => void invalidate(keys.page(page.route.id))}
-				>
-					Try again
-				</Button>
+				<Retry />
 			</div>
 		{:else if rows.kind === "no_matches"}
 			<div class="flex flex-col items-center gap-3 px-6 py-12 text-center">

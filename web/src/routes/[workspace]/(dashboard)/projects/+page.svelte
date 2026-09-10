@@ -29,6 +29,7 @@
 	import { slugFromName } from "$lib/workspace/create-workspace-schema";
 	import { projectsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -215,11 +216,29 @@
 					{/each}
 				</ul>
 			{:else if listing.kind === "unavailable"}
-				<Alert.Root variant="destructive">
-					<CircleX aria-hidden="true" />
-					<Alert.Title>We could not load your projects</Alert.Title>
-					<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
-				</Alert.Root>
+				<div class="flex flex-col items-start gap-3">
+					<Alert.Root variant="destructive">
+						<CircleX aria-hidden="true" />
+						<Alert.Title>We could not load your projects</Alert.Title>
+						<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+					</Alert.Root>
+					<Retry />
+				</div>
+			{:else if listing.kind === "no_matches"}
+				<Empty.Root>
+					<Empty.Media variant="icon"><Folder aria-hidden="true" /></Empty.Media>
+					<Empty.Header>
+						<Empty.Title>No projects here</Empty.Title>
+						<Empty.Description>
+							{showingArchived
+								? "Nothing archived matches what you are looking at."
+								: "Nothing matches what you are looking at."}
+						</Empty.Description>
+					</Empty.Header>
+					<Empty.Content>
+						<Button size="sm" variant="secondary" href={projectsPath(slug)}>Every project</Button>
+					</Empty.Content>
+				</Empty.Root>
 			{:else if listing.kind === "empty"}
 				<Empty.Root>
 					<Empty.Media variant="icon"><Folder aria-hidden="true" /></Empty.Media>

@@ -62,6 +62,10 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { projectPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import { attempt } from "$lib/api/attempt";
+	import { cursorOf, grew, moreFailedLine, rowsOf, type Listed } from "$lib/api/listed";
+	import type { ColumnPaging } from "$lib/issues/paging";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -83,20 +87,14 @@
 			: false
 	);
 
-	type Loaded = { source: Issue[]; issues: Issue[]; nextCursor: string | undefined };
-	type Paging = { kind: "idle" } | { kind: "loading" } | { kind: "unavailable" };
+	let accumulated = $state.raw<{ source: Listed<Issue>; rows: Listed<Issue> } | null>(null);
+	let localPaging = $state<ColumnPaging>({ kind: "idle" });
 
-	let accumulated = $state.raw<Loaded | null>(null);
-	let localPaging = $state<Paging>({ kind: "idle" });
-
-	const base = $derived(ready?.issues ?? []);
-	const loaded = $derived(
-		accumulated && accumulated.source === base ? accumulated.issues : base
-	);
-	const nextCursor = $derived(
-		accumulated && accumulated.source === base ? accumulated.nextCursor : ready?.nextCursor
-	);
-	const paging = $derived<Paging>(preview?.paging ?? localPaging);
+	const base = $derived<Listed<Issue>>(ready?.rows ?? { kind: "loading" });
+	const listing = $derived(accumulated && accumulated.source === base ? accumulated.rows : base);
+	const loaded = $derived(rowsOf(listing));
+	const nextCursor = $derived(cursorOf(listing));
+	const paging = $derived<ColumnPaging>(preview?.paging ?? localPaging);
 	const groups = $derived(groupByCategory(loaded));
 
 	const rows = $derived(groups.flatMap((group) => group.issues));
@@ -145,31 +143,31 @@
 		if (!nextCursor || !project) return;
 
 		const source = base;
+		const held = listing;
+
 		localPaging = { kind: "loading" };
 
-		try {
-			const { data: next, error } = await api.GET("/workspaces/{workspaceId}/issues", {
-				params: {
-					path: { workspaceId: data.workspace.id },
-					query: { projectId: project.id, limit: issuePageSize, cursor: nextCursor },
-				},
-			});
+		const outcome = await attempt({
+			run: () =>
+				api.GET("/workspaces/{workspaceId}/issues", {
+					params: {
+						path: { workspaceId: data.workspace.id },
+						query: { projectId: project.id, limit: issuePageSize, cursor: nextCursor },
+					},
+				}),
+		});
 
-			if (error || !next) {
-				localPaging = { kind: "unavailable" };
-
-				return;
-			}
-
-			accumulated = {
-				source,
-				issues: [...loaded, ...next.issues],
-				nextCursor: next.nextCursor,
-			};
-			localPaging = { kind: "idle" };
-		} catch {
+		if (outcome.kind !== "done") {
 			localPaging = { kind: "unavailable" };
+
+			return;
 		}
+
+		accumulated = {
+			source,
+			rows: grew(held, { rows: outcome.value.issues, nextCursor: outcome.value.nextCursor }),
+		};
+		localPaging = { kind: "idle" };
 	}
 
 	let health = $state<ProjectHealth>("on_track");
@@ -871,7 +869,16 @@
 							</Button>
 						{/if}
 					</div>
-					{#if groups.length === 0}
+					{#if listing.kind === "unavailable"}
+						<div class="flex flex-col items-start gap-3">
+							<Alert.Root variant="destructive">
+								<CircleX aria-hidden="true" />
+								<Alert.Title>We could not load this project's issues</Alert.Title>
+								<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+							</Alert.Root>
+							<Retry />
+						</div>
+					{:else if groups.length === 0}
 						<Empty.Root>
 							<Empty.Media variant="icon"><List aria-hidden="true" /></Empty.Media>
 							<Empty.Header>
@@ -921,9 +928,7 @@
 					{#if nextCursor || paging.kind === "unavailable"}
 						<div class="flex flex-col items-start gap-2">
 							{#if paging.kind === "unavailable"}
-								<p role="status" class="text-sm text-muted-foreground">
-									We could not load any more. Nothing changed &mdash; try again.
-								</p>
+								<p role="status" class="text-sm text-muted-foreground">{moreFailedLine}</p>
 							{/if}
 							{#if nextCursor}
 								<Button

@@ -63,7 +63,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 							createdAt: "2026-07-26T09:00:00Z",
 						},
 					],
-					issues: [
+					rows: { kind: "ready", nextCursor: undefined, rows: [
 						{
 							id: "00000000-0000-4000-8000-000000000601",
 							workspaceId: "00000000-0000-4000-8000-000000000001",
@@ -110,8 +110,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 								position: 2,
 							},
 						},
-					],
-					nextCursor: undefined,
+					] },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 1, active: 1, complete: 6, abandoned: 0 },
@@ -157,11 +156,32 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						},
 					],
 					updates: [],
-					issues: [],
-					nextCursor: undefined,
+					rows: { kind: "empty" },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 2, active: 1, complete: 3, abandoned: 0 },
+			},
+			issues_unavailable: {
+				detail: {
+					kind: "ready",
+					project: {
+						id: "00000000-0000-4000-8000-000000000805",
+						workspaceId: "00000000-0000-4000-8000-000000000001",
+						slug: "search-rewrite",
+						name: "Search rewrite",
+						description: "Replace the query planner so a search answers in one round trip.",
+						state: "planned",
+						archived: false,
+						concealedWork: false,
+						createdAt: "2026-09-01T09:00:00Z",
+					},
+					links: [],
+					members: [],
+					updates: [],
+					rows: { kind: "unavailable" },
+					activity: { kind: "empty" },
+				},
+				progress: undefined,
 			},
 			noissues: {
 				detail: {
@@ -180,8 +200,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 					links: [],
 					members: [],
 					updates: [],
-					issues: [],
-					nextCursor: undefined,
+					rows: { kind: "empty" },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
@@ -234,7 +253,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 							createdAt: "2026-07-26T09:00:00Z",
 						},
 					],
-					issues: [
+					rows: { kind: "ready", nextCursor: undefined, rows: [
 						{
 							id: "00000000-0000-4000-8000-000000000601",
 							workspaceId: "00000000-0000-4000-8000-000000000001",
@@ -281,8 +300,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 								position: 2,
 							},
 						},
-					],
-					nextCursor: undefined,
+					] },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 1, active: 1, complete: 6, abandoned: 0 },
@@ -335,7 +353,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 							createdAt: "2026-07-26T09:00:00Z",
 						},
 					],
-					issues: [
+					rows: { kind: "ready", nextCursor: undefined, rows: [
 						{
 							id: "00000000-0000-4000-8000-000000000601",
 							workspaceId: "00000000-0000-4000-8000-000000000001",
@@ -382,8 +400,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 								position: 2,
 							},
 						},
-					],
-					nextCursor: undefined,
+					] },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 1, active: 1, complete: 6, abandoned: 0 },
@@ -437,7 +454,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 							createdAt: "2026-07-26T09:00:00Z",
 						},
 					],
-					issues: [
+					rows: { kind: "ready", nextCursor: undefined, rows: [
 						{
 							id: "00000000-0000-4000-8000-000000000601",
 							workspaceId: "00000000-0000-4000-8000-000000000001",
@@ -484,8 +501,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 								position: 2,
 							},
 						},
-					],
-					nextCursor: undefined,
+					] },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 1, active: 1, complete: 6, abandoned: 0 },
@@ -539,7 +555,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 							createdAt: "2026-07-26T09:00:00Z",
 						},
 					],
-					issues: [
+					rows: { kind: "ready", nextCursor: undefined, rows: [
 						{
 							id: "00000000-0000-4000-8000-000000000601",
 							workspaceId: "00000000-0000-4000-8000-000000000001",
@@ -586,8 +602,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 								position: 2,
 							},
 						},
-					],
-					nextCursor: undefined,
+					] },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 1, active: 1, complete: 6, abandoned: 0 },
@@ -610,8 +625,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 					links: [],
 					members: [],
 					updates: [],
-					issues: [],
-					nextCursor: undefined,
+					rows: { kind: "empty" },
 					activity: { kind: "empty" },
 				},
 				progress: { notStarted: 0, active: 0, complete: 4, abandoned: 3 },
@@ -633,8 +647,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 					links: [],
 					members: [],
 					updates: [],
-					issues: [],
-					nextCursor: undefined,
+					rows: { kind: "empty" },
 					activity: { kind: "empty" },
 				},
 			},
