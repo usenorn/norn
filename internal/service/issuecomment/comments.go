@@ -170,9 +170,11 @@ func (s *issueCommentsService) Post(
 		return service.CommentPosted{}, err
 	}
 
+	named := addressed(input.BodyDoc, input.Mentions)
+
 	if err := entity.NewValidationError(
 		entity.ValidateCommentBody("body", body),
-		entity.ValidateMentionCount(mentionsField, len(input.Mentions)),
+		entity.ValidateMentionCount(mentionsField, len(named)),
 	); err != nil {
 		return service.CommentPosted{}, err
 	}
@@ -181,7 +183,7 @@ func (s *issueCommentsService) Post(
 		return service.CommentPosted{}, err
 	}
 
-	mentions, err := s.resolve(ctx, workspaceID, issue.TeamID, decision, input.Mentions)
+	mentions, err := s.resolve(ctx, workspaceID, issue.TeamID, decision, named)
 	if err != nil {
 		return service.CommentPosted{}, err
 	}
@@ -436,6 +438,11 @@ func (s *issueCommentsService) Edit(
 		return entity.IssueComment{}, err
 	}
 
+	mentions, err := s.resolve(ctx, workspaceID, issue.TeamID, decision, addressed(input.BodyDoc, nil))
+	if err != nil {
+		return entity.IssueComment{}, err
+	}
+
 	var edited entity.IssueComment
 
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
@@ -443,17 +450,70 @@ func (s *issueCommentsService) Edit(
 			return err
 		}
 
+		// The text is the only record of who a comment addresses, so an edit rewrites the list
+		// rather than adding to it: a name taken out of the text is taken out of the mentions.
+		if input.BodyDoc != nil {
+			if err := s.comments.ClearMentions(ctx, commentID); err != nil {
+				return err
+			}
+
+			if err := s.comments.RecordMentions(ctx, commentID, mentions); err != nil {
+				return err
+			}
+
+			for _, follower := range mentionedAccounts(mentions) {
+				if err := s.followers.Follow(ctx, entity.IssueFollower{
+					IssueID:     issueID,
+					WorkspaceID: workspaceID,
+					AccountID:   follower,
+				}); err != nil {
+					return err
+				}
+			}
+		}
+
 		edited, err = s.comments.GetByID(ctx, workspaceID, commentID)
 		if err != nil {
 			return err
 		}
 
-		return s.emit(ctx, entity.WebhookCommentEdited, edited, issue, decision)
+		edited.Mentions = mentions
+
+		if err := s.emit(ctx, entity.WebhookCommentEdited, edited, issue, decision); err != nil {
+			return err
+		}
+
+		s.broadcast(ctx, entity.EventCommentEdited, issue, edited)
+
+		return nil
 	}); err != nil {
 		return entity.IssueComment{}, err
 	}
 
 	return edited, nil
+}
+
+// addressed reads who a comment names. A document carries the names in the text itself, so the
+// text a reader sees and the people a notification reaches cannot drift apart the way a list
+// sent alongside the text does; a caller that sends no document keeps sending the list.
+func addressed(document *entity.Document, sent []service.CommentMentionInput) []service.CommentMentionInput {
+	if document == nil {
+		return sent
+	}
+
+	found := entity.DocumentMentions(*document)
+
+	requested := make([]service.CommentMentionInput, 0, len(found))
+
+	for _, mention := range found {
+		requested = append(requested, service.CommentMentionInput{
+			Kind:      mention.Kind,
+			AccountID: mention.AccountID,
+			TeamID:    mention.TeamID,
+		})
+	}
+
+	return requested
 }
 
 func (s *issueCommentsService) Remove(
@@ -487,7 +547,13 @@ func (s *issueCommentsService) Remove(
 			return err
 		}
 
-		return s.emit(ctx, entity.WebhookCommentDeleted, comment, issue, decision)
+		if err := s.emit(ctx, entity.WebhookCommentDeleted, comment, issue, decision); err != nil {
+			return err
+		}
+
+		s.broadcast(ctx, entity.EventCommentDeleted, issue, comment)
+
+		return nil
 	})
 }
 

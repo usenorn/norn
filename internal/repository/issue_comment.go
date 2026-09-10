@@ -27,6 +27,7 @@ type IssueComment interface {
 	Tombstone(ctx context.Context, commentID uuid.UUID, at time.Time) error
 	PurgeImported(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) error
 	RecordMentions(ctx context.Context, commentID uuid.UUID, mentions []entity.CommentMention) error
+	ClearMentions(ctx context.Context, commentID uuid.UUID) error
 	Mentioned(ctx context.Context, commentID uuid.UUID) ([]entity.CommentMention, error)
 	Audience(ctx context.Context, workspaceID, teamID uuid.UUID, accountIDs []uuid.UUID) ([]CommentAudience, error)
 	React(ctx context.Context, commentID, accountID uuid.UUID, reaction entity.CommentReaction) error

@@ -59,6 +59,20 @@ func (mr *MockIssueCommentMockRecorder) Audience(ctx, workspaceID, teamID, accou
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Audience", reflect.TypeOf((*MockIssueComment)(nil).Audience), ctx, workspaceID, teamID, accountIDs)
 }
 
+// ClearMentions mocks base method.
+func (m *MockIssueComment) ClearMentions(ctx context.Context, commentID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearMentions", ctx, commentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearMentions indicates an expected call of ClearMentions.
+func (mr *MockIssueCommentMockRecorder) ClearMentions(ctx, commentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearMentions", reflect.TypeOf((*MockIssueComment)(nil).ClearMentions), ctx, commentID)
+}
+
 // Create mocks base method.
 func (m *MockIssueComment) Create(ctx context.Context, comment entity.IssueComment) (entity.IssueComment, error) {
 	m.ctrl.T.Helper()

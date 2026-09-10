@@ -125,6 +125,10 @@ FROM workspace_issue_comments c
 WHERE c.id = $1
 ON CONFLICT DO NOTHING`
 
+const clearMentionsQuery = `
+DELETE FROM workspace_issue_comment_mentions
+WHERE comment_id = $1`
+
 const editCommentQuery = `
 UPDATE workspace_issue_comments
 SET body = $2, body_doc = $4::jsonb, edited_at = $3, updated_at = $3
@@ -643,6 +647,16 @@ func (r *issueCommentRepository) RecordMentions(
 		); err != nil {
 			return fmt.Errorf("record comment mention: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (r *issueCommentRepository) ClearMentions(ctx context.Context, commentID uuid.UUID) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, clearMentionsQuery, commentID.String(),
+	); err != nil {
+		return fmt.Errorf("clear comment mentions: %w", err)
 	}
 
 	return nil
