@@ -116,6 +116,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { cycleWindow } from "$lib/time";
 	import type { IssuesListingData, IssuesListingScope, IssuesPreview } from "./listing";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let {
 		data,
@@ -1286,6 +1287,7 @@
 				<p class="max-w-75 text-md leading-normal text-muted-foreground">
 					Nothing changed. Wait a moment and try again.
 				</p>
+				<Retry />
 			</div>
 		{:else if board.kind === "no_teams"}
 			<div class="my-auto flex flex-col items-center gap-3 px-6 py-10 text-center">
@@ -1538,10 +1540,12 @@
 			]}
 		>
 			{#snippet lead()}
-				<span class="font-mono text-xs text-muted-foreground tabular-nums">
-					{total}
-					{total === 1 ? "issue" : "issues"}
-				</span>
+				{#if board.kind !== "unavailable"}
+					<span class="font-mono text-xs text-muted-foreground tabular-nums">
+						{total}
+						{total === 1 ? "issue" : "issues"}
+					</span>
+				{/if}
 			{/snippet}
 		</ShortcutBar>
 	{/if}

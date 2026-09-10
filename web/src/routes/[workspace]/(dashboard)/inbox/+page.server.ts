@@ -2,7 +2,11 @@ import { listingFor, type InboxFilter, type InboxListing } from "$lib/notificati
 import { keys } from "$lib/api/keys";
 import type { PageServerLoad } from "./$types";
 
-export type InboxPageData = { listing: InboxListing; filter: InboxFilter; unread: number };
+export type InboxPageData = {
+	listing: InboxListing;
+	filter: InboxFilter;
+	unread: number | undefined;
+};
 
 export const load: PageServerLoad = async ({
 	depends,
@@ -26,6 +30,6 @@ export const load: PageServerLoad = async ({
 	return {
 		listing: listingFor(inbox.data, filter),
 		filter,
-		unread: inbox.data?.unread ?? 0,
+		unread: inbox.data?.unread,
 	};
 };

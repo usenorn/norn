@@ -26,16 +26,17 @@ export const load: PageServerLoad = async ({
 		return { listing: { kind: "loading" }, team };
 	}
 
+	const archived = url.searchParams.get("archived") === "1";
+
 	const projects = await locals.api.GET("/workspaces/{workspaceId}/projects", {
-		params: {
-			path: { workspaceId: workspace.id },
-			query: { archived: url.searchParams.get("archived") === "1", teamId },
-		},
+		params: { path: { workspaceId: workspace.id }, query: { archived, teamId } },
 	});
 
 	if (projects.error || !projects.data) return { listing: { kind: "unavailable" }, team };
 
-	if (projects.data.length === 0) return { listing: { kind: "empty" }, team };
+	if (projects.data.length === 0) {
+		return { listing: { kind: team || archived ? "no_matches" : "empty" }, team };
+	}
 
 	return { listing: { kind: "ready", projects: projects.data }, team };
 };

@@ -32,6 +32,7 @@
 	import { inboxPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 	import { showToast } from "$lib/toast/toasts";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -48,12 +49,15 @@
 	const slug = $derived(data.workspace.slug);
 
 	const filter = $derived(preview?.filter ?? data.filter);
-	const unread = $derived(preview?.unread ?? data.unread);
 	const failure = $derived<NotificationFailure | null>(preview?.failure ?? localFailure);
 	const busy = $derived(working !== "");
 
 	const listing = $derived<InboxListing>(
 		mergeLoaded(preview?.listing ?? data.listing, extra, pageCursor)
+	);
+
+	const unread = $derived(
+		listing.kind === "unavailable" ? undefined : (preview?.unread ?? data.unread)
 	);
 
 	const rows = $derived(listing.kind === "ready" ? listing.notifications : []);
@@ -226,9 +230,11 @@
 		<div class="flex h-11 flex-wrap items-center gap-2 pr-3 pl-4">
 			<Inbox class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Inbox</h1>
-			<span class="text-sm text-muted-foreground">
-				{unread === 0 ? "Nothing unread" : `${unread} unread`}
-			</span>
+			{#if unread !== undefined}
+				<span class="text-sm text-muted-foreground">
+					{unread === 0 ? "Nothing unread" : `${unread} unread`}
+				</span>
+			{/if}
 			<div class="ml-auto flex shrink-0 items-center gap-1">
 				<Button
 					href={workspacePath(slug, `/inbox?filter=${filter === "unread" ? "all" : "unread"}`)}
@@ -240,7 +246,7 @@
 				<Button
 					variant="secondary"
 					size="sm"
-					disabled={busy || unread === 0}
+					disabled={busy || !unread}
 					onclick={markAllRead}
 				>
 					Mark all read
@@ -265,9 +271,12 @@
 			{#if listing.kind === "loading"}
 				<div class="m-4 h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
 			{:else if listing.kind === "unavailable"}
-				<p class="p-6 text-md leading-normal text-muted-foreground">
-					We could not load your inbox. Nothing changed &mdash; wait a moment and try again.
-				</p>
+				<div class="flex flex-col items-start gap-3 p-6">
+					<p class="text-md leading-normal text-muted-foreground">
+						We could not load your inbox. Nothing changed &mdash; wait a moment and try again.
+					</p>
+					<Retry />
+				</div>
 			{:else if listing.kind === "caught_up"}
 				<div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
 					<p class="text-md font-medium tracking-snug text-ink-900">You are caught up</p>

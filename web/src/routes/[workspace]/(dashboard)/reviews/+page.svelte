@@ -8,6 +8,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { reviewPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -40,7 +41,7 @@
 			{#if queue.kind === "loading"}
 				<p class="my-auto text-sm text-muted-foreground">Reading what is waiting…</p>
 			{:else if queue.kind === "unavailable"}
-				<div class="my-auto">
+				<div class="my-auto flex flex-col items-start gap-3">
 					<Alert.Root variant="destructive">
 						<CircleAlert aria-hidden="true" class="size-4" />
 						<Alert.Title>We could not load the review queue</Alert.Title>
@@ -48,6 +49,7 @@
 							Something went wrong and nothing changed. Wait a moment and try again.
 						</Alert.Description>
 					</Alert.Root>
+					<Retry />
 				</div>
 			{:else if queue.runs.length === 0}
 				<p class="my-auto max-w-prose text-sm text-muted-foreground text-pretty">

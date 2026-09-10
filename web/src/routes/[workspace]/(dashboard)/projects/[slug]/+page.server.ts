@@ -1,5 +1,6 @@
 import type { IssueProgress } from "$lib/issues/board";
 import { keys } from "$lib/api/keys";
+import { listed } from "$lib/api/listed";
 import { issuePageSize } from "$lib/issues/filter";
 import type { ProjectDetail } from "$lib/projects/projects";
 import { projectPreviewStates } from "./preview";
@@ -75,8 +76,11 @@ export const load: PageServerLoad = async ({
 			members: members.data ?? [],
 			links: links.data ?? [],
 			updates: updates.data ?? [],
-			issues: issues.data?.issues ?? [],
-			nextCursor: issues.data?.nextCursor,
+			rows: listed(
+				issues.data && {
+					data: { rows: issues.data.issues, nextCursor: issues.data.nextCursor },
+				}
+			),
 			activity: readActivity(activity.data),
 		},
 		progress: progress.data,

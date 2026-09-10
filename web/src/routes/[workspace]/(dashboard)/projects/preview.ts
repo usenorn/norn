@@ -7,6 +7,7 @@ export const projectsPreviewStates: Record<string, ProjectsPreview> = import.met
 			loading: { listing: { kind: "loading" } },
 			unavailable: { listing: { kind: "unavailable" } },
 			empty: { listing: { kind: "empty" } },
+			no_matches: { listing: { kind: "no_matches" } },
 			ready: {
 				listing: {
 					kind: "ready",
