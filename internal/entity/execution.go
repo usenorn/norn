@@ -135,17 +135,21 @@ type Execution struct {
 	RunnerName     string
 	CodebaseID     uuid.UUID
 	CodebaseName   string
-	Attempt        int
-	State          ExecutionState
-	Reason         string
-	QueuedReason   ExecutionQueuedReason
-	Params         ExecutionParams
-	LeaseExpiresAt *time.Time
-	KeepUntil      *time.Time
-	QueuedAt       time.Time
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	UpdatedAt      time.Time
+
+	DescriptionRevisionID uuid.UUID
+
+	RequirementsMoved bool
+	Attempt           int
+	State             ExecutionState
+	Reason            string
+	QueuedReason      ExecutionQueuedReason
+	Params            ExecutionParams
+	LeaseExpiresAt    *time.Time
+	KeepUntil         *time.Time
+	QueuedAt          time.Time
+	StartedAt         *time.Time
+	FinishedAt        *time.Time
+	UpdatedAt         time.Time
 }
 
 type ExecutionPage struct {

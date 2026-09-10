@@ -550,7 +550,7 @@ func TestOnlyTheAuthorMayEdit(t *testing.T) {
 
 			if actor.allowed {
 				h.comments.EXPECT().
-					Edit(gomock.Any(), h.commentID, "now with a stack trace", gomock.Any()).
+					Edit(gomock.Any(), h.commentID, "now with a stack trace", gomock.Any(), gomock.Any()).
 					Return(nil)
 			}
 
@@ -827,5 +827,124 @@ func TestReadingCommentsOnAnInvisibleIssueIsRefusedBeforeTheThreadIsTouched(t *t
 		context.Background(), h.workspaceID, h.issueID, service.ListCommentsInput{},
 	); !errors.Is(err, entity.ErrIssueNotFound) {
 		t.Fatalf("reading a private team's conversation returned %v", err)
+	}
+}
+
+func mentioning(accountID uuid.UUID, label string) *entity.Document {
+	document := entity.NewDocument(entity.Node{
+		Type: entity.NodeParagraph,
+		Content: []entity.Node{
+			{Type: entity.NodeText, Text: "any idea about this "},
+			{
+				Type: entity.NodeMention,
+				Attrs: map[string]any{
+					"kind":  string(entity.MentionKindAccount),
+					"id":    accountID.String(),
+					"label": label,
+				},
+			},
+			{Type: entity.NodeText, Text: "?"},
+		},
+	})
+
+	return &document
+}
+
+func TestTheNamesInTheTextAreTheOnesRecordedNotTheOnesSentAlongside(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(h.authorID, entity.MembershipRoleMember)
+	h.seesTheIssue()
+	h.accepts()
+
+	h.comments.EXPECT().
+		Audience(gomock.Any(), h.workspaceID, h.teamID, gomock.Any()).
+		Return([]repository.CommentAudience{
+			{AccountID: h.otherID, Name: "Rae Whitfield", Visible: true},
+		}, nil)
+
+	var recorded []entity.CommentMention
+
+	h.comments.EXPECT().
+		RecordMentions(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, mentions []entity.CommentMention) error {
+			recorded = mentions
+
+			return nil
+		})
+
+	stranger := uuid.New()
+
+	if _, err := h.service.Post(
+		context.Background(), h.workspaceID, h.issueID,
+		service.PostCommentInput{
+			Body:     "any idea about this @Rae Whitfield?",
+			BodyDoc:  mentioning(h.otherID, "Rae Whitfield"),
+			Mentions: []service.CommentMentionInput{{Kind: entity.MentionKindAccount, AccountID: stranger}},
+		},
+	); err != nil {
+		t.Fatalf("Post: %v", err)
+	}
+
+	if len(recorded) != 1 || recorded[0].AccountID != h.otherID {
+		t.Fatalf(
+			"the comment recorded %+v. The text is what a reader sees, so a name sent alongside "+
+				"it must not reach anybody the text does not name.",
+			recorded,
+		)
+	}
+}
+
+func TestEditingANameOutOfACommentTakesTheMentionWithIt(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(h.authorID, entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	held := h.comment()
+	held.Mentions = []entity.CommentMention{{
+		Kind: entity.MentionKindAccount, AccountID: h.otherID, Name: "Rae Whitfield", Visible: true,
+	}}
+
+	h.holds(held)
+
+	h.comments.EXPECT().
+		Edit(gomock.Any(), h.commentID, gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	cleared := false
+
+	h.comments.EXPECT().
+		ClearMentions(gomock.Any(), h.commentID).
+		DoAndReturn(func(context.Context, uuid.UUID) error {
+			cleared = true
+
+			return nil
+		})
+
+	var recorded []entity.CommentMention
+
+	h.comments.EXPECT().
+		RecordMentions(gomock.Any(), h.commentID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, mentions []entity.CommentMention) error {
+			recorded = mentions
+
+			return nil
+		})
+
+	without := entity.DocumentFromMarkdown("never mind, found it")
+
+	if _, err := h.service.Edit(
+		context.Background(), h.workspaceID, h.issueID, h.commentID,
+		service.EditCommentInput{Body: "never mind, found it", BodyDoc: &without},
+	); err != nil {
+		t.Fatalf("Edit: %v", err)
+	}
+
+	if !cleared || len(recorded) != 0 {
+		t.Fatalf(
+			"after the edit the comment still records %+v (cleared: %t). A name taken out of the "+
+				"text has to be taken out of the mentions, or a notification reaches somebody the "+
+				"comment no longer names.",
+			recorded, cleared,
+		)
 	}
 }

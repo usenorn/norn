@@ -2496,6 +2496,178 @@ export interface paths {
         patch: operations["renameWorkspaceLabelGroup"];
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/description/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read what the description said before, newest first */
+        get: operations["listWorkspaceIssueDescriptionRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put back what the description said, as a new revision
+         * @description Restoring writes the old text forward rather than rewinding to it, so what it replaced is kept too and the restore itself can be undone.
+         */
+        post: operations["restoreWorkspaceIssueDescriptionRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issue-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read the issues you have started writing and not raised */
+        get: operations["listWorkspaceIssueDrafts"];
+        /**
+         * Keep what has been written so far
+         * @description Send the draft's own id to keep writing one that exists, and none to start another. A draft belongs to whoever wrote it and is never read by anybody else.
+         */
+        put: operations["saveWorkspaceIssueDraft"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issue-drafts/{draftId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                draftId: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Throw away a draft */
+        delete: operations["deleteWorkspaceIssueDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issue-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read the shapes a team keeps for the issues it raises again and again */
+        get: operations["listWorkspaceIssueTemplates"];
+        /** Keep a template, or change one that exists */
+        put: operations["saveWorkspaceIssueTemplate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issue-templates/{templateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop keeping a template */
+        delete: operations["deleteWorkspaceIssueTemplate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Read the acceptance criteria and what proves each of them */
+        get: operations["listWorkspaceIssueCriteria"];
+        put?: never;
+        /**
+         * File what proves an acceptance criterion
+         * @description Evidence is filed against the words the criterion said at the time. Rewriting the criterion afterwards leaves the evidence marked as answering the older wording.
+         */
+        post: operations["recordWorkspaceIssueEvidence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                evidenceId: components["parameters"]["EvidenceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take back a piece of evidence */
+        delete: operations["deleteWorkspaceIssueEvidence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/status": {
         parameters: {
             query?: never;
@@ -4900,7 +5072,9 @@ export interface components {
             title?: string;
             /** Format: uuid */
             stateId?: string;
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `descriptionDoc` alongside it settles both, and this is then ignored. */
             description?: string;
+            descriptionDoc?: components["schemas"]["Document"];
             priority?: components["schemas"]["IssuePriority"];
             /** Format: uuid */
             assigneeId?: string;
@@ -4924,6 +5098,244 @@ export interface components {
             beforeIssueId?: string;
             /** @description Properties to reset; absent means unchanged, which a nullable field cannot express */
             clear?: ("assignee" | "estimate" | "dueOn" | "cycle" | "project")[];
+        };
+        IssueTemplateList: {
+            templates: components["schemas"]["IssueTemplate"][];
+        };
+        IssueTemplate: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /**
+             * Format: uuid
+             * @description The team that keeps this template; absent means the whole workspace does.
+             */
+            teamId?: string;
+            name: string;
+            /** @description What this template is for, shown beside its name when choosing one. */
+            description?: string;
+            title: string;
+            body: string;
+            bodyDoc?: components["schemas"]["Document"];
+            requiredFields: components["schemas"]["TemplateField"][];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            labelIds?: string[];
+            priority: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: int32 */
+            position: number;
+            /** Format: uuid */
+            createdByAccountId?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @description A property a template insists on before an issue may be raised from it.
+         * @enum {string}
+         */
+        TemplateField: "assignee" | "project" | "cycle" | "estimate" | "dueOn" | "labels" | "priority";
+        SaveIssueTemplateRequest: {
+            /**
+             * Format: uuid
+             * @description The template to change; absent keeps a new one.
+             */
+            templateId?: string;
+            /** Format: uuid */
+            teamId?: string;
+            name: string;
+            description?: string;
+            title?: string;
+            body?: string;
+            bodyDoc?: components["schemas"]["Document"];
+            requiredFields?: components["schemas"]["TemplateField"][];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            labelIds?: string[];
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: int32 */
+            position?: number;
+        };
+        IssueDraftList: {
+            drafts: components["schemas"]["IssueDraft"][];
+        };
+        IssueDraft: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            workspaceId: string;
+            /** Format: uuid */
+            teamId?: string;
+            title: string;
+            description: string;
+            descriptionDoc?: components["schemas"]["Document"];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            /** Format: uuid */
+            parentIssueId?: string;
+            labelIds?: string[];
+            attachmentIds?: string[];
+            priority: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        SaveIssueDraftRequest: {
+            /**
+             * Format: uuid
+             * @description The draft to keep writing; absent starts another.
+             */
+            draftId?: string;
+            /** Format: uuid */
+            teamId?: string;
+            title?: string;
+            description?: string;
+            descriptionDoc?: components["schemas"]["Document"];
+            /** Format: uuid */
+            stateId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            cycleId?: string;
+            /** Format: uuid */
+            assigneeId?: string;
+            /** Format: uuid */
+            parentIssueId?: string;
+            labelIds?: string[];
+            attachmentIds?: string[];
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+        };
+        AcceptanceCriterionList: {
+            criteria: components["schemas"]["AcceptanceCriterion"][];
+        };
+        AcceptanceCriterion: {
+            /** @description The identifier the checklist item carries in the description. */
+            id: string;
+            text: string;
+            checked: boolean;
+            /** @description Whether any evidence answers the criterion as it reads now. */
+            proven: boolean;
+            evidence: components["schemas"]["CriterionEvidence"][];
+        };
+        CriterionEvidence: {
+            /** Format: uuid */
+            id: string;
+            criterionId: string;
+            kind: components["schemas"]["EvidenceKind"];
+            label: string;
+            url?: string;
+            /** Format: uuid */
+            attachmentId?: string;
+            /** @description Whether the criterion has been rewritten since this was filed, so it answers wording that no longer stands. */
+            stale: boolean;
+            /** @description What the criterion said when this evidence was filed. */
+            criterionText?: string;
+            /** Format: uuid */
+            recordedByAccountId?: string;
+            recordedByName?: string;
+            /** Format: date-time */
+            recordedAt: string;
+        };
+        /**
+         * @description What kind of proof this is.
+         * @enum {string}
+         */
+        EvidenceKind: "test" | "screenshot" | "pull_request" | "person";
+        RecordEvidenceRequest: {
+            criterionId: string;
+            kind: components["schemas"]["EvidenceKind"];
+            label: string;
+            /** @description Required for every kind but a person, who is named in the label. */
+            url?: string;
+            /** Format: uuid */
+            attachmentId?: string;
+        };
+        DescriptionRevisionList: {
+            revisions: components["schemas"]["DescriptionRevision"][];
+        };
+        DescriptionRevision: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            issueId: string;
+            /**
+             * Format: int32
+             * @description The version of the issue this text was written as.
+             */
+            issueVersion: number;
+            markdown: string;
+            doc?: components["schemas"]["Document"];
+            /** Format: uuid */
+            authorAccountId?: string;
+            authorName?: string;
+            source: components["schemas"]["DescriptionRevisionSource"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @description Who wrote this text. It names the actor rather than the person who allowed it: a description an agent wrote and somebody approved is still the agent's writing.
+         * @enum {string}
+         */
+        DescriptionRevisionSource: "person" | "agent" | "import" | "intake" | "restore";
+        RestoreDescriptionRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        /** @description The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not. */
+        Document: {
+            /** @enum {string} */
+            type: "doc";
+            content?: components["schemas"]["DocumentNode"][];
+        };
+        DocumentNode: {
+            /**
+             * @description One of the blocks and inline pieces this instance renders. A node of any other kind is refused rather than stored, because storing it would break the issue on opening.
+             * @enum {string}
+             */
+            type: "paragraph" | "heading" | "bulletList" | "orderedList" | "listItem" | "taskList" | "taskItem" | "blockquote" | "horizontalRule" | "codeBlock" | "table" | "tableRow" | "tableHeader" | "tableCell" | "details" | "detailsSummary" | "detailsContent" | "image" | "attachment" | "mention" | "issueRef" | "hardBreak" | "text";
+            /** @description What the node needs beyond its kind — a heading's level, a mention's account, an attachment's file. Read by the node type; unknown keys are kept as sent. */
+            attrs?: {
+                [key: string]: unknown;
+            };
+            content?: components["schemas"]["DocumentNode"][];
+            marks?: components["schemas"]["DocumentMark"][];
+            text?: string;
+        };
+        DocumentMark: {
+            /** @enum {string} */
+            type: "bold" | "italic" | "strike" | "code" | "link";
+            attrs?: {
+                [key: string]: unknown;
+            };
         };
         Attachment: {
             /** Format: uuid */
@@ -5011,7 +5423,9 @@ export interface components {
             authorAccountId?: string;
             authorName?: string;
             authorKind: components["schemas"]["CommentAuthorKind"];
+            /** @description The text as markdown, rendered from `bodyDoc`. */
             body: string;
+            bodyDoc?: components["schemas"]["Document"];
             edited: boolean;
             deleted: boolean;
             /** Format: date-time */
@@ -5051,7 +5465,9 @@ export interface components {
             teamId?: string;
         };
         PostCommentRequest: {
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `bodyDoc` alongside it settles both, and this is then ignored. */
             body: string;
+            bodyDoc?: components["schemas"]["Document"];
             reasoning?: components["schemas"]["AgentReasoning"];
             /** Format: uuid */
             parentCommentId?: string;
@@ -5059,7 +5475,9 @@ export interface components {
             mentions?: components["schemas"]["MentionTarget"][];
         };
         EditCommentRequest: {
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `bodyDoc` alongside it settles both, and this is then ignored. */
             body: string;
+            bodyDoc?: components["schemas"]["Document"];
         };
         PostedComment: {
             comment: components["schemas"]["IssueComment"];
@@ -5283,6 +5701,13 @@ export interface components {
             codebaseId?: string;
             /** @description The folder the run was taken from, named for the same reason */
             codebaseName?: string;
+            /**
+             * Format: uuid
+             * @description The version of the description this run was handed. What it built is judged against this text rather than against whatever the description says now.
+             */
+            descriptionRevisionId?: string;
+            /** @description Whether the description has been written since this run was given it. A run judged against text it never saw is judged against somebody's later mind. */
+            requirementsMoved?: boolean;
             attempt: number;
             state: components["schemas"]["ExecutionState"];
             reason?: string;
@@ -6099,7 +6524,9 @@ export interface components {
             referenceKey: string;
             /** Format: int32 */
             version: number;
+            /** @description The text as markdown, rendered from `descriptionDoc`. */
             description: string;
+            descriptionDoc?: components["schemas"]["Document"];
             priority: components["schemas"]["IssuePriority"];
             /** Format: uuid */
             assigneeAccountId?: string;
@@ -6353,7 +6780,9 @@ export interface components {
             /** Format: uuid */
             teamId: string;
             title: string;
+            /** @description The text as markdown. Send this only when the text was not written in an editor; sending `descriptionDoc` alongside it settles both, and this is then ignored. */
             description?: string;
+            descriptionDoc?: components["schemas"]["Document"];
             priority?: components["schemas"]["IssuePriority"];
             /** Format: uuid */
             assigneeId?: string;
@@ -6374,6 +6803,13 @@ export interface components {
              */
             cycleId?: string;
             labelIds?: string[];
+            /**
+             * Format: uuid
+             * @description A template on this team, or on the workspace. It fills in what this request does not send; anything the request does send wins over what the template offers.
+             */
+            templateId?: string;
+            /** @description A value the caller invents for this one issue. Sending the same request again with the same key answers with the issue the first one raised rather than raising a second, so a lost answer can be asked for again safely. */
+            idempotencyKey?: string;
             reasoning?: components["schemas"]["AgentReasoning"];
         };
         /**
@@ -6459,6 +6895,15 @@ export interface components {
         AgentAction: "comment" | "state_change" | "issue_edit" | "issue_create";
         /** @enum {string} */
         AgentProposalStatus: "pending" | "rejected" | "applied" | "failed";
+        ApproveAgentProposalRequest: {
+            /** @description The parts of the change to take. Naming none takes all of it, which is what an approver who did not choose meant. */
+            accept?: components["schemas"]["ChangePart"][];
+        };
+        /**
+         * @description One thing a proposal asks to change, decided on its own.
+         * @enum {string}
+         */
+        ChangePart: "title" | "description" | "state" | "priority" | "assignee" | "estimate" | "dueOn" | "cycle" | "project" | "labels";
         AgentProposal: {
             /** Format: uuid */
             id: string;
@@ -6479,6 +6924,13 @@ export interface components {
             stateId?: string;
             title?: string;
             description?: string;
+            priority?: components["schemas"]["IssuePriority"];
+            /** Format: int32 */
+            estimate?: number;
+            /** Format: date */
+            dueOn?: string;
+            /** @description The parts this proposal asks to empty rather than to set. */
+            cleared?: components["schemas"]["ChangePart"][];
             reasoning?: components["schemas"]["AgentReasoning"];
             /** @description So an approver can open the issue the proposal is about */
             issueReference?: string;
@@ -6487,6 +6939,9 @@ export interface components {
             teamKey?: string;
             /** @description The state a state change would move the issue to */
             stateName?: string;
+            /** @description What this proposal actually asks to change, so an approver is shown the four things it proposes rather than the ten it could have. */
+            parts?: components["schemas"]["ChangePart"][];
+            held?: components["schemas"]["AgentProposalHeld"];
             /** @description Questions the agent asked on this issue that nobody answered, so approving the proposal also ratifies the default it worked on. */
             questions?: components["schemas"]["IssueQuestion"][];
             /** Format: uuid */
@@ -6496,6 +6951,13 @@ export interface components {
             failure?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        /** @description What the issue says now, beside what the proposal would make it say. Approving without this is approving text nobody read. */
+        AgentProposalHeld: {
+            title?: string;
+            description?: string;
+            stateName?: string;
+            priority?: components["schemas"]["IssuePriority"];
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -8366,6 +8828,14 @@ export interface components {
         RunnerId: string;
         ProposalId: string;
         StateId: string;
+        TemplateId: string;
+        /** @description Read the templates this team keeps as well as the workspace's own. */
+        TemplateTeamId: string;
+        DraftId: string;
+        EvidenceId: string;
+        RevisionId: string;
+        /** @description How many revisions to return, newest first. */
+        RevisionLimit: number;
         IssueId: string;
         QuestionId: string;
         CycleId: string;
@@ -11601,7 +12071,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApproveAgentProposalRequest"];
+            };
+        };
         responses: {
             /** @description The settled proposal, applied or carrying why it could not be */
             200: {
@@ -13643,6 +14117,323 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["LabelConflict"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueDescriptionRevisions: {
+        parameters: {
+            query?: {
+                /** @description How many revisions to return, newest first. */
+                limit?: components["parameters"]["RevisionLimit"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the description has said, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DescriptionRevisionList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    restoreWorkspaceIssueDescriptionRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreDescriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description The issue as it now reads */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Issue"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["IssueConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your drafts, most recently written first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDraftList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    saveWorkspaceIssueDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveIssueDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description The draft as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueDraft"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceIssueDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                draftId: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The draft is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueTemplates: {
+        parameters: {
+            query?: {
+                /** @description Read the templates this team keeps as well as the workspace's own. */
+                teamId?: components["parameters"]["TemplateTeamId"];
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The templates on the team, and those the whole workspace keeps */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueTemplateList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    saveWorkspaceIssueTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveIssueTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description The template as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssueTemplate"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceIssueTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                templateId: components["parameters"]["TemplateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The template is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueCriteria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The checklist in the description, with the evidence filed against it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptanceCriterionList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    recordWorkspaceIssueEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordEvidenceRequest"];
+            };
+        };
+        responses: {
+            /** @description The evidence as it was filed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CriterionEvidence"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceIssueEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+                evidenceId: components["parameters"]["EvidenceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The evidence is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

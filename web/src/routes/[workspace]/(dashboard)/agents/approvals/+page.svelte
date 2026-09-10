@@ -12,6 +12,7 @@
 	import { keys } from "$lib/api/keys";
 	import { agentsPath, type ProposalQueue } from "$lib/agents/agents";
 	import ProposalCard from "$lib/agents/proposal-card.svelte";
+	import type { ChangePart } from "$lib/agents/agents";
 	import { approvalsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -38,7 +39,11 @@
 		},
 	}));
 
-	async function decide(proposalId: string, verdict: "approve" | "reject") {
+	async function decide(
+		proposalId: string,
+		verdict: "approve" | "reject",
+		accept?: ChangePart[]
+	) {
 		deciding = proposalId;
 		failed = null;
 
@@ -47,6 +52,7 @@
 				verdict === "approve"
 					? await api.POST("/workspaces/{workspaceId}/agent-proposals/{proposalId}/approve", {
 							params: { path: { workspaceId: workspace.id, proposalId } },
+							body: { accept },
 						})
 					: await api.POST("/workspaces/{workspaceId}/agent-proposals/{proposalId}/reject", {
 							params: { path: { workspaceId: workspace.id, proposalId } },

@@ -57,6 +57,7 @@
 		searchDebounceMs,
 		type Membership,
 	} from "$lib/workspace/members";
+	import TemplateSettings from "$lib/issues/template-settings.svelte";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { teamDetailPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -502,6 +503,14 @@
 						</Button>
 					</div>
 				</section>
+
+				<TemplateSettings
+					workspaceId={data.workspace.id}
+					workspace={data.workspace.slug}
+					teamId={team.id}
+					teamName={team.name}
+					{locked}
+				/>
 
 				<section class="flex flex-col gap-4">
 					<div class="flex flex-col gap-1">

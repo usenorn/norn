@@ -25,149 +25,156 @@ import (
 
 // WorkspaceExecution is an object representing the database table.
 type WorkspaceExecution struct {
-	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID    string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	IssueID        string      `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
-	DelegationID   string      `boil:"delegation_id" json:"delegation_id" toml:"delegation_id" yaml:"delegation_id"`
-	AgentID        string      `boil:"agent_id" json:"agent_id" toml:"agent_id" yaml:"agent_id"`
-	RunnerID       null.String `boil:"runner_id" json:"runner_id,omitempty" toml:"runner_id" yaml:"runner_id,omitempty"`
-	CodebaseID     null.String `boil:"codebase_id" json:"codebase_id,omitempty" toml:"codebase_id" yaml:"codebase_id,omitempty"`
-	Attempt        int         `boil:"attempt" json:"attempt" toml:"attempt" yaml:"attempt"`
-	State          string      `boil:"state" json:"state" toml:"state" yaml:"state"`
-	Reason         string      `boil:"reason" json:"reason" toml:"reason" yaml:"reason"`
-	Params         types.JSON  `boil:"params" json:"params" toml:"params" yaml:"params"`
-	LeaseExpiresAt null.Time   `boil:"lease_expires_at" json:"lease_expires_at,omitempty" toml:"lease_expires_at" yaml:"lease_expires_at,omitempty"`
-	QueuedAt       time.Time   `boil:"queued_at" json:"queued_at" toml:"queued_at" yaml:"queued_at"`
-	StartedAt      null.Time   `boil:"started_at" json:"started_at,omitempty" toml:"started_at" yaml:"started_at,omitempty"`
-	FinishedAt     null.Time   `boil:"finished_at" json:"finished_at,omitempty" toml:"finished_at" yaml:"finished_at,omitempty"`
-	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	QueuedReason   string      `boil:"queued_reason" json:"queued_reason" toml:"queued_reason" yaml:"queued_reason"`
-	KeepUntil      null.Time   `boil:"keep_until" json:"keep_until,omitempty" toml:"keep_until" yaml:"keep_until,omitempty"`
+	ID                    string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID           string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	IssueID               string      `boil:"issue_id" json:"issue_id" toml:"issue_id" yaml:"issue_id"`
+	DelegationID          string      `boil:"delegation_id" json:"delegation_id" toml:"delegation_id" yaml:"delegation_id"`
+	AgentID               string      `boil:"agent_id" json:"agent_id" toml:"agent_id" yaml:"agent_id"`
+	RunnerID              null.String `boil:"runner_id" json:"runner_id,omitempty" toml:"runner_id" yaml:"runner_id,omitempty"`
+	CodebaseID            null.String `boil:"codebase_id" json:"codebase_id,omitempty" toml:"codebase_id" yaml:"codebase_id,omitempty"`
+	Attempt               int         `boil:"attempt" json:"attempt" toml:"attempt" yaml:"attempt"`
+	State                 string      `boil:"state" json:"state" toml:"state" yaml:"state"`
+	Reason                string      `boil:"reason" json:"reason" toml:"reason" yaml:"reason"`
+	Params                types.JSON  `boil:"params" json:"params" toml:"params" yaml:"params"`
+	LeaseExpiresAt        null.Time   `boil:"lease_expires_at" json:"lease_expires_at,omitempty" toml:"lease_expires_at" yaml:"lease_expires_at,omitempty"`
+	QueuedAt              time.Time   `boil:"queued_at" json:"queued_at" toml:"queued_at" yaml:"queued_at"`
+	StartedAt             null.Time   `boil:"started_at" json:"started_at,omitempty" toml:"started_at" yaml:"started_at,omitempty"`
+	FinishedAt            null.Time   `boil:"finished_at" json:"finished_at,omitempty" toml:"finished_at" yaml:"finished_at,omitempty"`
+	UpdatedAt             time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	QueuedReason          string      `boil:"queued_reason" json:"queued_reason" toml:"queued_reason" yaml:"queued_reason"`
+	KeepUntil             null.Time   `boil:"keep_until" json:"keep_until,omitempty" toml:"keep_until" yaml:"keep_until,omitempty"`
+	DescriptionRevisionID null.String `boil:"description_revision_id" json:"description_revision_id,omitempty" toml:"description_revision_id" yaml:"description_revision_id,omitempty"`
 
 	R *workspaceExecutionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceExecutionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceExecutionColumns = struct {
-	ID             string
-	WorkspaceID    string
-	IssueID        string
-	DelegationID   string
-	AgentID        string
-	RunnerID       string
-	CodebaseID     string
-	Attempt        string
-	State          string
-	Reason         string
-	Params         string
-	LeaseExpiresAt string
-	QueuedAt       string
-	StartedAt      string
-	FinishedAt     string
-	UpdatedAt      string
-	QueuedReason   string
-	KeepUntil      string
+	ID                    string
+	WorkspaceID           string
+	IssueID               string
+	DelegationID          string
+	AgentID               string
+	RunnerID              string
+	CodebaseID            string
+	Attempt               string
+	State                 string
+	Reason                string
+	Params                string
+	LeaseExpiresAt        string
+	QueuedAt              string
+	StartedAt             string
+	FinishedAt            string
+	UpdatedAt             string
+	QueuedReason          string
+	KeepUntil             string
+	DescriptionRevisionID string
 }{
-	ID:             "id",
-	WorkspaceID:    "workspace_id",
-	IssueID:        "issue_id",
-	DelegationID:   "delegation_id",
-	AgentID:        "agent_id",
-	RunnerID:       "runner_id",
-	CodebaseID:     "codebase_id",
-	Attempt:        "attempt",
-	State:          "state",
-	Reason:         "reason",
-	Params:         "params",
-	LeaseExpiresAt: "lease_expires_at",
-	QueuedAt:       "queued_at",
-	StartedAt:      "started_at",
-	FinishedAt:     "finished_at",
-	UpdatedAt:      "updated_at",
-	QueuedReason:   "queued_reason",
-	KeepUntil:      "keep_until",
+	ID:                    "id",
+	WorkspaceID:           "workspace_id",
+	IssueID:               "issue_id",
+	DelegationID:          "delegation_id",
+	AgentID:               "agent_id",
+	RunnerID:              "runner_id",
+	CodebaseID:            "codebase_id",
+	Attempt:               "attempt",
+	State:                 "state",
+	Reason:                "reason",
+	Params:                "params",
+	LeaseExpiresAt:        "lease_expires_at",
+	QueuedAt:              "queued_at",
+	StartedAt:             "started_at",
+	FinishedAt:            "finished_at",
+	UpdatedAt:             "updated_at",
+	QueuedReason:          "queued_reason",
+	KeepUntil:             "keep_until",
+	DescriptionRevisionID: "description_revision_id",
 }
 
 var WorkspaceExecutionTableColumns = struct {
-	ID             string
-	WorkspaceID    string
-	IssueID        string
-	DelegationID   string
-	AgentID        string
-	RunnerID       string
-	CodebaseID     string
-	Attempt        string
-	State          string
-	Reason         string
-	Params         string
-	LeaseExpiresAt string
-	QueuedAt       string
-	StartedAt      string
-	FinishedAt     string
-	UpdatedAt      string
-	QueuedReason   string
-	KeepUntil      string
+	ID                    string
+	WorkspaceID           string
+	IssueID               string
+	DelegationID          string
+	AgentID               string
+	RunnerID              string
+	CodebaseID            string
+	Attempt               string
+	State                 string
+	Reason                string
+	Params                string
+	LeaseExpiresAt        string
+	QueuedAt              string
+	StartedAt             string
+	FinishedAt            string
+	UpdatedAt             string
+	QueuedReason          string
+	KeepUntil             string
+	DescriptionRevisionID string
 }{
-	ID:             "workspace_executions.id",
-	WorkspaceID:    "workspace_executions.workspace_id",
-	IssueID:        "workspace_executions.issue_id",
-	DelegationID:   "workspace_executions.delegation_id",
-	AgentID:        "workspace_executions.agent_id",
-	RunnerID:       "workspace_executions.runner_id",
-	CodebaseID:     "workspace_executions.codebase_id",
-	Attempt:        "workspace_executions.attempt",
-	State:          "workspace_executions.state",
-	Reason:         "workspace_executions.reason",
-	Params:         "workspace_executions.params",
-	LeaseExpiresAt: "workspace_executions.lease_expires_at",
-	QueuedAt:       "workspace_executions.queued_at",
-	StartedAt:      "workspace_executions.started_at",
-	FinishedAt:     "workspace_executions.finished_at",
-	UpdatedAt:      "workspace_executions.updated_at",
-	QueuedReason:   "workspace_executions.queued_reason",
-	KeepUntil:      "workspace_executions.keep_until",
+	ID:                    "workspace_executions.id",
+	WorkspaceID:           "workspace_executions.workspace_id",
+	IssueID:               "workspace_executions.issue_id",
+	DelegationID:          "workspace_executions.delegation_id",
+	AgentID:               "workspace_executions.agent_id",
+	RunnerID:              "workspace_executions.runner_id",
+	CodebaseID:            "workspace_executions.codebase_id",
+	Attempt:               "workspace_executions.attempt",
+	State:                 "workspace_executions.state",
+	Reason:                "workspace_executions.reason",
+	Params:                "workspace_executions.params",
+	LeaseExpiresAt:        "workspace_executions.lease_expires_at",
+	QueuedAt:              "workspace_executions.queued_at",
+	StartedAt:             "workspace_executions.started_at",
+	FinishedAt:            "workspace_executions.finished_at",
+	UpdatedAt:             "workspace_executions.updated_at",
+	QueuedReason:          "workspace_executions.queued_reason",
+	KeepUntil:             "workspace_executions.keep_until",
+	DescriptionRevisionID: "workspace_executions.description_revision_id",
 }
 
 // Generated where
 
 var WorkspaceExecutionWhere = struct {
-	ID             whereHelperstring
-	WorkspaceID    whereHelperstring
-	IssueID        whereHelperstring
-	DelegationID   whereHelperstring
-	AgentID        whereHelperstring
-	RunnerID       whereHelpernull_String
-	CodebaseID     whereHelpernull_String
-	Attempt        whereHelperint
-	State          whereHelperstring
-	Reason         whereHelperstring
-	Params         whereHelpertypes_JSON
-	LeaseExpiresAt whereHelpernull_Time
-	QueuedAt       whereHelpertime_Time
-	StartedAt      whereHelpernull_Time
-	FinishedAt     whereHelpernull_Time
-	UpdatedAt      whereHelpertime_Time
-	QueuedReason   whereHelperstring
-	KeepUntil      whereHelpernull_Time
+	ID                    whereHelperstring
+	WorkspaceID           whereHelperstring
+	IssueID               whereHelperstring
+	DelegationID          whereHelperstring
+	AgentID               whereHelperstring
+	RunnerID              whereHelpernull_String
+	CodebaseID            whereHelpernull_String
+	Attempt               whereHelperint
+	State                 whereHelperstring
+	Reason                whereHelperstring
+	Params                whereHelpertypes_JSON
+	LeaseExpiresAt        whereHelpernull_Time
+	QueuedAt              whereHelpertime_Time
+	StartedAt             whereHelpernull_Time
+	FinishedAt            whereHelpernull_Time
+	UpdatedAt             whereHelpertime_Time
+	QueuedReason          whereHelperstring
+	KeepUntil             whereHelpernull_Time
+	DescriptionRevisionID whereHelpernull_String
 }{
-	ID:             whereHelperstring{field: "\"workspace_executions\".\"id\""},
-	WorkspaceID:    whereHelperstring{field: "\"workspace_executions\".\"workspace_id\""},
-	IssueID:        whereHelperstring{field: "\"workspace_executions\".\"issue_id\""},
-	DelegationID:   whereHelperstring{field: "\"workspace_executions\".\"delegation_id\""},
-	AgentID:        whereHelperstring{field: "\"workspace_executions\".\"agent_id\""},
-	RunnerID:       whereHelpernull_String{field: "\"workspace_executions\".\"runner_id\""},
-	CodebaseID:     whereHelpernull_String{field: "\"workspace_executions\".\"codebase_id\""},
-	Attempt:        whereHelperint{field: "\"workspace_executions\".\"attempt\""},
-	State:          whereHelperstring{field: "\"workspace_executions\".\"state\""},
-	Reason:         whereHelperstring{field: "\"workspace_executions\".\"reason\""},
-	Params:         whereHelpertypes_JSON{field: "\"workspace_executions\".\"params\""},
-	LeaseExpiresAt: whereHelpernull_Time{field: "\"workspace_executions\".\"lease_expires_at\""},
-	QueuedAt:       whereHelpertime_Time{field: "\"workspace_executions\".\"queued_at\""},
-	StartedAt:      whereHelpernull_Time{field: "\"workspace_executions\".\"started_at\""},
-	FinishedAt:     whereHelpernull_Time{field: "\"workspace_executions\".\"finished_at\""},
-	UpdatedAt:      whereHelpertime_Time{field: "\"workspace_executions\".\"updated_at\""},
-	QueuedReason:   whereHelperstring{field: "\"workspace_executions\".\"queued_reason\""},
-	KeepUntil:      whereHelpernull_Time{field: "\"workspace_executions\".\"keep_until\""},
+	ID:                    whereHelperstring{field: "\"workspace_executions\".\"id\""},
+	WorkspaceID:           whereHelperstring{field: "\"workspace_executions\".\"workspace_id\""},
+	IssueID:               whereHelperstring{field: "\"workspace_executions\".\"issue_id\""},
+	DelegationID:          whereHelperstring{field: "\"workspace_executions\".\"delegation_id\""},
+	AgentID:               whereHelperstring{field: "\"workspace_executions\".\"agent_id\""},
+	RunnerID:              whereHelpernull_String{field: "\"workspace_executions\".\"runner_id\""},
+	CodebaseID:            whereHelpernull_String{field: "\"workspace_executions\".\"codebase_id\""},
+	Attempt:               whereHelperint{field: "\"workspace_executions\".\"attempt\""},
+	State:                 whereHelperstring{field: "\"workspace_executions\".\"state\""},
+	Reason:                whereHelperstring{field: "\"workspace_executions\".\"reason\""},
+	Params:                whereHelpertypes_JSON{field: "\"workspace_executions\".\"params\""},
+	LeaseExpiresAt:        whereHelpernull_Time{field: "\"workspace_executions\".\"lease_expires_at\""},
+	QueuedAt:              whereHelpertime_Time{field: "\"workspace_executions\".\"queued_at\""},
+	StartedAt:             whereHelpernull_Time{field: "\"workspace_executions\".\"started_at\""},
+	FinishedAt:            whereHelpernull_Time{field: "\"workspace_executions\".\"finished_at\""},
+	UpdatedAt:             whereHelpertime_Time{field: "\"workspace_executions\".\"updated_at\""},
+	QueuedReason:          whereHelperstring{field: "\"workspace_executions\".\"queued_reason\""},
+	KeepUntil:             whereHelpernull_Time{field: "\"workspace_executions\".\"keep_until\""},
+	DescriptionRevisionID: whereHelpernull_String{field: "\"workspace_executions\".\"description_revision_id\""},
 }
 
 // WorkspaceExecutionRels is where relationship names are stored.
@@ -175,6 +182,7 @@ var WorkspaceExecutionRels = struct {
 	Agent                                   string
 	Codebase                                string
 	Delegation                              string
+	DescriptionRevision                     string
 	Runner                                  string
 	Workspace                               string
 	ExecutionWorkspaceExecutionResult       string
@@ -191,6 +199,7 @@ var WorkspaceExecutionRels = struct {
 	Agent:                                   "Agent",
 	Codebase:                                "Codebase",
 	Delegation:                              "Delegation",
+	DescriptionRevision:                     "DescriptionRevision",
 	Runner:                                  "Runner",
 	Workspace:                               "Workspace",
 	ExecutionWorkspaceExecutionResult:       "ExecutionWorkspaceExecutionResult",
@@ -210,6 +219,7 @@ type workspaceExecutionR struct {
 	Agent                                   *WorkspaceAgent                    `boil:"Agent" json:"Agent" toml:"Agent" yaml:"Agent"`
 	Codebase                                *WorkspaceCodebasis                `boil:"Codebase" json:"Codebase" toml:"Codebase" yaml:"Codebase"`
 	Delegation                              *WorkspaceIssueDelegation          `boil:"Delegation" json:"Delegation" toml:"Delegation" yaml:"Delegation"`
+	DescriptionRevision                     *WorkspaceIssueDescriptionRevision `boil:"DescriptionRevision" json:"DescriptionRevision" toml:"DescriptionRevision" yaml:"DescriptionRevision"`
 	Runner                                  *WorkspaceRunner                   `boil:"Runner" json:"Runner" toml:"Runner" yaml:"Runner"`
 	Workspace                               *Workspace                         `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 	ExecutionWorkspaceExecutionResult       *WorkspaceExecutionResult          `boil:"ExecutionWorkspaceExecutionResult" json:"ExecutionWorkspaceExecutionResult" toml:"ExecutionWorkspaceExecutionResult" yaml:"ExecutionWorkspaceExecutionResult"`
@@ -275,6 +285,22 @@ func (r *workspaceExecutionR) GetDelegation() *WorkspaceIssueDelegation {
 	}
 
 	return r.Delegation
+}
+
+func (o *WorkspaceExecution) GetDescriptionRevision() *WorkspaceIssueDescriptionRevision {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetDescriptionRevision()
+}
+
+func (r *workspaceExecutionR) GetDescriptionRevision() *WorkspaceIssueDescriptionRevision {
+	if r == nil {
+		return nil
+	}
+
+	return r.DescriptionRevision
 }
 
 func (o *WorkspaceExecution) GetRunner() *WorkspaceRunner {
@@ -473,9 +499,9 @@ func (r *workspaceExecutionR) GetExecutionWorkspaceIssueQuestions() WorkspaceIss
 type workspaceExecutionL struct{}
 
 var (
-	workspaceExecutionAllColumns            = []string{"id", "workspace_id", "issue_id", "delegation_id", "agent_id", "runner_id", "codebase_id", "attempt", "state", "reason", "params", "lease_expires_at", "queued_at", "started_at", "finished_at", "updated_at", "queued_reason", "keep_until"}
+	workspaceExecutionAllColumns            = []string{"id", "workspace_id", "issue_id", "delegation_id", "agent_id", "runner_id", "codebase_id", "attempt", "state", "reason", "params", "lease_expires_at", "queued_at", "started_at", "finished_at", "updated_at", "queued_reason", "keep_until", "description_revision_id"}
 	workspaceExecutionColumnsWithoutDefault = []string{"id", "workspace_id", "issue_id", "delegation_id", "agent_id", "attempt"}
-	workspaceExecutionColumnsWithDefault    = []string{"runner_id", "codebase_id", "state", "reason", "params", "lease_expires_at", "queued_at", "started_at", "finished_at", "updated_at", "queued_reason", "keep_until"}
+	workspaceExecutionColumnsWithDefault    = []string{"runner_id", "codebase_id", "state", "reason", "params", "lease_expires_at", "queued_at", "started_at", "finished_at", "updated_at", "queued_reason", "keep_until", "description_revision_id"}
 	workspaceExecutionPrimaryKeyColumns     = []string{"id"}
 	workspaceExecutionGeneratedColumns      = []string{}
 )
@@ -816,6 +842,17 @@ func (o *WorkspaceExecution) Delegation(mods ...qm.QueryMod) workspaceIssueDeleg
 	queryMods = append(queryMods, mods...)
 
 	return WorkspaceIssueDelegations(queryMods...)
+}
+
+// DescriptionRevision pointed to by the foreign key.
+func (o *WorkspaceExecution) DescriptionRevision(mods ...qm.QueryMod) workspaceIssueDescriptionRevisionQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.DescriptionRevisionID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceIssueDescriptionRevisions(queryMods...)
 }
 
 // Runner pointed to by the foreign key.
@@ -1333,6 +1370,130 @@ func (workspaceExecutionL) LoadDelegation(ctx context.Context, e boil.ContextExe
 					foreign.R = &workspaceIssueDelegationR{}
 				}
 				foreign.R.DelegationWorkspaceExecutions = append(foreign.R.DelegationWorkspaceExecutions, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadDescriptionRevision allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceExecutionL) LoadDescriptionRevision(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceExecution any, mods queries.Applicator) error {
+	var slice []*WorkspaceExecution
+	var object *WorkspaceExecution
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceExecution.(*WorkspaceExecution)
+		if !ok {
+			object = new(WorkspaceExecution)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceExecution)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceExecution))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceExecution.(*[]*WorkspaceExecution)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceExecution)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceExecution))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceExecutionR{}
+		}
+		if !queries.IsNil(object.DescriptionRevisionID) {
+			args[object.DescriptionRevisionID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceExecutionR{}
+			}
+
+			if !queries.IsNil(obj.DescriptionRevisionID) {
+				args[obj.DescriptionRevisionID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_description_revisions`),
+		qm.WhereIn(`workspace_issue_description_revisions.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceIssueDescriptionRevision")
+	}
+
+	var resultSlice []*WorkspaceIssueDescriptionRevision
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceIssueDescriptionRevision")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_issue_description_revisions")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_description_revisions")
+	}
+
+	if len(workspaceIssueDescriptionRevisionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.DescriptionRevision = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceIssueDescriptionRevisionR{}
+		}
+		foreign.R.DescriptionRevisionWorkspaceExecutions = append(foreign.R.DescriptionRevisionWorkspaceExecutions, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.DescriptionRevisionID, foreign.ID) {
+				local.R.DescriptionRevision = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueDescriptionRevisionR{}
+				}
+				foreign.R.DescriptionRevisionWorkspaceExecutions = append(foreign.R.DescriptionRevisionWorkspaceExecutions, local)
 				break
 			}
 		}
@@ -2890,6 +3051,86 @@ func (o *WorkspaceExecution) SetDelegation(ctx context.Context, exec boil.Contex
 		related.R.DelegationWorkspaceExecutions = append(related.R.DelegationWorkspaceExecutions, o)
 	}
 
+	return nil
+}
+
+// SetDescriptionRevision of the workspaceExecution to the related item.
+// Sets o.R.DescriptionRevision to related.
+// Adds o to related.R.DescriptionRevisionWorkspaceExecutions.
+func (o *WorkspaceExecution) SetDescriptionRevision(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceIssueDescriptionRevision) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_executions\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"description_revision_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceExecutionPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.DescriptionRevisionID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceExecutionR{
+			DescriptionRevision: related,
+		}
+	} else {
+		o.R.DescriptionRevision = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceIssueDescriptionRevisionR{
+			DescriptionRevisionWorkspaceExecutions: WorkspaceExecutionSlice{o},
+		}
+	} else {
+		related.R.DescriptionRevisionWorkspaceExecutions = append(related.R.DescriptionRevisionWorkspaceExecutions, o)
+	}
+
+	return nil
+}
+
+// RemoveDescriptionRevision relationship.
+// Sets o.R.DescriptionRevision to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceExecution) RemoveDescriptionRevision(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceIssueDescriptionRevision) error {
+	var err error
+
+	queries.SetScanner(&o.DescriptionRevisionID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("description_revision_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.DescriptionRevision = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.DescriptionRevisionWorkspaceExecutions {
+		if queries.Equal(o.DescriptionRevisionID, ri.DescriptionRevisionID) {
+			continue
+		}
+
+		ln := len(related.R.DescriptionRevisionWorkspaceExecutions)
+		if ln > 1 && i < ln-1 {
+			related.R.DescriptionRevisionWorkspaceExecutions[i] = related.R.DescriptionRevisionWorkspaceExecutions[ln-1]
+		}
+		related.R.DescriptionRevisionWorkspaceExecutions = related.R.DescriptionRevisionWorkspaceExecutions[:ln-1]
+		break
+	}
 	return nil
 }
 

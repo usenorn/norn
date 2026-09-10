@@ -354,6 +354,7 @@ func issueDTO(issue entity.Issue) api.Issue {
 		Title:          issue.Title,
 		Labels:         labelDTOs(issue.Labels),
 		Description:    issue.Description,
+		DescriptionDoc: documentDTO(issue.DescriptionDoc),
 		Priority:       api.IssuePriority(issue.Priority),
 		Status:         api.IssueStatus(issue.Status),
 		Depth:          &depth,
@@ -1267,6 +1268,7 @@ func commentDTO(comment entity.IssueComment) api.IssueComment {
 		IssueId:    comment.IssueID,
 		AuthorKind: api.CommentAuthorKind(comment.AuthorKind),
 		Body:       comment.Body,
+		BodyDoc:    documentDTO(comment.BodyDoc),
 		Edited:     comment.Edited(),
 		Deleted:    comment.Deleted(),
 		EditedAt:   comment.EditedAt,
@@ -1710,6 +1712,41 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 	dto.Title = proposal.Change.Title
 	dto.Description = proposal.Change.Description
 
+	if proposal.Change.Priority != nil {
+		priority := api.IssuePriority(*proposal.Change.Priority)
+		dto.Priority = &priority
+	}
+
+	if proposal.Change.Estimate != nil {
+		estimate := int32(*proposal.Change.Estimate)
+		dto.Estimate = &estimate
+	}
+
+	if proposal.Change.DueOn != nil {
+		if due, err := time.Parse(time.DateOnly, *proposal.Change.DueOn); err == nil {
+			on := openapi_types.Date{Time: due}
+			dto.DueOn = &on
+		}
+	}
+
+	if len(proposal.Change.Clear) > 0 {
+		cleared := make([]api.ChangePart, 0, len(proposal.Change.Clear))
+		for _, part := range proposal.Change.Clear {
+			cleared = append(cleared, api.ChangePart(part))
+		}
+
+		dto.Cleared = &cleared
+	}
+
+	if asked := proposal.Change.Parts(); len(asked) > 0 {
+		parts := make([]api.ChangePart, 0, len(asked))
+		for _, part := range asked {
+			parts = append(parts, api.ChangePart(part))
+		}
+
+		dto.Parts = &parts
+	}
+
 	dto.Failure = nilIfEmpty(proposal.Failure)
 	dto.Reasoning = agentReasoningDTO(proposal.Reasoning)
 	dto.DecidedAt = proposal.DecidedAt
@@ -1760,6 +1797,20 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 		reference := waiting.Issue.Reference()
 		dto.IssueReference = &reference
 		dto.IssueTitle = &waiting.Issue.Title
+
+		priority := api.IssuePriority(waiting.Issue.Priority)
+
+		held := api.AgentProposalHeld{
+			Title:       nilIfEmpty(waiting.Issue.Title),
+			Description: nilIfEmpty(waiting.Issue.Description),
+			Priority:    &priority,
+		}
+
+		if waiting.Issue.State.Name != "" {
+			held.StateName = &waiting.Issue.State.Name
+		}
+
+		dto.Held = &held
 	}
 
 	if len(waiting.Questions) > 0 {
@@ -2131,6 +2182,7 @@ func nilIfNilID(id uuid.UUID) *uuid.UUID {
 
 func executionDTO(execution entity.Execution) api.Execution {
 	restartable := execution.Restartable()
+	moved := execution.RequirementsMoved
 
 	return api.Execution{
 		Id:             execution.ID,
@@ -2147,6 +2199,10 @@ func executionDTO(execution entity.Execution) api.Execution {
 		RunnerName:     nilIfEmpty(execution.RunnerName),
 		CodebaseId:     nilIfNilID(execution.CodebaseID),
 		CodebaseName:   nilIfEmpty(execution.CodebaseName),
+
+		DescriptionRevisionId: nilIfNilID(execution.DescriptionRevisionID),
+		RequirementsMoved:     &moved,
+
 		Attempt:        execution.Attempt,
 		State:          api.ExecutionState(execution.State),
 		Reason:         nilIfEmpty(execution.Reason),
@@ -2811,4 +2867,313 @@ func cycleReportDTO(report service.CycleReport) api.CycleReport {
 		Stale:    cycleStaleDTOs(report.Stale),
 		Frozen:   report.Frozen,
 	}
+}
+
+func documentDTO(document entity.Document) *api.Document {
+	if document.Type == "" {
+		return nil
+	}
+
+	return &api.Document{
+		Type:    api.DocumentType(document.Type),
+		Content: documentNodeDTOs(document.Content),
+	}
+}
+
+func documentNodeDTOs(nodes []entity.Node) *[]api.DocumentNode {
+	if len(nodes) == 0 {
+		return nil
+	}
+
+	converted := make([]api.DocumentNode, 0, len(nodes))
+
+	for _, node := range nodes {
+		converted = append(converted, api.DocumentNode{
+			Type:    api.DocumentNodeType(node.Type),
+			Attrs:   attrsDTO(node.Attrs),
+			Content: documentNodeDTOs(node.Content),
+			Marks:   documentMarkDTOs(node.Marks),
+			Text:    nilIfEmpty(node.Text),
+		})
+	}
+
+	return &converted
+}
+
+func documentMarkDTOs(marks []entity.Mark) *[]api.DocumentMark {
+	if len(marks) == 0 {
+		return nil
+	}
+
+	converted := make([]api.DocumentMark, 0, len(marks))
+
+	for _, mark := range marks {
+		converted = append(converted, api.DocumentMark{
+			Type:  api.DocumentMarkType(mark.Type),
+			Attrs: attrsDTO(mark.Attrs),
+		})
+	}
+
+	return &converted
+}
+
+func attrsDTO(attrs map[string]any) *map[string]any {
+	if len(attrs) == 0 {
+		return nil
+	}
+
+	return &attrs
+}
+
+func documentOf(document *api.Document) *entity.Document {
+	if document == nil {
+		return nil
+	}
+
+	return &entity.Document{
+		Type:    string(document.Type),
+		Content: documentNodesOf(document.Content),
+	}
+}
+
+func documentNodesOf(nodes *[]api.DocumentNode) []entity.Node {
+	if nodes == nil || len(*nodes) == 0 {
+		return nil
+	}
+
+	converted := make([]entity.Node, 0, len(*nodes))
+
+	for _, node := range *nodes {
+		converted = append(converted, entity.Node{
+			Type:    string(node.Type),
+			Attrs:   attrsOf(node.Attrs),
+			Content: documentNodesOf(node.Content),
+			Marks:   documentMarksOf(node.Marks),
+			Text:    textOf(node.Text),
+		})
+	}
+
+	return converted
+}
+
+func documentMarksOf(marks *[]api.DocumentMark) []entity.Mark {
+	if marks == nil || len(*marks) == 0 {
+		return nil
+	}
+
+	converted := make([]entity.Mark, 0, len(*marks))
+
+	for _, mark := range *marks {
+		converted = append(converted, entity.Mark{
+			Type:  string(mark.Type),
+			Attrs: attrsOf(mark.Attrs),
+		})
+	}
+
+	return converted
+}
+
+func attrsOf(attrs *map[string]any) map[string]any {
+	if attrs == nil || len(*attrs) == 0 {
+		return nil
+	}
+
+	return *attrs
+}
+
+func descriptionRevisionDTOs(revisions []entity.IssueDescriptionRevision) []api.DescriptionRevision {
+	converted := make([]api.DescriptionRevision, 0, len(revisions))
+
+	for _, revision := range revisions {
+		dto := api.DescriptionRevision{
+			Id:           revision.ID,
+			IssueId:      revision.IssueID,
+			IssueVersion: int32(revision.IssueVersion),
+			Markdown:     revision.Markdown,
+			Doc:          documentDTO(revision.Doc),
+			AuthorName:   nilIfEmpty(revision.AuthorName),
+			Source:       api.DescriptionRevisionSource(revision.Source),
+			CreatedAt:    revision.CreatedAt,
+		}
+
+		if revision.AuthorAccountID != uuid.Nil {
+			author := revision.AuthorAccountID
+			dto.AuthorAccountId = &author
+		}
+
+		converted = append(converted, dto)
+	}
+
+	return converted
+}
+
+func issueDraftDTOs(drafts []entity.IssueDraft) []api.IssueDraft {
+	converted := make([]api.IssueDraft, 0, len(drafts))
+
+	for _, draft := range drafts {
+		converted = append(converted, issueDraftDTO(draft))
+	}
+
+	return converted
+}
+
+func issueDraftDTO(draft entity.IssueDraft) api.IssueDraft {
+	dto := api.IssueDraft{
+		Id:             draft.ID,
+		WorkspaceId:    draft.WorkspaceID,
+		Title:          draft.Title,
+		Description:    draft.Description,
+		DescriptionDoc: documentDTO(draft.DescriptionDoc),
+		LabelIds:       identifierDTOs(draft.LabelIDs),
+		AttachmentIds:  identifierDTOs(draft.AttachmentIDs),
+		Priority:       api.IssuePriority(draft.Priority),
+		CreatedAt:      draft.CreatedAt,
+		UpdatedAt:      draft.UpdatedAt,
+	}
+
+	for target, held := range map[**uuid.UUID]uuid.UUID{
+		&dto.TeamId:        draft.TeamID,
+		&dto.StateId:       draft.StateID,
+		&dto.ProjectId:     draft.ProjectID,
+		&dto.CycleId:       draft.CycleID,
+		&dto.AssigneeId:    draft.AssigneeAccountID,
+		&dto.ParentIssueId: draft.ParentIssueID,
+	} {
+		if held != uuid.Nil {
+			named := held
+			*target = &named
+		}
+	}
+
+	if draft.Estimate > 0 {
+		estimate := int32(draft.Estimate)
+		dto.Estimate = &estimate
+	}
+
+	if due, err := time.Parse(time.DateOnly, draft.DueOn); err == nil {
+		on := openapi_types.Date{Time: due}
+		dto.DueOn = &on
+	}
+
+	return dto
+}
+
+func identifierDTOs(ids []uuid.UUID) *[]uuid.UUID {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	return &ids
+}
+
+func identifiersOf(ids *[]uuid.UUID) []uuid.UUID {
+	if ids == nil {
+		return nil
+	}
+
+	return *ids
+}
+
+func issueTemplateDTOs(templates []entity.IssueTemplate) []api.IssueTemplate {
+	converted := make([]api.IssueTemplate, 0, len(templates))
+
+	for _, template := range templates {
+		converted = append(converted, issueTemplateDTO(template))
+	}
+
+	return converted
+}
+
+func issueTemplateDTO(template entity.IssueTemplate) api.IssueTemplate {
+	required := make([]api.TemplateField, 0, len(template.RequiredFields))
+	for _, field := range template.RequiredFields {
+		required = append(required, api.TemplateField(field))
+	}
+
+	dto := api.IssueTemplate{
+		Id:             template.ID,
+		WorkspaceId:    template.WorkspaceID,
+		Name:           template.Name,
+		Description:    nilIfEmpty(template.Description),
+		Title:          template.Title,
+		Body:           template.Body,
+		BodyDoc:        documentDTO(template.BodyDoc),
+		RequiredFields: required,
+		LabelIds:       identifierDTOs(template.LabelIDs),
+		Priority:       api.IssuePriority(template.Priority),
+		Position:       int32(template.Position),
+		CreatedAt:      template.CreatedAt,
+		UpdatedAt:      template.UpdatedAt,
+	}
+
+	for target, held := range map[**uuid.UUID]uuid.UUID{
+		&dto.TeamId:             template.TeamID,
+		&dto.StateId:            template.StateID,
+		&dto.ProjectId:          template.ProjectID,
+		&dto.AssigneeId:         template.AssigneeAccountID,
+		&dto.CreatedByAccountId: template.CreatedByAccountID,
+	} {
+		if held != uuid.Nil {
+			named := held
+			*target = &named
+		}
+	}
+
+	if template.Estimate > 0 {
+		estimate := int32(template.Estimate)
+		dto.Estimate = &estimate
+	}
+
+	return dto
+}
+
+func acceptanceCriterionDTOs(criteria []entity.AcceptanceCriterion) []api.AcceptanceCriterion {
+	converted := make([]api.AcceptanceCriterion, 0, len(criteria))
+
+	for _, criterion := range criteria {
+		evidence := make([]api.CriterionEvidence, 0, len(criterion.Evidence))
+
+		for _, held := range criterion.Evidence {
+			evidence = append(evidence, criterionEvidenceDTO(held, criterion.Text))
+		}
+
+		converted = append(converted, api.AcceptanceCriterion{
+			Id:       criterion.ID,
+			Text:     criterion.Text,
+			Checked:  criterion.Checked,
+			Proven:   criterion.Proven(),
+			Evidence: evidence,
+		})
+	}
+
+	return converted
+}
+
+func criterionEvidenceDTO(
+	evidence entity.CriterionEvidence,
+	criterion string,
+) api.CriterionEvidence {
+	dto := api.CriterionEvidence{
+		Id:             evidence.ID,
+		CriterionId:    evidence.CriterionID,
+		Kind:           api.EvidenceKind(evidence.Kind),
+		Label:          evidence.Label,
+		Url:            nilIfEmpty(evidence.URL),
+		Stale:          evidence.Stale(criterion),
+		CriterionText:  nilIfEmpty(evidence.CriterionText),
+		RecordedByName: nilIfEmpty(evidence.RecordedByName),
+		RecordedAt:     evidence.RecordedAt,
+	}
+
+	if evidence.AttachmentID != uuid.Nil {
+		attachment := evidence.AttachmentID
+		dto.AttachmentId = &attachment
+	}
+
+	if evidence.RecordedByAccountID != uuid.Nil {
+		recorder := evidence.RecordedByAccountID
+		dto.RecordedByAccountId = &recorder
+	}
+
+	return dto
 }

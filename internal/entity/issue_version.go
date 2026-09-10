@@ -117,16 +117,19 @@ func attributed(fieldVersions map[string]int, observed int) bool {
 }
 
 type IssueChange struct {
-	Title       *string
-	StateID     *uuid.UUID
-	Description *string
-	Priority    *IssuePriority
-	Assignee    *uuid.UUID
-	Estimate    *int
-	DueOn       *string
-	CycleID     *uuid.UUID
-	ProjectID   *uuid.UUID
-	Rank        *string
+	Title *string
+
+	StateID *uuid.UUID
+
+	Description    *string
+	DescriptionDoc *Document
+	Priority       *IssuePriority
+	Assignee       *uuid.UUID
+	Estimate       *int
+	DueOn          *string
+	CycleID        *uuid.UUID
+	ProjectID      *uuid.UUID
+	Rank           *string
 
 	ClearAssignee bool
 	ClearEstimate bool

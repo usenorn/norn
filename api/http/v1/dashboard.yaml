@@ -2285,6 +2285,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - $ref: '#/components/parameters/ProposalId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApproveAgentProposalRequest' }
       responses:
         '200':
           description: The settled proposal, applied or carrying why it could not be
@@ -3810,6 +3815,227 @@ paths:
         - $ref: '#/components/parameters/GroupId'
       responses:
         '204': { description: The group was removed and its labels released }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/description/revisions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueDescriptionRevisions
+      summary: Read what the description said before, newest first
+      parameters:
+        - $ref: '#/components/parameters/RevisionLimit'
+      responses:
+        '200':
+          description: What the description has said, newest first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DescriptionRevisionList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/RevisionId'
+    post:
+      tags: [issues]
+      operationId: restoreWorkspaceIssueDescriptionRevision
+      summary: Put back what the description said, as a new revision
+      description: >-
+        Restoring writes the old text forward rather than rewinding to it, so what it replaced is
+        kept too and the restore itself can be undone.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RestoreDescriptionRequest' }
+      responses:
+        '200':
+          description: The issue as it now reads
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Issue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/IssueConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issue-drafts:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueDrafts
+      summary: Read the issues you have started writing and not raised
+      responses:
+        '200':
+          description: Your drafts, most recently written first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueDraftList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [issues]
+      operationId: saveWorkspaceIssueDraft
+      summary: Keep what has been written so far
+      description: >-
+        Send the draft's own id to keep writing one that exists, and none to start another. A
+        draft belongs to whoever wrote it and is never read by anybody else.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaveIssueDraftRequest' }
+      responses:
+        '200':
+          description: The draft as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueDraft' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issue-drafts/{draftId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DraftId'
+    delete:
+      tags: [issues]
+      operationId: deleteWorkspaceIssueDraft
+      summary: Throw away a draft
+      responses:
+        '204': { description: The draft is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issue-templates:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueTemplates
+      summary: Read the shapes a team keeps for the issues it raises again and again
+      parameters:
+        - $ref: '#/components/parameters/TemplateTeamId'
+      responses:
+        '200':
+          description: The templates on the team, and those the whole workspace keeps
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueTemplateList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [issues]
+      operationId: saveWorkspaceIssueTemplate
+      summary: Keep a template, or change one that exists
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaveIssueTemplateRequest' }
+      responses:
+        '200':
+          description: The template as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IssueTemplate' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issue-templates/{templateId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/TemplateId'
+    delete:
+      tags: [issues]
+      operationId: deleteWorkspaceIssueTemplate
+      summary: Stop keeping a template
+      responses:
+        '204': { description: The template is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/criteria:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueCriteria
+      summary: Read the acceptance criteria and what proves each of them
+      responses:
+        '200':
+          description: The checklist in the description, with the evidence filed against it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AcceptanceCriterionList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [issues]
+      operationId: recordWorkspaceIssueEvidence
+      summary: File what proves an acceptance criterion
+      description: >-
+        Evidence is filed against the words the criterion said at the time. Rewriting the
+        criterion afterwards leaves the evidence marked as answering the older wording.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordEvidenceRequest' }
+      responses:
+        '201':
+          description: The evidence as it was filed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CriterionEvidence' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+      - $ref: '#/components/parameters/EvidenceId'
+    delete:
+      tags: [issues]
+      operationId: deleteWorkspaceIssueEvidence
+      summary: Take back a piece of evidence
+      responses:
+        '204': { description: The evidence is gone }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -6775,6 +7001,44 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    TemplateId:
+      name: templateId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    TemplateTeamId:
+      name: teamId
+      in: query
+      required: false
+      description: Read the templates this team keeps as well as the workspace's own.
+      schema: { type: string, format: uuid }
+
+    DraftId:
+      name: draftId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    EvidenceId:
+      name: evidenceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    RevisionId:
+      name: revisionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    RevisionLimit:
+      name: limit
+      in: query
+      required: false
+      description: How many revisions to return, newest first.
+      schema: { type: integer, format: int32, minimum: 1, maximum: 100, default: 25 }
+
     IssueId:
       name: issueId
       in: path
@@ -7839,7 +8103,12 @@ components:
         expectedVersion: { type: integer, format: int32 }
         title: { type: string }
         stateId: { type: string, format: uuid }
-        description: { type: string }
+        description:
+          type: string
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `descriptionDoc` alongside it settles both, and this is then ignored.
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         assigneeId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }
@@ -7864,6 +8133,314 @@ components:
           items:
             type: string
             enum: [assignee, estimate, dueOn, cycle, project]
+
+    IssueTemplateList:
+      type: object
+      required: [templates]
+      properties:
+        templates:
+          type: array
+          items: { $ref: '#/components/schemas/IssueTemplate' }
+
+    IssueTemplate:
+      type: object
+      required: [id, workspaceId, name, title, body, requiredFields, priority, position, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        teamId:
+          type: string
+          format: uuid
+          description: The team that keeps this template; absent means the whole workspace does.
+        name: { type: string }
+        description:
+          type: string
+          description: What this template is for, shown beside its name when choosing one.
+        title: { type: string }
+        body: { type: string }
+        bodyDoc: { $ref: '#/components/schemas/Document' }
+        requiredFields:
+          type: array
+          items: { $ref: '#/components/schemas/TemplateField' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        position: { type: integer, format: int32 }
+        createdByAccountId: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TemplateField:
+      type: string
+      description: A property a template insists on before an issue may be raised from it.
+      enum: [assignee, project, cycle, estimate, dueOn, labels, priority]
+
+    SaveIssueTemplateRequest:
+      type: object
+      required: [name]
+      properties:
+        templateId:
+          type: string
+          format: uuid
+          description: The template to change; absent keeps a new one.
+        teamId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 128 }
+        description: { type: string }
+        title: { type: string }
+        body: { type: string }
+        bodyDoc: { $ref: '#/components/schemas/Document' }
+        requiredFields:
+          type: array
+          items: { $ref: '#/components/schemas/TemplateField' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        position: { type: integer, format: int32 }
+
+    IssueDraftList:
+      type: object
+      required: [drafts]
+      properties:
+        drafts:
+          type: array
+          items: { $ref: '#/components/schemas/IssueDraft' }
+
+    IssueDraft:
+      type: object
+      required: [id, workspaceId, title, description, priority, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        workspaceId: { type: string, format: uuid }
+        teamId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        parentIssueId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        attachmentIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SaveIssueDraftRequest:
+      type: object
+      properties:
+        draftId:
+          type: string
+          format: uuid
+          description: The draft to keep writing; absent starts another.
+        teamId: { type: string, format: uuid }
+        title: { type: string, maxLength: 256 }
+        description: { type: string }
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
+        stateId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        cycleId: { type: string, format: uuid }
+        assigneeId: { type: string, format: uuid }
+        parentIssueId: { type: string, format: uuid }
+        labelIds:
+          type: array
+          items: { type: string, format: uuid }
+        attachmentIds:
+          type: array
+          items: { type: string, format: uuid }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+
+    AcceptanceCriterionList:
+      type: object
+      required: [criteria]
+      properties:
+        criteria:
+          type: array
+          items: { $ref: '#/components/schemas/AcceptanceCriterion' }
+
+    AcceptanceCriterion:
+      type: object
+      required: [id, text, checked, proven, evidence]
+      properties:
+        id:
+          type: string
+          description: The identifier the checklist item carries in the description.
+        text: { type: string }
+        checked: { type: boolean }
+        proven:
+          type: boolean
+          description: Whether any evidence answers the criterion as it reads now.
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/CriterionEvidence' }
+
+    CriterionEvidence:
+      type: object
+      required: [id, criterionId, kind, label, stale, recordedAt]
+      properties:
+        id: { type: string, format: uuid }
+        criterionId: { type: string }
+        kind: { $ref: '#/components/schemas/EvidenceKind' }
+        label: { type: string }
+        url: { type: string }
+        attachmentId: { type: string, format: uuid }
+        stale:
+          type: boolean
+          description: >-
+            Whether the criterion has been rewritten since this was filed, so it answers wording
+            that no longer stands.
+        criterionText:
+          type: string
+          description: What the criterion said when this evidence was filed.
+        recordedByAccountId: { type: string, format: uuid }
+        recordedByName: { type: string }
+        recordedAt: { type: string, format: date-time }
+
+    EvidenceKind:
+      type: string
+      description: What kind of proof this is.
+      enum: [test, screenshot, pull_request, person]
+
+    RecordEvidenceRequest:
+      type: object
+      required: [criterionId, kind, label]
+      properties:
+        criterionId: { type: string, maxLength: 64 }
+        kind: { $ref: '#/components/schemas/EvidenceKind' }
+        label: { type: string, minLength: 1, maxLength: 200 }
+        url:
+          type: string
+          maxLength: 2048
+          description: Required for every kind but a person, who is named in the label.
+        attachmentId: { type: string, format: uuid }
+
+    DescriptionRevisionList:
+      type: object
+      required: [revisions]
+      properties:
+        revisions:
+          type: array
+          items: { $ref: '#/components/schemas/DescriptionRevision' }
+
+    DescriptionRevision:
+      type: object
+      required: [id, issueId, issueVersion, markdown, source, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        issueVersion:
+          type: integer
+          format: int32
+          description: The version of the issue this text was written as.
+        markdown: { type: string }
+        doc: { $ref: '#/components/schemas/Document' }
+        authorAccountId: { type: string, format: uuid }
+        authorName: { type: string }
+        source: { $ref: '#/components/schemas/DescriptionRevisionSource' }
+        createdAt: { type: string, format: date-time }
+
+    DescriptionRevisionSource:
+      type: string
+      description: >-
+        Who wrote this text. It names the actor rather than the person who allowed it: a
+        description an agent wrote and somebody approved is still the agent's writing.
+      enum: [person, agent, import, intake, restore]
+
+    RestoreDescriptionRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32 }
+
+    Document:
+      type: object
+      description: >-
+        The authoritative form of a description or a comment body: the same shape the editor
+        holds, so text travels from the caret to storage without being translated on the way.
+        The markdown alongside it is rendered from this and is never read back, so send this
+        whenever the text was written in an editor and send markdown when it was not.
+      required: [type]
+      properties:
+        type: { type: string, enum: [doc] }
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentNode' }
+
+    DocumentNode:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: >-
+            One of the blocks and inline pieces this instance renders. A node of any other kind
+            is refused rather than stored, because storing it would break the issue on opening.
+          enum:
+            - paragraph
+            - heading
+            - bulletList
+            - orderedList
+            - listItem
+            - taskList
+            - taskItem
+            - blockquote
+            - horizontalRule
+            - codeBlock
+            - table
+            - tableRow
+            - tableHeader
+            - tableCell
+            - details
+            - detailsSummary
+            - detailsContent
+            - image
+            - attachment
+            - mention
+            - issueRef
+            - hardBreak
+            - text
+        attrs:
+          type: object
+          additionalProperties: true
+          description: >-
+            What the node needs beyond its kind — a heading's level, a mention's account, an
+            attachment's file. Read by the node type; unknown keys are kept as sent.
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentNode' }
+        marks:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentMark' }
+        text: { type: string }
+
+    DocumentMark:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [bold, italic, strike, code, link]
+        attrs:
+          type: object
+          additionalProperties: true
 
     Attachment:
       type: object
@@ -7972,7 +8549,10 @@ components:
         authorAccountId: { type: string, format: uuid }
         authorName: { type: string }
         authorKind: { $ref: '#/components/schemas/CommentAuthorKind' }
-        body: { type: string }
+        body:
+          type: string
+          description: The text as markdown, rendered from `bodyDoc`.
+        bodyDoc: { $ref: '#/components/schemas/Document' }
         edited: { type: boolean }
         deleted: { type: boolean }
         editedAt: { type: string, format: date-time }
@@ -8031,7 +8611,14 @@ components:
       type: object
       required: [body]
       properties:
-        body: { type: string, minLength: 1, maxLength: 20000 }
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `bodyDoc` alongside it settles both, and this is then ignored.
+        bodyDoc: { $ref: '#/components/schemas/Document' }
         reasoning: { $ref: '#/components/schemas/AgentReasoning' }
         parentCommentId: { type: string, format: uuid }
         attachmentIds:
@@ -8047,7 +8634,14 @@ components:
       type: object
       required: [body]
       properties:
-        body: { type: string, minLength: 1, maxLength: 20000 }
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `bodyDoc` alongside it settles both, and this is then ignored.
+        bodyDoc: { $ref: '#/components/schemas/Document' }
 
     PostedComment:
       type: object
@@ -8388,6 +8982,17 @@ components:
           type: string
           maxLength: 200
           description: The folder the run was taken from, named for the same reason
+        descriptionRevisionId:
+          type: string
+          format: uuid
+          description: >-
+            The version of the description this run was handed. What it built is judged against
+            this text rather than against whatever the description says now.
+        requirementsMoved:
+          type: boolean
+          description: >-
+            Whether the description has been written since this run was given it. A run judged
+            against text it never saw is judged against somebody's later mind.
         attempt: { type: integer, minimum: 1 }
         state: { $ref: '#/components/schemas/ExecutionState' }
         reason: { type: string, maxLength: 4000 }
@@ -9651,7 +10256,10 @@ components:
         teamKey: { type: string }
         referenceKey: { type: string }
         version: { type: integer, format: int32 }
-        description: { type: string }
+        description:
+          type: string
+          description: The text as markdown, rendered from `descriptionDoc`.
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         assigneeAccountId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }
@@ -10045,7 +10653,12 @@ components:
       properties:
         teamId: { type: string, format: uuid }
         title: { type: string }
-        description: { type: string }
+        description:
+          type: string
+          description: >-
+            The text as markdown. Send this only when the text was not written in an editor;
+            sending `descriptionDoc` alongside it settles both, and this is then ignored.
+        descriptionDoc: { $ref: '#/components/schemas/Document' }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         assigneeId: { type: string, format: uuid }
         estimate: { type: integer, format: int32 }
@@ -10062,6 +10675,19 @@ components:
         labelIds:
           type: array
           items: { type: string, format: uuid }
+        templateId:
+          type: string
+          format: uuid
+          description: >-
+            A template on this team, or on the workspace. It fills in what this request does not
+            send; anything the request does send wins over what the template offers.
+        idempotencyKey:
+          type: string
+          maxLength: 128
+          description: >-
+            A value the caller invents for this one issue. Sending the same request again with
+            the same key answers with the issue the first one raised rather than raising a
+            second, so a lost answer can be asked for again safely.
         reasoning: { $ref: '#/components/schemas/AgentReasoning' }
 
     AccountKind:
@@ -10205,6 +10831,21 @@ components:
       type: string
       enum: [pending, rejected, applied, failed]
 
+    ApproveAgentProposalRequest:
+      type: object
+      properties:
+        accept:
+          type: array
+          description: >-
+            The parts of the change to take. Naming none takes all of it, which is what an
+            approver who did not choose meant.
+          items: { $ref: '#/components/schemas/ChangePart' }
+
+    ChangePart:
+      type: string
+      description: One thing a proposal asks to change, decided on its own.
+      enum: [title, description, state, priority, assignee, estimate, dueOn, cycle, project, labels]
+
     AgentProposal:
       type: object
       required: [id, agentId, agentName, teamId, action, status, createdAt]
@@ -10223,6 +10864,13 @@ components:
         stateId: { type: string, format: uuid }
         title: { type: string }
         description: { type: string }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
+        estimate: { type: integer, format: int32 }
+        dueOn: { type: string, format: date }
+        cleared:
+          type: array
+          description: The parts this proposal asks to empty rather than to set.
+          items: { $ref: '#/components/schemas/ChangePart' }
         reasoning: { $ref: '#/components/schemas/AgentReasoning' }
         issueReference:
           type: string
@@ -10234,6 +10882,14 @@ components:
         stateName:
           type: string
           description: The state a state change would move the issue to
+        parts:
+          type: array
+          description: >-
+            What this proposal actually asks to change, so an approver is shown the four things
+            it proposes rather than the ten it could have.
+          items: { $ref: '#/components/schemas/ChangePart' }
+        held:
+          $ref: '#/components/schemas/AgentProposalHeld'
         questions:
           type: array
           description: >-
@@ -10244,6 +10900,17 @@ components:
         decidedAt: { type: string, format: date-time }
         failure: { type: string }
         createdAt: { type: string, format: date-time }
+
+    AgentProposalHeld:
+      type: object
+      description: >-
+        What the issue says now, beside what the proposal would make it say. Approving without
+        this is approving text nobody read.
+      properties:
+        title: { type: string }
+        description: { type: string }
+        stateName: { type: string }
+        priority: { $ref: '#/components/schemas/IssuePriority' }
 
     AgentUnusableProblem:
       allOf:

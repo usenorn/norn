@@ -25,7 +25,7 @@ type Agents interface {
 	Configure(ctx context.Context, input ConfigureAgentInput) (entity.AgentSettings, error)
 
 	Waiting(ctx context.Context, workspaceID uuid.UUID) ([]WaitingProposal, error)
-	Approve(ctx context.Context, workspaceID, proposalID uuid.UUID) (entity.AgentProposal, error)
+	Approve(ctx context.Context, workspaceID, proposalID uuid.UUID, accepted []entity.ChangePart) (entity.AgentProposal, error)
 	Reject(ctx context.Context, workspaceID, proposalID uuid.UUID) (entity.AgentProposal, error)
 }
 

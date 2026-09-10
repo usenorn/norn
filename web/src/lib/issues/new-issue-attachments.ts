@@ -1,5 +1,6 @@
 import { api } from "$lib/api";
-import { attachmentMarkdown, type Attachment } from "$lib/attachments/attachments";
+import { attachmentNode, type Attachment } from "$lib/attachments/attachments";
+import type { Document } from "$lib/editor/document";
 import { newTask, upload, type UploadTask } from "$lib/attachments/upload";
 
 export type PendingFile = {
@@ -20,14 +21,35 @@ export function pendingFrom(files: File[], next: () => string): PendingFile[] {
 	return files.map((file) => ({ key: next(), name: file.name, size: file.size, file }));
 }
 
-export function markdownFor(attached: Attachment[]): string {
-	return attached.map(attachmentMarkdown).join("\n\n");
+export function describedWith(description: Document, attached: Attachment[]): Document {
+	if (attached.length === 0) return description;
+
+	const held = new Set(attachmentsIn(description));
+	const arriving = attached
+		.filter((attachment) => !held.has(attachment.id))
+		.map(attachmentNode);
+
+	if (arriving.length === 0) return description;
+
+	return { type: "doc", content: [...(description.content ?? []), ...arriving] };
 }
 
-export function describedWith(description: string, markdown: string): string {
-	if (!markdown) return description;
+export function attachmentsIn(description: Document): string[] {
+	const found: string[] = [];
 
-	return description.trim() ? `${description.trim()}\n\n${markdown}` : markdown;
+	for (const node of description.content ?? []) {
+		const id = (node.attrs as Record<string, unknown> | undefined)?.attachmentId;
+
+		if (typeof id === "string" && id !== "") found.push(id);
+	}
+
+	return found;
+}
+
+export function describedAll(description: Document, attached: Attachment[]): boolean {
+	const held = new Set(attachmentsIn(description));
+
+	return attached.every((attachment) => held.has(attachment.id));
 }
 
 export function attachFailureMessage(failed: PendingFile[]): string {

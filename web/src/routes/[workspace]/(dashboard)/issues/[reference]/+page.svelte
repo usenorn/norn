@@ -19,6 +19,7 @@
 	import Folder from "@lucide/svelte/icons/folder";
 	import Info from "@lucide/svelte/icons/info";
 	import Link2 from "@lucide/svelte/icons/link-2";
+	import History from "@lucide/svelte/icons/history";
 	import Pencil from "@lucide/svelte/icons/pencil";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Tags from "@lucide/svelte/icons/tags";
@@ -80,10 +81,22 @@
 	import Target from "@lucide/svelte/icons/target";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
-	import DescriptionEditor from "$lib/issues/description-editor.svelte";
+	import Editor from "$lib/editor/editor.svelte";
+	import CriteriaPanel from "$lib/issues/criteria-panel.svelte";
+	import DescriptionHistory from "$lib/issues/description-history.svelte";
+	import { Autosave, saveLine, type SaveOutcome } from "$lib/editor/autosave.svelte";
+	import {
+		asDocument,
+		documentEmpty,
+		documentText,
+		emptyDocument,
+		sameDocument,
+		type Document,
+		type DocumentNode,
+	} from "$lib/editor/document";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import type { CreationOutcome } from "$lib/issues/creating";
-	import type { NewIssueInput } from "$lib/issues/new-issue-schema";
+	import type { NewIssuePrefill } from "$lib/issues/new-issue-schema";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
 	import {
@@ -117,7 +130,7 @@
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import {
-		attachmentMarkdown,
+		attachmentNode,
 		attachmentFailureMessage,
 		readAttachmentFailure,
 		type AttachmentFailure,
@@ -125,12 +138,12 @@
 	} from "$lib/attachments/attachments";
 	import { newTask, settled, upload, type UploadTask } from "$lib/attachments/upload";
 	import {
+		authorLabel,
 		readCommentFailure,
 		type CommentFailure,
 		type CommentMention,
 		type CommentReaction,
 		type CommentThread,
-		type MentionTarget,
 	} from "$lib/comments/comments";
 	import {
 		conflictFailure,
@@ -195,9 +208,52 @@
 	let loadedActivity = $state.raw<ActivityFeed | null>(null);
 	let commentUploads = $state.raw<UploadTask[]>([]);
 	let bodyUploads = $state.raw<UploadTask[]>([]);
-	let descriptionEditor = $state.raw<
-		{ settle: (taskId: string, markdown: string) => boolean; abandon: (taskId: string) => void } | undefined
-	>(undefined);
+
+	let editingVersion = $state(0);
+	let describing = $state.raw<Document>(emptyDocument);
+	let describedBase = $state.raw<Document>(emptyDocument);
+	let describedConflict = $state.raw<{ mine: Document; theirs: Document } | null>(null);
+	let showingHistory = $state(false);
+
+	const describeSaver = new Autosave(() => saveDescribed());
+
+	async function saveDescribed(): Promise<SaveOutcome> {
+		if (!issue || sameDocument(describing, describedBase)) return "saved";
+
+		const writing = describing;
+		const against = editingVersion;
+
+		const saved = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
+			params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
+			body: { expectedVersion: against, descriptionDoc: writing },
+		});
+
+		const error = saved.error;
+
+		if (error) {
+			const read = readIssueFailure(error);
+
+			if (read.kind === "stale") {
+				describedConflict = { mine: writing, theirs: asDocument(issue.descriptionDoc) };
+
+				return "conflict";
+			}
+
+			return read.kind === "unavailable" ? "unknown" : "failed";
+		}
+
+		if (!saved.data || !("version" in saved.data)) return "unknown";
+
+		describedBase = writing;
+		editingVersion = saved.data.version;
+
+		return "saved";
+	}
+	let descriptionEditor = $state.raw<{
+		settle: (taskId: string, content: DocumentNode) => boolean;
+		abandon: (taskId: string) => void;
+		focus: () => void;
+	} | null>(null);
 	let attachmentFailure = $state<AttachmentFailure | null>(null);
 	let codeLinkFailure = $state<SourceControlFailure | null>(null);
 	let removedCodeLinks = $state.raw<string[]>([]);
@@ -246,7 +302,6 @@
 			}
 		});
 	});
-
 
 	async function toggleFollow() {
 		if (!issue) return;
@@ -429,11 +484,14 @@
 		onUpdate: async ({ form: pending }) => {
 			if (!pending.valid || !issue) return;
 
+			describeSaver.stop();
+
 			const clear: string[] = [];
 			const body: Record<string, unknown> = {};
 
 			if (pending.data.title !== issue.title) body.title = pending.data.title;
-			if (pending.data.description !== issue.description) body.description = pending.data.description;
+
+			if (!sameDocument(describing, describedBase)) body.descriptionDoc = describing;
 
 			if (pending.data.estimate === "") {
 				if (issue.estimate) clear.push("estimate");
@@ -455,11 +513,20 @@
 				return;
 			}
 
-			if (await patch(body)) {
+			const written = describing;
+
+			if (await patch(body, editingVersion)) {
+				describedBase = written;
 				editingField = null;
+				describedConflict = null;
+				describeSaver.rest();
 				announce(`Saved ${issue.reference}.`);
 
 				return;
+			}
+
+			if (failure?.kind === "stale" && failure.fields.includes("description")) {
+				describedConflict = { mine: describing, theirs: asDocument(issue.descriptionDoc) };
 			}
 
 			if (failure?.kind === "invalid") {
@@ -567,7 +634,7 @@
 		}
 	}
 
-	async function patch(body: Record<string, unknown>): Promise<boolean> {
+	async function patch(body: Record<string, unknown>, expected?: number): Promise<boolean> {
 		if (!issue) return false;
 
 		working = true;
@@ -577,7 +644,7 @@
 		try {
 			const { error } = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
 				params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-				body: { expectedVersion: issue.version, ...body },
+				body: { expectedVersion: expected ?? issue.version, ...body },
 			});
 
 			if (error) {
@@ -838,61 +905,69 @@
 	}
 
 	async function comment(
-		body: string,
-		mentions: MentionTarget[],
+		body: Document,
 		attachmentIds: string[],
 		parentCommentId?: string
-	): Promise<void> {
-		if (!issue) return;
+	): Promise<boolean> {
+		if (!issue) return false;
 
-		await act(async () => {
+		return filing(async () => {
 			const { data: posted, error } = await api.POST(
 				"/workspaces/{workspaceId}/issues/{issueId}/comments",
 				{
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { body, parentCommentId, mentions, attachmentIds },
+					body: {
+						body: documentText(body),
+						bodyDoc: body,
+						parentCommentId,
+						attachmentIds,
+					},
 				}
 			);
 
 			if (error || !posted) {
 				commentFailure = readCommentFailure(error);
 
-				return;
+				return false;
 			}
 
 			if (!("unreachable" in posted)) {
 				commentFailure = readCommentFailure(undefined);
 
-				return;
+				return false;
 			}
 
 			unreachable = posted.unreachable;
 			loadedComments = null;
 			commentUploads = [];
 			await invalidate(keys.page(page.route.id));
+
+			return true;
 		});
 	}
 
-	async function editComment(commentId: string, body: string): Promise<void> {
-		if (!issue) return;
+	async function editComment(commentId: string, body: Document): Promise<boolean> {
+		if (!issue) return false;
 
-		await act(async () => {
+		return filing(async () => {
 			const { error } = await api.PATCH(
 				"/workspaces/{workspaceId}/issues/{issueId}/comments/{commentId}",
 				{
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id, commentId } },
-					body: { body },
+					body: { body: documentText(body), bodyDoc: body },
 				}
 			);
 
 			if (error) {
 				commentFailure = readCommentFailure(error);
 
-				return;
+				return false;
 			}
 
 			loadedComments = null;
 			await invalidate(keys.page(page.route.id));
+
+			return true;
 		});
 	}
 
@@ -1004,13 +1079,23 @@
 	}
 
 	async function act(run: () => Promise<void>): Promise<void> {
+		await filing(async () => {
+			await run();
+
+			return true;
+		});
+	}
+
+	async function filing(run: () => Promise<boolean>): Promise<boolean> {
 		working = true;
 		commentFailure = null;
 
 		try {
-			await run();
+			return await run();
 		} catch {
 			commentFailure = { kind: "unavailable" };
+
+			return false;
 		} finally {
 			working = false;
 		}
@@ -1070,25 +1155,13 @@
 				if (into === "body" && next.state === "cancelled") descriptionEditor?.abandon(taskId);
 
 				if (next.state === "done" && next.attachment) {
-					if (into === "body") {
-						const markdown = attachmentMarkdown(next.attachment);
-
-						if (!descriptionEditor?.settle(taskId, markdown)) {
-							$formData.description = joined($formData.description, markdown);
-						}
-					}
+					if (into === "body") descriptionEditor?.settle(taskId, attachmentNode(next.attachment));
 
 					void invalidate(keys.page(page.route.id));
 				}
 			},
 			(abort) => aborts.set(taskId, abort)
 		);
-	}
-
-	function joined(body: string, markdown: string): string {
-		if (body.trim() === "") return markdown;
-
-		return body.endsWith("\n") ? body + markdown : `${body}\n${markdown}`;
 	}
 
 	function cancelUpload(taskId: string) {
@@ -1152,7 +1225,7 @@
 	let pickingDue = $state(false);
 	let addingChild = $state(false);
 	let filingUnder = $state.raw<{ id: string; reference: string } | null>(null);
-	let childPrefill = $state<Partial<NewIssueInput> | undefined>(undefined);
+	let childPrefill = $state<NewIssuePrefill | undefined>(undefined);
 	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
 
@@ -1264,7 +1337,29 @@
 	const dirty = $derived(
 		Boolean(issue) &&
 			(($formData.title !== issue?.title && editingField === "title") ||
-				($formData.description !== issue?.description && editingField === "description"))
+				(!sameDocument(describing, describedBase) && editingField === "description"))
+	);
+
+	$effect(() => {
+		const writing = describing;
+
+		if (editingField !== "description" || !issue) return;
+
+		if (sameDocument(writing, describedBase)) return;
+
+		if (describedConflict) return;
+
+		describeSaver.schedule();
+	});
+
+	$effect(() => {
+		if (editingField === "description") return;
+
+		describeSaver.stop();
+	});
+
+	const unsaved = $derived(
+		Boolean(issue) && editingField !== "description" && !sameDocument(describing, describedBase)
 	);
 
 	const watchers = $derived(
@@ -1330,10 +1425,15 @@
 	function startEditing(field: "title" | "description") {
 		if (!canEdit || !issue) return;
 
-		formData.update(
-			(current) => ({ ...current, title: issue.title, description: issue.description }),
-			{ taint: false }
-		);
+		formData.update((current) => ({ ...current, title: issue.title }), { taint: false });
+
+		if (!unsaved) {
+			describedBase = asDocument(issue.descriptionDoc);
+			describing = describedBase;
+			editingVersion = issue.version;
+			describedConflict = null;
+		}
+
 		editingField = field;
 	}
 
@@ -1346,15 +1446,142 @@
 		editedField.setSelectionRange(editedField.value.length, editedField.value.length);
 	});
 
+	function stopEditing() {
+		editingField = null;
+		failure = null;
+
+		if (!sameDocument(describing, describedBase) && !describedConflict) {
+			void describeSaver.flush();
+		}
+	}
+
+	function breakOut(selected: string) {
+		if (!issue) return;
+
+		const said = selected.trim();
+
+		childPrefill = {
+			teamId: issue.teamId,
+			projectId: issue.projectId ?? "",
+			title: said,
+			description: {
+				type: "doc",
+				content: [
+					{
+						type: "paragraph",
+						content: [
+							{ type: "text", text: "Broken out of " },
+							{
+								type: "issueRef",
+								attrs: {
+									issueId: issue.id,
+									reference: issue.reference,
+									title: issue.title,
+									href: at(`/issues/${issue.reference}`),
+								},
+							},
+							{ type: "text", text: "." },
+						],
+					},
+				],
+			},
+		};
+
+		filingUnder = { id: issue.id, reference: issue.reference };
+		addingChild = true;
+	}
+
+	function promote(comment: IssueComment, into: "issue" | "description") {
+		if (!issue) return;
+
+		const said = asDocument(comment.bodyDoc);
+		const source: Document = {
+			type: "doc",
+			content: [
+				...(said.content ?? []),
+				{
+					type: "paragraph",
+					content: [
+						{ type: "text", text: "Said by " },
+						{ type: "text", text: authorLabel(comment) },
+						{ type: "text", text: " in " },
+						{
+							type: "text",
+							text: "the conversation",
+							marks: [
+								{
+									type: "link",
+									attrs: { href: `${at(`/issues/${issue.reference}`)}#comment-${comment.id}` },
+								},
+							],
+						},
+						{ type: "text", text: "." },
+					],
+				},
+			],
+		};
+
+		if (into === "issue") {
+			childPrefill = {
+				teamId: issue.teamId,
+				projectId: issue.projectId ?? "",
+				title: documentText(said).slice(0, 200),
+				description: source,
+			};
+
+			filingUnder = { id: issue.id, reference: issue.reference };
+			addingChild = true;
+
+			return;
+		}
+
+		startEditing("description");
+
+		describing = {
+			type: "doc",
+			content: [...(describing.content ?? []), ...(source.content ?? [])],
+		};
+	}
+
+	function resumeEditing() {
+		if (!canEdit) return;
+
+		editingField = "description";
+	}
+
 	function discard() {
 		if (!issue) return;
 
-		formData.update(
-			(current) => ({ ...current, title: issue.title, description: issue.description }),
-			{ taint: false }
-		);
+		formData.update((current) => ({ ...current, title: issue.title }), { taint: false });
+
+		describing = asDocument(issue.descriptionDoc);
+		describedBase = describing;
+		describedConflict = null;
 		editingField = null;
 		failure = null;
+		describeSaver.rest();
+	}
+
+	function keepMine() {
+		if (!issue) return;
+
+		describedBase = asDocument(issue.descriptionDoc);
+		editingVersion = issue.version;
+		describedConflict = null;
+		failure = null;
+		describeSaver.rest();
+		(document.getElementById("issue-edit-form") as HTMLFormElement | null)?.requestSubmit();
+	}
+
+	function takeTheirs() {
+		if (!issue) return;
+
+		describing = asDocument(issue.descriptionDoc);
+		describedBase = describing;
+		editingVersion = issue.version;
+		describedConflict = null;
+		failure = null;
+		describeSaver.rest();
 	}
 
 	async function reopen() {
@@ -1394,13 +1621,13 @@
 	}
 
 	function onPointerDown(event: PointerEvent) {
-		if (editingField !== "description" || dirty) return;
+		if (editingField !== "description") return;
 
 		const target = event.target as HTMLElement | null;
 
 		if (target?.closest("[data-editing-region]")) return;
 
-		editingField = null;
+		stopEditing();
 	}
 
 	const shortcuts = useShortcuts();
@@ -1427,7 +1654,7 @@
 		if (event.key === "Escape") {
 			if (editingField) {
 				event.preventDefault();
-				discard();
+				stopEditing();
 			}
 
 			return;
@@ -1437,7 +1664,6 @@
 </script>
 
 <svelte:window onkeydown={onKey} onpointerdown={onPointerDown} />
-
 
 <svelte:head>
 	<title>{issue ? `${issue.reference} · ${issue.title}` : "Issue"} · Norn</title>
@@ -1877,6 +2103,12 @@
 								<h2 class="min-w-0 flex-1">
 									<Eyebrow rule class="text-ink-600">Description</Eyebrow>
 								</h2>
+								{#if editingField !== "description"}
+									<Button variant="ghost" size="sm" onclick={() => (showingHistory = true)}>
+										<History aria-hidden="true" />
+										History
+									</Button>
+								{/if}
 								{#if canEdit && editingField !== "description"}
 									<Button variant="ghost" size="sm" onclick={() => startEditing("description")}>
 										<Pencil aria-hidden="true" />
@@ -1892,19 +2124,28 @@
 											{#snippet children({ props })}
 												<Form.Label class="sr-only">Description</Form.Label>
 												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5">
-													<DescriptionEditor
+													<Editor
 														{...props}
 														bind:this={descriptionEditor}
-														bind:value={$formData.description}
+														bind:document={describing}
 														workspaceId={data.workspace.id}
 														workspace={data.workspace.slug}
-														members={ready?.members ?? []}
-														teams={data.teams ?? []}
 														disabled={$submitting}
 														autofocus
 														onfiles={(files) => begin("body", files)}
+														onmetaenter={() => {
+															(
+																window.document.getElementById(
+																	"issue-edit-form"
+																) as HTMLFormElement | null
+															)?.requestSubmit();
+
+															return true;
+														}}
+														onsubissue={breakOut}
 														placeholder="Describe the issue…"
-														class="min-h-47"
+														minHeight="min-h-47"
+														label="Description"
 													/>
 												</div>
 											{/snippet}
@@ -1919,7 +2160,69 @@
 										ondismiss={(taskId) => dismissUpload("body", taskId)}
 									/>
 
-									<div class="flex items-center gap-2">
+									{#if describedConflict}
+										<div class="flex flex-col gap-2 rounded-md border border-line-strong p-2.5">
+											<p class="text-sm text-ink-900">
+												Somebody saved a different description while you were writing. Neither
+												has been thrown away.
+											</p>
+											<div class="grid gap-2.5 sm:grid-cols-2">
+												<div class="flex min-w-0 flex-col gap-1">
+													<Eyebrow class="text-ink-600">Yours</Eyebrow>
+													<div
+														class="max-h-40 min-w-0 overflow-y-auto rounded-sm border border-line-subtle p-2"
+													>
+														<Editor
+															document={describedConflict.mine}
+															workspaceId={data.workspace.id}
+															workspace={data.workspace.slug}
+															disabled
+															toolbar={false}
+															minHeight="min-h-0"
+															label="The description you wrote"
+														/>
+													</div>
+												</div>
+												<div class="flex min-w-0 flex-col gap-1">
+													<Eyebrow class="text-ink-600">Theirs</Eyebrow>
+													<div
+														class="max-h-40 min-w-0 overflow-y-auto rounded-sm border border-line-subtle p-2"
+													>
+														<Editor
+															document={describedConflict.theirs}
+															workspaceId={data.workspace.id}
+															workspace={data.workspace.slug}
+															disabled
+															toolbar={false}
+															minHeight="min-h-0"
+															label="The description that was saved"
+														/>
+													</div>
+												</div>
+											</div>
+											<div class="flex flex-wrap items-center gap-2">
+												<Button
+													type="button"
+													size="sm"
+													disabled={$submitting}
+													onclick={keepMine}
+												>
+													Keep mine
+												</Button>
+												<Button
+													type="button"
+													variant="secondary"
+													size="sm"
+													disabled={$submitting}
+													onclick={takeTheirs}
+												>
+													Take theirs
+												</Button>
+											</div>
+										</div>
+									{/if}
+
+									<div class="flex flex-wrap items-center gap-2">
 										<Button type="submit" size="sm" disabled={$submitting}>
 											{$submitting ? "Saving" : "Save description"}
 										</Button>
@@ -1935,9 +2238,46 @@
 										<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
 											<Kbd keys="⌘ ↵" /> save
 										</span>
+										<span class="flex-1"></span>
+										{#if saveLine(describeSaver.state)}
+											<span
+												class="text-xs {describeSaver.state.kind === 'saved'
+													? 'text-muted-foreground'
+													: describeSaver.state.kind === 'waiting' ||
+														  describeSaver.state.kind === 'saving'
+														? 'text-muted-foreground'
+														: 'text-destructive'}"
+												aria-live="polite"
+											>
+												{saveLine(describeSaver.state)}
+											</span>
+										{/if}
+										{#if describeSaver.state.kind === "failed" || describeSaver.state.kind === "unknown"}
+											<Button
+												type="button"
+												variant="secondary"
+												size="sm"
+												onclick={() => void describeSaver.flush()}
+											>
+												Try again
+											</Button>
+										{/if}
 									</div>
 								</div>
-							{:else if issue.description.trim()}
+							{:else if issue.description.trim() || unsaved}
+								{#if unsaved}
+									<div
+										class="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-line-strong px-2.5 py-1.75"
+									>
+										<span class="min-w-0 flex-1 text-sm text-ink-900">
+											You have unsaved changes to this description.
+										</span>
+										<Button variant="secondary" size="sm" onclick={resumeEditing}>
+											Keep writing
+										</Button>
+										<Button variant="ghost" size="sm" onclick={discard}>Discard</Button>
+									</div>
+								{/if}
 								<button
 									type="button"
 									disabled={!canEdit}
@@ -2027,6 +2367,14 @@
 							/>
 						</section>
 					{/if}
+
+					<CriteriaPanel
+						workspaceId={data.workspace.id}
+						issueId={issue.id}
+						issueVersion={issue.version}
+						{canEdit}
+						{when}
+					/>
 
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
@@ -2258,8 +2606,8 @@
 							oncancelupload={cancelUpload}
 							onretryupload={(taskId) => retryUpload("comment", taskId)}
 							ondismissupload={(taskId) => dismissUpload("comment", taskId)}
-							members={ready.members}
-							teams={data.teams ?? []}
+							workspaceId={data.workspace.id}
+							workspace={data.workspace.slug}
 							accountId={data.member.id}
 							{when}
 							{canEdit}
@@ -2274,6 +2622,7 @@
 							onremove={removeComment}
 							onreact={react}
 							onmore={loadEarlier}
+							onpromote={canEdit ? promote : undefined}
 						/>
 					</section>
 				</div>
@@ -2733,6 +3082,24 @@
 		</div>
 	{/if}
 </div>
+
+{#if issue}
+	<DescriptionHistory
+		bind:open={showingHistory}
+		workspaceId={data.workspace.id}
+		workspace={data.workspace.slug}
+		issueId={issue.id}
+		version={issue.version}
+		{when}
+		{nameOf}
+		{working}
+		onrestored={async () => {
+			describedConflict = null;
+			await invalidate(keys.page(page.route.id));
+			announce("The description was put back.");
+		}}
+	/>
+{/if}
 
 {#if ready && issue}
 	<NewIssueDialog

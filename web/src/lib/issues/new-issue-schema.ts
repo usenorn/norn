@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { Document } from "$lib/editor/document";
+
 export const newIssueSchema = z.object({
 	teamId: z.string().trim().min(1, "Choose a team for this issue."),
 	title: z
@@ -7,7 +9,6 @@ export const newIssueSchema = z.object({
 		.trim()
 		.min(1, "Give the issue a title.")
 		.max(200, "Keep the title under 200 characters."),
-	description: z.string().max(20000, "Keep the description under 20,000 characters.").default(""),
 	stateId: z.string().trim().default(""),
 	priority: z.enum(["urgent", "high", "medium", "low", "none"]).default("none"),
 	assigneeId: z.string().trim().default(""),
@@ -23,3 +24,5 @@ export const newIssueSchema = z.object({
 });
 
 export type NewIssueInput = z.infer<typeof newIssueSchema>;
+
+export type NewIssuePrefill = Partial<NewIssueInput> & { description?: Document };

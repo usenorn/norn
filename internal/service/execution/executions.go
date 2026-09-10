@@ -24,6 +24,7 @@ type executionsService struct {
 	runners    repository.Runner
 	codebases  repository.Codebase
 	issues     repository.Issue
+	revisions  repository.IssueRevision
 	states     repository.WorkflowState
 	channels   repository.RunnerChannel
 	writer     service.Issues
@@ -42,6 +43,7 @@ func New(
 	runners repository.Runner,
 	codebases repository.Codebase,
 	issues repository.Issue,
+	revisions repository.IssueRevision,
 	states repository.WorkflowState,
 	channels repository.RunnerChannel,
 	writer service.Issues,
@@ -59,6 +61,7 @@ func New(
 		runners:    runners,
 		codebases:  codebases,
 		issues:     issues,
+		revisions:  revisions,
 		states:     states,
 		channels:   channels,
 		writer:     writer,

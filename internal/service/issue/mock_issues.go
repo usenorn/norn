@@ -89,6 +89,21 @@ func (mr *MockIssuesMockRecorder) Create(ctx, input any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockIssues)(nil).Create), ctx, input)
 }
 
+// DescriptionRevisions mocks base method.
+func (m *MockIssues) DescriptionRevisions(ctx context.Context, workspaceID, issueID uuid.UUID, limit int) ([]entity.IssueDescriptionRevision, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DescriptionRevisions", ctx, workspaceID, issueID, limit)
+	ret0, _ := ret[0].([]entity.IssueDescriptionRevision)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DescriptionRevisions indicates an expected call of DescriptionRevisions.
+func (mr *MockIssuesMockRecorder) DescriptionRevisions(ctx, workspaceID, issueID, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescriptionRevisions", reflect.TypeOf((*MockIssues)(nil).DescriptionRevisions), ctx, workspaceID, issueID, limit)
+}
+
 // Get mocks base method.
 func (m *MockIssues) Get(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.Issue, error) {
 	m.ctrl.T.Helper()
@@ -206,6 +221,21 @@ func (m *MockIssues) Query(ctx context.Context, workspaceID uuid.UUID, input ser
 func (mr *MockIssuesMockRecorder) Query(ctx, workspaceID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockIssues)(nil).Query), ctx, workspaceID, input)
+}
+
+// RestoreDescription mocks base method.
+func (m *MockIssues) RestoreDescription(ctx context.Context, workspaceID, issueID, revisionID uuid.UUID, expectedVersion int) (entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreDescription", ctx, workspaceID, issueID, revisionID, expectedVersion)
+	ret0, _ := ret[0].(entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RestoreDescription indicates an expected call of RestoreDescription.
+func (mr *MockIssuesMockRecorder) RestoreDescription(ctx, workspaceID, issueID, revisionID, expectedVersion any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreDescription", reflect.TypeOf((*MockIssues)(nil).RestoreDescription), ctx, workspaceID, issueID, revisionID, expectedVersion)
 }
 
 // SetLabels mocks base method.

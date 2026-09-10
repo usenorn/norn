@@ -31,6 +31,7 @@ const commentColumns = `
        coalesce(a.display_name, ''),
        c.author_kind,
        c.body,
+       coalesce(c.body_doc::text, ''),
        c.edited_at,
        c.deleted_at,
        c.created_at,
@@ -44,8 +45,8 @@ const createCommentQuery = `
 WITH created AS (
     INSERT INTO workspace_issue_comments
         (workspace_id, issue_id, parent_comment_id, author_account_id, author_kind, body,
-         created_at, updated_at)
-    SELECT $1, $2, nullif($3, '')::uuid, author.id, author.kind, $5, $6, $7
+         body_doc, created_at, updated_at)
+    SELECT $1, $2, nullif($3, '')::uuid, author.id, author.kind, $5, $8::jsonb, $6, $7
     FROM accounts author
     WHERE author.id = $4::uuid
     RETURNING *
@@ -124,14 +125,18 @@ FROM workspace_issue_comments c
 WHERE c.id = $1
 ON CONFLICT DO NOTHING`
 
+const clearMentionsQuery = `
+DELETE FROM workspace_issue_comment_mentions
+WHERE comment_id = $1`
+
 const editCommentQuery = `
 UPDATE workspace_issue_comments
-SET body = $2, edited_at = $3, updated_at = $3
+SET body = $2, body_doc = $4::jsonb, edited_at = $3, updated_at = $3
 WHERE id = $1 AND deleted_at IS NULL`
 
 const tombstoneCommentQuery = `
 UPDATE workspace_issue_comments
-SET body = '', edited_at = NULL, deleted_at = $2, updated_at = $2
+SET body = '', body_doc = NULL, edited_at = NULL, deleted_at = $2, updated_at = $2
 WHERE id = $1 AND deleted_at IS NULL`
 
 const purgeImportedCommentsQuery = `
@@ -187,14 +192,26 @@ func scanComment(row scanner) (entity.IssueComment, error) {
 		comment              entity.IssueComment
 		id, workspace, issue string
 		parent, author, kind string
+		documented           string
 		edited, deleted      sql.NullTime
 	)
 
 	if err := row.Scan(
 		&id, &workspace, &issue, &parent, &author, &comment.AuthorName, &kind,
-		&comment.Body, &edited, &deleted, &comment.CreatedAt, &comment.UpdatedAt,
+		&comment.Body, &documented, &edited, &deleted, &comment.CreatedAt, &comment.UpdatedAt,
 	); err != nil {
 		return entity.IssueComment{}, err
+	}
+
+	if documented == "" {
+		comment.BodyDoc = entity.DocumentFromMarkdown(comment.Body)
+	} else {
+		document, err := entity.DecodeDocument([]byte(documented))
+		if err != nil {
+			return entity.IssueComment{}, fmt.Errorf("decode comment body: %w", err)
+		}
+
+		comment.BodyDoc = document
 	}
 
 	comment.AuthorKind = entity.AccountKind(kind)
@@ -299,6 +316,7 @@ func (r *issueCommentRepository) Create(
 		comment.Body,
 		createdAt,
 		updatedAt,
+		documentOf(comment.BodyDoc),
 	))
 	if err != nil {
 		return entity.IssueComment{}, fmt.Errorf("create comment: %w", err)
@@ -538,9 +556,26 @@ func (r *issueCommentRepository) Edit(
 	ctx context.Context,
 	commentID uuid.UUID,
 	body string,
+	document entity.Document,
 	at time.Time,
 ) error {
-	return r.write(ctx, "edit comment", editCommentQuery, commentID.String(), body, at)
+	return r.write(
+		ctx, "edit comment", editCommentQuery,
+		commentID.String(), body, at, documentOf(document),
+	)
+}
+
+func documentOf(document entity.Document) any {
+	if document.Type == "" {
+		return nil
+	}
+
+	encoded, err := document.Encode()
+	if err != nil {
+		return nil
+	}
+
+	return string(encoded)
 }
 
 func (r *issueCommentRepository) Tombstone(
@@ -610,6 +645,16 @@ func (r *issueCommentRepository) RecordMentions(
 		); err != nil {
 			return fmt.Errorf("record comment mention: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (r *issueCommentRepository) ClearMentions(ctx context.Context, commentID uuid.UUID) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, clearMentionsQuery, commentID.String(),
+	); err != nil {
+		return fmt.Errorf("clear comment mentions: %w", err)
 	}
 
 	return nil

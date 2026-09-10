@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -193,6 +194,7 @@ func (s *agentsService) targetState(
 func (s *agentsService) Approve(
 	ctx context.Context,
 	workspaceID, proposalID uuid.UUID,
+	accepted []entity.ChangePart,
 ) (entity.AgentProposal, error) {
 	decision, proposal, err := s.decidable(ctx, workspaceID, proposalID)
 	if err != nil {
@@ -216,6 +218,8 @@ func (s *agentsService) Approve(
 		return entity.AgentProposal{}, err
 	}
 
+	proposal.Change = proposal.Change.Only(accepted)
+
 	if err := s.apply(ctx, agent, proposal, decision.Actor.AccountID); err != nil {
 		if settled := s.proposals.Settle(
 			ctx, proposal.ID, entity.AgentProposalFailed, decision.Actor.AccountID, now, err.Error(),
@@ -229,6 +233,19 @@ func (s *agentsService) Approve(
 	s.recordDecision(ctx, workspaceID, proposal, entity.AgentProposalApplied)
 
 	return s.proposals.GetByID(ctx, workspaceID, proposal.ID)
+}
+
+func partsTaken(accepted []entity.ChangePart) string {
+	if len(accepted) == 0 {
+		return "all"
+	}
+
+	named := make([]string, 0, len(accepted))
+	for _, part := range accepted {
+		named = append(named, string(part))
+	}
+
+	return strings.Join(named, ",")
 }
 
 func (s *agentsService) Reject(
@@ -266,6 +283,7 @@ func (s *agentsService) recordDecision(
 		Detail: map[string]string{
 			"proposal_id": proposal.ID.String(),
 			"outcome":     string(outcome),
+			"parts":       partsTaken(proposal.Change.Parts()),
 		},
 	})
 }

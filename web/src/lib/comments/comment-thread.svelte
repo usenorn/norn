@@ -10,6 +10,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import CommentComposer from "$lib/comments/comment-composer.svelte";
+	import { asDocument, type Document } from "$lib/editor/document";
 	import {
 		authorLabel,
 		commentFailureMessage,
@@ -23,19 +24,16 @@
 		type CommentReaction,
 		type CommentThread,
 		type IssueComment,
-		type MentionTarget,
 	} from "$lib/comments/comments";
 	import type { UploadTask } from "$lib/attachments/upload";
-	import type { Member } from "$lib/issues/members";
-	import type { Team } from "$lib/team/teams";
 
 	let {
 		thread,
 		events = [],
 		canEdit = true,
 		lockedLine = "",
-		members,
-		teams,
+		workspaceId,
+		workspace,
 		accountId,
 		when,
 		working = false,
@@ -46,6 +44,7 @@
 		onremove,
 		onreact,
 		onmore,
+		onpromote,
 		uploads,
 		onfiles,
 		oncancelupload,
@@ -56,25 +55,25 @@
 		events?: { id: string; at: string; line: string }[];
 		canEdit?: boolean;
 		lockedLine?: string;
-		members: Member[];
-		teams: Team[];
+		workspaceId: string;
+		workspace: string;
 		accountId: string;
 		when: (instant: string) => string;
 		working?: boolean;
 		failure?: CommentFailure | null;
 		unreachable?: CommentMention[];
 		onpost: (
-			body: string,
-			mentions: MentionTarget[],
+			body: Document,
 			attachmentIds: string[],
 			parentCommentId?: string
-		) => void;
-		onedit: (commentId: string, body: string) => void;
+		) => Promise<boolean>;
+		onedit: (commentId: string, body: Document) => Promise<boolean>;
 		onremove: (commentId: string) => void;
 		onreact: (commentId: string, reaction: CommentReaction, on: boolean) => void;
 		onmore: () => void;
+		onpromote?: (comment: IssueComment, into: "issue" | "description") => void;
 		uploads?: UploadTask[];
-		onfiles?: (files: File[]) => void;
+		onfiles?: (files: File[]) => string[] | void;
 		oncancelupload?: (id: string) => void;
 		onretryupload?: (id: string) => void;
 		ondismissupload?: (id: string) => void;
@@ -129,15 +128,18 @@
 			<p class="text-sm text-muted-foreground italic">This comment was deleted.</p>
 		{:else if editing === comment.id}
 			<CommentComposer
-				{members}
-				{teams}
+				{workspaceId}
+				{workspace}
 				{working}
-				body={comment.body}
+				body={asDocument(comment.bodyDoc)}
 				placeholder="Edit your comment"
 				submitLabel="Save"
-				onsubmit={(body) => {
-					editing = "";
-					onedit(comment.id, body);
+				onsubmit={async (body) => {
+					const saved = await onedit(comment.id, body);
+
+					if (saved) editing = "";
+
+					return saved;
 				}}
 				oncancel={() => (editing = "")}
 			/>
@@ -214,6 +216,24 @@
 					Delete
 				</Button>
 			{/if}
+
+			{#if onpromote && !comment.deleted}
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						{#snippet child({ props })}
+							<Button {...props} variant="ghost" size="sm" disabled={working}>Turn into</Button>
+						{/snippet}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content align="start">
+						<DropdownMenu.Item onSelect={() => onpromote(comment, "issue")}>
+							A sub-issue
+						</DropdownMenu.Item>
+						<DropdownMenu.Item onSelect={() => onpromote(comment, "description")}>
+							Part of the description
+						</DropdownMenu.Item>
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
+			{/if}
 		</div>
 
 		{#if comment.replies.length > 0}
@@ -227,14 +247,17 @@
 		{#if replyingTo === comment.id}
 			<div class="border-l border-line-subtle pl-4">
 				<CommentComposer
-					{members}
-					{teams}
+					{workspaceId}
+					{workspace}
 					{working}
 					placeholder="Reply to {authorLabel(comment)}"
 					submitLabel="Reply"
-					onsubmit={(body, mentions, attachmentIds) => {
-						replyingTo = "";
-						onpost(body, mentions, attachmentIds, comment.id);
+					onsubmit={async (body, attachmentIds) => {
+						const filed = await onpost(body, attachmentIds, comment.id);
+
+						if (filed) replyingTo = "";
+
+						return filed;
 					}}
 					oncancel={() => (replyingTo = "")}
 				/>
@@ -312,8 +335,8 @@
 		<div class="mt-1.5 flex gap-2.75 border-t border-line-default pt-4">
 			<div class="min-w-0 flex-1">
 				<CommentComposer
-					{members}
-					{teams}
+					{workspaceId}
+					{workspace}
 					{working}
 					{uploads}
 					{onfiles}
@@ -322,7 +345,7 @@
 					{ondismissupload}
 					placeholder="Write a comment"
 					submitLabel="Comment"
-					onsubmit={(body, mentions, attachmentIds) => onpost(body, mentions, attachmentIds)}
+					onsubmit={(body, attachmentIds) => onpost(body, attachmentIds)}
 				/>
 			</div>
 		</div>

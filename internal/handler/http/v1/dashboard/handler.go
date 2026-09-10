@@ -22,6 +22,9 @@ type handler struct {
 	teams             service.Teams
 	invitations       service.Invitations
 	issues            service.Issues
+	drafts            service.IssueDrafts
+	templates         service.IssueTemplates
+	criteria          service.IssueCriteria
 	issueRelations    service.IssueRelations
 	issueComments     service.IssueComments
 	delegations       service.Delegations
@@ -71,6 +74,9 @@ func New(
 	teams service.Teams,
 	invitations service.Invitations,
 	issues service.Issues,
+	drafts service.IssueDrafts,
+	templates service.IssueTemplates,
+	criteria service.IssueCriteria,
 	issueRelations service.IssueRelations,
 	issueComments service.IssueComments,
 	delegations service.Delegations,
@@ -119,6 +125,9 @@ func New(
 		teams:             teams,
 		invitations:       invitations,
 		issues:            issues,
+		drafts:            drafts,
+		templates:         templates,
+		criteria:          criteria,
 		issueRelations:    issueRelations,
 		issueComments:     issueComments,
 		delegations:       delegations,

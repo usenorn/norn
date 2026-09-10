@@ -142,14 +142,17 @@ var WorkspaceRels = struct {
 	WorkspaceInvitations           string
 	WorkspaceIssueAttachments      string
 	WorkspaceIssueDelegations      string
+	WorkspaceIssueDrafts           string
 	WorkspaceIssueMirrorConflicts  string
 	WorkspaceIssueMirrors          string
 	WorkspaceIssueQuestions        string
+	WorkspaceIssueTemplates        string
 	WorkspaceLabelGroups           string
 	WorkspaceLabels                string
 	WorkspaceMemberships           string
 	WorkspaceNotificationEvents    string
 	WorkspaceProjects              string
+	WorkspaceRequestKeys           string
 	WorkspaceRunners               string
 	WorkspaceSavedViews            string
 	WorkspaceSCMConnections        string
@@ -184,14 +187,17 @@ var WorkspaceRels = struct {
 	WorkspaceInvitations:           "WorkspaceInvitations",
 	WorkspaceIssueAttachments:      "WorkspaceIssueAttachments",
 	WorkspaceIssueDelegations:      "WorkspaceIssueDelegations",
+	WorkspaceIssueDrafts:           "WorkspaceIssueDrafts",
 	WorkspaceIssueMirrorConflicts:  "WorkspaceIssueMirrorConflicts",
 	WorkspaceIssueMirrors:          "WorkspaceIssueMirrors",
 	WorkspaceIssueQuestions:        "WorkspaceIssueQuestions",
+	WorkspaceIssueTemplates:        "WorkspaceIssueTemplates",
 	WorkspaceLabelGroups:           "WorkspaceLabelGroups",
 	WorkspaceLabels:                "WorkspaceLabels",
 	WorkspaceMemberships:           "WorkspaceMemberships",
 	WorkspaceNotificationEvents:    "WorkspaceNotificationEvents",
 	WorkspaceProjects:              "WorkspaceProjects",
+	WorkspaceRequestKeys:           "WorkspaceRequestKeys",
 	WorkspaceRunners:               "WorkspaceRunners",
 	WorkspaceSavedViews:            "WorkspaceSavedViews",
 	WorkspaceSCMConnections:        "WorkspaceSCMConnections",
@@ -229,14 +235,17 @@ type workspaceR struct {
 	WorkspaceInvitations           WorkspaceInvitationSlice           `boil:"WorkspaceInvitations" json:"WorkspaceInvitations" toml:"WorkspaceInvitations" yaml:"WorkspaceInvitations"`
 	WorkspaceIssueAttachments      WorkspaceIssueAttachmentSlice      `boil:"WorkspaceIssueAttachments" json:"WorkspaceIssueAttachments" toml:"WorkspaceIssueAttachments" yaml:"WorkspaceIssueAttachments"`
 	WorkspaceIssueDelegations      WorkspaceIssueDelegationSlice      `boil:"WorkspaceIssueDelegations" json:"WorkspaceIssueDelegations" toml:"WorkspaceIssueDelegations" yaml:"WorkspaceIssueDelegations"`
+	WorkspaceIssueDrafts           WorkspaceIssueDraftSlice           `boil:"WorkspaceIssueDrafts" json:"WorkspaceIssueDrafts" toml:"WorkspaceIssueDrafts" yaml:"WorkspaceIssueDrafts"`
 	WorkspaceIssueMirrorConflicts  WorkspaceIssueMirrorConflictSlice  `boil:"WorkspaceIssueMirrorConflicts" json:"WorkspaceIssueMirrorConflicts" toml:"WorkspaceIssueMirrorConflicts" yaml:"WorkspaceIssueMirrorConflicts"`
 	WorkspaceIssueMirrors          WorkspaceIssueMirrorSlice          `boil:"WorkspaceIssueMirrors" json:"WorkspaceIssueMirrors" toml:"WorkspaceIssueMirrors" yaml:"WorkspaceIssueMirrors"`
 	WorkspaceIssueQuestions        WorkspaceIssueQuestionSlice        `boil:"WorkspaceIssueQuestions" json:"WorkspaceIssueQuestions" toml:"WorkspaceIssueQuestions" yaml:"WorkspaceIssueQuestions"`
+	WorkspaceIssueTemplates        WorkspaceIssueTemplateSlice        `boil:"WorkspaceIssueTemplates" json:"WorkspaceIssueTemplates" toml:"WorkspaceIssueTemplates" yaml:"WorkspaceIssueTemplates"`
 	WorkspaceLabelGroups           WorkspaceLabelGroupSlice           `boil:"WorkspaceLabelGroups" json:"WorkspaceLabelGroups" toml:"WorkspaceLabelGroups" yaml:"WorkspaceLabelGroups"`
 	WorkspaceLabels                WorkspaceLabelSlice                `boil:"WorkspaceLabels" json:"WorkspaceLabels" toml:"WorkspaceLabels" yaml:"WorkspaceLabels"`
 	WorkspaceMemberships           WorkspaceMembershipSlice           `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
 	WorkspaceNotificationEvents    WorkspaceNotificationEventSlice    `boil:"WorkspaceNotificationEvents" json:"WorkspaceNotificationEvents" toml:"WorkspaceNotificationEvents" yaml:"WorkspaceNotificationEvents"`
 	WorkspaceProjects              WorkspaceProjectSlice              `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
+	WorkspaceRequestKeys           WorkspaceRequestKeySlice           `boil:"WorkspaceRequestKeys" json:"WorkspaceRequestKeys" toml:"WorkspaceRequestKeys" yaml:"WorkspaceRequestKeys"`
 	WorkspaceRunners               WorkspaceRunnerSlice               `boil:"WorkspaceRunners" json:"WorkspaceRunners" toml:"WorkspaceRunners" yaml:"WorkspaceRunners"`
 	WorkspaceSavedViews            WorkspaceSavedViewSlice            `boil:"WorkspaceSavedViews" json:"WorkspaceSavedViews" toml:"WorkspaceSavedViews" yaml:"WorkspaceSavedViews"`
 	WorkspaceSCMConnections        WorkspaceSCMConnectionSlice        `boil:"WorkspaceSCMConnections" json:"WorkspaceSCMConnections" toml:"WorkspaceSCMConnections" yaml:"WorkspaceSCMConnections"`
@@ -682,6 +691,22 @@ func (r *workspaceR) GetWorkspaceIssueDelegations() WorkspaceIssueDelegationSlic
 	return r.WorkspaceIssueDelegations
 }
 
+func (o *Workspace) GetWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceIssueDrafts()
+}
+
+func (r *workspaceR) GetWorkspaceIssueDrafts() WorkspaceIssueDraftSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceIssueDrafts
+}
+
 func (o *Workspace) GetWorkspaceIssueMirrorConflicts() WorkspaceIssueMirrorConflictSlice {
 	if o == nil {
 		return nil
@@ -728,6 +753,22 @@ func (r *workspaceR) GetWorkspaceIssueQuestions() WorkspaceIssueQuestionSlice {
 	}
 
 	return r.WorkspaceIssueQuestions
+}
+
+func (o *Workspace) GetWorkspaceIssueTemplates() WorkspaceIssueTemplateSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceIssueTemplates()
+}
+
+func (r *workspaceR) GetWorkspaceIssueTemplates() WorkspaceIssueTemplateSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceIssueTemplates
 }
 
 func (o *Workspace) GetWorkspaceLabelGroups() WorkspaceLabelGroupSlice {
@@ -808,6 +849,22 @@ func (r *workspaceR) GetWorkspaceProjects() WorkspaceProjectSlice {
 	}
 
 	return r.WorkspaceProjects
+}
+
+func (o *Workspace) GetWorkspaceRequestKeys() WorkspaceRequestKeySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceRequestKeys()
+}
+
+func (r *workspaceR) GetWorkspaceRequestKeys() WorkspaceRequestKeySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceRequestKeys
 }
 
 func (o *Workspace) GetWorkspaceRunners() WorkspaceRunnerSlice {
@@ -1579,6 +1636,20 @@ func (o *Workspace) WorkspaceIssueDelegations(mods ...qm.QueryMod) workspaceIssu
 	return WorkspaceIssueDelegations(queryMods...)
 }
 
+// WorkspaceIssueDrafts retrieves all the workspace_issue_draft's WorkspaceIssueDrafts with an executor.
+func (o *Workspace) WorkspaceIssueDrafts(mods ...qm.QueryMod) workspaceIssueDraftQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_drafts\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueDrafts(queryMods...)
+}
+
 // WorkspaceIssueMirrorConflicts retrieves all the workspace_issue_mirror_conflict's WorkspaceIssueMirrorConflicts with an executor.
 func (o *Workspace) WorkspaceIssueMirrorConflicts(mods ...qm.QueryMod) workspaceIssueMirrorConflictQuery {
 	var queryMods []qm.QueryMod
@@ -1619,6 +1690,20 @@ func (o *Workspace) WorkspaceIssueQuestions(mods ...qm.QueryMod) workspaceIssueQ
 	)
 
 	return WorkspaceIssueQuestions(queryMods...)
+}
+
+// WorkspaceIssueTemplates retrieves all the workspace_issue_template's WorkspaceIssueTemplates with an executor.
+func (o *Workspace) WorkspaceIssueTemplates(mods ...qm.QueryMod) workspaceIssueTemplateQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_issue_templates\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceIssueTemplates(queryMods...)
 }
 
 // WorkspaceLabelGroups retrieves all the workspace_label_group's WorkspaceLabelGroups with an executor.
@@ -1689,6 +1774,20 @@ func (o *Workspace) WorkspaceProjects(mods ...qm.QueryMod) workspaceProjectQuery
 	)
 
 	return WorkspaceProjects(queryMods...)
+}
+
+// WorkspaceRequestKeys retrieves all the workspace_request_key's WorkspaceRequestKeys with an executor.
+func (o *Workspace) WorkspaceRequestKeys(mods ...qm.QueryMod) workspaceRequestKeyQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_request_keys\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceRequestKeys(queryMods...)
 }
 
 // WorkspaceRunners retrieves all the workspace_runner's WorkspaceRunners with an executor.
@@ -4861,6 +4960,119 @@ func (workspaceL) LoadWorkspaceIssueDelegations(ctx context.Context, e boil.Cont
 	return nil
 }
 
+// LoadWorkspaceIssueDrafts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceIssueDrafts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_drafts`),
+		qm.WhereIn(`workspace_issue_drafts.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_drafts")
+	}
+
+	var resultSlice []*WorkspaceIssueDraft
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_drafts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_drafts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_drafts")
+	}
+
+	if len(workspaceIssueDraftAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceIssueDrafts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueDraftR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceIssueDrafts = append(local.R.WorkspaceIssueDrafts, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueDraftR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceIssueMirrorConflicts allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceIssueMirrorConflicts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -5190,6 +5402,119 @@ func (workspaceL) LoadWorkspaceIssueQuestions(ctx context.Context, e boil.Contex
 				local.R.WorkspaceIssueQuestions = append(local.R.WorkspaceIssueQuestions, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceIssueQuestionR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceIssueTemplates allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceIssueTemplates(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_issue_templates`),
+		qm.WhereIn(`workspace_issue_templates.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_issue_templates")
+	}
+
+	var resultSlice []*WorkspaceIssueTemplate
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_issue_templates")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_issue_templates")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_issue_templates")
+	}
+
+	if len(workspaceIssueTemplateAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceIssueTemplates = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceIssueTemplateR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceIssueTemplates = append(local.R.WorkspaceIssueTemplates, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceIssueTemplateR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -5755,6 +6080,119 @@ func (workspaceL) LoadWorkspaceProjects(ctx context.Context, e boil.ContextExecu
 				local.R.WorkspaceProjects = append(local.R.WorkspaceProjects, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceProjectR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceRequestKeys allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceRequestKeys(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_request_keys`),
+		qm.WhereIn(`workspace_request_keys.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_request_keys")
+	}
+
+	var resultSlice []*WorkspaceRequestKey
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_request_keys")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_request_keys")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_request_keys")
+	}
+
+	if len(workspaceRequestKeyAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceRequestKeys = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceRequestKeyR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceRequestKeys = append(local.R.WorkspaceRequestKeys, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceRequestKeyR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -7883,6 +8321,59 @@ func (o *Workspace) AddWorkspaceIssueDelegations(ctx context.Context, exec boil.
 	return nil
 }
 
+// AddWorkspaceIssueDrafts adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceIssueDrafts.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceIssueDrafts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueDraft) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_drafts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueDraftPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceIssueDrafts: related,
+		}
+	} else {
+		o.R.WorkspaceIssueDrafts = append(o.R.WorkspaceIssueDrafts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueDraftR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
 // AddWorkspaceIssueMirrorConflicts adds the given related objects to the existing relationships
 // of the workspace, optionally inserting them as new records.
 // Appends related to o.R.WorkspaceIssueMirrorConflicts.
@@ -8033,6 +8524,59 @@ func (o *Workspace) AddWorkspaceIssueQuestions(ctx context.Context, exec boil.Co
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceIssueQuestionR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceIssueTemplates adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceIssueTemplates.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceIssueTemplates(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceIssueTemplate) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_issue_templates\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceIssueTemplatePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceIssueTemplates: related,
+		}
+	} else {
+		o.R.WorkspaceIssueTemplates = append(o.R.WorkspaceIssueTemplates, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceIssueTemplateR{
 				Workspace: o,
 			}
 		} else {
@@ -8298,6 +8842,59 @@ func (o *Workspace) AddWorkspaceProjects(ctx context.Context, exec boil.ContextE
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceProjectR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceRequestKeys adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceRequestKeys.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceRequestKeys(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceRequestKey) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_request_keys\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceRequestKeyPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceRequestKeys: related,
+		}
+	} else {
+		o.R.WorkspaceRequestKeys = append(o.R.WorkspaceRequestKeys, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceRequestKeyR{
 				Workspace: o,
 			}
 		} else {

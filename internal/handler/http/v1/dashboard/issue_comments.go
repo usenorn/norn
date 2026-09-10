@@ -45,6 +45,7 @@ func (h *handler) PostWorkspaceIssueComment(
 ) (api.PostWorkspaceIssueCommentResponseObject, error) {
 	input := service.PostCommentInput{
 		Body:      request.Body.Body,
+		BodyDoc:   documentOf(request.Body.BodyDoc),
 		Reasoning: agentReasoningFrom(request.Body.Reasoning),
 	}
 
@@ -78,7 +79,10 @@ func (h *handler) EditWorkspaceIssueComment(
 ) (api.EditWorkspaceIssueCommentResponseObject, error) {
 	comment, err := h.issueComments.Edit(
 		ctx, request.WorkspaceId, request.IssueId, request.CommentId,
-		service.EditCommentInput{Body: request.Body.Body},
+		service.EditCommentInput{
+			Body:    request.Body.Body,
+			BodyDoc: documentOf(request.Body.BodyDoc),
+		},
 	)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

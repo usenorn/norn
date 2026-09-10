@@ -2,6 +2,7 @@
 	import { tick } from "svelte";
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
+	import FileText from "@lucide/svelte/icons/file-text";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import Paperclip from "@lucide/svelte/icons/paperclip";
 	import Plus from "@lucide/svelte/icons/plus";
@@ -36,8 +37,8 @@
 		attachFailureMessage,
 		attachPending,
 		describeFailureMessage,
+		describedAll,
 		describedWith,
-		markdownFor,
 		pendingFrom,
 		type PendingFile,
 	} from "./new-issue-attachments";
@@ -46,9 +47,31 @@
 	import type { Team } from "$lib/team/teams";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { duePresets } from "./facets";
-	import { newIssueSchema, type NewIssueInput } from "./new-issue-schema";
+	import { newIssueSchema, type NewIssuePrefill } from "./new-issue-schema";
+	import {
+		readTemplates,
+		templatesFor,
+		templatesOf,
+		type IssueTemplate,
+		type TemplateList,
+	} from "./templates";
+	import {
+		draftLabel,
+		dropDraft,
+		keepDraft,
+		readDrafts,
+		worthKeeping,
+		type IssueDraft,
+	} from "./drafts";
 	import { draftIssue, type CreationOutcome } from "./creating";
-	import DescriptionEditor from "$lib/issues/description-editor.svelte";
+	import Editor from "$lib/editor/editor.svelte";
+	import {
+		asDocument,
+		documentEmpty,
+		documentText,
+		emptyDocument,
+		type Document,
+	} from "$lib/editor/document";
 	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "./issues";
 	import type { Issue } from "./issues";
 
@@ -77,7 +100,7 @@
 		projects: Project[];
 		today: string;
 		now: string;
-		prefill?: Partial<NewIssueInput>;
+		prefill?: NewIssuePrefill;
 		onraising?: (key: string, draft: Issue) => void;
 		onsettled?: (outcome: CreationOutcome) => void | Promise<void>;
 	} = $props();
@@ -91,6 +114,13 @@
 	let uploads = $state.raw<UploadTask[]>([]);
 	let dragging = $state(false);
 	let unconfirmed = $state(false);
+	let describing = $state.raw<Document>(emptyDocument);
+	let draftId = $state("");
+	let templateList = $state.raw<TemplateList>({ kind: "loading" });
+	let templateId = $state("");
+	let replacing = $state.raw<IssueTemplate | null>(null);
+	let drafts = $state.raw<IssueDraft[]>([]);
+	let resumable = $state(false);
 	let opening = $state(0);
 
 	const unknownCreate =
@@ -103,7 +133,7 @@
 		workspaceId: string;
 		consumer: ((outcome: CreationOutcome) => void | Promise<void>) | undefined;
 		files: PendingFile[];
-		description: string;
+		description: Document;
 		issue: Issue | null;
 		attached: Attachment[];
 		settled: boolean;
@@ -272,7 +302,7 @@
 				workspaceId,
 				consumer: onsettled,
 				files: attaching,
-				description: pending.data.description,
+				description: describing,
 				issue: null,
 				attached: [],
 				settled: false,
@@ -292,7 +322,7 @@
 				const filing = openState ?? available.find((state) => state.isDefault);
 				const draft =
 					team && filing
-						? draftIssue(own.key, pending.data, {
+						? draftIssue(own.key, pending.data, own.description, {
 								workspaceId,
 								team,
 								state: filing,
@@ -319,7 +349,10 @@
 						body: {
 							teamId: pending.data.teamId,
 							title: pending.data.title,
-							description: pending.data.description || undefined,
+							idempotencyKey: own.key,
+							templateId: templateId || undefined,
+							description: documentText(own.description) || undefined,
+							descriptionDoc: documentEmpty(own.description) ? undefined : own.description,
 							priority: pending.data.priority,
 							stateId: pending.data.stateId || undefined,
 							assigneeId: pending.data.assigneeId || undefined,
@@ -366,7 +399,9 @@
 						key: own.key,
 						kind: "refused",
 						failure: refusal,
-						...(detached && showing() ? { input: pending.data } : {}),
+						...(detached && showing()
+							? { input: { ...pending.data, description: own.description } }
+							: {}),
 					});
 
 					if (!mine()) {
@@ -465,6 +500,13 @@
 
 			settle(own);
 
+			if (draftId) {
+				const kept = draftId;
+
+				draftId = "";
+				void dropDraft(own.workspaceId, kept);
+			}
+
 			if (!mine()) {
 				cancel();
 
@@ -483,7 +525,7 @@
 			attaching = [];
 			uploads = [];
 			pending.data.title = "";
-			pending.data.description = "";
+			describing = emptyDocument;
 
 			resuming = true;
 		},
@@ -498,8 +540,11 @@
 		describeConflict = false;
 		describeUncertain = false;
 
-		const links = markdownFor(own.attached);
-		const saved = await saveDescription(own, own.issue.version, describedWith(own.description, links));
+		const saved = await saveDescription(
+			own,
+			own.issue.version,
+			describedWith(own.description, own.attached)
+		);
 
 		if (saved) return saved;
 
@@ -509,7 +554,9 @@
 
 		if (!current) return null;
 
-		if (current.description.includes(links)) {
+		const held = asDocument(current.descriptionDoc);
+
+		if (describedAll(held, own.attached)) {
 			describeConflict = false;
 			describeUncertain = false;
 
@@ -522,20 +569,20 @@
 			describeConflict = false;
 		}
 
-		return saveDescription(own, current.version, describedWith(current.description, links));
+		return saveDescription(own, current.version, describedWith(held, own.attached));
 	}
 
 	async function saveDescription(
 		own: Submission,
 		expectedVersion: number,
-		description: string
+		description: Document
 	): Promise<Issue | null> {
 		if (!own.issue) return null;
 
 		try {
 			const described = await api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
 				params: { path: { workspaceId: own.workspaceId, issueId: own.issue.id } },
-				body: { expectedVersion, description },
+				body: { expectedVersion, descriptionDoc: description },
 			});
 
 			if (described.data && "id" in described.data) return described.data;
@@ -602,6 +649,137 @@
 	);
 
 	$effect(() => {
+		const justClosed = !open && wasOpen;
+
+		if (!justClosed) return;
+
+		void setAside();
+	});
+
+	async function setAside() {
+		if (live?.issue) return;
+
+		const fields = {
+			draftId: draftId || undefined,
+			teamId: $formData.teamId,
+			title: $formData.title,
+			description: describing,
+			stateId: $formData.stateId,
+			projectId: $formData.projectId,
+			cycleId: $formData.cycleId,
+			assigneeId: $formData.assigneeId,
+			labelIds: $formData.labelIds,
+			priority: $formData.priority,
+			dueOn: $formData.dueOn,
+		};
+
+		if (!worthKeeping(fields)) {
+			if (draftId) await dropDraft(workspaceId, draftId);
+
+			return;
+		}
+
+		const kept = await keepDraft(workspaceId, fields);
+
+		if (kept) draftId = kept.id;
+	}
+
+	$effect(() => {
+		const chosen = $formData.teamId;
+
+		if (!open || chosen === "") return;
+
+		void loadTemplates(chosen);
+	});
+
+	async function loadTemplates(forTeam: string) {
+		templateList = templatesFor(await readTemplates(workspaceId, forTeam));
+	}
+
+	const templates = $derived(templatesOf(templateList));
+	const templateOptions = $derived<PickerOption[]>(
+		templates.map((template) => ({
+			value: template.id,
+			label: template.name,
+			checked: template.id === templateId,
+		}))
+	);
+	const chosenTemplate = $derived(templates.find((template) => template.id === templateId));
+
+	function chooseTemplate(id: string) {
+		const template = templates.find((held) => held.id === id);
+
+		if (!template) return;
+
+		if ($formData.title.trim() !== "" || !documentEmpty(describing)) {
+			replacing = template;
+
+			return;
+		}
+
+		apply(template);
+	}
+
+	function apply(template: IssueTemplate) {
+		templateId = template.id;
+		replacing = null;
+
+		if (template.title) $formData.title = template.title;
+
+		describing = asDocument(template.bodyDoc ?? emptyDocument);
+
+		formData.update(
+			(current) => ({
+				...current,
+				stateId: template.stateId ?? current.stateId,
+				projectId: template.projectId ?? current.projectId,
+				assigneeId: template.assigneeId ?? current.assigneeId,
+				labelIds: template.labelIds?.length ? template.labelIds : current.labelIds,
+				priority: template.priority ?? current.priority,
+			}),
+			{ taint: false }
+		);
+	}
+
+	async function offerDrafts() {
+		const held = await readDrafts(workspaceId);
+
+		drafts = held;
+		resumable = held.length > 0;
+	}
+
+	function resume(draft: IssueDraft) {
+		draftId = draft.id;
+		describing = asDocument(draft.descriptionDoc ?? emptyDocument);
+		resumable = false;
+
+		formData.update(
+			(current) => ({
+				...current,
+				title: draft.title,
+				teamId: draft.teamId ?? current.teamId,
+				stateId: draft.stateId ?? "",
+				projectId: draft.projectId ?? "",
+				cycleId: draft.cycleId ?? "",
+				assigneeId: draft.assigneeId ?? "",
+				labelIds: draft.labelIds ?? [],
+				priority: draft.priority,
+				dueOn: draft.dueOn ?? "",
+			}),
+			{ taint: false }
+		);
+	}
+
+	async function forget(draft: IssueDraft) {
+		if (await dropDraft(workspaceId, draft.id)) {
+			drafts = drafts.filter((held) => held.id !== draft.id);
+			resumable = drafts.length > 0;
+
+			if (draftId === draft.id) draftId = "";
+		}
+	}
+
+	$effect(() => {
 		const justOpened = open && !wasOpen;
 
 		wasOpen = open;
@@ -609,7 +787,13 @@
 		if (!justOpened) return;
 
 		form.reset({ keepMessage: false });
+		describing = asDocument(prefill?.description ?? emptyDocument);
+		draftId = "";
+		drafts = [];
+		resumable = false;
 		opening += 1;
+
+		void offerDrafts();
 		abandon();
 		failure = null;
 		unconfirmed = false;
@@ -625,7 +809,6 @@
 			(current) => ({
 				...current,
 				title: prefill?.title ?? "",
-				description: prefill?.description ?? "",
 				labelIds: prefill?.labelIds ?? [],
 				dueOn: prefill?.dueOn ?? "",
 				createMore: false,
@@ -759,6 +942,10 @@
 	<Dialog.Content
 		class="top-21 grid-rows-[minmax(0,1fr)] max-h-[calc(100dvh-7.5rem)] overflow-hidden p-0 sm:max-w-162"
 		showCloseButton={false}
+		onOpenAutoFocus={(event) => {
+			event.preventDefault();
+			titleField?.focus();
+		}}
 	>
 		<Dialog.Description class="sr-only">
 			Raise an issue in a team you can see, and set its properties before it is created.
@@ -811,6 +998,29 @@
 
 				<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
 				<Dialog.Title class="text-md font-medium text-muted-foreground">New issue</Dialog.Title>
+
+				{#if templates.length > 0}
+					<PropertyPicker
+						options={templateOptions}
+						placeholder="Choose a template…"
+						onpick={chooseTemplate}
+						class="w-51.5"
+					>
+						{#snippet trigger(props)}
+							<Button
+								{...props}
+								variant="ghost"
+								size="sm"
+								disabled={busy || Boolean(raised)}
+								class="gap-1.5 px-1.5"
+							>
+								<FileText class="text-muted-foreground" aria-hidden="true" />
+								{chosenTemplate?.name ?? "Template"}
+								<ChevronDown class="text-muted-foreground" aria-hidden="true" />
+							</Button>
+						{/snippet}
+					</PropertyPicker>
+				{/if}
 				<span class="flex-1"></span>
 				{#if team}
 					<span
@@ -834,6 +1044,83 @@
 
 			<div class="min-h-0 flex-1 overflow-y-auto">
 				<div class="flex flex-col gap-2.5 px-4 pt-4 pb-3">
+					{#if replacing}
+						<div class="flex flex-col gap-2 rounded-md border border-line-strong p-2.5">
+							<p class="text-sm text-ink-900">
+								Using <span class="font-medium">{replacing.name}</span> replaces what you have
+								written here. Nothing is replaced until you say so.
+							</p>
+							<div class="flex flex-wrap items-center gap-2">
+								<Button
+									type="button"
+									size="sm"
+									disabled={busy}
+									onclick={() => replacing && apply(replacing)}
+								>
+									Replace it
+								</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									disabled={busy}
+									onclick={() => (replacing = null)}
+								>
+									Keep what I wrote
+								</Button>
+							</div>
+						</div>
+					{/if}
+
+					{#if chosenTemplate && chosenTemplate.requiredFields.length > 0}
+						<p class="text-sm text-muted-foreground">
+							{chosenTemplate.name} needs {chosenTemplate.requiredFields.join(", ")} before this
+							issue can be raised.
+						</p>
+					{/if}
+
+					{#if resumable && drafts.length > 0}
+						<div class="flex flex-col gap-1.5 rounded-md border border-line-strong p-2.5">
+							<div class="flex items-center gap-2">
+								<span class="min-w-0 flex-1 text-sm text-ink-900">
+									{drafts.length === 1
+										? "You left one issue unfinished."
+										: `You left ${drafts.length} issues unfinished.`}
+								</span>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onclick={() => (resumable = false)}
+								>
+									Start fresh
+								</Button>
+							</div>
+							<ul class="flex flex-col gap-0.5">
+								{#each drafts as draft (draft.id)}
+									<li class="flex items-center gap-2">
+										<button
+											type="button"
+											onclick={() => resume(draft)}
+											class="min-w-0 flex-1 cursor-pointer truncate rounded-sm px-1.5 py-1 text-left text-md text-ink-900 motion-control hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+										>
+											{draftLabel(draft)}
+										</button>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											aria-label="Throw away {draftLabel(draft)}"
+											onclick={() => forget(draft)}
+										>
+											<X aria-hidden="true" />
+										</Button>
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
+
 					<Form.Field {form} name="title">
 						<Form.Control>
 							{#snippet children({ props })}
@@ -853,26 +1140,20 @@
 						<Form.FieldErrors />
 					</Form.Field>
 
-					<Form.Field {form} name="description">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label class="sr-only">Description</Form.Label>
-								<DescriptionEditor
-									{...props}
-									bind:value={$formData.description}
-									{workspaceId}
-									{workspace}
-									{members}
-									{teams}
-									disabled={busy || Boolean(raised)}
-									onfiles={takeFiles}
-									onmetaenter={submitForm}
-									placeholder="Add description… What is broken, what should happen instead."
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.FieldErrors />
-					</Form.Field>
+					<Editor
+						bind:document={describing}
+						{workspaceId}
+						{workspace}
+						disabled={busy || Boolean(raised)}
+						onfiles={takeFiles}
+						onmetaenter={() => {
+							submitForm();
+
+							return true;
+						}}
+						placeholder="Add description… What is broken, what should happen instead."
+						label="Description"
+					/>
 
 					{#if uploads.length > 0}
 						<UploadList {uploads} oncancel={(id) => aborts.get(id)?.()} />

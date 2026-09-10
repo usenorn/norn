@@ -77,6 +77,7 @@ type Issue struct {
 	SCMAutomationSuppressed bool
 	Title                   string
 	Description             string
+	DescriptionDoc          Document
 	Priority                IssuePriority
 	AssigneeAccountID       uuid.UUID
 	Estimate                int

@@ -1,6 +1,7 @@
 import type { components } from "$lib/api/dashboard.gen";
 
 export type Attachment = components["schemas"]["Attachment"];
+type DocumentNode = components["schemas"]["DocumentNode"];
 export type AttachmentTransfer = components["schemas"]["AttachmentTransfer"];
 export type WorkspaceStorage = components["schemas"]["WorkspaceStorage"];
 
@@ -41,6 +42,30 @@ export function attachmentMarkdown(attachment: Attachment): string {
 	const link = `[${attachment.fileName}](${attachment.contentPath})`;
 
 	return attachment.inline ? `!${link}` : link;
+}
+
+export function attachmentNode(attachment: Attachment): DocumentNode {
+	if (attachment.inline) {
+		return {
+			type: "image",
+			attrs: {
+				src: attachment.contentPath,
+				alt: attachment.fileName,
+				attachmentId: attachment.id,
+			},
+		};
+	}
+
+	return {
+		type: "attachment",
+		attrs: {
+			attachmentId: attachment.id,
+			fileName: attachment.fileName,
+			href: attachment.contentPath,
+			contentType: attachment.contentType,
+			byteSize: attachment.byteSize,
+		},
+	};
 }
 
 export function attachmentFailureMessage(failure: AttachmentFailure): string {

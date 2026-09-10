@@ -23,11 +23,14 @@ import (
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
+	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
+	issuetemplaterepo "github.com/usenorn/norn/internal/repository/issuetemplate"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	requestkeyrepo "github.com/usenorn/norn/internal/repository/requestkey"
 	scmrepo "github.com/usenorn/norn/internal/repository/scm"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
@@ -42,6 +45,9 @@ import (
 
 type harness struct {
 	issues       *issuerepo.MockIssue
+	revisions    *issuerevisionrepo.MockIssueRevision
+	requests     *requestkeyrepo.MockRequestKey
+	templates    *issuetemplaterepo.MockIssueTemplate
 	states       *workflowstaterepo.MockWorkflowState
 	activity     *activityrepo.MockActivity
 	labels       *labelrepo.MockLabel
@@ -82,6 +88,9 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		issues:      issuerepo.NewMockIssue(ctrl),
+		revisions:   issuerevisionrepo.NewMockIssueRevision(ctrl),
+		requests:    requestkeyrepo.NewMockRequestKey(ctrl),
+		templates:   issuetemplaterepo.NewMockIssueTemplate(ctrl),
 		states:      workflowstaterepo.NewMockWorkflowState(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
 		labels:      labelrepo.NewMockLabel(ctrl),
@@ -147,7 +156,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = issuesvc.New(
-		h.issues, h.states, h.activity, h.labels, h.accounts, h.memberships,
+		h.issues, h.revisions, h.templates, h.requests, h.states, h.activity, h.labels, h.accounts, h.memberships,
 		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events,
 		silentEmitter(ctrl), h.followers,
 		h.jobs,

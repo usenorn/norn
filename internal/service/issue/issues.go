@@ -18,6 +18,9 @@ import (
 
 type issuesService struct {
 	issues       repository.Issue
+	revisions    repository.IssueRevision
+	templates    repository.IssueTemplate
+	requests     repository.RequestKey
 	states       repository.WorkflowState
 	activity     repository.Activity
 	labels       repository.Label
@@ -40,6 +43,9 @@ type issuesService struct {
 
 func New(
 	issues repository.Issue,
+	revisions repository.IssueRevision,
+	templates repository.IssueTemplate,
+	requests repository.RequestKey,
 	states repository.WorkflowState,
 	activity repository.Activity,
 	labels repository.Label,
@@ -61,6 +67,9 @@ func New(
 ) service.Issues {
 	return &issuesService{
 		issues:       issues,
+		revisions:    revisions,
+		templates:    templates,
+		requests:     requests,
 		states:       states,
 		activity:     activity,
 		labels:       labels,
@@ -82,6 +91,14 @@ func New(
 	}
 }
 
+func text(value *string) string {
+	if value == nil {
+		return ""
+	}
+
+	return *value
+}
+
 func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInput) (entity.Issue, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceIssue,
@@ -93,7 +110,10 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return entity.Issue{}, err
 	}
 
-	if err := entity.NewValidationError(entity.ValidateIssueTitle("title", input.Title)); err != nil {
+	if err := entity.NewValidationError(
+		entity.ValidateIssueTitle("title", input.Title),
+		entity.ValidateRequestKey("idempotencyKey", input.RequestKey),
+	); err != nil {
 		return entity.Issue{}, err
 	}
 
@@ -145,11 +165,29 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return entity.Issue{}, err
 	}
 
+	if input.TemplateID != uuid.Nil {
+		if err := s.shapedBy(ctx, &input); err != nil {
+			return entity.Issue{}, err
+		}
+	}
+
+	markdown, document, err := entity.Described(input.Description, input.DescriptionDoc)
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateIssueDescription("description", markdown),
+	); err != nil {
+		return entity.Issue{}, err
+	}
+
 	arriving := entity.Issue{
 		WorkspaceID:        input.WorkspaceID,
 		TeamID:             input.TeamID,
 		Title:              input.Title,
-		Description:        input.Description,
+		Description:        markdown,
+		DescriptionDoc:     document,
 		Priority:           input.Priority,
 		AssigneeAccountID:  input.AssigneeAccountID,
 		Estimate:           input.Estimate,
@@ -176,7 +214,22 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 
 	var created entity.Issue
 
+	claim := entity.RequestKey{
+		ID:          uuid.New(),
+		WorkspaceID: input.WorkspaceID,
+		AccountID:   decision.Actor.AccountID,
+		Scope:       entity.RequestScopeIssue,
+		Key:         input.RequestKey,
+		CreatedAt:   time.Now().UTC(),
+	}
+
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if claim.Key != "" {
+			if err := s.requests.Claim(ctx, claim); err != nil {
+				return err
+			}
+		}
+
 		if _, err := s.states.ShareByIDs(ctx, []uuid.UUID{arriving.State.ID}); err != nil {
 			return err
 		}
@@ -195,6 +248,18 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		created, err = s.issues.Create(ctx, arriving)
 		if err != nil {
 			return err
+		}
+
+		if claim.Key != "" {
+			if err := s.requests.Settle(ctx, input.WorkspaceID, claim.ID, created.ID); err != nil {
+				return err
+			}
+		}
+
+		if markdown != "" {
+			if err := s.remember(ctx, created, decision, entity.RevisionSourceOf(decision.Actor.Kind, input.Source, input.Origin)); err != nil {
+				return err
+			}
 		}
 
 		if len(labels) > 0 {
@@ -243,6 +308,10 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return nil
 	})
 	if err != nil {
+		if errors.Is(err, entity.ErrRequestKeyTaken) {
+			return s.raisedBefore(ctx, claim, decision)
+		}
+
 		return entity.Issue{}, err
 	}
 
@@ -430,21 +499,35 @@ func (s *issuesService) Update(
 		return entity.Issue{}, err
 	}
 
+	written := input.Description
+	documented := input.DescriptionDoc
+
+	if written != nil || documented != nil {
+		markdown, document, err := entity.Described(text(written), documented)
+		if err != nil {
+			return entity.Issue{}, err
+		}
+
+		written = &markdown
+		documented = &document
+	}
+
 	change := entity.IssueChange{
-		Title:         input.Title,
-		StateID:       input.StateID,
-		Description:   input.Description,
-		Priority:      input.Priority,
-		Assignee:      input.AssigneeID,
-		Estimate:      input.Estimate,
-		DueOn:         input.DueOn,
-		CycleID:       input.CycleID,
-		ProjectID:     input.ProjectID,
-		ClearAssignee: slices.Contains(input.Clear, entity.IssueFieldAssignee),
-		ClearEstimate: slices.Contains(input.Clear, entity.IssueFieldEstimate),
-		ClearDueOn:    slices.Contains(input.Clear, entity.IssueFieldDueOn),
-		ClearCycle:    slices.Contains(input.Clear, entity.IssueFieldCycle),
-		ClearProject:  slices.Contains(input.Clear, entity.IssueFieldProject),
+		Title:          input.Title,
+		StateID:        input.StateID,
+		Description:    written,
+		DescriptionDoc: documented,
+		Priority:       input.Priority,
+		Assignee:       input.AssigneeID,
+		Estimate:       input.Estimate,
+		DueOn:          input.DueOn,
+		CycleID:        input.CycleID,
+		ProjectID:      input.ProjectID,
+		ClearAssignee:  slices.Contains(input.Clear, entity.IssueFieldAssignee),
+		ClearEstimate:  slices.Contains(input.Clear, entity.IssueFieldEstimate),
+		ClearDueOn:     slices.Contains(input.Clear, entity.IssueFieldDueOn),
+		ClearCycle:     slices.Contains(input.Clear, entity.IssueFieldCycle),
+		ClearProject:   slices.Contains(input.Clear, entity.IssueFieldProject),
 	}
 
 	change.Rank, err = s.rankBetween(ctx, workspaceID, decision, input)
@@ -564,6 +647,17 @@ func (s *issuesService) Update(
 
 		if err := s.issues.Update(ctx, issueID, issue.Version, change, timestamps, now); err != nil {
 			return err
+		}
+
+		if change.DescriptionDoc != nil && *change.Description != issue.Description {
+			written := issue
+			written.Version = issue.Version + 1
+			written.Description = *change.Description
+			written.DescriptionDoc = *change.DescriptionDoc
+
+			if err := s.remember(ctx, written, decision, restoring(decision, input)); err != nil {
+				return err
+			}
 		}
 
 		if err := s.recordChanges(ctx, issue, decision, change, joining); err != nil {
@@ -1802,4 +1896,29 @@ func labelNames(labels []entity.Label) string {
 	slices.Sort(names)
 
 	return strings.Join(names, ", ")
+}
+
+func restoring(decision entity.Decision, input service.UpdateIssueInput) entity.RevisionSource {
+	if input.Restoring {
+		return entity.RevisionSourceRestore
+	}
+
+	return entity.RevisionSourceOf(decision.Actor.Kind, "", nil)
+}
+
+func (s *issuesService) raisedBefore(
+	ctx context.Context,
+	claim entity.RequestKey,
+	decision entity.Decision,
+) (entity.Issue, error) {
+	held, err := s.requests.Find(ctx, claim)
+	if err != nil {
+		return entity.Issue{}, err
+	}
+
+	if held.IssueID == uuid.Nil {
+		return entity.Issue{}, entity.ErrRequestKeyTaken
+	}
+
+	return s.issues.GetVisible(ctx, claim.WorkspaceID, held.IssueID, decision.Scope)
 }

@@ -256,3 +256,115 @@ type AgentProposal struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
+
+type ChangePart string
+
+const (
+	ChangePartTitle       ChangePart = "title"
+	ChangePartDescription ChangePart = "description"
+	ChangePartState       ChangePart = "state"
+	ChangePartPriority    ChangePart = "priority"
+	ChangePartAssignee    ChangePart = "assignee"
+	ChangePartEstimate    ChangePart = "estimate"
+	ChangePartDueOn       ChangePart = "dueOn"
+	ChangePartCycle       ChangePart = "cycle"
+	ChangePartProject     ChangePart = "project"
+	ChangePartLabels      ChangePart = "labels"
+)
+
+func ChangeParts() []ChangePart {
+	return []ChangePart{
+		ChangePartTitle, ChangePartDescription, ChangePartState, ChangePartPriority,
+		ChangePartAssignee, ChangePartEstimate, ChangePartDueOn, ChangePartCycle,
+		ChangePartProject, ChangePartLabels,
+	}
+}
+
+func (p ChangePart) Valid() bool {
+	return slices.Contains(ChangeParts(), p)
+}
+
+func (c AgentChange) Parts() []ChangePart {
+	var asked []ChangePart
+
+	for part, proposed := range map[ChangePart]bool{
+		ChangePartTitle:       c.Title != nil,
+		ChangePartDescription: c.Description != nil,
+		ChangePartState:       c.StateID != nil,
+		ChangePartPriority:    c.Priority != nil,
+		ChangePartAssignee:    c.AssigneeID != nil || slices.Contains(c.Clear, "assignee"),
+		ChangePartEstimate:    c.Estimate != nil || slices.Contains(c.Clear, "estimate"),
+		ChangePartDueOn:       c.DueOn != nil || slices.Contains(c.Clear, "dueOn"),
+		ChangePartCycle:       c.CycleID != nil || slices.Contains(c.Clear, "cycle"),
+		ChangePartProject:     c.ProjectID != nil || slices.Contains(c.Clear, "project"),
+		ChangePartLabels:      len(c.LabelIDs) > 0,
+	} {
+		if proposed {
+			asked = append(asked, part)
+		}
+	}
+
+	slices.SortFunc(asked, func(one, other ChangePart) int {
+		return slices.Index(ChangeParts(), one) - slices.Index(ChangeParts(), other)
+	})
+
+	return asked
+}
+
+func (c AgentChange) Only(accepted []ChangePart) AgentChange {
+	if len(accepted) == 0 {
+		return c
+	}
+
+	taken := func(part ChangePart) bool { return slices.Contains(accepted, part) }
+
+	narrowed := AgentChange{ExpectedVersion: c.ExpectedVersion, Body: c.Body}
+
+	if taken(ChangePartTitle) {
+		narrowed.Title = c.Title
+	}
+
+	if taken(ChangePartDescription) {
+		narrowed.Description = c.Description
+	}
+
+	if taken(ChangePartState) {
+		narrowed.StateID = c.StateID
+	}
+
+	if taken(ChangePartPriority) {
+		narrowed.Priority = c.Priority
+	}
+
+	if taken(ChangePartAssignee) {
+		narrowed.AssigneeID = c.AssigneeID
+	}
+
+	if taken(ChangePartEstimate) {
+		narrowed.Estimate = c.Estimate
+	}
+
+	if taken(ChangePartDueOn) {
+		narrowed.DueOn = c.DueOn
+	}
+
+	if taken(ChangePartCycle) {
+		narrowed.CycleID = c.CycleID
+	}
+
+	if taken(ChangePartProject) {
+		narrowed.ProjectID = c.ProjectID
+	}
+
+	if taken(ChangePartLabels) {
+		narrowed.LabelIDs = c.LabelIDs
+	}
+
+	for _, cleared := range c.Clear {
+		if taken(ChangePart(cleared)) {
+			narrowed.Clear = append(narrowed.Clear, cleared)
+		}
+	}
+
+	return narrowed
+}

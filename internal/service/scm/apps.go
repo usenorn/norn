@@ -19,11 +19,11 @@ import (
 )
 
 type apps struct {
-	apps        repository.SCMApp
-	connections repository.SCMConnection
-	states      repository.SCMAppState
-	forges      service.Forges
-	authorizer  service.Authorizer
+	apps          repository.SCMApp
+	connections   repository.SCMConnection
+	states        repository.SCMAppState
+	forges        service.Forges
+	authorizer    service.Authorizer
 	sourceControl config.SourceControl
 }
 

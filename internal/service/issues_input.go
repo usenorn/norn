@@ -11,6 +11,7 @@ type CreateIssueInput struct {
 	TeamID            uuid.UUID
 	Title             string
 	Description       string
+	DescriptionDoc    *entity.Document
 	Priority          entity.IssuePriority
 	AssigneeAccountID uuid.UUID
 	Estimate          int
@@ -19,8 +20,10 @@ type CreateIssueInput struct {
 	CycleID           uuid.UUID
 	ProjectID         uuid.UUID
 	LabelIDs          []uuid.UUID
+	TemplateID        uuid.UUID
 	Origin            *entity.ImportOrigin
 	Source            entity.TriageSource
+	RequestKey        string
 	Reasoning         entity.AgentReasoning
 }
 
@@ -81,6 +84,7 @@ type UpdateIssueInput struct {
 	Title                   *string
 	StateID                 *uuid.UUID
 	Description             *string
+	DescriptionDoc          *entity.Document
 	Priority                *entity.IssuePriority
 	AssigneeID              *uuid.UUID
 	Estimate                *int
@@ -90,6 +94,7 @@ type UpdateIssueInput struct {
 	AfterIssueID            *uuid.UUID
 	BeforeIssueID           *uuid.UUID
 	Clear                   []string
+	Restoring               bool
 	Reasoning               entity.AgentReasoning
 }
 

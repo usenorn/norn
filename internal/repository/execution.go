@@ -19,10 +19,12 @@ type NewExecution struct {
 	AgentID      uuid.UUID
 	RunnerID     uuid.UUID
 	CodebaseID   uuid.UUID
-	Attempt      int
-	QueuedReason entity.ExecutionQueuedReason
-	Params       entity.ExecutionParams
-	QueuedAt     time.Time
+
+	DescriptionRevisionID uuid.UUID
+	Attempt               int
+	QueuedReason          entity.ExecutionQueuedReason
+	Params                entity.ExecutionParams
+	QueuedAt              time.Time
 }
 
 type ExecutionBinding struct {

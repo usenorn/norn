@@ -69,11 +69,15 @@ import (
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
+	issuecriterionrepo "github.com/usenorn/norn/internal/repository/issuecriterion"
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
+	issuedraftrepo "github.com/usenorn/norn/internal/repository/issuedraft"
 	issuefilterreferencerepo "github.com/usenorn/norn/internal/repository/issuefilterreference"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
+	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
+	issuetemplaterepo "github.com/usenorn/norn/internal/repository/issuetemplate"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
@@ -93,6 +97,7 @@ import (
 	previewgrantrepo "github.com/usenorn/norn/internal/repository/previewgrant"
 	previewsharerepo "github.com/usenorn/norn/internal/repository/previewshare"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	requestkeyrepo "github.com/usenorn/norn/internal/repository/requestkey"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	runnerchannelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
 	runnersessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
@@ -141,8 +146,11 @@ import (
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
+	issuecriterionsvc "github.com/usenorn/norn/internal/service/issuecriterion"
+	issuedraftsvc "github.com/usenorn/norn/internal/service/issuedraft"
 	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
+	issuetemplatesvc "github.com/usenorn/norn/internal/service/issuetemplate"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
@@ -202,6 +210,11 @@ var baseSet = wire.NewSet(
 	passwordresetrepo.Set,
 	signuprepo.Set,
 	issuerepo.Set,
+	issuedraftrepo.Set,
+	issuecriterionrepo.Set,
+	issuerevisionrepo.Set,
+	issuetemplaterepo.Set,
+	requestkeyrepo.Set,
 	activityrepo.Set,
 	issuedelegationrepo.Set,
 	issuequestionrepo.Set,
@@ -279,6 +292,9 @@ var baseSet = wire.NewSet(
 	projectsvc.Set,
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
+	issuedraftsvc.Set,
+	issuecriterionsvc.Set,
+	issuetemplatesvc.Set,
 	issuequestionsvc.Set,
 	runnersvc.Set,
 	codebasesvc.Set,

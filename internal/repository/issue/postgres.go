@@ -25,6 +25,7 @@ const issueColumns = `
        i.version,
        i.field_versions,
        i.description,
+       coalesce(i.description_doc::text, ''),
        i.priority,
        coalesce(i.assignee_account_id::text, ''),
        coalesce(i.estimate, 0),
@@ -90,18 +91,18 @@ WITH allocated AS (
 ), inserted AS (
     INSERT INTO workspace_issues (
         id, workspace_id, team_id, reference_key, number, title, state_id,
-        created_by_account_id, description, priority, assignee_account_id,
+        created_by_account_id, description, description_doc, priority, assignee_account_id,
         estimate, due_on, cycle_id, project_id, triage_state, triage_source, rank,
         created_at, updated_at
     )
     SELECT $1, $2, $3, t.key, allocated.number, $4, $5, $6,
-           $8, $9, nullif($10, '')::uuid, nullif($11, 0), nullif($12, '')::date,
+           $8, $19::jsonb, $9, nullif($10, '')::uuid, nullif($11, 0), nullif($12, '')::date,
            nullif($17, '')::uuid, nullif($15, '')::uuid, nullif($13, ''), nullif($14, ''), $18,
            $7, $16
     FROM allocated
     JOIN workspace_teams t ON t.id = $3
     RETURNING id, workspace_id, team_id, reference_key, number, title, state_id,
-              version, field_versions, description, priority, assignee_account_id,
+              version, field_versions, description, description_doc, priority, assignee_account_id,
               estimate, due_on, state_entered_at, completed_at,
               status, archived_at,
               parent_issue_id, depth, cycle_id, project_id,
@@ -171,6 +172,7 @@ UPDATE workspace_issues
 SET title               = coalesce($3, title),
     state_id            = coalesce($4::uuid, state_id),
     description         = coalesce($5, description),
+    description_doc     = coalesce($23::jsonb, description_doc),
     priority            = coalesce($6, priority),
     assignee_account_id = CASE WHEN $7::boolean THEN NULL
                                ELSE coalesce($8::uuid, assignee_account_id) END,
@@ -397,6 +399,19 @@ const (
 	referenceUniqueIndex = "workspace_issues_reference_key"
 )
 
+func documentOf(document entity.Document) any {
+	if document.Type == "" {
+		return nil
+	}
+
+	encoded, err := document.Encode()
+	if err != nil {
+		return nil
+	}
+
+	return string(encoded)
+}
+
 func translateWriteError(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) &&
@@ -439,6 +454,7 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		completedAt   sql.NullTime
 		archivedAt    sql.NullTime
 		fieldVersions []byte
+		documented    string
 
 		triageState   string
 		triageSource  string
@@ -455,6 +471,7 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		&issue.Version,
 		&fieldVersions,
 		&issue.Description,
+		&documented,
 		&priority,
 		&assignee,
 		&issue.Estimate,
@@ -516,6 +533,17 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		if err := json.Unmarshal(fieldVersions, &issue.FieldVersions); err != nil {
 			return entity.Issue{}, fmt.Errorf("decode issue field versions: %w", err)
 		}
+	}
+
+	if documented == "" {
+		issue.DescriptionDoc = entity.DocumentFromMarkdown(issue.Description)
+	} else {
+		document, err := entity.DecodeDocument([]byte(documented))
+		if err != nil {
+			return entity.Issue{}, fmt.Errorf("decode issue description: %w", err)
+		}
+
+		issue.DescriptionDoc = document
 	}
 
 	if issue.FieldVersions == nil {
@@ -642,6 +670,7 @@ func (r *issueRepository) Create(ctx context.Context, issue entity.Issue) (entit
 		updatedAt,
 		text(issue.CycleID),
 		issue.Rank,
+		documentOf(issue.DescriptionDoc),
 	))
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {
@@ -1155,10 +1184,17 @@ func (r *issueRepository) Update(
 		projectID = change.ProjectID.String()
 	}
 
-	var rank any
+	var (
+		rank      any
+		described any
+	)
 
 	if change.Rank != nil {
 		rank = *change.Rank
+	}
+
+	if change.DescriptionDoc != nil {
+		described = documentOf(*change.DescriptionDoc)
 	}
 
 	if timestamps != nil {
@@ -1195,6 +1231,7 @@ func (r *issueRepository) Update(
 		change.ClearProject,
 		projectID,
 		rank,
+		described,
 	)
 	if err != nil {
 		return fmt.Errorf("update issue: %w", err)
