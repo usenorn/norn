@@ -171,7 +171,6 @@ func TestADescriptionWrittenInProductionSurvivesTheRoundTrip(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	// A stored description carries no trailing newline; the fixture is a file and does.
 	given := strings.TrimRight(string(written), "\n")
 	document := entity.DocumentFromMarkdown(given)
 

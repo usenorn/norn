@@ -349,9 +349,6 @@
 						body: {
 							teamId: pending.data.teamId,
 							title: pending.data.title,
-							// The key travels with every attempt at this one issue, so a lost answer
-							// can be asked for again and reaches the issue already raised rather
-							// than raising a second one saying the same thing.
 							idempotencyKey: own.key,
 							templateId: templateId || undefined,
 							description: documentText(own.description) || undefined,
@@ -651,8 +648,6 @@
 			)
 	);
 
-	// Closing the dialog with something written keeps it on the server rather than losing it.
-	// The dialog is not where the writing lives; it is only where it is done.
 	$effect(() => {
 		const justClosed = !open && wasOpen;
 
@@ -689,8 +684,6 @@
 		if (kept) draftId = kept.id;
 	}
 
-	// Templates are read for the team the issue is going to, because a template belongs to the
-	// team that keeps it and offering another team's would raise the wrong shape of issue.
 	$effect(() => {
 		const chosen = $formData.teamId;
 
@@ -718,8 +711,6 @@
 
 		if (!template) return;
 
-		// A template applied over writing would take it away, so what is there is shown against
-		// what the template offers and somebody decides which one stands.
 		if ($formData.title.trim() !== "" || !documentEmpty(describing)) {
 			replacing = template;
 
@@ -952,9 +943,6 @@
 		class="top-21 grid-rows-[minmax(0,1fr)] max-h-[calc(100dvh-7.5rem)] overflow-hidden p-0 sm:max-w-162"
 		showCloseButton={false}
 		onOpenAutoFocus={(event) => {
-			// Opening lands in the title, because that is where writing an issue starts. Left to
-			// itself the dialog focuses whichever control comes first, and the first thing typed
-			// goes nowhere.
 			event.preventDefault();
 			titleField?.focus();
 		}}

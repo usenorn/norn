@@ -1798,8 +1798,6 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 		dto.IssueReference = &reference
 		dto.IssueTitle = &waiting.Issue.Title
 
-		// What the issue says now travels with what the proposal would make it say, so nobody
-		// approves a description they have not read against the one it replaces.
 		priority := api.IssuePriority(waiting.Issue.Priority)
 
 		held := api.AgentProposalHeld{
@@ -2927,9 +2925,6 @@ func attrsDTO(attrs map[string]any) *map[string]any {
 	return &attrs
 }
 
-// documentOf reads a document a caller sent. It carries the caller's shape no further than
-// this: what the node types mean, and which of them this instance will store, is settled in the
-// domain layer, so a request cannot introduce a node the editor cannot render.
 func documentOf(document *api.Document) *entity.Document {
 	if document == nil {
 		return nil

@@ -20,8 +20,6 @@ func New(drafts repository.IssueDraft, authorizer service.Authorizer) service.Is
 	return &issueDraftsService{drafts: drafts, authorizer: authorizer}
 }
 
-// A draft belongs to the person writing it and to nobody else, so every operation is scoped to
-// the account the request authenticated as rather than to what the caller asks for.
 func (s *issueDraftsService) owner(
 	ctx context.Context,
 	workspaceID uuid.UUID,

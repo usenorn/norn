@@ -424,7 +424,6 @@
 	}
 }
 
-/* The editor writes blocks the prose plugin has no opinion about: a checklist item is a list
    item whose marker is a real checkbox, a toggle is a details element the writer folds, and a
    table needs its own borders. Placing these here keeps every editor and every rendered
    description looking alike. */
@@ -456,7 +455,6 @@
 	margin: 0;
 }
 
-/* A table wider than the column scrolls inside its own box rather than pushing the page sideways;
    at 360px almost every table is wider than the column. */
 [data-slot="editor"] .ProseMirror .tableWrapper {
 	overflow-x: auto;

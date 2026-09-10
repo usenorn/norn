@@ -21,10 +21,6 @@ export type DraftFields = {
 	dueOn?: string;
 };
 
-/**
- * A draft is worth keeping only when something was actually written. Keeping an empty one turns
- * opening the dialog and changing your mind into a row somebody has to clear later.
- */
 export function worthKeeping(fields: DraftFields): boolean {
 	return fields.title.trim() !== "" || !documentEmpty(fields.description);
 }

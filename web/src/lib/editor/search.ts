@@ -44,11 +44,6 @@ export const suggestionLimit = 8;
 
 const referenceShape = /^[A-Za-z][A-Za-z0-9]*-\d+$/;
 
-/**
- * Autocomplete searches what the person may read in the whole workspace rather than what the
- * page happens to have loaded. A teammate who is not on this board, or an issue from another
- * team, is exactly what somebody reaches for and exactly what a local list cannot offer.
- */
 export async function findIssues(
 	workspaceId: string,
 	workspace: string,
@@ -82,8 +77,6 @@ export async function findMentions(
 ): Promise<SuggestionOutcome> {
 	const asked = query.trim();
 
-	// The search asks for something to search for, so an empty query is a question nobody has
-	// finished asking rather than one with no answer.
 	if (asked === "") return { state: "typing" };
 
 	const found = await search(workspaceId, asked, ["person", "team", "issue", "project"]);
@@ -148,8 +141,6 @@ async function search(
 	const found = await api
 		.GET("/workspaces/{workspaceId}/search", {
 			params: { path: { workspaceId }, query: { q: query, kinds, limit: suggestionLimit } },
-			// The spec asks for the kinds as one comma-separated value, and the client repeats
-			// the parameter unless told otherwise; the server refuses the repeated form.
 			querySerializer: { array: { style: "form", explode: false } },
 		})
 		.catch(() => undefined);

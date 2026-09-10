@@ -46,8 +46,6 @@
 	const parts = $derived(proposal.parts ?? []);
 	const held = $derived(proposal.held);
 
-	// Every part starts accepted, because approving all of it is what approving used to mean.
-	// What a reader does here is take things out, not put them in.
 	let refused = $state.raw<ChangePart[]>([]);
 
 	const accepted = $derived(parts.filter((part) => !refused.includes(part)));

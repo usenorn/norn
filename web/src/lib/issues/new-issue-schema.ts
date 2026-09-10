@@ -25,9 +25,4 @@ export const newIssueSchema = z.object({
 
 export type NewIssueInput = z.infer<typeof newIssueSchema>;
 
-/**
- * What a refused creation hands back so the writing survives it. The description travels as the
- * document the editor held, because rendering it to text and reading it back would quietly drop
- * a mention, an attachment or a linked issue.
- */
 export type NewIssuePrefill = Partial<NewIssueInput> & { description?: Document };

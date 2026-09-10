@@ -8,11 +8,6 @@ export type SlashCommand = {
 	confirm?: string;
 };
 
-/**
- * The slash menu is the keyboard path to every block this editor writes. It is a plain list so
- * it can be searched, ordered and tested without an editor: what a query matches is a decision
- * about the menu, not about ProseMirror.
- */
 export const slashCommands: SlashCommand[] = [
 	{ key: "h1", label: "Heading 1", hint: "Big section heading", group: "Text", aliases: ["heading", "title", "#"] },
 	{ key: "h2", label: "Heading 2", hint: "Section heading", group: "Text", aliases: ["heading", "subtitle", "##"] },
@@ -41,11 +36,6 @@ export const slashCommands: SlashCommand[] = [
 	},
 ];
 
-/**
- * Ranking alone would scatter a group across the list — two text blocks with a lists block
- * between them — so the best match settles where its group sits and the group stays in one
- * piece. A reader arrowing down passes through each group once.
- */
 export function matchingCommands(query: string): SlashCommand[] {
 	const asked = query.trim().toLowerCase();
 
@@ -89,11 +79,6 @@ function rankOf(command: SlashCommand, asked: string): number {
 	return 0;
 }
 
-/**
- * A slash inside a path, a URL or code is a slash. Offering a menu there interrupts writing
- * `src/lib` or `https://` with a popup nobody asked for, so the menu only opens where a block
- * could actually start.
- */
 export function opensMenu(before: string): boolean {
 	if (before === "") return true;
 

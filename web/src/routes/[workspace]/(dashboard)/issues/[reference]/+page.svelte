@@ -208,17 +208,12 @@
 	let commentUploads = $state.raw<UploadTask[]>([]);
 	let bodyUploads = $state.raw<UploadTask[]>([]);
 
-	// The version an edit is measured against is taken when the edit begins, never afterwards.
-	// Reading it live means an update arriving over the wire quietly moves the ground under an
-	// open editor, and the save that follows overwrites what arrived without anybody being told.
 	let editingVersion = $state(0);
 	let describing = $state.raw<Document>(emptyDocument);
 	let describedBase = $state.raw<Document>(emptyDocument);
 	let describedConflict = $state.raw<{ mine: Document; theirs: Document } | null>(null);
 	let showingHistory = $state(false);
 
-	// The description saves itself as it is written. Typing is never blocked while a save runs,
-	// and the line beside the editor says what has actually happened rather than assuming.
 	const describeSaver = new Autosave(() => saveDescribed());
 
 	async function saveDescribed(): Promise<SaveOutcome> {
@@ -250,10 +245,6 @@
 
 		describedBase = writing;
 		editingVersion = saved.data.version;
-
-		// Nothing else on the page is reloaded for a save the person is still typing into.
-		// Reloading here blocks the keystroke that follows it, which is the one thing autosave
-		// must never do.
 
 		return "saved";
 	}
@@ -310,7 +301,6 @@
 			}
 		});
 	});
-
 
 	async function toggleFollow() {
 		if (!issue) return;
@@ -493,8 +483,6 @@
 		onUpdate: async ({ form: pending }) => {
 			if (!pending.valid || !issue) return;
 
-			// An autosave already on its way would write the same version and lose the race with
-			// this one, so the explicit save takes the pen.
 			describeSaver.stop();
 
 			const clear: string[] = [];
@@ -536,9 +524,6 @@
 				return;
 			}
 
-			// Nothing this editor holds is thrown away on a refusal. A stale version means
-			// somebody else wrote in the meantime, and both texts are worth reading before one
-			// of them is chosen.
 			if (failure?.kind === "stale" && failure.fields.includes("description")) {
 				describedConflict = { mine: describing, theirs: asDocument(issue.descriptionDoc) };
 			}
@@ -1100,8 +1085,6 @@
 		});
 	}
 
-	// A comment is only cleared once it is filed, so what writes one answers whether it landed
-	// rather than leaving the composer to assume it did.
 	async function filing(run: () => Promise<boolean>): Promise<boolean> {
 		working = true;
 		commentFailure = null;
@@ -1171,9 +1154,6 @@
 				if (into === "body" && next.state === "cancelled") descriptionEditor?.abandon(taskId);
 
 				if (next.state === "done" && next.attachment) {
-					// A placeholder somebody removed while the bytes were still travelling is a
-					// decision, so the file that lands afterwards has nowhere to go rather than
-					// reappearing in text that was written without it.
 					if (into === "body") descriptionEditor?.settle(taskId, attachmentNode(next.attachment));
 
 					void invalidate(keys.page(page.route.id));
@@ -1353,9 +1333,6 @@
 
 		await patch(date === "" ? { clear: ["dueOn"] } : { dueOn: date });
 	}
-	// Dirtiness is measured against the text this edit started from, not against what the issue
-	// says now. Measuring against the live value turns somebody else's edit into "unsaved
-	// changes" here, and closes the editor at a moment nobody chose.
 	const dirty = $derived(
 		Boolean(issue) &&
 			(($formData.title !== issue?.title && editingField === "title") ||
@@ -1380,8 +1357,6 @@
 		describeSaver.stop();
 	});
 
-	// Writing that has not been saved and is not on screen: the editor is closed but the words
-	// are still held, so the page has to say so rather than looking as if nothing happened.
 	const unsaved = $derived(
 		Boolean(issue) && editingField !== "description" && !sameDocument(describing, describedBase)
 	);
@@ -1470,21 +1445,15 @@
 		editedField.setSelectionRange(editedField.value.length, editedField.value.length);
 	});
 
-	// Leaving the editor keeps what was written. The text is still there to come back to, and
-	// only Cancel — which somebody chose — throws it away.
 	function stopEditing() {
 		editingField = null;
 		failure = null;
 
-		// Leaving with something unsaved writes it now rather than holding it until somebody
-		// comes back: the words are on the server whether or not this tab survives.
 		if (!sameDocument(describing, describedBase) && !describedConflict) {
 			void describeSaver.flush();
 		}
 	}
 
-	// A requirement broken out of a description becomes an issue that says where it came from,
-	// so reading the child answers what it is for without opening the parent.
 	function breakOut(selected: string) {
 		if (!issue) return;
 
@@ -1521,8 +1490,6 @@
 		addingChild = true;
 	}
 
-	// A decision reached in the conversation is worth more where the work is read than where it
-	// was said, so it moves with a link back to the comment it came from.
 	function promote(comment: IssueComment, into: "issue" | "description") {
 		if (!issue) return;
 
@@ -1683,9 +1650,6 @@
 			return;
 		}
 
-		// Escape dismisses the innermost thing that is open. Inside the editor that is a
-		// suggestion list, which the editor closes itself; out here it is the editing session,
-		// and closing it must not take the writing with it.
 		if (event.key === "Escape") {
 			if (editingField) {
 				event.preventDefault();
@@ -1699,7 +1663,6 @@
 </script>
 
 <svelte:window onkeydown={onKey} onpointerdown={onPointerDown} />
-
 
 <svelte:head>
 	<title>{issue ? `${issue.reference} · ${issue.title}` : "Issue"} · Norn</title>

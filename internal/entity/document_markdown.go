@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-// Markdown renders the document as the text every reader outside the editor sees: the API, the
-// MCP tools, an export, an email. It is a projection and is never parsed back into the stored
-// document, so it is free to spell a toggle or an attachment in the way that reads best.
 func (d Document) Markdown() string {
 	var builder strings.Builder
 
@@ -27,9 +24,6 @@ func writeBlocks(builder *strings.Builder, nodes []Node, prefix string) {
 	}
 }
 
-// writeItemBlocks keeps a list nested straight under its item's line. A blank line there makes
-// the whole list loose, which markdown renders with a paragraph inside every item — visible
-// extra space in text nobody changed.
 func writeItemBlocks(builder *strings.Builder, nodes []Node, prefix string) {
 	for index, node := range nodes {
 		if index > 0 && !listed(node) {
@@ -185,8 +179,6 @@ func writeTable(builder *strings.Builder, node Node, prefix string) {
 	}
 }
 
-// writeDetails spells a toggle as the HTML a markdown reader renders, because markdown has no
-// collapsible block of its own and dropping the summary would lose what the block is for.
 func writeDetails(builder *strings.Builder, node Node, prefix string) {
 	summary, body := "", []Node{}
 
@@ -226,9 +218,6 @@ func inlineOf(nodes []Node) string {
 	return markedRun(nodes, nil)
 }
 
-// markedRun wraps what consecutive nodes agree on once around the whole run. Writing a mark per
-// node would close and reopen the emphasis around a code span in the middle of a bold sentence,
-// which reads as literal asterisks rather than as bold.
 func markedRun(nodes []Node, applied []Mark) string {
 	var builder strings.Builder
 
@@ -259,9 +248,6 @@ func markedRun(nodes []Node, applied []Mark) string {
 	return builder.String()
 }
 
-// markOrder is the nesting order, outermost first. A code span is innermost because markdown
-// reads what is inside one literally, so emphasis written inside it would show its own
-// characters rather than take effect.
 func markOrder() []string {
 	return []string{MarkLink, MarkBold, MarkItalic, MarkStrike, MarkCode}
 }
@@ -316,8 +302,6 @@ func sameMark(a, b Mark) bool {
 	return true
 }
 
-// delimiters spells a mark. An autolink is written as the address itself: a reader sees the same
-// link either way, and the angle brackets would appear in text nobody wrote them into.
 func delimiters(mark Mark) (string, string) {
 	switch mark.Type {
 	case MarkCode:
@@ -381,8 +365,6 @@ func attachmentLabel(node Node) string {
 	return "attachment"
 }
 
-// writeLine drops space left at the end of a line. Nobody types it on purpose, it is invisible
-// to a reader, and leaving it there makes an edit that changed nothing look like a change.
 func writeLine(builder *strings.Builder, prefix, line string) {
 	for index, part := range strings.Split(line, "\n") {
 		if index > 0 {
@@ -396,8 +378,6 @@ func writeLine(builder *strings.Builder, prefix, line string) {
 	builder.WriteString("\n")
 }
 
-// writeVerbatim keeps a line as it was written. Inside a code block trailing space can be the
-// point — a fixture, a diff — so it is the one place this instance does not tidy.
 func writeVerbatim(builder *strings.Builder, prefix, line string) {
 	builder.WriteString(prefix)
 	builder.WriteString(line)

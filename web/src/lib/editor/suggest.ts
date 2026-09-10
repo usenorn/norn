@@ -16,11 +16,6 @@ export type SuggestionHandlers = {
 	onClose: () => void;
 };
 
-/**
- * completing wires one trigger character to a popup the caller draws. The popup never takes
- * focus: the caret stays in the document so typing keeps working and a screen reader keeps
- * reading the text rather than the list.
- */
 export function completing(
 	name: string,
 	char: string,

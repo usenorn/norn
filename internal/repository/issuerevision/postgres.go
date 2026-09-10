@@ -25,8 +25,6 @@ const revisionColumns = `
        r.source,
        r.created_at`
 
-// recordRevisionQuery keeps one row per version of an issue. A retried write that lands twice
-// therefore leaves one entry rather than a doubled history.
 const recordRevisionQuery = `
 INSERT INTO workspace_issue_description_revisions
     (id, workspace_id, issue_id, issue_version, doc, markdown, author_account_id, source, created_at)
@@ -49,8 +47,6 @@ WHERE r.issue_id = $1 AND r.workspace_id = $2
 ORDER BY r.created_at DESC, r.id DESC
 LIMIT 1`
 
-// replaceRevisionQuery folds a run of edits by one person into the entry they started, so the
-// history reads as the times somebody rewrote the description rather than as every keystroke.
 const replaceRevisionQuery = `
 UPDATE workspace_issue_description_revisions
 SET issue_version = $3, doc = $4::jsonb, markdown = $5

@@ -399,8 +399,6 @@ const (
 	referenceUniqueIndex = "workspace_issues_reference_key"
 )
 
-// documentOf hands the column the document as text, and NULL when there is none, so a write
-// that does not touch the description leaves what is stored alone.
 func documentOf(document entity.Document) any {
 	if document.Type == "" {
 		return nil
@@ -537,9 +535,6 @@ func scanIssue(row scanner) (entity.Issue, error) {
 		}
 	}
 
-	// An issue written before descriptions were documents has only its markdown. Reading it as
-	// a document here is what lets everything above this layer assume one shape; the column is
-	// filled the first time somebody writes the description.
 	if documented == "" {
 		issue.DescriptionDoc = entity.DocumentFromMarkdown(issue.Description)
 	} else {

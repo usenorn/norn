@@ -7,11 +7,6 @@ export type IssueRefAttributes = {
 	href: string;
 };
 
-/**
- * IssueRef is a link to an issue that survives what a written-out link does not: renaming the
- * issue, or moving it to another team so its reference changes. The identifier is what is
- * stored; the reference and title are what is shown, and they are refreshed on read.
- */
 export const IssueRef = Node.create({
 	name: "issueRef",
 	group: "inline",

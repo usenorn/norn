@@ -17,9 +17,6 @@ var (
 	ErrTooManyIssueDrafts = errors.New("too many drafts kept for one person in one workspace")
 )
 
-// IssueDraft is an issue somebody started writing and has not raised. It is kept on the server
-// rather than in the browser so the writing survives the tab, the device and the reload — the
-// three ways a half-written issue has been lost until now.
 type IssueDraft struct {
 	ID                uuid.UUID
 	WorkspaceID       uuid.UUID

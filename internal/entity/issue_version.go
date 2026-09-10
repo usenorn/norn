@@ -121,10 +121,6 @@ type IssueChange struct {
 
 	StateID *uuid.UUID
 
-	// Description carries the markdown a change is projected to and DescriptionDoc the document
-	// it was written as. They travel together: the document is what is stored and edited, the
-	// markdown is what every reader outside the editor sees, and writing one without the other
-	// is how the two drift.
 	Description    *string
 	DescriptionDoc *Document
 	Priority       *IssuePriority

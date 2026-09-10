@@ -406,9 +406,6 @@ func (s *executionsService) tell(
 	return nil
 }
 
-// requirements notes which description this run was handed. A description that has never been
-// written since versions were kept has none, and the run is judged against the issue as it
-// stands, which is the same thing.
 func (s *executionsService) requirements(ctx context.Context, issue entity.Issue) uuid.UUID {
 	held, err := s.revisions.Latest(ctx, issue.WorkspaceID, issue.ID)
 	if err != nil {

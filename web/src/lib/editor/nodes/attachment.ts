@@ -8,10 +8,6 @@ export type AttachmentAttributes = {
 	byteSize: number;
 };
 
-/**
- * Attachment is a file that is not a picture — a log, an archive, a document. It is a block of
- * its own rather than a link so it keeps its place in the text while the words around it change.
- */
 export const Attachment = Node.create({
 	name: "attachment",
 	group: "block",

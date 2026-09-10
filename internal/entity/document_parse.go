@@ -12,9 +12,6 @@ import (
 
 var documentReader = goldmark.New(goldmark.WithExtensions(extension.GFM))
 
-// DocumentFromMarkdown reads text written before this instance stored documents, and text
-// written by anything that still speaks markdown — the API, an agent, an import, an email. It
-// is the one way in: nothing writes the stored document by hand.
 func DocumentFromMarkdown(markdown string) Document {
 	source := []byte(markdown)
 	root := documentReader.Parser().Parse(text.NewReader(source))
@@ -78,8 +75,6 @@ func blockFrom(node ast.Node, source []byte) (Node, bool) {
 	return Node{}, false
 }
 
-// listFrom keeps a task list apart from a plain one. A checklist is a different thing to a
-// reader — it is clicked rather than read — and markdown spells both with a dash.
 func listFrom(list *ast.List, source []byte) Node {
 	var items []Node
 
@@ -153,8 +148,6 @@ func tableFrom(table *extensionast.Table, source []byte) Node {
 	return Node{Type: NodeTable, Content: rows}
 }
 
-// htmlBlockFrom recognises the one piece of HTML this instance writes itself — the toggle —
-// and keeps everything else as the text it is rather than letting markup into the document.
 func htmlBlockFrom(block *ast.HTMLBlock, source []byte) (Node, bool) {
 	raw := strings.TrimSpace(linesOf(block, source))
 
@@ -202,14 +195,10 @@ func inlineNodes(node ast.Node, source []byte, marks []Mark) []Node {
 	case *ast.Text:
 		var written []Node
 
-		// A break that follows something other than plain text — a link, a code span — arrives
-		// as an empty text node carrying the flag, so emptiness alone is not a reason to skip.
 		if value := string(typed.Segment.Value(source)); value != "" {
 			written = append(written, Node{Type: NodeText, Text: value, Marks: marks})
 		}
 
-		// Norn renders a single newline as a line break, so a wrapped line is something the
-		// writer sees rather than source formatting: it survives as a break, not a space.
 		if typed.HardLineBreak() || typed.SoftLineBreak() {
 			written = append(written, Node{Type: NodeHardBreak})
 		}
@@ -247,9 +236,6 @@ func inlineNodes(node ast.Node, source []byte, marks []Mark) []Node {
 		return nil
 
 	case *ast.AutoLink:
-		// An address or URL a reader can see is a link without any markup around it. Keeping
-		// that apart from a written-out link is what lets the text come back as it was rather
-		// than as a markdown link nobody typed.
 		shown := string(typed.Label(source))
 		href := string(typed.URL(source))
 

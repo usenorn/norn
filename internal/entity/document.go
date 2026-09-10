@@ -70,10 +70,6 @@ func DocumentMarks() []string {
 	return []string{MarkBold, MarkItalic, MarkStrike, MarkCode, MarkLink}
 }
 
-// Document is the authoritative form of a description or a comment. Its shape is the one the
-// browser's editor already speaks, so a document travels from the caret to the column without
-// being translated on the way; the markdown a reader, an agent or the API sees is rendered
-// from it and never written back.
 type Document struct {
 	Type    string `json:"type"`
 	Content []Node `json:"content,omitempty"`
@@ -92,10 +88,6 @@ type Mark struct {
 	Attrs map[string]any `json:"attrs,omitempty"`
 }
 
-// Described settles the two forms a caller may send. Whichever arrives, the stored text is
-// rendered from the stored document, so the two can never disagree: markdown that came in with
-// its own spelling of a heading or a stray blank line comes back in the one this instance
-// writes, and an edit that changes nothing leaves the text alone rather than tidying it.
 func Described(markdown string, document *Document) (string, Document, error) {
 	if document == nil {
 		parsed := DocumentFromMarkdown(markdown)
@@ -140,9 +132,6 @@ func DecodeDocument(raw []byte) (Document, error) {
 	return decoded, nil
 }
 
-// ValidateDocument refuses a shape this instance cannot render rather than storing it and
-// discovering the gap when somebody opens the issue. Depth and size are bounded because the
-// document arrives from a browser and is walked recursively on every read.
 func ValidateDocument(document Document) error {
 	if document.Type != DocumentType {
 		return ErrDocumentMalformed
@@ -189,9 +178,6 @@ func walkDocument(nodes []Node, depth int) (int, error) {
 	return counted, nil
 }
 
-// DocumentMentions reads who a document addresses. It is the only source: a mention lives in
-// the document as a node carrying an identifier, so the text a reader sees and the people a
-// notification reaches cannot drift apart the way a parallel list of targets does.
 func DocumentMentions(document Document) []CommentMention {
 	var (
 		found []CommentMention
@@ -231,8 +217,6 @@ func DocumentMentions(document Document) []CommentMention {
 	return found
 }
 
-// DocumentReferences reads which issues a document points at, so a move or a rename can be
-// followed rather than leaving the text quoting a reference that no longer exists.
 func DocumentReferences(document Document) []uuid.UUID {
 	var (
 		found []uuid.UUID
@@ -258,8 +242,6 @@ func DocumentReferences(document Document) []uuid.UUID {
 	return found
 }
 
-// DocumentAttachments reads which stored files a document shows, so a file removed from the
-// text can be told from one that was never in it.
 func DocumentAttachments(document Document) []uuid.UUID {
 	var (
 		found []uuid.UUID

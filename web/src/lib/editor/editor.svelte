@@ -127,9 +127,6 @@
 		};
 	}
 
-	// A later answer must not move what somebody has already arrowed onto, and an earlier one
-	// arriving after a newer query must not replace it. Both are the same bug seen from two
-	// sides, and both lose the choice under the writer's hands.
 	async function openSearch(kind: "mention" | "issue", session: SuggestionSession) {
 		const mine = (asked += 1);
 		const standing = popup?.kind === kind ? popup.rows[popup.index]?.key : undefined;
@@ -210,8 +207,6 @@
 			return true;
 		}
 
-		// Escape closes the list and leaves everything typed where it is. Clearing the text here
-		// is what makes a stray Escape feel like losing work.
 		if (event.key === "Escape") {
 			popup = null;
 
@@ -243,8 +238,6 @@
 
 			within.chain().focus().deleteRange(range).run();
 
-			// With nothing selected the line the caret sits on is what the writer meant: a
-			// checklist item or a requirement, typed and then broken out.
 			onsubissue?.(selected === "" ? within.state.selection.$from.parent.textContent.trim() : selected);
 
 			return;
@@ -403,8 +396,6 @@
 				held = next;
 				document = next;
 			},
-			// A transaction can be dispatched while Svelte is rendering — a blur fires one — and
-			// writing state there is refused. The toolbar only needs the new marks afterwards.
 			onTransaction: () => queueMicrotask(() => (revision += 1)),
 		});
 	}
@@ -468,8 +459,6 @@
 	const blank = $derived(documentEmpty(document));
 </script>
 
-<!-- The toolbar sits above the text but comes after it in the tab order, so tabbing in from the
-	title lands where writing happens and the controls stay one stop further on. -->
 <div class="flex min-w-0 flex-col {className}">
 	<div class="relative min-w-0">
 		<div

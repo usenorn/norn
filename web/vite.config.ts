@@ -7,8 +7,6 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, '.', ['SENTRY_', 'NORN_']);
 
-	// Two branches checked out side by side each need their own backend, and a hardcoded port
-	// sends one of them at the other's server, where every write is refused as cross-site.
 	const api = env.NORN_DEV_API_ORIGIN ?? 'http://127.0.0.1:8080';
 	const port = Number(env.NORN_DEV_PORT ?? 5174);
 

@@ -21,8 +21,6 @@ var (
 	ErrTooManyIssueTemplates = errors.New("too many templates on one team")
 )
 
-// TemplateField names a property a template insists on before an issue may be raised from it.
-// The set is closed: a template can only require something the creation screen actually offers.
 type TemplateField string
 
 const (
@@ -51,9 +49,6 @@ func (f TemplateField) Valid() bool {
 	return slices.Contains(TemplateFields(), f)
 }
 
-// IssueTemplate is a shape a team keeps for the issues it raises again and again — the prose it
-// starts from and the properties it comes with. A template with no team belongs to the whole
-// workspace.
 type IssueTemplate struct {
 	ID                 uuid.UUID
 	WorkspaceID        uuid.UUID
@@ -76,8 +71,6 @@ type IssueTemplate struct {
 	UpdatedAt          time.Time
 }
 
-// Missing reads which of the properties a template insists on the caller has not chosen, so the
-// refusal names them all at once rather than one per attempt.
 func (t IssueTemplate) Missing(chosen TemplateChoices) []TemplateField {
 	var absent []TemplateField
 

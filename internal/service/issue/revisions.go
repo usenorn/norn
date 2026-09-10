@@ -11,9 +11,6 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-// remember keeps what a description said at this version. The issue row holds only the text as
-// it stands now, so without this an edit erases what it replaced and nobody can see what a
-// requirement was when the work started.
 func (s *issuesService) remember(
 	ctx context.Context,
 	issue entity.Issue,
@@ -33,8 +30,6 @@ func (s *issuesService) remember(
 		CreatedAt:       now,
 	}
 
-	// A description saved as it is typed would leave an entry per pause. One sitting by one
-	// person is one entry, so the history reads as the times the text was rewritten.
 	held, err := s.revisions.Latest(ctx, issue.WorkspaceID, issue.ID)
 	if err == nil && held.Continues(decision.Actor.AccountID, source, now) {
 		writing.ID = held.ID
@@ -75,8 +70,6 @@ func (s *issuesService) DescriptionRevisions(
 	return s.revisions.List(ctx, workspaceID, issueID, limit)
 }
 
-// RestoreDescription writes the old text forward rather than rewinding to it, so the text it
-// replaced is kept as well and the restore itself can be undone.
 func (s *issuesService) RestoreDescription(
 	ctx context.Context,
 	workspaceID, issueID, revisionID uuid.UUID,

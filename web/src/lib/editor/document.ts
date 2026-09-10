@@ -36,12 +36,6 @@ const markKinds = new Set<string>(["bold", "italic", "strike", "code", "link"]);
 
 export const emptyDocument: Document = { type: "doc", content: [] };
 
-/**
- * The editor holds the same shape the server stores, so nothing is translated on the way. What
- * this does is refuse a node the server would refuse: an extension added later, or content
- * pasted from another editor, otherwise reaches the wire and comes back as a rejected save the
- * writer cannot act on.
- */
 export function asDocument(value: unknown): Document {
 	if (!value || typeof value !== "object") return emptyDocument;
 

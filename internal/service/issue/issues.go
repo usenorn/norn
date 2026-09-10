@@ -91,9 +91,6 @@ func New(
 	}
 }
 
-// described settles the two forms a description arrives in. The document is what is stored and
-// edited; the markdown is the projection every other reader sees. A caller may send either, and
-// what it did not send is derived here rather than left for the next layer to guess at.
 func text(value *string) string {
 	if value == nil {
 		return ""
@@ -311,9 +308,6 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 		return nil
 	})
 	if err != nil {
-		// A key that is already held means this request has been answered once. Nothing of this
-		// attempt was written, so the answer is the issue the first one raised rather than a
-		// second issue saying the same thing.
 		if errors.Is(err, entity.ErrRequestKeyTaken) {
 			return s.raisedBefore(ctx, claim, decision)
 		}
@@ -505,8 +499,6 @@ func (s *issuesService) Update(
 		return entity.Issue{}, err
 	}
 
-	// A caller may send the document, the markdown or neither, and what it sends settles both:
-	// the stored document and the projection are written by one statement or not at all.
 	written := input.Description
 	documented := input.DescriptionDoc
 
@@ -1906,8 +1898,6 @@ func labelNames(labels []entity.Label) string {
 	return strings.Join(names, ", ")
 }
 
-// restoring tells a description put back from the history apart from one somebody typed, so the
-// trail reads as what happened rather than crediting the restorer with writing the text again.
 func restoring(decision entity.Decision, input service.UpdateIssueInput) entity.RevisionSource {
 	if input.Restoring {
 		return entity.RevisionSourceRestore

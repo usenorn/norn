@@ -63,8 +63,6 @@
 
 	const placed = new Set<string>();
 
-	// A file that lands after its placeholder was removed has nowhere to go. Putting it back
-	// would undo a removal somebody meant, so a settle that finds no placeholder does nothing.
 	$effect(() => {
 		for (const task of uploads ?? []) {
 			if (task.state !== "done" || !task.attachment || placed.has(task.id)) continue;
@@ -80,8 +78,6 @@
 		onfiles(files);
 	}
 
-	// Nothing written here is cleared until the comment is actually filed. Clearing on the way
-	// out means a refused send leaves the writer with an empty box and nothing to retry.
 	async function send(): Promise<boolean> {
 		if (empty || working || sending || inFlight) return false;
 

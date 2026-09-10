@@ -565,8 +565,6 @@ func (r *issueCommentRepository) Edit(
 	)
 }
 
-// documentOf hands the column the document as text, and NULL when there is none, so a body that
-// arrives without one leaves the column for the reader to fill from the markdown.
 func documentOf(document entity.Document) any {
 	if document.Type == "" {
 		return nil

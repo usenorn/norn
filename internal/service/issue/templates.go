@@ -9,8 +9,6 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-// shapedBy fills in what a template offers and the caller did not send. What the caller did send
-// wins: a template starts an issue off rather than overruling the person raising it.
 func (s *issuesService) shapedBy(ctx context.Context, input *service.CreateIssueInput) error {
 	template, err := s.templates.GetByID(ctx, input.WorkspaceID, input.TemplateID)
 	if err != nil {

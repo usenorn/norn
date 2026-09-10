@@ -450,8 +450,6 @@ func (s *issueCommentsService) Edit(
 			return err
 		}
 
-		// The text is the only record of who a comment addresses, so an edit rewrites the list
-		// rather than adding to it: a name taken out of the text is taken out of the mentions.
 		if input.BodyDoc != nil {
 			if err := s.comments.ClearMentions(ctx, commentID); err != nil {
 				return err
@@ -493,9 +491,6 @@ func (s *issueCommentsService) Edit(
 	return edited, nil
 }
 
-// addressed reads who a comment names. A document carries the names in the text itself, so the
-// text a reader sees and the people a notification reaches cannot drift apart the way a list
-// sent alongside the text does; a caller that sends no document keeps sending the list.
 func addressed(document *entity.Document, sent []service.CommentMentionInput) []service.CommentMentionInput {
 	if document == nil {
 		return sent

@@ -106,8 +106,6 @@
 	let holder = $state.raw<HTMLDivElement | null>(null);
 	let at = $state(0);
 
-	// A toolbar is one stop on the way through a form, not one per button: arrow keys walk it.
-	// Eleven stops between the title and the text is what makes tabbing to write feel broken.
 	function steer(event: KeyboardEvent) {
 		const buttons = [...(holder?.querySelectorAll("button") ?? [])];
 

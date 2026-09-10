@@ -20,8 +20,6 @@ type NewExecution struct {
 	RunnerID     uuid.UUID
 	CodebaseID   uuid.UUID
 
-	// The description revision this run was handed. It is what the run is judged against, so
-	// requirements that move afterwards can be told apart from requirements it was given.
 	DescriptionRevisionID uuid.UUID
 	Attempt               int
 	QueuedReason          entity.ExecutionQueuedReason

@@ -15,11 +15,6 @@ export type SchemaOptions = {
 	onMetaEnter?: () => boolean;
 };
 
-/**
- * One schema for every editor in the product. Creation, descriptions, comments and templates
- * differ in what surrounds them, never in what a block does or which key writes it: a command
- * learnt in one is the same command everywhere.
- */
 export function editorExtensions(options: SchemaOptions): Extensions {
 	return [
 		StarterKit.configure({
@@ -49,15 +44,9 @@ export function editorExtensions(options: SchemaOptions): Extensions {
 	];
 }
 
-/**
- * Cmd/Ctrl+Enter belongs to whatever owns the innermost interaction. The editor claims it only
- * when nothing inside it is open, which is why the caller answers rather than being told.
- */
 function submitting(onMetaEnter?: () => boolean) {
 	return Extension.create({
 		name: "editor-submit",
-		// Above every block extension, so the key reaches the form rather than being spent
-		// leaving a code block or a list the caret happens to sit in.
 		priority: 1000,
 		addKeyboardShortcuts() {
 			return {

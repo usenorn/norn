@@ -136,12 +136,8 @@ type Execution struct {
 	CodebaseID     uuid.UUID
 	CodebaseName   string
 
-	// The description this run was given. Requirements move while work is under way, and a run
-	// judged against text it never saw is judged against somebody else's later mind.
 	DescriptionRevisionID uuid.UUID
 
-	// Whether the description has been written since. A run that is judged against text it was
-	// never given is judged against somebody's later mind, so the reader is told.
 	RequirementsMoved bool
 	Attempt           int
 	State             ExecutionState

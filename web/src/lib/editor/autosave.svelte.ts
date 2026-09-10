@@ -11,14 +11,6 @@ export type SaveState =
 
 export const saveDelay = 1200;
 
-/**
- * Autosave keeps one save in the air at a time. Two saves racing is how a description ends up
- * holding whichever answer came back last rather than what was typed last, and a save that is
- * skipped because one was already running is how the final sentence never lands.
- *
- * Typing is never blocked: a save runs beside it, and anything typed while it runs is saved
- * straight afterwards.
- */
 export class Autosave {
 	#state = $state.raw<SaveState>({ kind: "idle" });
 	#timer: ReturnType<typeof setTimeout> | null = null;
@@ -53,8 +45,6 @@ export class Autosave {
 		return this.#run();
 	}
 
-	// A refusal stops the clock. Retrying on a timer against a description somebody else has
-	// moved on would keep failing silently; the person is told and decides.
 	rest() {
 		this.#clear();
 		this.#state = { kind: "idle" };

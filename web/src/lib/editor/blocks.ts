@@ -2,10 +2,6 @@ import type { Editor } from "@tiptap/core";
 
 export type BlockRange = { from: number; to: number };
 
-/**
- * Running a slash command replaces the `/query` the writer typed and nothing else. Leaving it
- * behind, or clearing the whole block, are the two ways this goes wrong and both lose text.
- */
 export function runBlock(editor: Editor, range: BlockRange, key: string): boolean {
 	const chain = editor.chain().focus().deleteRange(range);
 

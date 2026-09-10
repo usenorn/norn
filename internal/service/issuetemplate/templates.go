@@ -25,8 +25,6 @@ func New(
 	return &issueTemplatesService{templates: templates, teams: teams, authorizer: authorizer}
 }
 
-// Keeping a template is a team-settings decision rather than an issue one, so writing one asks
-// for the same permission as changing the team it belongs to; reading one only asks to read.
 func (s *issueTemplatesService) Save(
 	ctx context.Context,
 	workspaceID uuid.UUID,

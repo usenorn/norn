@@ -44,10 +44,6 @@ export function attachmentMarkdown(attachment: Attachment): string {
 	return attachment.inline ? `!${link}` : link;
 }
 
-/**
- * A stored file becomes a node carrying its identifier, so the text says which file it shows
- * rather than only where the bytes happen to live today.
- */
 export function attachmentNode(attachment: Attachment): DocumentNode {
 	if (attachment.inline) {
 		return {

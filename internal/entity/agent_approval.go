@@ -257,8 +257,6 @@ type AgentProposal struct {
 	UpdatedAt   time.Time
 }
 
-// ChangePart names one thing a proposal asks to change. An approver decides part by part, so a
-// good title and a description that misses the point are not one decision.
 type ChangePart string
 
 const (
@@ -286,8 +284,6 @@ func (p ChangePart) Valid() bool {
 	return slices.Contains(ChangeParts(), p)
 }
 
-// Parts reads what a change actually asks for, so a reader is shown the four things it proposes
-// rather than the ten it could have.
 func (c AgentChange) Parts() []ChangePart {
 	var asked []ChangePart
 
@@ -315,8 +311,6 @@ func (c AgentChange) Parts() []ChangePart {
 	return asked
 }
 
-// Only narrows a change to the parts an approver accepted. Naming nothing accepts the whole
-// change, which is what an approver who did not choose meant.
 func (c AgentChange) Only(accepted []ChangePart) AgentChange {
 	if len(accepted) == 0 {
 		return c

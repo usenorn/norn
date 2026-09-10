@@ -28,9 +28,6 @@ func (s RequestScope) Valid() bool {
 	return slices.Contains(RequestScopes(), s)
 }
 
-// RequestKey is what a caller sends so that asking twice cannot mean twice. A network that drops
-// the answer looks exactly like one that dropped the question, and without this the only way to
-// find out which happened is to look — by which time a second issue exists.
 type RequestKey struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID

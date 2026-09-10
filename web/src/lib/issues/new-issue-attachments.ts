@@ -21,11 +21,6 @@ export function pendingFrom(files: File[], next: () => string): PendingFile[] {
 	return files.map((file) => ({ key: next(), name: file.name, size: file.size, file }));
 }
 
-/**
- * A file uploaded after the issue was raised joins the description as a node of its own, at the
- * end. Appending the same file twice is what a retried save would otherwise do, so a file
- * already named in the text is left where it is.
- */
 export function describedWith(description: Document, attached: Attachment[]): Document {
 	if (attached.length === 0) return description;
 
