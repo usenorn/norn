@@ -65,7 +65,16 @@
 
 	$effect(() => {
 		for (const task of uploads ?? []) {
-			if (task.state !== "done" || !task.attachment || placed.has(task.id)) continue;
+			if (placed.has(task.id)) continue;
+
+			if (task.state === "failed" || task.state === "cancelled") {
+				placed.add(task.id);
+				editor?.abandon(task.id);
+
+				continue;
+			}
+
+			if (task.state !== "done" || !task.attachment) continue;
 
 			placed.add(task.id);
 			editor?.settle(task.id, attachmentNode(task.attachment));

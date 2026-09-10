@@ -136,7 +136,13 @@
 		type AttachmentFailure,
 		type AttachmentPanel,
 	} from "$lib/attachments/attachments";
-	import { newTask, settled, upload, type UploadTask } from "$lib/attachments/upload";
+	import {
+		newTask,
+		settled,
+		upload,
+		uploadsSettleMs,
+		type UploadTask,
+	} from "$lib/attachments/upload";
 	import {
 		authorLabel,
 		readCommentFailure,
@@ -266,6 +272,7 @@
 	let automationOverride = $state.raw<boolean | null>(null);
 
 	let uploadSequence = 0;
+	let settling: ReturnType<typeof setTimeout> | null = null;
 
 	const aborts = new Map<string, () => void>();
 	const sources = new Map<string, File>();
@@ -1115,6 +1122,15 @@
 		}
 	}
 
+	function refreshOnceUploadsSettle() {
+		if (settling !== null) clearTimeout(settling);
+
+		settling = setTimeout(() => {
+			settling = null;
+			void invalidate(keys.page(page.route.id));
+		}, uploadsSettleMs);
+	}
+
 	function begin(into: "comment" | "body", files: File[]): string[] {
 		if (!issue) return [];
 
@@ -1140,6 +1156,8 @@
 			await attempt(into, taskId, file, task);
 		} catch {
 			replaceTask(into, { ...task, state: "failed", failure: { kind: "unavailable" } });
+
+			if (into === "body") descriptionEditor?.abandon(taskId);
 		}
 	}
 
@@ -1153,12 +1171,14 @@
 			(next) => {
 				replaceTask(into, next);
 
-				if (into === "body" && next.state === "cancelled") descriptionEditor?.abandon(taskId);
+				if (into === "body" && (next.state === "cancelled" || next.state === "failed")) {
+					descriptionEditor?.abandon(taskId);
+				}
 
 				if (next.state === "done" && next.attachment) {
 					if (into === "body") descriptionEditor?.settle(taskId, attachmentNode(next.attachment));
 
-					void invalidate(keys.page(page.route.id));
+					refreshOnceUploadsSettle();
 				}
 			},
 			(abort) => aborts.set(taskId, abort)

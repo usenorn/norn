@@ -8,6 +8,8 @@ import {
 
 export type UploadState = "reserving" | "sending" | "finalizing" | "done" | "failed" | "cancelled";
 
+export const uploadsSettleMs = 300;
+
 export type UploadTask = {
 	id: string;
 	name: string;

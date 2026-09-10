@@ -69,6 +69,7 @@
 	let held: Document = emptyDocument;
 	let asked = 0;
 	let searching: ReturnType<typeof setTimeout> | null = null;
+	let batches: { ids: string[]; arrived: Map<string, DocumentNode>; settled: Set<string> }[] = [];
 	let abandoning: AbortController | null = null;
 
 	const listId = $props.id();
@@ -301,10 +302,16 @@
 		return Array.from(list ?? []);
 	}
 
+	type Batch = { ids: string[]; arrived: Map<string, DocumentNode>; settled: Set<string> };
+
 	function take(view: EditorView, dropped: File[], pos: number): boolean {
 		if (dropped.length === 0 || !onfiles) return false;
 
 		const ids = onfiles(dropped) ?? [];
+
+		if (ids.length === 0) return false;
+
+		batches.push({ ids, arrived: new Map(), settled: new Set() });
 
 		ids.forEach((taskId, at) => {
 			const file = dropped[at];
@@ -312,26 +319,52 @@
 			placeUpload(view, { id: taskId, name: file.name, preview: previewOf(file) }, pos);
 		});
 
-		return ids.length > 0;
+		return true;
 	}
 
 	export function settle(taskId: string, content: DocumentNode): boolean {
-		const within = editor;
+		const batch = batches.find((held) => held.ids.includes(taskId));
 
-		if (!within) return false;
+		if (!batch || !editor || uploadPosition(editor.state, taskId) === null) return false;
 
-		const pos = uploadPosition(within.state, taskId);
-
-		if (pos === null) return false;
-
-		dropUpload(within.view, taskId);
-		within.commands.insertContentAt(pos, content);
+		batch.arrived.set(taskId, content);
+		batch.settled.add(taskId);
+		flush(batch);
 
 		return true;
 	}
 
 	export function abandon(taskId: string) {
+		const batch = batches.find((held) => held.ids.includes(taskId));
+
 		if (editor) dropUpload(editor.view, taskId);
+
+		if (!batch) return;
+
+		batch.settled.add(taskId);
+		flush(batch);
+	}
+
+	function flush(batch: Batch) {
+		const within = editor;
+
+		if (!within || batch.ids.some((taskId) => !batch.settled.has(taskId))) return;
+
+		batches = batches.filter((held) => held !== batch);
+
+		const landing = batch.ids
+			.map((taskId) => uploadPosition(within.state, taskId))
+			.find((pos) => pos !== null);
+
+		const written = batch.ids
+			.map((taskId) => batch.arrived.get(taskId))
+			.filter((content): content is DocumentNode => content !== undefined);
+
+		for (const taskId of batch.ids) dropUpload(within.view, taskId);
+
+		if (landing === undefined || landing === null || written.length === 0) return;
+
+		within.commands.insertContentAt(landing, written);
 	}
 
 	export function focus() {
