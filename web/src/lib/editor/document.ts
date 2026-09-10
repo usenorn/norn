@@ -36,6 +36,12 @@ const markKinds = new Set<string>(["bold", "italic", "strike", "code", "link"]);
 
 export const emptyDocument: Document = { type: "doc", content: [] };
 
+export function withParagraph(document: Document): Document {
+	return (document.content ?? []).length > 0
+		? document
+		: { type: "doc", content: [{ type: "paragraph" }] };
+}
+
 export function asDocument(value: unknown): Document {
 	if (!value || typeof value !== "object") return emptyDocument;
 

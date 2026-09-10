@@ -36,6 +36,21 @@ describe("matchingCommands", () => {
 		}
 	});
 
+	it("offers the four inline marks the toolbar used to carry", () => {
+		for (const key of ["bold", "italic", "strike", "inlinecode"]) {
+			expect(matchingCommands(key)[0].key).toBe(key);
+		}
+	});
+
+	it("teaches the keyboard shortcut for every command that has one", () => {
+		const bold = slashCommands.find((command) => command.key === "bold");
+		const strike = slashCommands.find((command) => command.key === "strike");
+
+		expect(bold?.keys).toBe("Mod+B");
+		expect(strike?.keys).toBe("Mod+Shift+S");
+		expect(slashCommands.filter((command) => command.keys).length).toBeGreaterThan(6);
+	});
+
 	it("names the sub-issue command as one that asks before creating work", () => {
 		const subissue = slashCommands.find((command) => command.key === "subissue");
 

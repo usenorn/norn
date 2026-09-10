@@ -39,7 +39,6 @@ export function editorExtensions(options: SchemaOptions): Extensions {
 		Placeholder.configure({
 			placeholder: ({ node }) => (node.type.name === "detailsSummary" ? "Summary" : options.placeholder),
 			showOnlyWhenEditable: true,
-			showOnlyCurrent: false,
 		}),
 		submitting(options.onMetaEnter),
 	];

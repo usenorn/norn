@@ -47,19 +47,20 @@ const referenceShape = /^[A-Za-z][A-Za-z0-9]*-\d+$/;
 export async function findIssues(
 	workspaceId: string,
 	workspace: string,
-	query: string
+	query: string,
+	signal?: AbortSignal
 ): Promise<SuggestionOutcome> {
 	const asked = query.trim();
 
 	if (asked === "") return { state: "typing" };
 
 	if (referenceShape.test(asked)) {
-		const named = await namedIssue(workspaceId, workspace, asked);
+		const named = await namedIssue(workspaceId, workspace, asked, signal);
 
 		if (named) return { state: "ready", groups: [{ label: "Issues", items: [named] }] };
 	}
 
-	const found = await search(workspaceId, asked, ["issue"]);
+	const found = await search(workspaceId, asked, ["issue"], signal);
 
 	if (found === "failed") return { state: "failed" };
 
@@ -73,13 +74,14 @@ export async function findIssues(
 export async function findMentions(
 	workspaceId: string,
 	workspace: string,
-	query: string
+	query: string,
+	signal?: AbortSignal
 ): Promise<SuggestionOutcome> {
 	const asked = query.trim();
 
 	if (asked === "") return { state: "typing" };
 
-	const found = await search(workspaceId, asked, ["person", "team", "issue", "project"]);
+	const found = await search(workspaceId, asked, ["person", "team", "issue", "project"], signal);
 
 	if (found === "failed") return { state: "failed" };
 
@@ -136,12 +138,14 @@ type Result = components["schemas"]["SearchResult"];
 async function search(
 	workspaceId: string,
 	query: string,
-	kinds: ("issue" | "person" | "team" | "project" | "comment")[]
+	kinds: ("issue" | "person" | "team" | "project" | "comment")[],
+	signal?: AbortSignal
 ): Promise<Found | "failed"> {
 	const found = await api
 		.GET("/workspaces/{workspaceId}/search", {
 			params: { path: { workspaceId }, query: { q: query, kinds, limit: suggestionLimit } },
 			querySerializer: { array: { style: "form", explode: false } },
+			signal,
 		})
 		.catch(() => undefined);
 
@@ -176,11 +180,13 @@ function issuesOf(found: Found | "failed", workspace: string): Suggestion[] {
 async function namedIssue(
 	workspaceId: string,
 	workspace: string,
-	reference: string
+	reference: string,
+	signal?: AbortSignal
 ): Promise<Suggestion | null> {
 	const found = await api
 		.GET("/workspaces/{workspaceId}/issues/by-reference/{reference}", {
 			params: { path: { workspaceId, reference: reference.toUpperCase() } },
+			signal,
 		})
 		.catch(() => undefined);
 

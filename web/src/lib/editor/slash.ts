@@ -2,22 +2,26 @@ export type SlashCommand = {
 	key: string;
 	label: string;
 	hint: string;
-	group: "Text" | "Lists" | "Blocks" | "Insert" | "Link";
+	group: "Text" | "Format" | "Lists" | "Blocks" | "Insert" | "Link";
 	aliases: string[];
-	shortcut?: string;
+	keys?: string;
 	confirm?: string;
 };
 
 export const slashCommands: SlashCommand[] = [
-	{ key: "h1", label: "Heading 1", hint: "Big section heading", group: "Text", aliases: ["heading", "title", "#"] },
-	{ key: "h2", label: "Heading 2", hint: "Section heading", group: "Text", aliases: ["heading", "subtitle", "##"] },
-	{ key: "h3", label: "Heading 3", hint: "Small heading", group: "Text", aliases: ["heading", "###"] },
+	{ key: "h1", label: "Heading 1", hint: "Big section heading", group: "Text", aliases: ["heading", "title", "#"], keys: "Mod+Alt+1" },
+	{ key: "h2", label: "Heading 2", hint: "Section heading", group: "Text", aliases: ["heading", "subtitle", "##"], keys: "Mod+Alt+2" },
+	{ key: "h3", label: "Heading 3", hint: "Small heading", group: "Text", aliases: ["heading", "###"], keys: "Mod+Alt+3" },
 	{ key: "text", label: "Text", hint: "Plain paragraph", group: "Text", aliases: ["paragraph", "body"] },
-	{ key: "bullet", label: "Bulleted list", hint: "An unordered list", group: "Lists", aliases: ["list", "ul", "unordered"] },
-	{ key: "numbered", label: "Numbered list", hint: "An ordered list", group: "Lists", aliases: ["list", "ol", "ordered"] },
-	{ key: "todo", label: "Checklist", hint: "A list you tick off", group: "Lists", aliases: ["task", "check", "checkbox"] },
+	{ key: "bold", label: "Bold", hint: "Heavy text", group: "Format", aliases: ["strong", "b", "**"], keys: "Mod+B" },
+	{ key: "italic", label: "Italic", hint: "Slanted text", group: "Format", aliases: ["emphasis", "i", "_"], keys: "Mod+I" },
+	{ key: "strike", label: "Strikethrough", hint: "Text with a line through it", group: "Format", aliases: ["strikethrough", "cross", "~~"], keys: "Mod+Shift+S" },
+	{ key: "inlinecode", label: "Inline code", hint: "Code inside a sentence", group: "Format", aliases: ["mono", "tick", "`"], keys: "Mod+E" },
+	{ key: "bullet", label: "Bulleted list", hint: "An unordered list", group: "Lists", aliases: ["list", "ul", "unordered"], keys: "Mod+Shift+8" },
+	{ key: "numbered", label: "Numbered list", hint: "An ordered list", group: "Lists", aliases: ["list", "ol", "ordered"], keys: "Mod+Shift+7" },
+	{ key: "todo", label: "Checklist", hint: "A list you tick off", group: "Lists", aliases: ["task", "check", "checkbox"], keys: "Mod+Shift+9" },
 	{ key: "code", label: "Code block", hint: "Code with a language", group: "Blocks", aliases: ["snippet", "pre", "```"] },
-	{ key: "quote", label: "Quote", hint: "A quoted passage", group: "Blocks", aliases: ["blockquote", ">"] },
+	{ key: "quote", label: "Quote", hint: "A quoted passage", group: "Blocks", aliases: ["blockquote", ">"], keys: "Mod+Shift+B" },
 	{ key: "divider", label: "Divider", hint: "A horizontal rule", group: "Blocks", aliases: ["rule", "hr", "---"] },
 	{ key: "table", label: "Table", hint: "Three columns, a header row", group: "Blocks", aliases: ["grid"] },
 	{ key: "toggle", label: "Toggle", hint: "A section that folds away", group: "Blocks", aliases: ["details", "collapse", "accordion"] },

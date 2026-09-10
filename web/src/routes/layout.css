@@ -424,9 +424,6 @@
 	}
 }
 
-   item whose marker is a real checkbox, a toggle is a details element the writer folds, and a
-   table needs its own borders. Placing these here keeps every editor and every rendered
-   description looking alike. */
 [data-slot="editor"] .ProseMirror ul[data-type="taskList"] {
 	list-style: none;
 	padding-left: 0;
@@ -455,7 +452,6 @@
 	margin: 0;
 }
 
-   at 360px almost every table is wider than the column. */
 [data-slot="editor"] .ProseMirror .tableWrapper {
 	overflow-x: auto;
 	max-width: 100%;
@@ -517,7 +513,7 @@
 	font-weight: 500;
 }
 
-[data-slot="editor"] .ProseMirror p.is-editor-empty:first-child::before,
+[data-slot="editor"] .ProseMirror p.is-empty::before,
 [data-slot="editor"] .ProseMirror [data-type="detailsSummary"].is-empty::before {
 	content: attr(data-placeholder);
 	float: left;

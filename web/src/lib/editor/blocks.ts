@@ -22,6 +22,14 @@ export function runBlock(editor: Editor, range: BlockRange, key: string): boolea
 			return chain.toggleTaskList().run();
 		case "code":
 			return chain.setCodeBlock().run();
+		case "bold":
+			return chain.toggleBold().run();
+		case "italic":
+			return chain.toggleItalic().run();
+		case "strike":
+			return chain.toggleStrike().run();
+		case "inlinecode":
+			return chain.toggleCode().run();
 		case "quote":
 			return chain.setBlockquote().run();
 		case "divider":

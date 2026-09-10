@@ -4,21 +4,21 @@
 	import { markdownProse } from "$lib/issues/markdown";
 	import {
 		asDocument,
-		documentEmpty,
 		emptyDocument,
 		sameDocument,
+		withParagraph,
 		type Document,
 		type DocumentNode,
 	} from "$lib/editor/document";
 	import { editorExtensions } from "$lib/editor/schema";
-	import { completing, type SuggestionSession } from "$lib/editor/suggest";
+	import { completing, type SuggestionAnchor, type SuggestionSession } from "$lib/editor/suggest";
 	import { insertIssueRef, insertLink, insertMention, runBlock } from "$lib/editor/blocks";
 	import { matchingCommands, type SlashCommand } from "$lib/editor/slash";
 	import { findIssues, findMentions, type Suggestion } from "$lib/editor/search";
-	import { composing } from "$lib/editor/keys";
+	import { combination, composing } from "$lib/editor/keys";
+	import { searchDebounceMs } from "$lib/workspace/members";
 	import { dropUpload, placeUpload, previewOf, uploadPosition } from "$lib/editor/uploads";
 	import SuggestionPopup, { type PopupRow } from "$lib/editor/suggestion-popup.svelte";
-	import Toolbar from "$lib/editor/toolbar.svelte";
 
 	let {
 		document = $bindable(emptyDocument),
@@ -27,7 +27,6 @@
 		placeholder = "Write something…",
 		disabled = false,
 		autofocus = false,
-		toolbar = true,
 		minHeight = "min-h-16",
 		id,
 		label = "Description",
@@ -43,7 +42,6 @@
 		placeholder?: string;
 		disabled?: boolean;
 		autofocus?: boolean;
-		toolbar?: boolean;
 		minHeight?: string;
 		id?: string;
 		label?: string;
@@ -60,24 +58,28 @@
 		rows: PopupRow[];
 		chosen: (Suggestion | SlashCommand)[];
 		index: number;
-		left: number;
-		top: number;
+		anchor: SuggestionAnchor;
 		state: "ready" | "loading" | "typing" | "empty" | "failed";
 		take: (chosen: unknown) => void;
 	};
 
 	let editor = $state.raw<Editor | null>(null);
 	let popup = $state.raw<Popup | null>(null);
-	let revision = $state(0);
 	let filing = $state.raw<HTMLInputElement | null>(null);
 	let held: Document = emptyDocument;
 	let asked = 0;
+	let searching: ReturnType<typeof setTimeout> | null = null;
+	let abandoning: AbortController | null = null;
 
 	const listId = $props.id();
 	const optionId = (at: number) => `${listId}-option-${at}`;
 
 	function place(session: SuggestionSession) {
-		return { left: session.rect.left, top: session.rect.bottom + 4 };
+		return { anchor: session.anchor };
+	}
+
+	function closing(kind: Popup["kind"]) {
+		if (popup?.kind === kind) popup = null;
 	}
 
 	function slashRows(commands: SlashCommand[]): PopupRow[] {
@@ -86,7 +88,7 @@
 			label: command.label,
 			hint: command.hint,
 			group: command.group,
-			shortcut: command.shortcut,
+			shortcut: command.keys ? combination(command.keys) : undefined,
 		}));
 	}
 
@@ -127,9 +129,8 @@
 		};
 	}
 
-	async function openSearch(kind: "mention" | "issue", session: SuggestionSession) {
+	function openSearch(kind: "mention" | "issue", session: SuggestionSession) {
 		const mine = (asked += 1);
-		const standing = popup?.kind === kind ? popup.rows[popup.index]?.key : undefined;
 
 		popup = {
 			kind,
@@ -141,10 +142,22 @@
 			...place(session),
 		};
 
+		if (searching !== null) clearTimeout(searching);
+
+		abandoning?.abort();
+		searching = setTimeout(() => void runSearch(kind, session, mine), searchDebounceMs);
+	}
+
+	async function runSearch(kind: "mention" | "issue", session: SuggestionSession, mine: number) {
+		const standing = popup?.kind === kind ? popup.rows[popup.index]?.key : undefined;
+		const abandon = new AbortController();
+
+		abandoning = abandon;
+
 		const outcome =
 			kind === "mention"
-				? await findMentions(workspaceId, workspace, session.query)
-				: await findIssues(workspaceId, workspace, session.query);
+				? await findMentions(workspaceId, workspace, session.query, abandon.signal)
+				: await findIssues(workspaceId, workspace, session.query, abandon.signal);
 
 		if (mine !== asked || popup?.kind !== kind) return;
 
@@ -209,6 +222,7 @@
 
 		if (event.key === "Escape") {
 			popup = null;
+			event.stopPropagation();
 
 			return true;
 		}
@@ -333,7 +347,7 @@
 	function build(element: HTMLElement): Editor {
 		return new Editor({
 			element,
-			content: document,
+			content: withParagraph(document),
 			editable: !disabled,
 			extensions: [
 				...editorExtensions({
@@ -344,24 +358,24 @@
 					onOpen: openSlash,
 					onQuery: openSlash,
 					onKey: steer,
-					onClose: () => (popup = null),
+					onClose: () => closing("slash"),
 				}, { command: taken }),
 				completing("mention", "@", {
-					onOpen: (session) => void openSearch("mention", session),
-					onQuery: (session) => void openSearch("mention", session),
+					onOpen: (session) => openSearch("mention", session),
+					onQuery: (session) => openSearch("mention", session),
 					onKey: steer,
-					onClose: () => (popup = null),
+					onClose: () => closing("mention"),
 				}, { command: taken }),
 				completing("issue", "#", {
-					onOpen: (session) => void openSearch("issue", session),
-					onQuery: (session) => void openSearch("issue", session),
+					onOpen: (session) => openSearch("issue", session),
+					onQuery: (session) => openSearch("issue", session),
 					onKey: steer,
-					onClose: () => (popup = null),
+					onClose: () => closing("issue"),
 				}, { command: taken }),
 			],
 			editorProps: {
 				attributes: {
-					class: "outline-none",
+					class: `outline-none ${minHeight}`,
 					role: "textbox",
 					"aria-multiline": "true",
 					"aria-label": label,
@@ -396,7 +410,6 @@
 				held = next;
 				document = next;
 			},
-			onTransaction: () => queueMicrotask(() => (revision += 1)),
 		});
 	}
 
@@ -422,7 +435,7 @@
 		if (!editor || sameDocument(next, held)) return;
 
 		held = next;
-		editor.commands.setContent(next, { emitUpdate: false });
+		editor.commands.setContent(withParagraph(next), { emitUpdate: false });
 	});
 
 	$effect(() => {
@@ -443,6 +456,7 @@
 			["aria-invalid", invalid === undefined ? undefined : String(invalid)],
 			["aria-activedescendant", active],
 			["aria-controls", popup ? listId : undefined],
+			["aria-owns", popup ? listId : undefined],
 			["aria-expanded", popup ? "true" : undefined],
 			["aria-autocomplete", popup ? "list" : undefined],
 		] as const) {
@@ -456,16 +470,14 @@
 		}
 	});
 
-	const blank = $derived(documentEmpty(document));
 </script>
 
 <div class="flex min-w-0 flex-col {className}">
 	<div class="relative min-w-0">
 		<div
 			use:mount
-			class="{markdownProse} min-w-0 py-2 text-md [&_.ProseMirror]:{minHeight}"
+			class="{markdownProse} min-w-0 py-2 text-md"
 			data-slot="editor"
-			data-empty={blank}
 		></div>
 
 		{#if popup}
@@ -473,8 +485,7 @@
 				id={listId}
 				rows={popup.rows}
 				index={popup.index}
-				left={popup.left}
-				top={popup.top}
+				anchor={popup.anchor}
 				state={popup.state}
 				label={popup.kind === "slash" ? "Blocks" : "Suggestions"}
 				typingHint={popup.kind === "issue"
@@ -485,15 +496,6 @@
 			/>
 		{/if}
 	</div>
-
-	{#if toolbar}
-		<Toolbar
-			{editor}
-			{revision}
-			{disabled}
-			onattach={onfiles ? () => filing?.click() : undefined}
-		/>
-	{/if}
 
 	{#if onfiles}
 		<input

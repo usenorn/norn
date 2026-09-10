@@ -2173,7 +2173,6 @@
 															workspaceId={data.workspace.id}
 															workspace={data.workspace.slug}
 															disabled
-															toolbar={false}
 															minHeight="min-h-0"
 															label="The description you wrote"
 														/>
@@ -2189,7 +2188,6 @@
 															workspaceId={data.workspace.id}
 															workspace={data.workspace.slug}
 															disabled
-															toolbar={false}
 															minHeight="min-h-0"
 															label="The description that was saved"
 														/>
