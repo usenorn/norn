@@ -26,6 +26,15 @@ func TestWhatSomebodyWroteSurvivesTheRoundTrip(t *testing.T) {
 		"a code block":    "```go\nfmt.Println(\"hello\")\n```",
 		"a table":         "| Name | State |\n| --- | --- |\n| Export | broken |",
 		"an image":        "![The stuck page](/v1/workspaces/w/attachments/a/content)",
+
+		"code inside a bold sentence": "**Stop declaring `additionalProperties` here.**",
+		"bold inside a quoted italic": "It reads _\"they are **not** installed\"_ today.",
+		"two code spans in one bold":  "**`one` and `two`** are both set.",
+		"a link inside bold":          "**See [the docs](https://norn.so/docs) first.**",
+		"a list nested under an item": "- Endpoints:\n  - `POST /issues`\n  - `GET /issues`",
+		"a checklist under an item":   "- Work:\n  - [x] write it\n  - [ ] ship it",
+		"an address a reader can see": "Write to rae@northwind.co about it.",
+		"a bare url":                  "Read https://norn.so/docs for more.",
 	} {
 		t.Run(name, func(t *testing.T) {
 			document := entity.DocumentFromMarkdown(written)

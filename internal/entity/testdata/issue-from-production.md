@@ -34,4 +34,4 @@ Only the narrow layout shows this bar, and the narrow layout has not been opened
 
 > Dropping the tab and leaving no route to teams is not a fix.
 
-See [the handoff](https://app.norn.so/norn/issues/NORN-111) or write to <norn@example.com>.
+See [the handoff](https://app.norn.so/norn/issues/NORN-111) or write to norn@example.com.

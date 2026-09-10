@@ -247,9 +247,9 @@ func inlineNodes(node ast.Node, source []byte, marks []Mark) []Node {
 		return nil
 
 	case *ast.AutoLink:
-		// An address written between angle brackets is a link the writer did not decorate.
-		// Keeping that apart from a written-out link is what lets the text come back as it
-		// was rather than as a markdown link nobody typed.
+		// An address or URL a reader can see is a link without any markup around it. Keeping
+		// that apart from a written-out link is what lets the text come back as it was rather
+		// than as a markdown link nobody typed.
 		shown := string(typed.Label(source))
 		href := string(typed.URL(source))
 
