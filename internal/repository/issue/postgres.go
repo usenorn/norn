@@ -74,6 +74,15 @@ WHERE i.id = $1
   AND i.workspace_id = $2
   AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))`
 
+const visibleIssueExistsQuery = `
+SELECT EXISTS (
+    SELECT 1
+    FROM workspace_issues i
+    WHERE i.id = $1
+      AND i.workspace_id = $2
+      AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))
+)`
+
 const issueByReferenceQuery = `
 SELECT` + issueColumns + issueJoins + `
 WHERE i.workspace_id = $1
@@ -710,6 +719,31 @@ func (r *issueRepository) GetVisible(
 	}
 
 	return hydrated[0], nil
+}
+
+func (r *issueRepository) VisibleExists(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+	scope entity.TeamScope,
+) error {
+	var found bool
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		visibleIssueExistsQuery,
+		issueID.String(),
+		workspaceID.String(),
+		scope.AllTeams,
+		teamIDs(scope),
+	).Scan(&found); err != nil {
+		return fmt.Errorf("find visible issue: %w", err)
+	}
+
+	if !found {
+		return entity.ErrIssueNotFound
+	}
+
+	return nil
 }
 
 func (r *issueRepository) GetVisibleByReference(
