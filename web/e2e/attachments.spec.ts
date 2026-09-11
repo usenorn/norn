@@ -138,6 +138,70 @@ test("a screenshot pasted into a new issue stays where the caret was", async ({ 
 	expect(order).toEqual(["before", "image", "after"]);
 });
 
+test("a file dropped on the editor inside the form is attached once", async ({ page }) => {
+	await page.goto(at("/my-tasks"));
+	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("textbox", { name: "Description" }).click();
+
+	await page.evaluate(async (make) => {
+		const blob = await eval(`(${make})`)();
+		const data = new DataTransfer();
+		const writing = document.querySelector('[aria-label="Description"]');
+		const box = writing?.getBoundingClientRect();
+
+		data.items.add(new File([blob], "dropped.png", { type: "image/png" }));
+
+		writing?.dispatchEvent(
+			new DragEvent("drop", {
+				dataTransfer: data,
+				bubbles: true,
+				cancelable: true,
+				clientX: (box?.left ?? 0) + 8,
+				clientY: (box?.top ?? 0) + 8,
+			})
+		);
+	}, screenshot);
+
+	const dialog = page.getByRole("dialog");
+
+	await expect(dialog.getByText("dropped.png")).toHaveCount(1);
+	await expect(page.locator('[aria-label="Description"] .animate-pulse')).toHaveCount(1);
+});
+
+test("a file that will not upload takes its place in the text with it", async ({ page }) => {
+	await page.route("**/v1/workspaces/*/issues/*/attachments", async (route) => {
+		if (route.request().method() !== "POST") return route.continue();
+
+		await route.fulfill({
+			status: 503,
+			contentType: "application/problem+json",
+			body: JSON.stringify({ title: "Unavailable", status: 503 }),
+		});
+	});
+
+	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
+	await page.getByRole("button", { name: "Edit" }).first().click();
+	await page.getByRole("textbox", { name: "Description" }).click();
+
+	await page.evaluate(async (make) => {
+		const blob = await eval(`(${make})`)();
+		const data = new DataTransfer();
+
+		data.items.add(new File([blob], "refused.png", { type: "image/png" }));
+
+		document
+			.querySelector('[aria-label="Description"]')
+			?.dispatchEvent(
+				new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+			);
+	}, screenshot);
+
+	await expect(page.locator('[aria-label="Description"] .animate-pulse')).toHaveCount(0, {
+		timeout: 20_000,
+	});
+	await expect(page.locator('[aria-label="Description"] img')).toHaveCount(0);
+});
+
 test("pasting rich text uploads nothing, because its pictures already have an address", async ({
 	page,
 }) => {
