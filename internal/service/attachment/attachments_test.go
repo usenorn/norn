@@ -99,15 +99,15 @@ func (h *harness) actAs(role entity.MembershipRole) {
 
 func (h *harness) seesTheIssue() {
 	h.issues.EXPECT().
-		GetVisible(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(entity.Issue{ID: h.issueID, WorkspaceID: h.workspaceID}, nil).
+		VisibleExists(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
 		AnyTimes()
 }
 
 func (h *harness) cannotSeeTheIssue() {
 	h.issues.EXPECT().
-		GetVisible(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(entity.Issue{}, entity.ErrIssueNotFound).
+		VisibleExists(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.ErrIssueNotFound).
 		AnyTimes()
 }
 

@@ -78,6 +78,8 @@ export function describeFailureMessage(kind: "conflict" | "unavailable" | "uncer
 	return "The files are attached, but the links could not be added to the description.";
 }
 
+export const uploadsAtOnce = 4;
+
 export async function attachPending(
 	workspaceId: string,
 	issueId: string,
@@ -85,49 +87,64 @@ export async function attachPending(
 	onprogress: (tasks: UploadTask[]) => void = () => {},
 	register: (key: string, abort: () => void) => void = () => {}
 ): Promise<AttachOutcome> {
-	const attached: Attachment[] = [];
-	const failed: PendingFile[] = [];
-	const cancelled: PendingFile[] = [];
 	const tasks = files.map((held) => newTask(held.key, held.file));
 
 	onprogress([...tasks]);
 
-	for (const [index, held] of files.entries()) {
-		const already = held.sentAlready
-			? await alreadyAttached(workspaceId, issueId, held.sentAlready)
-			: undefined;
+	const resumed = files.some((held) => held.sentAlready)
+		? await attachmentsOn(workspaceId, issueId)
+		: [];
 
-		if (already) {
-			tasks[index] = {
-				...tasks[index],
-				state: "done",
-				sent: held.size,
-				attachmentId: already.id,
-				attachment: already,
-			};
-			onprogress([...tasks]);
-			attached.push(already);
+	let next = 0;
 
-			continue;
+	async function work() {
+		for (let index = next++; index < files.length; index = next++) {
+			const held = files[index];
+			const already = held.sentAlready
+				? resumed.find((candidate) => candidate.id === held.sentAlready)
+				: undefined;
+
+			if (already) {
+				tasks[index] = {
+					...tasks[index],
+					state: "done",
+					sent: held.size,
+					attachmentId: already.id,
+					attachment: already,
+				};
+				onprogress([...tasks]);
+
+				continue;
+			}
+
+			try {
+				await upload(
+					{ workspaceId, issueId },
+					held.file,
+					tasks[index],
+					(task) => {
+						tasks[index] = task;
+						onprogress([...tasks]);
+					},
+					(abort) => register(held.key, abort),
+					held.sentAlready
+				);
+			} catch {
+				tasks[index] = { ...tasks[index], state: "failed", failure: { kind: "unavailable" } };
+				onprogress([...tasks]);
+			}
 		}
+	}
 
-		try {
-			await upload(
-				{ workspaceId, issueId },
-				held.file,
-				tasks[index],
-				(task) => {
-					tasks[index] = task;
-					onprogress([...tasks]);
-				},
-				(abort) => register(held.key, abort),
-				held.sentAlready
-			);
-		} catch {
-			tasks[index] = { ...tasks[index], state: "failed", failure: { kind: "unavailable" } };
-			onprogress([...tasks]);
-		}
+	await Promise.all(
+		Array.from({ length: Math.min(uploadsAtOnce, files.length) }, () => work())
+	);
 
+	const attached: Attachment[] = [];
+	const failed: PendingFile[] = [];
+	const cancelled: PendingFile[] = [];
+
+	files.forEach((held, index) => {
 		const settled = tasks[index];
 
 		if (settled.state === "done" && settled.attachment) {
@@ -137,25 +154,21 @@ export async function attachPending(
 		} else {
 			failed.push({ ...held, sentAlready: settled.attachmentId });
 		}
-	}
+	});
 
 	return { attached, failed, cancelled };
 }
 
-async function alreadyAttached(
-	workspaceId: string,
-	issueId: string,
-	attachmentId: string
-): Promise<Attachment | undefined> {
+async function attachmentsOn(workspaceId: string, issueId: string): Promise<Attachment[]> {
 	try {
 		const listed = await api.GET("/workspaces/{workspaceId}/issues/{issueId}/attachments", {
 			params: { path: { workspaceId, issueId } },
 		});
 
-		if (listed.error || !listed.data) return undefined;
+		if (listed.error || !listed.data) return [];
 
-		return listed.data.attachments.find((held) => held.id === attachmentId);
+		return listed.data.attachments;
 	} catch {
-		return undefined;
+		return [];
 	}
 }

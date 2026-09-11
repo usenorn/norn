@@ -15,6 +15,7 @@ type Issue interface {
 	SetSCMAutomationSuppressed(ctx context.Context, workspaceID, issueID uuid.UUID, suppressed bool) error
 	Create(ctx context.Context, issue entity.Issue) (entity.Issue, error)
 	GetVisible(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error)
+	VisibleExists(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) error
 	GetVisibleByReference(ctx context.Context, workspaceID uuid.UUID, reference entity.IssueReference, scope entity.TeamScope) (entity.Issue, error)
 	ListVisible(ctx context.Context, scope entity.TeamScope, page entity.IssuePage) ([]entity.Issue, error)
 	LockByID(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error)

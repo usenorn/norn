@@ -56,7 +56,7 @@ func (s *attachmentsService) onVisibleIssue(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
 	action entity.Action,
-) (entity.Decision, entity.Issue, error) {
+) (entity.Decision, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceIssue,
 		Action:      action,
@@ -64,22 +64,21 @@ func (s *attachmentsService) onVisibleIssue(
 		Scoped:      true,
 	})
 	if err != nil {
-		return entity.Decision{}, entity.Issue{}, err
+		return entity.Decision{}, err
 	}
 
-	issue, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
-	if err != nil {
-		return entity.Decision{}, entity.Issue{}, err
+	if err := s.issues.VisibleExists(ctx, workspaceID, issueID, decision.Scope); err != nil {
+		return entity.Decision{}, err
 	}
 
-	return decision, issue, nil
+	return decision, nil
 }
 
 func (s *attachmentsService) List(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
 ) ([]entity.Attachment, error) {
-	if _, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionRead); err != nil {
+	if _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionRead); err != nil {
 		return nil, err
 	}
 
@@ -141,7 +140,7 @@ func (s *attachmentsService) reserve(
 	workspaceID, issueID uuid.UUID,
 	input service.ReserveAttachmentInput,
 ) (entity.Attachment, error) {
-	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	decision, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
 	if err != nil {
 		return entity.Attachment{}, err
 	}
@@ -210,7 +209,7 @@ func (s *attachmentsService) Adopt(
 		return entity.Attachment{}, entity.ErrAttachmentAdoptNeedsOrigin
 	}
 
-	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	decision, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
 	if err != nil {
 		return entity.Attachment{}, err
 	}
@@ -296,7 +295,7 @@ func (s *attachmentsService) Finalize(
 	ctx context.Context,
 	workspaceID, issueID, attachmentID uuid.UUID,
 ) (entity.Attachment, error) {
-	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	decision, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
 	if err != nil {
 		return entity.Attachment{}, err
 	}
@@ -392,7 +391,7 @@ func (s *attachmentsService) Remove(
 	ctx context.Context,
 	workspaceID, issueID, attachmentID uuid.UUID,
 ) error {
-	decision, _, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
+	decision, err := s.onVisibleIssue(ctx, workspaceID, issueID, entity.ActionManage)
 	if err != nil {
 		return err
 	}
@@ -464,7 +463,7 @@ func (s *attachmentsService) Content(
 		return "", entity.ErrAttachmentNotFound
 	}
 
-	if _, err := s.issues.GetVisible(ctx, workspaceID, attachment.IssueID, decision.Scope); err != nil {
+	if err := s.issues.VisibleExists(ctx, workspaceID, attachment.IssueID, decision.Scope); err != nil {
 		return "", err
 	}
 

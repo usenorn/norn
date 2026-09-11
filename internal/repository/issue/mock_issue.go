@@ -499,3 +499,17 @@ func (mr *MockIssueMockRecorder) Update(ctx, issueID, expectedVersion, change, t
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockIssue)(nil).Update), ctx, issueID, expectedVersion, change, timestamps, changedAt)
 }
+
+// VisibleExists mocks base method.
+func (m *MockIssue) VisibleExists(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VisibleExists", ctx, workspaceID, issueID, scope)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VisibleExists indicates an expected call of VisibleExists.
+func (mr *MockIssueMockRecorder) VisibleExists(ctx, workspaceID, issueID, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VisibleExists", reflect.TypeOf((*MockIssue)(nil).VisibleExists), ctx, workspaceID, issueID, scope)
+}
