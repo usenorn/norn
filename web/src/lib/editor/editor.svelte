@@ -15,6 +15,7 @@
 	import { insertIssueRef, insertLink, insertMention, runBlock } from "$lib/editor/blocks";
 	import { matchingCommands, type SlashCommand } from "$lib/editor/slash";
 	import { findIssues, findMentions, type Suggestion } from "$lib/editor/search";
+	import { pastedFiles } from "$lib/editor/clipboard";
 	import { combination, composing } from "$lib/editor/keys";
 	import { searchDebounceMs } from "$lib/workspace/members";
 	import { dropUpload, placeUpload, previewOf, uploadPosition } from "$lib/editor/uploads";
@@ -325,13 +326,16 @@
 	export function settle(taskId: string, content: DocumentNode): boolean {
 		const batch = batches.find((held) => held.ids.includes(taskId));
 
-		if (!batch || !editor || uploadPosition(editor.state, taskId) === null) return false;
+		if (!batch) return false;
 
-		batch.arrived.set(taskId, content);
+		const placed = Boolean(editor) && uploadPosition(editor!.state, taskId) !== null;
+
+		if (placed) batch.arrived.set(taskId, content);
+
 		batch.settled.add(taskId);
 		flush(batch);
 
-		return true;
+		return placed;
 	}
 
 	export function abandon(taskId: string) {
@@ -415,7 +419,7 @@
 					...(id ? { id } : {}),
 				},
 				handlePaste: (view, event) => {
-					const grabbed = take(view, fileList(event.clipboardData?.files), view.state.selection.from);
+					const grabbed = take(view, pastedFiles(event.clipboardData), view.state.selection.from);
 
 					if (grabbed) event.preventDefault();
 

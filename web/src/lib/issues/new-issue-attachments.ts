@@ -1,6 +1,6 @@
 import { api } from "$lib/api";
 import { attachmentNode, type Attachment } from "$lib/attachments/attachments";
-import type { Document } from "$lib/editor/document";
+import { documentAttachments, type Document } from "$lib/editor/document";
 import { newTask, upload, type UploadTask } from "$lib/attachments/upload";
 
 export type PendingFile = {
@@ -24,7 +24,7 @@ export function pendingFrom(files: File[], next: () => string): PendingFile[] {
 export function describedWith(description: Document, attached: Attachment[]): Document {
 	if (attached.length === 0) return description;
 
-	const held = new Set(attachmentsIn(description));
+	const held = new Set(documentAttachments(description));
 	const arriving = attached
 		.filter((attachment) => !held.has(attachment.id))
 		.map(attachmentNode);
@@ -34,20 +34,8 @@ export function describedWith(description: Document, attached: Attachment[]): Do
 	return { type: "doc", content: [...(description.content ?? []), ...arriving] };
 }
 
-export function attachmentsIn(description: Document): string[] {
-	const found: string[] = [];
-
-	for (const node of description.content ?? []) {
-		const id = (node.attrs as Record<string, unknown> | undefined)?.attachmentId;
-
-		if (typeof id === "string" && id !== "") found.push(id);
-	}
-
-	return found;
-}
-
 export function describedAll(description: Document, attached: Attachment[]): boolean {
-	const held = new Set(attachmentsIn(description));
+	const held = new Set(documentAttachments(description));
 
 	return attached.every((attachment) => held.has(attachment.id));
 }

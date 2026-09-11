@@ -26,7 +26,7 @@
 	import LabelDot from "$lib/labels/label-dot.svelte";
 	import { initialsOf } from "$lib/team/members";
 	import { onCalendarDate } from "$lib/time";
-	import { formatBytes, type Attachment } from "$lib/attachments/attachments";
+	import { attachmentNode, formatBytes, type Attachment } from "$lib/attachments/attachments";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import type { UploadTask } from "$lib/attachments/upload";
@@ -71,6 +71,7 @@
 		documentText,
 		emptyDocument,
 		type Document,
+		type DocumentNode,
 	} from "$lib/editor/document";
 	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "./issues";
 	import type { Issue } from "./issues";
@@ -210,11 +211,20 @@
 	let labelFailure = $state<string | null>(null);
 	let resuming = $state(false);
 	let intake = 0;
+	let describer = $state.raw<{
+		settle: (taskId: string, content: DocumentNode) => boolean;
+		abandon: (taskId: string) => void;
+	} | null>(null);
+	const placed = new Set<string>();
 
-	function takeFiles(files: File[]) {
-		if (files.length === 0 || busy) return;
+	function takeFiles(files: File[]): string[] {
+		if (files.length === 0 || busy) return [];
 
-		setPending([...attaching, ...pendingFrom(files, () => `${(intake += 1)}`)]);
+		const waiting = pendingFrom(files, () => `${(intake += 1)}`);
+
+		setPending([...attaching, ...waiting]);
+
+		return waiting.map((held) => held.key);
 	}
 
 	function setPending(next: PendingFile[]) {
@@ -241,13 +251,17 @@
 	function dropFiles(event: DragEvent) {
 		if (!carriesFiles(event)) return;
 
-		event.preventDefault();
 		dragging = false;
+
+		if (event.defaultPrevented) return;
+
+		event.preventDefault();
 
 		takeFiles(Array.from(event.dataTransfer?.files ?? []));
 	}
 
 	function dropPending(key: string) {
+		describer?.abandon(key);
 		setPending(attaching.filter((file) => file.key !== key));
 	}
 
@@ -437,7 +451,25 @@
 					own.issue.id,
 					own.files,
 					(tasks) => {
-						if (mine()) uploads = tasks;
+						if (!mine()) return;
+
+						uploads = tasks;
+
+						for (const task of tasks) {
+							if (placed.has(task.id)) continue;
+
+							if (task.state === "done" && task.attachment) {
+								placed.add(task.id);
+								describer?.settle(task.id, attachmentNode(task.attachment));
+
+								continue;
+							}
+
+							if (task.state === "failed" || task.state === "cancelled") {
+								placed.add(task.id);
+								describer?.abandon(task.id);
+							}
+						}
 					},
 					(key, abort) => aborts.set(key, abort)
 				);
@@ -449,6 +481,7 @@
 				if (mine()) {
 					attaching = own.files;
 					uploads = [];
+					own.description = describing;
 				}
 			}
 
@@ -1141,6 +1174,7 @@
 					</Form.Field>
 
 					<Editor
+						bind:this={describer}
 						bind:document={describing}
 						{workspaceId}
 						{workspace}
