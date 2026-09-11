@@ -82,4 +82,93 @@ test("several files land in the description, in the order they were picked", asy
 	);
 
 	await expect(page.locator('[aria-label="Description"] .animate-pulse')).toHaveCount(0);
+
+	await expect(written.first()).toHaveAttribute("data-attachment", /[0-9a-f-]{36}/);
+});
+
+const screenshot = `async () => {
+	const canvas = document.createElement("canvas");
+
+	canvas.width = 40;
+	canvas.height = 30;
+	canvas.getContext("2d").fillRect(0, 0, 40, 30);
+
+	return await new Promise((done) => canvas.toBlob(done, "image/png"));
+}`;
+
+test("a screenshot pasted into a new issue stays where the caret was", async ({ page }) => {
+	await page.goto(at("/my-tasks"));
+	await page.getByRole("button", { name: "New task" }).click();
+
+	await page.getByRole("textbox", { name: "Issue title" }).fill("Pasted screenshot");
+	await page.getByRole("textbox", { name: "Description" }).click();
+	await page.keyboard.type("before");
+
+	await page.evaluate(async (make) => {
+		const blob = await eval(`(${make})`)();
+		const data = new DataTransfer();
+
+		data.items.add(new File([blob], "", { type: "image/png" }));
+
+		document
+			.querySelector('[aria-label="Description"]')
+			?.dispatchEvent(
+				new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+			);
+	}, screenshot);
+
+	await expect(page.locator('[aria-label="Description"] .animate-pulse')).toHaveCount(1);
+
+	await page.keyboard.press("End");
+	await page.keyboard.type("after");
+
+	await page.getByRole("button", { name: /Create issue/ }).click();
+	await page.getByRole("link", { name: /Pasted screenshot/ }).first().click();
+
+	const written = page.getByRole("main").locator("p, img");
+
+	await expect(page.getByRole("main").locator("img")).toHaveCount(1);
+
+	const order = await written.evaluateAll((found) =>
+		found
+			.map((one) => (one.tagName === "IMG" ? "image" : one.textContent?.trim()))
+			.filter((one) => one === "image" || one === "before" || one === "after")
+	);
+
+	expect(order).toEqual(["before", "image", "after"]);
+});
+
+test("pasting rich text uploads nothing, because its pictures already have an address", async ({
+	page,
+}) => {
+	const reserved: string[] = [];
+
+	page.on("request", (request) => {
+		if (request.method() === "POST" && request.url().includes("/attachments")) {
+			reserved.push(request.url());
+		}
+	});
+
+	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
+	await page.getByRole("button", { name: "Edit" }).first().click();
+	await page.getByRole("textbox", { name: "Description" }).click();
+
+	await page.evaluate(async (make) => {
+		const blob = await eval(`(${make})`)();
+		const data = new DataTransfer();
+
+		data.items.add(new File([blob], "from-a-page.png", { type: "image/png" }));
+		data.setData("text/html", '<p>copied <img src="https://example.test/a.png"> text</p>');
+		data.setData("text/plain", "copied text");
+
+		document
+			.querySelector('[aria-label="Description"]')
+			?.dispatchEvent(
+				new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+			);
+	}, screenshot);
+
+	await expect(page.getByRole("textbox", { name: "Description" })).toContainText("copied");
+
+	expect(reserved).toEqual([]);
 });
