@@ -11,7 +11,7 @@ import (
 
 type searchInput struct {
 	Workspace string   `json:"workspace" jsonschema:"the workspace slug or id"`
-	Query     string   `json:"query" jsonschema:"the search text; an issue reference like ENG-42 pins that issue first"`
+	Query     string   `json:"query" jsonschema:"the search text; an issue reference like ENG-42, or a bare number like 42, pins those issues first"`
 	Kinds     []string `json:"kinds,omitempty" jsonschema:"restrict to issue, comment, project, team, or person"`
 	Limit     int      `json:"limit,omitempty" jsonschema:"results per kind, at most 25"`
 }
