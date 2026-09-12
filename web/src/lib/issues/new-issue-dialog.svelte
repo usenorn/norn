@@ -123,6 +123,8 @@
 	let drafts = $state.raw<IssueDraft[]>([]);
 	let resumable = $state(false);
 	let opening = $state(0);
+	let filed = $state(false);
+	let closedWhileFiling = $state(false);
 
 	const unknownCreate =
 		"We could not tell whether the issue was created. Check the issue list before trying again.";
@@ -331,6 +333,7 @@
 			live = own;
 			holding = { issue: own.issue, running: true };
 			failure = null;
+			filed = false;
 
 			if (!own.issue) {
 				const filing = openState ?? available.find((state) => state.isDefault);
@@ -532,6 +535,7 @@
 			}
 
 			settle(own);
+			filed = true;
 
 			if (draftId) {
 				const kept = draftId;
@@ -686,7 +690,24 @@
 
 		if (!justClosed) return;
 
+		if ($submitting) {
+			closedWhileFiling = true;
+
+			return;
+		}
+
 		void setAside();
+	});
+
+	$effect(() => {
+		if ($submitting || !closedWhileFiling) return;
+
+		const keep = !filed && !open;
+
+		closedWhileFiling = false;
+		filed = false;
+
+		if (keep) void setAside();
 	});
 
 	async function setAside() {
@@ -825,6 +846,10 @@
 		drafts = [];
 		resumable = false;
 		opening += 1;
+		filed = false;
+		closedWhileFiling = false;
+		templateId = "";
+		replacing = null;
 
 		void offerDrafts();
 		abandon();
