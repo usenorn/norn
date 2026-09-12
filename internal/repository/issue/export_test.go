@@ -1,6 +1,7 @@
 package issue
 
 const (
-	InsertIssueQuery = insertIssueQuery
-	IssueColumns     = issueColumns
+	InsertIssueQuery    = insertIssueQuery
+	IssueColumns        = issueColumns
+	IssuesByNumberQuery = issuesByNumberQuery
 )

@@ -90,6 +90,14 @@ WHERE i.workspace_id = $1
   AND i.number = $3
   AND ($4::boolean IS TRUE OR i.team_id = ANY($5::uuid[]))`
 
+const issuesByNumberQuery = `
+SELECT` + issueColumns + issueJoins + `
+WHERE i.workspace_id = $1
+  AND i.number = $2
+  AND ($3::boolean IS TRUE OR i.team_id = ANY($4::uuid[]))
+ORDER BY i.updated_at DESC, i.id DESC
+LIMIT $5`
+
 const insertIssueQuery = `
 WITH allocated AS (
     INSERT INTO workspace_issue_numbers (team_id, next_number)
@@ -775,6 +783,49 @@ func (r *issueRepository) GetVisibleByReference(
 	}
 
 	return hydrated[0], nil
+}
+
+func (r *issueRepository) ListVisibleByNumber(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	number, limit int,
+	scope entity.TeamScope,
+) ([]entity.Issue, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		issuesByNumberQuery,
+		workspaceID.String(),
+		number,
+		scope.AllTeams,
+		teamIDs(scope),
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("find issues by number: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	issues := make([]entity.Issue, 0, limit)
+
+	for rows.Next() {
+		issue, err := scanIssue(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan issue: %w", err)
+		}
+
+		issues = append(issues, issue)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate issues by number: %w", err)
+	}
+
+	if err := r.hydrate(ctx, scope, issues); err != nil {
+		return nil, err
+	}
+
+	return issues, nil
 }
 
 func (r *issueRepository) ListVisible(
