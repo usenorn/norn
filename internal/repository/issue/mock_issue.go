@@ -208,6 +208,21 @@ func (mr *MockIssueMockRecorder) ListVisibleByIDs(ctx, scope, issueIDs any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisibleByIDs", reflect.TypeOf((*MockIssue)(nil).ListVisibleByIDs), ctx, scope, issueIDs)
 }
 
+// ListVisibleByNumber mocks base method.
+func (m *MockIssue) ListVisibleByNumber(ctx context.Context, workspaceID uuid.UUID, number, limit int, scope entity.TeamScope) ([]entity.Issue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListVisibleByNumber", ctx, workspaceID, number, limit, scope)
+	ret0, _ := ret[0].([]entity.Issue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListVisibleByNumber indicates an expected call of ListVisibleByNumber.
+func (mr *MockIssueMockRecorder) ListVisibleByNumber(ctx, workspaceID, number, limit, scope any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisibleByNumber", reflect.TypeOf((*MockIssue)(nil).ListVisibleByNumber), ctx, workspaceID, number, limit, scope)
+}
+
 // LockByCycleID mocks base method.
 func (m *MockIssue) LockByCycleID(ctx context.Context, cycleID uuid.UUID) ([]entity.Issue, error) {
 	m.ctrl.T.Helper()

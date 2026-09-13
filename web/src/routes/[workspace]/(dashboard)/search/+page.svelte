@@ -123,8 +123,8 @@
 
 			{#if listing.kind === "idle"}
 				<p class="text-md leading-normal text-muted-foreground text-pretty">
-					Type a word, part of a word, or an issue reference like
-					<span class="font-mono text-sm">ENG-412</span>.
+					Type a word, part of a word, an issue reference like
+					<span class="font-mono text-sm">ENG-412</span>, or just its number.
 				</p>
 			{:else if listing.kind === "searching"}
 				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>

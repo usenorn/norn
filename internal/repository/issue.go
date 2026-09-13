@@ -17,6 +17,7 @@ type Issue interface {
 	GetVisible(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error)
 	VisibleExists(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) error
 	GetVisibleByReference(ctx context.Context, workspaceID uuid.UUID, reference entity.IssueReference, scope entity.TeamScope) (entity.Issue, error)
+	ListVisibleByNumber(ctx context.Context, workspaceID uuid.UUID, number, limit int, scope entity.TeamScope) ([]entity.Issue, error)
 	ListVisible(ctx context.Context, scope entity.TeamScope, page entity.IssuePage) ([]entity.Issue, error)
 	LockByID(ctx context.Context, workspaceID, issueID uuid.UUID, scope entity.TeamScope) (entity.Issue, error)
 	Update(ctx context.Context, issueID uuid.UUID, expectedVersion int, change entity.IssueChange, timestamps *entity.StateTimestamps, changedAt time.Time) error

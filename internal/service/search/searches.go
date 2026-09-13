@@ -69,11 +69,12 @@ func (s *searchesService) Search(
 
 	results := entity.SearchResults{Query: query, Groups: groups}
 
-	if pinned, found, err := s.reference(ctx, workspaceID, query, decision.Scope); err != nil {
+	pinned, err := s.pinned(ctx, workspaceID, query, decision.Scope)
+	if err != nil {
 		return entity.SearchResults{}, err
-	} else if found {
-		results.Groups = pin(results.Groups, pinned)
 	}
+
+	results.Groups = pin(results.Groups, pinned)
 
 	if !results.Empty() {
 		return results, nil
@@ -112,53 +113,83 @@ func (s *searchesService) fuzzy(
 	return groups, nil
 }
 
-func (s *searchesService) reference(
+func (s *searchesService) pinned(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	query entity.SearchQuery,
 	scope entity.TeamScope,
-) (entity.SearchResult, bool, error) {
-	if query.Reference == nil {
-		return entity.SearchResult{}, false, nil
-	}
+) ([]entity.SearchResult, error) {
+	if query.Reference != nil {
+		issue, err := s.issues.GetVisibleByReference(ctx, workspaceID, *query.Reference, scope)
+		if err != nil {
+			if errors.Is(err, entity.ErrIssueNotFound) {
+				return nil, nil
+			}
 
-	issue, err := s.issues.GetVisibleByReference(ctx, workspaceID, *query.Reference, scope)
-	if err != nil {
-		if errors.Is(err, entity.ErrIssueNotFound) {
-			return entity.SearchResult{}, false, nil
+			return nil, err
 		}
 
-		return entity.SearchResult{}, false, err
+		return found([]entity.Issue{issue}), nil
 	}
 
-	if issue.Status != entity.IssueStatusActive {
-		return entity.SearchResult{}, false, nil
+	if query.Number > 0 {
+		issues, err := s.issues.ListVisibleByNumber(
+			ctx, workspaceID, query.Number, entity.SearchPinnedMax, scope,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return found(issues), nil
 	}
 
-	return entity.SearchResult{
-		Kind:      entity.SearchKindIssue,
-		ID:        issue.ID,
-		IssueID:   issue.ID,
-		Title:     issue.Title,
-		Reference: issue.Reference(),
-		TeamKey:   issue.TeamKey,
-		Status:    string(issue.Status),
-		TitleHit:  true,
-		UpdatedAt: issue.UpdatedAt,
-	}, true, nil
+	return nil, nil
 }
 
-func pin(groups []entity.SearchGroup, hit entity.SearchResult) []entity.SearchGroup {
+func found(issues []entity.Issue) []entity.SearchResult {
+	results := make([]entity.SearchResult, 0, len(issues))
+
+	for _, issue := range issues {
+		if issue.Status != entity.IssueStatusActive {
+			continue
+		}
+
+		results = append(results, entity.SearchResult{
+			Kind:      entity.SearchKindIssue,
+			ID:        issue.ID,
+			IssueID:   issue.ID,
+			Title:     issue.Title,
+			Reference: issue.Reference(),
+			TeamKey:   issue.TeamKey,
+			Status:    string(issue.Status),
+			TitleHit:  true,
+			UpdatedAt: issue.UpdatedAt,
+		})
+	}
+
+	return results
+}
+
+func pin(groups []entity.SearchGroup, hits []entity.SearchResult) []entity.SearchGroup {
+	if len(hits) == 0 {
+		return groups
+	}
+
+	pinnedIDs := make(map[uuid.UUID]struct{}, len(hits))
+	for _, hit := range hits {
+		pinnedIDs[hit.ID] = struct{}{}
+	}
+
 	for index, group := range groups {
 		if group.Kind != entity.SearchKindIssue {
 			continue
 		}
 
-		results := make([]entity.SearchResult, 0, len(group.Results)+1)
-		results = append(results, hit)
+		results := make([]entity.SearchResult, 0, len(group.Results)+len(hits))
+		results = append(results, hits...)
 
 		for _, result := range group.Results {
-			if result.ID != hit.ID {
+			if _, pinned := pinnedIDs[result.ID]; !pinned {
 				results = append(results, result)
 			}
 		}
@@ -170,7 +201,7 @@ func pin(groups []entity.SearchGroup, hit entity.SearchResult) []entity.SearchGr
 
 	return append([]entity.SearchGroup{{
 		Kind:    entity.SearchKindIssue,
-		Results: []entity.SearchResult{hit},
+		Results: hits,
 	}}, groups...)
 }
 

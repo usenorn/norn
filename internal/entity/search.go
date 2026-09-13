@@ -2,7 +2,9 @@ package entity
 
 import (
 	"errors"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -20,6 +22,7 @@ const (
 	SearchGroupMaxSize   = 25
 	SearchPaletteSize    = 5
 	SearchCandidateCap   = 500
+	SearchPinnedMax      = 5
 
 	SearchSimilarityThreshold = "0.4"
 )
@@ -58,10 +61,11 @@ type SearchQuery struct {
 	Stemmed   string
 	Prefix    string
 	Reference *IssueReference
+	Number    int
 }
 
 func (q SearchQuery) Empty() bool {
-	return q.Stemmed == "" && q.Prefix == "" && q.Reference == nil
+	return q.Stemmed == "" && q.Prefix == "" && q.Reference == nil && q.Number == 0
 }
 
 func ParseSearchQuery(raw string) SearchQuery {
@@ -73,9 +77,7 @@ func ParseSearchQuery(raw string) SearchQuery {
 
 	query := SearchQuery{Raw: trimmed}
 
-	if reference, err := ParseIssueReference(trimmed); err == nil {
-		query.Reference = &reference
-	}
+	query.Reference, query.Number = searchTarget(trimmed)
 
 	tokens := strings.Fields(strings.ReplaceAll(trimmed, `"`, " "))
 
@@ -101,6 +103,33 @@ func ParseSearchQuery(raw string) SearchQuery {
 	query.Prefix = searchToken(tokens[len(tokens)-1])
 
 	return query
+}
+
+var (
+	searchReferencePattern = regexp.MustCompile(`^#?([A-Za-z]{2,5})[ \t\-_]?([0-9]{1,9})$`)
+	searchNumberPattern    = regexp.MustCompile(`^#?([0-9]{1,9})$`)
+)
+
+func searchTarget(raw string) (*IssueReference, int) {
+	if found := searchReferencePattern.FindStringSubmatch(raw); found != nil {
+		number, err := strconv.Atoi(found[2])
+		if err != nil || number < 1 {
+			return nil, 0
+		}
+
+		return &IssueReference{Key: strings.ToUpper(found[1]), Number: number}, 0
+	}
+
+	if found := searchNumberPattern.FindStringSubmatch(raw); found != nil {
+		number, err := strconv.Atoi(found[1])
+		if err != nil || number < 1 {
+			return nil, 0
+		}
+
+		return nil, number
+	}
+
+	return nil, 0
 }
 
 func searchToken(raw string) string {
