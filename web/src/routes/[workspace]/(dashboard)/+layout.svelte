@@ -12,7 +12,6 @@
 	import LogOut from "@lucide/svelte/icons/log-out";
 	import Settings from "@lucide/svelte/icons/settings";
 	import BadgeCheck from "@lucide/svelte/icons/badge-check";
-	import Bell from "@lucide/svelte/icons/bell";
 	import Bot from "@lucide/svelte/icons/bot";
 	import AccountSwitcher from "$lib/account/account-switcher.svelte";
 	import SearchPalette from "$lib/search/search-palette.svelte";

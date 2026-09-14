@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import Bell from "@lucide/svelte/icons/bell";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
 	import Plus from "@lucide/svelte/icons/plus";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
@@ -197,14 +196,6 @@
 					</span>
 				{/if}
 			</div>
-			<Button
-				href={workspacePath(data.workspace.slug, "/inbox")}
-				variant="outline"
-				size="icon-sm"
-				aria-label="Notifications"
-			>
-				<Bell class="size-icon-toolbar" aria-hidden="true" />
-			</Button>
 			<Button size="sm" onclick={() => raising.raise()}>
 				<Plus aria-hidden="true" />
 				New task
