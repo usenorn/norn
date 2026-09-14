@@ -99,6 +99,16 @@ describe("a drop zone that takes files", () => {
 		expect(took).not.toHaveBeenCalled();
 	});
 
+	it("still swallows a drop it refuses, or the browser opens the file over the page", () => {
+		const { handlers } = zone(false);
+		const dropped = files();
+
+		handlers.ondragover(files());
+		handlers.ondrop(dropped);
+
+		expect(dropped.defaultPrevented).toBe(true);
+	});
+
 	it("lets the browser drop on it at all, which needs the default prevented while over it", () => {
 		const { handlers } = zone();
 		const event = files();

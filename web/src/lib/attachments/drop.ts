@@ -48,9 +48,12 @@ export function dropZone(zone: {
 
 			rest();
 
-			if (event.defaultPrevented || !open()) return;
+			const handled = event.defaultPrevented;
 
 			event.preventDefault();
+
+			if (handled || !open()) return;
+
 			zone.take(Array.from(event.dataTransfer?.files ?? []));
 		},
 	};

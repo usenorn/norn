@@ -44,14 +44,14 @@
 				{:else}
 					<div class="grid grid-cols-8 gap-0.5 p-1">
 						{#each shown as one (one.name)}
-							<button
-								type="button"
-								class="motion-control flex size-8 items-center justify-center rounded-md text-lg hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							<Button
+								variant="ghost"
+								size="glyph"
 								aria-label={one.name}
 								onclick={() => pick(one.glyph)}
 							>
 								{one.glyph}
-							</button>
+							</Button>
 						{/each}
 					</div>
 				{/if}

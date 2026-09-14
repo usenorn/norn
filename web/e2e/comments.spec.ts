@@ -23,6 +23,24 @@ async function openIssue(page: Page) {
 	return writing;
 }
 
+async function dragOverComment(page: Page, carrying: "file" | "text" | "away") {
+	await page.evaluate((what) => {
+		const data = new DataTransfer();
+		const writing = document.querySelector('[aria-label="Write a comment"]');
+
+		if (what === "text") data.setData("text/plain", "just words");
+		else data.items.add(new File([new Uint8Array(4)], "held.png", { type: "image/png" }));
+
+		writing?.dispatchEvent(
+			new DragEvent(what === "away" ? "dragleave" : "dragenter", {
+				dataTransfer: data,
+				bubbles: true,
+				cancelable: true,
+			})
+		);
+	}, carrying);
+}
+
 async function dropOnComment(page: Page, name: string) {
 	await page.evaluate(
 		async ([make, filed]) => {
@@ -72,31 +90,19 @@ test("dragging a file over a comment says what will happen, and dragging text sa
 }) => {
 	await openIssue(page);
 
-	await page.evaluate(() => {
-		const data = new DataTransfer();
-
-		data.items.add(new File([new Uint8Array(4)], "held.png", { type: "image/png" }));
-
-		document
-			.querySelector('[aria-label="Write a comment"]')
-			?.dispatchEvent(new DragEvent("dragenter", { dataTransfer: data, bubbles: true }));
-	});
-
 	const overlay = page.getByText("Drop files to attach them");
 
-	await expect(overlay).toBeVisible();
+	await dragOverComment(page, "text");
 
-	await page.evaluate(() => {
-		const data = new DataTransfer();
+	await expect(overlay).toHaveCount(0);
 
-		data.setData("text/plain", "just words");
-
-		document
-			.querySelector('[aria-label="Write a comment"]')
-			?.dispatchEvent(new DragEvent("dragenter", { dataTransfer: data, bubbles: true }));
-	});
+	await dragOverComment(page, "file");
 
 	await expect(overlay).toBeVisible();
+
+	await dragOverComment(page, "away");
+
+	await expect(overlay).toHaveCount(0);
 });
 
 test("an emoji can be typed into a comment by name", async ({ page }) => {

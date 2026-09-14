@@ -32,6 +32,7 @@
 				"icon-xs": "size-control-xs rounded-sm [&_svg:not([class*='size-'])]:size-3",
 				"icon-sm": "size-control-sm rounded-sm",
 				"icon-lg": "size-control-lg rounded-sm",
+				glyph: "size-control-sm rounded-sm text-lg",
 				touch: "size-11 rounded-md [&_svg:not([class*='size-'])]:size-5",
 			},
 		},
