@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
+	import DropOverlay from "$lib/attachments/drop-overlay.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
+	import { dropZone } from "$lib/attachments/drop";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
 	import { attachmentNode } from "$lib/attachments/attachments";
 	import { settled, type UploadTask } from "$lib/attachments/upload";
 	import Editor from "$lib/editor/editor.svelte";
+	import EmojiPicker from "$lib/editor/emoji-picker.svelte";
 	import {
 		documentEmpty,
 		emptyDocument,
@@ -53,6 +56,7 @@
 	let editor = $state.raw<{
 		settle: (taskId: string, content: DocumentNode) => boolean;
 		abandon: (taskId: string) => void;
+		insert: (text: string) => void;
 	} | null>(null);
 
 	const empty = $derived(documentEmpty(draft));
@@ -87,6 +91,12 @@
 		onfiles(files);
 	}
 
+	const zone = dropZone({
+		take,
+		over: (dragging) => (dropping = dragging),
+		accepts: () => Boolean(onfiles) && !working && !sending,
+	});
+
 	async function send(): Promise<boolean> {
 		if (empty || working || sending || inFlight) return false;
 
@@ -107,22 +117,11 @@
 	}
 </script>
 
-<div
-	class="flex flex-col gap-2 rounded-lg {dropping ? 'border border-dashed border-ring p-2' : ''}"
-	role="group"
-	ondragover={(event) => {
-		if (!onfiles) return;
-		event.preventDefault();
-		dropping = true;
-	}}
-	ondragleave={() => (dropping = false)}
-	ondrop={(event) => {
-		if (!onfiles) return;
-		event.preventDefault();
-		dropping = false;
-		take(Array.from(event.dataTransfer?.files ?? []));
-	}}
->
+<div class="relative flex flex-col gap-2 rounded-lg" role="group" {...zone}>
+	{#if dropping}
+		<DropOverlay inset="-inset-1" />
+	{/if}
+
 	<Label for="comment-{id}" class="sr-only">{placeholder}</Label>
 	<div class="rounded-md border border-line-default px-2.5 pb-1">
 		<Editor
@@ -135,6 +134,7 @@
 			label={placeholder}
 			disabled={working || sending}
 			minHeight="min-h-17.5"
+			emoji
 			onfiles={onfiles ? (files) => onfiles(files) : undefined}
 			onmetaenter={() => {
 				void send();
@@ -160,6 +160,8 @@
 		{#if onfiles}
 			<AttachmentPicker disabled={working || sending} onfiles={take} iconOnly />
 		{/if}
+
+		<EmojiPicker disabled={working || sending} onpick={(glyph) => editor?.insert(glyph)} />
 
 		<div class="flex-1"></div>
 

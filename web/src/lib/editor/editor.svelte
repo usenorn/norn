@@ -13,7 +13,8 @@
 	import { editorExtensions } from "$lib/editor/schema";
 	import { completing, type SuggestionAnchor, type SuggestionSession } from "$lib/editor/suggest";
 	import { insertIssueRef, insertLink, insertMention, runBlock } from "$lib/editor/blocks";
-	import { matchingCommands, type SlashCommand } from "$lib/editor/slash";
+	import { matchingCommands, opensMenu, type SlashCommand } from "$lib/editor/slash";
+	import { matchingEmoji, type Emoji } from "$lib/editor/emoji";
 	import { findIssues, findMentions, type Suggestion } from "$lib/editor/search";
 	import { pastedFiles } from "$lib/editor/clipboard";
 	import { combination, composing } from "$lib/editor/keys";
@@ -31,6 +32,7 @@
 		minHeight = "min-h-16",
 		id,
 		label = "Description",
+		emoji = false,
 		onfiles,
 		onmetaenter,
 		onsubissue,
@@ -46,6 +48,7 @@
 		minHeight?: string;
 		id?: string;
 		label?: string;
+		emoji?: boolean;
 		onfiles?: (files: File[]) => string[] | void;
 		onmetaenter?: () => boolean;
 		onsubissue?: (text: string) => void;
@@ -55,9 +58,9 @@
 	} = $props();
 
 	type Popup = {
-		kind: "slash" | "mention" | "issue";
+		kind: "slash" | "mention" | "issue" | "emoji";
 		rows: PopupRow[];
-		chosen: (Suggestion | SlashCommand)[];
+		chosen: (Suggestion | SlashCommand | Emoji)[];
 		index: number;
 		anchor: SuggestionAnchor;
 		state: "ready" | "loading" | "typing" | "empty" | "failed";
@@ -131,6 +134,25 @@
 		};
 	}
 
+	function openEmoji(session: SuggestionSession) {
+		const found = matchingEmoji(session.query);
+
+		popup = {
+			kind: "emoji",
+			rows: found.map((one) => ({
+				key: one.name,
+				label: `${one.glyph}  ${one.name}`,
+				hint: "",
+				group: "Emoji",
+			})),
+			chosen: found,
+			index: 0,
+			state: found.length > 0 ? "ready" : "empty",
+			take: session.take,
+			...place(session),
+		};
+	}
+
 	function openSearch(kind: "mention" | "issue", session: SuggestionSession) {
 		const mine = (asked += 1);
 
@@ -192,6 +214,12 @@
 
 		if (open.kind === "slash") {
 			open.take({ command: chosen as SlashCommand });
+
+			return;
+		}
+
+		if (open.kind === "emoji") {
+			open.take({ emoji: chosen as Emoji });
 
 			return;
 		}
@@ -288,10 +316,20 @@
 	}
 
 	function taken(props: { editor: Editor; range: { from: number; to: number }; props: unknown }) {
-		const chosen = props.props as { command?: SlashCommand; suggestion?: Suggestion };
+		const chosen = props.props as {
+			command?: SlashCommand;
+			suggestion?: Suggestion;
+			emoji?: Emoji;
+		};
 
 		if (chosen.command) {
 			runSlash(props.editor, props.range, chosen.command);
+
+			return;
+		}
+
+		if (chosen.emoji) {
+			props.editor.chain().focus().insertContentAt(props.range, `${chosen.emoji.glyph} `).run();
 
 			return;
 		}
@@ -375,6 +413,10 @@
 		editor?.commands.focus("end");
 	}
 
+	export function insert(text: string) {
+		editor?.chain().focus().insertContent(text).run();
+	}
+
 	export function pending(taskId: string): boolean {
 		const within = editor;
 
@@ -396,7 +438,7 @@
 					onQuery: openSlash,
 					onKey: steer,
 					onClose: () => closing("slash"),
-				}, { command: taken }),
+				}, { command: taken, opensAfter: opensMenu }),
 				completing("mention", "@", {
 					onOpen: (session) => openSearch("mention", session),
 					onQuery: (session) => openSearch("mention", session),
@@ -409,6 +451,16 @@
 					onKey: steer,
 					onClose: () => closing("issue"),
 				}, { command: taken }),
+				...(emoji
+					? [
+							completing("emoji", ":", {
+								onOpen: openEmoji,
+								onQuery: openEmoji,
+								onKey: steer,
+								onClose: () => closing("emoji"),
+							}, { command: taken, opensAfter: opensMenu }),
+						]
+					: []),
 			],
 			editorProps: {
 				attributes: {
@@ -524,7 +576,7 @@
 				index={popup.index}
 				anchor={popup.anchor}
 				state={popup.state}
-				label={popup.kind === "slash" ? "Blocks" : "Suggestions"}
+				label={popup.kind === "slash" ? "Blocks" : popup.kind === "emoji" ? "Emoji" : "Suggestions"}
 				typingHint={popup.kind === "issue"
 					? "Type a reference or a few words from the title"
 					: "Type a name to find somebody, a team, an issue or a project"}

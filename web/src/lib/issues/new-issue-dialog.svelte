@@ -28,7 +28,9 @@
 	import { onCalendarDate } from "$lib/time";
 	import { attachmentNode, formatBytes, type Attachment } from "$lib/attachments/attachments";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
+	import DropOverlay from "$lib/attachments/drop-overlay.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
+	import { dropZone } from "$lib/attachments/drop";
 	import type { UploadTask } from "$lib/attachments/upload";
 	import { assignable, type AccountKind } from "$lib/workspace/members";
 	import { conflictFailure, labelColors, labelFailureMessage } from "$lib/labels/labels";
@@ -235,32 +237,11 @@
 		if (live && !holding.running) live.files = next;
 	}
 
-	function carriesFiles(event: DragEvent): boolean {
-		return Array.from(event.dataTransfer?.types ?? []).includes("Files");
-	}
-
-	function dragEnter(event: DragEvent) {
-		if (!carriesFiles(event)) return;
-
-		event.preventDefault();
-		dragging = !busy;
-	}
-
-	function dragLeave(event: DragEvent) {
-		if (event.currentTarget === event.target) dragging = false;
-	}
-
-	function dropFiles(event: DragEvent) {
-		if (!carriesFiles(event)) return;
-
-		dragging = false;
-
-		if (event.defaultPrevented) return;
-
-		event.preventDefault();
-
-		takeFiles(Array.from(event.dataTransfer?.files ?? []));
-	}
+	const zone = dropZone({
+		take: (files) => takeFiles(files),
+		over: (over) => (dragging = over),
+		accepts: () => !busy,
+	});
 
 	function dropPending(key: string) {
 		describer?.abandon(key);
@@ -1014,17 +995,10 @@
 			method="POST"
 			use:enhance
 			class="relative flex min-h-0 w-full min-w-0 flex-col"
-			ondragenter={dragEnter}
-			ondragover={dragEnter}
-			ondragleave={dragLeave}
-			ondrop={dropFiles}
+			{...zone}
 		>
 			{#if dragging}
-				<div
-					class="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-paper-0/85 text-md text-ink-900"
-				>
-					Drop files to attach them
-				</div>
+				<DropOverlay />
 			{/if}
 			<div
 				class="flex flex-none items-center gap-2 border-b border-line-subtle py-2.75 pr-2.5 pl-3.5"

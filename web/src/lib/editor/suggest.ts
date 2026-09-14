@@ -1,7 +1,6 @@
 import { Extension } from "@tiptap/core";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
 import { PluginKey } from "@tiptap/pm/state";
-import { opensMenu } from "$lib/editor/slash";
 
 export type SuggestionAnchor = { getBoundingClientRect: () => DOMRect };
 
@@ -22,8 +21,9 @@ export function completing(
 	name: string,
 	char: string,
 	handlers: SuggestionHandlers,
-	options: Partial<SuggestionOptions> = {}
+	options: Partial<SuggestionOptions> & { opensAfter?: (before: string) => boolean } = {}
 ) {
+	const { opensAfter, ...suggestion } = options;
 	return Extension.create({
 		name: `editor-${name}`,
 		addProseMirrorPlugins() {
@@ -41,7 +41,7 @@ export function completing(
 							"￼"
 						);
 
-						return char === "/" ? opensMenu(before) : true;
+						return opensAfter ? opensAfter(before) : true;
 					},
 					render: () => ({
 						onStart: (props) => handlers.onOpen(sessionOf(props)),
@@ -49,7 +49,7 @@ export function completing(
 						onKeyDown: ({ event }) => handlers.onKey(event),
 						onExit: () => handlers.onClose(),
 					}),
-					...options,
+					...suggestion,
 				}),
 			];
 		},
