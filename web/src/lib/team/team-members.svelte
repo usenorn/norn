@@ -183,15 +183,17 @@
 						{member.displayName}
 					</span>
 					<span class="min-w-0 truncate text-sm text-muted-foreground">{member.email}</span>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						disabled={locked}
-						aria-label="Remove {member.displayName} from {team.name}"
-						onclick={() => void removeMember(member.accountId)}
-					>
-						<X aria-hidden="true" />
-					</Button>
+					{#if !archived && !readOnly}
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							disabled={locked}
+							aria-label="Remove {member.displayName} from {team.name}"
+							onclick={() => void removeMember(member.accountId)}
+						>
+							<X aria-hidden="true" />
+						</Button>
+					{/if}
 				</li>
 			{/each}
 		</ul>

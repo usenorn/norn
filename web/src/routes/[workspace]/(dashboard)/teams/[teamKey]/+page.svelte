@@ -22,6 +22,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { teamPath, teamSettingsPath } from "$lib/team/teams";
 	import { teamProfileSchema } from "$lib/team/team-profile-schema";
+	import { managesTeams } from "$lib/workspace/members";
 	import { teamOverviewPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -36,6 +37,7 @@
 	const overview = $derived(preview?.overview ?? data.overview);
 	const team = $derived(overview.kind === "ready" ? overview.team : null);
 	const here = $derived(team ? teamPath(slug, team.key) : "");
+	const readOnly = $derived(!managesTeams(data.members, data.member.id));
 
 	let editing = $state(false);
 	let failure = $state<string | null>(null);
@@ -180,6 +182,7 @@
 						team={{ id: overview.team.id, name: overview.team.name }}
 						roster={preview?.roster ?? data.roster}
 						archived={overview.team.status === "archived"}
+						{readOnly}
 					/>
 				</section>
 			{:else}
@@ -245,10 +248,12 @@
 									{overview.team.description || "No description yet."}
 								</p>
 							</div>
-							<Button variant="ghost" size="sm" onclick={edit}>
-								<Pencil aria-hidden="true" />
-								Edit
-							</Button>
+							{#if !readOnly}
+								<Button variant="ghost" size="sm" onclick={edit}>
+									<Pencil aria-hidden="true" />
+									Edit
+								</Button>
+							{/if}
 						</div>
 					{/if}
 

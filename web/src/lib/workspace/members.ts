@@ -100,6 +100,14 @@ export function hasMore(listing: MemberListing): boolean {
 	return listing.kind === "results" && listing.nextCursor !== undefined;
 }
 
+export function roleOf(members: Membership[], accountId: string): MembershipRole | null {
+	return members.find((member) => member.accountId === accountId)?.role ?? null;
+}
+
+export function managesTeams(members: Membership[], accountId: string): boolean {
+	return roleOf(members, accountId) === "admin";
+}
+
 export function memberName(member: Membership): string {
 	return member.displayName || member.email || member.accountId;
 }

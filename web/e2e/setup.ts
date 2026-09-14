@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { request, type APIRequestContext } from "@playwright/test";
-import { fixturePath, statePath, type Fixture } from "./fixture";
+import { fixturePath, ordinaryStatePath, statePath, type Fixture } from "./fixture";
 
 const api = process.env.NORN_E2E_API ?? "http://localhost:8080";
 const mail = process.env.NORN_E2E_MAILPIT ?? "http://localhost:8025";
@@ -114,6 +114,33 @@ export default async function setup(): Promise<void> {
 		issues.push({ id: issue.id, reference: issue.reference, title: one.title });
 	}
 
+	const ordinaryEmail = `e2e${stamp}-member@example.test`;
+	const ordinary = await request.newContext();
+
+	await call(ordinary, "post", "/auth/sign-up", {
+		email: ordinaryEmail,
+		displayName: "Ida Hollis",
+		password,
+		timezone: "UTC",
+	});
+
+	const ordinaryToken = await confirmationToken(ordinary, ordinaryEmail);
+	const joined = await call<{ account: { id: string } }>(
+		ordinary,
+		"post",
+		"/auth/sign-up/confirm",
+		{ token: ordinaryToken }
+	);
+
+	await call(client, "post", `/workspaces/${workspace.id}/members`, {
+		accountId: joined.account.id,
+		role: "member",
+	});
+
+	await call(client, "post", `/workspaces/${workspace.id}/teams/${team}/members`, {
+		accountId: joined.account.id,
+	});
+
 	const fixture: Fixture = {
 		workspaceId: workspace.id,
 		slug: workspace.slug,
@@ -121,11 +148,18 @@ export default async function setup(): Promise<void> {
 		accountId: account,
 		displayName: "Rae Okafor",
 		email,
+		ordinary: {
+			accountId: joined.account.id,
+			displayName: "Ida Hollis",
+			email: ordinaryEmail,
+		},
 		issues,
 	};
 
 	await mkdir(dirname(statePath), { recursive: true });
 	await client.storageState({ path: statePath });
+	await ordinary.storageState({ path: ordinaryStatePath });
 	await writeFile(fixturePath, JSON.stringify(fixture, null, "\t"));
 	await client.dispose();
+	await ordinary.dispose();
 }

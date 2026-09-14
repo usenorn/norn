@@ -25,11 +25,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { api } from "$lib/api";
-	import {
-		membersOf,
-		type MemberFailure,
-		type TeamRoster,
-	} from "$lib/team/members";
+	import type { MemberFailure, TeamRoster } from "$lib/team/members";
 	import type { CadenceSetting } from "$lib/cycles/cycles";
 	import type { StateList } from "$lib/team/states";
 	import { settingsFor, teamOf, type TeamSettings } from "$lib/team/team-settings";
@@ -48,8 +44,6 @@
 		type TeamVisibility,
 	} from "$lib/team/teams";
 	import { colorLabels } from "$lib/labels/labels";
-	import {
-	} from "$lib/workspace/members";
 	import TemplateSettings from "$lib/issues/template-settings.svelte";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { teamDetailPreviewStates } from "./preview";
