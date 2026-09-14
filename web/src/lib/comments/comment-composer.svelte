@@ -56,8 +56,11 @@
 	let editor = $state.raw<{
 		settle: (taskId: string, content: DocumentNode) => boolean;
 		abandon: (taskId: string) => void;
+		remove: (attachmentId: string) => boolean;
 		insert: (text: string) => void;
 	} | null>(null);
+	let writing = $state.raw<HTMLElement | null>(null);
+	let overWriting = $state(false);
 
 	const empty = $derived(documentEmpty(draft));
 	const inFlight = $derived((uploads ?? []).some((task) => !settled(task)));
@@ -93,7 +96,11 @@
 
 	const zone = dropZone({
 		take,
-		over: (dragging) => (dropping = dragging),
+		over: (dragging, event) => {
+			dropping = dragging;
+			overWriting =
+				dragging && event?.target instanceof Node && Boolean(writing?.contains(event.target));
+		},
 		accepts: () => Boolean(onfiles) && !working && !sending,
 	});
 
@@ -118,12 +125,12 @@
 </script>
 
 <div class="relative flex flex-col gap-2 rounded-lg" role="group" {...zone}>
-	{#if dropping}
+	{#if dropping && !overWriting}
 		<DropOverlay inset="-inset-1" />
 	{/if}
 
 	<Label for="comment-{id}" class="sr-only">{placeholder}</Label>
-	<div class="rounded-md border border-line-default px-2.5 pb-1">
+	<div bind:this={writing} class="rounded-md border border-line-default px-2.5 pb-1">
 		<Editor
 			bind:this={editor}
 			bind:document={draft}
@@ -150,7 +157,12 @@
 			oncancel={(taskId) => oncancelupload?.(taskId)}
 			onretry={(taskId) => onretryupload?.(taskId)}
 			ondismiss={(taskId) => {
+				const dropped = (uploads ?? []).find((task) => task.id === taskId);
+
 				editor?.abandon(taskId);
+
+				if (dropped?.attachment) editor?.remove(dropped.attachment.id);
+
 				ondismissupload?.(taskId);
 			}}
 		/>

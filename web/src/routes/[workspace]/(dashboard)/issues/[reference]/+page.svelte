@@ -259,6 +259,7 @@
 	let descriptionEditor = $state.raw<{
 		settle: (taskId: string, content: DocumentNode) => boolean;
 		abandon: (taskId: string) => void;
+		remove: (attachmentId: string) => boolean;
 		focus: () => void;
 	} | null>(null);
 	let attachmentFailure = $state<AttachmentFailure | null>(null);
@@ -1201,9 +1202,15 @@
 	}
 
 	function dismissUpload(into: "comment" | "body", taskId: string) {
-		if (into === "body") descriptionEditor?.abandon(taskId);
-
 		const list = into === "comment" ? commentUploads : bodyUploads;
+		const dropped = list.find((entry) => entry.id === taskId);
+
+		if (into === "body") {
+			descriptionEditor?.abandon(taskId);
+
+			if (dropped?.attachment) descriptionEditor?.remove(dropped.attachment.id);
+		}
+
 		const next = list.filter((entry) => entry.id !== taskId);
 
 		if (into === "comment") {
@@ -1211,6 +1218,8 @@
 		} else {
 			bodyUploads = next;
 		}
+
+		if (dropped?.attachment) void removeAttachment(dropped.attachment.id);
 	}
 
 	async function removeAttachment(attachmentId: string) {

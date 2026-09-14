@@ -31,6 +31,7 @@ export function settled(task: UploadTask): boolean {
 	return task.state === "done" || task.state === "failed" || task.state === "cancelled";
 }
 
+
 function send(
 	transfer: AttachmentTransfer,
 	file: File,

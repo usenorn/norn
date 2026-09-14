@@ -417,6 +417,34 @@
 		editor?.chain().focus().insertContent(text).run();
 	}
 
+	export function remove(attachmentId: string): boolean {
+		const within = editor;
+
+		if (!within) return false;
+
+		let at: number | null = null;
+
+		within.state.doc.descendants((node, pos) => {
+			if (at !== null) return false;
+
+			if (node.attrs?.attachmentId === attachmentId) {
+				at = pos;
+
+				return false;
+			}
+
+			return true;
+		});
+
+		if (at === null) return false;
+
+		const found = within.state.doc.nodeAt(at);
+
+		within.view.dispatch(within.state.tr.delete(at, at + (found?.nodeSize ?? 1)));
+
+		return true;
+	}
+
 	export function pending(taskId: string): boolean {
 		const within = editor;
 

@@ -23,22 +23,30 @@ async function openIssue(page: Page) {
 	return writing;
 }
 
-async function dragOverComment(page: Page, carrying: "file" | "text" | "away") {
-	await page.evaluate((what) => {
-		const data = new DataTransfer();
-		const writing = document.querySelector('[aria-label="Write a comment"]');
+async function dragOverComment(
+	page: Page,
+	carrying: "file" | "text" | "away",
+	over: "card" | "writing" = "card"
+) {
+	await page.evaluate(
+		([what, where]) => {
+			const data = new DataTransfer();
+			const writing = document.querySelector('[aria-label="Write a comment"]');
+			const landing = where === "writing" ? writing : writing?.closest('[role="group"]');
 
-		if (what === "text") data.setData("text/plain", "just words");
-		else data.items.add(new File([new Uint8Array(4)], "held.png", { type: "image/png" }));
+			if (what === "text") data.setData("text/plain", "just words");
+			else data.items.add(new File([new Uint8Array(4)], "held.png", { type: "image/png" }));
 
-		writing?.dispatchEvent(
-			new DragEvent(what === "away" ? "dragleave" : "dragenter", {
-				dataTransfer: data,
-				bubbles: true,
-				cancelable: true,
-			})
-		);
-	}, carrying);
+			landing?.dispatchEvent(
+				new DragEvent(what === "away" ? "dragleave" : "dragenter", {
+					dataTransfer: data,
+					bubbles: true,
+					cancelable: true,
+				})
+			);
+		},
+		[carrying, over] as const
+	);
 }
 
 async function dropOnComment(page: Page, name: string) {
@@ -83,6 +91,48 @@ test("a file dropped on a comment is attached once", async ({ page }) => {
 	});
 
 	expect(reserved).toHaveLength(1);
+});
+
+test("throwing an attached file away takes the picture and the file with it", async ({ page }) => {
+	const removed: string[] = [];
+
+	page.on("request", (request) => {
+		if (request.method() === "DELETE" && request.url().includes("/attachments/")) {
+			removed.push(request.url());
+		}
+	});
+
+	await openIssue(page);
+	await dropOnComment(page, "thrown-away.png");
+
+	const written = page.locator('[aria-label="Write a comment"] img');
+
+	await expect(written).toHaveCount(1, { timeout: 20_000 });
+
+	const throwAway = page.getByRole("button", { name: "Dismiss thrown-away.png" });
+
+	await expect(throwAway).toBeVisible();
+	await throwAway.click();
+
+	await expect(page.getByText("thrown-away.png")).toHaveCount(0);
+	await expect(written).toHaveCount(0);
+	await expect.poll(() => removed.length).toBe(1);
+});
+
+test("the picture lands where the cursor points, so the editor keeps its own mark", async ({
+	page,
+}) => {
+	await openIssue(page);
+
+	const overlay = page.getByText("Drop files to attach them");
+
+	await dragOverComment(page, "file");
+
+	await expect(overlay).toBeVisible();
+
+	await dragOverComment(page, "file", "writing");
+
+	await expect(overlay).toHaveCount(0);
 });
 
 test("dragging a file over a comment says what will happen, and dragging text says nothing", async ({
