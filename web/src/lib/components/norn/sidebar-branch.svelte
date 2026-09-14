@@ -34,14 +34,14 @@
 	} = $props();
 </script>
 
-<div class={cn("flex items-center gap-0.5", className)}>
+<div class={cn("relative flex items-center", className)}>
 	<button
 		type="button"
 		onclick={ontoggle}
 		aria-expanded={expanded}
 		aria-controls={id}
 		aria-label="{expanded ? 'Collapse' : 'Expand'} {label}"
-		class="flex size-5 shrink-0 items-center justify-center rounded-xs text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+		class="absolute top-1/2 left-1.5 flex size-5 -translate-y-1/2 items-center justify-center rounded-xs text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
 	>
 		<MorphIcon
 			icon={expanded ? ChevronDown : ChevronRight}
@@ -51,11 +51,23 @@
 			aria-hidden="true"
 		/>
 	</button>
-	<SidebarItem {href} {label} {icon} {glyph} {glyphEngaged} {active} class="min-w-0 flex-1" />
-	{@render action?.()}
+	<SidebarItem
+		{href}
+		{label}
+		{icon}
+		{glyph}
+		{glyphEngaged}
+		{active}
+		class={cn("min-w-0 flex-1 pl-7", action && "pr-8")}
+	/>
+	{#if action}
+		<span class="absolute top-1/2 right-1 -translate-y-1/2">
+			{@render action()}
+		</span>
+	{/if}
 </div>
 {#if expanded}
-	<div {id} class="pl-5">
+	<div {id}>
 		{@render children()}
 	</div>
 {/if}
