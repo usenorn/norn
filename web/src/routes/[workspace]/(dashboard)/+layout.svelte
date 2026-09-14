@@ -302,12 +302,12 @@
 						active={current(teamIssuesPath(slug, team.key))}
 					/>
 					<SidebarItem
-						href={teamProjectsPath(slug, team.id)}
+						href={teamProjectsPath(slug, team.key)}
 						label="Projects"
 						glyph={TargetGlyph}
 						glyphEngaged={CrosshairGlyph}
 						indent
-						active={current(teamProjectsPath(slug, team.id))}
+						active={current(teamProjectsPath(slug, team.key))}
 					/>
 					{#if running}
 						<SidebarItem
