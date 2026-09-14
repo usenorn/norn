@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { documentAttachments, type Document } from "./document";
+import { documentAttachments, documentExcerpt, type Document } from "./document";
 
 const nested: Document = {
 	type: "doc",
@@ -60,5 +60,69 @@ describe("finding the attachments a description already carries", () => {
 
 		expect(documentAttachments(older)).toEqual([]);
 		expect(documentAttachments(undefined)).toEqual([]);
+	});
+});
+
+describe("the opening words of a document", () => {
+	it("keeps paragraphs, list items and line breaks from running into each other", () => {
+		const written: Document = {
+			type: "doc",
+			content: [
+				{ type: "heading", content: [{ type: "text", text: "Refunds" }] },
+				{
+					type: "paragraph",
+					content: [
+						{ type: "text", text: "stall" },
+						{ type: "hardBreak" },
+						{ type: "text", text: "for" },
+					],
+				},
+				{
+					type: "bulletList",
+					content: [
+						{
+							type: "listItem",
+							content: [{ type: "paragraph", content: [{ type: "text", text: "invoices" }] }],
+						},
+					],
+				},
+			],
+		};
+
+		expect(documentExcerpt(written, 100)).toBe("Refunds stall for invoices");
+	});
+
+	it("names the people and issues it points at", () => {
+		const pointing: Document = {
+			type: "doc",
+			content: [
+				{
+					type: "paragraph",
+					content: [
+						{ type: "mention", attrs: { id: "a", label: "Rae" } },
+						{ type: "text", text: " look at " },
+						{ type: "issueRef", attrs: { reference: "NORN-4" } },
+					],
+				},
+			],
+		};
+
+		expect(documentExcerpt(pointing, 100)).toBe("@Rae look at NORN-4");
+	});
+
+	it("stops at a whole word and says it stopped", () => {
+		const long: Document = {
+			type: "doc",
+			content: [{ type: "paragraph", content: [{ type: "text", text: "one two three four" }] }],
+		};
+
+		expect(documentExcerpt(long, 9)).toBe("one two…");
+		expect(documentExcerpt(long, 7)).toBe("one two…");
+		expect(documentExcerpt(long, 18)).toBe("one two three four");
+	});
+
+	it("gives nothing for an empty or missing document", () => {
+		expect(documentExcerpt({ type: "doc", content: [] }, 100)).toBe("");
+		expect(documentExcerpt(undefined, 100)).toBe("");
 	});
 });

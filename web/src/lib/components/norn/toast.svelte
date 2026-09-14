@@ -22,6 +22,7 @@
 	let {
 		message,
 		href,
+		detail,
 		action = "Undo",
 		tone = "default",
 		onaction,
@@ -30,6 +31,7 @@
 	}: {
 		message: string;
 		href?: string;
+		detail?: string;
 		action?: string;
 		tone?: ToastTone;
 		onaction?: () => void;
@@ -44,17 +46,18 @@
 	aria-atomic="true"
 	class={cn(toastVariants({ tone }), className)}
 >
-	{#if href}
-		<a
-			{href}
-			onclick={onnavigate}
-			class="min-w-0 flex-1 underline-offset-2 text-pretty hover:underline"
-		>
-			{message}
-		</a>
-	{:else}
-		<span class="min-w-0 flex-1 text-pretty">{message}</span>
-	{/if}
+	<div class="min-w-0 flex-1">
+		{#if href}
+			<a {href} onclick={onnavigate} class="block underline-offset-2 text-pretty hover:underline">
+				{message}
+			</a>
+		{:else}
+			<span class="block text-pretty">{message}</span>
+		{/if}
+		{#if detail}
+			<p class="mt-0.5 line-clamp-2 text-xs opacity-75">{detail}</p>
+		{/if}
+	</div>
 	{#if onaction}
 		<button
 			type="button"

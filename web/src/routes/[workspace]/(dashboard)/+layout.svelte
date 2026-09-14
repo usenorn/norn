@@ -28,6 +28,7 @@
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
 	import { showToast } from "$lib/toast/toasts";
+	import { announceCreated } from "$lib/issues/created-toast";
 	import type { CreationOutcome } from "$lib/issues/creating";
 	import { calendarDate } from "$lib/time";
 	import ShortcutHelp from "$lib/shortcuts/shortcut-help.svelte";
@@ -173,9 +174,11 @@
 			return;
 		}
 
-		showToast(`Created ${outcome.issue.reference}`, {
-			href: workspacePath(where, `/issues/${outcome.issue.reference}`),
-		});
+		announceCreated(
+			outcome.issue,
+			workspacePath(where, `/issues/${outcome.issue.reference}`),
+			page.url.origin
+		);
 
 		await invalidate(keys.issues(workspaceId));
 	}
