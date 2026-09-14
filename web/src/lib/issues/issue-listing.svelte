@@ -3,7 +3,6 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
-	import Bell from "@lucide/svelte/icons/bell";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import CircleHelp from "@lucide/svelte/icons/circle-help";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -1206,9 +1205,6 @@
 					class={data.layout === "board" ? "border-primary bg-primary text-primary-foreground" : ""}
 				>
 					<Kanban class="size-icon-toolbar" aria-hidden="true" />
-				</Button>
-				<Button href={at("/inbox")} variant="outline" size="icon-sm" aria-label="Notifications">
-					<Bell class="size-icon-toolbar" aria-hidden="true" />
 				</Button>
 				<Button size="sm" disabled={teams.length === 0} onclick={() => raising.raise()}>
 					<Plus aria-hidden="true" />

@@ -7,7 +7,9 @@ test.describe("My tasks", () => {
 
 		await expect(page.getByRole("heading", { name: "My tasks" })).toBeVisible();
 
-		await page.getByRole("link", { name: "Notifications" }).click();
+		await expect(page.getByRole("link", { name: "Notifications" })).toHaveCount(0);
+
+		await page.getByRole("link", { name: "Inbox" }).click();
 		await expect(page).toHaveURL(new RegExp(`${fixture().slug}/inbox$`));
 
 		await page.goBack();
