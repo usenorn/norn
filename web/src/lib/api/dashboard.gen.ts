@@ -14904,13 +14904,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The labels the issue now carries */
+            /** @description The issue as it now stands, with the labels it carries */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Label"][];
+                    "application/json": components["schemas"]["Issue"];
                 };
             };
             401: components["responses"]["Problem"];

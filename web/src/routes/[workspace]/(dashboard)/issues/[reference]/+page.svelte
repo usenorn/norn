@@ -630,7 +630,7 @@
 				return;
 			}
 
-			applied = next ?? [];
+			applied = next?.labels ?? [];
 			announce(
 				`This issue now carries ${applied.length} ${applied.length === 1 ? "label" : "labels"}.`
 			);

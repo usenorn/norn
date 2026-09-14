@@ -208,7 +208,7 @@ func (h *handler) SetWorkspaceIssueLabels(
 	ctx context.Context,
 	request api.SetWorkspaceIssueLabelsRequestObject,
 ) (api.SetWorkspaceIssueLabelsResponseObject, error) {
-	labels, err := h.issues.SetLabels(ctx, request.WorkspaceId, request.IssueId, service.SetIssueLabelsInput{
+	issue, err := h.issues.SetLabels(ctx, request.WorkspaceId, request.IssueId, service.SetIssueLabelsInput{
 		ExpectedVersion: int(request.Body.ExpectedVersion),
 		LabelIDs:        request.Body.LabelIds,
 	})
@@ -220,5 +220,5 @@ func (h *handler) SetWorkspaceIssueLabels(
 		return nil, err
 	}
 
-	return api.SetWorkspaceIssueLabels200JSONResponse(labelDTOs(labels)), nil
+	return api.SetWorkspaceIssueLabels200JSONResponse(issueDTO(issue)), nil
 }

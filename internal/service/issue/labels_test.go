@@ -50,6 +50,7 @@ func TestAnIssueMayCarrySeveralLabelsFromDifferentGroups(t *testing.T) {
 		SetForIssue(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ entity.Issue, labels []entity.Label) error {
 			stored = labels
+			h.labelled = labels
 
 			return nil
 		})
@@ -59,8 +60,17 @@ func TestAnIssueMayCarrySeveralLabelsFromDifferentGroups(t *testing.T) {
 		t.Fatalf("SetLabels: %v", err)
 	}
 
-	if len(stored) != 3 || len(applied) != 3 {
-		t.Fatalf("stored %d and returned %d labels, want 3 of each", len(stored), len(applied))
+	if len(stored) != 3 || len(applied.Labels) != 3 {
+		t.Fatalf("stored %d and returned %d labels, want 3 of each", len(stored), len(applied.Labels))
+	}
+
+	if applied.Version != 2 {
+		t.Fatalf(
+			"the answer carries version %d, want the one the change produced. Without it the next "+
+				"edit claims the version from before the labels moved and is refused as somebody "+
+				"else's change.",
+			applied.Version,
+		)
 	}
 }
 
@@ -233,7 +243,25 @@ func (h *harness) expectLabelLock(
 	}
 
 	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, issueID, gomock.Any()).Return(issue, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).Return(issue, nil)
+
+	read := h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Return(issue, nil)
+
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID, _ entity.TeamScope) (entity.Issue, error) {
+			return entity.Issue{
+				ID:          issueID,
+				WorkspaceID: workspaceID,
+				TeamID:      teamID,
+				Version:     issue.Version + 1,
+				Labels:      h.labelled,
+			}, nil
+		}).
+		After(read).
+		AnyTimes()
+
 	h.issues.EXPECT().StampLabels(gomock.Any(), issueID, 1, gomock.Any()).Return(nil).AnyTimes()
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 }
@@ -256,7 +284,10 @@ func TestChangingTheLabelsIsWrittenIntoTheHistoryAndBumpsTheRow(t *testing.T) {
 
 	h.expectScope(workspaceID, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
 	h.issues.EXPECT().LockByID(gomock.Any(), workspaceID, issueID, gomock.Any()).Return(issue, nil)
-	h.issues.EXPECT().GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).Return(issue, nil)
+	h.issues.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, issueID, gomock.Any()).
+		Return(issue, nil).
+		Times(2)
 	h.labels.EXPECT().
 		ListByIDs(gomock.Any(), workspaceID, []uuid.UUID{after.ID}).
 		Return([]entity.Label{after}, nil)
