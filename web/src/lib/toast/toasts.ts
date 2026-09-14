@@ -3,6 +3,7 @@ import Toast, { type ToastTone } from "$lib/components/norn/toast.svelte";
 
 export type Raised = {
 	href?: string;
+	detail?: string;
 	action?: string;
 	tone?: ToastTone;
 	duration?: number;
@@ -22,6 +23,7 @@ export function showToast(message: string, options: Raised = {}) {
 		componentProps: {
 			message,
 			href: options.href,
+			detail: options.detail,
 			action: options.action,
 			tone: options.tone,
 			onaction:

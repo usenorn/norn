@@ -30,6 +30,7 @@
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
 	import { showFailure, showToast } from "$lib/toast/toasts";
+	import { announceCreated } from "./created-toast";
 	import { attempt, outcomeLine, unknownLine, type Outcome } from "$lib/api/attempt";
 	import { statusIndexOf } from "$lib/issues/set-status";
 	import BulkResult from "$lib/issues/bulk-result.svelte";
@@ -829,7 +830,7 @@
 			return;
 		}
 
-		announce(`Created ${outcome.issue.reference}`, undefined, at(`/issues/${outcome.issue.reference}`));
+		announceCreated(outcome.issue, at(`/issues/${outcome.issue.reference}`), page.url.origin);
 
 		await invalidate(keys.page(page.route.id));
 	}

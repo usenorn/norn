@@ -122,12 +122,41 @@ export function documentText(document: Document | undefined): string {
 	let written = "";
 
 	walk(document.content ?? [], (node) => {
-		if (node.type === "text") written += node.text ?? "";
-		if (node.type === "mention") written += `@${attrText(node, "label")}`;
-		if (node.type === "issueRef") written += attrText(node, "reference");
+		written += nodeText(node);
 	});
 
 	return written;
+}
+
+const textBoundaries = new Set<NodeKind>([
+	"paragraph",
+	"heading",
+	"listItem",
+	"taskItem",
+	"blockquote",
+	"codeBlock",
+	"tableHeader",
+	"tableCell",
+	"detailsSummary",
+	"hardBreak",
+]);
+
+export function documentExcerpt(document: Document | undefined, limit: number): string {
+	let written = "";
+
+	walk(document?.content ?? [], (node) => {
+		written += textBoundaries.has(node.type) ? ` ${nodeText(node)}` : nodeText(node);
+	});
+
+	const flat = written.replace(/\s+/g, " ").trim();
+
+	if (flat.length <= limit) return flat;
+
+	const cut = flat.slice(0, limit);
+	const whole =
+		flat[limit] === " " || !cut.includes(" ") ? cut : cut.slice(0, cut.lastIndexOf(" "));
+
+	return `${whole.trimEnd()}…`;
 }
 
 export function documentEmpty(document: Document | undefined): boolean {
@@ -175,6 +204,14 @@ export function documentAttachments(document: Document | undefined): string[] {
 
 export function sameDocument(one: Document | undefined, other: Document | undefined): boolean {
 	return JSON.stringify(one ?? emptyDocument) === JSON.stringify(other ?? emptyDocument);
+}
+
+function nodeText(node: DocumentNode): string {
+	if (node.type === "text") return node.text ?? "";
+	if (node.type === "mention") return `@${attrText(node, "label")}`;
+	if (node.type === "issueRef") return attrText(node, "reference");
+
+	return "";
 }
 
 function attrText(node: DocumentNode, name: string): string {
