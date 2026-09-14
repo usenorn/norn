@@ -11,7 +11,7 @@ export function carriesFiles(event: DragEvent): boolean {
 
 export function dropZone(zone: {
 	take: (files: File[]) => void;
-	over: (dragging: boolean, event?: DragEvent) => void;
+	over: (dragging: boolean) => void;
 	accepts?: () => boolean;
 }): DropZoneHandlers {
 	const open = () => zone.accepts?.() ?? true;
@@ -29,7 +29,7 @@ export function dropZone(zone: {
 
 			event.preventDefault();
 			depth += 1;
-			zone.over(open(), event);
+			zone.over(open());
 		},
 		ondragover: (event) => {
 			if (!carriesFiles(event)) return;

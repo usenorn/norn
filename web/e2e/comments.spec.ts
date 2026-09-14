@@ -123,20 +123,14 @@ test("throwing an attached file away takes the picture and the file with it", as
 		.toBe(1);
 });
 
-test("the picture lands where the cursor points, so the editor keeps its own mark", async ({
-	page,
-}) => {
+test("the invitation covers the text as well, wherever the file is held", async ({ page }) => {
 	await openIssue(page);
 
 	const overlay = page.getByText("Drop files to attach them");
 
-	await dragOverComment(page, "file");
-
-	await expect(overlay).toBeVisible();
-
 	await dragOverComment(page, "file", "writing");
 
-	await expect(overlay).toHaveCount(0);
+	await expect(overlay).toBeVisible();
 });
 
 test("dragging a file over a comment says what will happen, and dragging text says nothing", async ({
