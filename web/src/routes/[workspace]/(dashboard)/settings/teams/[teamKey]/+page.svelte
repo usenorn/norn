@@ -8,14 +8,13 @@
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Users from "@lucide/svelte/icons/users";
-	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import ColorChoice from "$lib/components/norn/color-choice.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
+	import TeamMembers from "$lib/team/team-members.svelte";
 	import WorkflowStates from "$lib/components/norn/workflow-states.svelte";
 	import CycleCadence from "$lib/team/cycle-cadence.svelte";
 	import TeamNotifications from "$lib/notifications/team-notifications.svelte";
@@ -27,10 +26,7 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { api } from "$lib/api";
 	import {
-		initialsOf,
-		memberFailureMessage,
 		membersOf,
-		rosterFor,
 		type MemberFailure,
 		type TeamRoster,
 	} from "$lib/team/members";
@@ -53,9 +49,6 @@
 	} from "$lib/team/teams";
 	import { colorLabels } from "$lib/labels/labels";
 	import {
-		memberName,
-		searchDebounceMs,
-		type Membership,
 	} from "$lib/workspace/members";
 	import TemplateSettings from "$lib/issues/template-settings.svelte";
 	import { workspacePath } from "$lib/workspace/navigation";
@@ -63,7 +56,6 @@
 	import type { PageProps } from "./$types";
 
 	const settingsFormId = "team-settings-form";
-	const candidateLimit = 8;
 
 	let { data }: PageProps = $props();
 
@@ -74,10 +66,7 @@
 	);
 
 	let submitted = $state<TeamSettings | null>(null);
-	let submittedRoster = $state<TeamRoster | null>(null);
-	let memberFailure = $state<MemberFailure | null>(null);
 	let archiving = $state(false);
-	let removing = $state("");
 
 	// svelte-ignore state_referenced_locally
 	const form = superForm(data.form, {
@@ -94,109 +83,18 @@
 	const settings = $derived<TeamSettings>(
 		submitted ?? $message ?? preview?.settings ?? data.settings
 	);
-	const roster = $derived<TeamRoster>(submittedRoster ?? preview?.roster ?? data.roster);
+	const roster = $derived<TeamRoster>(preview?.roster ?? data.roster);
 	const states = $derived<StateList>(preview?.states ?? data.states);
 	const cadence = $derived<CadenceSetting>(preview?.cadence ?? data.cadence);
 	const triage = $derived(preview?.triage ?? data.triage);
 	const intake = $derived(preview?.intake ?? data.intake);
 	const notifications = $derived(preview?.notifications ?? data.notifications);
-	const failure = $derived<MemberFailure | null>(preview?.failure ?? memberFailure);
+	const failure = $derived<MemberFailure | null>(preview?.failure ?? null);
 	const team = $derived(teamOf(settings));
 	const archived = $derived(settings.kind === "archived");
 	const readOnly = $derived(settings.kind === "read_only");
 
-	const members = $derived(membersOf(roster));
 	const visibilities: TeamVisibility[] = ["public", "private"];
-
-	let candidateQuery = $state("");
-	let candidates = $state<Membership[]>([]);
-	let searching = $state(false);
-	let adding = $state("");
-	let candidateDebounce: ReturnType<typeof setTimeout> | undefined;
-
-	$effect(() => () => clearTimeout(candidateDebounce));
-
-	async function findCandidates(query: string) {
-		if (!team || !query) {
-			candidates = [];
-
-			return;
-		}
-
-		searching = true;
-
-		try {
-			const { data: page } = await api.GET("/workspaces/{workspaceId}/members", {
-				params: {
-					path: { workspaceId: data.workspace.id },
-					query: { query, limit: candidateLimit },
-				},
-			});
-
-			candidates = (page?.members ?? []).filter(
-				(candidate) => !members.some((member) => member.accountId === candidate.accountId)
-			);
-		} catch {
-			candidates = [];
-		} finally {
-			searching = false;
-		}
-	}
-
-	function searchCandidates(value: string) {
-		candidateQuery = value;
-		clearTimeout(candidateDebounce);
-		candidateDebounce = setTimeout(() => findCandidates(value), searchDebounceMs);
-	}
-
-	async function addMember(accountId: string) {
-		if (!team) return;
-
-		adding = accountId;
-		memberFailure = null;
-
-		try {
-			const { data: added, error } = await api.POST(
-				"/workspaces/{workspaceId}/teams/{teamId}/members",
-				{
-					params: { path: { workspaceId: data.workspace.id, teamId: team.id } },
-					body: { accountId },
-				}
-			);
-
-			if (added) {
-				submittedRoster = { kind: "added", members: [...members, added], member: added };
-				candidates = candidates.filter((candidate) => candidate.accountId !== accountId);
-				await invalidate(keys.page(page.route.id));
-
-				return;
-			}
-
-			if (error?.status === 403) {
-				memberFailure = { kind: "forbidden" };
-
-				return;
-			}
-
-			if (error && "code" in error && error.code === "team_member_exists") {
-				memberFailure = { kind: "already_member" };
-
-				return;
-			}
-
-			if (error?.status === 404) {
-				memberFailure = { kind: "not_in_workspace" };
-
-				return;
-			}
-
-			memberFailure = { kind: "unavailable" };
-		} catch {
-			memberFailure = { kind: "unavailable" };
-		} finally {
-			adding = "";
-		}
-	}
 
 	$effect(() => {
 		if (!team) return;
@@ -208,9 +106,7 @@
 		);
 	});
 
-	const busy = $derived(
-		preview?.busy || $submitting || archiving || removing !== "" || adding !== ""
-	);
+	const busy = $derived(preview?.busy || $submitting || archiving);
 	const locked = $derived(busy || archived || readOnly);
 
 	async function setArchived(archive: boolean) {
@@ -241,32 +137,6 @@
 		}
 	}
 
-	async function removeMember(accountId: string) {
-		if (!team) return;
-
-		removing = accountId;
-		memberFailure = null;
-
-		try {
-			const { error } = await api.DELETE(
-				"/workspaces/{workspaceId}/teams/{teamId}/members/{accountId}",
-				{ params: { path: { workspaceId: data.workspace.id, teamId: team.id, accountId } } }
-			);
-
-			if (error) {
-				memberFailure = error.status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
-
-				return;
-			}
-
-			submittedRoster = rosterFor(members.filter((member) => member.accountId !== accountId));
-			await invalidate(keys.page(page.route.id));
-		} catch {
-			memberFailure = { kind: "unavailable" };
-		} finally {
-			removing = "";
-		}
-	}
 </script>
 
 <svelte:head>
@@ -520,105 +390,15 @@
 						</p>
 					</div>
 
-					{#if failure}
-						<Alert.Root variant="destructive">
-							<CircleX aria-hidden="true" />
-							<Alert.Title>That did not work</Alert.Title>
-							<Alert.Description>{memberFailureMessage(failure)}</Alert.Description>
-						</Alert.Root>
-					{/if}
-
-					{#if roster.kind === "loading"}
-						<div class="h-20 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
-					{:else if roster.kind === "unavailable"}
-						<p class="text-sm leading-normal text-muted-foreground">
-							We could not load who is on this team.
-						</p>
-					{:else if members.length === 0}
-						<p class="text-sm leading-normal text-muted-foreground">
-							Nobody is on this team yet.
-						</p>
-					{:else}
-						<ul class="flex flex-col rounded-lg border border-line-default" aria-live="polite">
-							{#each members as member (member.accountId)}
-								<li
-									class="flex flex-wrap items-center gap-2 border-b border-line-subtle px-3 py-2 last:border-b-0"
-								>
-									<Avatar.Root size="sm">
-										<Avatar.Fallback>{initialsOf(member.displayName)}</Avatar.Fallback>
-									</Avatar.Root>
-									<span class="min-w-0 flex-[1_1_120px] truncate text-md text-ink-900">
-										{member.displayName}
-									</span>
-									<span class="min-w-0 truncate text-sm text-muted-foreground">{member.email}</span>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										disabled={locked}
-										aria-label="Remove {member.displayName} from {team.name}"
-										onclick={() => removeMember(member.accountId)}
-									>
-										<X aria-hidden="true" />
-									</Button>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-
-					{#if !archived && !readOnly}
-						<div class="flex flex-col gap-2" role="search">
-							<label for="team-member-search" class="text-sm font-medium text-ink-900">
-								Add someone
-							</label>
-							<Input
-								id="team-member-search"
-								type="search"
-								enterkeyhint="search"
-								autocapitalize="none"
-								spellcheck="false"
-								placeholder="Search {data.workspace.name} by name or email"
-								disabled={busy}
-								value={candidateQuery}
-								oninput={(event) => searchCandidates(event.currentTarget.value)}
-							/>
-
-							{#if candidateQuery && candidates.length === 0 && !searching}
-								<p class="text-sm leading-normal text-muted-foreground text-pretty">
-									Nobody in {data.workspace.name} matches “{candidateQuery}”.
-									<a
-										href="/invite-teammates?workspace={slug}"
-										class="text-link underline-offset-2 hover:text-link-hover hover:underline"
-									>
-										Invite them to {data.workspace.name}
-									</a>
-									first.
-								</p>
-							{:else if candidates.length > 0}
-								<ul class="flex flex-col rounded-lg border border-line-default">
-									{#each candidates as candidate (candidate.accountId)}
-										<li class="border-b border-line-subtle last:border-b-0">
-											<Button
-												variant="ghost"
-												class="h-auto w-full justify-start gap-2 rounded-none px-3 py-2"
-												disabled={busy}
-												onclick={() => addMember(candidate.accountId)}
-											>
-												<Avatar.Root size="sm">
-													<Avatar.Fallback>{initialsOf(memberName(candidate))}</Avatar.Fallback>
-												</Avatar.Root>
-												<span class="min-w-0 flex-1 truncate text-left text-md text-ink-900">
-													{memberName(candidate)}
-												</span>
-												<span class="shrink-0 text-sm text-muted-foreground">
-													{adding === candidate.accountId ? "Adding" : "Add"}
-												</span>
-											</Button>
-										</li>
-									{/each}
-								</ul>
-							{/if}
-						</div>
-					{/if}
+					<TeamMembers
+						workspace={{ id: data.workspace.id, name: data.workspace.name, slug }}
+						team={{ id: team.id, name: team.name }}
+						{roster}
+						{failure}
+						{readOnly}
+						{archived}
+						busy={locked}
+					/>
 				</section>
 
 				<WorkflowStates
