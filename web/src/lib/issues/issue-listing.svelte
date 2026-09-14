@@ -95,6 +95,7 @@
 		type DropTarget,
 		type PendingMove,
 	} from "$lib/issues/drop";
+	import { expectedVersion, remember } from "$lib/issues/versions";
 	import {
 		columnFilter,
 		facetCount,
@@ -295,9 +296,11 @@
 			run: () =>
 				api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { expectedVersion: issue.version, ...body },
+					body: { expectedVersion: expectedVersion(issue), ...body },
 				}),
 		});
+
+		if (outcome.kind === "done") remember(outcome.value);
 
 		if (outcome.kind !== "done") {
 			showFailure(refusedLine(outcome), { href: at(`/issues/${issue.reference}`) });
@@ -448,11 +451,13 @@
 			run: () =>
 				api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
 					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { expectedVersion: issue.version, labelIds },
+					body: { expectedVersion: expectedVersion(issue), labelIds },
 				}),
 			optimistic: optimistic && (() => (edits = optimistic())),
 			reconcile: () => (edits = held),
 		});
+
+		if (outcome.kind === "done") remember(outcome.value);
 
 		if (outcome.kind !== "done") {
 			showFailure(refusedLine(outcome), { href: at(`/issues/${issue.reference}`) });

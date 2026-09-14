@@ -1,5 +1,6 @@
 import { api } from "$lib/api";
 import { attempt, unknownLine } from "$lib/api/attempt";
+import { expectedVersion, remember } from "./versions";
 import type { WorkflowState } from "$lib/team/states";
 import type { Issue } from "./issues";
 
@@ -35,11 +36,15 @@ export async function setStatus(
 		run: () =>
 			api.PATCH("/workspaces/{workspaceId}/issues/{issueId}", {
 				params: { path: { workspaceId, issueId: issue.id } },
-				body: { stateId: state.id, expectedVersion: issue.version },
+				body: { stateId: state.id, expectedVersion: expectedVersion(issue) },
 			}),
 	});
 
-	if (outcome.kind === "done") return { kind: "changed", state };
+	if (outcome.kind === "done") {
+		remember(outcome.value);
+
+		return { kind: "changed", state };
+	}
 	if (outcome.kind === "unknown") return { kind: "uncertain" };
 
 	return outcome.status === 409 ? { kind: "stale" } : { kind: "unavailable" };
