@@ -94,12 +94,12 @@
 				size="touch"
 			/>
 			<SidebarItem
-				href={teamProjectsPath(slug, team.id)}
+				href={teamProjectsPath(slug, team.key)}
 				label="Projects"
 				glyph={TargetGlyph}
 				glyphEngaged={CrosshairGlyph}
 				indent
-				active={current(teamProjectsPath(slug, team.id))}
+				active={current(teamProjectsPath(slug, team.key))}
 				size="touch"
 			/>
 			{#if running}

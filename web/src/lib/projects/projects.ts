@@ -155,8 +155,8 @@ export function groupByCategory(issues: Issue[]): CategoryGroup[] {
 		.filter((group) => group.issues.length > 0);
 }
 
-export function teamProjectsPath(workspace: string, teamId: string): string {
-	return `${projectsPath(workspace)}?teamId=${teamId}`;
+export function teamProjectsPath(workspace: string, teamKey: string): string {
+	return `/${workspace}/teams/${teamKey}/projects`;
 }
 
 export type ProjectStanding = "on_track" | "at_risk" | "completed" | "cancelled";

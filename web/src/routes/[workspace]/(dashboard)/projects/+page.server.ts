@@ -3,7 +3,7 @@ import { keys } from "$lib/api/keys";
 import { projectsPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 
-export type ProjectsData = { listing: ProjectListing; team: { id: string; name: string } | null };
+export type ProjectsData = { listing: ProjectListing };
 
 export const load: PageServerLoad = async ({
 	depends,
@@ -18,25 +18,19 @@ export const load: PageServerLoad = async ({
 
 	depends(keys.projects(workspace.id));
 
-	const { teams } = await parent();
-	const teamId = url.searchParams.get("teamId") ?? undefined;
-	const team = teams?.find((candidate) => candidate.id === teamId) ?? null;
-
 	if (import.meta.env.DEV && projectsPreviewStates[url.searchParams.get("state") ?? ""]) {
-		return { listing: { kind: "loading" }, team };
+		return { listing: { kind: "loading" } };
 	}
 
 	const archived = url.searchParams.get("archived") === "1";
 
 	const projects = await locals.api.GET("/workspaces/{workspaceId}/projects", {
-		params: { path: { workspaceId: workspace.id }, query: { archived, teamId } },
+		params: { path: { workspaceId: workspace.id }, query: { archived } },
 	});
 
-	if (projects.error || !projects.data) return { listing: { kind: "unavailable" }, team };
+	if (projects.error || !projects.data) return { listing: { kind: "unavailable" } };
 
-	if (projects.data.length === 0) {
-		return { listing: { kind: team || archived ? "no_matches" : "empty" }, team };
-	}
+	if (projects.data.length === 0) return { listing: { kind: archived ? "no_matches" : "empty" } };
 
-	return { listing: { kind: "ready", projects: projects.data }, team };
+	return { listing: { kind: "ready", projects: projects.data } };
 };
