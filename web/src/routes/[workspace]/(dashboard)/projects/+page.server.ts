@@ -1,4 +1,5 @@
-import type { ProjectListing } from "$lib/projects/projects";
+import { redirect } from "@sveltejs/kit";
+import { teamProjectsPath, type ProjectListing } from "$lib/projects/projects";
 import { keys } from "$lib/api/keys";
 import { projectsPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
@@ -9,14 +10,31 @@ export const load: PageServerLoad = async ({
 	depends,
 	route,
 	locals,
+	params,
 	parent,
 	url,
 }): Promise<ProjectsData> => {
 	depends(keys.page(route.id));
 
-	const { workspace } = await parent();
+	const { workspace, teams } = await parent();
 
 	depends(keys.projects(workspace.id));
+
+	const asked = url.searchParams.get("teamId");
+
+	if (asked) {
+		const team = (teams ?? []).find((candidate) => candidate.id === asked);
+		const kept = new URLSearchParams(url.searchParams);
+
+		kept.delete("teamId");
+
+		const query = kept.toString();
+		const landing = team
+			? teamProjectsPath(params.workspace, team.key)
+			: `/${params.workspace}/projects`;
+
+		redirect(308, query ? `${landing}?${query}` : landing);
+	}
 
 	if (import.meta.env.DEV && projectsPreviewStates[url.searchParams.get("state") ?? ""]) {
 		return { listing: { kind: "loading" } };
