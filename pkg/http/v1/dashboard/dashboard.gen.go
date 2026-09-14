@@ -50479,7 +50479,7 @@ type SetWorkspaceIssueLabelsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]Label
+	JSON200 *Issue
 	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
 	ApplicationproblemJSON401 *Problem
 	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
@@ -50495,7 +50495,7 @@ type SetWorkspaceIssueLabelsResponse struct {
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SetWorkspaceIssueLabelsResponse) GetJSON200() *[]Label {
+func (r SetWorkspaceIssueLabelsResponse) GetJSON200() *Issue {
 	return r.JSON200
 }
 
@@ -77317,7 +77317,7 @@ func ParseSetWorkspaceIssueLabelsResponse(rsp *http.Response) (*SetWorkspaceIssu
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []Label
+		var dest Issue
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -116698,7 +116698,7 @@ type SetWorkspaceIssueLabelsResponseObject interface {
 	VisitSetWorkspaceIssueLabelsResponse(w http.ResponseWriter) error
 }
 
-type SetWorkspaceIssueLabels200JSONResponse []Label
+type SetWorkspaceIssueLabels200JSONResponse Issue
 
 func (response SetWorkspaceIssueLabels200JSONResponse) VisitSetWorkspaceIssueLabelsResponse(w http.ResponseWriter) error {
 

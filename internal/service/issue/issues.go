@@ -742,7 +742,7 @@ func (s *issuesService) SetLabels(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,
 	input service.SetIssueLabelsInput,
-) ([]entity.Label, error) {
+) (entity.Issue, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceIssue,
 		Action:      entity.ActionManage,
@@ -750,10 +750,10 @@ func (s *issuesService) SetLabels(
 		Scoped:      true,
 	})
 	if err != nil {
-		return nil, err
+		return entity.Issue{}, err
 	}
 
-	var applied []entity.Label
+	var answered entity.Issue
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		locked, err := s.issues.LockByID(ctx, workspaceID, issueID, decision.Scope)
@@ -782,7 +782,7 @@ func (s *issuesService) SetLabels(
 		after := labelNames(labels)
 
 		if before == after {
-			applied = issue.Labels
+			answered = issue
 
 			return nil
 		}
@@ -803,16 +803,20 @@ func (s *issuesService) SetLabels(
 			return err
 		}
 
-		applied = labels
-		issue.Labels = labels
+		changed, err := s.issues.GetVisible(ctx, workspaceID, issueID, decision.Scope)
+		if err != nil {
+			return err
+		}
 
-		return s.emit(ctx, entity.WebhookIssueUpdated, issue, decision)
+		answered = changed
+
+		return s.emit(ctx, entity.WebhookIssueUpdated, changed, decision)
 	})
 	if err != nil {
-		return nil, err
+		return entity.Issue{}, err
 	}
 
-	return applied, nil
+	return answered, nil
 }
 
 func unique(ids []uuid.UUID) []uuid.UUID {

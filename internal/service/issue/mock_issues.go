@@ -239,10 +239,10 @@ func (mr *MockIssuesMockRecorder) RestoreDescription(ctx, workspaceID, issueID, 
 }
 
 // SetLabels mocks base method.
-func (m *MockIssues) SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input service.SetIssueLabelsInput) ([]entity.Label, error) {
+func (m *MockIssues) SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input service.SetIssueLabelsInput) (entity.Issue, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetLabels", ctx, workspaceID, issueID, input)
-	ret0, _ := ret[0].([]entity.Label)
+	ret0, _ := ret[0].(entity.Issue)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

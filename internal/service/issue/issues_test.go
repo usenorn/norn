@@ -54,6 +54,7 @@ type harness struct {
 	accounts     *accountrepo.MockAccount
 	memberships  *membershiprepo.MockMembership
 	cycles       *cyclerepo.MockCycle
+	labelled     []entity.Label
 	lockedCycles map[uuid.UUID]entity.Cycle
 	cycleOf      map[uuid.UUID]uuid.UUID
 	teamStates   map[uuid.UUID][]entity.WorkflowState

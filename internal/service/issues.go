@@ -22,7 +22,7 @@ type Issues interface {
 	SetStatus(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueStatusInput) (entity.Issue, error)
 	Purge(ctx context.Context, workspaceID, issueID uuid.UUID) error
 	MoveToTeam(ctx context.Context, workspaceID, issueID uuid.UUID, input MoveIssueInput) (entity.Issue, error)
-	SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueLabelsInput) ([]entity.Label, error)
+	SetLabels(ctx context.Context, workspaceID, issueID uuid.UUID, input SetIssueLabelsInput) (entity.Issue, error)
 	Progress(ctx context.Context, workspaceID uuid.UUID, input ProgressInput) (entity.IssueProgress, error)
 	ProjectProgress(ctx context.Context, workspaceID, projectID uuid.UUID) (entity.ProjectIssueProgress, error)
 	DescriptionRevisions(ctx context.Context, workspaceID, issueID uuid.UUID, limit int) ([]entity.IssueDescriptionRevision, error)
