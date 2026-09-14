@@ -35,15 +35,6 @@
 </script>
 
 <div class={cn("relative flex items-center", className)}>
-	<SidebarItem
-		{href}
-		{label}
-		{icon}
-		{glyph}
-		{glyphEngaged}
-		{active}
-		class={cn("min-w-0 flex-1 pl-7", action && "pr-8")}
-	/>
 	<button
 		type="button"
 		onclick={ontoggle}
@@ -60,6 +51,15 @@
 			aria-hidden="true"
 		/>
 	</button>
+	<SidebarItem
+		{href}
+		{label}
+		{icon}
+		{glyph}
+		{glyphEngaged}
+		{active}
+		class={cn("min-w-0 flex-1 pl-7", action && "pr-8")}
+	/>
 	{#if action}
 		<span class="absolute top-1/2 right-1 -translate-y-1/2">
 			{@render action()}

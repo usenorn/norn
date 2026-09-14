@@ -39,3 +39,15 @@ test("every row in the sidebar tree shares one band, whatever its depth", async 
 	expect(child?.icon).toBeGreaterThan(team?.icon ?? 0);
 	expect((child?.icon ?? 0) - (team?.icon ?? 0)).toBe((team?.icon ?? 0) - (top?.icon ?? 0));
 });
+
+test("keyboard focus crosses a team row in the order the eye reads it", async ({ page }) => {
+	await page.goto(at("/my-tasks"));
+
+	await page.getByRole("button", { name: /^(Collapse|Expand) Billing$/ }).focus();
+
+	await page.keyboard.press("Tab");
+	await expect(page.getByRole("link", { name: "Billing", exact: true })).toBeFocused();
+
+	await page.keyboard.press("Tab");
+	await expect(page.getByRole("button", { name: "Actions for Billing" })).toBeFocused();
+});
