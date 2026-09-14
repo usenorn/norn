@@ -123,6 +123,9 @@ test("a screenshot pasted into a new issue stays where the caret was", async ({ 
 	await page.keyboard.type("after");
 
 	await page.getByRole("button", { name: /Create issue/ }).click();
+
+	await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 20_000 });
+
 	await page.getByRole("link", { name: /Pasted screenshot/ }).first().click();
 
 	const written = page.getByRole("main").locator("p, img");

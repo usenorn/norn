@@ -8,10 +8,14 @@ export type Fixture = {
 	accountId: string;
 	displayName: string;
 	email: string;
+	ordinary: { accountId: string; displayName: string; email: string };
 	issues: { id: string; reference: string; title: string }[];
 };
 
 export const statePath = fileURLToPath(new URL("./.state/session.json", import.meta.url));
+export const ordinaryStatePath = fileURLToPath(
+	new URL("./.state/ordinary.json", import.meta.url)
+);
 export const fixturePath = fileURLToPath(new URL("./.state/fixture.json", import.meta.url));
 
 export function fixture(): Fixture {
