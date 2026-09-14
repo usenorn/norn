@@ -117,6 +117,10 @@ test("throwing an attached file away takes the picture and the file with it", as
 	await expect(page.getByText("thrown-away.png")).toHaveCount(0);
 	await expect(written).toHaveCount(0);
 	await expect.poll(() => removed.length).toBe(1);
+
+	await expect
+		.poll(() => page.locator('[aria-label="Write a comment"] p').count())
+		.toBe(1);
 });
 
 test("the picture lands where the cursor points, so the editor keeps its own mark", async ({

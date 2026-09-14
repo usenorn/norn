@@ -4,6 +4,7 @@
 	import { markdownProse } from "$lib/issues/markdown";
 	import {
 		asDocument,
+		documentEmpty,
 		emptyDocument,
 		sameDocument,
 		withParagraph,
@@ -441,6 +442,8 @@
 		const found = within.state.doc.nodeAt(at);
 
 		within.view.dispatch(within.state.tr.delete(at, at + (found?.nodeSize ?? 1)));
+
+		if (documentEmpty(asDocument(within.getJSON()))) within.commands.clearContent(true);
 
 		return true;
 	}
