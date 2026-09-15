@@ -225,9 +225,11 @@ func AttachmentFileName(name string) string {
 }
 
 type ImportFileCharge struct {
-	WorkspaceID uuid.UUID
-	ObjectKey   string
-	SizeBytes   int64
+	WorkspaceID  uuid.UUID
+	ObjectKey    string
+	SizeBytes    int64
+	SettleAfter  *time.Time
+	ChargedUntil *time.Time
 }
 
 type WorkspaceStorage struct {

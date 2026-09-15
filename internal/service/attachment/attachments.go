@@ -564,14 +564,14 @@ func (s *attachmentsService) ChargeImportFile(
 	var previous int64
 
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		held, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
+		file, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
 		if err != nil {
 			return err
 		}
 
-		previous = held
+		previous = file.SizeBytes
 
-		if grown := sizeBytes - held; grown > 0 {
+		if grown := sizeBytes - file.SizeBytes; grown > 0 {
 			if _, err := s.attachments.Admit(ctx, workspaceID, grown, s.cfg.MaxWorkspaceBytes); err != nil {
 				return s.exhausted(ctx, workspaceID, grown, err)
 			}
@@ -581,9 +581,10 @@ func (s *attachmentsService) ChargeImportFile(
 			}
 		}
 
-		settleAfter := time.Now().UTC().Add(s.cfg.UploadTTL + abandonGrace)
+		chargedUntil := laterOf(file.ChargedUntil, time.Now().UTC().Add(s.cfg.UploadTTL+abandonGrace))
+		settleAfter := soonerOf(file.SettleAfter, chargedUntil)
 
-		return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, sizeBytes, &settleAfter)
+		return s.attachments.RecordImportFile(ctx, workspaceID, objectKey, sizeBytes, &settleAfter, &chargedUntil)
 	}); err != nil {
 		return 0, err
 	}
@@ -623,16 +624,23 @@ func (s *attachmentsService) settleImportFile(
 	floorBytes int64,
 ) error {
 	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		held, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
+		file, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
 		if err != nil {
 			return err
 		}
 
+		now := time.Now().UTC()
+		stillWriting := file.ChargedUntil != nil && now.Before(*file.ChargedUntil)
+
 		object, err := s.blobs.Stat(ctx, objectKey)
 
 		switch {
+		case err == nil && stillWriting:
+			return s.resizeImportFile(ctx, file, object.Size, file.ChargedUntil)
 		case err == nil:
-			return s.resizeImportFile(ctx, workspaceID, objectKey, held, object.Size, nil)
+			return s.resizeImportFile(ctx, file, object.Size, nil)
+		case errors.Is(err, entity.ErrBlobNotFound) && stillWriting:
+			return s.resizeImportFile(ctx, file, 0, file.ChargedUntil)
 		case errors.Is(err, entity.ErrBlobNotFound):
 			return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
 		}
@@ -643,26 +651,44 @@ func (s *attachmentsService) settleImportFile(
 			"error", err.Error(),
 		)
 
-		settleAfter := time.Now().UTC()
-
-		return s.resizeImportFile(ctx, workspaceID, objectKey, held, max(held, floorBytes), &settleAfter)
+		return s.resizeImportFile(ctx, file, max(file.SizeBytes, floorBytes), &now)
 	})
 }
 
 func (s *attachmentsService) resizeImportFile(
 	ctx context.Context,
-	workspaceID uuid.UUID,
-	objectKey string,
-	held, sizeBytes int64,
+	file entity.ImportFileCharge,
+	sizeBytes int64,
 	settleAfter *time.Time,
 ) error {
-	if drift := sizeBytes - held; drift != 0 {
-		if err := s.attachments.Correct(ctx, workspaceID, drift); err != nil {
+	if drift := sizeBytes - file.SizeBytes; drift != 0 {
+		if err := s.attachments.Correct(ctx, file.WorkspaceID, drift); err != nil {
 			return err
 		}
 	}
 
-	return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, sizeBytes, settleAfter)
+	chargedUntil := file.ChargedUntil
+	if settleAfter == nil {
+		chargedUntil = nil
+	}
+
+	return s.attachments.RecordImportFile(ctx, file.WorkspaceID, file.ObjectKey, sizeBytes, settleAfter, chargedUntil)
+}
+
+func laterOf(current *time.Time, candidate time.Time) time.Time {
+	if current != nil && current.After(candidate) {
+		return *current
+	}
+
+	return candidate
+}
+
+func soonerOf(current *time.Time, candidate time.Time) time.Time {
+	if current != nil && current.Before(candidate) {
+		return *current
+	}
+
+	return candidate
 }
 
 func malformedImportKey() error {

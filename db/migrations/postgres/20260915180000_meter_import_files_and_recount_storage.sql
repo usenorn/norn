@@ -8,6 +8,7 @@ CREATE TABLE workspace_import_files (
     workspace_id uuid NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE,
     size_bytes   bigint NOT NULL DEFAULT 0,
     settle_after timestamptz,
+    charged_until timestamptz,
     created_at   timestamptz NOT NULL DEFAULT now(),
     updated_at   timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT workspace_import_files_size_check CHECK (size_bytes >= 0),

@@ -765,12 +765,13 @@ func TestAnImportFileWrittenAgainIsChargedOnlyForWhatItGrew(t *testing.T) {
 	h := newHarness(t, maxWorkspaceBytes)
 	key := h.importKey()
 
-	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).Return(int64(300), nil)
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
+		Return(entity.ImportFileCharge{SizeBytes: 300}, nil)
 	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(200), int64(maxWorkspaceBytes)).
 		Return(int64(800), nil)
 	h.attachments.EXPECT().
-		SizeImportFile(gomock.Any(), h.workspaceID, key, int64(500), gomock.Not(gomock.Nil())).
+		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(500), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
 		Return(nil)
 
 	previous, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 500)
@@ -795,10 +796,11 @@ func TestAnImportFileWrittenAgainSmallerGivesBackWhatItShrank(t *testing.T) {
 	h := newHarness(t, maxWorkspaceBytes)
 	key := h.importKey()
 
-	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).Return(int64(500), nil)
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
+		Return(entity.ImportFileCharge{SizeBytes: 500}, nil)
 	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(300)).Return(nil)
 	h.attachments.EXPECT().
-		SizeImportFile(gomock.Any(), h.workspaceID, key, int64(200), gomock.Not(gomock.Nil())).
+		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(200), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
 		Return(nil)
 
 	if _, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 200); err != nil {
@@ -810,7 +812,8 @@ func TestAnImportFileIntoAFullWorkspaceIsRefusedWithItsNumbersAndNeverRecorded(t
 	h := newHarness(t, maxWorkspaceBytes)
 	key := h.importKey()
 
-	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).Return(int64(0), nil)
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
+		Return(entity.ImportFileCharge{}, nil)
 	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(400), int64(maxWorkspaceBytes)).
 		Return(int64(0), entity.ErrStorageExhausted)
@@ -895,28 +898,36 @@ type storageBook struct {
 	stored      int64
 	files       map[string]int64
 	settle      map[string]*time.Time
+	charged     map[string]*time.Time
 	locked      string
 }
 
-func (b *storageBook) ClaimImportFile(_ context.Context, _ uuid.UUID, key string) (int64, error) {
+func (b *storageBook) ClaimImportFile(_ context.Context, _ uuid.UUID, key string) (entity.ImportFileCharge, error) {
 	if _, held := b.files[key]; !held {
 		b.files[key] = 0
 	}
 
 	b.locked = key
 
-	return b.files[key], nil
+	return entity.ImportFileCharge{
+		WorkspaceID:  b.workspaceID,
+		ObjectKey:    key,
+		SizeBytes:    b.files[key],
+		SettleAfter:  b.settle[key],
+		ChargedUntil: b.charged[key],
+	}, nil
 }
 
-func (b *storageBook) SizeImportFile(
+func (b *storageBook) RecordImportFile(
 	_ context.Context,
 	_ uuid.UUID,
 	key string,
 	sizeBytes int64,
-	settleAfter *time.Time,
+	settleAfter, chargedUntil *time.Time,
 ) error {
 	b.files[key] = sizeBytes
 	b.settle[key] = settleAfter
+	b.charged[key] = chargedUntil
 
 	return nil
 }
@@ -925,8 +936,21 @@ func (b *storageBook) RefundImportFile(_ context.Context, _ uuid.UUID, key strin
 	b.stored = max(b.stored-b.files[key], 0)
 	delete(b.files, key)
 	delete(b.settle, key)
+	delete(b.charged, key)
 
 	return nil
+}
+
+func (b *storageBook) deadlinesPass(key string) {
+	passed := time.Now().UTC().Add(-time.Minute)
+
+	if b.settle[key] != nil {
+		b.settle[key] = &passed
+	}
+
+	if b.charged[key] != nil {
+		b.charged[key] = &passed
+	}
 }
 
 func (b *storageBook) MarkOrphans(context.Context, time.Time) error {
@@ -982,10 +1006,16 @@ type measuredStore struct {
 	book        *storageBook
 	objects     map[string]int64
 	unreachable bool
+	landing     func()
 }
 
 func newBook(workspaceID uuid.UUID) (*storageBook, *measuredStore) {
-	book := &storageBook{workspaceID: workspaceID, files: map[string]int64{}, settle: map[string]*time.Time{}}
+	book := &storageBook{
+		workspaceID: workspaceID,
+		files:       map[string]int64{},
+		settle:      map[string]*time.Time{},
+		charged:     map[string]*time.Time{},
+	}
 
 	return book, &measuredStore{book: book, objects: map[string]int64{}}
 }
@@ -1000,11 +1030,18 @@ func (m *measuredStore) Stat(_ context.Context, key string) (entity.BlobObject, 
 		)
 	}
 
-	if m.unreachable {
+	unreachable := m.unreachable
+	size, held := m.objects[key]
+
+	if landing := m.landing; landing != nil {
+		m.landing = nil
+		landing()
+	}
+
+	if unreachable {
 		return entity.BlobObject{}, errors.New("storage is unreachable")
 	}
 
-	size, held := m.objects[key]
 	if !held {
 		return entity.BlobObject{}, entity.ErrBlobNotFound
 	}
@@ -1064,6 +1101,79 @@ func (m *measuredStore) leaving(key string, sizeBytes int64) {
 	m.objects[key] = sizeBytes
 }
 
+func sweptOnceNobodyCanStillBeWriting(t *testing.T, storage service.Attachments, book *storageBook, key string) {
+	t.Helper()
+
+	book.deadlinesPass(key)
+
+	if err := storage.Reclaim(context.Background()); err != nil {
+		t.Fatalf("Reclaim: %v", err)
+	}
+}
+
+func TestAWriteThatLandsWhileAnotherUploadIsMeasuredIsCaughtEvenIfItsUploaderDies(t *testing.T) {
+	for name, first := range map[string]struct {
+		landed bool
+	}{
+		"A's write landed, B's lands after A's HEAD, and B dies before measuring": {landed: true},
+		"A's write failed, B's lands after A's HEAD, and B dies before measuring": {landed: false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "rows.csv")
+
+			book, store := newBook(workspaceID)
+			storage := bookedService(t, book, store)
+
+			previousA, err := storage.ChargeImportFile(ctx, workspaceID, key, 500)
+			if err != nil {
+				t.Fatalf("ChargeImportFile for A: %v", err)
+			}
+
+			if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+				t.Fatalf("ChargeImportFile for B: %v", err)
+			}
+
+			if first.landed {
+				store.leaving(key, 500)
+			}
+
+			store.landing = func() { store.objects[key] = 700 }
+
+			if first.landed {
+				err = storage.SettleImportFile(ctx, workspaceID, key)
+			} else {
+				err = storage.RestoreImportFile(ctx, workspaceID, key, previousA)
+			}
+
+			if err != nil {
+				t.Fatalf("measuring A: %v", err)
+			}
+
+			if _, held := book.files[key]; !held || book.settle[key] == nil {
+				t.Fatalf(
+					"A's measurement left the file held %v and waiting %v. B charged before A measured and "+
+						"was still writing, so A's HEAD says nothing about B's bytes: settling or dropping "+
+						"the record there leaves nothing to catch B's object if B dies before measuring.",
+					held, book.settle[key] != nil,
+				)
+			}
+
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
+
+			if book.stored != 700 || book.files[key] != 700 || book.settle[key] != nil {
+				t.Fatalf(
+					"storage holds B's 700 bytes, but once nobody could still be writing the sweep left the "+
+						"file recorded at %d and the workspace at %d (waiting %v). Without that last "+
+						"measurement the ledger stays short for good.",
+					book.files[key], book.stored, book.settle[key] != nil,
+				)
+			}
+		})
+	}
+}
+
 func TestTwoUploadsOfOneImportFileLeaveTheLedgerAtWhateverStorageKept(t *testing.T) {
 	for name, writes := range map[string]struct {
 		first, last int64
@@ -1093,13 +1203,23 @@ func TestTwoUploadsOfOneImportFileLeaveTheLedgerAtWhateverStorageKept(t *testing
 				}
 			}
 
-			if book.stored != writes.last || book.files[key] != writes.last || book.settle[key] != nil {
+			if book.stored != writes.last || book.files[key] != writes.last {
 				t.Fatalf(
 					"both uploads of %q succeeded and storage kept the %d bytes written last, but the "+
 						"file is recorded at %d and the workspace reads %d. The upload charged last is "+
 						"not always the one written last, so only a measurement after each write finds "+
 						"the object storage actually kept.",
 					key, writes.last, book.files[key], book.stored,
+				)
+			}
+
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
+
+			if book.stored != writes.last || book.files[key] != writes.last || book.settle[key] != nil {
+				t.Fatalf(
+					"the sweep after both uploads left the file recorded at %d and the workspace at %d "+
+						"(waiting %v), want %d and settled",
+					book.files[key], book.stored, book.settle[key] != nil, writes.last,
 				)
 			}
 		})
@@ -1134,14 +1254,25 @@ func TestAnImportFileWhoseWriteFailedIsCountedAtWhatStorageStillHolds(t *testing
 				t.Fatalf("RestoreImportFile: %v", err)
 			}
 
+			if book.stored != write.want || book.files[key] != write.want {
+				t.Fatalf(
+					"after %s the file is recorded at %d bytes and the workspace reads %d, want %d for "+
+						"both. Whatever is still in storage has to stay counted, and nothing more: "+
+						"refunding the whole file hides the earlier bytes, and keeping the failed charge "+
+						"bills bytes that never arrived.",
+					name, book.files[key], book.stored, write.want,
+				)
+			}
+
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
+
 			recorded, held := book.files[key]
 
-			if book.stored != write.want || recorded != write.want || held != (write.want > 0) {
+			if book.stored != write.want || recorded != write.want || held != (write.want > 0) ||
+				book.settle[key] != nil {
 				t.Fatalf(
-					"after %s the file is recorded at %d bytes (held %v) and the workspace reads %d, "+
-						"want %d for both. Whatever is still in storage has to stay counted, and "+
-						"nothing more: refunding the whole file hides the earlier bytes, and keeping "+
-						"the failed charge bills bytes that never arrived.",
+					"once nobody could still be writing, the sweep left %s recorded at %d (held %v) and "+
+						"the workspace at %d, want %d and settled",
 					name, recorded, held, book.stored, write.want,
 				)
 			}
@@ -1191,9 +1322,7 @@ func TestAWriteWhoseOutcomeCannotBeCheckedStaysChargedUntilTheSweepMeasuresIt(t 
 
 			store.unreachable = false
 
-			if err := storage.Reclaim(ctx); err != nil {
-				t.Fatalf("Reclaim: %v", err)
-			}
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
 
 			recorded, held := book.files[key]
 

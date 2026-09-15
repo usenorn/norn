@@ -26,8 +26,8 @@ type Attachment interface {
 	Release(ctx context.Context, workspaceID uuid.UUID, sizeBytes int64) error
 	Correct(ctx context.Context, workspaceID uuid.UUID, deltaBytes int64) error
 	Ledger(ctx context.Context, workspaceID uuid.UUID, defaultMaxBytes int64) (entity.WorkspaceStorage, error)
-	ClaimImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (int64, error)
-	SizeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64, settleAfter *time.Time) error
+	ClaimImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.ImportFileCharge, error)
+	RecordImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64, settleAfter, chargedUntil *time.Time) error
 	ListUnsettledImportFiles(ctx context.Context, at time.Time, batch int) ([]entity.ImportFileCharge, error)
 	TakeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (int64, bool, error)
 	RefundImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) error

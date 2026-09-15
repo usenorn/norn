@@ -140,14 +140,14 @@ VALUES ($1, $2::uuid, 0)
 ON CONFLICT (object_key) DO NOTHING`
 
 const lockImportFileQuery = `
-SELECT size_bytes
+SELECT size_bytes, settle_after, charged_until
 FROM workspace_import_files
 WHERE object_key = $1 AND workspace_id = $2::uuid
 FOR UPDATE`
 
-const sizeImportFileQuery = `
+const recordImportFileQuery = `
 UPDATE workspace_import_files
-SET size_bytes = $3, settle_after = $4, updated_at = now()
+SET size_bytes = $3, settle_after = $4, charged_until = $5, updated_at = now()
 WHERE object_key = $1 AND workspace_id = $2::uuid`
 
 const unsettledImportFilesQuery = `
@@ -517,43 +517,58 @@ func (r *attachmentRepository) ClaimImportFile(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	objectKey string,
-) (int64, error) {
+) (entity.ImportFileCharge, error) {
 	querier := r.db.Querier(ctx)
 
 	if _, err := querier.ExecContext(ctx, claimImportFileQuery, objectKey, workspaceID.String()); err != nil {
-		return 0, fmt.Errorf("claim import file: %w", err)
+		return entity.ImportFileCharge{}, fmt.Errorf("claim import file: %w", err)
 	}
 
-	var held int64
+	var (
+		file                      = entity.ImportFileCharge{WorkspaceID: workspaceID, ObjectKey: objectKey}
+		settleAfter, chargedUntil sql.NullTime
+	)
 
-	err := querier.QueryRowContext(ctx, lockImportFileQuery, objectKey, workspaceID.String()).Scan(&held)
+	err := querier.QueryRowContext(ctx, lockImportFileQuery, objectKey, workspaceID.String()).
+		Scan(&file.SizeBytes, &settleAfter, &chargedUntil)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, entity.ErrAttachmentNotFound
+			return entity.ImportFileCharge{}, entity.ErrAttachmentNotFound
 		}
 
-		return 0, fmt.Errorf("lock import file: %w", err)
+		return entity.ImportFileCharge{}, fmt.Errorf("lock import file: %w", err)
 	}
 
-	return held, nil
+	if settleAfter.Valid {
+		file.SettleAfter = &settleAfter.Time
+	}
+
+	if chargedUntil.Valid {
+		file.ChargedUntil = &chargedUntil.Time
+	}
+
+	return file, nil
 }
 
-func (r *attachmentRepository) SizeImportFile(
+func (r *attachmentRepository) RecordImportFile(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	objectKey string,
 	sizeBytes int64,
-	settleAfter *time.Time,
+	settleAfter, chargedUntil *time.Time,
 ) error {
-	var settle any
-	if settleAfter != nil {
-		settle = *settleAfter
+	return r.touch(
+		ctx, "record import file", recordImportFileQuery,
+		objectKey, workspaceID.String(), sizeBytes, optionalTime(settleAfter), optionalTime(chargedUntil),
+	)
+}
+
+func optionalTime(at *time.Time) any {
+	if at == nil {
+		return nil
 	}
 
-	return r.touch(
-		ctx, "size import file", sizeImportFileQuery,
-		objectKey, workspaceID.String(), sizeBytes, settle,
-	)
+	return *at
 }
 
 func (r *attachmentRepository) ListUnsettledImportFiles(

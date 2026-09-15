@@ -22,7 +22,7 @@ var statements = map[string]string{
 	"ledgerQuery":               ledgerQuery,
 	"claimImportFileQuery":      claimImportFileQuery,
 	"lockImportFileQuery":       lockImportFileQuery,
-	"sizeImportFileQuery":       sizeImportFileQuery,
+	"recordImportFileQuery":     recordImportFileQuery,
 	"unsettledImportFilesQuery": unsettledImportFilesQuery,
 	"takeImportFileQuery":       takeImportFileQuery,
 	"refundImportFileQuery":     refundImportFileQuery,
@@ -146,7 +146,7 @@ func TestNothingCanDriveTheLedgerNegative(t *testing.T) {
 
 func TestAnImportFileIsOnlyEverReachedThroughItsOwnWorkspace(t *testing.T) {
 	for _, name := range []string{
-		"lockImportFileQuery", "sizeImportFileQuery", "takeImportFileQuery", "refundImportFileQuery",
+		"lockImportFileQuery", "recordImportFileQuery", "takeImportFileQuery", "refundImportFileQuery",
 	} {
 		if !strings.Contains(statements[name], "workspace_id = $2::uuid") {
 			t.Errorf(
