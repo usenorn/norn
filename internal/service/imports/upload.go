@@ -55,13 +55,14 @@ func (s *importsService) Upload(
 
 	size := int64(len(body))
 
-	if err := s.fileWriter.ChargeImportFile(ctx, run.WorkspaceID, key, size); err != nil {
+	previous, err := s.fileWriter.ChargeImportFile(ctx, run.WorkspaceID, key, size)
+	if err != nil {
 		return service.ImportFile{}, err
 	}
 
 	if err := s.blobs.Put(ctx, key, entity.AttachmentGenericType, bytes.NewReader(body), size); err != nil {
-		if refundErr := s.fileWriter.RefundImportFile(ctx, run.WorkspaceID, key); refundErr != nil {
-			return service.ImportFile{}, errors.Join(err, refundErr)
+		if restoreErr := s.fileWriter.RestoreImportFile(ctx, run.WorkspaceID, key, previous); restoreErr != nil {
+			return service.ImportFile{}, errors.Join(err, restoreErr)
 		}
 
 		return service.ImportFile{}, err

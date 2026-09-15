@@ -18,6 +18,11 @@ CREATE INDEX workspace_import_files_workspace_idx
 
 LOCK TABLE workspace_storage_ledger IN EXCLUSIVE MODE;
 
+UPDATE workspace_issue_attachments
+SET size_bytes = 0
+WHERE status = 'discarded' AND issue_id IS NOT NULL AND size_bytes <> 0;
+
+
 INSERT INTO workspace_storage_ledger (workspace_id, stored_bytes, updated_at)
 SELECT a.workspace_id, sum(a.size_bytes), now()
 FROM workspace_issue_attachments a

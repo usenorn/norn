@@ -535,20 +535,24 @@ func (s *attachmentsService) ChargeImportFile(
 	workspaceID uuid.UUID,
 	objectKey string,
 	sizeBytes int64,
-) error {
+) (int64, error) {
 	if !importKeyOf(workspaceID, objectKey) {
-		return entity.NewValidationError(entity.FieldError{Field: "objectKey", Code: entity.ValidationCodeMalformed})
+		return 0, entity.NewValidationError(entity.FieldError{Field: "objectKey", Code: entity.ValidationCodeMalformed})
 	}
 
 	if sizeBytes < 0 {
-		return entity.NewValidationError(entity.FieldError{Field: "sizeBytes", Code: entity.ValidationCodeMalformed})
+		return 0, entity.NewValidationError(entity.FieldError{Field: "sizeBytes", Code: entity.ValidationCodeMalformed})
 	}
 
-	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+	var previous int64
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		held, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
 		if err != nil {
 			return err
 		}
+
+		previous = held
 
 		if grown := sizeBytes - held; grown > 0 {
 			if _, err := s.attachments.Admit(ctx, workspaceID, grown, s.cfg.MaxWorkspaceBytes); err != nil {
@@ -561,15 +565,66 @@ func (s *attachmentsService) ChargeImportFile(
 		}
 
 		return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, sizeBytes)
-	})
+	}); err != nil {
+		return 0, err
+	}
+
+	return previous, nil
 }
 
-func (s *attachmentsService) RefundImportFile(
+func (s *attachmentsService) RestoreImportFile(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	objectKey string,
+	previousBytes int64,
 ) error {
-	return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
+	if !importKeyOf(workspaceID, objectKey) {
+		return entity.NewValidationError(entity.FieldError{Field: "objectKey", Code: entity.ValidationCodeMalformed})
+	}
+
+	stored, present := s.measureImportFile(ctx, objectKey, previousBytes)
+
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if !present {
+			return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
+		}
+
+		held, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
+		if err != nil {
+			return err
+		}
+
+		if drift := stored - held; drift != 0 {
+			if err := s.attachments.Correct(ctx, workspaceID, drift); err != nil {
+				return err
+			}
+		}
+
+		return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, stored)
+	})
+}
+
+func (s *attachmentsService) measureImportFile(
+	ctx context.Context,
+	objectKey string,
+	previousBytes int64,
+) (int64, bool) {
+	object, err := s.blobs.Stat(ctx, objectKey)
+
+	switch {
+	case err == nil:
+		return object.Size, true
+	case errors.Is(err, entity.ErrBlobNotFound):
+		return 0, false
+	default:
+		logging.From(ctx).WarnContext(
+			ctx, "an import file could not be measured after a failed write, so its previous size stands",
+			"object_key", objectKey,
+			"error", err.Error(),
+		)
+
+		return previousBytes, previousBytes > 0
+	}
 }
 
 func importKeyOf(workspaceID uuid.UUID, key string) bool {

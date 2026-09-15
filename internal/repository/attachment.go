@@ -24,6 +24,7 @@ type Attachment interface {
 	Reclaim(ctx context.Context, attachmentID uuid.UUID) error
 	Admit(ctx context.Context, workspaceID uuid.UUID, sizeBytes, defaultMaxBytes int64) (int64, error)
 	Release(ctx context.Context, workspaceID uuid.UUID, sizeBytes int64) error
+	Correct(ctx context.Context, workspaceID uuid.UUID, deltaBytes int64) error
 	Ledger(ctx context.Context, workspaceID uuid.UUID, defaultMaxBytes int64) (entity.WorkspaceStorage, error)
 	ClaimImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (int64, error)
 	SizeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64) error

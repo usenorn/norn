@@ -46,6 +46,6 @@ type Attachments interface {
 	Content(ctx context.Context, workspaceID, attachmentID uuid.UUID) (string, error)
 	Ledger(ctx context.Context, workspaceID uuid.UUID) (entity.WorkspaceStorage, error)
 	Reclaim(ctx context.Context) error
-	ChargeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64) error
-	RefundImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) error
+	ChargeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64) (int64, error)
+	RestoreImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, previousBytes int64) error
 }

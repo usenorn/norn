@@ -163,15 +163,16 @@ func (s *Source) carry(
 	key := entity.ImportBlobKey(run.WorkspaceID, run.RunID, name)
 	size := int64(len(body))
 
-	if err := s.storage.ChargeImportFile(ctx, run.WorkspaceID, key, size); err != nil {
+	previous, err := s.storage.ChargeImportFile(ctx, run.WorkspaceID, key, size)
+	if err != nil {
 		s.leave(ctx, payload, source, err)
 
 		return
 	}
 
 	if err := s.blobs.Put(ctx, key, contentType, bytes.NewReader(body), size); err != nil {
-		if refundErr := s.storage.RefundImportFile(ctx, run.WorkspaceID, key); refundErr != nil {
-			err = errors.Join(err, refundErr)
+		if restoreErr := s.storage.RestoreImportFile(ctx, run.WorkspaceID, key, previous); restoreErr != nil {
+			err = errors.Join(err, restoreErr)
 		}
 
 		s.leave(ctx, payload, source, err)

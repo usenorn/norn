@@ -87,6 +87,20 @@ func (mr *MockAttachmentMockRecorder) ClaimImportFile(ctx, workspaceID, objectKe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimImportFile", reflect.TypeOf((*MockAttachment)(nil).ClaimImportFile), ctx, workspaceID, objectKey)
 }
 
+// Correct mocks base method.
+func (m *MockAttachment) Correct(ctx context.Context, workspaceID uuid.UUID, deltaBytes int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Correct", ctx, workspaceID, deltaBytes)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Correct indicates an expected call of Correct.
+func (mr *MockAttachmentMockRecorder) Correct(ctx, workspaceID, deltaBytes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Correct", reflect.TypeOf((*MockAttachment)(nil).Correct), ctx, workspaceID, deltaBytes)
+}
+
 // Create mocks base method.
 func (m *MockAttachment) Create(ctx context.Context, attachment entity.Attachment) (entity.Attachment, error) {
 	m.ctrl.T.Helper()

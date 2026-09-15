@@ -122,6 +122,12 @@ VALUES ($1::uuid, 0, now())
 ON CONFLICT (workspace_id) DO UPDATE
     SET stored_bytes = greatest(workspace_storage_ledger.stored_bytes - $2::bigint, 0), updated_at = now()`
 
+const correctStorageQuery = `
+INSERT INTO workspace_storage_ledger (workspace_id, stored_bytes, updated_at)
+VALUES ($1::uuid, greatest($2::bigint, 0), now())
+ON CONFLICT (workspace_id) DO UPDATE
+    SET stored_bytes = greatest(workspace_storage_ledger.stored_bytes + $2::bigint, 0), updated_at = now()`
+
 const ledgerQuery = `
 SELECT coalesce(l.stored_bytes, 0), coalesce(l.max_bytes, $2::bigint), coalesce(l.updated_at, now())
 FROM workspaces w
@@ -461,6 +467,20 @@ func (r *attachmentRepository) Release(
 		ctx, releaseStorageQuery, workspaceID.String(), sizeBytes,
 	); err != nil {
 		return fmt.Errorf("release workspace storage: %w", err)
+	}
+
+	return nil
+}
+
+func (r *attachmentRepository) Correct(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	deltaBytes int64,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, correctStorageQuery, workspaceID.String(), deltaBytes,
+	); err != nil {
+		return fmt.Errorf("correct workspace storage: %w", err)
 	}
 
 	return nil

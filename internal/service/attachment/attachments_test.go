@@ -12,6 +12,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/repository"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
@@ -770,11 +771,20 @@ func TestAnImportFileWrittenAgainIsChargedOnlyForWhatItGrew(t *testing.T) {
 		Return(int64(800), nil)
 	h.attachments.EXPECT().SizeImportFile(gomock.Any(), h.workspaceID, key, int64(500)).Return(nil)
 
-	if err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 500); err != nil {
+	previous, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 500)
+	if err != nil {
 		t.Fatalf(
 			"ChargeImportFile: %v. A file uploaded again under the same name replaces the first, "+
 				"so charging all 500 bytes would bill the 300 that are no longer stored.",
 			err,
+		)
+	}
+
+	if previous != 300 {
+		t.Fatalf(
+			"the charge reported the file had held %d bytes, want 300. A write that fails after "+
+				"this has only that number to put the file back to.",
+			previous,
 		)
 	}
 }
@@ -787,7 +797,7 @@ func TestAnImportFileWrittenAgainSmallerGivesBackWhatItShrank(t *testing.T) {
 	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(300)).Return(nil)
 	h.attachments.EXPECT().SizeImportFile(gomock.Any(), h.workspaceID, key, int64(200)).Return(nil)
 
-	if err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 200); err != nil {
+	if _, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 200); err != nil {
 		t.Fatalf("ChargeImportFile: %v", err)
 	}
 }
@@ -804,7 +814,7 @@ func TestAnImportFileIntoAFullWorkspaceIsRefusedWithItsNumbersAndNeverRecorded(t
 		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
 		Return(entity.WorkspaceStorage{StoredBytes: 9_900, MaxBytes: maxWorkspaceBytes}, nil)
 
-	err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 400)
+	_, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 400)
 
 	var exhausted entity.StorageExhaustedError
 	if !errors.As(err, &exhausted) || exhausted.StoredBytes != 9_900 {
@@ -826,7 +836,7 @@ func TestAKeyOutsideThisWorkspacesImportsIsNeverCharged(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var refused entity.ValidationError
 
-			if err := h.service.ChargeImportFile(
+			if _, err := h.service.ChargeImportFile(
 				context.Background(), h.workspaceID, key, 100,
 			); !errors.As(err, &refused) {
 				t.Fatalf(
@@ -871,6 +881,158 @@ func TestAnImportedFileAdoptedOntoAnIssueIsNotChargedASecondTime(t *testing.T) {
 				"them again would count one file twice.",
 			err,
 		)
+	}
+}
+
+type storageBook struct {
+	repository.Attachment
+
+	stored int64
+	files  map[string]int64
+}
+
+func (b *storageBook) ClaimImportFile(_ context.Context, _ uuid.UUID, key string) (int64, error) {
+	if _, held := b.files[key]; !held {
+		b.files[key] = 0
+	}
+
+	return b.files[key], nil
+}
+
+func (b *storageBook) SizeImportFile(_ context.Context, _ uuid.UUID, key string, sizeBytes int64) error {
+	b.files[key] = sizeBytes
+
+	return nil
+}
+
+func (b *storageBook) RefundImportFile(_ context.Context, _ uuid.UUID, key string) error {
+	b.stored = max(b.stored-b.files[key], 0)
+	delete(b.files, key)
+
+	return nil
+}
+
+func (b *storageBook) Admit(_ context.Context, _ uuid.UUID, sizeBytes, maxBytes int64) (int64, error) {
+	if maxBytes != 0 && b.stored+sizeBytes > maxBytes {
+		return 0, entity.ErrStorageExhausted
+	}
+
+	b.stored += sizeBytes
+
+	return b.stored, nil
+}
+
+func (b *storageBook) Release(_ context.Context, _ uuid.UUID, sizeBytes int64) error {
+	b.stored = max(b.stored-sizeBytes, 0)
+
+	return nil
+}
+
+func (b *storageBook) Correct(_ context.Context, _ uuid.UUID, deltaBytes int64) error {
+	b.stored = max(b.stored+deltaBytes, 0)
+
+	return nil
+}
+
+type measuredStore struct {
+	repository.Blob
+
+	objects     map[string]int64
+	unreachable bool
+}
+
+func (m *measuredStore) Stat(_ context.Context, key string) (entity.BlobObject, error) {
+	if m.unreachable {
+		return entity.BlobObject{}, errors.New("storage is unreachable")
+	}
+
+	size, held := m.objects[key]
+	if !held {
+		return entity.BlobObject{}, entity.ErrBlobNotFound
+	}
+
+	return entity.BlobObject{Size: size}, nil
+}
+
+func bookedService(t *testing.T, book *storageBook, store *measuredStore) service.Attachments {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+
+	transactor := transactorrepo.NewMockTransactor(ctrl)
+	transactor.EXPECT().
+		WithTx(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(ctx)
+		}).
+		AnyTimes()
+
+	return attachmentsvc.New(
+		book, activityrepo.NewMockActivity(ctrl), issuerepo.NewMockIssue(ctrl), store,
+		jobqueuerepo.NewMockJobProducer(ctrl), authorizersvc.NewMockAuthorizer(ctrl), transactor,
+		config.Attachments{MaxFileBytes: maxFileBytes, MaxWorkspaceBytes: maxWorkspaceBytes},
+	)
+}
+
+func TestAnImportFileWhoseWriteFailedIsCountedAtWhatStorageStillHolds(t *testing.T) {
+	const nothingLeft = -1
+
+	for name, write := range map[string]struct {
+		earlier     int64
+		left        int64
+		unreachable bool
+		want        int64
+	}{
+		"a replacement the store refused, keeping the earlier file":      {300, 300, false, 300},
+		"a replacement that landed although the store reported an error": {300, 500, false, 500},
+		"a replacement whose outcome cannot be checked":                  {300, 300, true, 300},
+		"a first upload that never reached storage":                      {0, nothingLeft, false, 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "rows.csv")
+
+			book := &storageBook{stored: write.earlier, files: map[string]int64{}}
+			store := &measuredStore{objects: map[string]int64{}, unreachable: write.unreachable}
+
+			if write.earlier > 0 {
+				book.files[key] = write.earlier
+				store.objects[key] = write.earlier
+			}
+
+			storage := bookedService(t, book, store)
+
+			previous, err := storage.ChargeImportFile(context.Background(), workspaceID, key, 500)
+			if err != nil {
+				t.Fatalf("ChargeImportFile: %v", err)
+			}
+
+			if book.stored != 500 {
+				t.Fatalf("charging a 500 byte upload left the workspace reading %d bytes", book.stored)
+			}
+
+			if write.left == nothingLeft {
+				delete(store.objects, key)
+			} else {
+				store.objects[key] = write.left
+			}
+
+			if err := storage.RestoreImportFile(context.Background(), workspaceID, key, previous); err != nil {
+				t.Fatalf("RestoreImportFile: %v", err)
+			}
+
+			recorded, held := book.files[key]
+
+			if book.stored != write.want || recorded != write.want || held != (write.want > 0) {
+				t.Fatalf(
+					"after %s the file is recorded at %d bytes (held %v) and the workspace reads %d, "+
+						"want %d for both. Whatever is still in storage has to stay counted, and "+
+						"nothing more: refunding the whole file hides the earlier bytes, and keeping "+
+						"the failed charge bills bytes that never arrived.",
+					name, recorded, held, book.stored, write.want,
+				)
+			}
+		})
 	}
 }
 

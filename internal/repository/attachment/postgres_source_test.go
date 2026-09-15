@@ -18,6 +18,7 @@ var statements = map[string]string{
 	"reclaimAttachmentQuery":  reclaimAttachmentQuery,
 	"admitStorageQuery":       admitStorageQuery,
 	"releaseStorageQuery":     releaseStorageQuery,
+	"correctStorageQuery":     correctStorageQuery,
 	"ledgerQuery":             ledgerQuery,
 	"claimImportFileQuery":    claimImportFileQuery,
 	"lockImportFileQuery":     lockImportFileQuery,
@@ -115,11 +116,12 @@ func TestDiscardingZeroesTheBytesItGaveBackSoTheSweepCannotGiveThemBackAgain(t *
 }
 
 func TestReleasingIsNeverGatedByTheLimit(t *testing.T) {
-	for _, name := range []string{"releaseStorageQuery", "refundImportFileQuery"} {
+	for _, name := range []string{"releaseStorageQuery", "refundImportFileQuery", "correctStorageQuery"} {
 		if strings.Contains(statements[name], "<=") {
 			t.Errorf(
 				"%s is conditional on the cap. A workspace that is already over its limit could "+
-					"then never free anything, which is the one state it has to escape.",
+					"then never free anything or be put back to what it really stores, which is "+
+					"the one state it has to escape.",
 				name,
 			)
 		}
@@ -127,7 +129,9 @@ func TestReleasingIsNeverGatedByTheLimit(t *testing.T) {
 }
 
 func TestNothingCanDriveTheLedgerNegative(t *testing.T) {
-	for _, name := range []string{"reclaimAttachmentQuery", "releaseStorageQuery", "refundImportFileQuery"} {
+	for _, name := range []string{
+		"reclaimAttachmentQuery", "releaseStorageQuery", "refundImportFileQuery", "correctStorageQuery",
+	} {
 		if !strings.Contains(statements[name], "greatest(") {
 			t.Errorf(
 				"%s subtracts without a floor. Drift after a crash between the object delete and "+

@@ -60,14 +60,21 @@ func TestAFileIntoAFullWorkspaceIsLeftNamedRatherThanStored(t *testing.T) {
 	}
 }
 
-func TestAFileTheStoreRefusesGivesBackTheRoomItWasCharged(t *testing.T) {
+func refusing(store *blobStore) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	store.refuse = errors.New("storage is unreachable")
+}
+
+func TestAFirstFileTheStoreRefusesGivesBackWhatItWasCharged(t *testing.T) {
 	var reads atomic.Int64
 
 	held := standing(t).
 		answering(oneIssueHolding("", theFileRow, "")).
 		holding(servingTheScreenshot(&reads))
 
-	held.blobs.refuse = errors.New("storage is unreachable")
+	refusing(held.blobs)
 
 	page, err := held.source().Fetch(staging(), asking(entity.ImportAttachment))
 	if err != nil {
@@ -78,11 +85,41 @@ func TestAFileTheStoreRefusesGivesBackTheRoomItWasCharged(t *testing.T) {
 		t.Fatalf("the file the store refused still names object %q", file.ObjectKey)
 	}
 
-	if len(held.storage.givenBack()) != 1 || len(held.storage.held()) != 0 {
+	if len(held.storage.putBack()) != 1 || len(held.storage.held()) != 0 {
 		t.Fatalf(
-			"the refused file left %v charged and gave back %v. Bytes that never reached storage "+
+			"the refused file left %v charged after %d restores. Bytes that never reached storage "+
 				"must not stay on the workspace's bill.",
-			held.storage.held(), held.storage.givenBack(),
+			held.storage.held(), len(held.storage.putBack()),
+		)
+	}
+}
+
+func TestAFileStagedAgainThatTheStoreRefusesKeepsItsEarlierCharge(t *testing.T) {
+	var reads atomic.Int64
+
+	held := standing(t).
+		answering(oneIssueHolding("", theFileRow, "")).
+		holding(servingTheScreenshot(&reads))
+
+	first := attachmentOf(t, fetched(t, staging(), held.source(), asking(entity.ImportAttachment)), screenshotRow)
+
+	refusing(held.blobs)
+
+	page, err := held.source().Fetch(staging(), asking(entity.ImportAttachment))
+	if err != nil {
+		t.Fatalf("a store that refused the second pull ended the attachment phase: %v", err)
+	}
+
+	if again := attachmentOf(t, page, screenshotRow); again.ObjectKey != "" {
+		t.Fatalf("the pull the store refused still names object %q", again.ObjectKey)
+	}
+
+	if charged := held.storage.held()[first.ObjectKey]; charged != int64(len(screenshot)) {
+		t.Fatalf(
+			"after a second pull of the same file failed, %q is charged %d bytes, want the %d the "+
+				"first pull stored. The earlier object is still in storage under that key, so its "+
+				"charge has to survive the failed replacement.",
+			first.ObjectKey, charged, len(screenshot),
 		)
 	}
 }

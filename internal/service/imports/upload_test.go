@@ -30,10 +30,10 @@ func TestAnImportFileIsChargedToTheWorkspaceBeforeItsBytesAreWritten(t *testing.
 
 	h.fileWriter.EXPECT().
 		ChargeImportFile(gomock.Any(), h.run().WorkspaceID, gomock.Any(), int64(len(uploadedRows))).
-		DoAndReturn(func(_ context.Context, _ uuid.UUID, key string, _ int64) error {
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, key string, _ int64) (int64, error) {
 			charged = key
 
-			return nil
+			return 0, nil
 		})
 	h.blobs.EXPECT().
 		Put(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), int64(len(uploadedRows))).
@@ -65,7 +65,7 @@ func TestAnImportFileIntoAFullWorkspaceIsRefusedBeforeAnythingIsWritten(t *testi
 
 	h.fileWriter.EXPECT().
 		ChargeImportFile(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(entity.StorageExhaustedError{SizeBytes: 50, StoredBytes: 990, MaxBytes: 1_000})
+		Return(int64(0), entity.StorageExhaustedError{SizeBytes: 50, StoredBytes: 990, MaxBytes: 1_000})
 
 	if _, err := h.upload(); !errors.Is(err, entity.ErrStorageExhausted) {
 		t.Fatalf(
@@ -76,22 +76,22 @@ func TestAnImportFileIntoAFullWorkspaceIsRefusedBeforeAnythingIsWritten(t *testi
 	}
 }
 
-func TestAnImportFileTheStoreRefusesGivesBackTheRoomItWasCharged(t *testing.T) {
+func TestAReplacementTheStoreRefusesPutsTheImportFileBackToItsEarlierSize(t *testing.T) {
 	h := newHarness(t).backed().allow(entity.Decision{})
 
 	h.fileWriter.EXPECT().
 		ChargeImportFile(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil)
+		Return(int64(300), nil)
 	h.blobs.EXPECT().
 		Put(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(errors.New("storage is unreachable"))
 
-	refunded := false
+	var restoredTo int64 = -1
 
 	h.fileWriter.EXPECT().
-		RefundImportFile(gomock.Any(), h.run().WorkspaceID, gomock.Any()).
-		DoAndReturn(func(context.Context, uuid.UUID, string) error {
-			refunded = true
+		RestoreImportFile(gomock.Any(), h.run().WorkspaceID, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, _ string, previous int64) error {
+			restoredTo = previous
 
 			return nil
 		})
@@ -100,10 +100,12 @@ func TestAnImportFileTheStoreRefusesGivesBackTheRoomItWasCharged(t *testing.T) {
 		t.Fatal("an upload the store refused reported success")
 	}
 
-	if !refunded {
-		t.Fatal(
-			"the workspace kept the charge for a file that never reached storage, so its usage " +
-				"would grow with every failed upload",
+	if restoredTo != 300 {
+		t.Fatalf(
+			"the refused replacement was put back with %d bytes, want the 300 the earlier upload "+
+				"stored. That object is still in storage, so dropping its charge would read the "+
+				"workspace as holding less than it does.",
+			restoredTo,
 		)
 	}
 }

@@ -97,33 +97,41 @@ type storageLedger struct {
 
 	mu       sync.Mutex
 	charged  map[string]int64
-	refunded []string
+	restored []string
 	full     bool
 }
 
-func (l *storageLedger) ChargeImportFile(_ context.Context, _ uuid.UUID, key string, size int64) error {
+func (l *storageLedger) ChargeImportFile(_ context.Context, _ uuid.UUID, key string, size int64) (int64, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	if l.full {
-		return entity.StorageExhaustedError{SizeBytes: size}
+		return 0, entity.StorageExhaustedError{SizeBytes: size}
 	}
 
 	if l.charged == nil {
 		l.charged = map[string]int64{}
 	}
 
+	previous := l.charged[key]
 	l.charged[key] = size
 
-	return nil
+	return previous, nil
 }
 
-func (l *storageLedger) RefundImportFile(_ context.Context, _ uuid.UUID, key string) error {
+func (l *storageLedger) RestoreImportFile(_ context.Context, _ uuid.UUID, key string, previous int64) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	delete(l.charged, key)
-	l.refunded = append(l.refunded, key)
+	l.restored = append(l.restored, key)
+
+	if previous == 0 {
+		delete(l.charged, key)
+
+		return nil
+	}
+
+	l.charged[key] = previous
 
 	return nil
 }
@@ -135,11 +143,11 @@ func (l *storageLedger) held() map[string]int64 {
 	return maps.Clone(l.charged)
 }
 
-func (l *storageLedger) givenBack() []string {
+func (l *storageLedger) putBack() []string {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	return append([]string{}, l.refunded...)
+	return append([]string{}, l.restored...)
 }
 
 type stand struct {
