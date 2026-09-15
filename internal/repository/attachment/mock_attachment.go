@@ -235,20 +235,20 @@ func (mr *MockAttachmentMockRecorder) LockByID(ctx, workspaceID, attachmentID an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockAttachment)(nil).LockByID), ctx, workspaceID, attachmentID)
 }
 
-// LockStoredByObjectKey mocks base method.
-func (m *MockAttachment) LockStoredByObjectKey(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.Attachment, bool, error) {
+// LockByObjectKey mocks base method.
+func (m *MockAttachment) LockByObjectKey(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.Attachment, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LockStoredByObjectKey", ctx, workspaceID, objectKey)
+	ret := m.ctrl.Call(m, "LockByObjectKey", ctx, workspaceID, objectKey)
 	ret0, _ := ret[0].(entity.Attachment)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// LockStoredByObjectKey indicates an expected call of LockStoredByObjectKey.
-func (mr *MockAttachmentMockRecorder) LockStoredByObjectKey(ctx, workspaceID, objectKey any) *gomock.Call {
+// LockByObjectKey indicates an expected call of LockByObjectKey.
+func (mr *MockAttachmentMockRecorder) LockByObjectKey(ctx, workspaceID, objectKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockStoredByObjectKey", reflect.TypeOf((*MockAttachment)(nil).LockStoredByObjectKey), ctx, workspaceID, objectKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByObjectKey", reflect.TypeOf((*MockAttachment)(nil).LockByObjectKey), ctx, workspaceID, objectKey)
 }
 
 // MarkOrphans mocks base method.
@@ -333,6 +333,20 @@ func (m *MockAttachment) Release(ctx context.Context, workspaceID uuid.UUID, siz
 func (mr *MockAttachmentMockRecorder) Release(ctx, workspaceID, sizeBytes any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Release", reflect.TypeOf((*MockAttachment)(nil).Release), ctx, workspaceID, sizeBytes)
+}
+
+// RetireAttachment mocks base method.
+func (m *MockAttachment) RetireAttachment(ctx context.Context, attachmentID uuid.UUID, reclaimAfter time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetireAttachment", ctx, attachmentID, reclaimAfter)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RetireAttachment indicates an expected call of RetireAttachment.
+func (mr *MockAttachmentMockRecorder) RetireAttachment(ctx, attachmentID, reclaimAfter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetireAttachment", reflect.TypeOf((*MockAttachment)(nil).RetireAttachment), ctx, attachmentID, reclaimAfter)
 }
 
 // Settle mocks base method.

@@ -7,28 +7,29 @@ import (
 )
 
 var statements = map[string]string{
-	"createAttachmentQuery":          createAttachmentQuery,
-	"attachmentByIDQuery":            attachmentByIDQuery,
-	"attachmentsByIssueQuery":        attachmentsByIssueQuery,
-	"lockStoredAttachmentByKeyQuery": lockStoredAttachmentByKeyQuery,
-	"settleAttachmentQuery":          settleAttachmentQuery,
-	"discardAttachmentQuery":         discardAttachmentQuery,
-	"claimForCommentQuery":           claimForCommentQuery,
-	"markOrphansQuery":               markOrphansQuery,
-	"reclaimableQuery":               reclaimableQuery,
-	"reclaimAttachmentQuery":         reclaimAttachmentQuery,
-	"admitStorageQuery":              admitStorageQuery,
-	"releaseStorageQuery":            releaseStorageQuery,
-	"correctStorageQuery":            correctStorageQuery,
-	"ledgerQuery":                    ledgerQuery,
-	"claimImportFileQuery":           claimImportFileQuery,
-	"lockImportFileQuery":            lockImportFileQuery,
-	"recordImportFileQuery":          recordImportFileQuery,
-	"unsettledImportFilesQuery":      unsettledImportFilesQuery,
-	"takeImportFileQuery":            takeImportFileQuery,
-	"unsettledAttachmentsQuery":      unsettledAttachmentsQuery,
-	"measureAttachmentQuery":         measureAttachmentQuery,
-	"refundImportFileQuery":          refundImportFileQuery,
+	"createAttachmentQuery":     createAttachmentQuery,
+	"attachmentByIDQuery":       attachmentByIDQuery,
+	"attachmentsByIssueQuery":   attachmentsByIssueQuery,
+	"lockAttachmentByKeyQuery":  lockAttachmentByKeyQuery,
+	"retireAttachmentQuery":     retireAttachmentQuery,
+	"settleAttachmentQuery":     settleAttachmentQuery,
+	"discardAttachmentQuery":    discardAttachmentQuery,
+	"claimForCommentQuery":      claimForCommentQuery,
+	"markOrphansQuery":          markOrphansQuery,
+	"reclaimableQuery":          reclaimableQuery,
+	"reclaimAttachmentQuery":    reclaimAttachmentQuery,
+	"admitStorageQuery":         admitStorageQuery,
+	"releaseStorageQuery":       releaseStorageQuery,
+	"correctStorageQuery":       correctStorageQuery,
+	"ledgerQuery":               ledgerQuery,
+	"claimImportFileQuery":      claimImportFileQuery,
+	"lockImportFileQuery":       lockImportFileQuery,
+	"recordImportFileQuery":     recordImportFileQuery,
+	"unsettledImportFilesQuery": unsettledImportFilesQuery,
+	"takeImportFileQuery":       takeImportFileQuery,
+	"unsettledAttachmentsQuery": unsettledAttachmentsQuery,
+	"measureAttachmentQuery":    measureAttachmentQuery,
+	"refundImportFileQuery":     refundImportFileQuery,
 }
 
 func TestNoAttachmentQueryAggregatesAnything(t *testing.T) {
@@ -170,16 +171,35 @@ func TestTheSweepOnlyMeasuresImportFilesWhoseWritersHaveHadTheirChance(t *testin
 	}
 }
 
-func TestAMeasurementNeverResizesAFileThatWasRemoved(t *testing.T) {
-	for _, name := range []string{"unsettledAttachmentsQuery", "measureAttachmentQuery", "lockStoredAttachmentByKeyQuery"} {
-		if !strings.Contains(statements[name], "status = 'stored'") {
-			t.Errorf(
-				"%s reaches attachments that are not stored. A removed file already gave its bytes "+
-					"back and carries a size of zero; measuring it would put its object back on the "+
-					"ledger just before the sweep deletes it.",
-				name,
-			)
-		}
+func TestTheSweepOnlyMeasuresFilesThatAreStillOnTheirIssue(t *testing.T) {
+	if !strings.Contains(unsettledAttachmentsQuery, "status = 'stored'") {
+		t.Fatal(
+			"the sweep measures removed files. Their bytes leave the ledger when the sweep deletes " +
+				"them, and a measurement in between would only move a number that is about to go.",
+		)
+	}
+}
+
+func TestARemovedFileOutlivesEveryWriterThatMightStillPutItsObject(t *testing.T) {
+	if !strings.Contains(reclaimAttachmentQuery, "reclaim_after <= now()") {
+		t.Error(
+			"the reclaim deletes a row whose deadline has moved since it was listed. A writer that " +
+				"charged in between could put the object back and die, leaving bytes nothing counts.",
+		)
+	}
+
+	if !strings.Contains(markOrphansQuery, "coalesce(charged_until") {
+		t.Error(
+			"an orphaned file is scheduled for deletion before its writers' deadline, so a late " +
+				"writer could put its object back after the sweep and nothing would count it",
+		)
+	}
+
+	if !strings.Contains(measureAttachmentQuery, "greatest(reclaim_after") {
+		t.Error(
+			"a writer charging a removed file does not push its deletion past the new deadline, " +
+				"so the sweep could delete the row while that writer is still putting the object",
+		)
 	}
 }
 

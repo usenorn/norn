@@ -767,7 +767,7 @@ func TestAnImportFileWrittenAgainIsChargedOnlyForWhatItGrew(t *testing.T) {
 
 	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
 		Return(entity.ImportFileCharge{SizeBytes: 300}, nil)
-	h.attachments.EXPECT().LockStoredByObjectKey(gomock.Any(), h.workspaceID, key).
+	h.attachments.EXPECT().LockByObjectKey(gomock.Any(), h.workspaceID, key).
 		Return(entity.Attachment{}, false, nil)
 	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(200), int64(maxWorkspaceBytes)).
@@ -800,7 +800,7 @@ func TestAnImportFileWrittenAgainSmallerKeepsItsLargerReservationUntilTheSweep(t
 
 	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
 		Return(entity.ImportFileCharge{SizeBytes: 500}, nil)
-	h.attachments.EXPECT().LockStoredByObjectKey(gomock.Any(), h.workspaceID, key).
+	h.attachments.EXPECT().LockByObjectKey(gomock.Any(), h.workspaceID, key).
 		Return(entity.Attachment{}, false, nil)
 	h.attachments.EXPECT().
 		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(500), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
@@ -822,7 +822,7 @@ func TestAnImportFileIntoAFullWorkspaceIsRefusedWithItsNumbersAndNeverRecorded(t
 
 	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
 		Return(entity.ImportFileCharge{}, nil)
-	h.attachments.EXPECT().LockStoredByObjectKey(gomock.Any(), h.workspaceID, key).
+	h.attachments.EXPECT().LockByObjectKey(gomock.Any(), h.workspaceID, key).
 		Return(entity.Attachment{}, false, nil)
 	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(400), int64(maxWorkspaceBytes)).
@@ -985,13 +985,13 @@ func (b *storageBook) TakeImportFile(_ context.Context, _ uuid.UUID, key string)
 	return file, true, nil
 }
 
-func (b *storageBook) LockStoredByObjectKey(
+func (b *storageBook) LockByObjectKey(
 	_ context.Context,
 	_ uuid.UUID,
 	key string,
 ) (entity.Attachment, bool, error) {
 	for _, attachment := range b.attachments {
-		if attachment.ObjectKey == key && attachment.Stored() {
+		if attachment.ObjectKey == key {
 			b.locked = key
 
 			return attachment, true, nil
@@ -1028,7 +1028,48 @@ func (b *storageBook) MeasureAttachment(
 	attachment.SizeBytes = sizeBytes
 	attachment.SettleAfter = settleAfter
 	attachment.ChargedUntil = chargedUntil
+
+	if !attachment.Stored() && chargedUntil != nil &&
+		(attachment.ReclaimAfter == nil || chargedUntil.After(*attachment.ReclaimAfter)) {
+		attachment.ReclaimAfter = chargedUntil
+	}
+
 	b.attachments[attachmentID] = attachment
+
+	return nil
+}
+
+func (b *storageBook) RetireAttachment(_ context.Context, attachmentID uuid.UUID, reclaimAfter time.Time) error {
+	attachment := b.attachments[attachmentID]
+	attachment.Status = entity.AttachmentStatusDiscarded
+	attachment.ReclaimAfter = &reclaimAfter
+	b.attachments[attachmentID] = attachment
+
+	return nil
+}
+
+func (b *storageBook) Discard(_ context.Context, attachmentID uuid.UUID, releasedBytes int64, at time.Time) error {
+	attachment, held := b.attachments[attachmentID]
+	if !held || attachment.SizeBytes != releasedBytes {
+		return entity.ErrAttachmentNotFound
+	}
+
+	attachment.Status = entity.AttachmentStatusDiscarded
+	attachment.SizeBytes = 0
+	attachment.ReclaimAfter = &at
+	b.attachments[attachmentID] = attachment
+
+	return nil
+}
+
+func (b *storageBook) Reclaim(_ context.Context, attachmentID uuid.UUID) error {
+	attachment, held := b.attachments[attachmentID]
+	if !held || attachment.ReclaimAfter == nil || attachment.ReclaimAfter.After(time.Now().UTC()) {
+		return nil
+	}
+
+	b.stored = max(b.stored-attachment.SizeBytes, 0)
+	delete(b.attachments, attachmentID)
 
 	return nil
 }
@@ -1057,6 +1098,10 @@ func (b *storageBook) attachmentDeadlinesPass(attachmentID uuid.UUID) {
 		attachment.ChargedUntil = &passed
 	}
 
+	if attachment.ReclaimAfter != nil {
+		attachment.ReclaimAfter = &passed
+	}
+
 	b.attachments[attachmentID] = attachment
 }
 
@@ -1064,8 +1109,16 @@ func (b *storageBook) MarkOrphans(context.Context, time.Time) error {
 	return nil
 }
 
-func (b *storageBook) ListReclaimable(context.Context, time.Time, int) ([]entity.Attachment, error) {
-	return nil, nil
+func (b *storageBook) ListReclaimable(_ context.Context, at time.Time, _ int) ([]entity.Attachment, error) {
+	due := make([]entity.Attachment, 0)
+
+	for _, attachment := range b.attachments {
+		if attachment.ReclaimAfter != nil && !attachment.ReclaimAfter.After(at) {
+			due = append(due, attachment)
+		}
+	}
+
+	return due, nil
 }
 
 func (b *storageBook) ListUnsettledImportFiles(
@@ -1114,6 +1167,12 @@ type measuredStore struct {
 	objects     map[string]int64
 	unreachable bool
 	landing     func()
+}
+
+func (m *measuredStore) Delete(_ context.Context, key string) error {
+	delete(m.objects, key)
+
+	return nil
 }
 
 func newBook(workspaceID uuid.UUID) (*storageBook, *measuredStore) {
@@ -1191,9 +1250,14 @@ func bookedService(t *testing.T, book *storageBook, store *measuredStore) servic
 		}, nil).
 		AnyTimes()
 
+	activity := activityrepo.NewMockActivity(ctrl)
+	activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	jobs := jobqueuerepo.NewMockJobProducer(ctrl)
+	jobs.EXPECT().EnqueueAttachmentReclaim(gomock.Any()).Return(nil).AnyTimes()
+
 	return attachmentsvc.New(
-		book, activityrepo.NewMockActivity(ctrl), issues, store,
-		jobqueuerepo.NewMockJobProducer(ctrl), authorizer, transactor,
+		book, activity, issues, store, jobs, authorizer, transactor,
 		config.Attachments{
 			MaxFileBytes:      maxFileBytes,
 			MaxWorkspaceBytes: maxWorkspaceBytes,
@@ -1692,6 +1756,142 @@ func TestAnUploadChargedAfterItsFileWasAdoptedGrowsTheAttachmentsReservation(t *
 			"after the write and the sweep, an import record is held %v, the attachment records %d and the "+
 				"workspace reads %d (waiting %v), want no import record and 900 settled",
 			recordedAgain, attachment.SizeBytes, book.stored, attachment.SettleAfter != nil,
+		)
+	}
+}
+
+func TestRemovingAnAdoptedFileWhileAWriterMayStillBeActiveKeepsItsReservationUntilNobodyCanBe(t *testing.T) {
+	for name, late := range map[string]struct {
+		chargedBefore, chargedAfter int64
+		measures                    bool
+	}{
+		"a writer charged before the removal puts its object and dies before measuring": {chargedBefore: 900},
+		"a writer charged before the removal puts its object and measures it":           {chargedBefore: 900, measures: true},
+		"a writer charged after the removal puts its object and dies before measuring":  {chargedAfter: 1200},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID, issueID := uuid.New(), uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "shot.png")
+
+			book, store := newBook(workspaceID)
+			storage := bookedService(t, book, store)
+
+			if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+				t.Fatalf("ChargeImportFile(700): %v", err)
+			}
+
+			store.leaving(key, 700)
+
+			if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+				t.Fatalf("SettleImportFile after writing 700: %v", err)
+			}
+
+			if late.chargedBefore > 0 {
+				if _, err := storage.ChargeImportFile(ctx, workspaceID, key, late.chargedBefore); err != nil {
+					t.Fatalf("ChargeImportFile(%d): %v", late.chargedBefore, err)
+				}
+			}
+
+			adopted, err := storage.Adopt(ctx, workspaceID, issueID, service.AdoptAttachmentInput{
+				ObjectKey:   key,
+				FileName:    "shot.png",
+				ContentType: "image/png",
+				SizeBytes:   700,
+				Origin:      adoptingOrigin(),
+			})
+			if err != nil {
+				t.Fatalf("Adopt: %v", err)
+			}
+
+			if err := storage.Remove(ctx, workspaceID, issueID, adopted.ID); err != nil {
+				t.Fatalf("Remove: %v", err)
+			}
+
+			reserved := max(int64(700), late.chargedBefore)
+			removed, kept := book.attachments[adopted.ID]
+
+			if !kept || removed.Stored() || removed.SizeBytes != reserved || book.stored != reserved {
+				t.Fatalf(
+					"removing the file while a writer could still be active left its row kept %v (on its "+
+						"issue %v) at %d and the workspace at %d, want the row kept, off its issue, and %d "+
+						"still reserved. A writer that puts the object back afterwards and dies before "+
+						"measuring would otherwise leave bytes that nothing counts.",
+					kept, removed.Stored(), removed.SizeBytes, book.stored, reserved,
+				)
+			}
+
+			if late.chargedAfter > 0 {
+				if _, err := storage.ChargeImportFile(ctx, workspaceID, key, late.chargedAfter); err != nil {
+					t.Fatalf("ChargeImportFile(%d): %v", late.chargedAfter, err)
+				}
+
+				reserved = late.chargedAfter
+			}
+
+			store.leaving(key, max(late.chargedBefore, late.chargedAfter))
+
+			if late.measures {
+				if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+					t.Fatalf("SettleImportFile after the removal: %v", err)
+				}
+			}
+
+			if err := storage.Reclaim(ctx); err != nil {
+				t.Fatalf("Reclaim before the deadline: %v", err)
+			}
+
+			_, recordedAgain := book.files[key]
+			_, kept = book.attachments[adopted.ID]
+
+			if recordedAgain || !kept || book.stored != reserved {
+				t.Fatalf(
+					"before any writer's deadline had passed, the sweep left an import record held %v, the "+
+						"removed file's row kept %v and the workspace at %d, want no import record, the row "+
+						"kept and %d reserved",
+					recordedAgain, kept, book.stored, reserved,
+				)
+			}
+
+			book.attachmentDeadlinesPass(adopted.ID)
+
+			if err := storage.Reclaim(ctx); err != nil {
+				t.Fatalf("Reclaim after the deadline: %v", err)
+			}
+
+			_, recordedAgain = book.files[key]
+			_, kept = book.attachments[adopted.ID]
+			_, left := store.objects[key]
+
+			if recordedAgain || kept || left || book.stored != 0 {
+				t.Fatalf(
+					"once nobody could still be writing, the sweep left an import record held %v, the row "+
+						"kept %v, the object in storage %v and the workspace at %d, want all of it gone and "+
+						"nothing counted",
+					recordedAgain, kept, left, book.stored,
+				)
+			}
+		})
+	}
+}
+
+func TestRemovingAFileAWriterMayStillBePuttingKeepsItsReservationUntilTheDeadline(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	chargedUntil := time.Now().UTC().Add(time.Hour)
+	held := h.stored("image/png")
+	held.ChargedUntil = &chargedUntil
+
+	h.attachments.EXPECT().LockByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(held, nil)
+	h.attachments.EXPECT().RetireAttachment(gomock.Any(), h.attachmentID, chargedUntil).Return(nil)
+
+	if err := h.service.Remove(context.Background(), h.workspaceID, h.issueID, h.attachmentID); err != nil {
+		t.Fatalf(
+			"Remove: %v. A writer may still put this object back before its deadline, so the room cannot "+
+				"be given back and the row cannot be deleted until then.",
+			err,
 		)
 	}
 }

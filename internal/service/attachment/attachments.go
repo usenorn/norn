@@ -405,11 +405,7 @@ func (s *attachmentsService) Remove(
 			return entity.ErrAttachmentNotFound
 		}
 
-		if err := s.attachments.Release(ctx, workspaceID, attachment.SizeBytes); err != nil {
-			return err
-		}
-
-		if err := s.attachments.Discard(ctx, attachmentID, attachment.SizeBytes, time.Now().UTC()); err != nil {
+		if err := s.giveBack(ctx, attachment); err != nil {
 			return err
 		}
 
@@ -421,6 +417,20 @@ func (s *attachmentsService) Remove(
 	s.kick(ctx)
 
 	return nil
+}
+
+func (s *attachmentsService) giveBack(ctx context.Context, attachment entity.Attachment) error {
+	now := time.Now().UTC()
+
+	if attachment.ChargedUntil != nil && now.Before(*attachment.ChargedUntil) {
+		return s.attachments.RetireAttachment(ctx, attachment.ID, *attachment.ChargedUntil)
+	}
+
+	if err := s.attachments.Release(ctx, attachment.WorkspaceID, attachment.SizeBytes); err != nil {
+		return err
+	}
+
+	return s.attachments.Discard(ctx, attachment.ID, attachment.SizeBytes, now)
 }
 
 func (s *attachmentsService) record(
@@ -725,7 +735,7 @@ func (s *attachmentsService) adopterOf(
 	objectKey string,
 	file entity.ImportFileCharge,
 ) (entity.Attachment, bool, error) {
-	adopter, adopted, err := s.attachments.LockStoredByObjectKey(ctx, workspaceID, objectKey)
+	adopter, adopted, err := s.attachments.LockByObjectKey(ctx, workspaceID, objectKey)
 	if err != nil || !adopted {
 		return entity.Attachment{}, false, err
 	}

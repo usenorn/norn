@@ -15,7 +15,8 @@ type Attachment interface {
 	Create(ctx context.Context, attachment entity.Attachment) (entity.Attachment, error)
 	GetByID(ctx context.Context, workspaceID, attachmentID uuid.UUID) (entity.Attachment, error)
 	LockByID(ctx context.Context, workspaceID, attachmentID uuid.UUID) (entity.Attachment, error)
-	LockStoredByObjectKey(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.Attachment, bool, error)
+	LockByObjectKey(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.Attachment, bool, error)
+	RetireAttachment(ctx context.Context, attachmentID uuid.UUID, reclaimAfter time.Time) error
 	ListByIssue(ctx context.Context, issueID uuid.UUID) ([]entity.Attachment, error)
 	Settle(ctx context.Context, attachmentID uuid.UUID, sizeBytes int64, contentType string, at time.Time) error
 	Discard(ctx context.Context, attachmentID uuid.UUID, releasedBytes int64, at time.Time) error

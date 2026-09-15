@@ -64,9 +64,14 @@ WHERE a.id = $1 AND a.workspace_id = $2`
 const lockAttachmentQuery = attachmentByIDQuery + `
 FOR UPDATE OF a`
 
-const lockStoredAttachmentByKeyQuery = `SELECT` + attachmentColumns + attachmentJoins + `
-WHERE a.object_key = $1 AND a.workspace_id = $2 AND a.status = 'stored'
+const lockAttachmentByKeyQuery = `SELECT` + attachmentColumns + attachmentJoins + `
+WHERE a.object_key = $1 AND a.workspace_id = $2
 FOR UPDATE OF a`
+
+const retireAttachmentQuery = `
+UPDATE workspace_issue_attachments
+SET status = 'discarded', reclaim_after = $2, updated_at = now()
+WHERE id = $1 AND status <> 'discarded'`
 
 const attachmentsByIssueQuery = `SELECT` + attachmentColumns + attachmentJoins + `
 WHERE a.issue_id = $1 AND a.status = 'stored'
@@ -92,7 +97,7 @@ WHERE workspace_id = $1
 
 const markOrphansQuery = `
 UPDATE workspace_issue_attachments
-SET status = 'discarded', reclaim_after = $1, updated_at = $1
+SET status = 'discarded', reclaim_after = greatest($1, coalesce(charged_until, $1)), updated_at = $1
 WHERE reclaim_after IS NULL AND issue_id IS NULL`
 
 const reclaimableQuery = `SELECT` + attachmentColumns + attachmentJoins + `
@@ -103,7 +108,7 @@ LIMIT $2`
 const reclaimAttachmentQuery = `
 WITH reclaimed AS (
     DELETE FROM workspace_issue_attachments
-    WHERE id = $1
+    WHERE id = $1 AND reclaim_after IS NOT NULL AND reclaim_after <= now()
     RETURNING workspace_id, size_bytes
 )
 UPDATE workspace_storage_ledger l
@@ -177,8 +182,15 @@ LIMIT $2`
 
 const measureAttachmentQuery = `
 UPDATE workspace_issue_attachments
-SET size_bytes = $2, settle_after = $3, charged_until = $4, updated_at = now()
-WHERE id = $1 AND status = 'stored'`
+SET size_bytes = $2,
+    settle_after = $3,
+    charged_until = $4,
+    reclaim_after = CASE
+        WHEN status = 'discarded' THEN greatest(reclaim_after, coalesce($4::timestamptz, reclaim_after))
+        ELSE reclaim_after
+    END,
+    updated_at = now()
+WHERE id = $1`
 
 const refundImportFileQuery = `
 WITH refunded AS (
@@ -345,12 +357,20 @@ func (r *attachmentRepository) LockByID(
 	return r.find(ctx, lockAttachmentQuery, attachmentID.String(), workspaceID.String())
 }
 
-func (r *attachmentRepository) LockStoredByObjectKey(
+func (r *attachmentRepository) RetireAttachment(
+	ctx context.Context,
+	attachmentID uuid.UUID,
+	reclaimAfter time.Time,
+) error {
+	return r.touch(ctx, "retire attachment", retireAttachmentQuery, attachmentID.String(), reclaimAfter)
+}
+
+func (r *attachmentRepository) LockByObjectKey(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	objectKey string,
 ) (entity.Attachment, bool, error) {
-	attachment, err := r.find(ctx, lockStoredAttachmentByKeyQuery, objectKey, workspaceID.String())
+	attachment, err := r.find(ctx, lockAttachmentByKeyQuery, objectKey, workspaceID.String())
 	if errors.Is(err, entity.ErrAttachmentNotFound) {
 		return entity.Attachment{}, false, nil
 	}
