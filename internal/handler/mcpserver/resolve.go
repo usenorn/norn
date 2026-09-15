@@ -3,6 +3,7 @@ package mcpserver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -98,24 +99,74 @@ func (t *toolset) resolveProject(
 	return t.projects.GetBySlug(ctx, workspaceID, strings.ToLower(strings.TrimSpace(ref)))
 }
 
-func resolveAssignee(ctx context.Context, ref string) (uuid.UUID, error) {
-	if strings.EqualFold(ref, "me") {
+const memberPageSize = 100
+
+func (t *toolset) resolveAssignee(ctx context.Context, workspaceID uuid.UUID, ref string) (uuid.UUID, error) {
+	wanted := strings.TrimSpace(ref)
+
+	if strings.EqualFold(wanted, "me") {
 		actor, ok := identity.Actor(ctx)
 		if !ok {
 			return uuid.Nil, entity.ErrAccountForbidden
 		}
 
-		return actor.AccountID, nil
+		return actor.Authority(), nil
 	}
 
-	accountID, err := uuid.Parse(ref)
-	if err != nil {
-		return uuid.Nil, errors.New(
-			"assignee must be an account id from norn_list_workspace_members, or \"me\"",
-		)
+	if accountID, err := uuid.Parse(wanted); err == nil {
+		return accountID, nil
 	}
 
-	return accountID, nil
+	if strings.Contains(wanted, "@") {
+		return t.assigneeByEmail(ctx, workspaceID, wanted)
+	}
+
+	return uuid.Nil, refusal(
+		"assignee_invalid",
+		"assignee must be \"me\" for the person this connection acts for, an account id from "+
+			"norn_list_workspace_members, or the exact email address of a person in this workspace",
+	)
+}
+
+func (t *toolset) assigneeByEmail(ctx context.Context, workspaceID uuid.UUID, email string) (uuid.UUID, error) {
+	normalized := strings.ToLower(strings.TrimSpace(email))
+	cursor := ""
+
+	for {
+		page, err := t.workspaces.ListMembers(ctx, workspaceID, service.ListMembersInput{
+			Cursor: cursor,
+			Limit:  memberPageSize,
+		})
+		if err != nil {
+			return uuid.Nil, err
+		}
+
+		for _, member := range page.Members {
+			if strings.ToLower(strings.TrimSpace(member.Email)) != normalized {
+				continue
+			}
+
+			if member.AccountKind.Machine() || member.Membership.Deactivated() {
+				return uuid.Nil, refusal(
+					"assignee_not_assignable",
+					fmt.Sprintf("%s belongs to an agent, an integration or a deactivated member, and "+
+						"only an active person can be assigned an issue", normalized),
+				)
+			}
+
+			return member.Membership.AccountID, nil
+		}
+
+		if page.NextCursor == "" {
+			return uuid.Nil, refusal(
+				"assignee_not_found",
+				fmt.Sprintf("nobody in this workspace has the email address %s; call "+
+					"norn_list_workspace_members to find the person", normalized),
+			)
+		}
+
+		cursor = page.NextCursor
+	}
 }
 
 func (t *toolset) resolveLabels(
@@ -132,12 +183,20 @@ func (t *toolset) resolveLabels(
 		return nil, err
 	}
 
+	return matchLabels(labels, refs)
+}
+
+func matchLabels(labels []entity.Label, refs []string) ([]uuid.UUID, error) {
 	resolved := make([]uuid.UUID, 0, len(refs))
 
 	for _, ref := range refs {
 		id, found := matchLabel(labels, ref)
 		if !found {
-			return nil, entity.ErrLabelNotFound
+			return nil, refusal(
+				"label_not_found",
+				fmt.Sprintf("no label %q in this workspace; call norn_get_workspace_structure for "+
+					"its labels", strings.TrimSpace(ref)),
+			)
 		}
 
 		resolved = append(resolved, id)

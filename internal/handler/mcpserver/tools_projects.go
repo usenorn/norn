@@ -128,7 +128,7 @@ func (t *toolset) createProject(
 	}
 
 	if input.Lead != "" {
-		accountID, err := resolveAssignee(ctx, input.Lead)
+		accountID, err := t.resolveAssignee(ctx, workspace.ID, input.Lead)
 		if err != nil {
 			return nil, getProjectOutput{}, toolFailure(ctx, err)
 		}
@@ -194,7 +194,7 @@ func (t *toolset) updateProject(
 	}
 
 	if input.Lead != nil {
-		accountID, err := resolveAssignee(ctx, *input.Lead)
+		accountID, err := t.resolveAssignee(ctx, workspace.ID, *input.Lead)
 		if err != nil {
 			return nil, getProjectOutput{}, toolFailure(ctx, err)
 		}

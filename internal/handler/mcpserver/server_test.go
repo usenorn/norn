@@ -210,6 +210,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_create_issue",
 		"norn_update_issue",
 		"norn_change_issue_state",
+		"norn_set_issue_status",
+		"norn_set_issue_parent",
 		"norn_create_comment",
 		"norn_whoami",
 		"norn_ask",
@@ -220,8 +222,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 21 {
-		t.Errorf("registered %d tools, want 21", len(tools.Tools))
+	if len(tools.Tools) != 23 {
+		t.Errorf("registered %d tools, want 23", len(tools.Tools))
 	}
 }
 
