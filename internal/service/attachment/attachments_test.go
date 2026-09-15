@@ -792,19 +792,23 @@ func TestAnImportFileWrittenAgainIsChargedOnlyForWhatItGrew(t *testing.T) {
 	}
 }
 
-func TestAnImportFileWrittenAgainSmallerGivesBackWhatItShrank(t *testing.T) {
+func TestAnImportFileWrittenAgainSmallerKeepsItsLargerReservationUntilTheSweep(t *testing.T) {
 	h := newHarness(t, maxWorkspaceBytes)
 	key := h.importKey()
 
 	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
 		Return(entity.ImportFileCharge{SizeBytes: 500}, nil)
-	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(300)).Return(nil)
 	h.attachments.EXPECT().
-		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(200), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
+		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(500), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
 		Return(nil)
 
 	if _, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 200); err != nil {
-		t.Fatalf("ChargeImportFile: %v", err)
+		t.Fatalf(
+			"ChargeImportFile: %v. The earlier 500 bytes may still be in storage, or still being "+
+				"written, when a 200 byte replacement is charged, so the reservation cannot shrink "+
+				"before the sweep measures what is there.",
+			err,
+		)
 	}
 }
 
@@ -1115,8 +1119,8 @@ func TestAWriteThatLandsWhileAnotherUploadIsMeasuredIsCaughtEvenIfItsUploaderDie
 	for name, first := range map[string]struct {
 		landed bool
 	}{
-		"A's write landed, B's lands after A's HEAD, and B dies before measuring": {landed: true},
-		"A's write failed, B's lands after A's HEAD, and B dies before measuring": {landed: false},
+		"A's write landed, B's lands after A's HEAD, and B dies before measuring":  {landed: true},
+		"A's write failed, its HEAD finds nothing, B's lands after it, and B dies": {landed: false},
 	} {
 		t.Run(name, func(t *testing.T) {
 			ctx := context.Background()
@@ -1151,12 +1155,14 @@ func TestAWriteThatLandsWhileAnotherUploadIsMeasuredIsCaughtEvenIfItsUploaderDie
 				t.Fatalf("measuring A: %v", err)
 			}
 
-			if _, held := book.files[key]; !held || book.settle[key] == nil {
+			if book.stored != 700 || book.files[key] != 700 || book.settle[key] == nil {
 				t.Fatalf(
-					"A's measurement left the file held %v and waiting %v. B charged before A measured and "+
-						"was still writing, so A's HEAD says nothing about B's bytes: settling or dropping "+
-						"the record there leaves nothing to catch B's object if B dies before measuring.",
-					held, book.settle[key] != nil,
+					"A's measurement left the file recorded at %d and the workspace at %d (waiting %v), want "+
+						"700 and waiting. B reserved 700 bytes and was still writing when A measured, so "+
+						"A's HEAD says nothing about B's bytes: lowering the reservation there lets the "+
+						"workspace take uploads past its limit, and settling it leaves nothing to catch "+
+						"B's object if B dies before measuring.",
+					book.files[key], book.stored, book.settle[key] != nil,
 				)
 			}
 
@@ -1203,13 +1209,13 @@ func TestTwoUploadsOfOneImportFileLeaveTheLedgerAtWhateverStorageKept(t *testing
 				}
 			}
 
-			if book.stored != writes.last || book.files[key] != writes.last {
+			if book.stored != 700 || book.files[key] != 700 {
 				t.Fatalf(
-					"both uploads of %q succeeded and storage kept the %d bytes written last, but the "+
-						"file is recorded at %d and the workspace reads %d. The upload charged last is "+
-						"not always the one written last, so only a measurement after each write finds "+
-						"the object storage actually kept.",
-					key, writes.last, book.files[key], book.stored,
+					"both uploads of %q wrote before either could be known to be the last, but the file "+
+						"is recorded at %d and the workspace reads %d, want the 700 the larger one "+
+						"reserved. Until no writer can still be active a reservation may only grow, or "+
+						"the workspace can take uploads past its limit.",
+					key, book.files[key], book.stored,
 				)
 			}
 
@@ -1226,13 +1232,13 @@ func TestTwoUploadsOfOneImportFileLeaveTheLedgerAtWhateverStorageKept(t *testing
 	}
 }
 
-func TestAnImportFileWhoseWriteFailedIsCountedAtWhatStorageStillHolds(t *testing.T) {
+func TestAnImportFileWhoseWriteFailedKeepsItsReservationUntilTheSweepCountsWhatStorageHolds(t *testing.T) {
 	for name, write := range map[string]struct {
 		earlier, left, want int64
 	}{
 		"a replacement the store refused, keeping the earlier file":      {300, 300, 300},
 		"a replacement that landed although the store reported an error": {300, 500, 500},
-		"a first upload the store confirms never arrived":                {0, nothingLeft, 0},
+		"a first upload whose HEAD finds nothing":                        {0, nothingLeft, 0},
 	} {
 		t.Run(name, func(t *testing.T) {
 			ctx := context.Background()
@@ -1254,13 +1260,13 @@ func TestAnImportFileWhoseWriteFailedIsCountedAtWhatStorageStillHolds(t *testing
 				t.Fatalf("RestoreImportFile: %v", err)
 			}
 
-			if book.stored != write.want || book.files[key] != write.want {
+			if book.stored != 500 || book.files[key] != 500 || book.settle[key] == nil {
 				t.Fatalf(
-					"after %s the file is recorded at %d bytes and the workspace reads %d, want %d for "+
-						"both. Whatever is still in storage has to stay counted, and nothing more: "+
-						"refunding the whole file hides the earlier bytes, and keeping the failed charge "+
-						"bills bytes that never arrived.",
-					name, book.files[key], book.stored, write.want,
+					"after %s, while a writer could still be active, the file is recorded at %d and the "+
+						"workspace reads %d (waiting %v), want the 500 reserved and waiting. A HEAD taken "+
+						"before then cannot lower a reservation, or the workspace could take uploads past "+
+						"its limit in the meantime.",
+					name, book.files[key], book.stored, book.settle[key] != nil,
 				)
 			}
 
