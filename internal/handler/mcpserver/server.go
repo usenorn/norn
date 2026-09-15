@@ -219,7 +219,10 @@ func (t *toolset) register(server *mcp.Server) {
 		Name: "norn_create_issue",
 		Description: "Create an issue on a team, optionally in a project or cycle, with labels " +
 			"and an assignee. An assignee of me is the person this connection acts for, which " +
-			"for an agent is its owner, never the agent itself. Requires the write capability.",
+			"for an agent is its owner, never the agent itself. An issue raised with no assignee " +
+			"may wait in the team's triage inbox, where it stays out of the team's issue list " +
+			"until somebody accepts it: the returned triageState says so. Requires the write " +
+			"capability.",
 		Annotations: create,
 	}, t.createIssue)
 
