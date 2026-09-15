@@ -58,6 +58,20 @@ func (mr *MockAttachmentsMockRecorder) Adopt(ctx, workspaceID, issueID, input an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Adopt", reflect.TypeOf((*MockAttachments)(nil).Adopt), ctx, workspaceID, issueID, input)
 }
 
+// ChargeImportFile mocks base method.
+func (m *MockAttachments) ChargeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChargeImportFile", ctx, workspaceID, objectKey, sizeBytes)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ChargeImportFile indicates an expected call of ChargeImportFile.
+func (mr *MockAttachmentsMockRecorder) ChargeImportFile(ctx, workspaceID, objectKey, sizeBytes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChargeImportFile", reflect.TypeOf((*MockAttachments)(nil).ChargeImportFile), ctx, workspaceID, objectKey, sizeBytes)
+}
+
 // Content mocks base method.
 func (m *MockAttachments) Content(ctx context.Context, workspaceID, attachmentID uuid.UUID) (string, error) {
 	m.ctrl.T.Helper()
@@ -145,6 +159,20 @@ func (m *MockAttachments) Reclaim(ctx context.Context) error {
 func (mr *MockAttachmentsMockRecorder) Reclaim(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reclaim", reflect.TypeOf((*MockAttachments)(nil).Reclaim), ctx)
+}
+
+// RefundImportFile mocks base method.
+func (m *MockAttachments) RefundImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefundImportFile", ctx, workspaceID, objectKey)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RefundImportFile indicates an expected call of RefundImportFile.
+func (mr *MockAttachmentsMockRecorder) RefundImportFile(ctx, workspaceID, objectKey any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefundImportFile", reflect.TypeOf((*MockAttachments)(nil).RefundImportFile), ctx, workspaceID, objectKey)
 }
 
 // Remove mocks base method.

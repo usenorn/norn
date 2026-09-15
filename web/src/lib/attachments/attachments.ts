@@ -13,6 +13,7 @@ export type AttachmentPanel =
 
 export type AttachmentFailure =
 	| { kind: "too_large"; maxBytes: number }
+	| { kind: "size_mismatch" }
 	| { kind: "workspace_full"; storedBytes: number; maxBytes: number }
 	| { kind: "expired" }
 	| { kind: "gone" }
@@ -72,6 +73,8 @@ export function attachmentFailureMessage(failure: AttachmentFailure): string {
 	switch (failure.kind) {
 		case "too_large":
 			return `That file is bigger than ${formatBytes(failure.maxBytes)}, which is the most one file may be.`;
+		case "size_mismatch":
+			return "That file changed while it was uploading, or only part of it arrived. Try it again.";
 		case "workspace_full":
 			return `This workspace is storing ${formatBytes(failure.storedBytes)} of ${formatBytes(failure.maxBytes)}. Remove a file to make room.`;
 		case "expired":
@@ -102,6 +105,8 @@ export function readAttachmentFailure(error: unknown): AttachmentFailure {
 	switch (problem.code) {
 		case "attachment_too_large":
 			return { kind: "too_large", maxBytes: problem.maxBytes ?? 0 };
+		case "attachment_size_mismatch":
+			return { kind: "size_mismatch" };
 		case "workspace_storage_exhausted":
 			return {
 				kind: "workspace_full",

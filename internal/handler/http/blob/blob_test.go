@@ -2,6 +2,7 @@ package blob_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -145,6 +146,38 @@ func TestAnUploadIsCappedByItsOwnLinkNotJustTheGlobalLimit(t *testing.T) {
 			"a link capped at 4 bytes accepted a larger body with %d. The cap travels with the "+
 				"link so it cannot drift from the one the reservation was admitted against.",
 			status,
+		)
+	}
+}
+
+func TestAnUploadOverItsLinkSaysWhichLimitItHit(t *testing.T) {
+	e := newEdge(t, 1<<20)
+
+	e.grants.EXPECT().Read(gomock.Any(), "the-grant").Return(live(4), nil)
+	e.blobs.EXPECT().
+		Put(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ string, body io.Reader, _ int64) error {
+			_, err := io.ReadAll(body)
+
+			return err
+		})
+
+	answer := e.upload("the-grant", "far too much")
+
+	var problem struct {
+		Code     string `json:"code"`
+		MaxBytes int64  `json:"maxBytes"`
+	}
+
+	if err := json.Unmarshal(answer.Body.Bytes(), &problem); err != nil {
+		t.Fatalf("the refusal is not a problem document: %v", err)
+	}
+
+	if problem.Code != "attachment_too_large" || problem.MaxBytes != 4 {
+		t.Fatalf(
+			"the refusal carried code %q and limit %d. Without the code the uploader can only say "+
+				"that something went wrong, not that the file was larger than its link allowed.",
+			problem.Code, problem.MaxBytes,
 		)
 	}
 }

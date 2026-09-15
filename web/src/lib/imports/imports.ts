@@ -1,4 +1,5 @@
 import type { components, operations } from "$lib/api/dashboard.gen";
+import { formatBytes } from "$lib/attachments/attachments";
 import type { LabelColor } from "$lib/labels/labels";
 import { workspacePath } from "$lib/workspace/navigation";
 
@@ -31,7 +32,7 @@ type UploadResponses = operations["uploadWorkspaceImportFile"]["responses"];
 export type ImportProblem =
 	| ConfigureResponses[403 | 404 | 409 | 422 | 500 | 503]["content"]["application/problem+json"]
 	| CatalogueResponses[429 | 502]["content"]["application/problem+json"]
-	| UploadResponses[400 | 413]["content"]["application/problem+json"];
+	| UploadResponses[400 | 409 | 413]["content"]["application/problem+json"];
 
 export const runPageSize = 25;
 export const memberPageSize = 100;
@@ -100,6 +101,7 @@ export type ImportFailure =
 	| { kind: "team_mapping_required" }
 	| { kind: "file_unreadable" }
 	| { kind: "file_too_large" }
+	| { kind: "storage_full"; storedBytes: number; maxBytes: number }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
 
@@ -120,6 +122,12 @@ export function importFailure(problem: ImportProblem, resumesAt?: string): Impor
 				return { kind: "source_refused", reason: problem.reason };
 			case "import_signing_unavailable":
 				return { kind: "encryption_unavailable" };
+			case "workspace_storage_exhausted":
+				return {
+					kind: "storage_full",
+					storedBytes: problem.storedBytes ?? 0,
+					maxBytes: problem.maxBytes ?? 0,
+				};
 			case "rate_limited":
 				return { kind: "rate_limited", resumesAt };
 			case "forbidden":
@@ -155,6 +163,8 @@ export function failureTitle(failure: ImportFailure): string {
 			return "This instance cannot hold a source key";
 		case "file_too_large":
 			return "That file is too large";
+		case "storage_full":
+			return "This workspace is out of storage";
 		case "file_unreadable":
 			return "That upload did not arrive as a file";
 		case "forbidden":
@@ -192,6 +202,8 @@ export function failureMessage(failure: ImportFailure): string {
 			return "Choose a file and upload it again.";
 		case "file_too_large":
 			return "Split it, or ask an operator what this instance accepts.";
+		case "storage_full":
+			return `This workspace is storing ${formatBytes(failure.storedBytes)} of ${formatBytes(failure.maxBytes)}. Remove files from its issues to make room, then upload again.`;
 		case "forbidden":
 			return "Ask an administrator of this workspace.";
 		case "unavailable":

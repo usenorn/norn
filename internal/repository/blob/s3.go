@@ -178,12 +178,14 @@ func (r *objectStoreRepository) RemoveAll(ctx context.Context, prefix string) er
 func (r *objectStoreRepository) PresignPut(
 	ctx context.Context,
 	key string,
+	sizeBytes int64,
 	ttl time.Duration,
 ) (entity.BlobTicket, error) {
 	request, err := r.presigner.PresignPutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(r.client.Bucket()),
-		Key:         aws.String(key),
-		ContentType: aws.String(entity.AttachmentGenericType),
+		Bucket:        aws.String(r.client.Bucket()),
+		Key:           aws.String(key),
+		ContentType:   aws.String(entity.AttachmentGenericType),
+		ContentLength: aws.Int64(sizeBytes),
 	}, s3.WithPresignExpires(ttl))
 	if err != nil {
 		return entity.BlobTicket{}, fmt.Errorf("presign upload for %q: %w", key, err)

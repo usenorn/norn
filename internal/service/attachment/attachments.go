@@ -95,7 +95,7 @@ func (s *attachmentsService) Reserve(
 		return service.AttachmentReservation{}, err
 	}
 
-	ticket, err := s.blobs.PresignPut(ctx, created.ObjectKey, s.cfg.UploadTTL)
+	ticket, err := s.blobs.PresignPut(ctx, created.ObjectKey, created.SizeBytes, s.cfg.UploadTTL)
 	if err != nil {
 		return service.AttachmentReservation{}, err
 	}
@@ -225,8 +225,7 @@ func (s *attachmentsService) Adopt(
 	// The key must name an object this workspace's own import wrote. Adopting takes ownership
 	// of whatever it is handed, and a revert later deletes it: a key pointing into another
 	// workspace's stored files would have this import take one and the undo destroy it.
-	if !entity.ValidBlobKey(input.ObjectKey) ||
-		!strings.HasPrefix(input.ObjectKey, entity.ImportBlobPrefix(workspaceID)+"/") {
+	if !importKeyOf(workspaceID, input.ObjectKey) {
 		return entity.Attachment{}, entity.NewValidationError(entity.FieldError{
 			Field: "objectKey",
 			Code:  entity.ValidationCodeMalformed,
@@ -253,7 +252,14 @@ func (s *attachmentsService) Adopt(
 	var created entity.Attachment
 
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		if _, err := s.attachments.Admit(
+		held, charged, err := s.attachments.TakeImportFile(ctx, workspaceID, input.ObjectKey)
+		if err != nil {
+			return err
+		}
+
+		if charged {
+			adopted.SizeBytes = held
+		} else if _, err := s.attachments.Admit(
 			ctx, workspaceID, input.SizeBytes, s.cfg.MaxWorkspaceBytes,
 		); err != nil {
 			return s.exhausted(ctx, workspaceID, input.SizeBytes, err)
@@ -279,7 +285,7 @@ func (s *attachmentsService) exhausted(
 		return err
 	}
 
-	ledger, readErr := s.attachments.Ledger(ctx, workspaceID)
+	ledger, readErr := s.attachments.Ledger(ctx, workspaceID, s.cfg.MaxWorkspaceBytes)
 	if readErr != nil {
 		return err
 	}
@@ -287,7 +293,7 @@ func (s *attachmentsService) exhausted(
 	return entity.StorageExhaustedError{
 		SizeBytes:   sizeBytes,
 		StoredBytes: ledger.StoredBytes,
-		MaxBytes:    s.cfg.MaxWorkspaceBytes,
+		MaxBytes:    ledger.MaxBytes,
 	}
 }
 
@@ -336,29 +342,20 @@ func (s *attachmentsService) Finalize(
 		})
 	}
 
-	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		if delta := object.Size - reserved.SizeBytes; delta > 0 {
-			if _, err := s.attachments.Admit(
-				ctx, workspaceID, delta, s.cfg.MaxWorkspaceBytes,
-			); err != nil {
-				return s.exhausted(ctx, workspaceID, delta, err)
-			}
-		} else if delta < 0 {
-			if err := s.attachments.Release(ctx, workspaceID, -delta); err != nil {
-				return err
-			}
-		}
+	if object.Size != reserved.SizeBytes {
+		return entity.Attachment{}, s.refuse(ctx, reserved, entity.AttachmentSizeMismatchError{
+			DeclaredBytes: reserved.SizeBytes,
+			ArrivedBytes:  object.Size,
+		})
+	}
 
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		if err := s.attachments.Settle(ctx, attachmentID, object.Size, served, time.Now().UTC()); err != nil {
 			return err
 		}
 
 		return s.record(ctx, decision, reserved, entity.ActivityKindAttachmentAdded)
 	}); err != nil {
-		if errors.Is(err, entity.ErrStorageExhausted) {
-			return entity.Attachment{}, s.refuse(ctx, reserved, err)
-		}
-
 		return entity.Attachment{}, err
 	}
 
@@ -377,7 +374,7 @@ func (s *attachmentsService) refuse(
 			return err
 		}
 
-		return s.attachments.Discard(ctx, reserved.ID, now)
+		return s.attachments.Discard(ctx, reserved.ID, reserved.SizeBytes, now)
 	}); err != nil {
 		return err
 	}
@@ -410,7 +407,7 @@ func (s *attachmentsService) Remove(
 			return err
 		}
 
-		if err := s.attachments.Discard(ctx, attachmentID, time.Now().UTC()); err != nil {
+		if err := s.attachments.Discard(ctx, attachmentID, attachment.SizeBytes, time.Now().UTC()); err != nil {
 			return err
 		}
 
@@ -486,14 +483,7 @@ func (s *attachmentsService) Ledger(
 		return entity.WorkspaceStorage{}, err
 	}
 
-	ledger, err := s.attachments.Ledger(ctx, workspaceID)
-	if err != nil {
-		return entity.WorkspaceStorage{}, err
-	}
-
-	ledger.MaxBytes = s.cfg.MaxWorkspaceBytes
-
-	return ledger, nil
+	return s.attachments.Ledger(ctx, workspaceID, s.cfg.MaxWorkspaceBytes)
 }
 
 func (s *attachmentsService) Reclaim(ctx context.Context) error {
@@ -538,6 +528,52 @@ func (s *attachmentsService) release(ctx context.Context, attachment entity.Atta
 	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		return s.attachments.Reclaim(ctx, attachment.ID)
 	})
+}
+
+func (s *attachmentsService) ChargeImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+	sizeBytes int64,
+) error {
+	if !importKeyOf(workspaceID, objectKey) {
+		return entity.NewValidationError(entity.FieldError{Field: "objectKey", Code: entity.ValidationCodeMalformed})
+	}
+
+	if sizeBytes < 0 {
+		return entity.NewValidationError(entity.FieldError{Field: "sizeBytes", Code: entity.ValidationCodeMalformed})
+	}
+
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		held, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
+		if err != nil {
+			return err
+		}
+
+		if grown := sizeBytes - held; grown > 0 {
+			if _, err := s.attachments.Admit(ctx, workspaceID, grown, s.cfg.MaxWorkspaceBytes); err != nil {
+				return s.exhausted(ctx, workspaceID, grown, err)
+			}
+		} else if grown < 0 {
+			if err := s.attachments.Release(ctx, workspaceID, -grown); err != nil {
+				return err
+			}
+		}
+
+		return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, sizeBytes)
+	})
+}
+
+func (s *attachmentsService) RefundImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+) error {
+	return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
+}
+
+func importKeyOf(workspaceID uuid.UUID, key string) bool {
+	return entity.ValidBlobKey(key) && strings.HasPrefix(key, entity.ImportBlobPrefix(workspaceID)+"/")
 }
 
 func (s *attachmentsService) kick(ctx context.Context) {

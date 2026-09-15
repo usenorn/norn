@@ -73,8 +73,8 @@ WHERE id = $1 AND status = 'pending'`
 
 const discardAttachmentQuery = `
 UPDATE workspace_issue_attachments
-SET status = 'discarded', reclaim_after = $2, updated_at = $2
-WHERE id = $1 AND status <> 'discarded'`
+SET status = 'discarded', size_bytes = 0, reclaim_after = $2, updated_at = $2
+WHERE id = $1 AND status <> 'discarded' AND size_bytes = $3`
 
 const claimForCommentQuery = `
 UPDATE workspace_issue_attachments
@@ -111,7 +111,9 @@ SELECT $1::uuid, $2::bigint, now()
 WHERE $3::bigint = 0 OR $2::bigint <= $3::bigint
 ON CONFLICT (workspace_id) DO UPDATE
     SET stored_bytes = workspace_storage_ledger.stored_bytes + $2::bigint, updated_at = now()
-    WHERE $3::bigint = 0 OR workspace_storage_ledger.stored_bytes + $2::bigint <= $3::bigint
+    WHERE coalesce(workspace_storage_ledger.max_bytes, $3::bigint) = 0
+       OR workspace_storage_ledger.stored_bytes + $2::bigint
+          <= coalesce(workspace_storage_ledger.max_bytes, $3::bigint)
 RETURNING stored_bytes`
 
 const releaseStorageQuery = `
@@ -121,10 +123,42 @@ ON CONFLICT (workspace_id) DO UPDATE
     SET stored_bytes = greatest(workspace_storage_ledger.stored_bytes - $2::bigint, 0), updated_at = now()`
 
 const ledgerQuery = `
-SELECT coalesce(l.stored_bytes, 0), coalesce(l.updated_at, now())
+SELECT coalesce(l.stored_bytes, 0), coalesce(l.max_bytes, $2::bigint), coalesce(l.updated_at, now())
 FROM workspaces w
 LEFT JOIN workspace_storage_ledger l ON l.workspace_id = w.id
 WHERE w.id = $1`
+
+const claimImportFileQuery = `
+INSERT INTO workspace_import_files (object_key, workspace_id, size_bytes)
+VALUES ($1, $2::uuid, 0)
+ON CONFLICT (object_key) DO NOTHING`
+
+const lockImportFileQuery = `
+SELECT size_bytes
+FROM workspace_import_files
+WHERE object_key = $1 AND workspace_id = $2::uuid
+FOR UPDATE`
+
+const sizeImportFileQuery = `
+UPDATE workspace_import_files
+SET size_bytes = $3, updated_at = now()
+WHERE object_key = $1 AND workspace_id = $2::uuid`
+
+const takeImportFileQuery = `
+DELETE FROM workspace_import_files
+WHERE object_key = $1 AND workspace_id = $2::uuid
+RETURNING size_bytes`
+
+const refundImportFileQuery = `
+WITH refunded AS (
+    DELETE FROM workspace_import_files
+    WHERE object_key = $1 AND workspace_id = $2::uuid
+    RETURNING workspace_id, size_bytes
+)
+UPDATE workspace_storage_ledger l
+SET stored_bytes = greatest(l.stored_bytes - r.size_bytes, 0), updated_at = now()
+FROM refunded r
+WHERE l.workspace_id = r.workspace_id`
 
 type scanner interface {
 	Scan(dest ...any) error
@@ -329,9 +363,13 @@ func (r *attachmentRepository) Settle(
 func (r *attachmentRepository) Discard(
 	ctx context.Context,
 	attachmentID uuid.UUID,
+	releasedBytes int64,
 	at time.Time,
 ) error {
-	return r.touch(ctx, "discard attachment", discardAttachmentQuery, attachmentID.String(), at)
+	return r.touch(
+		ctx, "discard attachment", discardAttachmentQuery,
+		attachmentID.String(), at, releasedBytes,
+	)
 }
 
 func (r *attachmentRepository) touch(
@@ -431,11 +469,12 @@ func (r *attachmentRepository) Release(
 func (r *attachmentRepository) Ledger(
 	ctx context.Context,
 	workspaceID uuid.UUID,
+	defaultMaxBytes int64,
 ) (entity.WorkspaceStorage, error) {
 	ledger := entity.WorkspaceStorage{WorkspaceID: workspaceID}
 
-	err := r.db.Querier(ctx).QueryRowContext(ctx, ledgerQuery, workspaceID.String()).
-		Scan(&ledger.StoredBytes, &ledger.UpdatedAt)
+	err := r.db.Querier(ctx).QueryRowContext(ctx, ledgerQuery, workspaceID.String(), defaultMaxBytes).
+		Scan(&ledger.StoredBytes, &ledger.MaxBytes, &ledger.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.WorkspaceStorage{}, entity.ErrWorkspaceNotFound
@@ -445,4 +484,74 @@ func (r *attachmentRepository) Ledger(
 	}
 
 	return ledger, nil
+}
+
+func (r *attachmentRepository) ClaimImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+) (int64, error) {
+	querier := r.db.Querier(ctx)
+
+	if _, err := querier.ExecContext(ctx, claimImportFileQuery, objectKey, workspaceID.String()); err != nil {
+		return 0, fmt.Errorf("claim import file: %w", err)
+	}
+
+	var held int64
+
+	err := querier.QueryRowContext(ctx, lockImportFileQuery, objectKey, workspaceID.String()).Scan(&held)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, entity.ErrAttachmentNotFound
+		}
+
+		return 0, fmt.Errorf("lock import file: %w", err)
+	}
+
+	return held, nil
+}
+
+func (r *attachmentRepository) SizeImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+	sizeBytes int64,
+) error {
+	return r.touch(
+		ctx, "size import file", sizeImportFileQuery,
+		objectKey, workspaceID.String(), sizeBytes,
+	)
+}
+
+func (r *attachmentRepository) TakeImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+) (int64, bool, error) {
+	var held int64
+
+	err := r.db.Querier(ctx).QueryRowContext(ctx, takeImportFileQuery, objectKey, workspaceID.String()).Scan(&held)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+
+	if err != nil {
+		return 0, false, fmt.Errorf("take import file: %w", err)
+	}
+
+	return held, true, nil
+}
+
+func (r *attachmentRepository) RefundImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, refundImportFileQuery, objectKey, workspaceID.String(),
+	); err != nil {
+		return fmt.Errorf("refund import file: %w", err)
+	}
+
+	return nil
 }

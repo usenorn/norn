@@ -3,6 +3,7 @@ package imports
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -52,9 +53,17 @@ func (s *importsService) Upload(
 		})
 	}
 
-	if err := s.blobs.Put(
-		ctx, key, entity.AttachmentGenericType, bytes.NewReader(body), int64(len(body)),
-	); err != nil {
+	size := int64(len(body))
+
+	if err := s.fileWriter.ChargeImportFile(ctx, run.WorkspaceID, key, size); err != nil {
+		return service.ImportFile{}, err
+	}
+
+	if err := s.blobs.Put(ctx, key, entity.AttachmentGenericType, bytes.NewReader(body), size); err != nil {
+		if refundErr := s.fileWriter.RefundImportFile(ctx, run.WorkspaceID, key); refundErr != nil {
+			return service.ImportFile{}, errors.Join(err, refundErr)
+		}
+
 		return service.ImportFile{}, err
 	}
 

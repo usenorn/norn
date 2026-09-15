@@ -17,6 +17,6 @@ type Blob interface {
 	Stat(ctx context.Context, key string) (entity.BlobObject, error)
 	Delete(ctx context.Context, key string) error
 	RemoveAll(ctx context.Context, prefix string) error
-	PresignPut(ctx context.Context, key string, ttl time.Duration) (entity.BlobTicket, error)
+	PresignPut(ctx context.Context, key string, sizeBytes int64, ttl time.Duration) (entity.BlobTicket, error)
 	PresignGet(ctx context.Context, key string, serve entity.ServeSpec, ttl time.Duration) (string, error)
 }

@@ -217,6 +217,7 @@ func (r *filesystemRepository) RemoveAll(_ context.Context, prefix string) error
 func (r *filesystemRepository) PresignPut(
 	ctx context.Context,
 	key string,
+	sizeBytes int64,
 	ttl time.Duration,
 ) (entity.BlobTicket, error) {
 	expires := time.Now().UTC().Add(ttl)
@@ -224,7 +225,7 @@ func (r *filesystemRepository) PresignPut(
 	token, err := r.grants.Issue(ctx, entity.BlobGrant{
 		Purpose:   entity.BlobGrantUpload,
 		Key:       key,
-		MaxBytes:  r.maxFileBytes,
+		MaxBytes:  min(sizeBytes, r.maxFileBytes),
 		ExpiresAt: expires,
 	}, ttl)
 	if err != nil {

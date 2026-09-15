@@ -161,20 +161,40 @@ func (s *Source) carry(
 	}
 
 	key := entity.ImportBlobKey(run.WorkspaceID, run.RunID, name)
+	size := int64(len(body))
 
-	if err := s.blobs.Put(ctx, key, contentType, bytes.NewReader(body), int64(len(body))); err != nil {
-		logging.From(ctx).WarnContext(ctx, "a linear file could not be stored",
-			"issue", payload.Issue,
-			"source_url", source,
-			"reason", err.Error(),
-		)
+	if err := s.storage.ChargeImportFile(ctx, run.WorkspaceID, key, size); err != nil {
+		s.leave(ctx, payload, source, err)
+
+		return
+	}
+
+	if err := s.blobs.Put(ctx, key, contentType, bytes.NewReader(body), size); err != nil {
+		if refundErr := s.storage.RefundImportFile(ctx, run.WorkspaceID, key); refundErr != nil {
+			err = errors.Join(err, refundErr)
+		}
+
+		s.leave(ctx, payload, source, err)
 
 		return
 	}
 
 	payload.ObjectKey = key
 	payload.ContentType = contentType
-	payload.SizeBytes = int64(len(body))
+	payload.SizeBytes = size
+}
+
+func (s *Source) leave(
+	ctx context.Context,
+	payload *service.ImportAttachmentPayload,
+	source string,
+	err error,
+) {
+	logging.From(ctx).WarnContext(ctx, "a linear file could not be stored",
+		"issue", payload.Issue,
+		"source_url", source,
+		"reason", err.Error(),
+	)
 }
 
 func (s *Source) download(ctx context.Context, key, source string) ([]byte, string, error) {

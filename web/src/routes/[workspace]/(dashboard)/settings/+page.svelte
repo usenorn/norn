@@ -237,8 +237,9 @@
 				<div class="flex flex-col gap-1">
 					<h2 class="text-md font-medium tracking-snug text-ink-900">Storage</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Every file attached to an issue in {workspace.name} counts towards this. Norn refuses an
-						upload once there is no room left, so it is worth knowing before you reach it.
+						Files attached to issues in {workspace.name} and files brought in by an import count
+						towards this. Norn refuses an upload once there is no room left, so it is worth knowing
+						before you reach it.
 					</p>
 				</div>
 

@@ -673,6 +673,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrAttachmentTooLarge):
 		return storageRefusedProblem(api.AttachmentTooLarge, http.StatusRequestEntityTooLarge, err), true
 
+	case errors.Is(err, entity.ErrAttachmentSizeMismatch):
+		return storageRefusedProblem(api.AttachmentSizeMismatch, http.StatusConflict, err), true
+
 	case errors.Is(err, entity.ErrStorageExhausted):
 		return storageRefusedProblem(api.WorkspaceStorageExhausted, http.StatusConflict, err), true
 

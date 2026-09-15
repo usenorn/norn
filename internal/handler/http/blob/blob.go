@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/repository"
+	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
 
 const (
@@ -74,7 +75,10 @@ func (e *Edge) Receive(w http.ResponseWriter, r *http.Request) {
 	if err := e.blobs.Put(r.Context(), grant.Key, entity.AttachmentGenericType, body, -1); err != nil {
 		var oversized *http.MaxBytesError
 		if errors.As(err, &oversized) {
-			middleware.WriteProblem(w, r, http.StatusRequestEntityTooLarge, entity.ErrAttachmentTooLarge.Error())
+			middleware.WriteStorageProblem(
+				w, r, http.StatusRequestEntityTooLarge, api.AttachmentTooLarge,
+				entity.ErrAttachmentTooLarge.Error(), e.uploadLimit(grant),
+			)
 
 			return
 		}

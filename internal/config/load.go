@@ -14,7 +14,11 @@ import (
 	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
-const envPrefix = "NORN"
+const (
+	envPrefix                  = "NORN"
+	workspaceStorageKey        = "attachments.max_workspace_bytes"
+	cloudWorkspaceStorageBytes = int64(1 << 30)
+)
 
 func New(cfgFile string) (Config, error) {
 	if err := loadDotenv(); err != nil {
@@ -28,6 +32,10 @@ func New(cfgFile string) (Config, error) {
 	v.SetEnvPrefix(envPrefix)
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
+
+	if err := v.BindEnv(workspaceStorageKey); err != nil {
+		return Config{}, fmt.Errorf("bind %s: %w", workspaceStorageKey, err)
+	}
 
 	if cfgFile != "" {
 		v.SetConfigFile(cfgFile)
@@ -48,11 +56,23 @@ func New(cfgFile string) (Config, error) {
 		return Config{}, fmt.Errorf("unmarshal config: %w", err)
 	}
 
+	if !v.IsSet(workspaceStorageKey) {
+		cfg.Attachments.MaxWorkspaceBytes = defaultWorkspaceStorage(cfg.Instance)
+	}
+
 	if err := validate(cfg); err != nil {
 		return Config{}, err
 	}
 
 	return cfg, nil
+}
+
+func defaultWorkspaceStorage(instance Instance) int64 {
+	if instance.SelfHosted {
+		return 0
+	}
+
+	return cloudWorkspaceStorageBytes
 }
 
 func validate(cfg Config) error {
@@ -797,7 +817,6 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("storage.public_base_url", "")
 	v.SetDefault("storage.timeout", 30*time.Second)
 	v.SetDefault("attachments.max_file_bytes", int64(25<<20))
-	v.SetDefault("attachments.max_workspace_bytes", int64(0))
 	v.SetDefault("attachments.upload_ttl", 15*time.Minute)
 	v.SetDefault("attachments.link_ttl", 5*time.Minute)
 	v.SetDefault("attachments.transfer_timeout", 10*time.Minute)

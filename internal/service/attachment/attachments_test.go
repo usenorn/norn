@@ -164,8 +164,8 @@ func TestAFullWorkspaceIsRefusedWithItsOwnNumbers(t *testing.T) {
 		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
 		Return(int64(0), entity.ErrStorageExhausted)
 	h.attachments.EXPECT().
-		Ledger(gomock.Any(), h.workspaceID).
-		Return(entity.WorkspaceStorage{StoredBytes: 9_800}, nil)
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 9_800, MaxBytes: maxWorkspaceBytes}, nil)
 
 	_, err := h.service.Reserve(
 		context.Background(), h.workspaceID, h.issueID,
@@ -224,7 +224,7 @@ func TestRoomIsTakenBeforeTheRowExistsSoTwoUploadsCannotBothFit(t *testing.T) {
 			return reserved, nil
 		})
 	h.blobs.EXPECT().
-		PresignPut(gomock.Any(), gomock.Any(), gomock.Any()).
+		PresignPut(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(entity.BlobTicket{URL: "https://storage.example/put", Method: "PUT"}, nil)
 
 	reservation, err := h.service.Reserve(
@@ -303,6 +303,9 @@ func TestAnAdoptedFileIsStoredOnItsIssueBeforeAnySweepCouldSeeIt(t *testing.T) {
 	origin := entity.NewImportOrigin(source, source, h.accountID)
 
 	h.attachments.EXPECT().
+		TakeImportFile(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(int64(0), false, nil)
+	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
 		Return(int64(500), nil)
 	h.attachments.EXPECT().
@@ -356,11 +359,14 @@ func TestAnImportsFileIsRefusedByAFullWorkspaceLikeAnyOtherUpload(t *testing.T) 
 	origin := entity.NewImportOrigin(source, source, h.accountID)
 
 	h.attachments.EXPECT().
+		TakeImportFile(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(int64(0), false, nil)
+	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
 		Return(int64(0), entity.ErrStorageExhausted)
 	h.attachments.EXPECT().
-		Ledger(gomock.Any(), h.workspaceID).
-		Return(entity.WorkspaceStorage{StoredBytes: 9_900}, nil)
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 9_900, MaxBytes: maxWorkspaceBytes}, nil)
 
 	_, err := h.service.Adopt(context.Background(), h.workspaceID, h.issueID, h.carried(&origin))
 
@@ -410,6 +416,8 @@ func TestAnAdoptedFileIsServedByWhatItIsRatherThanWhatTheSourceSaid(t *testing.T
 	carried := h.carried(&origin)
 	carried.ContentType = "image/svg+xml"
 
+	h.attachments.EXPECT().TakeImportFile(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(int64(0), false, nil)
 	h.attachments.EXPECT().Admit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(int64(500), nil)
 	h.attachments.EXPECT().
@@ -479,53 +487,42 @@ func TestFinalizeTrustsWhatItSniffsRatherThanWhatWasDeclared(t *testing.T) {
 	}
 }
 
-func TestFinalizeChargesTheDifferenceWhenMoreArrivedThanWasReserved(t *testing.T) {
-	h := newHarness(t, maxWorkspaceBytes)
-	h.actAs(entity.MembershipRoleMember)
-	h.seesTheIssue()
+func TestFinalizeRefusesAFileThatIsNotTheSizeItWasReservedAt(t *testing.T) {
+	for name, arrived := range map[string]int64{
+		"more than was declared": 700,
+		"less than was declared": 300,
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t, maxWorkspaceBytes)
+			h.actAs(entity.MembershipRoleMember)
+			h.seesTheIssue()
 
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(h.reserved(), nil)
-	h.blobs.EXPECT().Stat(gomock.Any(), gomock.Any()).Return(entity.BlobObject{Size: 700}, nil)
-	h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
-	h.attachments.EXPECT().
-		Admit(gomock.Any(), h.workspaceID, int64(200), int64(maxWorkspaceBytes)).
-		Return(int64(700), nil)
-	h.attachments.EXPECT().
-		Settle(gomock.Any(), h.attachmentID, int64(700), "image/png", gomock.Any()).
-		Return(nil)
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(h.stored("image/png"), nil)
+			h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(h.reserved(), nil)
+			h.blobs.EXPECT().Stat(gomock.Any(), gomock.Any()).Return(entity.BlobObject{Size: arrived}, nil)
+			h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
+			h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(500)).Return(nil)
+			h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, int64(500), gomock.Any()).Return(nil)
 
-	if _, err := h.service.Finalize(
-		context.Background(), h.workspaceID, h.issueID, h.attachmentID,
-	); err != nil {
-		t.Fatalf("Finalize: %v", err)
-	}
-}
+			_, err := h.service.Finalize(context.Background(), h.workspaceID, h.issueID, h.attachmentID)
 
-func TestFinalizeGivesBackTheDifferenceWhenLessArrived(t *testing.T) {
-	h := newHarness(t, maxWorkspaceBytes)
-	h.actAs(entity.MembershipRoleMember)
-	h.seesTheIssue()
+			var mismatch entity.AttachmentSizeMismatchError
+			if !errors.As(err, &mismatch) {
+				t.Fatalf(
+					"a file of %d bytes against a reservation of 500 was finalized with %v. The link "+
+						"was signed for the declared size, so any other size means the object was "+
+						"replaced or cut short, and settling it would bill the wrong number or hand "+
+						"out a broken file.",
+					arrived, err,
+				)
+			}
 
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(h.reserved(), nil)
-	h.blobs.EXPECT().Stat(gomock.Any(), gomock.Any()).Return(entity.BlobObject{Size: 300}, nil)
-	h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
-	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(200)).Return(nil)
-	h.attachments.EXPECT().
-		Settle(gomock.Any(), h.attachmentID, int64(300), "image/png", gomock.Any()).
-		Return(nil)
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(h.stored("image/png"), nil)
-
-	if _, err := h.service.Finalize(
-		context.Background(), h.workspaceID, h.issueID, h.attachmentID,
-	); err != nil {
-		t.Fatalf(
-			"Finalize: %v. A reservation is the declared size; the room a smaller file did not "+
-				"use has to come back or the workspace slowly fills with nothing.",
-			err,
-		)
+			if mismatch.DeclaredBytes != 500 || mismatch.ArrivedBytes != arrived {
+				t.Fatalf(
+					"the refusal reported %d declared and %d arrived",
+					mismatch.DeclaredBytes, mismatch.ArrivedBytes,
+				)
+			}
+		})
 	}
 }
 
@@ -539,15 +536,15 @@ func TestAFileThatArrivesOverTheCapIsDiscardedAndItsRoomReturned(t *testing.T) {
 		Return(entity.BlobObject{Size: maxFileBytes + 1}, nil)
 	h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
 	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(500)).Return(nil)
-	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, gomock.Any()).Return(nil)
+	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, int64(500), gomock.Any()).Return(nil)
 
 	_, err := h.service.Finalize(context.Background(), h.workspaceID, h.issueID, h.attachmentID)
 
 	var oversized entity.AttachmentTooLargeError
 	if !errors.As(err, &oversized) {
 		t.Fatalf(
-			"a presigned PUT cannot bound the body, so a client can always send more than it "+
-				"declared. Finalize returned %v rather than refusing it.",
+			"the upload link bounds what a browser sends, but the object is only ever measured "+
+				"here. Finalize returned %v rather than refusing a file over the per-file cap.",
 			err,
 		)
 	}
@@ -664,12 +661,216 @@ func TestRemovingAFileGivesItsRoomBackAtOnce(t *testing.T) {
 	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(h.stored("image/png"), nil)
 	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(500)).Return(nil)
-	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, gomock.Any()).Return(nil)
+	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, int64(500), gomock.Any()).Return(nil)
 
 	if err := h.service.Remove(
 		context.Background(), h.workspaceID, h.issueID, h.attachmentID,
 	); err != nil {
 		t.Fatalf("Remove: %v", err)
+	}
+}
+
+func TestAnUploadLinkIsSignedForExactlyTheSizeThatWasReserved(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	h.attachments.EXPECT().Admit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(500), nil)
+	h.attachments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, reserved entity.Attachment) (entity.Attachment, error) {
+			return reserved, nil
+		})
+
+	var signed int64
+
+	h.blobs.EXPECT().
+		PresignPut(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, sizeBytes int64, _ time.Duration) (entity.BlobTicket, error) {
+			signed = sizeBytes
+
+			return entity.BlobTicket{URL: "https://storage.example/put", Method: "PUT"}, nil
+		})
+
+	if _, err := h.service.Reserve(
+		context.Background(), h.workspaceID, h.issueID,
+		service.ReserveAttachmentInput{FileName: "shot.png", SizeBytes: 500},
+	); err != nil {
+		t.Fatalf("Reserve: %v", err)
+	}
+
+	if signed != 500 {
+		t.Fatalf(
+			"the upload link was signed for %d bytes against a reservation of 500. The workspace "+
+				"was charged for what was declared, so a link that takes any other size lets a "+
+				"client store more than it paid room for.",
+			signed,
+		)
+	}
+}
+
+func TestAWorkspaceGivenItsOwnLimitReportsThatRatherThanTheInstanceDefault(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.authorizer.EXPECT().Decide(gomock.Any(), gomock.Any()).Return(entity.Decision{}, nil)
+	h.attachments.EXPECT().Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 2_048, MaxBytes: 50_000}, nil)
+
+	ledger, err := h.service.Ledger(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Ledger: %v", err)
+	}
+
+	if ledger.MaxBytes != 50_000 {
+		t.Fatalf(
+			"a workspace given 50000 bytes of its own reported a limit of %d. The settings page "+
+				"would then show a limit the uploads are not actually held to.",
+			ledger.MaxBytes,
+		)
+	}
+}
+
+func TestAFullWorkspaceIsToldTheLimitItIsActuallyHeldTo(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
+		Return(int64(0), entity.ErrStorageExhausted)
+	h.attachments.EXPECT().
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 49_800, MaxBytes: 50_000}, nil)
+
+	_, err := h.service.Reserve(
+		context.Background(), h.workspaceID, h.issueID,
+		service.ReserveAttachmentInput{FileName: "shot.png", SizeBytes: 500},
+	)
+
+	var exhausted entity.StorageExhaustedError
+	if !errors.As(err, &exhausted) || exhausted.MaxBytes != 50_000 {
+		t.Fatalf(
+			"a workspace held to its own 50000 bytes was refused with %v. Quoting the instance "+
+				"default instead would tell the uploader they have room they do not.",
+			err,
+		)
+	}
+}
+
+func (h *harness) importKey() string {
+	return entity.ImportBlobKey(h.workspaceID, h.attachmentID, "rows.csv")
+}
+
+func TestAnImportFileWrittenAgainIsChargedOnlyForWhatItGrew(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	key := h.importKey()
+
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).Return(int64(300), nil)
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(200), int64(maxWorkspaceBytes)).
+		Return(int64(800), nil)
+	h.attachments.EXPECT().SizeImportFile(gomock.Any(), h.workspaceID, key, int64(500)).Return(nil)
+
+	if err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 500); err != nil {
+		t.Fatalf(
+			"ChargeImportFile: %v. A file uploaded again under the same name replaces the first, "+
+				"so charging all 500 bytes would bill the 300 that are no longer stored.",
+			err,
+		)
+	}
+}
+
+func TestAnImportFileWrittenAgainSmallerGivesBackWhatItShrank(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	key := h.importKey()
+
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).Return(int64(500), nil)
+	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(300)).Return(nil)
+	h.attachments.EXPECT().SizeImportFile(gomock.Any(), h.workspaceID, key, int64(200)).Return(nil)
+
+	if err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 200); err != nil {
+		t.Fatalf("ChargeImportFile: %v", err)
+	}
+}
+
+func TestAnImportFileIntoAFullWorkspaceIsRefusedWithItsNumbersAndNeverRecorded(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	key := h.importKey()
+
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).Return(int64(0), nil)
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(400), int64(maxWorkspaceBytes)).
+		Return(int64(0), entity.ErrStorageExhausted)
+	h.attachments.EXPECT().
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 9_900, MaxBytes: maxWorkspaceBytes}, nil)
+
+	err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 400)
+
+	var exhausted entity.StorageExhaustedError
+	if !errors.As(err, &exhausted) || exhausted.StoredBytes != 9_900 {
+		t.Fatalf(
+			"an import file into a full workspace returned %v. The upload has to be refused "+
+				"before the bytes are written, and say how full the workspace is.",
+			err,
+		)
+	}
+}
+
+func TestAKeyOutsideThisWorkspacesImportsIsNeverCharged(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+
+	for name, key := range map[string]string{
+		"another workspace's import": entity.ImportBlobKey(uuid.New(), uuid.New(), "rows.csv"),
+		"a live attachment":          entity.AttachmentKey(h.workspaceID, uuid.New()),
+	} {
+		t.Run(name, func(t *testing.T) {
+			var refused entity.ValidationError
+
+			if err := h.service.ChargeImportFile(
+				context.Background(), h.workspaceID, key, 100,
+			); !errors.As(err, &refused) {
+				t.Fatalf(
+					"charging %s returned %v. A key that is not this workspace's own import would "+
+						"let one import put its bytes on another workspace's bill.",
+					name, err,
+				)
+			}
+		})
+	}
+}
+
+func TestAnImportedFileAdoptedOntoAnIssueIsNotChargedASecondTime(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, h.accountID)
+	carried := h.carried(&origin)
+
+	h.attachments.EXPECT().
+		TakeImportFile(gomock.Any(), h.workspaceID, carried.ObjectKey).
+		Return(int64(700), true, nil)
+	h.attachments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, adopted entity.Attachment) (entity.Attachment, error) {
+			if adopted.SizeBytes != 700 {
+				t.Fatalf(
+					"the adopted row records %d bytes where the import was charged 700. The sweep "+
+						"gives back what the row says, so the two have to agree.",
+					adopted.SizeBytes,
+				)
+			}
+
+			return adopted, nil
+		})
+
+	if _, err := h.service.Adopt(context.Background(), h.workspaceID, h.issueID, carried); err != nil {
+		t.Fatalf(
+			"Adopt: %v. The import already paid for these bytes when it stored them; admitting "+
+				"them again would count one file twice.",
+			err,
+		)
 	}
 }
 
@@ -735,8 +936,8 @@ func TestOnlySomeoneWhoMayChangeTheWorkspaceSeesWhatItIsStoring(t *testing.T) {
 
 			return entity.Decision{Role: entity.MembershipRoleAdmin}, nil
 		})
-	h.attachments.EXPECT().Ledger(gomock.Any(), h.workspaceID).
-		Return(entity.WorkspaceStorage{StoredBytes: 2_048}, nil)
+	h.attachments.EXPECT().Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 2_048, MaxBytes: maxWorkspaceBytes}, nil)
 
 	ledger, err := h.service.Ledger(context.Background(), h.workspaceID)
 	if err != nil {
@@ -760,7 +961,7 @@ func TestOnlySomeoneWhoMayChangeTheWorkspaceSeesWhatItIsStoring(t *testing.T) {
 func TestAnUnlimitedWorkspaceStillReportsWhatItIsStoring(t *testing.T) {
 	h := newHarness(t, 0)
 	h.authorizer.EXPECT().Decide(gomock.Any(), gomock.Any()).Return(entity.Decision{}, nil)
-	h.attachments.EXPECT().Ledger(gomock.Any(), gomock.Any()).
+	h.attachments.EXPECT().Ledger(gomock.Any(), gomock.Any(), int64(0)).
 		Return(entity.WorkspaceStorage{StoredBytes: 4_096}, nil)
 
 	ledger, err := h.service.Ledger(context.Background(), h.workspaceID)
