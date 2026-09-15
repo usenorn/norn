@@ -78,6 +78,7 @@ type harness struct {
 	proposals    *agentproposalrepo.MockAgentProposal
 	agents       *agentrepo.MockAgent
 	actor        entity.Actor
+	routing      *entity.TriageSettings
 	holds        entity.AgentSettings
 	service      service.Issues
 }
@@ -175,7 +176,13 @@ func newHarness(t *testing.T) *harness {
 
 	h.triage.EXPECT().
 		Settings(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(entity.TriageSettings{}, entity.ErrTriageDisabled).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.TriageSettings, error) {
+			if h.routing == nil {
+				return entity.TriageSettings{}, entity.ErrTriageDisabled
+			}
+
+			return *h.routing, nil
+		}).
 		AnyTimes()
 
 	h.issues.EXPECT().LowestRank(gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
@@ -228,10 +235,15 @@ func newHarness(t *testing.T) *harness {
 func (h *harness) expectScope(workspaceID uuid.UUID, scope entity.TeamScope) {
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
-		Return(entity.Decision{
-			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
-			Scope: scope,
-		}, nil)
+		Return(entity.Decision{Actor: h.actor, Scope: scope}, nil)
+}
+
+func (h *harness) triaging(settings entity.TriageSettings) {
+	h.routing = &settings
+}
+
+func (h *harness) actingAs(kind entity.ActorKind) {
+	h.actor = entity.Actor{Kind: kind, AccountID: uuid.New()}
 }
 
 func (h *harness) expectRefused(err error) {

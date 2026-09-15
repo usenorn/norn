@@ -97,6 +97,7 @@ type issueDTO struct {
 	TeamKey         string     `json:"teamKey"`
 	State           stateRef   `json:"state"`
 	Status          string     `json:"status"`
+	TriageState     string     `json:"triageState,omitempty"`
 	Priority        string     `json:"priority"`
 	AssigneeID      string     `json:"assigneeId,omitempty"`
 	CreatedByID     string     `json:"createdById,omitempty"`
@@ -129,6 +130,7 @@ func issueDTOFrom(issue entity.Issue) issueDTO {
 		TeamID:          issue.TeamID.String(),
 		TeamKey:         issue.TeamKey,
 		Status:          string(issue.Status),
+		TriageState:     string(issue.TriageState),
 		Priority:        string(issue.Priority),
 		Estimate:        issue.Estimate,
 		DueOn:           issue.DueOn,
