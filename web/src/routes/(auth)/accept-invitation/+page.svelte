@@ -25,7 +25,7 @@
 		type InvitationContext,
 		type InvitationDetail,
 	} from "$lib/workspace/accept-invitation";
-	import { initialsOf } from "$lib/team/members";
+	import { initialsOf } from "$lib/account/accounts";
 	import { onDate } from "$lib/time";
 	import { roleLabels } from "$lib/workspace/members";
 	import { acceptInvitationPreviewStates } from "./preview";

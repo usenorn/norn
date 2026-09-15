@@ -14,6 +14,7 @@ export type Task = {
 	state: TaskState;
 	priority: TaskPriority;
 	assignee: string | null;
+	assigneeAccountId: string | null;
 	date: string | null;
 	labels: TaskLabel[];
 	project: string;

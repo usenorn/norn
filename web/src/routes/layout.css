@@ -44,6 +44,23 @@
 	--label-orchid: #b07ad0;
 	--label-magenta: #cb77b4;
 
+	--avatar-cyan: #25424a;
+	--avatar-cyan-ink: #aed8e2;
+	--avatar-blue: #2b3850;
+	--avatar-blue-ink: #b6c9ea;
+	--avatar-violet: #353451;
+	--avatar-violet-ink: #c6c4ec;
+	--avatar-orchid: #3f314e;
+	--avatar-orchid-ink: #d5bee8;
+	--avatar-magenta: #473045;
+	--avatar-magenta-ink: #e2bddb;
+	--avatar-rose: #4d2d34;
+	--avatar-rose-ink: #eab9c1;
+	--avatar-amber: #4c3d23;
+	--avatar-amber-ink: #e8d1a7;
+	--avatar-green: #253f35;
+	--avatar-green-ink: #add3c3;
+
 	--cyan-500: #35b7d6;
 	--cyan-400: #5cc6e0;
 	--cyan-600: #1e7f98;
@@ -267,6 +284,23 @@
 	--color-label-violet: var(--label-violet);
 	--color-label-orchid: var(--label-orchid);
 	--color-label-magenta: var(--label-magenta);
+
+	--color-avatar-cyan: var(--avatar-cyan);
+	--color-avatar-cyan-ink: var(--avatar-cyan-ink);
+	--color-avatar-blue: var(--avatar-blue);
+	--color-avatar-blue-ink: var(--avatar-blue-ink);
+	--color-avatar-violet: var(--avatar-violet);
+	--color-avatar-violet-ink: var(--avatar-violet-ink);
+	--color-avatar-orchid: var(--avatar-orchid);
+	--color-avatar-orchid-ink: var(--avatar-orchid-ink);
+	--color-avatar-magenta: var(--avatar-magenta);
+	--color-avatar-magenta-ink: var(--avatar-magenta-ink);
+	--color-avatar-rose: var(--avatar-rose);
+	--color-avatar-rose-ink: var(--avatar-rose-ink);
+	--color-avatar-amber: var(--avatar-amber);
+	--color-avatar-amber-ink: var(--avatar-amber-ink);
+	--color-avatar-green: var(--avatar-green);
+	--color-avatar-green-ink: var(--avatar-green-ink);
 
 	--color-success: var(--green-500);
 	--color-success-quiet: var(--green-quiet);

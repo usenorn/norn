@@ -7,11 +7,11 @@
 	import Settings from "@lucide/svelte/icons/settings";
 	import Terminal from "@lucide/svelte/icons/terminal";
 	import UserPlus from "@lucide/svelte/icons/user-plus";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
 	import AccountIdentity from "$lib/account/account-identity.svelte";
-	import { initialsOf, withSlot, type SignedInAccount } from "$lib/account/accounts";
+	import { withSlot, type SignedInAccount } from "$lib/account/accounts";
 	import { workspacePath } from "$lib/workspace/navigation";
 
 	type WorkspaceContext = { slug: string; name: string };
@@ -63,12 +63,12 @@
 			</span>
 			<ChevronsUpDown class="size-icon-row shrink-0 text-muted-foreground" aria-hidden="true" />
 		{:else}
-			<Avatar.Root size="sm">
-				{#if acting?.account.avatarUrl}
-					<Avatar.Image src={acting.account.avatarUrl} alt="" />
-				{/if}
-				<Avatar.Fallback>{initialsOf(acting?.account.displayName ?? "")}</Avatar.Fallback>
-			</Avatar.Root>
+			<PersonAvatar
+				accountId={acting?.account.id ?? ""}
+				name={acting?.account.displayName ?? ""}
+				avatarUrl={acting?.account.avatarUrl}
+				size="sm"
+			/>
 
 			{#if trigger === "person"}
 				<span class="min-w-0 flex-1 truncate text-sm text-ink-600">

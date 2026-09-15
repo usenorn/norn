@@ -15,6 +15,7 @@
 	import Zap from "@lucide/svelte/icons/zap";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
@@ -32,7 +33,7 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { lift } from "$lib/motion";
 	import { priorityLabel } from "$lib/issues/issues";
-	import { initialsOf } from "$lib/team/members";
+	import { initialsOf } from "$lib/account/accounts";
 	import { onDateAndTime } from "$lib/time";
 	import {
 		declineReasons,
@@ -484,9 +485,17 @@
 								</h2>
 
 								<div class="flex flex-wrap items-center gap-2">
-									<Avatar.Root size="xs">
-										<Avatar.Fallback>{initialsOf(reporterOf(item))}</Avatar.Fallback>
-									</Avatar.Root>
+									{#if item.createdByAccountId}
+										<PersonAvatar
+											accountId={item.createdByAccountId}
+											name={reporterOf(item)}
+											size="xs"
+										/>
+									{:else}
+										<Avatar.Root size="xs">
+											<Avatar.Fallback>{initialsOf(reporterOf(item))}</Avatar.Fallback>
+										</Avatar.Root>
+									{/if}
 									<span class="text-sm text-ink-600">{reporterOf(item)}</span>
 									<span class="font-mono text-xs text-muted-foreground">
 										{item.createdByAccountId ? "member" : "outside the workspace"}

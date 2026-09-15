@@ -15,7 +15,7 @@
 	import X from "@lucide/svelte/icons/x";
 	import List from "@lucide/svelte/icons/list";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import * as Empty from "$lib/components/ui/empty/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
@@ -56,7 +56,6 @@
 		type ProjectState,
 	} from "$lib/projects/projects";
 	import { categoryLabels } from "$lib/team/states";
-	import { initialsOf } from "$lib/team/members";
 	import { memberName, searchDebounceMs, type Membership } from "$lib/workspace/members";
 	import { onDate, onDateAndTime } from "$lib/time";
 	import { workspacePath } from "$lib/workspace/navigation";
@@ -580,9 +579,11 @@
 			<span class="flex items-center gap-2">
 				<span class="font-mono text-2xs tracking-caps uppercase text-muted-foreground">Lead</span>
 				{#if project.leadName}
-					<Avatar.Root size="sm">
-						<Avatar.Fallback>{initialsOf(project.leadName)}</Avatar.Fallback>
-					</Avatar.Root>
+					<PersonAvatar
+						accountId={project.leadAccountId ?? ""}
+						name={project.leadName}
+						size="sm"
+					/>
 					<span class="text-xs text-ink-600">{project.leadName}</span>
 				{:else}
 					<span class="text-xs text-muted-foreground">Nobody yet</span>
@@ -810,9 +811,11 @@
 								<li
 									class="flex flex-wrap items-center gap-2 border-b border-line-subtle px-3 py-2 last:border-b-0"
 								>
-									<Avatar.Root size="sm">
-										<Avatar.Fallback>{initialsOf(member.displayName)}</Avatar.Fallback>
-									</Avatar.Root>
+									<PersonAvatar
+										accountId={member.accountId}
+										name={member.displayName}
+										size="sm"
+									/>
 									<span class="min-w-0 flex-[1_1_120px] truncate text-md text-ink-900">
 										{member.displayName}
 									</span>
@@ -867,9 +870,11 @@
 												disabled={working}
 												onclick={() => addMember(candidate.accountId)}
 											>
-												<Avatar.Root size="sm">
-													<Avatar.Fallback>{initialsOf(memberName(candidate))}</Avatar.Fallback>
-												</Avatar.Root>
+												<PersonAvatar
+													accountId={candidate.accountId}
+													name={memberName(candidate)}
+													size="sm"
+												/>
 												<span class="min-w-0 flex-1 truncate text-left text-md text-ink-900">
 													{memberName(candidate)}
 												</span>

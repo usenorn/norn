@@ -112,7 +112,7 @@ export type ColumnSource = {
 export type GroupMark =
 	| { kind: "state"; state: WorkflowState }
 	| { kind: "priority"; priority: IssuePriority }
-	| { kind: "assignee"; name: string }
+	| { kind: "assignee"; accountId: string; name: string }
 	| { kind: "project" }
 	| { kind: "all" }
 	| { kind: "unknown" };
@@ -165,9 +165,13 @@ function slotsFor(grouping: Grouping, context: GroupingContext): ColumnSlot[] {
 				...context.members.map((member) => ({
 					key: member.accountId,
 					name: member.displayName ?? "Someone",
-					mark: { kind: "assignee", name: member.displayName ?? "" } as const,
+					mark: {
+						kind: "assignee",
+						accountId: member.accountId,
+						name: member.displayName ?? "",
+					} as const,
 				})),
-				{ key: "", name: "Unassigned", mark: { kind: "assignee", name: "" } },
+				{ key: "", name: "Unassigned", mark: { kind: "assignee", accountId: "", name: "" } },
 			];
 		case "project":
 			return [

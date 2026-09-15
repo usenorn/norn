@@ -1,5 +1,6 @@
 <script lang="ts">
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "./person-avatar.svelte";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
 	import Tag from "./tag.svelte";
@@ -35,15 +36,6 @@
 	const hidden = $derived(showing.includes("labels") ? task.labels.length - tags.length : 0);
 	const settled = $derived(
 		task.state.category === "complete" || task.state.category === "abandoned"
-	);
-
-	const initials = $derived(
-		(task.assignee ?? "")
-			.trim()
-			.split(/\s+/)
-			.slice(0, 2)
-			.map((part) => part[0])
-			.join("")
 	);
 </script>
 
@@ -90,9 +82,12 @@
 			</span>
 		{/if}
 		{#if task.assignee}
-			<Avatar.Root size="xs" title={task.assignee}>
-				<Avatar.Fallback>{initials}</Avatar.Fallback>
-			</Avatar.Root>
+			<PersonAvatar
+				accountId={task.assigneeAccountId ?? ""}
+				name={task.assignee}
+				size="xs"
+				title={task.assignee}
+			/>
 		{:else}
 			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
 				<Avatar.Fallback>+</Avatar.Fallback>

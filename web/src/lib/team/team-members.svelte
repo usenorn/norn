@@ -4,7 +4,7 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { api } from "$lib/api";
@@ -16,7 +16,6 @@
 		type MemberFailure,
 		type TeamRoster,
 	} from "$lib/team/members";
-	import { initialsOf } from "$lib/team/members";
 	import { memberName, searchDebounceMs, type Membership } from "$lib/workspace/members";
 
 	const candidateLimit = 8;
@@ -176,9 +175,7 @@
 				<li
 					class="flex flex-wrap items-center gap-2 border-b border-line-subtle px-3 py-2 last:border-b-0"
 				>
-					<Avatar.Root size="sm">
-						<Avatar.Fallback>{initialsOf(member.displayName)}</Avatar.Fallback>
-					</Avatar.Root>
+					<PersonAvatar accountId={member.accountId} name={member.displayName} size="sm" />
 					<span class="min-w-0 flex-[1_1_120px] truncate text-md text-ink-900">
 						{member.displayName}
 					</span>
@@ -235,9 +232,11 @@
 								disabled={working}
 								onclick={() => void addMember(candidate.accountId)}
 							>
-								<Avatar.Root size="sm">
-									<Avatar.Fallback>{initialsOf(memberName(candidate))}</Avatar.Fallback>
-								</Avatar.Root>
+								<PersonAvatar
+									accountId={candidate.accountId}
+									name={memberName(candidate)}
+									size="sm"
+								/>
 								<span class="min-w-0 flex-1 truncate text-left text-md text-ink-900">
 									{memberName(candidate)}
 								</span>
