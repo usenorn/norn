@@ -14,6 +14,7 @@
 	import { SvelteSet } from "svelte/reactivity";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -106,7 +107,6 @@
 	import type { IssuePriority } from "$lib/issues/issues";
 	import { brokenIn } from "$lib/views/applied";
 	import { referenceLabel, scopeOf, viewsPath } from "$lib/views/views";
-	import { initialsOf } from "$lib/team/members";
 	import type { WorkflowState } from "$lib/team/states";
 	import { assignees } from "$lib/workspace/members";
 	import { workspacePath } from "$lib/workspace/navigation";
@@ -956,9 +956,12 @@
 		<PriorityIcon priority={column.mark.priority} />
 	{:else if column.mark.kind === "assignee"}
 		{#if column.mark.name}
-			<Avatar.Root size="xs" title={column.mark.name}>
-				<Avatar.Fallback>{initialsOf(column.mark.name)}</Avatar.Fallback>
-			</Avatar.Root>
+			<PersonAvatar
+				accountId={column.mark.accountId}
+				name={column.mark.name}
+				size="xs"
+				title={column.mark.name}
+			/>
 		{:else}
 			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
 				<Avatar.Fallback>+</Avatar.Fallback>
@@ -1106,9 +1109,12 @@
 				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
 			>
 				{#if held}
-					<Avatar.Root size="xs" title={held}>
-						<Avatar.Fallback>{initialsOf(held)}</Avatar.Fallback>
-					</Avatar.Root>
+					<PersonAvatar
+						accountId={issue.assigneeAccountId ?? ""}
+						name={held}
+						size="xs"
+						title={held}
+					/>
 				{:else}
 					<Avatar.Root size="xs" variant="ghost" title="Unassigned">
 						<Avatar.Fallback>+</Avatar.Fallback>
@@ -1118,9 +1124,7 @@
 		{/snippet}
 		{#snippet mark(option)}
 			{#if option.value}
-				<Avatar.Root size="xs">
-					<Avatar.Fallback>{initialsOf(option.label)}</Avatar.Fallback>
-				</Avatar.Root>
+				<PersonAvatar accountId={option.value} name={option.label} size="xs" />
 			{:else}
 				<Avatar.Root size="xs" variant="ghost">
 					<Avatar.Fallback>+</Avatar.Fallback>

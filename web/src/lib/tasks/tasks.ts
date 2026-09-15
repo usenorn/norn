@@ -15,6 +15,7 @@ export function taskOf(issue: Issue, assignee: string | null): Task {
 		state: { name: issue.state.name, category: issue.state.category },
 		priority: issue.priority,
 		assignee,
+		assigneeAccountId: issue.assigneeAccountId ?? null,
 		date: issue.dueOn ? onCalendarDate(issue.dueOn) : null,
 		labels: issue.labels.map((label) => ({ name: label.name, color: label.color })),
 		project: issue.projectName ?? "",

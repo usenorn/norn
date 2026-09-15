@@ -13,6 +13,7 @@
 	import { api } from "$lib/api";
 	import { showToast } from "$lib/toast/toasts";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
@@ -24,7 +25,6 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import LabelDot from "$lib/labels/label-dot.svelte";
-	import { initialsOf } from "$lib/team/members";
 	import { onCalendarDate } from "$lib/time";
 	import { attachmentNode, formatBytes, type Attachment } from "$lib/attachments/attachments";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
@@ -1329,9 +1329,7 @@
 								class={chipClass}
 							>
 								{#if assignee}
-									<Avatar.Root size="xs">
-										<Avatar.Fallback>{initialsOf(assignee)}</Avatar.Fallback>
-									</Avatar.Root>
+									<PersonAvatar accountId={$formData.assigneeId} name={assignee} size="xs" />
 									{assignee}
 								{:else}
 									<Avatar.Root size="xs" variant="ghost">
@@ -1343,9 +1341,7 @@
 						{/snippet}
 						{#snippet mark(option)}
 							{#if option.value}
-								<Avatar.Root size="xs">
-									<Avatar.Fallback>{initialsOf(option.label)}</Avatar.Fallback>
-								</Avatar.Root>
+								<PersonAvatar accountId={option.value} name={option.label} size="xs" />
 							{:else}
 								<Avatar.Root size="xs" variant="ghost">
 									<Avatar.Fallback>+</Avatar.Fallback>

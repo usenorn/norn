@@ -28,7 +28,7 @@
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
 	import { memberName } from "$lib/workspace/members";
 	import { membersOf, rosterFor } from "$lib/team/members";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import {
 		burndownCeiling,
 		burndownIdeal,
@@ -1038,11 +1038,12 @@
 											decorative
 										/>
 										{#if names.get(risk.issue.assigneeAccountId ?? "")}
-											<Avatar.Root class="ml-auto size-4.5">
-												<Avatar.Fallback class="text-2xs">
-													{names.get(risk.issue.assigneeAccountId ?? "")?.slice(0, 1)}
-												</Avatar.Fallback>
-											</Avatar.Root>
+											<PersonAvatar
+												accountId={risk.issue.assigneeAccountId ?? ""}
+												name={names.get(risk.issue.assigneeAccountId ?? "") ?? ""}
+												size="xs"
+												class="ml-auto"
+											/>
 										{/if}
 									</span>
 									<span class="truncate text-sm text-ink-900">{risk.issue.title}</span>

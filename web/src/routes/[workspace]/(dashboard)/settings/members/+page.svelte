@@ -7,7 +7,7 @@
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
@@ -19,7 +19,6 @@
 	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { withSlot } from "$lib/account/accounts";
 	import { api } from "$lib/api";
-	import { initialsOf } from "$lib/team/members";
 	import {
 		authMethodLabel,
 		hasMore,
@@ -614,9 +613,11 @@
 									</div>
 								{:else}
 									<div class="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2">
-										<Avatar.Root size="sm">
-											<Avatar.Fallback>{initialsOf(memberName(member))}</Avatar.Fallback>
-										</Avatar.Root>
+										<PersonAvatar
+											accountId={member.accountId}
+											name={memberName(member)}
+											size="sm"
+										/>
 
 										<span class="min-w-0 flex-[1_1_120px] truncate text-md text-ink-900">
 											{memberName(member)}

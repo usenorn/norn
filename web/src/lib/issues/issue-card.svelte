@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
@@ -59,15 +60,6 @@
 		issue.state.category === "complete" || issue.state.category === "abandoned"
 	);
 	const late = $derived(!settled && overdue(due, now, timezone));
-
-	const initials = $derived(
-		assignee
-			.trim()
-			.split(/\s+/)
-			.slice(0, 2)
-			.map((part) => part[0])
-			.join("")
-	);
 </script>
 
 <div
@@ -148,9 +140,12 @@
 			{#if assigneeControl}
 				{@render assigneeControl(issue)}
 			{:else if assignee}
-				<Avatar.Root size="xs" title={assignee}>
-					<Avatar.Fallback>{initials}</Avatar.Fallback>
-				</Avatar.Root>
+				<PersonAvatar
+					accountId={issue.assigneeAccountId ?? ""}
+					name={assignee}
+					size="xs"
+					title={assignee}
+				/>
 			{:else}
 				<Avatar.Root size="xs" variant="ghost" title="Unassigned">
 					<Avatar.Fallback>+</Avatar.Fallback>

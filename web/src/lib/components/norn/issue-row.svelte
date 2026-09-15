@@ -3,6 +3,7 @@
 	import Check from "@lucide/svelte/icons/check";
 	import Link2 from "@lucide/svelte/icons/link-2";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "./person-avatar.svelte";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
 	import ProgressBar from "./progress-bar.svelte";
@@ -65,15 +66,6 @@
 	const late = $derived(!settled && overdue(due, now, timezone));
 	const children = $derived(issue.childProgress);
 	const hasChildren = $derived(children ? totalIssues(children) > 0 : false);
-
-	const initials = $derived(
-		assignee
-			.trim()
-			.split(/\s+/)
-			.slice(0, 2)
-			.map((part) => part[0])
-			.join("")
-	);
 
 	const line = $derived(
 		[issue.reference, due ? dueLabel(due, now, timezone) : "", assignee.split(" ")[0] ?? ""]
@@ -208,9 +200,12 @@
 		{#if assigneeControl}
 			{@render assigneeControl(issue)}
 		{:else if assignee}
-			<Avatar.Root size="xs" title={assignee}>
-				<Avatar.Fallback>{initials}</Avatar.Fallback>
-			</Avatar.Root>
+			<PersonAvatar
+				accountId={issue.assigneeAccountId ?? ""}
+				name={assignee}
+				size="xs"
+				title={assignee}
+			/>
 		{:else}
 			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
 				<Avatar.Fallback>+</Avatar.Fallback>

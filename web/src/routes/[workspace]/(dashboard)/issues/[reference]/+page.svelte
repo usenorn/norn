@@ -29,7 +29,7 @@
 	import Users from "@lucide/svelte/icons/users";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as Popover from "$lib/components/ui/popover/index.js";
 	import { Calendar } from "$lib/components/ui/calendar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
@@ -55,7 +55,6 @@
 	} from "$lib/agents/delegation";
 	import { totalIssues } from "$lib/issues/board";
 	import { assignees } from "$lib/workspace/members";
-	import { initialsOf } from "$lib/team/members";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
 	import { useShortcuts } from "$lib/shortcuts/registry.svelte";
@@ -1258,10 +1257,6 @@
 		issue?.state.category === "complete" || issue?.state.category === "abandoned"
 	);
 
-	function initials(name: string): string {
-		return initialsOf(name);
-	}
-
 	function nameOf(accountId: string | undefined): string {
 		if (!accountId) return "";
 
@@ -2096,9 +2091,11 @@
 						{/if}
 
 						<div class="flex flex-wrap items-center gap-2">
-							<Avatar.Root size="xs">
-								<Avatar.Fallback>{initials(reporter)}</Avatar.Fallback>
-							</Avatar.Root>
+							<PersonAvatar
+								accountId={issue?.createdByAccountId ?? ""}
+								name={reporter}
+								size="xs"
+							/>
 							<span class="text-sm text-muted-foreground">{reporter} opened this</span>
 							<span class="font-mono text-xs text-muted-foreground">
 								<time datetime={issue.createdAt}>
@@ -2712,9 +2709,11 @@
 					>
 						{#snippet glyph()}
 							{#if assigneeName}
-								<Avatar.Root size="xs">
-									<Avatar.Fallback>{initials(assigneeName)}</Avatar.Fallback>
-								</Avatar.Root>
+								<PersonAvatar
+									accountId={issue?.assigneeAccountId ?? ""}
+									name={assigneeName}
+									size="xs"
+								/>
 							{:else}
 								<UserRound class="size-icon-row text-muted-foreground" aria-hidden="true" />
 							{/if}
@@ -2980,9 +2979,13 @@
 						{#if watchers.length > 0}
 							<span class="flex min-w-0 flex-1 -space-x-1.5">
 								{#each watchers.slice(0, 5) as watcher (watcher.accountId)}
-									<Avatar.Root size="xs" class="ring-1 ring-card" title={watcher.name}>
-										<Avatar.Fallback>{initials(watcher.name)}</Avatar.Fallback>
-									</Avatar.Root>
+									<PersonAvatar
+										accountId={watcher.accountId}
+										name={watcher.name}
+										size="xs"
+										title={watcher.name}
+										class="ring-1 ring-card"
+									/>
 								{/each}
 								{#if watchers.length > 5}
 									<span

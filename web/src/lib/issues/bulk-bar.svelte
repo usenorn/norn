@@ -8,12 +8,12 @@
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import X from "@lucide/svelte/icons/x";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { initialsOf } from "$lib/team/members";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { priorities, type IssuePriority } from "./issues";
 	import type { Cycle } from "$lib/cycles/cycles";
@@ -127,9 +127,7 @@
 		{/snippet}
 		{#snippet mark(option)}
 			{#if option.value}
-				<Avatar.Root size="xs">
-					<Avatar.Fallback>{initialsOf(option.label)}</Avatar.Fallback>
-				</Avatar.Root>
+				<PersonAvatar accountId={option.value} name={option.label} size="xs" />
 			{:else}
 				<Avatar.Root size="xs" variant="ghost">
 					<Avatar.Fallback>+</Avatar.Fallback>

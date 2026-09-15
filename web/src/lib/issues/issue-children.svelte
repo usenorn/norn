@@ -1,8 +1,7 @@
 <script lang="ts">
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
-	import { initialsOf } from "$lib/team/members";
 	import { onDayMonth } from "$lib/time";
 	import type { WorkflowState } from "$lib/team/states";
 	import type { Issue } from "$lib/issues/issues";
@@ -90,9 +89,12 @@
 						</span>
 					{/if}
 					{#if nameOf(child.assigneeAccountId)}
-						<Avatar.Root size="xs" class="relative z-1">
-							<Avatar.Fallback>{initialsOf(nameOf(child.assigneeAccountId))}</Avatar.Fallback>
-						</Avatar.Root>
+						<PersonAvatar
+							accountId={child.assigneeAccountId ?? ""}
+							name={nameOf(child.assigneeAccountId)}
+							size="xs"
+							class="relative z-1"
+						/>
 					{:else}
 						<span
 							class="relative z-1 size-icon-row rounded-full border border-dashed border-line-strong"
