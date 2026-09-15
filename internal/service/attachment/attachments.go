@@ -252,13 +252,15 @@ func (s *attachmentsService) Adopt(
 	var created entity.Attachment
 
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		held, charged, err := s.attachments.TakeImportFile(ctx, workspaceID, input.ObjectKey)
+		file, charged, err := s.attachments.TakeImportFile(ctx, workspaceID, input.ObjectKey)
 		if err != nil {
 			return err
 		}
 
 		if charged {
-			adopted.SizeBytes = held
+			adopted.SizeBytes = file.SizeBytes
+			adopted.SettleAfter = file.SettleAfter
+			adopted.ChargedUntil = file.ChargedUntil
 		} else if _, err := s.attachments.Admit(
 			ctx, workspaceID, input.SizeBytes, s.cfg.MaxWorkspaceBytes,
 		); err != nil {
@@ -393,16 +395,16 @@ func (s *attachmentsService) Remove(
 		return err
 	}
 
-	attachment, err := s.attachments.GetByID(ctx, workspaceID, attachmentID)
-	if err != nil {
-		return err
-	}
-
-	if attachment.IssueID != issueID {
-		return entity.ErrAttachmentNotFound
-	}
-
 	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		attachment, err := s.attachments.LockByID(ctx, workspaceID, attachmentID)
+		if err != nil {
+			return err
+		}
+
+		if attachment.IssueID != issueID {
+			return entity.ErrAttachmentNotFound
+		}
+
 		if err := s.attachments.Release(ctx, workspaceID, attachment.SizeBytes); err != nil {
 			return err
 		}
@@ -530,8 +532,27 @@ func (s *attachmentsService) Reclaim(ctx context.Context) error {
 		}
 	}
 
+	adopted, err := s.attachments.ListUnsettledAttachments(ctx, now, s.cfg.ReclaimBatch)
+	if err != nil {
+		return err
+	}
+
+	for _, attachment := range adopted {
+		if err := s.settleAttachment(ctx, attachment.WorkspaceID, attachment.ID); err != nil {
+			failures++
+
+			logging.From(ctx).WarnContext(
+				ctx, "measuring an adopted file failed",
+				"attachment_id", attachment.ID.String(),
+				"error", err.Error(),
+			)
+		}
+	}
+
 	if failures > 0 {
-		return fmt.Errorf("reclaim or measure %d of %d stored files", failures, len(reclaimable)+len(unsettled))
+		return fmt.Errorf(
+			"reclaim or measure %d of %d stored files", failures, len(reclaimable)+len(unsettled)+len(adopted),
+		)
 	}
 
 	return nil
@@ -627,30 +648,78 @@ func (s *attachmentsService) settleImportFile(
 			return err
 		}
 
-		now := time.Now().UTC()
-		stillWriting := file.ChargedUntil != nil && now.Before(*file.ChargedUntil)
-
-		object, err := s.blobs.Stat(ctx, objectKey)
-
-		switch {
-		case err == nil && stillWriting:
-			return s.resizeImportFile(ctx, file, max(file.SizeBytes, object.Size), file.ChargedUntil)
-		case err == nil:
-			return s.resizeImportFile(ctx, file, object.Size, nil)
-		case errors.Is(err, entity.ErrBlobNotFound) && stillWriting:
-			return s.resizeImportFile(ctx, file, file.SizeBytes, file.ChargedUntil)
-		case errors.Is(err, entity.ErrBlobNotFound):
+		sizeBytes, settleAfter, gone := s.measure(ctx, objectKey, file.SizeBytes, floorBytes, file.ChargedUntil)
+		if gone {
 			return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
 		}
 
-		logging.From(ctx).WarnContext(
-			ctx, "an import file could not be measured, so it stays charged at its larger size until the sweep measures it",
-			"object_key", objectKey,
-			"error", err.Error(),
+		return s.resizeImportFile(ctx, file, sizeBytes, settleAfter)
+	})
+}
+
+func (s *attachmentsService) settleAttachment(ctx context.Context, workspaceID, attachmentID uuid.UUID) error {
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		attachment, err := s.attachments.LockByID(ctx, workspaceID, attachmentID)
+		if errors.Is(err, entity.ErrAttachmentNotFound) {
+			return nil
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if !attachment.Stored() || attachment.SettleAfter == nil {
+			return nil
+		}
+
+		sizeBytes, settleAfter, _ := s.measure(
+			ctx, attachment.ObjectKey, attachment.SizeBytes, 0, attachment.ChargedUntil,
 		)
 
-		return s.resizeImportFile(ctx, file, max(file.SizeBytes, floorBytes), &now)
+		if drift := sizeBytes - attachment.SizeBytes; drift != 0 {
+			if err := s.attachments.Correct(ctx, workspaceID, drift); err != nil {
+				return err
+			}
+		}
+
+		chargedUntil := attachment.ChargedUntil
+		if settleAfter == nil {
+			chargedUntil = nil
+		}
+
+		return s.attachments.MeasureAttachment(ctx, attachmentID, sizeBytes, settleAfter, chargedUntil)
 	})
+}
+
+func (s *attachmentsService) measure(
+	ctx context.Context,
+	objectKey string,
+	reservedBytes, floorBytes int64,
+	chargedUntil *time.Time,
+) (int64, *time.Time, bool) {
+	now := time.Now().UTC()
+	stillWriting := chargedUntil != nil && now.Before(*chargedUntil)
+
+	object, err := s.blobs.Stat(ctx, objectKey)
+
+	switch {
+	case err == nil && stillWriting:
+		return max(reservedBytes, object.Size), chargedUntil, false
+	case err == nil:
+		return object.Size, nil, false
+	case errors.Is(err, entity.ErrBlobNotFound) && stillWriting:
+		return reservedBytes, chargedUntil, false
+	case errors.Is(err, entity.ErrBlobNotFound):
+		return 0, nil, true
+	}
+
+	logging.From(ctx).WarnContext(
+		ctx, "a stored file could not be measured, so it stays charged at its larger size until the sweep measures it",
+		"object_key", objectKey,
+		"error", err.Error(),
+	)
+
+	return max(reservedBytes, floorBytes), &now, false
 }
 
 func (s *attachmentsService) resizeImportFile(

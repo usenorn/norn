@@ -36,7 +36,9 @@ const attachmentColumns = `
        a.status,
        a.reclaim_after,
        a.created_at,
-       a.updated_at`
+       a.updated_at,
+       a.settle_after,
+       a.charged_until`
 
 const attachmentJoins = `
 FROM workspace_issue_attachments a
@@ -47,9 +49,9 @@ WITH created AS (
     INSERT INTO workspace_issue_attachments
         (id, workspace_id, issue_id, comment_id, uploaded_by_account_id,
          object_key, file_name, content_type, size_bytes, status, reclaim_after,
-         created_at, updated_at)
+         created_at, updated_at, settle_after, charged_until)
     VALUES ($1, $2, nullif($3, '')::uuid, nullif($4, '')::uuid, nullif($5, '')::uuid,
-            $6, $7, $8, $9, $10, $11, $12, $13)
+            $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
     RETURNING *
 )
 SELECT` + attachmentColumns + `
@@ -160,7 +162,19 @@ LIMIT $2`
 const takeImportFileQuery = `
 DELETE FROM workspace_import_files
 WHERE object_key = $1 AND workspace_id = $2::uuid
-RETURNING size_bytes`
+RETURNING size_bytes, settle_after, charged_until`
+
+const unsettledAttachmentsQuery = `
+SELECT id, workspace_id
+FROM workspace_issue_attachments
+WHERE status = 'stored' AND settle_after IS NOT NULL AND settle_after <= $1
+ORDER BY settle_after, id
+LIMIT $2`
+
+const measureAttachmentQuery = `
+UPDATE workspace_issue_attachments
+SET size_bytes = $2, settle_after = $3, charged_until = $4, updated_at = now()
+WHERE id = $1 AND status = 'stored'`
 
 const refundImportFileQuery = `
 WITH refunded AS (
@@ -201,13 +215,15 @@ func scanAttachment(row scanner) (entity.Attachment, error) {
 		issue, comment   string
 		uploader, status string
 		reclaimAfter     sql.NullTime
+		settleAfter      sql.NullTime
+		chargedUntil     sql.NullTime
 	)
 
 	if err := row.Scan(
 		&id, &workspace, &issue, &comment, &uploader, &attachment.UploaderName,
 		&attachment.ObjectKey, &attachment.FileName, &attachment.ContentType,
 		&attachment.SizeBytes, &status, &reclaimAfter,
-		&attachment.CreatedAt, &attachment.UpdatedAt,
+		&attachment.CreatedAt, &attachment.UpdatedAt, &settleAfter, &chargedUntil,
 	); err != nil {
 		return entity.Attachment{}, err
 	}
@@ -216,6 +232,14 @@ func scanAttachment(row scanner) (entity.Attachment, error) {
 
 	if reclaimAfter.Valid {
 		attachment.ReclaimAfter = &reclaimAfter.Time
+	}
+
+	if settleAfter.Valid {
+		attachment.SettleAfter = &settleAfter.Time
+	}
+
+	if chargedUntil.Valid {
+		attachment.ChargedUntil = &chargedUntil.Time
 	}
 
 	parsed, err := uuid.Parse(id)
@@ -276,6 +300,8 @@ func (r *attachmentRepository) Create(
 		reclaimAfter,
 		createdAt,
 		updatedAt,
+		optionalTime(attachment.SettleAfter),
+		optionalTime(attachment.ChargedUntil),
 	))
 	if err != nil {
 		return entity.Attachment{}, fmt.Errorf("create attachment: %w", err)
@@ -613,19 +639,84 @@ func (r *attachmentRepository) TakeImportFile(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	objectKey string,
-) (int64, bool, error) {
-	var held int64
+) (entity.ImportFileCharge, bool, error) {
+	var (
+		file                      = entity.ImportFileCharge{WorkspaceID: workspaceID, ObjectKey: objectKey}
+		settleAfter, chargedUntil sql.NullTime
+	)
 
-	err := r.db.Querier(ctx).QueryRowContext(ctx, takeImportFileQuery, objectKey, workspaceID.String()).Scan(&held)
+	err := r.db.Querier(ctx).QueryRowContext(ctx, takeImportFileQuery, objectKey, workspaceID.String()).
+		Scan(&file.SizeBytes, &settleAfter, &chargedUntil)
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, false, nil
+		return entity.ImportFileCharge{}, false, nil
 	}
 
 	if err != nil {
-		return 0, false, fmt.Errorf("take import file: %w", err)
+		return entity.ImportFileCharge{}, false, fmt.Errorf("take import file: %w", err)
 	}
 
-	return held, true, nil
+	if settleAfter.Valid {
+		file.SettleAfter = &settleAfter.Time
+	}
+
+	if chargedUntil.Valid {
+		file.ChargedUntil = &chargedUntil.Time
+	}
+
+	return file, true, nil
+}
+
+func (r *attachmentRepository) ListUnsettledAttachments(
+	ctx context.Context,
+	at time.Time,
+	batch int,
+) ([]entity.Attachment, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, unsettledAttachmentsQuery, at, batch)
+	if err != nil {
+		return nil, fmt.Errorf("read unsettled attachments: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	attachments := make([]entity.Attachment, 0)
+
+	for rows.Next() {
+		var id, workspace string
+
+		if err := rows.Scan(&id, &workspace); err != nil {
+			return nil, fmt.Errorf("scan unsettled attachment: %w", err)
+		}
+
+		var attachment entity.Attachment
+
+		if attachment.ID, err = uuid.Parse(id); err != nil {
+			return nil, fmt.Errorf("parse unsettled attachment id: %w", err)
+		}
+
+		if attachment.WorkspaceID, err = uuid.Parse(workspace); err != nil {
+			return nil, fmt.Errorf("parse unsettled attachment workspace id: %w", err)
+		}
+
+		attachments = append(attachments, attachment)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate unsettled attachments: %w", err)
+	}
+
+	return attachments, nil
+}
+
+func (r *attachmentRepository) MeasureAttachment(
+	ctx context.Context,
+	attachmentID uuid.UUID,
+	sizeBytes int64,
+	settleAfter, chargedUntil *time.Time,
+) error {
+	return r.touch(
+		ctx, "measure attachment", measureAttachmentQuery,
+		attachmentID.String(), sizeBytes, optionalTime(settleAfter), optionalTime(chargedUntil),
+	)
 }
 
 func (r *attachmentRepository) RefundImportFile(

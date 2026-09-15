@@ -22,6 +22,14 @@ CREATE INDEX workspace_import_files_settle_idx
     ON workspace_import_files (settle_after, object_key)
     WHERE settle_after IS NOT NULL;
 
+ALTER TABLE workspace_issue_attachments
+    ADD COLUMN settle_after timestamptz,
+    ADD COLUMN charged_until timestamptz;
+
+CREATE INDEX workspace_issue_attachments_settle_idx
+    ON workspace_issue_attachments (settle_after, id)
+    WHERE settle_after IS NOT NULL AND status = 'stored';
+
 LOCK TABLE workspace_storage_ledger IN EXCLUSIVE MODE;
 
 UPDATE workspace_issue_attachments
@@ -45,6 +53,12 @@ WHERE l.stored_bytes <> 0
   );
 
 -- +goose Down
+DROP INDEX workspace_issue_attachments_settle_idx;
+
+ALTER TABLE workspace_issue_attachments
+    DROP COLUMN settle_after,
+    DROP COLUMN charged_until;
+
 DROP TABLE workspace_import_files;
 
 ALTER TABLE workspace_storage_ledger

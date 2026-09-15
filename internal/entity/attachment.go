@@ -108,6 +108,8 @@ type Attachment struct {
 	SizeBytes    int64
 	Status       AttachmentStatus
 	ReclaimAfter *time.Time
+	SettleAfter  *time.Time
+	ChargedUntil *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	Origin       *ImportOrigin

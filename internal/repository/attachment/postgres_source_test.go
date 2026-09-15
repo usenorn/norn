@@ -25,6 +25,8 @@ var statements = map[string]string{
 	"recordImportFileQuery":     recordImportFileQuery,
 	"unsettledImportFilesQuery": unsettledImportFilesQuery,
 	"takeImportFileQuery":       takeImportFileQuery,
+	"unsettledAttachmentsQuery": unsettledAttachmentsQuery,
+	"measureAttachmentQuery":    measureAttachmentQuery,
 	"refundImportFileQuery":     refundImportFileQuery,
 }
 
@@ -164,6 +166,19 @@ func TestTheSweepOnlyMeasuresImportFilesWhoseWritersHaveHadTheirChance(t *testin
 			"the sweep picks import files without waiting for their settle deadline. A file still " +
 				"being written would be measured as missing and refunded mid-upload.",
 		)
+	}
+}
+
+func TestAMeasurementNeverResizesAFileThatWasRemoved(t *testing.T) {
+	for _, name := range []string{"unsettledAttachmentsQuery", "measureAttachmentQuery"} {
+		if !strings.Contains(statements[name], "status = 'stored'") {
+			t.Errorf(
+				"%s reaches attachments that are not stored. A removed file already gave its bytes "+
+					"back and carries a size of zero; measuring it would put its object back on the "+
+					"ledger just before the sweep deletes it.",
+				name,
+			)
+		}
 	}
 }
 

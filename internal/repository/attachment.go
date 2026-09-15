@@ -29,6 +29,8 @@ type Attachment interface {
 	ClaimImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.ImportFileCharge, error)
 	RecordImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64, settleAfter, chargedUntil *time.Time) error
 	ListUnsettledImportFiles(ctx context.Context, at time.Time, batch int) ([]entity.ImportFileCharge, error)
-	TakeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (int64, bool, error)
+	TakeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.ImportFileCharge, bool, error)
+	ListUnsettledAttachments(ctx context.Context, at time.Time, batch int) ([]entity.Attachment, error)
+	MeasureAttachment(ctx context.Context, attachmentID uuid.UUID, sizeBytes int64, settleAfter, chargedUntil *time.Time) error
 	RefundImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) error
 }

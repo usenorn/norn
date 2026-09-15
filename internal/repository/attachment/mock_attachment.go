@@ -190,6 +190,21 @@ func (mr *MockAttachmentMockRecorder) ListReclaimable(ctx, at, batch any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListReclaimable", reflect.TypeOf((*MockAttachment)(nil).ListReclaimable), ctx, at, batch)
 }
 
+// ListUnsettledAttachments mocks base method.
+func (m *MockAttachment) ListUnsettledAttachments(ctx context.Context, at time.Time, batch int) ([]entity.Attachment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUnsettledAttachments", ctx, at, batch)
+	ret0, _ := ret[0].([]entity.Attachment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUnsettledAttachments indicates an expected call of ListUnsettledAttachments.
+func (mr *MockAttachmentMockRecorder) ListUnsettledAttachments(ctx, at, batch any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUnsettledAttachments", reflect.TypeOf((*MockAttachment)(nil).ListUnsettledAttachments), ctx, at, batch)
+}
+
 // ListUnsettledImportFiles mocks base method.
 func (m *MockAttachment) ListUnsettledImportFiles(ctx context.Context, at time.Time, batch int) ([]entity.ImportFileCharge, error) {
 	m.ctrl.T.Helper()
@@ -232,6 +247,20 @@ func (m *MockAttachment) MarkOrphans(ctx context.Context, at time.Time) error {
 func (mr *MockAttachmentMockRecorder) MarkOrphans(ctx, at any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkOrphans", reflect.TypeOf((*MockAttachment)(nil).MarkOrphans), ctx, at)
+}
+
+// MeasureAttachment mocks base method.
+func (m *MockAttachment) MeasureAttachment(ctx context.Context, attachmentID uuid.UUID, sizeBytes int64, settleAfter, chargedUntil *time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MeasureAttachment", ctx, attachmentID, sizeBytes, settleAfter, chargedUntil)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MeasureAttachment indicates an expected call of MeasureAttachment.
+func (mr *MockAttachmentMockRecorder) MeasureAttachment(ctx, attachmentID, sizeBytes, settleAfter, chargedUntil any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MeasureAttachment", reflect.TypeOf((*MockAttachment)(nil).MeasureAttachment), ctx, attachmentID, sizeBytes, settleAfter, chargedUntil)
 }
 
 // Reclaim mocks base method.
@@ -305,10 +334,10 @@ func (mr *MockAttachmentMockRecorder) Settle(ctx, attachmentID, sizeBytes, conte
 }
 
 // TakeImportFile mocks base method.
-func (m *MockAttachment) TakeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (int64, bool, error) {
+func (m *MockAttachment) TakeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) (entity.ImportFileCharge, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TakeImportFile", ctx, workspaceID, objectKey)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(entity.ImportFileCharge)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
