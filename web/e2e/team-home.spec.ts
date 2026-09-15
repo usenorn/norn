@@ -51,6 +51,6 @@ test.describe("somebody who is on the team but does not run the workspace", () =
 
 		await expect(page.getByText(fixture().email)).toBeVisible();
 		await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(0);
-		await expect(page.getByLabel("Add someone")).toHaveCount(0);
+		await expect(page.getByRole("button", { name: "Add someone" })).toHaveCount(0);
 	});
 });

@@ -2,8 +2,10 @@
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import UserPlus from "@lucide/svelte/icons/user-plus";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Dialog from "$lib/components/ui/dialog/index.js";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
@@ -45,6 +47,7 @@
 	let searching = $state(false);
 	let adding = $state("");
 	let removing = $state("");
+	let choosing = $state(false);
 	let candidateDebounce: ReturnType<typeof setTimeout> | undefined;
 
 	const standing = $derived(changed ?? roster);
@@ -77,6 +80,14 @@
 		} finally {
 			searching = false;
 		}
+	}
+
+	function openChoosing() {
+		clearTimeout(candidateDebounce);
+		candidateQuery = "";
+		candidates = [];
+		refused = null;
+		choosing = true;
 	}
 
 	function searchCandidates(value: string) {
@@ -153,7 +164,7 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	{#if shown}
+	{#if shown && !choosing}
 		<Alert.Root variant="destructive">
 			<CircleX aria-hidden="true" />
 			<Alert.Title>That did not work</Alert.Title>
@@ -197,15 +208,43 @@
 	{/if}
 
 	{#if !archived && !readOnly}
+		<div>
+			<Button variant="secondary" disabled={busy || removing !== ""} onclick={openChoosing}>
+				<UserPlus aria-hidden="true" />
+				Add someone
+			</Button>
+		</div>
+	{/if}
+</div>
+
+<Dialog.Root bind:open={choosing}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Add someone to {team.name}</Dialog.Title>
+			<Dialog.Description>
+				Belonging to {workspace.name} does not put someone on this team. Find who should be on it.
+			</Dialog.Description>
+		</Dialog.Header>
+
+		{#if refused}
+			<Alert.Root variant="destructive">
+				<CircleX aria-hidden="true" />
+				<Alert.Title>That did not work</Alert.Title>
+				<Alert.Description>{memberFailureMessage(refused)}</Alert.Description>
+			</Alert.Root>
+		{/if}
+
 		<div class="flex flex-col gap-2" role="search">
-			<label for="team-member-search" class="text-sm font-medium text-ink-900">Add someone</label>
+			<label for="team-member-search" class="text-sm font-medium text-ink-900">
+				Search {workspace.name}
+			</label>
 			<Input
 				id="team-member-search"
 				type="search"
 				enterkeyhint="search"
 				autocapitalize="none"
 				spellcheck="false"
-				placeholder="Search {workspace.name} by name or email"
+				placeholder="Name or email"
 				disabled={working}
 				value={candidateQuery}
 				oninput={(event) => searchCandidates(event.currentTarget.value)}
@@ -249,5 +288,9 @@
 				</ul>
 			{/if}
 		</div>
-	{/if}
-</div>
+
+		<Dialog.Footer>
+			<Button variant="secondary" onclick={() => (choosing = false)}>Done</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>

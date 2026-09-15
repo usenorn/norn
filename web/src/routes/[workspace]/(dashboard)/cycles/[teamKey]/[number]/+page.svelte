@@ -593,7 +593,7 @@
 								<DropdownMenu.Separator />
 								<DropdownMenu.Item>
 									{#snippet child({ props })}
-										<a {...props} href={teamSettingsPath(slug, cycle.teamKey)}>Cycle settings</a>
+										<a {...props} href={teamSettingsPath(slug, cycle.teamKey, "cycles")}>Cycle settings</a>
 									{/snippet}
 								</DropdownMenu.Item>
 							</DropdownMenu.Content>

@@ -27,8 +27,29 @@ export function teamPath(workspace: string, teamKey: string): string {
 	return `/${workspace}/teams/${teamKey.toUpperCase()}`;
 }
 
-export function teamSettingsPath(workspace: string, teamKey: string): string {
-	return `/${workspace}/settings/teams/${teamKey.toUpperCase()}`;
+export const teamSettingsSections = [
+	"general",
+	"members",
+	"notifications",
+	"states",
+	"templates",
+	"cycles",
+	"triage",
+	"email",
+	"source-control",
+	"agents",
+] as const;
+
+export type TeamSettingsSection = (typeof teamSettingsSections)[number];
+
+export function teamSettingsPath(
+	workspace: string,
+	teamKey: string,
+	section?: TeamSettingsSection
+): string {
+	const settings = `/${workspace}/settings/teams/${teamKey.toUpperCase()}`;
+
+	return section ? `${settings}/${section}` : settings;
 }
 
 export const estimationLabels: Record<TeamEstimation, string> = {
