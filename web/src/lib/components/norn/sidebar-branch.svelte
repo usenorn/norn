@@ -34,14 +34,22 @@
 	} = $props();
 </script>
 
-<div class={cn("relative flex items-center", className)}>
+<div
+	data-slot="sidebar-row"
+	data-active={active}
+	class={cn(
+		"relative isolate flex h-6.75 items-center gap-0.5 rounded-xs pr-1 motion-control hover:bg-accent data-[active=true]:rule-inset data-[active=true]:bg-accent",
+		className
+	)}
+>
+	<SidebarItem {href} {label} {icon} {glyph} {glyphEngaged} {active} stretched class="min-w-0" />
 	<button
 		type="button"
 		onclick={ontoggle}
 		aria-expanded={expanded}
 		aria-controls={id}
 		aria-label="{expanded ? 'Collapse' : 'Expand'} {label}"
-		class="absolute top-1/2 left-1.5 flex size-5 -translate-y-1/2 items-center justify-center rounded-xs text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+		class="relative z-1 flex size-5 shrink-0 items-center justify-center rounded-xs text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
 	>
 		<MorphIcon
 			icon={expanded ? ChevronDown : ChevronRight}
@@ -51,17 +59,8 @@
 			aria-hidden="true"
 		/>
 	</button>
-	<SidebarItem
-		{href}
-		{label}
-		{icon}
-		{glyph}
-		{glyphEngaged}
-		{active}
-		class={cn("min-w-0 flex-1 pl-7", action && "pr-8")}
-	/>
 	{#if action}
-		<span class="absolute top-1/2 right-1 -translate-y-1/2">
+		<span class="relative z-1 ml-auto shrink-0">
 			{@render action()}
 		</span>
 	{/if}

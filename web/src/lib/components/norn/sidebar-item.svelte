@@ -13,6 +13,7 @@
 		count,
 		active = false,
 		indent = false,
+		stretched = false,
 		size = "row",
 		onclick,
 		class: className,
@@ -27,6 +28,7 @@
 		count?: number;
 		active?: boolean;
 		indent?: boolean;
+		stretched?: boolean;
 		size?: "row" | "touch";
 		onclick?: (event: MouseEvent) => void;
 		class?: string;
@@ -38,15 +40,19 @@
 
 <a
 	{href}
+	data-slot={stretched ? undefined : "sidebar-row"}
 	data-active={active}
 	aria-current={active ? "page" : undefined}
 	onpointerenter={() => (hovered = true)}
 	onpointerleave={() => (hovered = false)}
 	{onclick}
 	class={cn(
-		"flex w-full items-center gap-2 rounded-xs px-2 text-md font-medium tracking-snug text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[active=true]:rule-inset data-[active=true]:bg-accent data-[active=true]:text-ink-900",
+		"flex items-center gap-2 rounded-xs px-2 text-md font-medium tracking-snug text-ink-600 motion-control hover:text-ink-900 data-[active=true]:text-ink-900",
+		stretched
+			? "after:absolute after:inset-0 after:rounded-xs after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-[-2px] focus-visible:after:outline-ring"
+			: "w-full hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[active=true]:rule-inset data-[active=true]:bg-accent",
 		size === "touch" ? "h-11 gap-3 rounded-sm" : "h-6.75",
-		indent && (size === "touch" ? "pl-14" : "pl-12"),
+		indent && (size === "touch" ? "pl-8" : "pl-7"),
 		className
 	)}
 >
