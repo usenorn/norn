@@ -64,6 +64,10 @@ WHERE a.id = $1 AND a.workspace_id = $2`
 const lockAttachmentQuery = attachmentByIDQuery + `
 FOR UPDATE OF a`
 
+const lockStoredAttachmentByKeyQuery = `SELECT` + attachmentColumns + attachmentJoins + `
+WHERE a.object_key = $1 AND a.workspace_id = $2 AND a.status = 'stored'
+FOR UPDATE OF a`
+
 const attachmentsByIssueQuery = `SELECT` + attachmentColumns + attachmentJoins + `
 WHERE a.issue_id = $1 AND a.status = 'stored'
 ORDER BY a.created_at, a.id`
@@ -339,6 +343,23 @@ func (r *attachmentRepository) LockByID(
 	workspaceID, attachmentID uuid.UUID,
 ) (entity.Attachment, error) {
 	return r.find(ctx, lockAttachmentQuery, attachmentID.String(), workspaceID.String())
+}
+
+func (r *attachmentRepository) LockStoredByObjectKey(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+) (entity.Attachment, bool, error) {
+	attachment, err := r.find(ctx, lockStoredAttachmentByKeyQuery, objectKey, workspaceID.String())
+	if errors.Is(err, entity.ErrAttachmentNotFound) {
+		return entity.Attachment{}, false, nil
+	}
+
+	if err != nil {
+		return entity.Attachment{}, false, err
+	}
+
+	return attachment, true, nil
 }
 
 func (r *attachmentRepository) query(

@@ -7,27 +7,28 @@ import (
 )
 
 var statements = map[string]string{
-	"createAttachmentQuery":     createAttachmentQuery,
-	"attachmentByIDQuery":       attachmentByIDQuery,
-	"attachmentsByIssueQuery":   attachmentsByIssueQuery,
-	"settleAttachmentQuery":     settleAttachmentQuery,
-	"discardAttachmentQuery":    discardAttachmentQuery,
-	"claimForCommentQuery":      claimForCommentQuery,
-	"markOrphansQuery":          markOrphansQuery,
-	"reclaimableQuery":          reclaimableQuery,
-	"reclaimAttachmentQuery":    reclaimAttachmentQuery,
-	"admitStorageQuery":         admitStorageQuery,
-	"releaseStorageQuery":       releaseStorageQuery,
-	"correctStorageQuery":       correctStorageQuery,
-	"ledgerQuery":               ledgerQuery,
-	"claimImportFileQuery":      claimImportFileQuery,
-	"lockImportFileQuery":       lockImportFileQuery,
-	"recordImportFileQuery":     recordImportFileQuery,
-	"unsettledImportFilesQuery": unsettledImportFilesQuery,
-	"takeImportFileQuery":       takeImportFileQuery,
-	"unsettledAttachmentsQuery": unsettledAttachmentsQuery,
-	"measureAttachmentQuery":    measureAttachmentQuery,
-	"refundImportFileQuery":     refundImportFileQuery,
+	"createAttachmentQuery":          createAttachmentQuery,
+	"attachmentByIDQuery":            attachmentByIDQuery,
+	"attachmentsByIssueQuery":        attachmentsByIssueQuery,
+	"lockStoredAttachmentByKeyQuery": lockStoredAttachmentByKeyQuery,
+	"settleAttachmentQuery":          settleAttachmentQuery,
+	"discardAttachmentQuery":         discardAttachmentQuery,
+	"claimForCommentQuery":           claimForCommentQuery,
+	"markOrphansQuery":               markOrphansQuery,
+	"reclaimableQuery":               reclaimableQuery,
+	"reclaimAttachmentQuery":         reclaimAttachmentQuery,
+	"admitStorageQuery":              admitStorageQuery,
+	"releaseStorageQuery":            releaseStorageQuery,
+	"correctStorageQuery":            correctStorageQuery,
+	"ledgerQuery":                    ledgerQuery,
+	"claimImportFileQuery":           claimImportFileQuery,
+	"lockImportFileQuery":            lockImportFileQuery,
+	"recordImportFileQuery":          recordImportFileQuery,
+	"unsettledImportFilesQuery":      unsettledImportFilesQuery,
+	"takeImportFileQuery":            takeImportFileQuery,
+	"unsettledAttachmentsQuery":      unsettledAttachmentsQuery,
+	"measureAttachmentQuery":         measureAttachmentQuery,
+	"refundImportFileQuery":          refundImportFileQuery,
 }
 
 func TestNoAttachmentQueryAggregatesAnything(t *testing.T) {
@@ -170,7 +171,7 @@ func TestTheSweepOnlyMeasuresImportFilesWhoseWritersHaveHadTheirChance(t *testin
 }
 
 func TestAMeasurementNeverResizesAFileThatWasRemoved(t *testing.T) {
-	for _, name := range []string{"unsettledAttachmentsQuery", "measureAttachmentQuery"} {
+	for _, name := range []string{"unsettledAttachmentsQuery", "measureAttachmentQuery", "lockStoredAttachmentByKeyQuery"} {
 		if !strings.Contains(statements[name], "status = 'stored'") {
 			t.Errorf(
 				"%s reaches attachments that are not stored. A removed file already gave its bytes "+

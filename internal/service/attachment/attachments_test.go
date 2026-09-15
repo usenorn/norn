@@ -767,6 +767,8 @@ func TestAnImportFileWrittenAgainIsChargedOnlyForWhatItGrew(t *testing.T) {
 
 	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
 		Return(entity.ImportFileCharge{SizeBytes: 300}, nil)
+	h.attachments.EXPECT().LockStoredByObjectKey(gomock.Any(), h.workspaceID, key).
+		Return(entity.Attachment{}, false, nil)
 	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(200), int64(maxWorkspaceBytes)).
 		Return(int64(800), nil)
@@ -798,6 +800,8 @@ func TestAnImportFileWrittenAgainSmallerKeepsItsLargerReservationUntilTheSweep(t
 
 	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
 		Return(entity.ImportFileCharge{SizeBytes: 500}, nil)
+	h.attachments.EXPECT().LockStoredByObjectKey(gomock.Any(), h.workspaceID, key).
+		Return(entity.Attachment{}, false, nil)
 	h.attachments.EXPECT().
 		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(500), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
 		Return(nil)
@@ -818,6 +822,8 @@ func TestAnImportFileIntoAFullWorkspaceIsRefusedWithItsNumbersAndNeverRecorded(t
 
 	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
 		Return(entity.ImportFileCharge{}, nil)
+	h.attachments.EXPECT().LockStoredByObjectKey(gomock.Any(), h.workspaceID, key).
+		Return(entity.Attachment{}, false, nil)
 	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(400), int64(maxWorkspaceBytes)).
 		Return(int64(0), entity.ErrStorageExhausted)
@@ -977,6 +983,22 @@ func (b *storageBook) TakeImportFile(_ context.Context, _ uuid.UUID, key string)
 	delete(b.charged, key)
 
 	return file, true, nil
+}
+
+func (b *storageBook) LockStoredByObjectKey(
+	_ context.Context,
+	_ uuid.UUID,
+	key string,
+) (entity.Attachment, bool, error) {
+	for _, attachment := range b.attachments {
+		if attachment.ObjectKey == key && attachment.Stored() {
+			b.locked = key
+
+			return attachment, true, nil
+		}
+	}
+
+	return entity.Attachment{}, false, nil
 }
 
 func (b *storageBook) Create(_ context.Context, attachment entity.Attachment) (entity.Attachment, error) {
@@ -1502,6 +1524,174 @@ func TestAFileAdoptedWhileItsReservationWasStillHeldIsMeasuredByTheSweepOnItsIss
 				"%d and the attachment is waiting %v. Adoption moves the file off the import record, so "+
 				"unless its reservation moves with it nothing measures it again and the 700 stays for good.",
 			attachment.SizeBytes, book.stored, attachment.SettleAfter != nil,
+		)
+	}
+}
+
+func adoptingOrigin() *entity.ImportOrigin {
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, uuid.New())
+
+	return &origin
+}
+
+func TestAWriterThatFinishesAfterItsFileWasAdoptedMeasuresTheAttachmentInsteadOfChargingAgain(t *testing.T) {
+	for name, second := range map[string]struct {
+		charged int64
+		lands   bool
+	}{
+		"a smaller second upload lands after the adoption": {charged: 500, lands: true},
+		"a larger second upload lands after the adoption":  {charged: 900, lands: true},
+		"a larger second upload fails after the adoption":  {charged: 900, lands: false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "shot.png")
+
+			book, store := newBook(workspaceID)
+			storage := bookedService(t, book, store)
+
+			if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+				t.Fatalf("ChargeImportFile(700): %v", err)
+			}
+
+			store.leaving(key, 700)
+
+			if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+				t.Fatalf("SettleImportFile after writing 700: %v", err)
+			}
+
+			previous, err := storage.ChargeImportFile(ctx, workspaceID, key, second.charged)
+			if err != nil {
+				t.Fatalf("ChargeImportFile(%d): %v", second.charged, err)
+			}
+
+			adopted, err := storage.Adopt(ctx, workspaceID, uuid.New(), service.AdoptAttachmentInput{
+				ObjectKey:   key,
+				FileName:    "shot.png",
+				ContentType: "image/png",
+				SizeBytes:   700,
+				Origin:      adoptingOrigin(),
+			})
+			if err != nil {
+				t.Fatalf("Adopt: %v", err)
+			}
+
+			reserved, inStorage := max(int64(700), second.charged), int64(700)
+
+			if second.lands {
+				store.leaving(key, second.charged)
+				inStorage = second.charged
+				err = storage.SettleImportFile(ctx, workspaceID, key)
+			} else {
+				err = storage.RestoreImportFile(ctx, workspaceID, key, previous)
+			}
+
+			if err != nil {
+				t.Fatalf("the second upload measuring its write: %v", err)
+			}
+
+			attachment := book.attachments[adopted.ID]
+			_, recordedAgain := book.files[key]
+
+			if recordedAgain || attachment.SizeBytes != reserved || book.stored != reserved {
+				t.Fatalf(
+					"after the second upload measured a file that had already been adopted, an import "+
+						"record is held %v, the attachment records %d and the workspace reads %d, want no "+
+						"import record and %d for both. There is one object, so it can only have one charge.",
+					recordedAgain, attachment.SizeBytes, book.stored, reserved,
+				)
+			}
+
+			book.attachmentDeadlinesPass(adopted.ID)
+
+			if err := storage.Reclaim(ctx); err != nil {
+				t.Fatalf("Reclaim: %v", err)
+			}
+
+			attachment = book.attachments[adopted.ID]
+			_, recordedAgain = book.files[key]
+
+			if recordedAgain || attachment.SizeBytes != inStorage || book.stored != inStorage ||
+				attachment.SettleAfter != nil {
+				t.Fatalf(
+					"once nobody could still be writing, the sweep left an import record held %v, the "+
+						"attachment at %d and the workspace at %d (waiting %v), want no import record and "+
+						"the %d bytes in storage for both",
+					recordedAgain, attachment.SizeBytes, book.stored, attachment.SettleAfter != nil, inStorage,
+				)
+			}
+		})
+	}
+}
+
+func TestAnUploadChargedAfterItsFileWasAdoptedGrowsTheAttachmentsReservation(t *testing.T) {
+	ctx := context.Background()
+	workspaceID := uuid.New()
+	key := entity.ImportBlobKey(workspaceID, uuid.New(), "shot.png")
+
+	book, store := newBook(workspaceID)
+	storage := bookedService(t, book, store)
+
+	if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+		t.Fatalf("ChargeImportFile(700): %v", err)
+	}
+
+	store.leaving(key, 700)
+
+	if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+		t.Fatalf("SettleImportFile after writing 700: %v", err)
+	}
+
+	adopted, err := storage.Adopt(ctx, workspaceID, uuid.New(), service.AdoptAttachmentInput{
+		ObjectKey:   key,
+		FileName:    "shot.png",
+		ContentType: "image/png",
+		SizeBytes:   700,
+		Origin:      adoptingOrigin(),
+	})
+	if err != nil {
+		t.Fatalf("Adopt: %v", err)
+	}
+
+	previous, err := storage.ChargeImportFile(ctx, workspaceID, key, 900)
+	if err != nil {
+		t.Fatalf("ChargeImportFile(900): %v", err)
+	}
+
+	attachment := book.attachments[adopted.ID]
+	_, recordedAgain := book.files[key]
+
+	if previous != 700 || recordedAgain || attachment.SizeBytes != 900 || book.stored != 900 {
+		t.Fatalf(
+			"a 900 byte upload charged after its file was adopted reported %d held before it, left an import "+
+				"record held %v, the attachment at %d and the workspace at %d, want 700 before, no import "+
+				"record and 900 for both. The adopted attachment is the one charge for that object.",
+			previous, recordedAgain, attachment.SizeBytes, book.stored,
+		)
+	}
+
+	store.leaving(key, 900)
+
+	if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+		t.Fatalf("SettleImportFile after writing 900: %v", err)
+	}
+
+	book.attachmentDeadlinesPass(adopted.ID)
+
+	if err := storage.Reclaim(ctx); err != nil {
+		t.Fatalf("Reclaim: %v", err)
+	}
+
+	attachment = book.attachments[adopted.ID]
+	_, recordedAgain = book.files[key]
+
+	if recordedAgain || attachment.SizeBytes != 900 || book.stored != 900 || attachment.SettleAfter != nil {
+		t.Fatalf(
+			"after the write and the sweep, an import record is held %v, the attachment records %d and the "+
+				"workspace reads %d (waiting %v), want no import record and 900 settled",
+			recordedAgain, attachment.SizeBytes, book.stored, attachment.SettleAfter != nil,
 		)
 	}
 }

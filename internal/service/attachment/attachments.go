@@ -590,6 +590,17 @@ func (s *attachmentsService) ChargeImportFile(
 			return err
 		}
 
+		adopter, adopted, err := s.adopterOf(ctx, workspaceID, objectKey, file)
+		if err != nil {
+			return err
+		}
+
+		if adopted {
+			previous = adopter.SizeBytes
+
+			return s.chargeAttachment(ctx, adopter, sizeBytes)
+		}
+
 		previous = file.SizeBytes
 
 		if grown := sizeBytes - file.SizeBytes; grown > 0 {
@@ -648,6 +659,15 @@ func (s *attachmentsService) settleImportFile(
 			return err
 		}
 
+		adopter, adopted, err := s.adopterOf(ctx, workspaceID, objectKey, file)
+		if err != nil {
+			return err
+		}
+
+		if adopted {
+			return s.measureAttachment(ctx, adopter, floorBytes)
+		}
+
 		sizeBytes, settleAfter, gone := s.measure(ctx, objectKey, file.SizeBytes, floorBytes, file.ChargedUntil)
 		if gone {
 			return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
@@ -672,23 +692,96 @@ func (s *attachmentsService) settleAttachment(ctx context.Context, workspaceID, 
 			return nil
 		}
 
-		sizeBytes, settleAfter, _ := s.measure(
-			ctx, attachment.ObjectKey, attachment.SizeBytes, 0, attachment.ChargedUntil,
-		)
-
-		if drift := sizeBytes - attachment.SizeBytes; drift != 0 {
-			if err := s.attachments.Correct(ctx, workspaceID, drift); err != nil {
-				return err
-			}
-		}
-
-		chargedUntil := attachment.ChargedUntil
-		if settleAfter == nil {
-			chargedUntil = nil
-		}
-
-		return s.attachments.MeasureAttachment(ctx, attachmentID, sizeBytes, settleAfter, chargedUntil)
+		return s.measureAttachment(ctx, attachment, 0)
 	})
+}
+
+func (s *attachmentsService) measureAttachment(
+	ctx context.Context,
+	attachment entity.Attachment,
+	floorBytes int64,
+) error {
+	sizeBytes, settleAfter, _ := s.measure(
+		ctx, attachment.ObjectKey, attachment.SizeBytes, floorBytes, attachment.ChargedUntil,
+	)
+
+	if drift := sizeBytes - attachment.SizeBytes; drift != 0 {
+		if err := s.attachments.Correct(ctx, attachment.WorkspaceID, drift); err != nil {
+			return err
+		}
+	}
+
+	chargedUntil := attachment.ChargedUntil
+	if settleAfter == nil {
+		chargedUntil = nil
+	}
+
+	return s.attachments.MeasureAttachment(ctx, attachment.ID, sizeBytes, settleAfter, chargedUntil)
+}
+
+func (s *attachmentsService) adopterOf(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+	file entity.ImportFileCharge,
+) (entity.Attachment, bool, error) {
+	adopter, adopted, err := s.attachments.LockStoredByObjectKey(ctx, workspaceID, objectKey)
+	if err != nil || !adopted {
+		return entity.Attachment{}, false, err
+	}
+
+	if _, _, err := s.attachments.TakeImportFile(ctx, workspaceID, objectKey); err != nil {
+		return entity.Attachment{}, false, err
+	}
+
+	reserved := max(adopter.SizeBytes, file.SizeBytes)
+
+	if drift := reserved - adopter.SizeBytes - file.SizeBytes; drift != 0 {
+		if err := s.attachments.Correct(ctx, workspaceID, drift); err != nil {
+			return entity.Attachment{}, false, err
+		}
+	}
+
+	adopter.SizeBytes = reserved
+	adopter.ChargedUntil = latestOf(adopter.ChargedUntil, file.ChargedUntil)
+	adopter.SettleAfter = earliestOf(adopter.SettleAfter, file.SettleAfter)
+
+	return adopter, true, nil
+}
+
+func (s *attachmentsService) chargeAttachment(
+	ctx context.Context,
+	adopter entity.Attachment,
+	sizeBytes int64,
+) error {
+	if grown := sizeBytes - adopter.SizeBytes; grown > 0 {
+		if _, err := s.attachments.Admit(ctx, adopter.WorkspaceID, grown, s.cfg.MaxWorkspaceBytes); err != nil {
+			return s.exhausted(ctx, adopter.WorkspaceID, grown, err)
+		}
+	}
+
+	chargedUntil := laterOf(adopter.ChargedUntil, time.Now().UTC().Add(s.cfg.UploadTTL+abandonGrace))
+	settleAfter := soonerOf(adopter.SettleAfter, chargedUntil)
+
+	return s.attachments.MeasureAttachment(
+		ctx, adopter.ID, max(adopter.SizeBytes, sizeBytes), &settleAfter, &chargedUntil,
+	)
+}
+
+func latestOf(first, second *time.Time) *time.Time {
+	if first == nil || (second != nil && second.After(*first)) {
+		return second
+	}
+
+	return first
+}
+
+func earliestOf(first, second *time.Time) *time.Time {
+	if first == nil || (second != nil && second.Before(*first)) {
+		return second
+	}
+
+	return first
 }
 
 func (s *attachmentsService) measure(
