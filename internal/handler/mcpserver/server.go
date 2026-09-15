@@ -217,26 +217,47 @@ func (t *toolset) register(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_create_issue",
-		Description: "Create an issue on a team, optionally in a project and with labels. " +
-			"Requires the write capability.",
+		Description: "Create an issue on a team, optionally in a project or cycle, with labels " +
+			"and an assignee. An assignee of me is the person this connection acts for, which " +
+			"for an agent is its owner, never the agent itself. Requires the write capability.",
 		Annotations: create,
 	}, t.createIssue)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_update_issue",
-		Description: "Update an issue's fields, including moving it to another team. Requires " +
-			"expected_version from a prior norn_get_issue; on a version conflict, re-read and " +
-			"retry. A move keeps the issue's reference, so a number already quoted stays valid. " +
-			"Labels given here replace the issue's labels rather than adding to them.",
+		Description: "Update an issue's fields, including moving it to another team. " +
+			"expected_version guards against overwriting someone else's change; when omitted " +
+			"the current version is read. A move keeps the issue's reference, so a number " +
+			"already quoted stays valid. labels replaces every label; add_labels and " +
+			"remove_labels change only the labels they name. To take the issue out of its " +
+			"project or cycle, name project or cycle in clear. Closing an issue with open " +
+			"sub-issues needs acknowledge_open_children. Every refusal starts with a stable code.",
 		Annotations: update,
 	}, t.updateIssue)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_change_issue_state",
 		Description: "Move an issue to another workflow state by state name or id. Reads the " +
-			"current version automatically unless expected_version is given.",
+			"current version automatically unless expected_version is given. Closing an issue " +
+			"that still has open sub-issues needs acknowledge_open_children.",
 		Annotations: update,
 	}, t.changeIssueState)
+
+	destructive := true
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_set_issue_status",
+		Description: "Archive an issue, delete it, or restore it to active. A deleted issue " +
+			"keeps its reference and can be restored for 30 days.",
+		Annotations: &mcp.ToolAnnotations{DestructiveHint: &destructive, IdempotentHint: true},
+	}, t.setIssueStatus)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_set_issue_parent",
+		Description: "File an issue under another issue as its sub-issue, or take it out from " +
+			"under its parent with an empty parent.",
+		Annotations: update,
+	}, t.setIssueParent)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "norn_create_comment",
