@@ -180,6 +180,14 @@ func (s *Source) carry(
 		return
 	}
 
+	if err := s.storage.SettleImportFile(ctx, run.WorkspaceID, key); err != nil {
+		logging.From(ctx).WarnContext(ctx, "a stored linear file could not be measured, so the sweep will measure it",
+			"issue", payload.Issue,
+			"object_key", key,
+			"reason", err.Error(),
+		)
+	}
+
 	payload.ObjectKey = key
 	payload.ContentType = contentType
 	payload.SizeBytes = size

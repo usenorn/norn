@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/service"
 )
 
@@ -66,6 +67,13 @@ func (s *importsService) Upload(
 		}
 
 		return service.ImportFile{}, err
+	}
+
+	if err := s.fileWriter.SettleImportFile(ctx, run.WorkspaceID, key); err != nil {
+		logging.From(ctx).WarnContext(ctx, "an uploaded import file could not be measured, so the sweep will measure it",
+			"object_key", key,
+			"error", err.Error(),
+		)
 	}
 
 	return service.ImportFile{

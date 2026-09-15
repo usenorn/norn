@@ -23,10 +23,10 @@ func (h *harness) upload() (service.ImportFile, error) {
 	})
 }
 
-func TestAnImportFileIsChargedToTheWorkspaceBeforeItsBytesAreWritten(t *testing.T) {
+func TestAnImportFileIsChargedBeforeItIsWrittenAndMeasuredAfter(t *testing.T) {
 	h := newHarness(t).backed().allow(entity.Decision{})
 
-	charged := ""
+	charged, written, measured := "", "", ""
 
 	h.fileWriter.EXPECT().
 		ChargeImportFile(gomock.Any(), h.run().WorkspaceID, gomock.Any(), int64(len(uploadedRows))).
@@ -47,6 +47,19 @@ func TestAnImportFileIsChargedToTheWorkspaceBeforeItsBytesAreWritten(t *testing.
 				)
 			}
 
+			written = key
+
+			return nil
+		})
+	h.fileWriter.EXPECT().
+		SettleImportFile(gomock.Any(), h.run().WorkspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, key string) error {
+			if written != key {
+				t.Fatalf("the file %q was measured before it was written", key)
+			}
+
+			measured = key
+
 			return nil
 		})
 
@@ -55,8 +68,13 @@ func TestAnImportFileIsChargedToTheWorkspaceBeforeItsBytesAreWritten(t *testing.
 		t.Fatalf("Upload: %v", err)
 	}
 
-	if file.ObjectKey != charged {
-		t.Fatalf("the run was handed %q, but the workspace was charged for %q", file.ObjectKey, charged)
+	if file.ObjectKey != charged || measured != charged {
+		t.Fatalf(
+			"the run was handed %q, the workspace was charged for %q and %q was measured. Two uploads "+
+				"under one name can both succeed, and only measuring after each write leaves the "+
+				"ledger at the object storage kept.",
+			file.ObjectKey, charged, measured,
+		)
 	}
 }
 
@@ -106,6 +124,28 @@ func TestAReplacementTheStoreRefusesPutsTheImportFileBackToItsEarlierSize(t *tes
 				"stored. That object is still in storage, so dropping its charge would read the "+
 				"workspace as holding less than it does.",
 			restoredTo,
+		)
+	}
+}
+
+func TestAStoredImportFileThatCannotBeMeasuredYetIsStillAccepted(t *testing.T) {
+	h := newHarness(t).backed().allow(entity.Decision{})
+
+	h.fileWriter.EXPECT().
+		ChargeImportFile(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	h.blobs.EXPECT().
+		Put(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+	h.fileWriter.EXPECT().
+		SettleImportFile(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(errors.New("the database went away"))
+
+	if _, err := h.upload(); err != nil {
+		t.Fatalf(
+			"a stored and charged file was refused because measuring it failed: %v. The bytes are "+
+				"in storage and on the ledger at their declared size, and the sweep measures them.",
+			err,
 		)
 	}
 }

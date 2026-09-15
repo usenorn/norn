@@ -98,7 +98,24 @@ type storageLedger struct {
 	mu       sync.Mutex
 	charged  map[string]int64
 	restored []string
+	settled  []string
 	full     bool
+}
+
+func (l *storageLedger) SettleImportFile(_ context.Context, _ uuid.UUID, key string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.settled = append(l.settled, key)
+
+	return nil
+}
+
+func (l *storageLedger) measured() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	return append([]string{}, l.settled...)
 }
 
 func (l *storageLedger) ChargeImportFile(_ context.Context, _ uuid.UUID, key string, size int64) (int64, error) {

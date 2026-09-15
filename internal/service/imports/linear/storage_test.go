@@ -2,6 +2,7 @@ package linear_test
 
 import (
 	"errors"
+	"slices"
 	"sync/atomic"
 	"testing"
 
@@ -23,6 +24,25 @@ func TestAStoredFileIsChargedToTheWorkspaceItWasPulledFor(t *testing.T) {
 			"a stored file of %d bytes was charged %d. An import's files sit in the workspace's "+
 				"storage from the moment they are pulled, so they count against its limit from then.",
 			len(screenshot), charged,
+		)
+	}
+}
+
+func TestAStoredFileIsMeasuredOnceItIsWritten(t *testing.T) {
+	var reads atomic.Int64
+
+	held := standing(t).
+		answering(oneIssueHolding("", theFileRow, "")).
+		holding(servingTheScreenshot(&reads))
+
+	file := attachmentOf(t, fetched(t, staging(), held.source(), asking(entity.ImportAttachment)), screenshotRow)
+
+	if !slices.Contains(held.storage.measured(), file.ObjectKey) {
+		t.Fatalf(
+			"the stored file %q was never measured after it was written. Two pulls of the same file "+
+				"both succeed under one key, and only a measurement after each write leaves the "+
+				"charge at what storage actually kept.",
+			file.ObjectKey,
 		)
 	}
 }

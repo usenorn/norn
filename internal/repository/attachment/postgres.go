@@ -147,8 +147,15 @@ FOR UPDATE`
 
 const sizeImportFileQuery = `
 UPDATE workspace_import_files
-SET size_bytes = $3, updated_at = now()
+SET size_bytes = $3, settle_after = $4, updated_at = now()
 WHERE object_key = $1 AND workspace_id = $2::uuid`
+
+const unsettledImportFilesQuery = `
+SELECT workspace_id, object_key, size_bytes
+FROM workspace_import_files
+WHERE settle_after IS NOT NULL AND settle_after <= $1
+ORDER BY settle_after, object_key
+LIMIT $2`
 
 const takeImportFileQuery = `
 DELETE FROM workspace_import_files
@@ -536,11 +543,55 @@ func (r *attachmentRepository) SizeImportFile(
 	workspaceID uuid.UUID,
 	objectKey string,
 	sizeBytes int64,
+	settleAfter *time.Time,
 ) error {
+	var settle any
+	if settleAfter != nil {
+		settle = *settleAfter
+	}
+
 	return r.touch(
 		ctx, "size import file", sizeImportFileQuery,
-		objectKey, workspaceID.String(), sizeBytes,
+		objectKey, workspaceID.String(), sizeBytes, settle,
 	)
+}
+
+func (r *attachmentRepository) ListUnsettledImportFiles(
+	ctx context.Context,
+	at time.Time,
+	batch int,
+) ([]entity.ImportFileCharge, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, unsettledImportFilesQuery, at, batch)
+	if err != nil {
+		return nil, fmt.Errorf("read unsettled import files: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	files := make([]entity.ImportFileCharge, 0)
+
+	for rows.Next() {
+		var (
+			file      entity.ImportFileCharge
+			workspace string
+		)
+
+		if err := rows.Scan(&workspace, &file.ObjectKey, &file.SizeBytes); err != nil {
+			return nil, fmt.Errorf("scan unsettled import file: %w", err)
+		}
+
+		if file.WorkspaceID, err = uuid.Parse(workspace); err != nil {
+			return nil, fmt.Errorf("parse unsettled import file workspace id: %w", err)
+		}
+
+		files = append(files, file)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate unsettled import files: %w", err)
+	}
+
+	return files, nil
 }
 
 func (r *attachmentRepository) TakeImportFile(

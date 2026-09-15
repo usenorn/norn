@@ -513,8 +513,25 @@ func (s *attachmentsService) Reclaim(ctx context.Context) error {
 		}
 	}
 
+	unsettled, err := s.attachments.ListUnsettledImportFiles(ctx, now, s.cfg.ReclaimBatch)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range unsettled {
+		if err := s.settleImportFile(ctx, file.WorkspaceID, file.ObjectKey, 0); err != nil {
+			failures++
+
+			logging.From(ctx).WarnContext(
+				ctx, "measuring an import file failed",
+				"object_key", file.ObjectKey,
+				"error", err.Error(),
+			)
+		}
+	}
+
 	if failures > 0 {
-		return fmt.Errorf("reclaim %d of %d stored files", failures, len(reclaimable))
+		return fmt.Errorf("reclaim or measure %d of %d stored files", failures, len(reclaimable)+len(unsettled))
 	}
 
 	return nil
@@ -564,12 +581,26 @@ func (s *attachmentsService) ChargeImportFile(
 			}
 		}
 
-		return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, sizeBytes)
+		settleAfter := time.Now().UTC().Add(s.cfg.UploadTTL + abandonGrace)
+
+		return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, sizeBytes, &settleAfter)
 	}); err != nil {
 		return 0, err
 	}
 
 	return previous, nil
+}
+
+func (s *attachmentsService) SettleImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+) error {
+	if !importKeyOf(workspaceID, objectKey) {
+		return malformedImportKey()
+	}
+
+	return s.settleImportFile(ctx, workspaceID, objectKey, 0)
 }
 
 func (s *attachmentsService) RestoreImportFile(
@@ -579,52 +610,63 @@ func (s *attachmentsService) RestoreImportFile(
 	previousBytes int64,
 ) error {
 	if !importKeyOf(workspaceID, objectKey) {
-		return entity.NewValidationError(entity.FieldError{Field: "objectKey", Code: entity.ValidationCodeMalformed})
+		return malformedImportKey()
 	}
 
-	stored, present := s.measureImportFile(ctx, objectKey, previousBytes)
+	return s.settleImportFile(ctx, workspaceID, objectKey, previousBytes)
+}
 
+func (s *attachmentsService) settleImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+	floorBytes int64,
+) error {
 	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		if !present {
-			return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
-		}
-
 		held, err := s.attachments.ClaimImportFile(ctx, workspaceID, objectKey)
 		if err != nil {
 			return err
 		}
 
-		if drift := stored - held; drift != 0 {
-			if err := s.attachments.Correct(ctx, workspaceID, drift); err != nil {
-				return err
-			}
+		object, err := s.blobs.Stat(ctx, objectKey)
+
+		switch {
+		case err == nil:
+			return s.resizeImportFile(ctx, workspaceID, objectKey, held, object.Size, nil)
+		case errors.Is(err, entity.ErrBlobNotFound):
+			return s.attachments.RefundImportFile(ctx, workspaceID, objectKey)
 		}
 
-		return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, stored)
-	})
-}
-
-func (s *attachmentsService) measureImportFile(
-	ctx context.Context,
-	objectKey string,
-	previousBytes int64,
-) (int64, bool) {
-	object, err := s.blobs.Stat(ctx, objectKey)
-
-	switch {
-	case err == nil:
-		return object.Size, true
-	case errors.Is(err, entity.ErrBlobNotFound):
-		return 0, false
-	default:
 		logging.From(ctx).WarnContext(
-			ctx, "an import file could not be measured after a failed write, so its previous size stands",
+			ctx, "an import file could not be measured, so it stays charged at its larger size until the sweep measures it",
 			"object_key", objectKey,
 			"error", err.Error(),
 		)
 
-		return previousBytes, previousBytes > 0
+		settleAfter := time.Now().UTC()
+
+		return s.resizeImportFile(ctx, workspaceID, objectKey, held, max(held, floorBytes), &settleAfter)
+	})
+}
+
+func (s *attachmentsService) resizeImportFile(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	objectKey string,
+	held, sizeBytes int64,
+	settleAfter *time.Time,
+) error {
+	if drift := sizeBytes - held; drift != 0 {
+		if err := s.attachments.Correct(ctx, workspaceID, drift); err != nil {
+			return err
+		}
 	}
+
+	return s.attachments.SizeImportFile(ctx, workspaceID, objectKey, sizeBytes, settleAfter)
+}
+
+func malformedImportKey() error {
+	return entity.NewValidationError(entity.FieldError{Field: "objectKey", Code: entity.ValidationCodeMalformed})
 }
 
 func importKeyOf(workspaceID uuid.UUID, key string) bool {

@@ -190,6 +190,21 @@ func (mr *MockAttachmentMockRecorder) ListReclaimable(ctx, at, batch any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListReclaimable", reflect.TypeOf((*MockAttachment)(nil).ListReclaimable), ctx, at, batch)
 }
 
+// ListUnsettledImportFiles mocks base method.
+func (m *MockAttachment) ListUnsettledImportFiles(ctx context.Context, at time.Time, batch int) ([]entity.ImportFileCharge, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUnsettledImportFiles", ctx, at, batch)
+	ret0, _ := ret[0].([]entity.ImportFileCharge)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUnsettledImportFiles indicates an expected call of ListUnsettledImportFiles.
+func (mr *MockAttachmentMockRecorder) ListUnsettledImportFiles(ctx, at, batch any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUnsettledImportFiles", reflect.TypeOf((*MockAttachment)(nil).ListUnsettledImportFiles), ctx, at, batch)
+}
+
 // LockByID mocks base method.
 func (m *MockAttachment) LockByID(ctx context.Context, workspaceID, attachmentID uuid.UUID) (entity.Attachment, error) {
 	m.ctrl.T.Helper()
@@ -276,17 +291,17 @@ func (mr *MockAttachmentMockRecorder) Settle(ctx, attachmentID, sizeBytes, conte
 }
 
 // SizeImportFile mocks base method.
-func (m *MockAttachment) SizeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64) error {
+func (m *MockAttachment) SizeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64, settleAfter *time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SizeImportFile", ctx, workspaceID, objectKey, sizeBytes)
+	ret := m.ctrl.Call(m, "SizeImportFile", ctx, workspaceID, objectKey, sizeBytes, settleAfter)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SizeImportFile indicates an expected call of SizeImportFile.
-func (mr *MockAttachmentMockRecorder) SizeImportFile(ctx, workspaceID, objectKey, sizeBytes any) *gomock.Call {
+func (mr *MockAttachmentMockRecorder) SizeImportFile(ctx, workspaceID, objectKey, sizeBytes, settleAfter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SizeImportFile", reflect.TypeOf((*MockAttachment)(nil).SizeImportFile), ctx, workspaceID, objectKey, sizeBytes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SizeImportFile", reflect.TypeOf((*MockAttachment)(nil).SizeImportFile), ctx, workspaceID, objectKey, sizeBytes, settleAfter)
 }
 
 // TakeImportFile mocks base method.

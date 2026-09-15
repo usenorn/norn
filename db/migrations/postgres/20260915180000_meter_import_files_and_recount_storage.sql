@@ -7,6 +7,7 @@ CREATE TABLE workspace_import_files (
     object_key   text PRIMARY KEY,
     workspace_id uuid NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE,
     size_bytes   bigint NOT NULL DEFAULT 0,
+    settle_after timestamptz,
     created_at   timestamptz NOT NULL DEFAULT now(),
     updated_at   timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT workspace_import_files_size_check CHECK (size_bytes >= 0),
@@ -15,6 +16,10 @@ CREATE TABLE workspace_import_files (
 
 CREATE INDEX workspace_import_files_workspace_idx
     ON workspace_import_files (workspace_id);
+
+CREATE INDEX workspace_import_files_settle_idx
+    ON workspace_import_files (settle_after, object_key)
+    WHERE settle_after IS NOT NULL;
 
 LOCK TABLE workspace_storage_ledger IN EXCLUSIVE MODE;
 

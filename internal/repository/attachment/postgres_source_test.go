@@ -7,24 +7,25 @@ import (
 )
 
 var statements = map[string]string{
-	"createAttachmentQuery":   createAttachmentQuery,
-	"attachmentByIDQuery":     attachmentByIDQuery,
-	"attachmentsByIssueQuery": attachmentsByIssueQuery,
-	"settleAttachmentQuery":   settleAttachmentQuery,
-	"discardAttachmentQuery":  discardAttachmentQuery,
-	"claimForCommentQuery":    claimForCommentQuery,
-	"markOrphansQuery":        markOrphansQuery,
-	"reclaimableQuery":        reclaimableQuery,
-	"reclaimAttachmentQuery":  reclaimAttachmentQuery,
-	"admitStorageQuery":       admitStorageQuery,
-	"releaseStorageQuery":     releaseStorageQuery,
-	"correctStorageQuery":     correctStorageQuery,
-	"ledgerQuery":             ledgerQuery,
-	"claimImportFileQuery":    claimImportFileQuery,
-	"lockImportFileQuery":     lockImportFileQuery,
-	"sizeImportFileQuery":     sizeImportFileQuery,
-	"takeImportFileQuery":     takeImportFileQuery,
-	"refundImportFileQuery":   refundImportFileQuery,
+	"createAttachmentQuery":     createAttachmentQuery,
+	"attachmentByIDQuery":       attachmentByIDQuery,
+	"attachmentsByIssueQuery":   attachmentsByIssueQuery,
+	"settleAttachmentQuery":     settleAttachmentQuery,
+	"discardAttachmentQuery":    discardAttachmentQuery,
+	"claimForCommentQuery":      claimForCommentQuery,
+	"markOrphansQuery":          markOrphansQuery,
+	"reclaimableQuery":          reclaimableQuery,
+	"reclaimAttachmentQuery":    reclaimAttachmentQuery,
+	"admitStorageQuery":         admitStorageQuery,
+	"releaseStorageQuery":       releaseStorageQuery,
+	"correctStorageQuery":       correctStorageQuery,
+	"ledgerQuery":               ledgerQuery,
+	"claimImportFileQuery":      claimImportFileQuery,
+	"lockImportFileQuery":       lockImportFileQuery,
+	"sizeImportFileQuery":       sizeImportFileQuery,
+	"unsettledImportFilesQuery": unsettledImportFilesQuery,
+	"takeImportFileQuery":       takeImportFileQuery,
+	"refundImportFileQuery":     refundImportFileQuery,
 }
 
 func TestNoAttachmentQueryAggregatesAnything(t *testing.T) {
@@ -154,6 +155,15 @@ func TestAnImportFileIsOnlyEverReachedThroughItsOwnWorkspace(t *testing.T) {
 				name,
 			)
 		}
+	}
+}
+
+func TestTheSweepOnlyMeasuresImportFilesWhoseWritersHaveHadTheirChance(t *testing.T) {
+	if !strings.Contains(unsettledImportFilesQuery, "settle_after <= $1") {
+		t.Fatal(
+			"the sweep picks import files without waiting for their settle deadline. A file still " +
+				"being written would be measured as missing and refunded mid-upload.",
+		)
 	}
 }
 

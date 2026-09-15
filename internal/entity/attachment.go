@@ -224,6 +224,12 @@ func AttachmentFileName(name string) string {
 	return strings.TrimSpace(cleaned)
 }
 
+type ImportFileCharge struct {
+	WorkspaceID uuid.UUID
+	ObjectKey   string
+	SizeBytes   int64
+}
+
 type WorkspaceStorage struct {
 	WorkspaceID uuid.UUID
 	StoredBytes int64
