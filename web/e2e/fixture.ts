@@ -9,6 +9,7 @@ export type Fixture = {
 	displayName: string;
 	email: string;
 	ordinary: { accountId: string; displayName: string; email: string };
+	outsider: { accountId: string; displayName: string; email: string };
 	issues: { id: string; reference: string; title: string }[];
 };
 

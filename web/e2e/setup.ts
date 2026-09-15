@@ -141,6 +141,29 @@ export default async function setup(): Promise<void> {
 		accountId: joined.account.id,
 	});
 
+	const outsiderEmail = `e2e${stamp}-outsider@example.test`;
+	const outsider = await request.newContext();
+
+	await call(outsider, "post", "/auth/sign-up", {
+		email: outsiderEmail,
+		displayName: "Mina Castell",
+		password,
+		timezone: "UTC",
+	});
+
+	const outsiderToken = await confirmationToken(outsider, outsiderEmail);
+	const arrived = await call<{ account: { id: string } }>(
+		outsider,
+		"post",
+		"/auth/sign-up/confirm",
+		{ token: outsiderToken }
+	);
+
+	await call(client, "post", `/workspaces/${workspace.id}/members`, {
+		accountId: arrived.account.id,
+		role: "member",
+	});
+
 	const fixture: Fixture = {
 		workspaceId: workspace.id,
 		slug: workspace.slug,
@@ -153,6 +176,11 @@ export default async function setup(): Promise<void> {
 			displayName: "Ida Hollis",
 			email: ordinaryEmail,
 		},
+		outsider: {
+			accountId: arrived.account.id,
+			displayName: "Mina Castell",
+			email: outsiderEmail,
+		},
 		issues,
 	};
 
@@ -162,4 +190,5 @@ export default async function setup(): Promise<void> {
 	await writeFile(fixturePath, JSON.stringify(fixture, null, "\t"));
 	await client.dispose();
 	await ordinary.dispose();
+	await outsider.dispose();
 }

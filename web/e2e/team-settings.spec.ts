@@ -86,10 +86,14 @@ test("a state is added from a dialog, and closing a dialog puts focus back on th
 	await expect(open).toBeFocused();
 });
 
-test("someone is looked for from a dialog, and Escape puts focus back on its button", async ({
+test("someone from the workspace is found and added from a dialog, and stays on the team after a reload", async ({
 	page,
 }) => {
+	const { displayName } = fixture().outsider;
+	const onTeam = page.getByRole("button", { name: `Remove ${displayName} from Billing` });
+
 	await page.goto(settingsAt("members"));
+	await expect(onTeam).toHaveCount(0);
 
 	const open = page.getByRole("button", { name: "Add someone" });
 
@@ -100,13 +104,32 @@ test("someone is looked for from a dialog, and Escape puts focus back on its but
 	await expect(dialog).toBeVisible();
 	await expect(dialog.getByRole("searchbox")).toBeFocused();
 
-	await dialog.getByRole("searchbox").fill(fixture().ordinary.displayName);
-	await expect(dialog.getByText(/^Nobody in .+ matches/)).toBeVisible();
+	await dialog.getByRole("searchbox").fill(displayName);
+	await dialog.getByRole("button", { name: new RegExp(displayName) }).click();
+
+	await expect(dialog.getByRole("button", { name: new RegExp(displayName) })).toHaveCount(0);
 
 	await page.keyboard.press("Escape");
 
 	await expect(page.getByRole("dialog")).toHaveCount(0);
 	await expect(open).toBeFocused();
+	await expect(onTeam).toBeVisible();
+
+	await page.reload();
+
+	await expect(page.getByRole("heading", { level: 1, name: "Members" })).toBeVisible();
+	await expect(onTeam).toBeVisible();
+});
+
+test("looking for somebody already on the team offers nobody to add", async ({ page }) => {
+	await page.goto(settingsAt("members"));
+	await page.getByRole("button", { name: "Add someone" }).click();
+
+	const dialog = page.getByRole("dialog", { name: /^Add someone to / });
+
+	await dialog.getByRole("searchbox").fill(fixture().ordinary.displayName);
+
+	await expect(dialog.getByText(/^Nobody in .+ matches/)).toBeVisible();
 });
 
 test("the cycles page sends its settings links straight to the cycles section", async ({
