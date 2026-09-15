@@ -13,7 +13,7 @@ test("a bare issue number finds that issue and opens it", async ({ page }) => {
 
 	await page.getByRole("combobox").fill(numberOf(reference));
 
-	const found = page.getByRole("option", { name: new RegExp(reference) });
+	const found = page.getByRole("option", { name: new RegExp(`${reference}(?!\\d)`) });
 
 	await expect(found).toBeVisible();
 
@@ -31,5 +31,5 @@ test("the number with its team key in front finds the same issue", async ({ page
 
 	await page.getByRole("combobox").fill(`${key.toLowerCase()}${number}`);
 
-	await expect(page.getByRole("option", { name: new RegExp(reference) })).toBeVisible();
+	await expect(page.getByRole("option", { name: new RegExp(`${reference}(?!\\d)`) })).toBeVisible();
 });
