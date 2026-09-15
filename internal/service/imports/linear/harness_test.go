@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"maps"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -91,10 +92,86 @@ func (b *blobStore) objects() []storedObject {
 	return append([]storedObject{}, b.stored...)
 }
 
+type storageLedger struct {
+	service.Attachments
+
+	mu       sync.Mutex
+	charged  map[string]int64
+	restored []string
+	settled  []string
+	full     bool
+}
+
+func (l *storageLedger) SettleImportFile(_ context.Context, _ uuid.UUID, key string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.settled = append(l.settled, key)
+
+	return nil
+}
+
+func (l *storageLedger) measured() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	return append([]string{}, l.settled...)
+}
+
+func (l *storageLedger) ChargeImportFile(_ context.Context, _ uuid.UUID, key string, size int64) (int64, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.full {
+		return 0, entity.StorageExhaustedError{SizeBytes: size}
+	}
+
+	if l.charged == nil {
+		l.charged = map[string]int64{}
+	}
+
+	previous := l.charged[key]
+	l.charged[key] = size
+
+	return previous, nil
+}
+
+func (l *storageLedger) RestoreImportFile(_ context.Context, _ uuid.UUID, key string, previous int64) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.restored = append(l.restored, key)
+
+	if previous == 0 {
+		delete(l.charged, key)
+
+		return nil
+	}
+
+	l.charged[key] = previous
+
+	return nil
+}
+
+func (l *storageLedger) held() map[string]int64 {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	return maps.Clone(l.charged)
+}
+
+func (l *storageLedger) putBack() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	return append([]string{}, l.restored...)
+}
+
 type stand struct {
 	t        *testing.T
 	endpoint string
 	blobs    *blobStore
+	storage  *storageLedger
 	limit    int64
 	page     int
 
@@ -108,11 +185,12 @@ func standing(t *testing.T) *stand {
 	t.Helper()
 
 	held := &stand{
-		t:      t,
-		blobs:  &blobStore{},
-		limit:  defaultAttachmentCap,
-		page:   defaultPageSize,
-		answer: func(graphCall) string { return `{"data":{}}` },
+		t:       t,
+		blobs:   &blobStore{},
+		storage: &storageLedger{},
+		limit:   defaultAttachmentCap,
+		page:    defaultPageSize,
+		answer:  func(graphCall) string { return `{"data":{}}` },
 		serve: func(writer http.ResponseWriter, _ *http.Request) {
 			writer.WriteHeader(http.StatusNotFound)
 		},
@@ -258,7 +336,7 @@ func (s *stand) source() *linear.Source {
 	}
 
 	return linear.New(
-		lineargraph.New(cfg), s.blobs, cfg, config.Imports{MaxAttachmentBytes: s.limit},
+		lineargraph.New(cfg), s.blobs, s.storage, cfg, config.Imports{MaxAttachmentBytes: s.limit},
 	)
 }
 

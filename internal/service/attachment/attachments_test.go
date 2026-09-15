@@ -12,6 +12,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/repository"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
@@ -164,8 +165,8 @@ func TestAFullWorkspaceIsRefusedWithItsOwnNumbers(t *testing.T) {
 		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
 		Return(int64(0), entity.ErrStorageExhausted)
 	h.attachments.EXPECT().
-		Ledger(gomock.Any(), h.workspaceID).
-		Return(entity.WorkspaceStorage{StoredBytes: 9_800}, nil)
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 9_800, MaxBytes: maxWorkspaceBytes}, nil)
 
 	_, err := h.service.Reserve(
 		context.Background(), h.workspaceID, h.issueID,
@@ -224,7 +225,7 @@ func TestRoomIsTakenBeforeTheRowExistsSoTwoUploadsCannotBothFit(t *testing.T) {
 			return reserved, nil
 		})
 	h.blobs.EXPECT().
-		PresignPut(gomock.Any(), gomock.Any(), gomock.Any()).
+		PresignPut(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(entity.BlobTicket{URL: "https://storage.example/put", Method: "PUT"}, nil)
 
 	reservation, err := h.service.Reserve(
@@ -303,6 +304,9 @@ func TestAnAdoptedFileIsStoredOnItsIssueBeforeAnySweepCouldSeeIt(t *testing.T) {
 	origin := entity.NewImportOrigin(source, source, h.accountID)
 
 	h.attachments.EXPECT().
+		TakeImportFile(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(entity.ImportFileCharge{}, false, nil)
+	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
 		Return(int64(500), nil)
 	h.attachments.EXPECT().
@@ -356,11 +360,14 @@ func TestAnImportsFileIsRefusedByAFullWorkspaceLikeAnyOtherUpload(t *testing.T) 
 	origin := entity.NewImportOrigin(source, source, h.accountID)
 
 	h.attachments.EXPECT().
+		TakeImportFile(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(entity.ImportFileCharge{}, false, nil)
+	h.attachments.EXPECT().
 		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
 		Return(int64(0), entity.ErrStorageExhausted)
 	h.attachments.EXPECT().
-		Ledger(gomock.Any(), h.workspaceID).
-		Return(entity.WorkspaceStorage{StoredBytes: 9_900}, nil)
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 9_900, MaxBytes: maxWorkspaceBytes}, nil)
 
 	_, err := h.service.Adopt(context.Background(), h.workspaceID, h.issueID, h.carried(&origin))
 
@@ -410,6 +417,8 @@ func TestAnAdoptedFileIsServedByWhatItIsRatherThanWhatTheSourceSaid(t *testing.T
 	carried := h.carried(&origin)
 	carried.ContentType = "image/svg+xml"
 
+	h.attachments.EXPECT().TakeImportFile(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(entity.ImportFileCharge{}, false, nil)
 	h.attachments.EXPECT().Admit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(int64(500), nil)
 	h.attachments.EXPECT().
@@ -479,53 +488,42 @@ func TestFinalizeTrustsWhatItSniffsRatherThanWhatWasDeclared(t *testing.T) {
 	}
 }
 
-func TestFinalizeChargesTheDifferenceWhenMoreArrivedThanWasReserved(t *testing.T) {
-	h := newHarness(t, maxWorkspaceBytes)
-	h.actAs(entity.MembershipRoleMember)
-	h.seesTheIssue()
+func TestFinalizeRefusesAFileThatIsNotTheSizeItWasReservedAt(t *testing.T) {
+	for name, arrived := range map[string]int64{
+		"more than was declared": 700,
+		"less than was declared": 300,
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t, maxWorkspaceBytes)
+			h.actAs(entity.MembershipRoleMember)
+			h.seesTheIssue()
 
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(h.reserved(), nil)
-	h.blobs.EXPECT().Stat(gomock.Any(), gomock.Any()).Return(entity.BlobObject{Size: 700}, nil)
-	h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
-	h.attachments.EXPECT().
-		Admit(gomock.Any(), h.workspaceID, int64(200), int64(maxWorkspaceBytes)).
-		Return(int64(700), nil)
-	h.attachments.EXPECT().
-		Settle(gomock.Any(), h.attachmentID, int64(700), "image/png", gomock.Any()).
-		Return(nil)
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(h.stored("image/png"), nil)
+			h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(h.reserved(), nil)
+			h.blobs.EXPECT().Stat(gomock.Any(), gomock.Any()).Return(entity.BlobObject{Size: arrived}, nil)
+			h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
+			h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(500)).Return(nil)
+			h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, int64(500), gomock.Any()).Return(nil)
 
-	if _, err := h.service.Finalize(
-		context.Background(), h.workspaceID, h.issueID, h.attachmentID,
-	); err != nil {
-		t.Fatalf("Finalize: %v", err)
-	}
-}
+			_, err := h.service.Finalize(context.Background(), h.workspaceID, h.issueID, h.attachmentID)
 
-func TestFinalizeGivesBackTheDifferenceWhenLessArrived(t *testing.T) {
-	h := newHarness(t, maxWorkspaceBytes)
-	h.actAs(entity.MembershipRoleMember)
-	h.seesTheIssue()
+			var mismatch entity.AttachmentSizeMismatchError
+			if !errors.As(err, &mismatch) {
+				t.Fatalf(
+					"a file of %d bytes against a reservation of 500 was finalized with %v. The link "+
+						"was signed for the declared size, so any other size means the object was "+
+						"replaced or cut short, and settling it would bill the wrong number or hand "+
+						"out a broken file.",
+					arrived, err,
+				)
+			}
 
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(h.reserved(), nil)
-	h.blobs.EXPECT().Stat(gomock.Any(), gomock.Any()).Return(entity.BlobObject{Size: 300}, nil)
-	h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
-	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(200)).Return(nil)
-	h.attachments.EXPECT().
-		Settle(gomock.Any(), h.attachmentID, int64(300), "image/png", gomock.Any()).
-		Return(nil)
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(h.stored("image/png"), nil)
-
-	if _, err := h.service.Finalize(
-		context.Background(), h.workspaceID, h.issueID, h.attachmentID,
-	); err != nil {
-		t.Fatalf(
-			"Finalize: %v. A reservation is the declared size; the room a smaller file did not "+
-				"use has to come back or the workspace slowly fills with nothing.",
-			err,
-		)
+			if mismatch.DeclaredBytes != 500 || mismatch.ArrivedBytes != arrived {
+				t.Fatalf(
+					"the refusal reported %d declared and %d arrived",
+					mismatch.DeclaredBytes, mismatch.ArrivedBytes,
+				)
+			}
+		})
 	}
 }
 
@@ -539,15 +537,15 @@ func TestAFileThatArrivesOverTheCapIsDiscardedAndItsRoomReturned(t *testing.T) {
 		Return(entity.BlobObject{Size: maxFileBytes + 1}, nil)
 	h.blobs.EXPECT().Sniff(gomock.Any(), gomock.Any()).Return("image/png", nil)
 	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(500)).Return(nil)
-	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, gomock.Any()).Return(nil)
+	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, int64(500), gomock.Any()).Return(nil)
 
 	_, err := h.service.Finalize(context.Background(), h.workspaceID, h.issueID, h.attachmentID)
 
 	var oversized entity.AttachmentTooLargeError
 	if !errors.As(err, &oversized) {
 		t.Fatalf(
-			"a presigned PUT cannot bound the body, so a client can always send more than it "+
-				"declared. Finalize returned %v rather than refusing it.",
+			"the upload link bounds what a browser sends, but the object is only ever measured "+
+				"here. Finalize returned %v rather than refusing a file over the per-file cap.",
 			err,
 		)
 	}
@@ -661,15 +659,1240 @@ func TestRemovingAFileGivesItsRoomBackAtOnce(t *testing.T) {
 	h.actAs(entity.MembershipRoleMember)
 	h.seesTheIssue()
 
-	h.attachments.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
+	h.attachments.EXPECT().LockByID(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(h.stored("image/png"), nil)
 	h.attachments.EXPECT().Release(gomock.Any(), h.workspaceID, int64(500)).Return(nil)
-	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, gomock.Any()).Return(nil)
+	h.attachments.EXPECT().Discard(gomock.Any(), h.attachmentID, int64(500), gomock.Any()).Return(nil)
 
 	if err := h.service.Remove(
 		context.Background(), h.workspaceID, h.issueID, h.attachmentID,
 	); err != nil {
 		t.Fatalf("Remove: %v", err)
+	}
+}
+
+func TestAnUploadLinkIsSignedForExactlyTheSizeThatWasReserved(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	h.attachments.EXPECT().Admit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(500), nil)
+	h.attachments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, reserved entity.Attachment) (entity.Attachment, error) {
+			return reserved, nil
+		})
+
+	var signed int64
+
+	h.blobs.EXPECT().
+		PresignPut(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, sizeBytes int64, _ time.Duration) (entity.BlobTicket, error) {
+			signed = sizeBytes
+
+			return entity.BlobTicket{URL: "https://storage.example/put", Method: "PUT"}, nil
+		})
+
+	if _, err := h.service.Reserve(
+		context.Background(), h.workspaceID, h.issueID,
+		service.ReserveAttachmentInput{FileName: "shot.png", SizeBytes: 500},
+	); err != nil {
+		t.Fatalf("Reserve: %v", err)
+	}
+
+	if signed != 500 {
+		t.Fatalf(
+			"the upload link was signed for %d bytes against a reservation of 500. The workspace "+
+				"was charged for what was declared, so a link that takes any other size lets a "+
+				"client store more than it paid room for.",
+			signed,
+		)
+	}
+}
+
+func TestAWorkspaceGivenItsOwnLimitReportsThatRatherThanTheInstanceDefault(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.authorizer.EXPECT().Decide(gomock.Any(), gomock.Any()).Return(entity.Decision{}, nil)
+	h.attachments.EXPECT().Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 2_048, MaxBytes: 50_000}, nil)
+
+	ledger, err := h.service.Ledger(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Ledger: %v", err)
+	}
+
+	if ledger.MaxBytes != 50_000 {
+		t.Fatalf(
+			"a workspace given 50000 bytes of its own reported a limit of %d. The settings page "+
+				"would then show a limit the uploads are not actually held to.",
+			ledger.MaxBytes,
+		)
+	}
+}
+
+func TestAFullWorkspaceIsToldTheLimitItIsActuallyHeldTo(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(500), int64(maxWorkspaceBytes)).
+		Return(int64(0), entity.ErrStorageExhausted)
+	h.attachments.EXPECT().
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 49_800, MaxBytes: 50_000}, nil)
+
+	_, err := h.service.Reserve(
+		context.Background(), h.workspaceID, h.issueID,
+		service.ReserveAttachmentInput{FileName: "shot.png", SizeBytes: 500},
+	)
+
+	var exhausted entity.StorageExhaustedError
+	if !errors.As(err, &exhausted) || exhausted.MaxBytes != 50_000 {
+		t.Fatalf(
+			"a workspace held to its own 50000 bytes was refused with %v. Quoting the instance "+
+				"default instead would tell the uploader they have room they do not.",
+			err,
+		)
+	}
+}
+
+func (h *harness) importKey() string {
+	return entity.ImportBlobKey(h.workspaceID, h.attachmentID, "rows.csv")
+}
+
+func TestAnImportFileWrittenAgainIsChargedOnlyForWhatItGrew(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	key := h.importKey()
+
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
+		Return(entity.ImportFileCharge{SizeBytes: 300}, nil)
+	h.attachments.EXPECT().LockByObjectKey(gomock.Any(), h.workspaceID, key).
+		Return(entity.Attachment{}, false, nil)
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(200), int64(maxWorkspaceBytes)).
+		Return(int64(800), nil)
+	h.attachments.EXPECT().
+		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(500), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
+		Return(nil)
+
+	previous, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 500)
+	if err != nil {
+		t.Fatalf(
+			"ChargeImportFile: %v. A file uploaded again under the same name replaces the first, "+
+				"so charging all 500 bytes would bill the 300 that are no longer stored.",
+			err,
+		)
+	}
+
+	if previous != 300 {
+		t.Fatalf(
+			"the charge reported the file had held %d bytes, want 300. A write that fails after "+
+				"this has only that number to put the file back to.",
+			previous,
+		)
+	}
+}
+
+func TestAnImportFileWrittenAgainSmallerKeepsItsLargerReservationUntilTheSweep(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	key := h.importKey()
+
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
+		Return(entity.ImportFileCharge{SizeBytes: 500}, nil)
+	h.attachments.EXPECT().LockByObjectKey(gomock.Any(), h.workspaceID, key).
+		Return(entity.Attachment{}, false, nil)
+	h.attachments.EXPECT().
+		RecordImportFile(gomock.Any(), h.workspaceID, key, int64(500), gomock.Not(gomock.Nil()), gomock.Not(gomock.Nil())).
+		Return(nil)
+
+	if _, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 200); err != nil {
+		t.Fatalf(
+			"ChargeImportFile: %v. The earlier 500 bytes may still be in storage, or still being "+
+				"written, when a 200 byte replacement is charged, so the reservation cannot shrink "+
+				"before the sweep measures what is there.",
+			err,
+		)
+	}
+}
+
+func TestAnImportFileIntoAFullWorkspaceIsRefusedWithItsNumbersAndNeverRecorded(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	key := h.importKey()
+
+	h.attachments.EXPECT().ClaimImportFile(gomock.Any(), h.workspaceID, key).
+		Return(entity.ImportFileCharge{}, nil)
+	h.attachments.EXPECT().LockByObjectKey(gomock.Any(), h.workspaceID, key).
+		Return(entity.Attachment{}, false, nil)
+	h.attachments.EXPECT().
+		Admit(gomock.Any(), h.workspaceID, int64(400), int64(maxWorkspaceBytes)).
+		Return(int64(0), entity.ErrStorageExhausted)
+	h.attachments.EXPECT().
+		Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 9_900, MaxBytes: maxWorkspaceBytes}, nil)
+
+	_, err := h.service.ChargeImportFile(context.Background(), h.workspaceID, key, 400)
+
+	var exhausted entity.StorageExhaustedError
+	if !errors.As(err, &exhausted) || exhausted.StoredBytes != 9_900 {
+		t.Fatalf(
+			"an import file into a full workspace returned %v. The upload has to be refused "+
+				"before the bytes are written, and say how full the workspace is.",
+			err,
+		)
+	}
+}
+
+func TestAKeyOutsideThisWorkspacesImportsIsNeverCharged(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+
+	for name, key := range map[string]string{
+		"another workspace's import": entity.ImportBlobKey(uuid.New(), uuid.New(), "rows.csv"),
+		"a live attachment":          entity.AttachmentKey(h.workspaceID, uuid.New()),
+	} {
+		t.Run(name, func(t *testing.T) {
+			var refused entity.ValidationError
+
+			if _, err := h.service.ChargeImportFile(
+				context.Background(), h.workspaceID, key, 100,
+			); !errors.As(err, &refused) {
+				t.Fatalf(
+					"charging %s returned %v. A key that is not this workspace's own import would "+
+						"let one import put its bytes on another workspace's bill.",
+					name, err,
+				)
+			}
+		})
+	}
+}
+
+func TestAnImportedFileAdoptedOntoAnIssueIsNotChargedASecondTime(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, h.accountID)
+	carried := h.carried(&origin)
+
+	h.attachments.EXPECT().
+		TakeImportFile(gomock.Any(), h.workspaceID, carried.ObjectKey).
+		Return(entity.ImportFileCharge{SizeBytes: 700}, true, nil)
+	h.attachments.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, adopted entity.Attachment) (entity.Attachment, error) {
+			if adopted.SizeBytes != 700 {
+				t.Fatalf(
+					"the adopted row records %d bytes where the import was charged 700. The sweep "+
+						"gives back what the row says, so the two have to agree.",
+					adopted.SizeBytes,
+				)
+			}
+
+			return adopted, nil
+		})
+
+	if _, err := h.service.Adopt(context.Background(), h.workspaceID, h.issueID, carried); err != nil {
+		t.Fatalf(
+			"Adopt: %v. The import already paid for these bytes when it stored them; admitting "+
+				"them again would count one file twice.",
+			err,
+		)
+	}
+}
+
+type storageBook struct {
+	repository.Attachment
+
+	workspaceID uuid.UUID
+	stored      int64
+	files       map[string]int64
+	settle      map[string]*time.Time
+	charged     map[string]*time.Time
+	attachments map[uuid.UUID]entity.Attachment
+	locked      string
+}
+
+func (b *storageBook) ClaimImportFile(_ context.Context, _ uuid.UUID, key string) (entity.ImportFileCharge, error) {
+	if _, held := b.files[key]; !held {
+		b.files[key] = 0
+	}
+
+	b.locked = key
+
+	return entity.ImportFileCharge{
+		WorkspaceID:  b.workspaceID,
+		ObjectKey:    key,
+		SizeBytes:    b.files[key],
+		SettleAfter:  b.settle[key],
+		ChargedUntil: b.charged[key],
+	}, nil
+}
+
+func (b *storageBook) RecordImportFile(
+	_ context.Context,
+	_ uuid.UUID,
+	key string,
+	sizeBytes int64,
+	settleAfter, chargedUntil *time.Time,
+) error {
+	b.files[key] = sizeBytes
+	b.settle[key] = settleAfter
+	b.charged[key] = chargedUntil
+
+	return nil
+}
+
+func (b *storageBook) RefundImportFile(_ context.Context, _ uuid.UUID, key string) error {
+	b.stored = max(b.stored-b.files[key], 0)
+	delete(b.files, key)
+	delete(b.settle, key)
+	delete(b.charged, key)
+
+	return nil
+}
+
+func (b *storageBook) deadlinesPass(key string) {
+	passed := time.Now().UTC().Add(-time.Minute)
+
+	if b.settle[key] != nil {
+		b.settle[key] = &passed
+	}
+
+	if b.charged[key] != nil {
+		b.charged[key] = &passed
+	}
+}
+
+func (b *storageBook) TakeImportFile(_ context.Context, _ uuid.UUID, key string) (entity.ImportFileCharge, bool, error) {
+	size, held := b.files[key]
+	if !held {
+		return entity.ImportFileCharge{}, false, nil
+	}
+
+	file := entity.ImportFileCharge{
+		WorkspaceID:  b.workspaceID,
+		ObjectKey:    key,
+		SizeBytes:    size,
+		SettleAfter:  b.settle[key],
+		ChargedUntil: b.charged[key],
+	}
+
+	delete(b.files, key)
+	delete(b.settle, key)
+	delete(b.charged, key)
+
+	return file, true, nil
+}
+
+func (b *storageBook) LockByObjectKey(
+	_ context.Context,
+	_ uuid.UUID,
+	key string,
+) (entity.Attachment, bool, error) {
+	for _, attachment := range b.attachments {
+		if attachment.ObjectKey == key {
+			b.locked = key
+
+			return attachment, true, nil
+		}
+	}
+
+	return entity.Attachment{}, false, nil
+}
+
+func (b *storageBook) Create(_ context.Context, attachment entity.Attachment) (entity.Attachment, error) {
+	b.attachments[attachment.ID] = attachment
+
+	return attachment, nil
+}
+
+func (b *storageBook) LockByID(_ context.Context, _, attachmentID uuid.UUID) (entity.Attachment, error) {
+	attachment, held := b.attachments[attachmentID]
+	if !held {
+		return entity.Attachment{}, entity.ErrAttachmentNotFound
+	}
+
+	b.locked = attachment.ObjectKey
+
+	return attachment, nil
+}
+
+func (b *storageBook) MeasureAttachment(
+	_ context.Context,
+	attachmentID uuid.UUID,
+	sizeBytes int64,
+	settleAfter, chargedUntil *time.Time,
+) error {
+	attachment := b.attachments[attachmentID]
+	attachment.SizeBytes = sizeBytes
+	attachment.SettleAfter = settleAfter
+	attachment.ChargedUntil = chargedUntil
+
+	if !attachment.Stored() && chargedUntil != nil &&
+		(attachment.ReclaimAfter == nil || chargedUntil.After(*attachment.ReclaimAfter)) {
+		attachment.ReclaimAfter = chargedUntil
+	}
+
+	b.attachments[attachmentID] = attachment
+
+	return nil
+}
+
+func (b *storageBook) RetireAttachment(_ context.Context, attachmentID uuid.UUID, reclaimAfter time.Time) error {
+	attachment := b.attachments[attachmentID]
+	attachment.Status = entity.AttachmentStatusDiscarded
+	attachment.ReclaimAfter = &reclaimAfter
+	b.attachments[attachmentID] = attachment
+
+	return nil
+}
+
+func (b *storageBook) Discard(_ context.Context, attachmentID uuid.UUID, releasedBytes int64, at time.Time) error {
+	attachment, held := b.attachments[attachmentID]
+	if !held || attachment.SizeBytes != releasedBytes {
+		return entity.ErrAttachmentNotFound
+	}
+
+	attachment.Status = entity.AttachmentStatusDiscarded
+	attachment.SizeBytes = 0
+	attachment.ReclaimAfter = &at
+	b.attachments[attachmentID] = attachment
+
+	return nil
+}
+
+func (b *storageBook) Reclaim(_ context.Context, attachmentID uuid.UUID) error {
+	attachment, held := b.attachments[attachmentID]
+	if !held || attachment.ReclaimAfter == nil || attachment.ReclaimAfter.After(time.Now().UTC()) {
+		return nil
+	}
+
+	b.stored = max(b.stored-attachment.SizeBytes, 0)
+	delete(b.attachments, attachmentID)
+
+	return nil
+}
+
+func (b *storageBook) ListUnsettledAttachments(_ context.Context, at time.Time, _ int) ([]entity.Attachment, error) {
+	due := make([]entity.Attachment, 0)
+
+	for _, attachment := range b.attachments {
+		if attachment.Stored() && attachment.SettleAfter != nil && !attachment.SettleAfter.After(at) {
+			due = append(due, attachment)
+		}
+	}
+
+	return due, nil
+}
+
+func (b *storageBook) attachmentDeadlinesPass(attachmentID uuid.UUID) {
+	passed := time.Now().UTC().Add(-time.Minute)
+	attachment := b.attachments[attachmentID]
+
+	if attachment.SettleAfter != nil {
+		attachment.SettleAfter = &passed
+	}
+
+	if attachment.ChargedUntil != nil {
+		attachment.ChargedUntil = &passed
+	}
+
+	if attachment.ReclaimAfter != nil {
+		attachment.ReclaimAfter = &passed
+	}
+
+	b.attachments[attachmentID] = attachment
+}
+
+func (b *storageBook) MarkOrphans(context.Context, time.Time) error {
+	return nil
+}
+
+func (b *storageBook) ListReclaimable(_ context.Context, at time.Time, _ int) ([]entity.Attachment, error) {
+	due := make([]entity.Attachment, 0)
+
+	for _, attachment := range b.attachments {
+		if attachment.ReclaimAfter != nil && !attachment.ReclaimAfter.After(at) {
+			due = append(due, attachment)
+		}
+	}
+
+	return due, nil
+}
+
+func (b *storageBook) ListUnsettledImportFiles(
+	_ context.Context,
+	at time.Time,
+	_ int,
+) ([]entity.ImportFileCharge, error) {
+	due := make([]entity.ImportFileCharge, 0)
+
+	for key, settleAfter := range b.settle {
+		if settleAfter != nil && !settleAfter.After(at) {
+			due = append(due, entity.ImportFileCharge{WorkspaceID: b.workspaceID, ObjectKey: key, SizeBytes: b.files[key]})
+		}
+	}
+
+	return due, nil
+}
+
+func (b *storageBook) Admit(_ context.Context, _ uuid.UUID, sizeBytes, maxBytes int64) (int64, error) {
+	if maxBytes != 0 && b.stored+sizeBytes > maxBytes {
+		return 0, entity.ErrStorageExhausted
+	}
+
+	b.stored += sizeBytes
+
+	return b.stored, nil
+}
+
+func (b *storageBook) Release(_ context.Context, _ uuid.UUID, sizeBytes int64) error {
+	b.stored = max(b.stored-sizeBytes, 0)
+
+	return nil
+}
+
+func (b *storageBook) Correct(_ context.Context, _ uuid.UUID, deltaBytes int64) error {
+	b.stored = max(b.stored+deltaBytes, 0)
+
+	return nil
+}
+
+type measuredStore struct {
+	repository.Blob
+
+	t           *testing.T
+	book        *storageBook
+	objects     map[string]int64
+	unreachable bool
+	landing     func()
+}
+
+func (m *measuredStore) Delete(_ context.Context, key string) error {
+	delete(m.objects, key)
+
+	return nil
+}
+
+func newBook(workspaceID uuid.UUID) (*storageBook, *measuredStore) {
+	book := &storageBook{
+		workspaceID: workspaceID,
+		files:       map[string]int64{},
+		settle:      map[string]*time.Time{},
+		charged:     map[string]*time.Time{},
+		attachments: map[uuid.UUID]entity.Attachment{},
+	}
+
+	return book, &measuredStore{book: book, objects: map[string]int64{}}
+}
+
+func (m *measuredStore) Stat(_ context.Context, key string) (entity.BlobObject, error) {
+	if m.book.locked != key {
+		m.t.Errorf(
+			"%q was measured without holding its row. A second upload of the same key could write "+
+				"and settle between the measurement and the update, and the ledger would keep the "+
+				"older size.",
+			key,
+		)
+	}
+
+	unreachable := m.unreachable
+	size, held := m.objects[key]
+
+	if landing := m.landing; landing != nil {
+		m.landing = nil
+		landing()
+	}
+
+	if unreachable {
+		return entity.BlobObject{}, errors.New("storage is unreachable")
+	}
+
+	if !held {
+		return entity.BlobObject{}, entity.ErrBlobNotFound
+	}
+
+	return entity.BlobObject{Size: size}, nil
+}
+
+func bookedService(t *testing.T, book *storageBook, store *measuredStore) service.Attachments {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+
+	store.t = t
+
+	transactor := transactorrepo.NewMockTransactor(ctrl)
+	transactor.EXPECT().
+		WithTx(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			err := fn(ctx)
+			book.locked = ""
+
+			return err
+		}).
+		AnyTimes()
+
+	issues := issuerepo.NewMockIssue(ctrl)
+	issues.EXPECT().
+		VisibleExists(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
+	authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()},
+			Role:  entity.MembershipRoleMember,
+			Scope: entity.TeamScope{WorkspaceID: book.workspaceID, AllTeams: true},
+		}, nil).
+		AnyTimes()
+
+	activity := activityrepo.NewMockActivity(ctrl)
+	activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	jobs := jobqueuerepo.NewMockJobProducer(ctrl)
+	jobs.EXPECT().EnqueueAttachmentReclaim(gomock.Any()).Return(nil).AnyTimes()
+
+	return attachmentsvc.New(
+		book, activity, issues, store, jobs, authorizer, transactor,
+		config.Attachments{
+			MaxFileBytes:      maxFileBytes,
+			MaxWorkspaceBytes: maxWorkspaceBytes,
+			UploadTTL:         15 * time.Minute,
+			ReclaimBatch:      100,
+		},
+	)
+}
+
+const nothingLeft = -1
+
+func (b *storageBook) holding(key string, sizeBytes int64, store *measuredStore) {
+	if sizeBytes <= 0 {
+		return
+	}
+
+	b.files[key] = sizeBytes
+	b.stored = sizeBytes
+	store.objects[key] = sizeBytes
+}
+
+func (m *measuredStore) leaving(key string, sizeBytes int64) {
+	if sizeBytes == nothingLeft {
+		delete(m.objects, key)
+
+		return
+	}
+
+	m.objects[key] = sizeBytes
+}
+
+func sweptOnceNobodyCanStillBeWriting(t *testing.T, storage service.Attachments, book *storageBook, key string) {
+	t.Helper()
+
+	book.deadlinesPass(key)
+
+	if err := storage.Reclaim(context.Background()); err != nil {
+		t.Fatalf("Reclaim: %v", err)
+	}
+}
+
+func TestAWriteThatLandsWhileAnotherUploadIsMeasuredIsCaughtEvenIfItsUploaderDies(t *testing.T) {
+	for name, first := range map[string]struct {
+		landed bool
+	}{
+		"A's write landed, B's lands after A's HEAD, and B dies before measuring":  {landed: true},
+		"A's write failed, its HEAD finds nothing, B's lands after it, and B dies": {landed: false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "rows.csv")
+
+			book, store := newBook(workspaceID)
+			storage := bookedService(t, book, store)
+
+			previousA, err := storage.ChargeImportFile(ctx, workspaceID, key, 500)
+			if err != nil {
+				t.Fatalf("ChargeImportFile for A: %v", err)
+			}
+
+			if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+				t.Fatalf("ChargeImportFile for B: %v", err)
+			}
+
+			if first.landed {
+				store.leaving(key, 500)
+			}
+
+			store.landing = func() { store.objects[key] = 700 }
+
+			if first.landed {
+				err = storage.SettleImportFile(ctx, workspaceID, key)
+			} else {
+				err = storage.RestoreImportFile(ctx, workspaceID, key, previousA)
+			}
+
+			if err != nil {
+				t.Fatalf("measuring A: %v", err)
+			}
+
+			if book.stored != 700 || book.files[key] != 700 || book.settle[key] == nil {
+				t.Fatalf(
+					"A's measurement left the file recorded at %d and the workspace at %d (waiting %v), want "+
+						"700 and waiting. B reserved 700 bytes and was still writing when A measured, so "+
+						"A's HEAD says nothing about B's bytes: lowering the reservation there lets the "+
+						"workspace take uploads past its limit, and settling it leaves nothing to catch "+
+						"B's object if B dies before measuring.",
+					book.files[key], book.stored, book.settle[key] != nil,
+				)
+			}
+
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
+
+			if book.stored != 700 || book.files[key] != 700 || book.settle[key] != nil {
+				t.Fatalf(
+					"storage holds B's 700 bytes, but once nobody could still be writing the sweep left the "+
+						"file recorded at %d and the workspace at %d (waiting %v). Without that last "+
+						"measurement the ledger stays short for good.",
+					book.files[key], book.stored, book.settle[key] != nil,
+				)
+			}
+		})
+	}
+}
+
+func TestTwoUploadsOfOneImportFileLeaveTheLedgerAtWhateverStorageKept(t *testing.T) {
+	for name, writes := range map[string]struct {
+		first, last int64
+	}{
+		"A charges 700, B charges 500, B writes, then A writes": {first: 500, last: 700},
+		"A charges 700, B charges 500, A writes, then B writes": {first: 700, last: 500},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "rows.csv")
+
+			book, store := newBook(workspaceID)
+			storage := bookedService(t, book, store)
+
+			for _, size := range []int64{700, 500} {
+				if _, err := storage.ChargeImportFile(ctx, workspaceID, key, size); err != nil {
+					t.Fatalf("ChargeImportFile(%d): %v", size, err)
+				}
+			}
+
+			for _, written := range []int64{writes.first, writes.last} {
+				store.leaving(key, written)
+
+				if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+					t.Fatalf("SettleImportFile after writing %d: %v", written, err)
+				}
+			}
+
+			if book.stored != 700 || book.files[key] != 700 {
+				t.Fatalf(
+					"both uploads of %q wrote before either could be known to be the last, but the file "+
+						"is recorded at %d and the workspace reads %d, want the 700 the larger one "+
+						"reserved. Until no writer can still be active a reservation may only grow, or "+
+						"the workspace can take uploads past its limit.",
+					key, book.files[key], book.stored,
+				)
+			}
+
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
+
+			if book.stored != writes.last || book.files[key] != writes.last || book.settle[key] != nil {
+				t.Fatalf(
+					"the sweep after both uploads left the file recorded at %d and the workspace at %d "+
+						"(waiting %v), want %d and settled",
+					book.files[key], book.stored, book.settle[key] != nil, writes.last,
+				)
+			}
+		})
+	}
+}
+
+func TestAnImportFileWhoseWriteFailedKeepsItsReservationUntilTheSweepCountsWhatStorageHolds(t *testing.T) {
+	for name, write := range map[string]struct {
+		earlier, left, want int64
+	}{
+		"a replacement the store refused, keeping the earlier file":      {300, 300, 300},
+		"a replacement that landed although the store reported an error": {300, 500, 500},
+		"a first upload whose HEAD finds nothing":                        {0, nothingLeft, 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "rows.csv")
+
+			book, store := newBook(workspaceID)
+			book.holding(key, write.earlier, store)
+			storage := bookedService(t, book, store)
+
+			previous, err := storage.ChargeImportFile(ctx, workspaceID, key, 500)
+			if err != nil {
+				t.Fatalf("ChargeImportFile: %v", err)
+			}
+
+			store.leaving(key, write.left)
+
+			if err := storage.RestoreImportFile(ctx, workspaceID, key, previous); err != nil {
+				t.Fatalf("RestoreImportFile: %v", err)
+			}
+
+			if book.stored != 500 || book.files[key] != 500 || book.settle[key] == nil {
+				t.Fatalf(
+					"after %s, while a writer could still be active, the file is recorded at %d and the "+
+						"workspace reads %d (waiting %v), want the 500 reserved and waiting. A HEAD taken "+
+						"before then cannot lower a reservation, or the workspace could take uploads past "+
+						"its limit in the meantime.",
+					name, book.files[key], book.stored, book.settle[key] != nil,
+				)
+			}
+
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
+
+			recorded, held := book.files[key]
+
+			if book.stored != write.want || recorded != write.want || held != (write.want > 0) ||
+				book.settle[key] != nil {
+				t.Fatalf(
+					"once nobody could still be writing, the sweep left %s recorded at %d (held %v) and "+
+						"the workspace at %d, want %d and settled",
+					name, recorded, held, book.stored, write.want,
+				)
+			}
+		})
+	}
+}
+
+func TestAWriteWhoseOutcomeCannotBeCheckedStaysChargedUntilTheSweepMeasuresIt(t *testing.T) {
+	for name, write := range map[string]struct {
+		earlier, charged, left, kept, swept int64
+	}{
+		"a first upload that landed while storage stopped answering":       {0, 500, 500, 500, 500},
+		"a first upload that never landed while storage stopped answering": {0, 500, nothingLeft, 500, 0},
+		"a replacement whose earlier file survived":                        {300, 500, 300, 500, 300},
+		"a smaller replacement that landed":                                {500, 300, 300, 500, 300},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "rows.csv")
+
+			book, store := newBook(workspaceID)
+			book.holding(key, write.earlier, store)
+			storage := bookedService(t, book, store)
+
+			previous, err := storage.ChargeImportFile(ctx, workspaceID, key, write.charged)
+			if err != nil {
+				t.Fatalf("ChargeImportFile: %v", err)
+			}
+
+			store.leaving(key, write.left)
+			store.unreachable = true
+
+			if err := storage.RestoreImportFile(ctx, workspaceID, key, previous); err != nil {
+				t.Fatalf("RestoreImportFile: %v", err)
+			}
+
+			if book.stored != write.kept || book.files[key] != write.kept || book.settle[key] == nil {
+				t.Fatalf(
+					"while storage could not be asked, %s left the file recorded at %d and the workspace "+
+						"at %d (waiting to be measured: %v), want %d for both and waiting. The object "+
+						"may well be there, so its charge cannot be dropped on a guess; the sweep is "+
+						"what finds out.",
+					name, book.files[key], book.stored, book.settle[key] != nil, write.kept,
+				)
+			}
+
+			store.unreachable = false
+
+			sweptOnceNobodyCanStillBeWriting(t, storage, book, key)
+
+			recorded, held := book.files[key]
+
+			if book.stored != write.swept || recorded != write.swept || held != (write.swept > 0) ||
+				book.settle[key] != nil {
+				t.Fatalf(
+					"once storage answered again, the sweep left %s recorded at %d (held %v) and the "+
+						"workspace at %d, want %d for both and nothing left waiting",
+					name, recorded, held, book.stored, write.swept,
+				)
+			}
+		})
+	}
+}
+
+func TestAFileAdoptedWhileItsReservationWasStillHeldIsMeasuredByTheSweepOnItsIssue(t *testing.T) {
+	ctx := context.Background()
+	workspaceID := uuid.New()
+	key := entity.ImportBlobKey(workspaceID, uuid.New(), "shot.png")
+
+	book, store := newBook(workspaceID)
+	storage := bookedService(t, book, store)
+
+	for _, written := range []int64{700, 300} {
+		if _, err := storage.ChargeImportFile(ctx, workspaceID, key, written); err != nil {
+			t.Fatalf("ChargeImportFile(%d): %v", written, err)
+		}
+
+		store.leaving(key, written)
+
+		if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+			t.Fatalf("SettleImportFile after writing %d: %v", written, err)
+		}
+	}
+
+	if book.stored != 700 {
+		t.Fatalf("the smaller replacement lowered the reservation to %d while a writer could still be active", book.stored)
+	}
+
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, uuid.New())
+
+	adopted, err := storage.Adopt(ctx, workspaceID, uuid.New(), service.AdoptAttachmentInput{
+		ObjectKey:   key,
+		FileName:    "shot.png",
+		ContentType: "image/png",
+		SizeBytes:   300,
+		Origin:      &origin,
+	})
+	if err != nil {
+		t.Fatalf("Adopt: %v", err)
+	}
+
+	if _, held := book.files[key]; held || book.stored != 700 || book.attachments[adopted.ID].SettleAfter == nil {
+		t.Fatalf(
+			"adopting the file left the import record held %v, the workspace at %d and the attachment "+
+				"waiting %v, want the reservation carried onto the attachment: still 700 and waiting",
+			held, book.stored, book.attachments[adopted.ID].SettleAfter != nil,
+		)
+	}
+
+	book.attachmentDeadlinesPass(adopted.ID)
+
+	if err := storage.Reclaim(ctx); err != nil {
+		t.Fatalf("Reclaim: %v", err)
+	}
+
+	attachment := book.attachments[adopted.ID]
+
+	if attachment.SizeBytes != 300 || book.stored != 300 || attachment.SettleAfter != nil {
+		t.Fatalf(
+			"storage holds 300 bytes, but after the sweep the attachment records %d, the workspace reads "+
+				"%d and the attachment is waiting %v. Adoption moves the file off the import record, so "+
+				"unless its reservation moves with it nothing measures it again and the 700 stays for good.",
+			attachment.SizeBytes, book.stored, attachment.SettleAfter != nil,
+		)
+	}
+}
+
+func adoptingOrigin() *entity.ImportOrigin {
+	source := time.Date(2021, time.March, 4, 5, 6, 7, 0, time.UTC)
+	origin := entity.NewImportOrigin(source, source, uuid.New())
+
+	return &origin
+}
+
+func TestAWriterThatFinishesAfterItsFileWasAdoptedMeasuresTheAttachmentInsteadOfChargingAgain(t *testing.T) {
+	for name, second := range map[string]struct {
+		charged int64
+		lands   bool
+	}{
+		"a smaller second upload lands after the adoption": {charged: 500, lands: true},
+		"a larger second upload lands after the adoption":  {charged: 900, lands: true},
+		"a larger second upload fails after the adoption":  {charged: 900, lands: false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID := uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "shot.png")
+
+			book, store := newBook(workspaceID)
+			storage := bookedService(t, book, store)
+
+			if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+				t.Fatalf("ChargeImportFile(700): %v", err)
+			}
+
+			store.leaving(key, 700)
+
+			if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+				t.Fatalf("SettleImportFile after writing 700: %v", err)
+			}
+
+			previous, err := storage.ChargeImportFile(ctx, workspaceID, key, second.charged)
+			if err != nil {
+				t.Fatalf("ChargeImportFile(%d): %v", second.charged, err)
+			}
+
+			adopted, err := storage.Adopt(ctx, workspaceID, uuid.New(), service.AdoptAttachmentInput{
+				ObjectKey:   key,
+				FileName:    "shot.png",
+				ContentType: "image/png",
+				SizeBytes:   700,
+				Origin:      adoptingOrigin(),
+			})
+			if err != nil {
+				t.Fatalf("Adopt: %v", err)
+			}
+
+			reserved, inStorage := max(int64(700), second.charged), int64(700)
+
+			if second.lands {
+				store.leaving(key, second.charged)
+				inStorage = second.charged
+				err = storage.SettleImportFile(ctx, workspaceID, key)
+			} else {
+				err = storage.RestoreImportFile(ctx, workspaceID, key, previous)
+			}
+
+			if err != nil {
+				t.Fatalf("the second upload measuring its write: %v", err)
+			}
+
+			attachment := book.attachments[adopted.ID]
+			_, recordedAgain := book.files[key]
+
+			if recordedAgain || attachment.SizeBytes != reserved || book.stored != reserved {
+				t.Fatalf(
+					"after the second upload measured a file that had already been adopted, an import "+
+						"record is held %v, the attachment records %d and the workspace reads %d, want no "+
+						"import record and %d for both. There is one object, so it can only have one charge.",
+					recordedAgain, attachment.SizeBytes, book.stored, reserved,
+				)
+			}
+
+			book.attachmentDeadlinesPass(adopted.ID)
+
+			if err := storage.Reclaim(ctx); err != nil {
+				t.Fatalf("Reclaim: %v", err)
+			}
+
+			attachment = book.attachments[adopted.ID]
+			_, recordedAgain = book.files[key]
+
+			if recordedAgain || attachment.SizeBytes != inStorage || book.stored != inStorage ||
+				attachment.SettleAfter != nil {
+				t.Fatalf(
+					"once nobody could still be writing, the sweep left an import record held %v, the "+
+						"attachment at %d and the workspace at %d (waiting %v), want no import record and "+
+						"the %d bytes in storage for both",
+					recordedAgain, attachment.SizeBytes, book.stored, attachment.SettleAfter != nil, inStorage,
+				)
+			}
+		})
+	}
+}
+
+func TestAnUploadChargedAfterItsFileWasAdoptedGrowsTheAttachmentsReservation(t *testing.T) {
+	ctx := context.Background()
+	workspaceID := uuid.New()
+	key := entity.ImportBlobKey(workspaceID, uuid.New(), "shot.png")
+
+	book, store := newBook(workspaceID)
+	storage := bookedService(t, book, store)
+
+	if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+		t.Fatalf("ChargeImportFile(700): %v", err)
+	}
+
+	store.leaving(key, 700)
+
+	if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+		t.Fatalf("SettleImportFile after writing 700: %v", err)
+	}
+
+	adopted, err := storage.Adopt(ctx, workspaceID, uuid.New(), service.AdoptAttachmentInput{
+		ObjectKey:   key,
+		FileName:    "shot.png",
+		ContentType: "image/png",
+		SizeBytes:   700,
+		Origin:      adoptingOrigin(),
+	})
+	if err != nil {
+		t.Fatalf("Adopt: %v", err)
+	}
+
+	previous, err := storage.ChargeImportFile(ctx, workspaceID, key, 900)
+	if err != nil {
+		t.Fatalf("ChargeImportFile(900): %v", err)
+	}
+
+	attachment := book.attachments[adopted.ID]
+	_, recordedAgain := book.files[key]
+
+	if previous != 700 || recordedAgain || attachment.SizeBytes != 900 || book.stored != 900 {
+		t.Fatalf(
+			"a 900 byte upload charged after its file was adopted reported %d held before it, left an import "+
+				"record held %v, the attachment at %d and the workspace at %d, want 700 before, no import "+
+				"record and 900 for both. The adopted attachment is the one charge for that object.",
+			previous, recordedAgain, attachment.SizeBytes, book.stored,
+		)
+	}
+
+	store.leaving(key, 900)
+
+	if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+		t.Fatalf("SettleImportFile after writing 900: %v", err)
+	}
+
+	book.attachmentDeadlinesPass(adopted.ID)
+
+	if err := storage.Reclaim(ctx); err != nil {
+		t.Fatalf("Reclaim: %v", err)
+	}
+
+	attachment = book.attachments[adopted.ID]
+	_, recordedAgain = book.files[key]
+
+	if recordedAgain || attachment.SizeBytes != 900 || book.stored != 900 || attachment.SettleAfter != nil {
+		t.Fatalf(
+			"after the write and the sweep, an import record is held %v, the attachment records %d and the "+
+				"workspace reads %d (waiting %v), want no import record and 900 settled",
+			recordedAgain, attachment.SizeBytes, book.stored, attachment.SettleAfter != nil,
+		)
+	}
+}
+
+func TestRemovingAnAdoptedFileWhileAWriterMayStillBeActiveKeepsItsReservationUntilNobodyCanBe(t *testing.T) {
+	for name, late := range map[string]struct {
+		chargedBefore, chargedAfter int64
+		measures                    bool
+	}{
+		"a writer charged before the removal puts its object and dies before measuring": {chargedBefore: 900},
+		"a writer charged before the removal puts its object and measures it":           {chargedBefore: 900, measures: true},
+		"a writer charged after the removal puts its object and dies before measuring":  {chargedAfter: 1200},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			workspaceID, issueID := uuid.New(), uuid.New()
+			key := entity.ImportBlobKey(workspaceID, uuid.New(), "shot.png")
+
+			book, store := newBook(workspaceID)
+			storage := bookedService(t, book, store)
+
+			if _, err := storage.ChargeImportFile(ctx, workspaceID, key, 700); err != nil {
+				t.Fatalf("ChargeImportFile(700): %v", err)
+			}
+
+			store.leaving(key, 700)
+
+			if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+				t.Fatalf("SettleImportFile after writing 700: %v", err)
+			}
+
+			if late.chargedBefore > 0 {
+				if _, err := storage.ChargeImportFile(ctx, workspaceID, key, late.chargedBefore); err != nil {
+					t.Fatalf("ChargeImportFile(%d): %v", late.chargedBefore, err)
+				}
+			}
+
+			adopted, err := storage.Adopt(ctx, workspaceID, issueID, service.AdoptAttachmentInput{
+				ObjectKey:   key,
+				FileName:    "shot.png",
+				ContentType: "image/png",
+				SizeBytes:   700,
+				Origin:      adoptingOrigin(),
+			})
+			if err != nil {
+				t.Fatalf("Adopt: %v", err)
+			}
+
+			if err := storage.Remove(ctx, workspaceID, issueID, adopted.ID); err != nil {
+				t.Fatalf("Remove: %v", err)
+			}
+
+			reserved := max(int64(700), late.chargedBefore)
+			removed, kept := book.attachments[adopted.ID]
+
+			if !kept || removed.Stored() || removed.SizeBytes != reserved || book.stored != reserved {
+				t.Fatalf(
+					"removing the file while a writer could still be active left its row kept %v (on its "+
+						"issue %v) at %d and the workspace at %d, want the row kept, off its issue, and %d "+
+						"still reserved. A writer that puts the object back afterwards and dies before "+
+						"measuring would otherwise leave bytes that nothing counts.",
+					kept, removed.Stored(), removed.SizeBytes, book.stored, reserved,
+				)
+			}
+
+			if late.chargedAfter > 0 {
+				if _, err := storage.ChargeImportFile(ctx, workspaceID, key, late.chargedAfter); err != nil {
+					t.Fatalf("ChargeImportFile(%d): %v", late.chargedAfter, err)
+				}
+
+				reserved = late.chargedAfter
+			}
+
+			store.leaving(key, max(late.chargedBefore, late.chargedAfter))
+
+			if late.measures {
+				if err := storage.SettleImportFile(ctx, workspaceID, key); err != nil {
+					t.Fatalf("SettleImportFile after the removal: %v", err)
+				}
+			}
+
+			if err := storage.Reclaim(ctx); err != nil {
+				t.Fatalf("Reclaim before the deadline: %v", err)
+			}
+
+			_, recordedAgain := book.files[key]
+			_, kept = book.attachments[adopted.ID]
+
+			if recordedAgain || !kept || book.stored != reserved {
+				t.Fatalf(
+					"before any writer's deadline had passed, the sweep left an import record held %v, the "+
+						"removed file's row kept %v and the workspace at %d, want no import record, the row "+
+						"kept and %d reserved",
+					recordedAgain, kept, book.stored, reserved,
+				)
+			}
+
+			book.attachmentDeadlinesPass(adopted.ID)
+
+			if err := storage.Reclaim(ctx); err != nil {
+				t.Fatalf("Reclaim after the deadline: %v", err)
+			}
+
+			_, recordedAgain = book.files[key]
+			_, kept = book.attachments[adopted.ID]
+			_, left := store.objects[key]
+
+			if recordedAgain || kept || left || book.stored != 0 {
+				t.Fatalf(
+					"once nobody could still be writing, the sweep left an import record held %v, the row "+
+						"kept %v, the object in storage %v and the workspace at %d, want all of it gone and "+
+						"nothing counted",
+					recordedAgain, kept, left, book.stored,
+				)
+			}
+		})
+	}
+}
+
+func TestRemovingAFileAWriterMayStillBePuttingKeepsItsReservationUntilTheDeadline(t *testing.T) {
+	h := newHarness(t, maxWorkspaceBytes)
+	h.actAs(entity.MembershipRoleMember)
+	h.seesTheIssue()
+
+	chargedUntil := time.Now().UTC().Add(time.Hour)
+	held := h.stored("image/png")
+	held.ChargedUntil = &chargedUntil
+
+	h.attachments.EXPECT().LockByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(held, nil)
+	h.attachments.EXPECT().RetireAttachment(gomock.Any(), h.attachmentID, chargedUntil).Return(nil)
+
+	if err := h.service.Remove(context.Background(), h.workspaceID, h.issueID, h.attachmentID); err != nil {
+		t.Fatalf(
+			"Remove: %v. A writer may still put this object back before its deadline, so the room cannot "+
+				"be given back and the row cannot be deleted until then.",
+			err,
+		)
 	}
 }
 
@@ -682,6 +1905,8 @@ func TestReclaimRemovesTheObjectBeforeItForgetsWhereItWas(t *testing.T) {
 	h.attachments.EXPECT().MarkOrphans(gomock.Any(), gomock.Any()).Return(nil)
 	h.attachments.EXPECT().ListReclaimable(gomock.Any(), gomock.Any(), 100).
 		Return([]entity.Attachment{orphan}, nil)
+	h.attachments.EXPECT().ListUnsettledImportFiles(gomock.Any(), gomock.Any(), 100).Return(nil, nil)
+	h.attachments.EXPECT().ListUnsettledAttachments(gomock.Any(), gomock.Any(), 100).Return(nil, nil)
 	h.blobs.EXPECT().
 		Delete(gomock.Any(), orphan.ObjectKey).
 		DoAndReturn(func(context.Context, string) error {
@@ -713,6 +1938,8 @@ func TestReclaimReportsAFailureRatherThanLookingLikeAHealthySweep(t *testing.T) 
 	h.attachments.EXPECT().MarkOrphans(gomock.Any(), gomock.Any()).Return(nil)
 	h.attachments.EXPECT().ListReclaimable(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return([]entity.Attachment{h.stored("image/png")}, nil)
+	h.attachments.EXPECT().ListUnsettledImportFiles(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+	h.attachments.EXPECT().ListUnsettledAttachments(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
 	h.blobs.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("storage is unreachable"))
 
 	if err := h.service.Reclaim(context.Background()); err == nil {
@@ -735,8 +1962,8 @@ func TestOnlySomeoneWhoMayChangeTheWorkspaceSeesWhatItIsStoring(t *testing.T) {
 
 			return entity.Decision{Role: entity.MembershipRoleAdmin}, nil
 		})
-	h.attachments.EXPECT().Ledger(gomock.Any(), h.workspaceID).
-		Return(entity.WorkspaceStorage{StoredBytes: 2_048}, nil)
+	h.attachments.EXPECT().Ledger(gomock.Any(), h.workspaceID, int64(maxWorkspaceBytes)).
+		Return(entity.WorkspaceStorage{StoredBytes: 2_048, MaxBytes: maxWorkspaceBytes}, nil)
 
 	ledger, err := h.service.Ledger(context.Background(), h.workspaceID)
 	if err != nil {
@@ -760,7 +1987,7 @@ func TestOnlySomeoneWhoMayChangeTheWorkspaceSeesWhatItIsStoring(t *testing.T) {
 func TestAnUnlimitedWorkspaceStillReportsWhatItIsStoring(t *testing.T) {
 	h := newHarness(t, 0)
 	h.authorizer.EXPECT().Decide(gomock.Any(), gomock.Any()).Return(entity.Decision{}, nil)
-	h.attachments.EXPECT().Ledger(gomock.Any(), gomock.Any()).
+	h.attachments.EXPECT().Ledger(gomock.Any(), gomock.Any(), int64(0)).
 		Return(entity.WorkspaceStorage{StoredBytes: 4_096}, nil)
 
 	ledger, err := h.service.Ledger(context.Background(), h.workspaceID)

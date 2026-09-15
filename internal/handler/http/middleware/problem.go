@@ -55,6 +55,33 @@ func WriteRunnerProblem(
 	write(w, status, problem)
 }
 
+func WriteStorageProblem(
+	w http.ResponseWriter,
+	r *http.Request,
+	status int,
+	code api.StorageRefusedProblemCode,
+	detail string,
+	maxBytes int64,
+) {
+	problem := api.StorageRefusedProblem{
+		Type:     problemType,
+		Title:    http.StatusText(status),
+		Status:   int32(status),
+		Code:     code,
+		MaxBytes: &maxBytes,
+	}
+
+	if detail != "" {
+		problem.Detail = &detail
+	}
+
+	if correlationID, ok := CorrelationIDFrom(r.Context()); ok {
+		problem.Instance = &correlationID
+	}
+
+	write(w, status, problem)
+}
+
 func write(w http.ResponseWriter, status int, problem any) {
 	w.Header().Set("Content-Type", problemContentType)
 	w.WriteHeader(status)

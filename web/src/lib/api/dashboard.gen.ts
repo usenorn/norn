@@ -5398,9 +5398,10 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        ImportUploadConflictProblem: components["schemas"]["ImportConflictProblem"] | components["schemas"]["StorageRefusedProblem"];
         StorageRefusedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "attachment_too_large" | "workspace_storage_exhausted" | "attachment_not_pending" | "attachment_missing";
+            code: "attachment_too_large" | "attachment_size_mismatch" | "workspace_storage_exhausted" | "attachment_not_pending" | "attachment_missing";
             /** Format: int64 */
             byteSize?: number;
             /** Format: int64 */
@@ -8749,6 +8750,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ImportConflictProblem"];
             };
         };
+        /** @description The run cannot take a file from where it stands, or the workspace has no room for it */
+        ImportUploadConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ImportUploadConflictProblem"];
+            };
+        };
         /** @description The source refused to hand over what the import asked it for */
         ImportSourceRefused: {
             headers: {
@@ -11517,7 +11527,7 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
-            409: components["responses"]["ImportConflict"];
+            409: components["responses"]["ImportUploadConflict"];
             413: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];

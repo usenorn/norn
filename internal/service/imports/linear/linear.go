@@ -25,25 +25,28 @@ type Settings struct {
 }
 
 type Source struct {
-	client *lineargraph.Client
-	blobs  repository.Blob
-	files  *http.Client
-	cfg    config.Linear
-	limits config.Imports
+	client  *lineargraph.Client
+	blobs   repository.Blob
+	storage service.Attachments
+	files   *http.Client
+	cfg     config.Linear
+	limits  config.Imports
 }
 
 func New(
 	client *lineargraph.Client,
 	blobs repository.Blob,
+	storage service.Attachments,
 	cfg config.Linear,
 	limits config.Imports,
 ) *Source {
 	return &Source{
-		client: client,
-		blobs:  blobs,
-		files:  &http.Client{Timeout: cfg.RequestTimeout},
-		cfg:    cfg,
-		limits: limits,
+		client:  client,
+		blobs:   blobs,
+		storage: storage,
+		files:   &http.Client{Timeout: cfg.RequestTimeout},
+		cfg:     cfg,
+		limits:  limits,
 	}
 }
 

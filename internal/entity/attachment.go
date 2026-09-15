@@ -30,6 +30,7 @@ var (
 	ErrAttachmentNotPending       = errors.New("attachment has already been settled")
 	ErrAttachmentMissing          = errors.New("no file was uploaded for this attachment")
 	ErrAttachmentTooLarge         = errors.New("file exceeds the maximum size")
+	ErrAttachmentSizeMismatch     = errors.New("the stored file is not the size that was declared")
 	ErrAttachmentAdoptNeedsOrigin = errors.New("adopting a stored object is reserved for an import")
 	ErrStorageExhausted           = errors.New("workspace storage is full")
 )
@@ -45,6 +46,19 @@ func (e AttachmentTooLargeError) Error() string {
 
 func (e AttachmentTooLargeError) Unwrap() error {
 	return ErrAttachmentTooLarge
+}
+
+type AttachmentSizeMismatchError struct {
+	DeclaredBytes int64
+	ArrivedBytes  int64
+}
+
+func (e AttachmentSizeMismatchError) Error() string {
+	return fmt.Sprintf("%s: %d arrived of %d declared", ErrAttachmentSizeMismatch, e.ArrivedBytes, e.DeclaredBytes)
+}
+
+func (e AttachmentSizeMismatchError) Unwrap() error {
+	return ErrAttachmentSizeMismatch
 }
 
 type StorageExhaustedError struct {
@@ -94,6 +108,8 @@ type Attachment struct {
 	SizeBytes    int64
 	Status       AttachmentStatus
 	ReclaimAfter *time.Time
+	SettleAfter  *time.Time
+	ChargedUntil *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	Origin       *ImportOrigin
@@ -208,6 +224,14 @@ func AttachmentFileName(name string) string {
 	}
 
 	return strings.TrimSpace(cleaned)
+}
+
+type ImportFileCharge struct {
+	WorkspaceID  uuid.UUID
+	ObjectKey    string
+	SizeBytes    int64
+	SettleAfter  *time.Time
+	ChargedUntil *time.Time
 }
 
 type WorkspaceStorage struct {

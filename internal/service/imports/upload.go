@@ -3,12 +3,14 @@ package imports
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/service"
 )
 
@@ -52,10 +54,26 @@ func (s *importsService) Upload(
 		})
 	}
 
-	if err := s.blobs.Put(
-		ctx, key, entity.AttachmentGenericType, bytes.NewReader(body), int64(len(body)),
-	); err != nil {
+	size := int64(len(body))
+
+	previous, err := s.fileWriter.ChargeImportFile(ctx, run.WorkspaceID, key, size)
+	if err != nil {
 		return service.ImportFile{}, err
+	}
+
+	if err := s.blobs.Put(ctx, key, entity.AttachmentGenericType, bytes.NewReader(body), size); err != nil {
+		if restoreErr := s.fileWriter.RestoreImportFile(ctx, run.WorkspaceID, key, previous); restoreErr != nil {
+			return service.ImportFile{}, errors.Join(err, restoreErr)
+		}
+
+		return service.ImportFile{}, err
+	}
+
+	if err := s.fileWriter.SettleImportFile(ctx, run.WorkspaceID, key); err != nil {
+		logging.From(ctx).WarnContext(ctx, "an uploaded import file could not be measured, so the sweep will measure it",
+			"object_key", key,
+			"error", err.Error(),
+		)
 	}
 
 	return service.ImportFile{

@@ -88,18 +88,18 @@ func (mr *MockBlobMockRecorder) PresignGet(ctx, key, serve, ttl any) *gomock.Cal
 }
 
 // PresignPut mocks base method.
-func (m *MockBlob) PresignPut(ctx context.Context, key string, ttl time.Duration) (entity.BlobTicket, error) {
+func (m *MockBlob) PresignPut(ctx context.Context, key string, sizeBytes int64, ttl time.Duration) (entity.BlobTicket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PresignPut", ctx, key, ttl)
+	ret := m.ctrl.Call(m, "PresignPut", ctx, key, sizeBytes, ttl)
 	ret0, _ := ret[0].(entity.BlobTicket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PresignPut indicates an expected call of PresignPut.
-func (mr *MockBlobMockRecorder) PresignPut(ctx, key, ttl any) *gomock.Call {
+func (mr *MockBlobMockRecorder) PresignPut(ctx, key, sizeBytes, ttl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignPut", reflect.TypeOf((*MockBlob)(nil).PresignPut), ctx, key, ttl)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignPut", reflect.TypeOf((*MockBlob)(nil).PresignPut), ctx, key, sizeBytes, ttl)
 }
 
 // Put mocks base method.

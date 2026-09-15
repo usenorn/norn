@@ -1883,7 +1883,7 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/ImportConflict' }
+        '409': { $ref: '#/components/responses/ImportUploadConflict' }
         '413': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
@@ -7487,6 +7487,11 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ImportConflictProblem' }
+    ImportUploadConflict:
+      description: The run cannot take a file from where it stands, or the workspace has no room for it
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ImportUploadConflictProblem' }
     ImportSourceRefused:
       description: The source refused to hand over what the import asked it for
       content:
@@ -8511,6 +8516,11 @@ components:
         unlimited: { type: boolean }
         updatedAt: { type: string, format: date-time }
 
+    ImportUploadConflictProblem:
+      oneOf:
+        - $ref: '#/components/schemas/ImportConflictProblem'
+        - $ref: '#/components/schemas/StorageRefusedProblem'
+
     StorageRefusedProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -8521,6 +8531,7 @@ components:
               type: string
               enum:
                 - attachment_too_large
+                - attachment_size_mismatch
                 - workspace_storage_exhausted
                 - attachment_not_pending
                 - attachment_missing

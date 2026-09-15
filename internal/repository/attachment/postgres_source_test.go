@@ -7,18 +7,29 @@ import (
 )
 
 var statements = map[string]string{
-	"createAttachmentQuery":   createAttachmentQuery,
-	"attachmentByIDQuery":     attachmentByIDQuery,
-	"attachmentsByIssueQuery": attachmentsByIssueQuery,
-	"settleAttachmentQuery":   settleAttachmentQuery,
-	"discardAttachmentQuery":  discardAttachmentQuery,
-	"claimForCommentQuery":    claimForCommentQuery,
-	"markOrphansQuery":        markOrphansQuery,
-	"reclaimableQuery":        reclaimableQuery,
-	"reclaimAttachmentQuery":  reclaimAttachmentQuery,
-	"admitStorageQuery":       admitStorageQuery,
-	"releaseStorageQuery":     releaseStorageQuery,
-	"ledgerQuery":             ledgerQuery,
+	"createAttachmentQuery":     createAttachmentQuery,
+	"attachmentByIDQuery":       attachmentByIDQuery,
+	"attachmentsByIssueQuery":   attachmentsByIssueQuery,
+	"lockAttachmentByKeyQuery":  lockAttachmentByKeyQuery,
+	"retireAttachmentQuery":     retireAttachmentQuery,
+	"settleAttachmentQuery":     settleAttachmentQuery,
+	"discardAttachmentQuery":    discardAttachmentQuery,
+	"claimForCommentQuery":      claimForCommentQuery,
+	"markOrphansQuery":          markOrphansQuery,
+	"reclaimableQuery":          reclaimableQuery,
+	"reclaimAttachmentQuery":    reclaimAttachmentQuery,
+	"admitStorageQuery":         admitStorageQuery,
+	"releaseStorageQuery":       releaseStorageQuery,
+	"correctStorageQuery":       correctStorageQuery,
+	"ledgerQuery":               ledgerQuery,
+	"claimImportFileQuery":      claimImportFileQuery,
+	"lockImportFileQuery":       lockImportFileQuery,
+	"recordImportFileQuery":     recordImportFileQuery,
+	"unsettledImportFilesQuery": unsettledImportFilesQuery,
+	"takeImportFileQuery":       takeImportFileQuery,
+	"unsettledAttachmentsQuery": unsettledAttachmentsQuery,
+	"measureAttachmentQuery":    measureAttachmentQuery,
+	"refundImportFileQuery":     refundImportFileQuery,
 }
 
 func TestNoAttachmentQueryAggregatesAnything(t *testing.T) {
@@ -67,22 +78,65 @@ func TestTheAdmissionRefusesTheFirstUploadIntoAnEmptyLedger(t *testing.T) {
 		)
 	}
 
-	if !strings.Contains(update, "stored_bytes + $2::bigint <= $3::bigint") {
+	if !strings.Contains(update, "stored_bytes + $2::bigint") ||
+		!strings.Contains(update, "<= coalesce(workspace_storage_ledger.max_bytes, $3::bigint)") {
 		t.Fatal("the update branch of the admission does not check the cap")
 	}
 }
 
-func TestReleasingIsNeverGatedByTheLimit(t *testing.T) {
-	if strings.Contains(releaseStorageQuery, "<=") {
+func TestAWorkspacesOwnLimitWinsOverTheInstanceDefault(t *testing.T) {
+	_, update, _ := strings.Cut(admitStorageQuery, "ON CONFLICT")
+
+	if strings.Count(update, "coalesce(workspace_storage_ledger.max_bytes, $3::bigint)") != 2 {
 		t.Fatal(
-			"releasing bytes is conditional on the cap. A workspace that is already over its " +
-				"limit could then never free anything, which is the one state it has to escape.",
+			"the admission does not read the workspace's own limit on both sides of its check. " +
+				"A workspace given more room would be refused at the instance default, and one " +
+				"given unlimited room would still be capped.",
+		)
+	}
+
+	if !strings.Contains(ledgerQuery, "coalesce(l.max_bytes, $2::bigint)") {
+		t.Fatal(
+			"the ledger reports the instance default rather than the workspace's own limit, so " +
+				"the settings page would disagree with what an upload is actually held to",
 		)
 	}
 }
 
+func TestDiscardingZeroesTheBytesItGaveBackSoTheSweepCannotGiveThemBackAgain(t *testing.T) {
+	if !strings.Contains(discardAttachmentQuery, "size_bytes = 0") {
+		t.Fatal(
+			"a discarded row keeps its size after its bytes were released. The sweep subtracts " +
+				"size_bytes when it deletes the row, so every removed file would be taken off the " +
+				"ledger twice and the workspace would read emptier than it is.",
+		)
+	}
+
+	if !strings.Contains(discardAttachmentQuery, "size_bytes = $3") {
+		t.Fatal(
+			"the discard does not require the row to still hold the bytes that were released. " +
+				"A row resized in between would have one size given back and another forgotten.",
+		)
+	}
+}
+
+func TestReleasingIsNeverGatedByTheLimit(t *testing.T) {
+	for _, name := range []string{"releaseStorageQuery", "refundImportFileQuery", "correctStorageQuery"} {
+		if strings.Contains(statements[name], "<=") {
+			t.Errorf(
+				"%s is conditional on the cap. A workspace that is already over its limit could "+
+					"then never free anything or be put back to what it really stores, which is "+
+					"the one state it has to escape.",
+				name,
+			)
+		}
+	}
+}
+
 func TestNothingCanDriveTheLedgerNegative(t *testing.T) {
-	for _, name := range []string{"reclaimAttachmentQuery", "releaseStorageQuery"} {
+	for _, name := range []string{
+		"reclaimAttachmentQuery", "releaseStorageQuery", "refundImportFileQuery", "correctStorageQuery",
+	} {
 		if !strings.Contains(statements[name], "greatest(") {
 			t.Errorf(
 				"%s subtracts without a floor. Drift after a crash between the object delete and "+
@@ -91,6 +145,70 @@ func TestNothingCanDriveTheLedgerNegative(t *testing.T) {
 				name,
 			)
 		}
+	}
+}
+
+func TestAnImportFileIsOnlyEverReachedThroughItsOwnWorkspace(t *testing.T) {
+	for _, name := range []string{
+		"lockImportFileQuery", "recordImportFileQuery", "takeImportFileQuery", "refundImportFileQuery",
+	} {
+		if !strings.Contains(statements[name], "workspace_id = $2::uuid") {
+			t.Errorf(
+				"%s finds an import file by its key alone. A key is a string a caller hands in, "+
+					"and without the workspace one import could move another workspace's bytes.",
+				name,
+			)
+		}
+	}
+}
+
+func TestTheSweepOnlyMeasuresImportFilesWhoseWritersHaveHadTheirChance(t *testing.T) {
+	if !strings.Contains(unsettledImportFilesQuery, "settle_after <= $1") {
+		t.Fatal(
+			"the sweep picks import files without waiting for their settle deadline. A file still " +
+				"being written would be measured as missing and refunded mid-upload.",
+		)
+	}
+}
+
+func TestTheSweepOnlyMeasuresFilesThatAreStillOnTheirIssue(t *testing.T) {
+	if !strings.Contains(unsettledAttachmentsQuery, "status = 'stored'") {
+		t.Fatal(
+			"the sweep measures removed files. Their bytes leave the ledger when the sweep deletes " +
+				"them, and a measurement in between would only move a number that is about to go.",
+		)
+	}
+}
+
+func TestARemovedFileOutlivesEveryWriterThatMightStillPutItsObject(t *testing.T) {
+	if !strings.Contains(reclaimAttachmentQuery, "reclaim_after <= now()") {
+		t.Error(
+			"the reclaim deletes a row whose deadline has moved since it was listed. A writer that " +
+				"charged in between could put the object back and die, leaving bytes nothing counts.",
+		)
+	}
+
+	if !strings.Contains(markOrphansQuery, "coalesce(charged_until") {
+		t.Error(
+			"an orphaned file is scheduled for deletion before its writers' deadline, so a late " +
+				"writer could put its object back after the sweep and nothing would count it",
+		)
+	}
+
+	if !strings.Contains(measureAttachmentQuery, "greatest(reclaim_after") {
+		t.Error(
+			"a writer charging a removed file does not push its deletion past the new deadline, " +
+				"so the sweep could delete the row while that writer is still putting the object",
+		)
+	}
+}
+
+func TestAClaimedImportFileIsLockedBeforeItsSizeIsRead(t *testing.T) {
+	if !strings.Contains(lockImportFileQuery, "FOR UPDATE") {
+		t.Fatal(
+			"the size an import file already holds is read without a lock. Two uploads under the " +
+				"same name would both charge the whole file instead of one charging the difference.",
+		)
 	}
 }
 

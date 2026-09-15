@@ -161,20 +161,49 @@ func (s *Source) carry(
 	}
 
 	key := entity.ImportBlobKey(run.WorkspaceID, run.RunID, name)
+	size := int64(len(body))
 
-	if err := s.blobs.Put(ctx, key, contentType, bytes.NewReader(body), int64(len(body))); err != nil {
-		logging.From(ctx).WarnContext(ctx, "a linear file could not be stored",
-			"issue", payload.Issue,
-			"source_url", source,
-			"reason", err.Error(),
-		)
+	previous, err := s.storage.ChargeImportFile(ctx, run.WorkspaceID, key, size)
+	if err != nil {
+		s.leave(ctx, payload, source, err)
 
 		return
 	}
 
+	if err := s.blobs.Put(ctx, key, contentType, bytes.NewReader(body), size); err != nil {
+		if restoreErr := s.storage.RestoreImportFile(ctx, run.WorkspaceID, key, previous); restoreErr != nil {
+			err = errors.Join(err, restoreErr)
+		}
+
+		s.leave(ctx, payload, source, err)
+
+		return
+	}
+
+	if err := s.storage.SettleImportFile(ctx, run.WorkspaceID, key); err != nil {
+		logging.From(ctx).WarnContext(ctx, "a stored linear file could not be measured, so the sweep will measure it",
+			"issue", payload.Issue,
+			"object_key", key,
+			"reason", err.Error(),
+		)
+	}
+
 	payload.ObjectKey = key
 	payload.ContentType = contentType
-	payload.SizeBytes = int64(len(body))
+	payload.SizeBytes = size
+}
+
+func (s *Source) leave(
+	ctx context.Context,
+	payload *service.ImportAttachmentPayload,
+	source string,
+	err error,
+) {
+	logging.From(ctx).WarnContext(ctx, "a linear file could not be stored",
+		"issue", payload.Issue,
+		"source_url", source,
+		"reason", err.Error(),
+	)
 }
 
 func (s *Source) download(ctx context.Context, key, source string) ([]byte, string, error) {

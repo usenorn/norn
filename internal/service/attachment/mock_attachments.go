@@ -58,6 +58,21 @@ func (mr *MockAttachmentsMockRecorder) Adopt(ctx, workspaceID, issueID, input an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Adopt", reflect.TypeOf((*MockAttachments)(nil).Adopt), ctx, workspaceID, issueID, input)
 }
 
+// ChargeImportFile mocks base method.
+func (m *MockAttachments) ChargeImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, sizeBytes int64) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChargeImportFile", ctx, workspaceID, objectKey, sizeBytes)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ChargeImportFile indicates an expected call of ChargeImportFile.
+func (mr *MockAttachmentsMockRecorder) ChargeImportFile(ctx, workspaceID, objectKey, sizeBytes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChargeImportFile", reflect.TypeOf((*MockAttachments)(nil).ChargeImportFile), ctx, workspaceID, objectKey, sizeBytes)
+}
+
 // Content mocks base method.
 func (m *MockAttachments) Content(ctx context.Context, workspaceID, attachmentID uuid.UUID) (string, error) {
 	m.ctrl.T.Helper()
@@ -174,4 +189,32 @@ func (m *MockAttachments) Reserve(ctx context.Context, workspaceID, issueID uuid
 func (mr *MockAttachmentsMockRecorder) Reserve(ctx, workspaceID, issueID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reserve", reflect.TypeOf((*MockAttachments)(nil).Reserve), ctx, workspaceID, issueID, input)
+}
+
+// RestoreImportFile mocks base method.
+func (m *MockAttachments) RestoreImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string, previousBytes int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreImportFile", ctx, workspaceID, objectKey, previousBytes)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestoreImportFile indicates an expected call of RestoreImportFile.
+func (mr *MockAttachmentsMockRecorder) RestoreImportFile(ctx, workspaceID, objectKey, previousBytes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreImportFile", reflect.TypeOf((*MockAttachments)(nil).RestoreImportFile), ctx, workspaceID, objectKey, previousBytes)
+}
+
+// SettleImportFile mocks base method.
+func (m *MockAttachments) SettleImportFile(ctx context.Context, workspaceID uuid.UUID, objectKey string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SettleImportFile", ctx, workspaceID, objectKey)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SettleImportFile indicates an expected call of SettleImportFile.
+func (mr *MockAttachmentsMockRecorder) SettleImportFile(ctx, workspaceID, objectKey any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SettleImportFile", reflect.TypeOf((*MockAttachments)(nil).SettleImportFile), ctx, workspaceID, objectKey)
 }

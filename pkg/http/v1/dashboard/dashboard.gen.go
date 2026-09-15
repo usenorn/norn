@@ -3835,6 +3835,7 @@ func (e StateCategory) Valid() bool {
 const (
 	AttachmentMissing         StorageRefusedProblemCode = "attachment_missing"
 	AttachmentNotPending      StorageRefusedProblemCode = "attachment_not_pending"
+	AttachmentSizeMismatch    StorageRefusedProblemCode = "attachment_size_mismatch"
 	AttachmentTooLarge        StorageRefusedProblemCode = "attachment_too_large"
 	WorkspaceStorageExhausted StorageRefusedProblemCode = "workspace_storage_exhausted"
 )
@@ -3845,6 +3846,8 @@ func (e StorageRefusedProblemCode) Valid() bool {
 	case AttachmentMissing:
 		return true
 	case AttachmentNotPending:
+		return true
+	case AttachmentSizeMismatch:
 		return true
 	case AttachmentTooLarge:
 		return true
@@ -6526,6 +6529,11 @@ type ImportStatus string
 
 // ImportUnknownPolicy defines model for ImportUnknownPolicy.
 type ImportUnknownPolicy string
+
+// ImportUploadConflictProblem defines model for ImportUploadConflictProblem.
+type ImportUploadConflictProblem struct {
+	union json.RawMessage
+}
 
 // Instance defines model for Instance.
 type Instance struct {
@@ -9291,6 +9299,9 @@ type ImportSourceRateLimited = RateLimitedProblem
 // ImportSourceRefused defines model for ImportSourceRefused.
 type ImportSourceRefused = ImportSourceRefusedProblem
 
+// ImportUploadConflict defines model for ImportUploadConflict.
+type ImportUploadConflict = ImportUploadConflictProblem
+
 // IntakeConflict defines model for IntakeConflict.
 type IntakeConflict = IntakeConflictProblem
 
@@ -10000,6 +10011,68 @@ type CreateWorkspaceWebhookJSONRequestBody = CreateWebhookRequest
 
 // UpdateWorkspaceWebhookJSONRequestBody defines body for UpdateWorkspaceWebhook for application/json ContentType.
 type UpdateWorkspaceWebhookJSONRequestBody = UpdateWebhookRequest
+
+// AsImportConflictProblem returns the union data inside the ImportUploadConflictProblem as a ImportConflictProblem
+func (t ImportUploadConflictProblem) AsImportConflictProblem() (ImportConflictProblem, error) {
+	var body ImportConflictProblem
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromImportConflictProblem overwrites any union data inside the ImportUploadConflictProblem as the provided ImportConflictProblem
+func (t *ImportUploadConflictProblem) FromImportConflictProblem(v ImportConflictProblem) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeImportConflictProblem performs a merge with any union data inside the ImportUploadConflictProblem, using the provided ImportConflictProblem
+func (t *ImportUploadConflictProblem) MergeImportConflictProblem(v ImportConflictProblem) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStorageRefusedProblem returns the union data inside the ImportUploadConflictProblem as a StorageRefusedProblem
+func (t ImportUploadConflictProblem) AsStorageRefusedProblem() (StorageRefusedProblem, error) {
+	var body StorageRefusedProblem
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStorageRefusedProblem overwrites any union data inside the ImportUploadConflictProblem as the provided StorageRefusedProblem
+func (t *ImportUploadConflictProblem) FromStorageRefusedProblem(v StorageRefusedProblem) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStorageRefusedProblem performs a merge with any union data inside the ImportUploadConflictProblem, using the provided StorageRefusedProblem
+func (t *ImportUploadConflictProblem) MergeStorageRefusedProblem(v StorageRefusedProblem) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ImportUploadConflictProblem) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ImportUploadConflictProblem) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // RequestEditorFn is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -46290,7 +46363,7 @@ type UploadWorkspaceImportFileResponse struct {
 	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
 	ApplicationproblemJSON404 *Problem
 	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
-	ApplicationproblemJSON409 *ImportConflict
+	ApplicationproblemJSON409 *ImportUploadConflict
 	// ApplicationproblemJSON413 the response for an HTTP 413 `application/problem+json` response
 	ApplicationproblemJSON413 *Problem
 	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
@@ -46325,7 +46398,7 @@ func (r UploadWorkspaceImportFileResponse) GetApplicationproblemJSON404() *Probl
 }
 
 // GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
-func (r UploadWorkspaceImportFileResponse) GetApplicationproblemJSON409() *ImportConflict {
+func (r UploadWorkspaceImportFileResponse) GetApplicationproblemJSON409() *ImportUploadConflict {
 	return r.ApplicationproblemJSON409
 }
 
@@ -73984,7 +74057,7 @@ func ParseUploadWorkspaceImportFileResponse(rsp *http.Response) (*UploadWorkspac
 		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest ImportConflict
+		var dest ImportUploadConflict
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -101693,6 +101766,16 @@ type ImportSourceRateLimitedApplicationProblemPlusJSONResponse struct {
 
 type ImportSourceRefusedApplicationProblemPlusJSONResponse ImportSourceRefusedProblem
 
+type ImportUploadConflictApplicationProblemPlusJSONResponse ImportUploadConflictProblem
+
+func (t ImportUploadConflictApplicationProblemPlusJSONResponse) MarshalJSON() ([]byte, error) {
+	return ImportUploadConflictProblem(t).MarshalJSON()
+}
+
+func (t *ImportUploadConflictApplicationProblemPlusJSONResponse) UnmarshalJSON(b []byte) error {
+	return (*ImportUploadConflictProblem)(t).UnmarshalJSON(b)
+}
+
 type IntakeConflictApplicationProblemPlusJSONResponse IntakeConflictProblem
 
 type InvitationLinkExpiredApplicationProblemPlusJSONResponse InvitationExpiredProblem
@@ -111383,7 +111466,7 @@ func (response UploadWorkspaceImportFile404ApplicationProblemPlusJSONResponse) V
 }
 
 type UploadWorkspaceImportFile409ApplicationProblemPlusJSONResponse struct {
-	ImportConflictApplicationProblemPlusJSONResponse
+	ImportUploadConflictApplicationProblemPlusJSONResponse
 }
 
 func (response UploadWorkspaceImportFile409ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceImportFileResponse(w http.ResponseWriter) error {
