@@ -10,6 +10,7 @@
 	import Plus from "@lucide/svelte/icons/plus";
 	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Dialog from "$lib/components/ui/dialog/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import StatusIcon from "./status-icon.svelte";
@@ -50,6 +51,7 @@
 	let working = $state("");
 	let removing = $state(false);
 	let reassignTo = $state("");
+	let composing = $state(false);
 
 	const states = $derived(submitted ?? statesOf(list));
 	const removalId = $derived(page.url.searchParams.get("remove") ?? "");
@@ -63,6 +65,8 @@
 		SPA: true,
 		validators: zod4Client(workflowStateSchema),
 		resetForm: false,
+		invalidateAll: false,
+		applyAction: false,
 		onUpdate: async ({ form: pendingForm }) => {
 			if (!pendingForm.valid) return;
 
@@ -123,6 +127,7 @@
 	const { form: formData, enhance, submitting } = form;
 
 	const busy = $derived(locked || $submitting || working !== "" || removing);
+	const opensLocked = $derived(locked || working !== "" || removing);
 
 	async function refresh() {
 		const { data } = await api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
@@ -138,9 +143,18 @@
 		editingId = state.id;
 		failure = null;
 		formData.set({ name: state.name, category: state.category }, { taint: false });
+		composing = true;
+	}
+
+	function startAdding() {
+		editingId = "";
+		failure = null;
+		formData.set({ name: "", category: "not_started" }, { taint: false });
+		composing = true;
 	}
 
 	function stopEditing() {
+		composing = false;
 		editingId = "";
 		formData.set({ name: "", category: "not_started" }, { taint: false });
 	}
@@ -290,7 +304,7 @@
 		</p>
 	</div>
 
-	{#if failure}
+	{#if failure && !composing}
 		<Alert.Root variant="destructive">
 			<CircleX aria-hidden="true" />
 			<Alert.Title>That did not work</Alert.Title>
@@ -354,10 +368,11 @@
 							<Button
 								variant="ghost"
 								size="sm"
-								disabled={busy}
-								onclick={() => (editingId === state.id ? stopEditing() : startEditing(state))}
+								disabled={opensLocked}
+								aria-label="Edit {state.name}"
+								onclick={() => startEditing(state)}
 							>
-								{editingId === state.id ? "Cancel" : "Edit"}
+								Edit
 							</Button>
 							<Button
 								variant="ghost"
@@ -464,20 +479,47 @@
 			{/each}
 		</ol>
 
-		<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
-			<div class="flex flex-col gap-1">
-				<h3 class="text-sm font-medium text-ink-900">
-					{editing ? `Edit ${editing.name}` : "Add a state"}
-				</h3>
-			</div>
+		<div>
+			<Button variant="secondary" disabled={opensLocked} onclick={startAdding}>
+				<Plus aria-hidden="true" />
+				Add a state
+			</Button>
+		</div>
+	{/if}
+</section>
 
+<Dialog.Root
+	bind:open={composing}
+	onOpenChange={(open) => {
+		if (!open) stopEditing();
+	}}
+>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>{editing ? `Edit ${editing.name}` : "Add a state"}</Dialog.Title>
+			<Dialog.Description>
+				{editing
+					? "Rename it, or say which of the four categories it belongs to."
+					: `A new step for issues in ${team.name}. It is added after the last state.`}
+			</Dialog.Description>
+		</Dialog.Header>
+
+		{#if failure}
+			<Alert.Root variant="destructive">
+				<CircleX aria-hidden="true" />
+				<Alert.Title>That did not work</Alert.Title>
+				<Alert.Description>{stateFailureMessage(failure)}</Alert.Description>
+			</Alert.Root>
+		{/if}
+
+		<form id={formId} method="POST" use:enhance class="flex flex-col gap-4">
 			<Form.Field {form} name="name">
 				<Form.Control>
 					{#snippet children({ props })}
 						<Form.Label>Name</Form.Label>
 						<Input
 							{...props}
-							disabled={busy}
+							disabled={$submitting}
 							placeholder="Ready for review"
 							bind:value={$formData.name}
 						/>
@@ -493,7 +535,7 @@
 						<Select.Root
 							type="single"
 							value={$formData.category}
-							disabled={busy}
+							disabled={$submitting}
 							onValueChange={(value) => ($formData.category = value as StateCategory)}
 						>
 							<Select.Trigger {...props}>{categoryLabels[$formData.category]}</Select.Trigger>
@@ -514,16 +556,11 @@
 			</Form.Field>
 		</form>
 
-		<div class="flex gap-2">
-			<Button type="submit" form={formId} disabled={busy}>
-				{#if !editing}
-					<Plus aria-hidden="true" />
-				{/if}
+		<Dialog.Footer>
+			<Button variant="secondary" disabled={$submitting} onclick={stopEditing}>Cancel</Button>
+			<Button type="submit" form={formId} disabled={$submitting}>
 				{$submitting ? "Saving" : editing ? "Save state" : "Add state"}
 			</Button>
-			{#if editing}
-				<Button variant="secondary" disabled={busy} onclick={stopEditing}>Cancel</Button>
-			{/if}
-		</div>
-	{/if}
-</section>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>

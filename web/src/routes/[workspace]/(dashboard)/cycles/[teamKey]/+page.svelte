@@ -105,7 +105,7 @@
 						<Button
 							variant="secondary"
 							size="sm"
-							href={teamSettingsPath(slug, listing.teamKey)}
+							href={teamSettingsPath(slug, listing.teamKey, "cycles")}
 						>
 							Turn on cycles
 						</Button>
@@ -119,7 +119,7 @@
 					<Button
 						variant="ghost"
 						size="sm"
-						href={teamSettingsPath(slug, listing.teamKey)}
+						href={teamSettingsPath(slug, listing.teamKey, "cycles")}
 					>
 						Change cadence
 					</Button>

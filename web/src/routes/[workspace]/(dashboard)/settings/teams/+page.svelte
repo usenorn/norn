@@ -20,6 +20,7 @@
 	import {
 		teamKeyFromName,
 		teamListTabs,
+		teamSettingsPath,
 		teamsIn,
 		visibilityLabels,
 		visibilityNotes,
@@ -90,7 +91,7 @@
 	}
 
 	function teamHref(team: Team): string {
-		return workspacePath(slug, `/settings/teams/${team.key}`);
+		return teamSettingsPath(slug, team.key);
 	}
 
 	function keyFieldValue(event: Event) {
