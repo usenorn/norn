@@ -15,6 +15,10 @@ func (s *issuesService) route(
 	decision entity.Decision,
 	declared entity.TriageSource,
 ) error {
+	if arriving.AssigneeAccountID != uuid.Nil {
+		return nil
+	}
+
 	settings, err := s.triage.Settings(ctx, arriving.WorkspaceID, arriving.TeamID)
 	if err != nil {
 		if errors.Is(err, entity.ErrTriageDisabled) {
