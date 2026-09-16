@@ -528,6 +528,77 @@ func TestMovingABatchIntoACycleCountsAsScopeAddedToAStartedCycle(t *testing.T) {
 	}
 }
 
+func TestTakingABatchOutOfAStartedCycleCountsAsScopeRemoved(t *testing.T) {
+	workspaceID, teamID, cycleID := uuid.New(), uuid.New(), uuid.New()
+	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})
+
+	issue := issueOn(teamID, 1)
+	issue.CycleID = cycleID
+	issue.CycleNumber = 24
+	issue.WorkspaceID = workspaceID
+
+	h.expectAction(workspaceID, ptr(1))
+	h.lock(issue)
+	h.cycles.EXPECT().
+		GetVisible(gomock.Any(), workspaceID, cycleID, gomock.Any()).
+		Return(entity.Cycle{
+			ID: cycleID, WorkspaceID: workspaceID, TeamID: teamID, Number: 24, StartsOn: "2020-01-01",
+		}, nil)
+
+	var cleared bool
+
+	h.issues.EXPECT().
+		Update(gomock.Any(), issue.ID, 1, gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, _ int, change entity.IssueChange, _ *entity.StateTimestamps, _ time.Time) error {
+			cleared = change.ClearCycle && change.CycleID == nil
+
+			return nil
+		})
+
+	var recorded entity.CycleScopeChange
+
+	h.scopeChanges.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, change entity.CycleScopeChange) error {
+			recorded = change
+
+			return nil
+		})
+
+	var activity entity.Activity
+
+	h.activity.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, a entity.Activity) error {
+			activity = a
+
+			return nil
+		})
+	h.actions.EXPECT().RecordOutcomes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Advance(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	h.actions.EXPECT().Claim(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	h.actions.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+	if _, err := h.service.Apply(context.Background(), workspaceID, service.ApplyBulkInput{
+		Change: entity.BulkChange{ClearCycle: true},
+		Set:    entity.BulkSet{IssueIDs: []uuid.UUID{issue.ID}},
+	}); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	if !cleared {
+		t.Fatal("the issue kept its cycle, want it moved back to the backlog")
+	}
+
+	if recorded.CycleID != cycleID || recorded.Change != entity.CycleScopeChangeRemoved {
+		t.Fatalf("scope change = %+v, want work removed from cycle %v", recorded, cycleID)
+	}
+
+	if activity.Field != entity.IssueFieldCycle || activity.FromValue != "Cycle 24" || activity.ToValue != "" {
+		t.Fatalf("activity = %+v, want the cycle recorded as left", activity)
+	}
+}
+
 func TestAnIssueIsRefusedACycleBelongingToAnotherTeamWithoutFailingTheBatch(t *testing.T) {
 	workspaceID, mine, theirs, cycleID := uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	h := newHarness(t, entity.TeamScope{WorkspaceID: workspaceID, AllTeams: true})

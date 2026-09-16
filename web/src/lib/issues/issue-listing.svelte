@@ -37,6 +37,7 @@
 	import BulkResult from "$lib/issues/bulk-result.svelte";
 	import IssueCard from "$lib/issues/issue-card.svelte";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
+	import { registerCommandTargets } from "$lib/command/scope.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import DisplayMenu from "$lib/issues/display-menu.svelte";
 	import FilterBar from "$lib/issues/filter-bar.svelte";
@@ -862,6 +863,18 @@
 		},
 		left: () => step(-1),
 		right: () => step(1),
+	}));
+
+	registerCommandTargets("selection", () => ({
+		issues: flat
+			.filter((issue) => selected.has(issue.id))
+			.map((issue) => ({
+				id: issue.id,
+				reference: issue.reference,
+				title: issue.title,
+				teamId: issue.teamId,
+			})),
+		onapplied: clearSelection,
 	}));
 
 	registerNewIssue(() => ({

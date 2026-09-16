@@ -7,10 +7,12 @@
 		class: className,
 		children,
 		heading,
+		meta,
 		value,
 		...restProps
 	}: CommandPrimitive.GroupProps & {
 		heading?: string;
+		meta?: string;
 	} = $props();
 </script>
 
@@ -26,6 +28,9 @@
 			class="flex items-center gap-1.5 px-2 pt-1.5 pb-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
 		>
 			{heading}
+			{#if meta}
+				<span class="ml-auto text-2xs tracking-normal text-muted-foreground normal-case">{meta}</span>
+			{/if}
 		</CommandPrimitive.GroupHeading>
 	{/if}
 	<CommandPrimitive.GroupItems {children} />

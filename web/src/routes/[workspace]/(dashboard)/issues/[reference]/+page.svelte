@@ -172,6 +172,7 @@
 	import type { Issue, IssueComment } from "$lib/realtime/connection.svelte";
 	import type { PageProps } from "./$types";
 	import { copyText } from "$lib/clipboard";
+	import { registerCommandTargets } from "$lib/command/scope.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -348,6 +349,11 @@
 	const people = $derived(assignees(ready?.members ?? []));
 	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);
+	registerCommandTargets("open", () => ({
+		issues: issue
+			? [{ id: issue.id, reference: issue.reference, title: issue.title, teamId: issue.teamId }]
+			: [],
+	}));
 	const assigned = $derived(delegationPreview?.assigned ?? Boolean(issue?.assigneeAccountId));
 	const following = $derived(ready?.follow === "following");
 	const labels = $derived(applied ?? issue?.labels ?? []);

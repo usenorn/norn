@@ -5102,6 +5102,7 @@ type BulkChange struct {
 	AddLabelId    *openapi_types.UUID `json:"addLabelId,omitempty"`
 	AssigneeId    *openapi_types.UUID `json:"assigneeId,omitempty"`
 	ClearAssignee *bool               `json:"clearAssignee,omitempty"`
+	ClearCycle    *bool               `json:"clearCycle,omitempty"`
 	CycleId       *openapi_types.UUID `json:"cycleId,omitempty"`
 	Priority      *IssuePriority      `json:"priority,omitempty"`
 	StateId       *openapi_types.UUID `json:"stateId,omitempty"`

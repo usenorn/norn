@@ -7663,6 +7663,7 @@ components:
         clearAssignee: { type: boolean }
         addLabelId: { type: string, format: uuid }
         cycleId: { type: string, format: uuid }
+        clearCycle: { type: boolean }
         priority: { $ref: '#/components/schemas/IssuePriority' }
         status: { $ref: '#/components/schemas/IssueStatus' }
 

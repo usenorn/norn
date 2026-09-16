@@ -8,6 +8,8 @@
 				default: "",
 				scrollable:
 					"top-[max(1rem,env(safe-area-inset-top))] grid-rows-[minmax(0,1fr)] max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:top-[12vh] sm:max-h-[76dvh] sm:pb-6",
+				palette:
+					"top-22 gap-0 overflow-hidden p-0 sm:max-w-160",
 			},
 		},
 		defaultVariants: {
@@ -45,7 +47,7 @@
 </script>
 
 <DialogPortal {...portalProps}>
-	<Dialog.Overlay />
+	<Dialog.Overlay blur={variant !== "palette"} />
 	<DialogPrimitive.Content
 		bind:ref
 		data-slot="dialog-content"

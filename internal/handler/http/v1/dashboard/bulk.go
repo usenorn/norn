@@ -84,6 +84,10 @@ func bulkChangeFrom(body api.BulkChange) entity.BulkChange {
 		change.ClearAssignee = *body.ClearAssignee
 	}
 
+	if body.ClearCycle != nil {
+		change.ClearCycle = *body.ClearCycle
+	}
+
 	if body.Priority != nil {
 		priority := entity.IssuePriority(*body.Priority)
 		change.Priority = &priority

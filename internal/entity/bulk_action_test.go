@@ -148,6 +148,15 @@ func TestSettingAndClearingTheAssigneeAtOnceIsRefused(t *testing.T) {
 	}
 }
 
+func TestJoiningAndLeavingACycleAtOnceIsRefused(t *testing.T) {
+	cycle := uuid.New()
+	change := entity.BulkChange{CycleID: &cycle, ClearCycle: true}
+
+	if err := change.Validate(); !errors.Is(err, entity.ErrBulkChangeConflicting) {
+		t.Fatalf("joining and leaving a cycle together validated as %v", err)
+	}
+}
+
 func TestASetIsEitherIdentifiersOrAFilterButNeverBoth(t *testing.T) {
 	if err := (entity.BulkSet{}).Validate(); !errors.Is(err, entity.ErrBulkSetEmpty) {
 		t.Error("an empty set was accepted")

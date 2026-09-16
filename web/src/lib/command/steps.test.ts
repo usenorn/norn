@@ -1,0 +1,25 @@
+import { describe, expect, it } from "vitest";
+import { backlogOption, changeFor, stepOptions } from "./steps";
+
+describe("steps", () => {
+	it("moves an issue back to the backlog by clearing its cycle", () => {
+		expect(changeFor("cycle", backlogOption)).toEqual({ clearCycle: true });
+		expect(changeFor("cycle", "c1")).toEqual({ cycleId: "c1" });
+	});
+
+	it("offers only the team's own labels besides workspace labels", () => {
+		const options = stepOptions("label", {
+			teamId: "t1",
+			members: [],
+			states: [],
+			cycles: [],
+			labels: [
+				{ id: "l1", workspaceId: "w", name: "Bug", color: "magenta" },
+				{ id: "l2", workspaceId: "w", teamId: "t1", name: "Design", color: "violet" },
+				{ id: "l3", workspaceId: "w", teamId: "t2", name: "Infra", color: "cyan" },
+			],
+		});
+
+		expect(options.map((option) => option.label)).toEqual(["Bug", "Design"]);
+	});
+});

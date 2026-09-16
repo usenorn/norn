@@ -1,22 +1,48 @@
+<script lang="ts" module>
+	import { type VariantProps, tv } from "tailwind-variants";
+
+	export const commandInputVariants = tv({
+		base: "flex flex-none items-center border-b border-line-subtle",
+		variants: {
+			variant: {
+				default: "h-8 gap-1.5 px-2.25",
+				palette: "h-11 gap-2.5 px-3",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+		},
+	});
+
+	export type CommandInputVariant = VariantProps<typeof commandInputVariants>["variant"];
+</script>
+
 <script lang="ts">
 	import { Command as CommandPrimitive } from "bits-ui";
 	import SearchIcon from "@lucide/svelte/icons/search";
+	import type { Snippet } from "svelte";
 	import { cn } from "$lib/utils.js";
 
 	let {
 		ref = $bindable(null),
 		class: className,
 		value = $bindable(""),
+		variant = "default",
+		leading,
 		children,
 		...restProps
-	}: CommandPrimitive.InputProps = $props();
+	}: CommandPrimitive.InputProps & {
+		variant?: CommandInputVariant;
+		leading?: Snippet;
+	} = $props();
 </script>
 
-<div
-	data-slot="command-input-wrapper"
-	class="flex h-8 flex-none items-center gap-1.5 border-b border-line-subtle px-2.25"
->
-	<SearchIcon class="size-3.25 shrink-0 text-muted-foreground" aria-hidden="true" />
+<div data-slot="command-input-wrapper" class={commandInputVariants({ variant })}>
+	{#if leading}
+		{@render leading()}
+	{:else}
+		<SearchIcon class="size-3.25 shrink-0 text-muted-foreground" aria-hidden="true" />
+	{/if}
 	<CommandPrimitive.Input
 		bind:ref
 		bind:value
