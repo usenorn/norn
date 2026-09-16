@@ -41,7 +41,6 @@
 	import { cn } from "$lib/utils.js";
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueField from "$lib/issues/issue-field.svelte";
 	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
@@ -151,14 +150,15 @@
 		type CommentThread,
 	} from "$lib/comments/comments";
 	import {
-		conflictFailure,
 		labelFailureMessage,
-		sectioned,
-		selectable,
-		toggled,
+		refusedLabelFailure,
 		type Label,
 		type LabelFailure,
 	} from "$lib/labels/labels";
+	import { canCreateLabels } from "$lib/labels/create-label";
+	import LabelChips from "$lib/labels/label-chips.svelte";
+	import LabelPicker from "$lib/labels/label-picker.svelte";
+	import { setIssueLabels } from "$lib/labels/set-issue-labels";
 	import { parseDate } from "@internationalized/date";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import {
@@ -206,6 +206,8 @@
 	);
 
 	let applied = $state<Label[] | null>(null);
+	let createdLabels = $state.raw<Label[]>([]);
+	let labelTurn = 0;
 	let labelFailure = $state<LabelFailure | null>(null);
 	let failure = $state<IssueFailure | null>(null);
 	let pendingTeamId = $state("");
@@ -360,10 +362,12 @@
 	const slug = $derived(page.params.workspace ?? "");
 	const at = $derived((path: string) => workspacePath(slug, path));
 
-	const available = $derived(
-		issue ? selectable(ready?.labels ?? [], issue.teamId) : ([] as Label[])
-	);
-	const sections = $derived(sectioned(available, ready?.groups ?? []));
+	const knownLabels = $derived([
+		...(ready?.labels ?? []),
+		...createdLabels.filter(
+			(created) => !(ready?.labels ?? []).some((label) => label.id === created.id)
+		),
+	]);
 
 	const teams = $derived(data.teams ?? []);
 	const assigneeName = $derived(
@@ -596,55 +600,39 @@
 		}
 	}
 
-	function readFailure(error: unknown): LabelFailure {
-		if (error && typeof error === "object" && "code" in error) {
-			const problem = error as { code: string; issues?: number; conflicts?: string[] };
-			const conflict = conflictFailure(problem.code, problem.issues, problem.conflicts);
-
-			if (conflict) return conflict;
-		}
-
-		if (error && typeof error === "object" && "status" in error) {
-			if ((error as { status: number }).status === 403) return { kind: "forbidden" };
-		}
-
-		return { kind: "unavailable" };
-	}
-
-	async function submit(labelIds: string[]) {
+	async function changeLabels(labelIds: string[]) {
 		if (!issue) return;
 
-		working = true;
+		const turn = ++labelTurn;
+		const known = knownLabels;
+
 		labelFailure = null;
 		failure = null;
 
-		try {
-			const { data: next, error } = await api.PUT(
-				"/workspaces/{workspaceId}/issues/{issueId}/labels",
-				{
-					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { expectedVersion: issue.version, labelIds },
-				}
-			);
+		const outcome = await setIssueLabels({
+			workspaceId: data.workspace.id,
+			issue,
+			labelIds,
+			optimistic: () =>
+				(applied = labelIds.flatMap((id) => known.find((label) => label.id === id) ?? [])),
+		});
 
-			if (error) {
-				labelFailure = readFailure(error);
-				applied = null;
-				await invalidate(keys.page(page.route.id));
+		if (outcome.kind === "superseded") return;
 
-				return;
-			}
+		if (outcome.kind === "changed") {
+			const count = outcome.issue.labels.length;
 
-			applied = next?.labels ?? [];
-			announce(
-				`This issue now carries ${applied.length} ${applied.length === 1 ? "label" : "labels"}.`
-			);
-			await invalidate(keys.page(page.route.id));
-		} catch {
-			labelFailure = { kind: "unavailable" };
-		} finally {
-			working = false;
+			announce(`This issue now carries ${count} ${count === 1 ? "label" : "labels"}.`);
+		} else {
+			labelFailure =
+				outcome.kind === "refused"
+					? refusedLabelFailure(outcome.problem, outcome.status)
+					: { kind: "unavailable" };
 		}
+
+		await invalidate(keys.page(page.route.id));
+
+		if (turn === labelTurn) applied = null;
 	}
 
 	async function patch(body: Record<string, unknown>, expected?: number): Promise<boolean> {
@@ -1256,7 +1244,9 @@
 	let shown = $state<"all" | "comments">("all");
 
 	const role = $derived(
-		ready?.members.find((member) => member.accountId === data.member.id)?.role ?? "member"
+		preview?.role ??
+			ready?.members.find((member) => member.accountId === data.member.id)?.role ??
+			"member"
 	);
 	const canEdit = $derived(Boolean(issue) && role !== "viewer" && issue?.status === "active");
 	const closedIssue = $derived(
@@ -2743,38 +2733,31 @@
 						onrecall={recall}
 					/>
 
-					<IssueField
-						label="Labels"
-						placeholder="Search labels"
-						editable={canEdit && available.length > 0}
-						closeOnPick={false}
-						empty="No labels apply to this team"
-						options={available.map((label) => ({
-							value: label.id,
-							label: label.name,
-							checked: labels.some((chosen) => chosen.id === label.id),
-						}))}
-						onpick={(labelId) => {
-							const chosen = available.find((candidate) => candidate.id === labelId);
-							if (chosen) submit(toggled(labels, chosen));
-						}}
-					>
+					<IssueField label="Labels" control={canEdit ? labelControl : undefined}>
 						{#snippet glyph()}
 							<Tags class="size-icon-row text-muted-foreground" aria-hidden="true" />
 						{/snippet}
 						{#snippet value()}
-							<span class="flex min-w-0 flex-1 flex-wrap gap-1.5">
-								{#each labels as label (label.id)}
-									<Tag name={label.name} color={label.color} />
-								{/each}
-								{#if labels.length === 0}
-									<span class="text-muted-foreground">
-										{canEdit ? "Add labels" : "None"}
-									</span>
-								{/if}
-							</span>
+							{#if labels.length > 0}
+								<LabelChips {labels} place="field" />
+							{:else}
+								<span class="text-muted-foreground">None</span>
+							{/if}
 						{/snippet}
 					</IssueField>
+
+					{#snippet labelControl()}
+						<LabelPicker
+							workspaceId={data.workspace.id}
+							labels={knownLabels}
+							chosen={labels}
+							teamId={issue.teamId}
+							place="field"
+							canCreate={canCreateLabels(role)}
+							onchange={changeLabels}
+							oncreated={(label) => (createdLabels = [...createdLabels, label])}
+						/>
+					{/snippet}
 
 					<IssueField
 						label="Project"
@@ -3139,6 +3122,7 @@
 		today={calendarDate(data.now, data.workspace.timezone)}
 		now={data.now}
 		prefill={childPrefill ?? { teamId: issue.teamId, projectId: issue.projectId ?? "" }}
+		canCreateLabel={canCreateLabels(role)}
 		onsettled={settleUnder(filingUnder, data.workspace.id)}
 	/>
 

@@ -12,10 +12,12 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
+	import LabelDot from "$lib/labels/label-dot.svelte";
 	import {
 		chosenCount,
 		clearedLink,
 		facetChips,
+		facetLabelColor,
 		facetOptions,
 		type FacetCatalogue,
 	} from "$lib/issues/facet-options";
@@ -85,6 +87,7 @@
 		<Kbd keys="F" />
 	{/snippet}
 	{#snippet mark(option)}
+		{@const labelColor = facetLabelColor(catalogue, category, option.value)}
 		{#if !category && search.trim() === ""}
 			{#if option.value === "state"}
 				<StatusIcon category="not_started" decorative />
@@ -101,6 +104,8 @@
 			{/if}
 		{:else if option.value === ""}
 			<ArrowLeft class="text-muted-foreground" aria-hidden="true" />
+		{:else if labelColor}
+			<LabelDot color={labelColor} />
 		{/if}
 	{/snippet}
 </PropertyPicker>
