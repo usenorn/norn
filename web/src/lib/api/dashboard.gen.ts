@@ -4768,6 +4768,7 @@ export interface components {
             addLabelId?: string;
             /** Format: uuid */
             cycleId?: string;
+            clearCycle?: boolean;
             priority?: components["schemas"]["IssuePriority"];
             status?: components["schemas"]["IssueStatus"];
         };

@@ -27,6 +27,8 @@
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
+	import { provideCommandTargets } from "$lib/command/scope.svelte";
+	import { applyDensity, readDensity } from "$lib/layout/density";
 	import { showToast } from "$lib/toast/toasts";
 	import { announceCreated } from "$lib/issues/created-toast";
 	import type { CreationOutcome } from "$lib/issues/creating";
@@ -144,6 +146,10 @@
 	bindRoam(provideRoam());
 
 	const raising = provideNewIssue();
+
+	provideCommandTargets();
+
+	$effect(() => applyDensity(readDensity()));
 
 	holdShortcuts(() => raising.open);
 
@@ -479,4 +485,12 @@
 	bind:open={searching}
 	workspaceId={data.workspace.id}
 	workspaceSlug={slug}
+	{teams}
+	cycles={data.cycles}
+	views={data.views ?? []}
+	projects={data.projects}
+	members={data.members}
+	labels={data.labels}
+	states={data.states}
+	creatable={teams.length > 0}
 />

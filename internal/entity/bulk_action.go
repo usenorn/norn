@@ -125,6 +125,7 @@ type BulkChange struct {
 	Status     *IssueStatus
 
 	ClearAssignee bool
+	ClearCycle    bool
 }
 
 func (c BulkChange) Touched() []string {
@@ -146,7 +147,7 @@ func (c BulkChange) Touched() []string {
 		fields = append(fields, IssueFieldLabels)
 	}
 
-	if c.CycleID != nil {
+	if c.CycleID != nil || c.ClearCycle {
 		fields = append(fields, IssueFieldCycle)
 	}
 
@@ -181,6 +182,10 @@ func (c BulkChange) Validate() error {
 	}
 
 	if c.AssigneeID != nil && c.ClearAssignee {
+		return ErrBulkChangeConflicting
+	}
+
+	if c.CycleID != nil && c.ClearCycle {
 		return ErrBulkChangeConflicting
 	}
 

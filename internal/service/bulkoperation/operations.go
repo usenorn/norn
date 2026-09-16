@@ -621,6 +621,11 @@ func (s *operationsService) edit(
 		change.CycleID = &joining.ID
 	}
 
+	leaving := action.Change.ClearCycle && issue.CycleID != uuid.Nil
+	if leaving {
+		change.ClearCycle = true
+	}
+
 	if len(change.Touched()) == 0 {
 		return nil
 	}
@@ -672,6 +677,20 @@ func (s *operationsService) edit(
 		}
 
 		if err := s.rescope(ctx, decision, issue, joining, now); err != nil {
+			return err
+		}
+	}
+
+	if leaving {
+		if err := s.record(ctx, action, decision, issue, entity.Activity{
+			Kind:      entity.ActivityKindPropertyChanged,
+			Field:     entity.IssueFieldCycle,
+			FromValue: cycleName(issue.CycleNumber),
+		}); err != nil {
+			return err
+		}
+
+		if err := s.rescope(ctx, decision, issue, entity.Cycle{}, now); err != nil {
 			return err
 		}
 	}
