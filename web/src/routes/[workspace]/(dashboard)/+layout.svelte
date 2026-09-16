@@ -26,6 +26,7 @@
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
+	import { canCreateLabels } from "$lib/labels/create-label";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
 	import { provideCommandTargets } from "$lib/command/scope.svelte";
 	import { applyDensity, readDensity } from "$lib/layout/density";
@@ -476,6 +477,9 @@
 		{today}
 		now={data.now}
 		prefill={raising.prefill}
+		canCreateLabel={canCreateLabels(
+			data.members.find((member) => member.accountId === data.member.id)?.role
+		)}
 		onraising={raising.onraising}
 		onsettled={settlement}
 	/>

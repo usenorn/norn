@@ -96,7 +96,11 @@
 	const catalogue = $derived<FacetCatalogue>({
 		state: data.states.map((state) => ({ value: state.id, label: state.name })),
 		priority: priorities.map((entry) => ({ value: entry.value, label: entry.label })),
-		label: (data.labels ?? []).map((label) => ({ value: label.id, label: label.name })),
+		label: (data.labels ?? []).map((label) => ({
+			value: label.id,
+			label: label.name,
+			color: label.color,
+		})),
 		project: (data.projects ?? []).map((project) => ({ value: project.id, label: project.name })),
 		due: dueEntries(),
 		cycle: cycles,

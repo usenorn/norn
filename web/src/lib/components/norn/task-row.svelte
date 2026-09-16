@@ -3,7 +3,7 @@
 	import PersonAvatar from "./person-avatar.svelte";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
-	import Tag from "./tag.svelte";
+	import LabelChips from "$lib/labels/label-chips.svelte";
 	import { cn } from "$lib/utils.js";
 	import type { RowProperty } from "$lib/issues/display";
 	import type { Task } from "$lib/tasks/types";
@@ -32,8 +32,7 @@
 		class?: string;
 	} = $props();
 
-	const tags = $derived(showing.includes("labels") ? task.labels.slice(0, 2) : []);
-	const hidden = $derived(showing.includes("labels") ? task.labels.length - tags.length : 0);
+	const labels = $derived(showing.includes("labels") ? task.labels : []);
 	const settled = $derived(
 		task.state.category === "complete" || task.state.category === "abandoned"
 	);
@@ -70,12 +69,7 @@
 		{task.title}
 	</span>
 	<span class="flex flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground">
-		{#each tags as label (label.name)}
-			<Tag name={label.name} color={label.color} class="hidden lg:inline-flex" />
-		{/each}
-		{#if hidden > 0}
-			<span class="hidden font-mono text-2xs text-muted-foreground lg:inline">+{hidden}</span>
-		{/if}
+		<LabelChips {labels} place="row" />
 		{#if task.date && showing.includes("due")}
 			<span class="hidden font-mono text-xs whitespace-nowrap text-muted-foreground sm:inline">
 				{task.date}

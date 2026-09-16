@@ -8,9 +8,10 @@ import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type { UploadTask } from "$lib/attachments/upload";
 import type { DelegationFailure, DelegationPanel } from "$lib/agents/delegation";
 import type { IssueQuestion } from "$lib/questions/questions";
+import type { MembershipRole } from "$lib/workspace/members";
 import type { IssueDetail } from "./+page.server";
 
-export type IssueDetailPreview = { detail: IssueDetail };
+export type IssueDetailPreview = { detail: IssueDetail; role?: MembershipRole };
 
 export type ActivityPreview = {
 	feed: ActivityFeed;
@@ -267,6 +268,84 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					kind: "ready",
 					issue: {
 						id: "00000000-0000-4000-8000-000000000505",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						teamKey: "DSG",
+						referenceKey: "DSG",
+						status: "active" as const,
+						version: 1,
+						description: "",
+						priority: "none",
+						stateEnteredAt: "2026-07-30T09:00:00Z",
+						state: {
+							id: "00000000-0000-4000-8000-000000000402",
+							name: "Ready",
+							category: "not_started",
+							position: 2,
+						},
+						labels: [],
+						number: 17,
+						reference: "DSG-17",
+						title: "Cache avatars between sessions",
+						createdAt: "2026-08-02T09:00:00Z",
+					},
+					states: [
+						{
+							id: "00000000-0000-4000-8000-000000000402",
+							teamId: "00000000-0000-4000-8000-000000000102",
+							name: "Ready",
+							category: "not_started",
+							position: 2,
+							isDefault: true,
+							isCompletion: false,
+						},
+					],
+					groups: [],
+					labels: [],
+					relations: [],
+					cycles: [],
+					projects: [],
+					children: [],
+					childProgress: { notStarted: 0, active: 0, complete: 0, abandoned: 0 },
+					candidates: [],
+					comments: { kind: "empty" },
+					attachments: { kind: "empty" },
+					delegation: { kind: "none" },
+			runs: [
+					{
+						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+						reference: "DSG-14",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						issueReference: "DSG-14",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						agentId: "00000000-0000-4000-8000-000000000601",
+						agentName: "Rae's agent",
+						runnerId: "00000000-0000-4000-8000-000000000701",
+						runnerName: "rae-mbp",
+						attempt: 1,
+						state: "running" as const,
+						params: { tool: "claude-code", model: "opus-5" },
+						queuedAt: "2026-08-23T09:00:00Z",
+						startedAt: "2026-08-23T09:01:30Z",
+					},
+				],
+			questions: [],
+					follow: "following" as const,
+					watchers: [],
+					mirrorConflicts: [],
+					shipping: { releases: [], deployments: [] },
+					codeLinks: [],
+					members: [],
+					activity: { kind: "empty" },
+				},
+			},
+			no_labels_yet_admin: {
+				role: "admin",
+				detail: {
+					kind: "ready",
+					issue: {
+						id: "00000000-0000-4000-8000-000000000506",
 						workspaceId: "00000000-0000-4000-8000-000000000000",
 						teamId: "00000000-0000-4000-8000-000000000102",
 						teamKey: "DSG",

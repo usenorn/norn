@@ -13,6 +13,14 @@ export const labelColors: LabelColor[] = [
 	"magenta",
 ];
 
+const assignableColors = labelColors.filter((color) => color !== "neutral");
+
+export function randomLabelColor(pick: () => number = Math.random): LabelColor {
+	const index = Math.floor(pick() * assignableColors.length);
+
+	return assignableColors[Math.min(Math.max(index, 0), assignableColors.length - 1)];
+}
+
 export const colorLabels: Record<LabelColor, string> = {
 	neutral: "Neutral",
 	cyan: "Cyan",
@@ -113,6 +121,17 @@ export function conflictFailure(
 		default:
 			return null;
 	}
+}
+
+export function refusedLabelFailure(problem: unknown, status: number): LabelFailure {
+	if (problem && typeof problem === "object" && "code" in problem) {
+		const held = problem as { code: unknown; issues?: number; conflicts?: string[] };
+		const conflict = conflictFailure(String(held.code), held.issues, held.conflicts);
+
+		if (conflict) return conflict;
+	}
+
+	return status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
 }
 
 export type LabelSection = { group: LabelGroup | null; labels: Label[] };

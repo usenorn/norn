@@ -23,9 +23,10 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import LabelDot from "$lib/labels/label-dot.svelte";
+	import LabelPicker from "$lib/labels/label-picker.svelte";
+	import { setIssueLabels, type LabelsOutcome } from "$lib/labels/set-issue-labels";
+	import type { Label } from "$lib/labels/labels";
 	import BulkBar, { type BulkPicker } from "$lib/issues/bulk-bar.svelte";
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
@@ -272,7 +273,7 @@
 			unassignedEntry(),
 		],
 		priority: priorities.map((entry) => ({ value: entry.value, label: entry.label })),
-		label: labels.map((label) => ({ value: label.id, label: label.name })),
+		label: labels.map((label) => ({ value: label.id, label: label.name, color: label.color })),
 		project: (data.projects ?? []).map((project) => ({ value: project.id, label: project.name })),
 		cycle: teamCycles.map((cycle) => ({ value: cycle.id, label: cycle.name })),
 		due: dueEntries(),
@@ -405,32 +406,28 @@
 		);
 	}
 
-	function toggleLabel(issue: Issue, labelId: string) {
-		return rowPending.once(issue.id, () => togglingLabel(issue, labelId));
-	}
-
-	async function togglingLabel(issue: Issue, labelId: string) {
+	async function changeLabels(issue: Issue, labelIds: string[], picked: Label) {
 		const held = issue.labels.map((label) => label.id);
-		const carries = held.includes(labelId);
-		const next = carries ? held.filter((id) => id !== labelId) : [...held, labelId];
-		const name = labels.find((label) => label.id === labelId)?.name ?? "that label";
+		const adding = labelIds.includes(picked.id);
 
-		const outcome = await setLabels(issue, next, () =>
+		const outcome = await setLabels(issue, labelIds, () =>
 			withEdit(edits, issue.id, {
-				labels: labels.filter((label) => next.includes(label.id)),
+				labels: labelIds.flatMap(
+					(id) => [picked, ...labels].find((label) => label.id === id) ?? []
+				),
 			})
 		);
 
-		if (outcome.kind !== "done") return;
+		if (outcome.kind !== "changed") return;
 
 		announce(
-			carries
-				? `Removed ${name} from ${issue.reference}`
-				: `Added ${name} to ${issue.reference}`,
+			adding
+				? `Added ${picked.name} to ${issue.reference}`
+				: `Removed ${picked.name} from ${issue.reference}`,
 			async () => {
 				const undone = await setLabels(asLoaded(issue), held);
 
-				if (undone.kind !== "done") return;
+				if (undone.kind !== "changed") return;
 
 				edits = without(edits, issue.id);
 				await invalidate(keys.page(page.route.id));
@@ -445,23 +442,24 @@
 		issue: Issue,
 		labelIds: string[],
 		optimistic?: () => PendingEdit[]
-	): Promise<Outcome<unknown>> {
+	): Promise<LabelsOutcome> {
 		const held = edits;
 
-		const outcome = await attempt({
-			run: () =>
-				api.PUT("/workspaces/{workspaceId}/issues/{issueId}/labels", {
-					params: { path: { workspaceId: data.workspace.id, issueId: issue.id } },
-					body: { expectedVersion: expectedVersion(issue), labelIds },
-				}),
+		const outcome = await setIssueLabels({
+			workspaceId: data.workspace.id,
+			issue,
+			labelIds,
 			optimistic: optimistic && (() => (edits = optimistic())),
 			reconcile: () => (edits = held),
 		});
 
-		if (outcome.kind === "done") remember(outcome.value);
-
-		if (outcome.kind !== "done") {
-			showFailure(refusedLine(outcome), { href: at(`/issues/${issue.reference}`) });
+		if (outcome.kind === "refused" || outcome.kind === "uncertain") {
+			showFailure(
+				outcome.kind === "refused"
+					? issueFailureMessage(readIssueFailure(outcome.problem))
+					: unknownLine,
+				{ href: at(`/issues/${issue.reference}`) }
+			);
 			await invalidate(keys.page(page.route.id));
 		}
 
@@ -1048,54 +1046,18 @@
 {/snippet}
 
 {#snippet labelsControl(issue: Issue, always = false)}
-	{@const carried = display.shown.includes("labels") ? issue.labels : []}
-	<PropertyPicker
-		options={labels.map((label) => ({
-			value: label.id,
-			label: label.name,
-			checked: carried.some((held) => held.id === label.id),
-		}))}
-		placeholder="Add label…"
-		class="w-49"
-		align="end"
-		closeOnPick={false}
-		empty="No labels reach this team"
-		onpick={(value) => toggleLabel(issue, value)}
-	>
-		{#snippet shortcut()}
-			<Kbd keys="Esc" />
-		{/snippet}
-		{#snippet trigger(props)}
-			<button
-				{...props}
-				type="button"
-				aria-label="Change labels on {issue.reference}"
-				disabled={draftIDs.has(issue.id)}
-				class="inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2"
-			>
-				{#each carried.slice(0, 2) as label (label.id)}
-					<Tag name={label.name} color={label.color} class="hidden lg:inline-flex" />
-				{/each}
-				{#if carried.length > 2}
-					<span class="hidden font-mono text-2xs text-muted-foreground lg:inline">
-						+{carried.length - 2}
-					</span>
-				{/if}
-				{#if carried.length === 0}
-					<span
-						class="h-0.5 w-2 bg-line-strong {always
-							? ''
-							: 'hidden opacity-0 group-hover/row:opacity-100 lg:inline-block'}"
-						aria-hidden="true"
-					></span>
-				{/if}
-			</button>
-		{/snippet}
-		{#snippet mark(option)}
-			{@const label = labels.find((candidate) => candidate.id === option.value)}
-			<LabelDot color={label?.color} />
-		{/snippet}
-	</PropertyPicker>
+	<LabelPicker
+		workspaceId={data.workspace.id}
+		{labels}
+		chosen={issue.labels}
+		chips={display.shown.includes("labels")}
+		teamId={issue.teamId}
+		place="row"
+		{always}
+		subject={issue.reference}
+		disabled={draftIDs.has(issue.id)}
+		onchange={(labelIds, picked) => changeLabels(issue, labelIds, picked)}
+	/>
 {/snippet}
 
 {#snippet assigneeControl(issue: Issue)}

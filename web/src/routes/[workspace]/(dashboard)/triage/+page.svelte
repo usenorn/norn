@@ -23,7 +23,7 @@
 	import Kbd from "$lib/components/norn/kbd.svelte";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
+	import LabelChips from "$lib/labels/label-chips.svelte";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import { api } from "$lib/api";
@@ -533,10 +533,8 @@
 
 									{#if item.labels.length > 0}
 										<dt class="font-mono text-xs text-muted-foreground">Labels</dt>
-										<dd class="flex flex-wrap gap-1.5">
-											{#each item.labels as label (label.id)}
-												<Tag name={label.name} color={label.color} />
-											{/each}
+										<dd class="flex">
+											<LabelChips labels={item.labels} place="field" />
 										</dd>
 									{/if}
 

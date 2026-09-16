@@ -4,7 +4,7 @@
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
+	import LabelChips from "$lib/labels/label-chips.svelte";
 	import { cn } from "$lib/utils.js";
 	import { dueLabel, overdue } from "$lib/time";
 	import type { RowProperty } from "./display";
@@ -54,8 +54,6 @@
 
 	const labels = $derived(shown.includes("labels") ? issue.labels : []);
 	const due = $derived(shown.includes("due") ? issue.dueOn : undefined);
-	const visible = $derived(labels.slice(0, 2));
-	const hidden = $derived(labels.length - visible.length);
 	const settled = $derived(
 		issue.state.category === "complete" || issue.state.category === "abandoned"
 	);
@@ -118,12 +116,7 @@
 			{#if labelsControl}
 				{@render labelsControl(issue, true)}
 			{:else}
-				{#each visible as label (label.id)}
-					<Tag name={label.name} color={label.color} />
-				{/each}
-				{#if hidden > 0}
-					<span class="font-mono text-2xs whitespace-nowrap text-muted-foreground">+{hidden}</span>
-				{/if}
+				<LabelChips {labels} place="card" />
 			{/if}
 		</span>
 		<span class="min-w-1.5 flex-1"></span>

@@ -7,7 +7,7 @@
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
 	import ProgressBar from "./progress-bar.svelte";
-	import Tag from "./tag.svelte";
+	import LabelChips from "$lib/labels/label-chips.svelte";
 	import { cn } from "$lib/utils.js";
 	import { dueLabel, overdue } from "$lib/time";
 	import { totalIssues } from "$lib/issues/board";
@@ -58,8 +58,6 @@
 
 	const labels = $derived(shown.includes("labels") ? issue.labels : []);
 	const due = $derived(shown.includes("due") ? issue.dueOn : undefined);
-	const visible = $derived(labels.slice(0, 2));
-	const hidden = $derived(labels.length - visible.length);
 	const settled = $derived(
 		issue.state.category === "complete" || issue.state.category === "abandoned"
 	);
@@ -176,12 +174,7 @@
 		{#if labelsControl}
 			{@render labelsControl(issue, false)}
 		{:else}
-			{#each visible as label (label.id)}
-				<Tag name={label.name} color={label.color} class="hidden lg:inline-flex" />
-			{/each}
-			{#if hidden > 0}
-				<span class="hidden font-mono text-2xs text-muted-foreground lg:inline">+{hidden}</span>
-			{/if}
+			<LabelChips {labels} place="row" />
 		{/if}
 		{#if issue.estimate}
 			<span class="hidden font-mono text-2xs text-muted-foreground sm:inline">

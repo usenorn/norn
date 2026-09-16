@@ -5,8 +5,6 @@
 	import FileText from "@lucide/svelte/icons/file-text";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import Paperclip from "@lucide/svelte/icons/paperclip";
-	import Plus from "@lucide/svelte/icons/plus";
-	import Tags from "@lucide/svelte/icons/tags";
 	import X from "@lucide/svelte/icons/x";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -14,7 +12,6 @@
 	import { showToast } from "$lib/toast/toasts";
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as Command from "$lib/components/ui/command/index.js";
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -24,14 +21,13 @@
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import LabelDot from "$lib/labels/label-dot.svelte";
+	import LabelPicker from "$lib/labels/label-picker.svelte";
 	import { onCalendarDate } from "$lib/time";
 	import { attachmentNode, formatBytes, type Attachment } from "$lib/attachments/attachments";
 	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
 	import UploadList from "$lib/attachments/upload-list.svelte";
 	import type { UploadTask } from "$lib/attachments/upload";
 	import { assignable, type AccountKind } from "$lib/workspace/members";
-	import { conflictFailure, labelColors, labelFailureMessage } from "$lib/labels/labels";
 	import type { Label } from "$lib/labels/labels";
 	import {
 		attachFailureMessage,
@@ -88,6 +84,7 @@
 		today,
 		now,
 		prefill,
+		canCreateLabel = false,
 		onraising,
 		onsettled,
 	}: {
@@ -102,6 +99,7 @@
 		today: string;
 		now: string;
 		prefill?: NewIssuePrefill;
+		canCreateLabel?: boolean;
 		onraising?: (key: string, draft: Issue) => void;
 		onsettled?: (outcome: CreationOutcome) => void | Promise<void>;
 	} = $props();
@@ -208,9 +206,6 @@
 		});
 	}
 	let coined = $state.raw<Label[]>([]);
-	let labelSearch = $state("");
-	let coining = $state(false);
-	let labelFailure = $state<string | null>(null);
 	let resuming = $state(false);
 	let intake = 0;
 	let describer = $state.raw<{
@@ -265,37 +260,6 @@
 	function dropPending(key: string) {
 		describer?.abandon(key);
 		setPending(attaching.filter((file) => file.key !== key));
-	}
-
-	async function coinLabel(name: string) {
-		const wanted = name.trim();
-
-		if (!wanted || coining) return;
-
-		coining = true;
-		labelFailure = null;
-
-		const { data, error } = await api.POST("/workspaces/{workspaceId}/labels", {
-			params: { path: { workspaceId } },
-			body: { name: wanted, color: labelColors[(labels.length + coined.length) % labelColors.length] },
-		});
-
-		coining = false;
-
-		if (error || !data) {
-			const conflict =
-				error && typeof error === "object" && "code" in error
-					? conflictFailure(String(error.code))
-					: null;
-
-			labelFailure = labelFailureMessage(conflict ?? { kind: "unavailable" });
-
-			return;
-		}
-
-		coined = [...coined, data];
-		labelSearch = "";
-		toggleLabel(data.id);
 	}
 
 	const form = superForm(defaults(zod4(newIssueSchema)), {
@@ -676,14 +640,6 @@
 
 	const chosenLabels = $derived(known.filter((label) => $formData.labelIds.includes(label.id)));
 
-	const reachable = $derived(known.filter((label) => !label.teamId || label.teamId === team?.id));
-
-	const coinable = $derived(
-		labelSearch.trim().length > 0 &&
-			!reachable.some(
-				(label) => label.name.toLowerCase() === labelSearch.trim().toLowerCase()
-			)
-	);
 
 	$effect(() => {
 		const justClosed = !open && wasOpen;
@@ -860,8 +816,6 @@
 		dragging = false;
 		aborts.clear();
 		coined = [];
-		labelSearch = "";
-		labelFailure = null;
 
 		formData.update(
 			(current) => ({
@@ -927,12 +881,6 @@
 		fields?.requestSubmit();
 	}
 
-	function toggleLabel(labelId: string) {
-		$formData.labelIds = $formData.labelIds.includes(labelId)
-			? $formData.labelIds.filter((held) => held !== labelId)
-			: [...$formData.labelIds, labelId];
-	}
-
 	const teamOptions = $derived<PickerOption[]>(
 		teams.map((candidate) => ({
 			value: candidate.id,
@@ -974,14 +922,6 @@
 		})),
 		{ value: "", label: "No project", checked: $formData.projectId === "" },
 	]);
-
-	const labelOptions = $derived<PickerOption[]>(
-		reachable.map((label) => ({
-			value: label.id,
-			label: label.name,
-			checked: $formData.labelIds.includes(label.id),
-		}))
-	);
 
 	const dueOptions = $derived<PickerOption[]>(
 		duePresets(today).map((preset) => ({
@@ -1350,60 +1290,17 @@
 						{/snippet}
 					</PropertyPicker>
 
-					<PropertyPicker
-						options={labelOptions}
-						placeholder="Add or create a label…"
-						class="w-49"
-						empty="No labels reach this team"
-						closeOnPick={false}
-						bind:search={labelSearch}
-						onpick={toggleLabel}
-					>
-						{#snippet shortcut()}
-							<Kbd keys="Esc" />
-						{/snippet}
-						{#snippet action(search)}
-							{#if coinable}
-								<Command.Item value="coin-{search}" onSelect={() => coinLabel(search)}>
-									<span class="inline-flex w-3.75 flex-none justify-center">
-										<Plus class="text-muted-foreground" aria-hidden="true" />
-									</span>
-									<span class="min-w-0 flex-1 truncate">
-										{coining ? "Creating" : "Create"} “{search.trim()}”
-									</span>
-								</Command.Item>
-							{:else if labelOptions.length === 0}
-								<p class="px-2 py-1.5 text-sm text-muted-foreground">
-									No labels reach this team. Type a name to create one.
-								</p>
-							{/if}
-						{/snippet}
-						{#snippet footer()}
-							{#if labelFailure}
-								<p class="border-t border-line-subtle px-2 py-1.5 text-sm text-destructive" role="alert">
-									{labelFailure}
-								</p>
-							{/if}
-						{/snippet}
-						{#snippet trigger(props)}
-							<Button
-								{...props}
-								variant="outline"
-								size="sm"
-								disabled={busy || Boolean(raised)}
-								class={chipClass}
-							>
-								<Tags class="text-muted-foreground" aria-hidden="true" />
-								{chosenLabels.length > 0
-									? chosenLabels.map((label) => label.name).join(", ")
-									: "Label"}
-							</Button>
-						{/snippet}
-						{#snippet mark(option)}
-							{@const label = labels.find((candidate) => candidate.id === option.value)}
-							<LabelDot color={label?.color} />
-						{/snippet}
-					</PropertyPicker>
+					<LabelPicker
+						{workspaceId}
+						labels={known}
+						chosen={chosenLabels}
+						teamId={team?.id ?? ""}
+						place="dialog"
+						canCreate={canCreateLabel}
+						disabled={busy || Boolean(raised)}
+						onchange={(labelIds) => ($formData.labelIds = labelIds)}
+						oncreated={(label) => (coined = [...coined, label])}
+					/>
 
 					<PropertyPicker
 						options={projectOptions}

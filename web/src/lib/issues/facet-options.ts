@@ -1,8 +1,9 @@
+import type { LabelColor } from "$lib/labels/labels";
 import type { PickerOption } from "./property-picker.svelte";
 import { dueWindowLabels, dueWindows, facetLabels, unassigned, type FacetKind, type Facets } from "./facets";
 import type { LinkWith } from "./linking";
 
-export type FacetEntry = { value: string; label: string };
+export type FacetEntry = { value: string; label: string; color?: LabelColor };
 
 export type FacetCatalogue = Partial<Record<FacetKind, FacetEntry[]>>;
 
@@ -62,6 +63,20 @@ export function facetOptions(
 			href: linkWith({ [kind]: option.checked ? null : option.value }),
 		}))
 	);
+}
+
+export function facetLabelColor(
+	catalogue: FacetCatalogue,
+	category: FacetKind | null,
+	value: string
+): LabelColor | undefined {
+	const labelPrefix = "label:";
+	const labelId =
+		category === "label" ? value : value.startsWith(labelPrefix) ? value.slice(labelPrefix.length) : "";
+
+	if (!labelId) return undefined;
+
+	return catalogue.label?.find((entry) => entry.value === labelId)?.color;
 }
 
 export function facetChips(
