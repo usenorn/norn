@@ -920,17 +920,31 @@
 
 			return cursor.at >= start && cursor.at < start + column.issues.length;
 		});
+		const row = here < 0 ? 0 : cursor.at - (offsets.get(columns[here].key) ?? 0);
 
 		for (let next = (here < 0 ? 0 : here) + by; next >= 0 && next < columns.length; next += by) {
-			if (columns[next].issues.length === 0) continue;
+			const landing = columns[next];
 
-			cursor.to(offsets.get(columns[next].key) ?? 0);
+			if (landing.issues.length === 0) continue;
+
+			cursor.to((offsets.get(landing.key) ?? 0) + Math.min(row, landing.issues.length - 1));
 
 			return true;
 		}
 
 		return false;
 	}
+
+	$effect(() => {
+		if (data.layout !== "board" || cursor.row === undefined) return;
+
+		const released = [
+			shortcuts.register("cursor-left", () => step(-1)),
+			shortcuts.register("cursor-right", () => step(1)),
+		];
+
+		return () => released.forEach((release) => release());
+	});
 
 	$effect(() => {
 		if (selected.size === 0) return;
@@ -1578,6 +1592,7 @@
 		<ShortcutBar
 			ids={[
 				"cursor-down",
+				...(data.layout === "board" ? (["cursor-left", "cursor-right"] as const) : []),
 				"cursor-open",
 				"status-set",
 				"select-toggle",

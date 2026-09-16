@@ -63,6 +63,8 @@ const declared = [
 
 	{ id: "cursor-down", keys: ["j", "arrowdown"], label: "Move down", group: "list" },
 	{ id: "cursor-up", keys: ["k", "arrowup"], label: "Move up", group: "list" },
+	{ id: "cursor-left", keys: ["arrowleft"], label: "Previous column", group: "list" },
+	{ id: "cursor-right", keys: ["arrowright"], label: "Next column", group: "list" },
 	{ id: "cursor-open", keys: ["enter", "o"], label: "Open", group: "list", yieldsToFocus: true },
 	{ id: "issue-new", keys: ["c"], label: "New issue", group: "issues" },
 	{ id: "issue-filter", keys: ["f"], label: "Filter", group: "issues" },
@@ -115,6 +117,8 @@ export function shortcutOf(id: ShortcutId): Shortcut {
 const namedKeys: Record<string, string> = {
 	arrowdown: "↓",
 	arrowup: "↑",
+	arrowleft: "←",
+	arrowright: "→",
 	enter: "↵",
 	escape: "Esc",
 	" ": "Space",
