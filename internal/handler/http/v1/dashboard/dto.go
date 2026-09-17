@@ -1097,6 +1097,7 @@ func labelDTO(label entity.Label) api.Label {
 		Id:          label.ID,
 		WorkspaceId: label.WorkspaceID,
 		Name:        label.Name,
+		Description: label.Description,
 		Color:       api.LabelColor(label.Color),
 	}
 

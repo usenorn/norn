@@ -6,6 +6,7 @@ import {
 	boardFor,
 	conflictFailure,
 	labelFailureMessage,
+	usageFor,
 	type LabelFailure,
 } from "$lib/labels/labels";
 import { labelGroupSchema, labelSchema } from "$lib/labels/label-schema";
@@ -23,13 +24,18 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 	const { workspace, teams } = await parent();
 	const path = { workspaceId: workspace.id };
 
-	const [labels, groups] = await Promise.all([
+	const [labels, groups, tallies] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/labels", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/label-groups", { params: { path } }),
+		locals.api.POST("/workspaces/{workspaceId}/issues/query", {
+			params: { path },
+			body: { groupBy: "label", limit: 1 },
+		}),
 	]);
 
 	return {
 		board: boardFor(labels.data, groups.data),
+		usage: usageFor(tallies),
 		teams: teams ?? [],
 		form: await superValidate<LabelForm, LabelFailure>(zod4(labelSchema), { id: labelFormId }),
 		groupForm: await superValidate<LabelGroupForm, LabelFailure>(zod4(labelGroupSchema), {
@@ -64,17 +70,18 @@ export const actions: Actions = {
 
 		const workspaceId = String(posted.get("workspaceId") ?? "");
 		const labelId = String(posted.get("labelId") ?? "");
-		const { name, color, groupId, teamId } = form.data;
+		const { name, description, color, groupId, teamId } = form.data;
 
 		const result = labelId
 			? await locals.api.PATCH("/workspaces/{workspaceId}/labels/{labelId}", {
 					params: { path: { workspaceId, labelId } },
-					body: { name, color, groupId: groupId || null },
+					body: { name, description, color, groupId: groupId || null },
 				})
 			: await locals.api.POST("/workspaces/{workspaceId}/labels", {
 					params: { path: { workspaceId } },
 					body: {
 						name,
+						description,
 						color,
 						...(groupId ? { groupId } : {}),
 						...(teamId ? { teamId } : {}),

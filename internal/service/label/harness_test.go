@@ -89,6 +89,7 @@ func workspaceLabel(workspaceID uuid.UUID, name string) entity.Label {
 		ID:          uuid.New(),
 		WorkspaceID: workspaceID,
 		Name:        name,
+		Description: "Something shipped is wrong",
 		Color:       entity.LabelColorCyan,
 	}
 }

@@ -174,18 +174,18 @@ func (mr *MockLabelMockRecorder) SyncApplicationGroup(ctx, labelID, groupID any)
 }
 
 // UpdateSettings mocks base method.
-func (m *MockLabel) UpdateSettings(ctx context.Context, id uuid.UUID, name string, color entity.LabelColor, groupID uuid.UUID) (entity.Label, error) {
+func (m *MockLabel) UpdateSettings(ctx context.Context, id uuid.UUID, name, description string, color entity.LabelColor, groupID uuid.UUID) (entity.Label, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSettings", ctx, id, name, color, groupID)
+	ret := m.ctrl.Call(m, "UpdateSettings", ctx, id, name, description, color, groupID)
 	ret0, _ := ret[0].(entity.Label)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateSettings indicates an expected call of UpdateSettings.
-func (mr *MockLabelMockRecorder) UpdateSettings(ctx, id, name, color, groupID any) *gomock.Call {
+func (mr *MockLabelMockRecorder) UpdateSettings(ctx, id, name, description, color, groupID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSettings", reflect.TypeOf((*MockLabel)(nil).UpdateSettings), ctx, id, name, color, groupID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSettings", reflect.TypeOf((*MockLabel)(nil).UpdateSettings), ctx, id, name, description, color, groupID)
 }
 
 // Usage mocks base method.

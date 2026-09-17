@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	LabelNameMinLen      = 1
-	LabelNameMaxLen      = 40
-	LabelGroupNameMinLen = 1
-	LabelGroupNameMaxLen = 40
+	LabelNameMinLen        = 1
+	LabelNameMaxLen        = 40
+	LabelDescriptionMaxLen = 120
+	LabelGroupNameMinLen   = 1
+	LabelGroupNameMaxLen   = 40
 )
 
 var (
@@ -68,6 +69,7 @@ type Label struct {
 	TeamID      uuid.UUID
 	GroupID     uuid.UUID
 	Name        string
+	Description string
 	Color       LabelColor
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -121,6 +123,14 @@ func ValidateLabelName(field, name string) FieldError {
 	default:
 		return FieldError{}
 	}
+}
+
+func ValidateLabelDescription(field, description string) FieldError {
+	if utf8.RuneCountInString(strings.TrimSpace(description)) > LabelDescriptionMaxLen {
+		return FieldError{Field: field, Code: ValidationCodeTooLong}
+	}
+
+	return FieldError{}
 }
 
 func ValidateLabelGroupName(field, name string) FieldError {

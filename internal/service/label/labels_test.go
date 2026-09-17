@@ -154,21 +154,22 @@ func TestRenamingALabelTouchesNothingButTheLabelRow(t *testing.T) {
 	h.labels.EXPECT().LockByID(gomock.Any(), workspaceID, label.ID).Return(label, nil)
 
 	var (
-		gotName  string
-		gotColor entity.LabelColor
-		gotGroup uuid.UUID
+		gotName        string
+		gotDescription string
+		gotColor       entity.LabelColor
+		gotGroup       uuid.UUID
 	)
 
 	h.labels.EXPECT().
-		UpdateSettings(gomock.Any(), label.ID, gomock.Any(), gomock.Any(), gomock.Any()).
+		UpdateSettings(gomock.Any(), label.ID, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
 			id uuid.UUID,
-			name string,
+			name, description string,
 			color entity.LabelColor,
 			groupID uuid.UUID,
 		) (entity.Label, error) {
-			gotName, gotColor, gotGroup = name, color, groupID
+			gotName, gotDescription, gotColor, gotGroup = name, description, color, groupID
 			updated := label
 			updated.Name = name
 
@@ -194,6 +195,10 @@ func TestRenamingALabelTouchesNothingButTheLabelRow(t *testing.T) {
 
 	if gotColor != label.Color || gotGroup != label.GroupID {
 		t.Fatal("a rename must leave colour and group exactly as they were")
+	}
+
+	if gotDescription != label.Description {
+		t.Fatalf("stored description = %q, want the untouched %q", gotDescription, label.Description)
 	}
 }
 
