@@ -686,6 +686,7 @@ func (s *importsService) createIssue(
 		ProjectID:         projectID,
 		LabelIDs:          labelIDs,
 		Origin:            &origin,
+		Imported:          true,
 	})
 	if err != nil {
 		return made, err
@@ -959,6 +960,7 @@ func (s *importsService) embedInIssue(
 	updated, err := s.issueWriter.Update(ctx, run.WorkspaceID, issueID, service.UpdateIssueInput{
 		ExpectedVersion: issue.Version,
 		Description:     &body,
+		Imported:        true,
 	})
 	if err != nil {
 		return made, err

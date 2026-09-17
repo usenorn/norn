@@ -49,6 +49,13 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.transactor.EXPECT().
+		WithSavepoint(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			return fn(ctx)
+		}).
+		AnyTimes()
+
 	h.service = relationsvc.New(
 		h.relations, h.issues, h.states, h.activity, h.authorizer, h.transactor,
 	)

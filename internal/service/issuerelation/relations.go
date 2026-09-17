@@ -339,3 +339,79 @@ func (s *relationsService) List(
 
 	return entity.GroupRelations(relations), nil
 }
+
+func (s *relationsService) RelateMentioned(ctx context.Context, subject entity.Issue, text string) error {
+	mentioned := entity.ScanIssueReferences(text)
+	if len(mentioned) == 0 {
+		return nil
+	}
+
+	decision, err := s.decide(ctx, subject.WorkspaceID, entity.ActionManage)
+	if err != nil {
+		return err
+	}
+
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		for _, mention := range mentioned {
+			if err := s.relateMention(ctx, subject, mention.Reference, decision); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (s *relationsService) relateMention(
+	ctx context.Context,
+	subject entity.Issue,
+	reference entity.IssueReference,
+	decision entity.Decision,
+) error {
+	counterpart, err := s.issues.GetVisibleByReference(ctx, subject.WorkspaceID, reference, decision.Scope)
+	if errors.Is(err, entity.ErrIssueNotFound) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if counterpart.ID == subject.ID {
+		return nil
+	}
+
+	if err := s.unheld(ctx, subject.WorkspaceID, subject.ID, counterpart.ID, decision); err != nil {
+		if errors.Is(err, entity.ErrIssueRelationExists) {
+			return nil
+		}
+
+		return err
+	}
+
+	source, target := entity.NormalisePair(subject.ID, counterpart.ID)
+
+	err = s.transactor.WithSavepoint(ctx, func(ctx context.Context) error {
+		_, err := s.relations.Create(ctx, entity.StoredIssueRelation{
+			WorkspaceID:        subject.WorkspaceID,
+			SourceIssueID:      source,
+			TargetIssueID:      target,
+			Kind:               entity.IssueRelationRelatesTo,
+			CreatedByAccountID: decision.Actor.AccountID,
+		})
+
+		return err
+	})
+	if errors.Is(err, entity.ErrIssueRelationExists) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return s.record(
+		ctx, subject.WorkspaceID, decision, entity.ActivityKindRelationAdded,
+		subject, counterpart, entity.IssueRelationViewRelatesTo, entity.IssueRelationViewRelatesTo,
+	)
+}

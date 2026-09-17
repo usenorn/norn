@@ -21,6 +21,7 @@ import (
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
+	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
@@ -48,6 +49,9 @@ var toolScopes = entity.APIScopeSet{
 
 type harness struct {
 	issues        *issuesvc.MockIssues
+	relations     *issuerelationsvc.MockIssueRelations
+	related       []entity.IssueRelationGroup
+	relationsFail error
 	questions     *issuequestionsvc.MockIssueQuestions
 	asked         []entity.IssueQuestion
 	agents        *agentsvc.MockAgents
@@ -68,6 +72,7 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		issues:        issuesvc.NewMockIssues(ctrl),
+		relations:     issuerelationsvc.NewMockIssueRelations(ctrl),
 		agents:        agentsvc.NewMockAgents(ctrl),
 		teams:         teamsvc.NewMockTeams(ctrl),
 		questions:     issuequestionsvc.NewMockIssueQuestions(ctrl),
@@ -85,6 +90,7 @@ func newHarness(t *testing.T) *harness {
 
 	h.edge = mcpserver.New(
 		h.issues,
+		h.relations,
 		h.questions,
 		h.agents,
 		issuecommentsvc.NewMockIssueComments(ctrl),
@@ -104,6 +110,13 @@ func newHarness(t *testing.T) *harness {
 		List(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.IssueQuestion, error) {
 			return h.asked, nil
+		}).
+		AnyTimes()
+
+	h.relations.EXPECT().
+		List(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) ([]entity.IssueRelationGroup, error) {
+			return h.related, h.relationsFail
 		}).
 		AnyTimes()
 
@@ -212,6 +225,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_change_issue_state",
 		"norn_set_issue_status",
 		"norn_set_issue_parent",
+		"norn_link_issues",
+		"norn_unlink_issues",
 		"norn_create_comment",
 		"norn_whoami",
 		"norn_ask",
@@ -222,8 +237,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 23 {
-		t.Errorf("registered %d tools, want 23", len(tools.Tools))
+	if len(tools.Tools) != 25 {
+		t.Errorf("registered %d tools, want 25", len(tools.Tools))
 	}
 }
 
@@ -381,6 +396,7 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 
 	edge := mcpserver.New(
 		issuesvc.NewMockIssues(ctrl),
+		issuerelationsvc.NewMockIssueRelations(ctrl),
 		issuequestionsvc.NewMockIssueQuestions(ctrl),
 		agentsvc.NewMockAgents(ctrl),
 		issuecommentsvc.NewMockIssueComments(ctrl),

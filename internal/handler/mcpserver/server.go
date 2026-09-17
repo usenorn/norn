@@ -33,6 +33,7 @@ const untrustedContentInstructions = workingInstructions +
 
 type toolset struct {
 	issues         service.Issues
+	relations      service.IssueRelations
 	questions      service.IssueQuestions
 	agents         service.Agents
 	issueComments  service.IssueComments
@@ -53,6 +54,7 @@ type Edge struct {
 
 func New(
 	issues service.Issues,
+	relations service.IssueRelations,
 	questions service.IssueQuestions,
 	agents service.Agents,
 	issueComments service.IssueComments,
@@ -69,6 +71,7 @@ func New(
 ) *Edge {
 	tools := &toolset{
 		issues:         issues,
+		relations:      relations,
 		questions:      questions,
 		agents:         agents,
 		issueComments:  issueComments,
@@ -140,8 +143,9 @@ func (t *toolset) register(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "norn_get_issue",
-		Description: "Fetch one issue by reference (like ENG-42) or id, optionally with its " +
-			"comment thread. The returned version is the expected_version for updates.",
+		Description: "Fetch one issue by reference (like ENG-42) or id with the issues it is " +
+			"related to, optionally with its comment thread. The returned version is the " +
+			"expected_version for updates.",
 		Annotations: read,
 	}, t.getIssue)
 
@@ -221,8 +225,9 @@ func (t *toolset) register(server *mcp.Server) {
 			"and an assignee. An assignee of me is the person this connection acts for, which " +
 			"for an agent is its owner, never the agent itself. An issue raised with no assignee " +
 			"may wait in the team's triage inbox, where it stays out of the team's issue list " +
-			"until somebody accepts it: the returned triageState says so. Requires the write " +
-			"capability.",
+			"until somebody accepts it: the returned triageState says so. An issue reference " +
+			"named in the description relates the two issues; to say one blocks or duplicates " +
+			"the other, use norn_link_issues. Requires the write capability.",
 		Annotations: create,
 	}, t.createIssue)
 
@@ -234,7 +239,9 @@ func (t *toolset) register(server *mcp.Server) {
 			"already quoted stays valid. labels replaces every label; add_labels and " +
 			"remove_labels change only the labels they name. To take the issue out of its " +
 			"project or cycle, name project or cycle in clear. Closing an issue with open " +
-			"sub-issues needs acknowledge_open_children. Every refusal starts with a stable code.",
+			"sub-issues needs acknowledge_open_children. An issue reference newly named in the " +
+			"description relates the two issues; to say one blocks or duplicates the other, use " +
+			"norn_link_issues. Every refusal starts with a stable code.",
 		Annotations: update,
 	}, t.updateIssue)
 
@@ -261,6 +268,21 @@ func (t *toolset) register(server *mcp.Server) {
 			"under its parent with an empty parent.",
 		Annotations: update,
 	}, t.setIssueParent)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "norn_link_issues",
+		Description: "Relate two issues: one blocks the other, duplicates it, or relates to it. " +
+			"Record a relation this way rather than only mentioning the other issue in a " +
+			"comment, which relates nothing. Two issues hold at most one relation between " +
+			"them; norn_get_issue lists the relations an issue already has.",
+		Annotations: create,
+	}, t.linkIssues)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "norn_unlink_issues",
+		Description: "Remove the relation between two issues, whatever its kind.",
+		Annotations: &mcp.ToolAnnotations{DestructiveHint: &destructive},
+	}, t.unlinkIssues)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "norn_create_comment",

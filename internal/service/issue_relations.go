@@ -14,6 +14,7 @@ type IssueRelations interface {
 	Add(ctx context.Context, workspaceID, issueID uuid.UUID, input AddIssueRelationInput) (entity.IssueRelation, error)
 	Remove(ctx context.Context, workspaceID, issueID, relationID uuid.UUID) error
 	List(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.IssueRelationGroup, error)
+	RelateMentioned(ctx context.Context, subject entity.Issue, text string) error
 }
 
 type AddIssueRelationInput struct {

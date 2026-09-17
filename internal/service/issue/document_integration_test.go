@@ -33,6 +33,7 @@ import (
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
+	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
 	issuetemplaterepo "github.com/usenorn/norn/internal/repository/issuetemplate"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
@@ -51,6 +52,7 @@ import (
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecriterionsvc "github.com/usenorn/norn/internal/service/issuecriterion"
+	relationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 )
 
@@ -269,6 +271,14 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 			notificationeventrepo.New(client),
 			events,
 			emitter,
+			relationsvc.New(
+				issuerelationrepo.New(client),
+				issuerepo.New(client),
+				workflowstaterepo.New(client),
+				activityrepo.New(client),
+				authorizer,
+				client,
+			),
 			issuefollowerrepo.New(client),
 			jobs,
 			agenthold.New(
@@ -1022,5 +1032,133 @@ func TestEvidenceForACriterionTheIssueDoesNotCarryIsRefused(t *testing.T) {
 
 	if !errors.Is(err, entity.ErrCriterionNotFound) {
 		t.Fatalf("filing evidence against a criterion nobody wrote returned %v, want a refusal", err)
+	}
+}
+
+func TestMentioningAnIssueInADescriptionStoresOneRelationBetweenThem(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	cause, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Webhooks time out",
+	})
+	if err != nil {
+		t.Fatalf("Create the cause: %v", err)
+	}
+
+	symptom, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Retries pile up",
+		Description: "Same cause as " + cause.Reference() + ", and nothing like WRT-9999.",
+	})
+	if err != nil {
+		t.Fatalf("Create the symptom: %v", err)
+	}
+
+	rewritten := "Same cause as " + strings.ToLower(cause.Reference()) + ", filed as " + symptom.Reference() + "."
+
+	if _, err := issues.Update(ctx, place.workspace.ID, symptom.ID, service.UpdateIssueInput{
+		ExpectedVersion: symptom.Version,
+		Description:     &rewritten,
+	}); err != nil {
+		t.Fatalf("Update the symptom: %v", err)
+	}
+
+	answering := "Explains " + symptom.Reference() + "."
+
+	if _, err := issues.Update(ctx, place.workspace.ID, cause.ID, service.UpdateIssueInput{
+		ExpectedVersion: cause.Version,
+		Description:     &answering,
+	}); err != nil {
+		t.Fatalf("Update the cause: %v", err)
+	}
+
+	scope := entity.TeamScope{WorkspaceID: place.workspace.ID, AllTeams: true}
+
+	held, err := issuerelationrepo.New(client).ListForIssue(ctx, place.workspace.ID, symptom.ID, scope)
+	if err != nil {
+		t.Fatalf("ListForIssue: %v", err)
+	}
+
+	if len(held) != 1 || held[0].Kind != entity.IssueRelationViewRelatesTo || held[0].Issue.ID != cause.ID {
+		t.Fatalf("the symptom holds %+v, want one relates_to with the cause", held)
+	}
+}
+
+func TestAnUndatedImportLeavesItsMentionsForTheImportedRelationToRecord(t *testing.T) {
+	client := documentDatabase(t)
+	issues, _, place := writingIssues(t, client)
+
+	ctx := context.Background()
+
+	cause, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Webhooks time out",
+	})
+	if err != nil {
+		t.Fatalf("Create the cause: %v", err)
+	}
+
+	undated := entity.NewImportOrigin(time.Time{}, time.Time{}, uuid.Nil)
+
+	imported, err := issues.Create(ctx, service.CreateIssueInput{
+		WorkspaceID: place.workspace.ID,
+		TeamID:      place.team.ID,
+		Title:       "Retries pile up",
+		Description: "Blocked by " + cause.Reference() + ".",
+		Origin:      &undated,
+		Imported:    true,
+	})
+	if err != nil {
+		t.Fatalf("Create the imported issue: %v", err)
+	}
+
+	scope := entity.TeamScope{WorkspaceID: place.workspace.ID, AllTeams: true}
+	stored := issuerelationrepo.New(client)
+
+	held, err := stored.ListForIssue(ctx, place.workspace.ID, imported.ID, scope)
+	if err != nil {
+		t.Fatalf("ListForIssue: %v", err)
+	}
+
+	if len(held) != 0 {
+		t.Fatalf("the import related its mention on arrival: %+v", held)
+	}
+
+	authorizer := authorizersvc.NewMockAuthorizer(gomock.NewController(t))
+	authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{
+			Actor:     entity.Actor{Kind: entity.ActorKindUser, AccountID: place.account},
+			Workspace: place.workspace,
+			Scope:     scope,
+		}, nil).
+		AnyTimes()
+
+	relations := relationsvc.New(
+		stored, issuerepo.New(client), workflowstaterepo.New(client), activityrepo.New(client),
+		authorizer, client,
+	)
+
+	if _, err := relations.Add(ctx, place.workspace.ID, imported.ID, service.AddIssueRelationInput{
+		Kind:          entity.IssueRelationViewBlockedBy,
+		CounterpartID: cause.ID,
+	}); err != nil {
+		t.Fatalf("the imported relation was refused: %v", err)
+	}
+
+	held, err = stored.ListForIssue(ctx, place.workspace.ID, imported.ID, scope)
+	if err != nil {
+		t.Fatalf("ListForIssue: %v", err)
+	}
+
+	if len(held) != 1 || held[0].Kind != entity.IssueRelationViewBlockedBy || held[0].Issue.ID != cause.ID {
+		t.Fatalf("the imported issue holds %+v, want only blocked_by the cause", held)
 	}
 }

@@ -73,6 +73,20 @@ func (mr *MockIssueRelationsMockRecorder) List(ctx, workspaceID, issueID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockIssueRelations)(nil).List), ctx, workspaceID, issueID)
 }
 
+// RelateMentioned mocks base method.
+func (m *MockIssueRelations) RelateMentioned(ctx context.Context, subject entity.Issue, text string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RelateMentioned", ctx, subject, text)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RelateMentioned indicates an expected call of RelateMentioned.
+func (mr *MockIssueRelationsMockRecorder) RelateMentioned(ctx, subject, text any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RelateMentioned", reflect.TypeOf((*MockIssueRelations)(nil).RelateMentioned), ctx, subject, text)
+}
+
 // Remove mocks base method.
 func (m *MockIssueRelations) Remove(ctx context.Context, workspaceID, issueID, relationID uuid.UUID) error {
 	m.ctrl.T.Helper()
