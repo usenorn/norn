@@ -16,7 +16,6 @@
 	import AccountSwitcher from "$lib/account/account-switcher.svelte";
 	import { logoSource } from "$lib/workspace/logo";
 	import SearchPalette from "$lib/search/search-palette.svelte";
-	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
 	import StaleBanner from "$lib/realtime/stale-banner.svelte";
 	import { invalidatedBy, provideRealtime } from "$lib/realtime/connection.svelte";
 	import KeyRound from "@lucide/svelte/icons/key-round";
@@ -375,10 +374,6 @@
 				active={exactly(viewsPath(slug))}
 			/>
 		</nav>
-
-		<div class="flex h-6 items-center px-2">
-			<ConnectionIndicator state={realtime.state} />
-		</div>
 
 		<div class="mt-2 flex h-9.5 items-center gap-2 border-t border-line-default px-1.5">
 			<AccountSwitcher

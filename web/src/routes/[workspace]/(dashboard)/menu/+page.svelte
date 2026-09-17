@@ -14,8 +14,6 @@
 	} from "lucide";
 	import AccountSwitcher from "$lib/account/account-switcher.svelte";
 	import { logoSource } from "$lib/workspace/logo";
-	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
-	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
 	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -28,8 +26,6 @@
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();
-
-	const realtime = useRealtime();
 
 	const slug = $derived(data.workspace.slug);
 	const workspaceContext = $derived({
@@ -188,10 +184,5 @@
 				class="min-w-0 flex-1"
 			/>
 		</div>
-		{#if realtime}
-			<div class="flex h-6 items-center px-2">
-				<ConnectionIndicator state={realtime.state} />
-			</div>
-		{/if}
 	</nav>
 </div>
