@@ -37,6 +37,8 @@ type WorkspaceIssueAttachment struct {
 	ReclaimAfter        null.Time   `boil:"reclaim_after" json:"reclaim_after,omitempty" toml:"reclaim_after" yaml:"reclaim_after,omitempty"`
 	CreatedAt           time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt           time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SettleAfter         null.Time   `boil:"settle_after" json:"settle_after,omitempty" toml:"settle_after" yaml:"settle_after,omitempty"`
+	ChargedUntil        null.Time   `boil:"charged_until" json:"charged_until,omitempty" toml:"charged_until" yaml:"charged_until,omitempty"`
 
 	R *workspaceIssueAttachmentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueAttachmentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -56,6 +58,8 @@ var WorkspaceIssueAttachmentColumns = struct {
 	ReclaimAfter        string
 	CreatedAt           string
 	UpdatedAt           string
+	SettleAfter         string
+	ChargedUntil        string
 }{
 	ID:                  "id",
 	WorkspaceID:         "workspace_id",
@@ -70,6 +74,8 @@ var WorkspaceIssueAttachmentColumns = struct {
 	ReclaimAfter:        "reclaim_after",
 	CreatedAt:           "created_at",
 	UpdatedAt:           "updated_at",
+	SettleAfter:         "settle_after",
+	ChargedUntil:        "charged_until",
 }
 
 var WorkspaceIssueAttachmentTableColumns = struct {
@@ -86,6 +92,8 @@ var WorkspaceIssueAttachmentTableColumns = struct {
 	ReclaimAfter        string
 	CreatedAt           string
 	UpdatedAt           string
+	SettleAfter         string
+	ChargedUntil        string
 }{
 	ID:                  "workspace_issue_attachments.id",
 	WorkspaceID:         "workspace_issue_attachments.workspace_id",
@@ -100,6 +108,8 @@ var WorkspaceIssueAttachmentTableColumns = struct {
 	ReclaimAfter:        "workspace_issue_attachments.reclaim_after",
 	CreatedAt:           "workspace_issue_attachments.created_at",
 	UpdatedAt:           "workspace_issue_attachments.updated_at",
+	SettleAfter:         "workspace_issue_attachments.settle_after",
+	ChargedUntil:        "workspace_issue_attachments.charged_until",
 }
 
 // Generated where
@@ -118,6 +128,8 @@ var WorkspaceIssueAttachmentWhere = struct {
 	ReclaimAfter        whereHelpernull_Time
 	CreatedAt           whereHelpertime_Time
 	UpdatedAt           whereHelpertime_Time
+	SettleAfter         whereHelpernull_Time
+	ChargedUntil        whereHelpernull_Time
 }{
 	ID:                  whereHelperstring{field: "\"workspace_issue_attachments\".\"id\""},
 	WorkspaceID:         whereHelperstring{field: "\"workspace_issue_attachments\".\"workspace_id\""},
@@ -132,6 +144,8 @@ var WorkspaceIssueAttachmentWhere = struct {
 	ReclaimAfter:        whereHelpernull_Time{field: "\"workspace_issue_attachments\".\"reclaim_after\""},
 	CreatedAt:           whereHelpertime_Time{field: "\"workspace_issue_attachments\".\"created_at\""},
 	UpdatedAt:           whereHelpertime_Time{field: "\"workspace_issue_attachments\".\"updated_at\""},
+	SettleAfter:         whereHelpernull_Time{field: "\"workspace_issue_attachments\".\"settle_after\""},
+	ChargedUntil:        whereHelpernull_Time{field: "\"workspace_issue_attachments\".\"charged_until\""},
 }
 
 // WorkspaceIssueAttachmentRels is where relationship names are stored.
@@ -190,9 +204,9 @@ func (r *workspaceIssueAttachmentR) GetAttachmentWorkspaceIssueCriterionEvidence
 type workspaceIssueAttachmentL struct{}
 
 var (
-	workspaceIssueAttachmentAllColumns            = []string{"id", "workspace_id", "issue_id", "comment_id", "uploaded_by_account_id", "object_key", "file_name", "content_type", "size_bytes", "status", "reclaim_after", "created_at", "updated_at"}
+	workspaceIssueAttachmentAllColumns            = []string{"id", "workspace_id", "issue_id", "comment_id", "uploaded_by_account_id", "object_key", "file_name", "content_type", "size_bytes", "status", "reclaim_after", "created_at", "updated_at", "settle_after", "charged_until"}
 	workspaceIssueAttachmentColumnsWithoutDefault = []string{"workspace_id", "object_key", "file_name", "content_type", "size_bytes"}
-	workspaceIssueAttachmentColumnsWithDefault    = []string{"id", "issue_id", "comment_id", "uploaded_by_account_id", "status", "reclaim_after", "created_at", "updated_at"}
+	workspaceIssueAttachmentColumnsWithDefault    = []string{"id", "issue_id", "comment_id", "uploaded_by_account_id", "status", "reclaim_after", "created_at", "updated_at", "settle_after", "charged_until"}
 	workspaceIssueAttachmentPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueAttachmentGeneratedColumns      = []string{}
 )
