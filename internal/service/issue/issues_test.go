@@ -41,6 +41,7 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
+	relationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 )
 
 type harness struct {
@@ -70,6 +71,8 @@ type harness struct {
 	asked        []entity.IssueQuestion
 	events       *eventsvc.MockEvents
 	followers    *issuefollowerrepo.MockIssueFollower
+	relations    *relationsvc.MockIssueRelations
+	mentioned    []mention
 	jobs         *jobqueuerepo.MockJobProducer
 	codeLinks    *scmrepo.MockCodeLink
 	transactor   *transactorrepo.MockTransactor
@@ -108,6 +111,7 @@ func newHarness(t *testing.T) *harness {
 		questions:   questionrepo.NewMockIssueQuestion(ctrl),
 		events:      eventsvc.NewMockEvents(ctrl),
 		followers:   issuefollowerrepo.NewMockIssueFollower(ctrl),
+		relations:   relationsvc.NewMockIssueRelations(ctrl),
 		jobs:        jobqueuerepo.NewMockJobProducer(ctrl),
 		codeLinks:   scmrepo.NewMockCodeLink(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
@@ -160,7 +164,7 @@ func newHarness(t *testing.T) *harness {
 	h.service = issuesvc.New(
 		h.issues, h.revisions, h.templates, h.requests, h.states, h.activity, h.labels, h.accounts, h.memberships,
 		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events,
-		silentEmitter(ctrl), h.followers,
+		silentEmitter(ctrl), h.relations, h.followers,
 		h.jobs,
 		agenthold.New(
 			h.settings,
@@ -182,6 +186,15 @@ func newHarness(t *testing.T) *harness {
 			}
 
 			return *h.routing, nil
+		}).
+		AnyTimes()
+
+	h.relations.EXPECT().
+		RelateMentioned(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, subject entity.Issue, text string) error {
+			h.mentioned = append(h.mentioned, mention{subject: subject.ID, text: text})
+
+			return nil
 		}).
 		AnyTimes()
 

@@ -22,6 +22,7 @@ type applied struct {
 	projects []service.CreateProjectInput
 	cycles   []service.CreateCycleInput
 	issues   []service.CreateIssueInput
+	rewrites []service.UpdateIssueInput
 	comments []service.PostCommentInput
 	files    []service.AdoptAttachmentInput
 
@@ -328,6 +329,7 @@ func applyingInto(h *harness, team entity.Team, made *applied) *applied {
 			input service.UpdateIssueInput,
 		) (entity.Issue, error) {
 			issue := made.held[issueID]
+			made.rewrites = append(made.rewrites, input)
 
 			if input.ExpectedVersion != issue.Version {
 				return entity.Issue{}, entity.IssueStaleError{

@@ -393,3 +393,47 @@ func questionDTOs(questions []entity.IssueQuestion) []questionDTO {
 
 	return dtos
 }
+
+type relatedIssueDTO struct {
+	ID        string   `json:"id"`
+	Reference string   `json:"reference"`
+	Title     string   `json:"title"`
+	State     stateRef `json:"state"`
+	Status    string   `json:"status"`
+}
+
+type relationDTO struct {
+	ID    string          `json:"id"`
+	Kind  string          `json:"kind"`
+	Issue relatedIssueDTO `json:"issue"`
+}
+
+func relationDTOFrom(relation entity.IssueRelation) relationDTO {
+	return relationDTO{
+		ID:   relation.ID.String(),
+		Kind: string(relation.Kind),
+		Issue: relatedIssueDTO{
+			ID:        relation.Issue.ID.String(),
+			Reference: relation.Issue.Reference(),
+			Title:     relation.Issue.Title,
+			State: stateRef{
+				ID:       relation.Issue.State.ID.String(),
+				Name:     relation.Issue.State.Name,
+				Category: string(relation.Issue.State.Category),
+			},
+			Status: string(relation.Issue.Status),
+		},
+	}
+}
+
+func relationDTOsFrom(groups []entity.IssueRelationGroup) []relationDTO {
+	var dtos []relationDTO
+
+	for _, group := range groups {
+		for _, relation := range group.Relations {
+			dtos = append(dtos, relationDTOFrom(relation))
+		}
+	}
+
+	return dtos
+}

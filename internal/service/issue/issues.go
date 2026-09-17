@@ -34,6 +34,7 @@ type issuesService struct {
 	notify       repository.NotificationEvent
 	events       service.Events
 	emitter      service.WebhookEmitter
+	relations    service.IssueRelations
 	followers    repository.IssueFollower
 	jobs         repository.JobProducer
 	gate         *agenthold.Gate
@@ -59,6 +60,7 @@ func New(
 	notify repository.NotificationEvent,
 	events service.Events,
 	emitter service.WebhookEmitter,
+	relations service.IssueRelations,
 	followers repository.IssueFollower,
 	jobs repository.JobProducer,
 	gate *agenthold.Gate,
@@ -83,6 +85,7 @@ func New(
 		notify:       notify,
 		events:       events,
 		emitter:      emitter,
+		relations:    relations,
 		followers:    followers,
 		jobs:         jobs,
 		gate:         gate,
@@ -278,6 +281,12 @@ func (s *issuesService) Create(ctx context.Context, input service.CreateIssueInp
 			ToState:     created.State.Name,
 		}); err != nil {
 			return err
+		}
+
+		if !input.Imported {
+			if err := s.relations.RelateMentioned(ctx, created, markdown); err != nil {
+				return err
+			}
 		}
 
 		if joining.ID != uuid.Nil {
@@ -702,6 +711,12 @@ func (s *issuesService) Update(
 		}
 
 		updated = refreshed
+
+		if !input.Imported && change.Description != nil && *change.Description != issue.Description {
+			if err := s.relations.RelateMentioned(ctx, refreshed, *change.Description); err != nil {
+				return err
+			}
+		}
 
 		if err := s.emit(ctx, entity.WebhookIssueUpdated, refreshed, decision); err != nil {
 			return err

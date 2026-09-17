@@ -122,6 +122,16 @@ var disclosedFailures = []disclosure{
 		entity.ErrIssueStatusTransition, "status_unchanged",
 		"the issue is already in that status",
 	},
+	{entity.ErrIssueRelationSelf, "relation_self", "an issue cannot be related to itself"},
+	{
+		entity.ErrIssueRelationExists, "relation_exists",
+		"the two issues are already related; norn_get_issue lists how, and norn_unlink_issues " +
+			"removes that relation before another kind is recorded",
+	},
+	{
+		entity.ErrIssueRelationNotFound, "relation_not_found",
+		"the two issues are not related; norn_get_issue lists the relations an issue has",
+	},
 	{errWorkspaceUnknown, "workspace_not_found", errWorkspaceUnknown.Error()},
 }
 
@@ -163,6 +173,16 @@ func toolFailure(ctx context.Context, err error) error {
 				"expected_version=%d (conflicting fields: %s)",
 			stale.Version,
 			strings.Join(stale.Conflicts, ", "),
+		))
+	}
+
+	var related entity.IssueRelationExistsError
+	if errors.As(err, &related) {
+		return refusal("relation_exists", fmt.Sprintf(
+			"the issue is already related to %s as %s, and two issues hold one relation at most; "+
+				"remove it with norn_unlink_issues before recording another kind",
+			related.Reference,
+			related.Kind,
 		))
 	}
 

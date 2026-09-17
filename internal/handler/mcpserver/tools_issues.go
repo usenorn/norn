@@ -23,6 +23,7 @@ type getIssueOutput struct {
 	Issue     issueDTO      `json:"issue"`
 	Comments  []commentDTO  `json:"comments,omitempty"`
 	Questions []questionDTO `json:"questions,omitempty"`
+	Relations []relationDTO `json:"relations,omitempty"`
 }
 
 func (t *toolset) getIssue(
@@ -59,6 +60,13 @@ func (t *toolset) getIssue(
 	}
 
 	output.Questions = questionDTOs(entity.UnansweredQuestions(asked))
+
+	related, err := t.relations.List(ctx, workspace.ID, issue.ID)
+	if err != nil {
+		return nil, getIssueOutput{}, toolFailure(ctx, err)
+	}
+
+	output.Relations = relationDTOsFrom(related)
 
 	return nil, output, nil
 }

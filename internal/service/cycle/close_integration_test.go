@@ -30,6 +30,7 @@ import (
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuefollowerrepo "github.com/usenorn/norn/internal/repository/issuefollower"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
+	issuerelationrepo "github.com/usenorn/norn/internal/repository/issuerelation"
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
 	issuetemplaterepo "github.com/usenorn/norn/internal/repository/issuetemplate"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
@@ -49,6 +50,7 @@ import (
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
+	relationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 )
 
@@ -515,6 +517,14 @@ func liveIssues(t *testing.T, client *postgres.Client, world *live) service.Issu
 		notificationeventrepo.New(client),
 		events,
 		silentEmitter(ctrl),
+		relationsvc.New(
+			issuerelationrepo.New(client),
+			issuerepo.New(client),
+			workflowstaterepo.New(client),
+			activityrepo.New(client),
+			authorizer,
+			client,
+		),
 		issuefollowerrepo.New(client),
 		jobs,
 		agenthold.New(

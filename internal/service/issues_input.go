@@ -22,6 +22,7 @@ type CreateIssueInput struct {
 	LabelIDs          []uuid.UUID
 	TemplateID        uuid.UUID
 	Origin            *entity.ImportOrigin
+	Imported          bool
 	Source            entity.TriageSource
 	RequestKey        string
 	Reasoning         entity.AgentReasoning
@@ -95,6 +96,7 @@ type UpdateIssueInput struct {
 	BeforeIssueID           *uuid.UUID
 	Clear                   []string
 	Restoring               bool
+	Imported                bool
 	Reasoning               entity.AgentReasoning
 }
 
