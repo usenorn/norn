@@ -1,4 +1,4 @@
-import { phaseLabel, type Cycle } from "$lib/cycles/cycles";
+import { openCycles, phaseLabel, type Cycle } from "$lib/cycles/cycles";
 import type { Label } from "$lib/labels/labels";
 import type { WorkflowState } from "$lib/team/states";
 import { assignees, type Membership } from "$lib/workspace/members";
@@ -35,9 +35,11 @@ export function stepOptions(kind: StepKind, sources: StepSources): StepOption[] 
 				.map((state) => ({ value: state.id, label: state.name, category: state.category }));
 		case "cycle":
 			return [
-				...sources.cycles
-					.filter((cycle) => cycle.teamId === sources.teamId && !cycle.closedAt)
-					.map((cycle) => ({ value: cycle.id, label: cycle.name, hint: phaseLabel(cycle.phase) })),
+				...openCycles(sources.cycles, sources.teamId).map((cycle) => ({
+					value: cycle.id,
+					label: cycle.name,
+					hint: phaseLabel(cycle.phase),
+				})),
 				{ value: backlogOption, label: "Backlog", hint: "no cycle" },
 			];
 		default:

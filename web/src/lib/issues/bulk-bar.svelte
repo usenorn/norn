@@ -16,7 +16,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { priorities, type IssuePriority } from "./issues";
-	import type { Cycle } from "$lib/cycles/cycles";
+	import type { TeamCyclesRead } from "$lib/cycles/cycles";
 	import type { WorkflowState } from "$lib/team/states";
 	import type { Member } from "./members";
 
@@ -30,18 +30,20 @@
 		onstate,
 		onassignee,
 		oncycle,
+		onreloadcycles,
 		onstatus,
 		onclear,
 	}: {
 		count: number;
 		states: WorkflowState[];
 		members: Member[];
-		cycles: Cycle[];
+		cycles: TeamCyclesRead | null;
 		working?: boolean;
 		onpriority: (priority: IssuePriority) => void;
 		onstate: (stateId: string) => void;
 		onassignee: (accountId: string) => void;
 		oncycle: (cycleId: string) => void;
+		onreloadcycles: () => void;
 		onstatus: (status: "archived" | "pending_deletion") => void;
 		onclear: () => void;
 	} = $props();
@@ -56,6 +58,12 @@
 		pickingAssignee = what === "assignee";
 		pickingCycle = what === "cycle";
 		pickingMore = what === "more";
+
+		if (what === "cycle") reloadFailedCycles();
+	}
+
+	function reloadFailedCycles() {
+		if (cycles?.kind === "failed") onreloadcycles();
 	}
 
 	const stateOptions = $derived<PickerOption[]>(
@@ -71,7 +79,20 @@
 	]);
 
 	const cycleOptions = $derived<PickerOption[]>(
-		cycles.map((cycle) => ({ value: cycle.id, label: cycle.name }))
+		cycles?.kind === "ready"
+			? [
+					...cycles.cycles.map((cycle) => ({ value: cycle.id, label: cycle.name })),
+					{ value: "", label: "No cycle" },
+				]
+			: []
+	);
+
+	const cycleWaiting = $derived(
+		cycles?.kind === "failed"
+			? "Couldn’t load this team’s cycles"
+			: cycles?.kind === "loading"
+				? "Loading cycles…"
+				: undefined
 	);
 
 	const barButton =
@@ -136,19 +157,28 @@
 		{/snippet}
 	</PropertyPicker>
 
-	<PropertyPicker
-		bind:open={pickingCycle}
-		options={cycleOptions}
-		placeholder="Move to cycle…"
-		empty="No cycle is open on this team"
-		onpick={oncycle}
-	>
-		{#snippet trigger(props)}
-			<Button {...props} variant="outline" size="sm" disabled={working} class={barButton}>
-				Move to cycle
-			</Button>
-		{/snippet}
-	</PropertyPicker>
+	{#if cycles}
+		<PropertyPicker
+			bind:open={
+				() => pickingCycle,
+				(open) => {
+					pickingCycle = open;
+
+					if (open) reloadFailedCycles();
+				}
+			}
+			options={cycleOptions}
+			placeholder="Move to cycle…"
+			empty={cycleWaiting}
+			onpick={oncycle}
+		>
+			{#snippet trigger(props)}
+				<Button {...props} variant="outline" size="sm" disabled={working} class={barButton}>
+					Move to cycle
+				</Button>
+			{/snippet}
+		</PropertyPicker>
+	{/if}
 
 	<DropdownMenu.Root bind:open={pickingMore}>
 		<DropdownMenu.Trigger>

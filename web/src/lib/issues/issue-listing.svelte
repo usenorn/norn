@@ -113,6 +113,7 @@
 	import { assignees } from "$lib/workspace/members";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { cycleWindow } from "$lib/time";
+	import { cyclingTeams, openCycles, type TeamCyclesRead } from "$lib/cycles/cycles";
 	import type { IssuesListingData, IssuesListingScope, IssuesPreview } from "./listing";
 	import Retry from "$lib/components/norn/retry.svelte";
 	import { Pending } from "$lib/api/pending.svelte";
@@ -733,13 +734,42 @@
 	const sharedStates = $derived(
 		selectedTeams.size === 1 ? statesOfTeam([...selectedTeams][0]) : []
 	);
-	const sharedCycles = $derived(
-		selectedTeams.size === 1
-			? (data.cycles ?? [])
-					.filter((entry) => entry.teamId === [...selectedTeams][0])
-					.map((entry) => entry.cycle)
-			: []
-	);
+	const cycling = $derived(cyclingTeams(data.cycles ?? []));
+	const selectedTeam = $derived(selectedTeams.size === 1 ? [...selectedTeams][0] : null);
+
+	let selectionCycles = $state.raw<TeamCyclesRead | null>(null);
+
+	const sharedCycles = $derived.by((): TeamCyclesRead | null => {
+		if (!selectedTeam || !cycling.has(selectedTeam)) return null;
+
+		return selectionCycles?.teamId === selectedTeam
+			? selectionCycles
+			: { kind: "loading", teamId: selectedTeam };
+	});
+
+	$effect(() => {
+		const teamId = selectedTeam;
+
+		if (!teamId || !cycling.has(teamId) || untrack(() => selectionCycles?.teamId) === teamId) return;
+
+		void loadCycles(teamId);
+	});
+
+	async function loadCycles(teamId: string) {
+		selectionCycles = { kind: "loading", teamId };
+
+		const read = await api
+			.GET("/workspaces/{workspaceId}/cycles", {
+				params: { path: { workspaceId: data.workspace.id }, query: { teamId } },
+			})
+			.catch(() => undefined);
+
+		if (selectionCycles?.teamId !== teamId) return;
+
+		selectionCycles = read?.data
+			? { kind: "ready", teamId, cycles: openCycles(read.data, teamId) }
+			: { kind: "failed", teamId };
+	}
 
 	function toggle(id: string, extend = false) {
 		if (extend && anchor) {
@@ -865,7 +895,9 @@
 
 	registerCommandTargets("selection", () => ({
 		issues: flat
-			.filter((issue) => selected.has(issue.id))
+			.filter((issue) =>
+				selected.size > 0 ? selected.has(issue.id) : issue === cursor.row && !draftIDs.has(issue.id)
+			)
 			.map((issue) => ({
 				id: issue.id,
 				reference: issue.reference,
@@ -954,11 +986,30 @@
 			shortcuts.register("bulk-status", () => bulkBar?.pick("state")),
 			shortcuts.register("bulk-assignee", () => bulkBar?.pick("assignee")),
 			shortcuts.register("bulk-priority", () => bulkBar?.pick("more")),
-			shortcuts.register("bulk-cycle", () => bulkBar?.pick("cycle")),
 		];
 
 		return () => released.forEach((release) => release());
 	});
+
+	$effect(() => {
+		if (selected.size > 0) {
+			if (sharedCycles === null) return;
+
+			return shortcuts.register("bulk-cycle", () => bulkBar?.pick("cycle"));
+		}
+
+		const issue = cursor.row;
+
+		if (!issue || draftIDs.has(issue.id) || !cycling.has(issue.teamId)) return;
+
+		return shortcuts.register("bulk-cycle", () => void pickCycleFor(issue.id));
+	});
+
+	async function pickCycleFor(id: string) {
+		toggle(id);
+		await tick();
+		bulkBar?.pick("cycle");
+	}
 
 	const filtered = $derived(facetCount(facets) > 0);
 </script>
@@ -1582,7 +1633,8 @@
 			working={applying}
 			onpriority={(priority) => applyBulk({ priority })}
 			onstate={(stateId) => applyBulk({ stateId })}
-			oncycle={(cycleId) => applyBulk({ cycleId })}
+			onreloadcycles={() => selectedTeam && loadCycles(selectedTeam)}
+			oncycle={(cycleId) => applyBulk(cycleId === "" ? { clearCycle: true } : { cycleId })}
 			onassignee={(accountId) =>
 				applyBulk(accountId === "" ? { clearAssignee: true } : { assigneeId: accountId })}
 			onstatus={(status) => applyBulk({ status })}
@@ -1596,6 +1648,7 @@
 				"cursor-open",
 				"status-set",
 				"select-toggle",
+				...(cycling.size > 0 ? (["bulk-cycle"] as const) : []),
 				"issue-filter",
 				"issue-new",
 				"help",

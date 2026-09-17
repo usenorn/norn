@@ -50,6 +50,19 @@ export function cycleName(cycle: Cycle): string {
 	return cycle.name;
 }
 
+export type TeamCyclesRead =
+	| { kind: "loading"; teamId: string }
+	| { kind: "ready"; teamId: string; cycles: Cycle[] }
+	| { kind: "failed"; teamId: string };
+
+export function openCycles(cycles: Cycle[], teamId: string | null): Cycle[] {
+	return cycles.filter((cycle) => cycle.teamId === teamId && !cycle.closedAt);
+}
+
+export function cyclingTeams(current: TeamCycle[]): Set<string> {
+	return new Set(current.map((entry) => entry.teamId));
+}
+
 export function cyclePath(workspace: string, cycle: Cycle): string {
 	return `/${workspace}/cycles/${cycle.teamKey.toLowerCase()}/${cycle.number}`;
 }
