@@ -277,7 +277,11 @@
 				</div>
 
 				<div class="flex items-center gap-2.5">
-					<WorkspaceMark name={detail.workspace.name} class="size-7 flex-none text-base" />
+					<WorkspaceMark
+						name={detail.workspace.name}
+						logoUrl={detail.workspace.logoUrl}
+						class="size-7 flex-none text-base"
+					/>
 					<div class="flex min-w-0 flex-col gap-px">
 						<span class="text-base font-medium tracking-snug text-ink-900">
 							{detail.workspace.name}
