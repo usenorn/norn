@@ -7688,13 +7688,17 @@ components:
 
     Label:
       type: object
-      required: [id, workspaceId, name, color]
+      required: [id, workspaceId, name, description, color]
       properties:
         id: { type: string, format: uuid }
         workspaceId: { type: string, format: uuid }
         teamId: { type: string, format: uuid }
         groupId: { type: string, format: uuid }
         name: { type: string }
+        description:
+          type: string
+          maxLength: 120
+          description: What the label is for, shown beside it in settings. Empty when nobody wrote one.
         color: { $ref: '#/components/schemas/LabelColor' }
 
     LabelGroup:
@@ -7716,6 +7720,10 @@ components:
       required: [name, color]
       properties:
         name: { type: string }
+        description:
+          type: string
+          maxLength: 120
+          description: Optional. Absent is the same as empty.
         color: { $ref: '#/components/schemas/LabelColor' }
         teamId: { type: string, format: uuid }
         groupId: { type: string, format: uuid }
@@ -8081,6 +8089,10 @@ components:
       type: object
       properties:
         name: { type: string }
+        description:
+          type: string
+          maxLength: 120
+          description: Optional. Absent leaves the current description alone; empty clears it.
         color: { $ref: '#/components/schemas/LabelColor' }
         groupId:
           type: string

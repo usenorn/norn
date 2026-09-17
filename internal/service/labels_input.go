@@ -11,12 +11,14 @@ type CreateLabelInput struct {
 	TeamID      uuid.UUID
 	GroupID     uuid.UUID
 	Name        string
+	Description string
 	Color       entity.LabelColor
 	Origin      *entity.ImportOrigin
 }
 
 type UpdateLabelInput struct {
-	Name    *string
-	Color   *entity.LabelColor
-	GroupID *uuid.UUID
+	Name        *string
+	Description *string
+	Color       *entity.LabelColor
+	GroupID     *uuid.UUID
 }

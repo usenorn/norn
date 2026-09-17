@@ -32,6 +32,7 @@ type WorkspaceLabel struct {
 	Color       string      `boil:"color" json:"color" toml:"color" yaml:"color"`
 	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt   time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Description string      `boil:"description" json:"description" toml:"description" yaml:"description"`
 
 	R *workspaceLabelR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceLabelL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -46,6 +47,7 @@ var WorkspaceLabelColumns = struct {
 	Color       string
 	CreatedAt   string
 	UpdatedAt   string
+	Description string
 }{
 	ID:          "id",
 	WorkspaceID: "workspace_id",
@@ -55,6 +57,7 @@ var WorkspaceLabelColumns = struct {
 	Color:       "color",
 	CreatedAt:   "created_at",
 	UpdatedAt:   "updated_at",
+	Description: "description",
 }
 
 var WorkspaceLabelTableColumns = struct {
@@ -66,6 +69,7 @@ var WorkspaceLabelTableColumns = struct {
 	Color       string
 	CreatedAt   string
 	UpdatedAt   string
+	Description string
 }{
 	ID:          "workspace_labels.id",
 	WorkspaceID: "workspace_labels.workspace_id",
@@ -75,6 +79,7 @@ var WorkspaceLabelTableColumns = struct {
 	Color:       "workspace_labels.color",
 	CreatedAt:   "workspace_labels.created_at",
 	UpdatedAt:   "workspace_labels.updated_at",
+	Description: "workspace_labels.description",
 }
 
 // Generated where
@@ -88,6 +93,7 @@ var WorkspaceLabelWhere = struct {
 	Color       whereHelperstring
 	CreatedAt   whereHelpertime_Time
 	UpdatedAt   whereHelpertime_Time
+	Description whereHelperstring
 }{
 	ID:          whereHelperstring{field: "\"workspace_labels\".\"id\""},
 	WorkspaceID: whereHelperstring{field: "\"workspace_labels\".\"workspace_id\""},
@@ -97,6 +103,7 @@ var WorkspaceLabelWhere = struct {
 	Color:       whereHelperstring{field: "\"workspace_labels\".\"color\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"workspace_labels\".\"created_at\""},
 	UpdatedAt:   whereHelpertime_Time{field: "\"workspace_labels\".\"updated_at\""},
+	Description: whereHelperstring{field: "\"workspace_labels\".\"description\""},
 }
 
 // WorkspaceLabelRels is where relationship names are stored.
@@ -136,9 +143,9 @@ func (r *workspaceLabelR) GetWorkspace() *Workspace {
 type workspaceLabelL struct{}
 
 var (
-	workspaceLabelAllColumns            = []string{"id", "workspace_id", "team_id", "group_id", "name", "color", "created_at", "updated_at"}
+	workspaceLabelAllColumns            = []string{"id", "workspace_id", "team_id", "group_id", "name", "color", "created_at", "updated_at", "description"}
 	workspaceLabelColumnsWithoutDefault = []string{"workspace_id", "name", "color"}
-	workspaceLabelColumnsWithDefault    = []string{"id", "team_id", "group_id", "created_at", "updated_at"}
+	workspaceLabelColumnsWithDefault    = []string{"id", "team_id", "group_id", "created_at", "updated_at", "description"}
 	workspaceLabelPrimaryKeyColumns     = []string{"id"}
 	workspaceLabelGeneratedColumns      = []string{}
 )

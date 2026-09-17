@@ -36,6 +36,10 @@ func (h *handler) CreateWorkspaceLabel(
 		Color:       entity.LabelColor(request.Body.Color),
 	}
 
+	if request.Body.Description != nil {
+		input.Description = *request.Body.Description
+	}
+
 	if request.Body.TeamId != nil {
 		input.TeamID = *request.Body.TeamId
 	}
@@ -60,7 +64,10 @@ func (h *handler) UpdateWorkspaceLabel(
 	ctx context.Context,
 	request api.UpdateWorkspaceLabelRequestObject,
 ) (api.UpdateWorkspaceLabelResponseObject, error) {
-	input := service.UpdateLabelInput{Name: request.Body.Name}
+	input := service.UpdateLabelInput{
+		Name:        request.Body.Name,
+		Description: request.Body.Description,
+	}
 
 	if request.Body.Color != nil {
 		color := entity.LabelColor(*request.Body.Color)

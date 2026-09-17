@@ -4765,6 +4765,8 @@ export interface components {
             /** Format: uuid */
             groupId?: string;
             name: string;
+            /** @description What the label is for, shown beside it in settings. Empty when nobody wrote one. */
+            description: string;
             color: components["schemas"]["LabelColor"];
         };
         LabelGroup: {
@@ -4780,6 +4782,8 @@ export interface components {
         };
         CreateLabelRequest: {
             name: string;
+            /** @description Optional. Absent is the same as empty. */
+            description?: string;
             color: components["schemas"]["LabelColor"];
             /** Format: uuid */
             teamId?: string;
@@ -5051,6 +5055,8 @@ export interface components {
         };
         UpdateLabelRequest: {
             name?: string;
+            /** @description Optional. Absent leaves the current description alone; empty clears it. */
+            description?: string;
             color?: components["schemas"]["LabelColor"];
             /** Format: uuid */
             groupId?: string | null;

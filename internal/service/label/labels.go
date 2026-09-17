@@ -123,6 +123,7 @@ func (s *labelsService) Create(ctx context.Context, input service.CreateLabelInp
 
 	if err := entity.NewValidationError(
 		entity.ValidateLabelName("name", input.Name),
+		entity.ValidateLabelDescription("description", input.Description),
 		entity.ValidateLabelColor("color", input.Color),
 	); err != nil {
 		return entity.Label{}, err
@@ -145,6 +146,7 @@ func (s *labelsService) Create(ctx context.Context, input service.CreateLabelInp
 		TeamID:      input.TeamID,
 		GroupID:     input.GroupID,
 		Name:        strings.TrimSpace(input.Name),
+		Description: strings.TrimSpace(input.Description),
 		Color:       input.Color,
 		Origin:      input.Origin,
 	})
@@ -179,6 +181,11 @@ func (s *labelsService) Update(
 			name = strings.TrimSpace(*input.Name)
 		}
 
+		description := current.Description
+		if input.Description != nil {
+			description = strings.TrimSpace(*input.Description)
+		}
+
 		color := current.Color
 		if input.Color != nil {
 			color = *input.Color
@@ -186,6 +193,7 @@ func (s *labelsService) Update(
 
 		if err := entity.NewValidationError(
 			entity.ValidateLabelName("name", name),
+			entity.ValidateLabelDescription("description", description),
 			entity.ValidateLabelColor("color", color),
 		); err != nil {
 			return err
@@ -202,7 +210,7 @@ func (s *labelsService) Update(
 			}
 		}
 
-		updated, err = s.labels.UpdateSettings(ctx, labelID, name, color, groupID)
+		updated, err = s.labels.UpdateSettings(ctx, labelID, name, description, color, groupID)
 		if err != nil {
 			return err
 		}

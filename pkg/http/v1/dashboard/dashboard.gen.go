@@ -5438,10 +5438,13 @@ type CreateIssueRequest struct {
 
 // CreateLabelRequest defines model for CreateLabelRequest.
 type CreateLabelRequest struct {
-	Color   LabelColor          `json:"color"`
-	GroupId *openapi_types.UUID `json:"groupId,omitempty"`
-	Name    string              `json:"name"`
-	TeamId  *openapi_types.UUID `json:"teamId,omitempty"`
+	Color LabelColor `json:"color"`
+
+	// Description Optional. Absent is the same as empty.
+	Description *string             `json:"description,omitempty"`
+	GroupId     *openapi_types.UUID `json:"groupId,omitempty"`
+	Name        string              `json:"name"`
+	TeamId      *openapi_types.UUID `json:"teamId,omitempty"`
 }
 
 // CreateProjectRequest defines model for CreateProjectRequest.
@@ -7186,7 +7189,10 @@ type IssuedSession struct {
 
 // Label defines model for Label.
 type Label struct {
-	Color       LabelColor          `json:"color"`
+	Color LabelColor `json:"color"`
+
+	// Description What the label is for, shown beside it in settings. Empty when nobody wrote one.
+	Description string              `json:"description"`
 	GroupId     *openapi_types.UUID `json:"groupId,omitempty"`
 	Id          openapi_types.UUID  `json:"id"`
 	Name        string              `json:"name"`
@@ -8719,9 +8725,12 @@ type UpdateIssueRequestClear string
 
 // UpdateLabelRequest defines model for UpdateLabelRequest.
 type UpdateLabelRequest struct {
-	Color   *LabelColor         `json:"color,omitempty"`
-	GroupId *openapi_types.UUID `json:"groupId,omitempty"`
-	Name    *string             `json:"name,omitempty"`
+	Color *LabelColor `json:"color,omitempty"`
+
+	// Description Optional. Absent leaves the current description alone; empty clears it.
+	Description *string             `json:"description,omitempty"`
+	GroupId     *openapi_types.UUID `json:"groupId,omitempty"`
+	Name        *string             `json:"name,omitempty"`
 }
 
 // UpdateProfileRequest defines model for UpdateProfileRequest.

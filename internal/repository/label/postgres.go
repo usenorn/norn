@@ -32,7 +32,7 @@ const (
 )
 
 const scopedListQuery = `
-SELECT id, workspace_id, coalesce(team_id::text, ''), coalesce(group_id::text, ''), name, color, created_at, updated_at
+SELECT id, workspace_id, coalesce(team_id::text, ''), coalesce(group_id::text, ''), name, description, color, created_at, updated_at
 FROM workspace_labels
 WHERE workspace_id = $1
   AND (team_id IS NULL OR $2::boolean IS TRUE OR team_id = ANY($3::uuid[]))
@@ -108,6 +108,7 @@ func toEntity(model *dbpostgres.WorkspaceLabel) (entity.Label, error) {
 		TeamID:      teamID,
 		GroupID:     groupID,
 		Name:        model.Name,
+		Description: model.Description,
 		Color:       entity.LabelColor(model.Color),
 		CreatedAt:   model.CreatedAt,
 		UpdatedAt:   model.UpdatedAt,
@@ -121,6 +122,7 @@ func toModel(label entity.Label) *dbpostgres.WorkspaceLabel {
 		TeamID:      optionalID(label.TeamID),
 		GroupID:     optionalID(label.GroupID),
 		Name:        label.Name,
+		Description: label.Description,
 		Color:       string(label.Color),
 		CreatedAt:   label.CreatedAt,
 		UpdatedAt:   label.UpdatedAt,
@@ -280,6 +282,7 @@ func scanLabel(row scanner) (entity.Label, error) {
 		&team,
 		&group,
 		&label.Name,
+		&label.Description,
 		&color,
 		&label.CreatedAt,
 		&label.UpdatedAt,
@@ -343,17 +346,18 @@ func (r *labelRepository) ListByIDs(
 func (r *labelRepository) UpdateSettings(
 	ctx context.Context,
 	id uuid.UUID,
-	name string,
+	name, description string,
 	color entity.LabelColor,
 	groupID uuid.UUID,
 ) (entity.Label, error) {
 	updated, err := dbpostgres.WorkspaceLabels(
 		dbpostgres.WorkspaceLabelWhere.ID.EQ(id.String()),
 	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
-		dbpostgres.WorkspaceLabelColumns.Name:      name,
-		dbpostgres.WorkspaceLabelColumns.Color:     string(color),
-		dbpostgres.WorkspaceLabelColumns.GroupID:   optionalID(groupID),
-		dbpostgres.WorkspaceLabelColumns.UpdatedAt: time.Now().UTC(),
+		dbpostgres.WorkspaceLabelColumns.Name:        name,
+		dbpostgres.WorkspaceLabelColumns.Description: description,
+		dbpostgres.WorkspaceLabelColumns.Color:       string(color),
+		dbpostgres.WorkspaceLabelColumns.GroupID:     optionalID(groupID),
+		dbpostgres.WorkspaceLabelColumns.UpdatedAt:   time.Now().UTC(),
 	})
 	if err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {

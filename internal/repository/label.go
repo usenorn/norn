@@ -16,7 +16,7 @@ type Label interface {
 	LockByID(ctx context.Context, workspaceID, id uuid.UUID) (entity.Label, error)
 	ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID, scope entity.TeamScope) ([]entity.Label, error)
 	ListByIDs(ctx context.Context, workspaceID uuid.UUID, ids []uuid.UUID) ([]entity.Label, error)
-	UpdateSettings(ctx context.Context, id uuid.UUID, name string, color entity.LabelColor, groupID uuid.UUID) (entity.Label, error)
+	UpdateSettings(ctx context.Context, id uuid.UUID, name, description string, color entity.LabelColor, groupID uuid.UUID) (entity.Label, error)
 	SyncApplicationGroup(ctx context.Context, labelID, groupID uuid.UUID) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	SetForIssue(ctx context.Context, issue entity.Issue, labels []entity.Label) error
