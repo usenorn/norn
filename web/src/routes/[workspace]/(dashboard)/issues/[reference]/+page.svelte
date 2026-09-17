@@ -53,6 +53,7 @@
 		type DelegationPanel,
 	} from "$lib/agents/delegation";
 	import { totalIssues } from "$lib/issues/board";
+	import { cyclingTeams } from "$lib/cycles/cycles";
 	import { assignees } from "$lib/workspace/members";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
@@ -351,6 +352,7 @@
 	const people = $derived(assignees(ready?.members ?? []));
 	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);
+	const cycling = $derived(issue ? cyclingTeams(data.cycles).has(issue.teamId) : false);
 	registerCommandTargets("open", () => ({
 		issues: issue
 			? [{ id: issue.id, reference: issue.reference, title: issue.title, teamId: issue.teamId }]
@@ -2786,32 +2788,33 @@
 						{/snippet}
 					</IssueField>
 
-					<IssueField
-						label="Cycle"
-						placeholder="Move to cycle"
-						editable={canEdit}
-						empty="This team runs no cycles"
-						options={[
-							{ value: "", label: "No cycle", checked: !issue.cycleId },
-							...ready.cycles.map((cycle) => ({
-								value: cycle.id,
-								label: `${cycle.name} · ${cycleWindow(cycle.startsOn, cycle.endsOn)}`,
-								checked: cycle.id === issue.cycleId,
-							})),
-						]}
-						onpick={setCycle}
-					>
-						{#snippet glyph()}
-							<Layers class="size-icon-row text-muted-foreground" aria-hidden="true" />
-						{/snippet}
-						{#snippet value()}
-							<span
-								class="min-w-0 flex-1 truncate {issue.cycleNumber ? '' : 'text-muted-foreground'}"
-							>
-								{issue.cycleNumber ? `Cycle ${issue.cycleNumber}` : "No cycle"}
-							</span>
-						{/snippet}
-					</IssueField>
+					{#if cycling}
+						<IssueField
+							label="Cycle"
+							placeholder="Move to cycle"
+							editable={canEdit}
+							options={[
+								{ value: "", label: "No cycle", checked: !issue.cycleId },
+								...ready.cycles.map((cycle) => ({
+									value: cycle.id,
+									label: `${cycle.name} · ${cycleWindow(cycle.startsOn, cycle.endsOn)}`,
+									checked: cycle.id === issue.cycleId,
+								})),
+							]}
+							onpick={setCycle}
+						>
+							{#snippet glyph()}
+								<Layers class="size-icon-row text-muted-foreground" aria-hidden="true" />
+							{/snippet}
+							{#snippet value()}
+								<span
+									class="min-w-0 flex-1 truncate {issue.cycleNumber ? '' : 'text-muted-foreground'}"
+								>
+									{issue.cycleNumber ? `Cycle ${issue.cycleNumber}` : "No cycle"}
+								</span>
+							{/snippet}
+						</IssueField>
+					{/if}
 
 					<div class="relative flex min-h-7 items-center gap-1.5">
 						<span

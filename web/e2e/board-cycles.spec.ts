@@ -197,4 +197,14 @@ test.describe("cycles from the board", () => {
 		await expect(page.getByText("1 selected")).toBeVisible();
 		await expect(page.getByRole("button", { name: "Move to cycle" })).toHaveCount(0);
 	});
+
+	test("an issue shows the cycle field only while its team runs cycles", async ({ page }) => {
+		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
+		await expect(page.getByRole("button", { name: "Project: change" })).toBeVisible();
+		await expect(page.getByRole("button", { name: "Cycle: change" })).toHaveCount(0);
+
+		await runCycles(page);
+		await page.reload();
+		await expect(page.getByRole("button", { name: "Cycle: change" })).toBeVisible();
+	});
 });
