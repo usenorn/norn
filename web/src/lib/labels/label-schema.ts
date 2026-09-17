@@ -6,6 +6,11 @@ export const labelSchema = z.object({
 		.trim()
 		.min(1, "Enter a label name.")
 		.max(40, "Keep the name under 40 characters."),
+	description: z
+		.string()
+		.trim()
+		.max(120, "Keep the description under 120 characters.")
+		.default(""),
 	color: z.enum(["neutral", "cyan", "blue", "violet", "orchid", "magenta"]).default("cyan"),
 	groupId: z.string().default(""),
 	teamId: z.string().default(""),

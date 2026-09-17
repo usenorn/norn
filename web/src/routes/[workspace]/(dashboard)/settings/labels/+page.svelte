@@ -1,19 +1,26 @@
 <script lang="ts">
-	import { goto, invalidate } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
+	import Check from "@lucide/svelte/icons/check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
+	import List from "@lucide/svelte/icons/list";
 	import Merge from "@lucide/svelte/icons/merge";
+	import MoreHorizontal from "@lucide/svelte/icons/more-horizontal";
+	import Pencil from "@lucide/svelte/icons/pencil";
 	import Plus from "@lucide/svelte/icons/plus";
+	import Search from "@lucide/svelte/icons/search";
 	import Tags from "@lucide/svelte/icons/tags";
-	import X from "@lucide/svelte/icons/x";
+	import Trash2 from "@lucide/svelte/icons/trash-2";
+	import Ungroup from "@lucide/svelte/icons/ungroup";
 	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import * as Empty from "$lib/components/ui/empty/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import ColorChoice from "$lib/components/norn/color-choice.svelte";
+	import * as InputGroup from "$lib/components/ui/input-group/index.js";
+	import * as Popover from "$lib/components/ui/popover/index.js";
+	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -21,31 +28,34 @@
 	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
 	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { api } from "$lib/api";
+	import DeleteLabelDialog from "$lib/labels/delete-label-dialog.svelte";
+	import LabelEditor from "$lib/labels/label-editor.svelte";
+	import MergeLabelDialog from "$lib/labels/merge-label-dialog.svelte";
 	import {
-		colorLabels,
-		conflictFailure,
 		groupsOf,
-		labelColors,
+		issueCount,
 		labelFailureMessage,
 		labelsOf,
+		matches,
 		mergeTargets,
+		refusedLabelFailure,
 		sectioned,
+		usageOf,
 		type Label,
 		type LabelBoard,
-		type LabelColor,
 		type LabelFailure,
+		type LabelGroup,
+		type LabelUsage,
 	} from "$lib/labels/labels";
-	import { labelGroupSchema, labelSchema } from "$lib/labels/label-schema";
+	import { labelSchema } from "$lib/labels/label-schema";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { labelsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 	import { showToast } from "$lib/toast/toasts";
 
 	const labelFormId = "label-form";
-	const groupFormId = "label-group-form";
 
 	let { data }: PageProps = $props();
-
 
 	const preview = $derived(
 		import.meta.env.DEV
@@ -55,50 +65,72 @@
 
 	let directFailure = $state<LabelFailure | null>(null);
 	let editingId = $state("");
+	let editorOpen = $state(false);
 	let working = $state("");
-	let usage = $state<number | null>(null);
-	let mergeInto = $state("");
+	let query = $state("");
+	let createdGroups = $state<LabelGroup[]>([]);
+
+	let mergeSource = $state<Label | null>(null);
+	let mergeOpen = $state(false);
+	let removalTarget = $state<Label | null>(null);
+	let removalOpen = $state(false);
+	let removalUsage = $state<number | null>(null);
+
+	let renamingGroupId = $state("");
+	let renamedGroup = $state("");
 
 	const board = $derived<LabelBoard>(preview?.board ?? data.board);
 	const labels = $derived(labelsOf(board));
-	const groups = $derived(groupsOf(board));
-	const sections = $derived(sectioned(labels, groups));
+	const groups = $derived.by<LabelGroup[]>(() => {
+		const known = groupsOf(board);
+		const held = new Set(known.map((group) => group.id));
+
+		return [...known, ...createdGroups.filter((group) => !held.has(group.id))];
+	});
 	const teams = $derived(preview?.teams ?? data.teams);
+	const usage = $derived<LabelUsage>(preview?.usage ?? data.usage);
 	const slug = $derived(page.params.workspace ?? "");
 
-	const removalId = $derived(page.url.searchParams.get("remove") ?? "");
-	const mergeId = $derived(page.url.searchParams.get("merge") ?? "");
-	const removing = $derived(labels.find((label) => label.id === removalId) ?? null);
-	const merging = $derived(labels.find((label) => label.id === mergeId) ?? null);
-	const targets = $derived(merging ? mergeTargets(merging, labels) : []);
+	const found = $derived(labels.filter((label) => matches(label, query)));
+	const sections = $derived(sectioned(found, groups));
 	const editing = $derived(labels.find((label) => label.id === editingId) ?? null);
-
 	const busy = $derived(working !== "");
+
+	let opened = $state("");
+
+	$effect(() => {
+		const wanted = preview?.opens;
+
+		if (!wanted || opened === wanted || labels.length === 0) return;
+
+		opened = wanted;
+
+		if (wanted === "editor") openEdit(labels[0]);
+		if (wanted === "merge") openMerge(labels[0]);
+		if (wanted === "delete") openRemoval(labels[0]);
+	});
+
+	const countLine = $derived(
+		`${found.length} ${found.length === 1 ? "label" : "labels"} · ${
+			groups.length === 0 ? "no groups" : `${groups.length} ${groups.length === 1 ? "group" : "groups"}`
+		}`
+	);
 
 	function teamKeyOf(teamId: string | undefined): string {
 		return teams.find((team) => team.id === teamId)?.key ?? "";
 	}
 
 	async function refresh() {
+		createdGroups = [];
+
 		await Promise.all([
 			invalidate(keys.page(page.route.id)),
 			invalidate(keys.labels(data.workspace.id)),
 		]);
 	}
 
-	function readFailure(error: unknown): LabelFailure {
-		if (error && typeof error === "object" && "code" in error) {
-			const problem = error as { code: string; issues?: number; status?: number };
-			const conflict = conflictFailure(problem.code, problem.issues);
-
-			if (conflict) return conflict;
-		}
-
-		if (error && typeof error === "object" && "status" in error) {
-			if ((error as { status: number }).status === 403) return { kind: "forbidden" };
-		}
-
-		return { kind: "unavailable" };
+	function readFailure(error: unknown, status: number): LabelFailure {
+		return refusedLabelFailure(error, status);
 	}
 
 	// svelte-ignore state_referenced_locally
@@ -111,131 +143,116 @@
 		onUpdated: ({ form: result }) => {
 			if (!result.valid || result.message) return;
 
-			showToast(editing
-				? `${result.data.name} was saved.`
-				: `${result.data.name} was added.`);
-			stopEditing();
+			showToast(editing ? `${result.data.name} was saved.` : `${result.data.name} was added.`);
+			closeEditor();
+			createdGroups = [];
 		},
 	});
 	const { form: formData, enhance, submitting, message } = form;
 
-	// svelte-ignore state_referenced_locally
-	const groupForm = superForm(data.groupForm, {
-		id: groupFormId,
-		validators: zod4Client(labelGroupSchema),
-		resetForm: true,
-		onSubmit: clearFailure,
-		onError: () => (directFailure = { kind: "unavailable" }),
-		onUpdated: ({ form: result }) => {
-			if (!result.valid || result.message) return;
-
-			showToast(`${result.data.name} was added. Labels in it are mutually exclusive.`);
-		},
-	});
-	const {
-		form: groupData,
-		enhance: groupEnhance,
-		submitting: groupSubmitting,
-		message: groupMessage,
-	} = groupForm;
-
-	const failure = $derived<LabelFailure | null>(
-		directFailure ?? $message ?? $groupMessage ?? null
-	);
+	const failure = $derived<LabelFailure | null>(directFailure ?? $message ?? null);
 
 	function clearFailure() {
 		directFailure = null;
 		message.set(undefined);
-		groupMessage.set(undefined);
 	}
 
-	function startEditing(label: Label) {
+	function openCreate() {
+		editingId = "";
+		clearFailure();
+		formData.set(
+			{ name: "", description: "", color: "cyan", groupId: "", teamId: "" },
+			{ taint: false }
+		);
+		editorOpen = true;
+	}
+
+	function openEdit(label: Label) {
 		editingId = label.id;
 		clearFailure();
 		formData.set(
 			{
 				name: label.name,
+				description: label.description,
 				color: label.color,
 				groupId: label.groupId ?? "",
 				teamId: label.teamId ?? "",
 			},
 			{ taint: false }
 		);
+		editorOpen = true;
 	}
 
-	function stopEditing() {
+	function closeEditor() {
+		editorOpen = false;
 		editingId = "";
-		formData.set({ name: "", color: "cyan", groupId: "", teamId: "" }, { taint: false });
 	}
 
-	function panelHref(key: "remove" | "merge", label: Label): string {
-		const next = new URL(page.url);
-		next.searchParams.delete(key === "remove" ? "merge" : "remove");
-		next.searchParams.set(key, label.id);
-
-		return `${next.pathname}${next.search}`;
+	function openMerge(label: Label) {
+		mergeSource = label;
+		mergeOpen = true;
+		clearFailure();
 	}
 
-	async function closePanels() {
-		const next = new URL(page.url);
-		next.searchParams.delete("remove");
-		next.searchParams.delete("merge");
-		usage = null;
-		mergeInto = "";
+	function openRemoval(label: Label) {
+		removalTarget = label;
+		removalUsage = null;
+		removalOpen = true;
+		clearFailure();
 
-		await goto(next, { replaceState: true, noScroll: true });
-	}
-
-	const usageWorkspaceId = $derived(data.workspace.id);
-
-	$effect(() => {
-		const id = removalId;
-
-		if (!id) {
-			usage = null;
+		if (preview) {
+			removalUsage = usageOf(usage, label);
 
 			return;
 		}
 
-		usage = null;
-
 		api
 			.GET("/workspaces/{workspaceId}/labels/{labelId}/usage", {
-				params: { path: { workspaceId: usageWorkspaceId, labelId: id } },
+				params: { path: { workspaceId: data.workspace.id, labelId: label.id } },
 			})
 			.then(({ data: read }) => {
-				if (read) usage = read.issues;
+				if (read && removalTarget?.id === label.id) removalUsage = read.issues;
 			})
 			.catch(() => {
 				directFailure = { kind: "unavailable" };
 			});
-	});
+	}
+
+	function mergeInstead() {
+		const label = removalTarget;
+		removalOpen = false;
+
+		if (label) openMerge(label);
+	}
 
 	async function confirmRemoval() {
-		if (!removing || usage === null) return;
+		const label = removalTarget;
 
-		working = removing.id;
+		if (!label || removalUsage === null) return;
+
+		working = label.id;
 		clearFailure();
 
 		try {
-			const { error } = await api.DELETE("/workspaces/{workspaceId}/labels/{labelId}", {
+			const { error, response } = await api.DELETE("/workspaces/{workspaceId}/labels/{labelId}", {
 				params: {
-					path: { workspaceId: data.workspace.id, labelId: removing.id },
-					query: { acknowledgedIssues: usage },
+					path: { workspaceId: data.workspace.id, labelId: label.id },
+					query: { acknowledgedIssues: removalUsage },
 				},
 			});
 
 			if (error) {
-				const conflict = readFailure(error);
+				const conflict = readFailure(error, response?.status ?? 0);
 				directFailure = conflict;
 
-				if (conflict.kind === "usage_changed") usage = conflict.issues;
+				if (conflict.kind === "usage_changed") removalUsage = conflict.issues;
 
 				return;
 			}
 
-			showToast(`${removing.name} was removed from ${usage} ${usage === 1 ? "issue" : "issues"}.`);
-			await closePanels();
+			showToast(`${label.name} was removed from ${issueCount(removalUsage)}.`);
+			removalOpen = false;
+			removalTarget = null;
 			await refresh();
 		} catch {
 			directFailure = { kind: "unavailable" };
@@ -244,29 +261,32 @@
 		}
 	}
 
-	async function confirmMerge() {
-		if (!merging || !mergeInto) return;
+	async function confirmMerge(targetId: string) {
+		const source = mergeSource;
 
-		working = merging.id;
+		if (!source || !targetId) return;
+
+		working = source.id;
 		clearFailure();
 
 		try {
-			const { data: kept, error } = await api.POST(
+			const { data: kept, error, response } = await api.POST(
 				"/workspaces/{workspaceId}/labels/{labelId}/merge",
 				{
-					params: { path: { workspaceId: data.workspace.id, labelId: merging.id } },
-					body: { intoLabelId: mergeInto },
+					params: { path: { workspaceId: data.workspace.id, labelId: source.id } },
+					body: { intoLabelId: targetId },
 				}
 			);
 
 			if (error) {
-				directFailure = readFailure(error);
+				directFailure = readFailure(error, response?.status ?? 0);
 
 				return;
 			}
 
-			showToast(`${merging.name} was merged into ${kept?.name ?? "the other label"}.`);
-			await closePanels();
+			showToast(`${source.name} was merged into ${kept?.name ?? "the other label"}.`);
+			mergeOpen = false;
+			mergeSource = null;
 			await refresh();
 		} catch {
 			directFailure = { kind: "unavailable" };
@@ -275,22 +295,73 @@
 		}
 	}
 
-	async function removeGroup(id: string, name: string) {
-		working = id;
+	function startRenamingGroup(group: LabelGroup) {
+		renamingGroupId = group.id;
+		renamedGroup = group.name;
+		clearFailure();
+	}
+
+	function stopRenamingGroup() {
+		renamingGroupId = "";
+		renamedGroup = "";
+	}
+
+	async function confirmGroupRename(group: LabelGroup) {
+		const name = renamedGroup.trim();
+
+		if (!name || name === group.name) {
+			stopRenamingGroup();
+
+			return;
+		}
+
+		working = group.id;
 		clearFailure();
 
 		try {
-			const { error } = await api.DELETE("/workspaces/{workspaceId}/label-groups/{groupId}", {
-				params: { path: { workspaceId: data.workspace.id, groupId: id } },
-			});
+			const { error, response } = await api.PATCH(
+				"/workspaces/{workspaceId}/label-groups/{groupId}",
+				{
+					params: { path: { workspaceId: data.workspace.id, groupId: group.id } },
+					body: { name },
+				}
+			);
 
 			if (error) {
-				directFailure = readFailure(error);
+				directFailure = readFailure(error, response?.status ?? 0);
 
 				return;
 			}
 
-			showToast(`${name} was removed. Its labels are still here, no longer exclusive.`);
+			showToast(`${group.name} is now ${name}.`);
+			stopRenamingGroup();
+			await refresh();
+		} catch {
+			directFailure = { kind: "unavailable" };
+		} finally {
+			working = "";
+		}
+	}
+
+	async function removeGroup(group: LabelGroup) {
+		working = group.id;
+		clearFailure();
+
+		try {
+			const { error, response } = await api.DELETE(
+				"/workspaces/{workspaceId}/label-groups/{groupId}",
+				{
+					params: { path: { workspaceId: data.workspace.id, groupId: group.id } },
+				}
+			);
+
+			if (error) {
+				directFailure = readFailure(error, response?.status ?? 0);
+
+				return;
+			}
+
+			showToast(`${group.name} was removed. Its labels are still here, no longer exclusive.`);
 			await refresh();
 		} catch {
 			directFailure = { kind: "unavailable" };
@@ -304,434 +375,287 @@
 
 <SettingsPage
 	title="Labels"
-	description="A shared vocabulary for classifying and routing work."
+	description="Labels cut across teams. They are cool colours only — red, amber and green belong to status, so a label can never be mistaken for one."
 	Icon={Tags}
-	meta={board.kind === "loading" ? "loading" : `${labels.length} labels / ${groups.length} groups`}
-	width="compact"
+	meta={board.kind === "loading" ? "loading" : countLine}
+	width="standard"
 >
+	{#snippet actions()}
+		<Popover.Root
+			open={editorOpen}
+			onOpenChange={(next) => {
+				editorOpen = next;
 
-			{#if failure}
-				<Alert.Root variant="destructive">
-					<CircleX aria-hidden="true" />
-					<Alert.Title>That did not work</Alert.Title>
-					<Alert.Description>{labelFailureMessage(failure)}</Alert.Description>
-				</Alert.Root>
-			{/if}
+				if (!next) editingId = "";
+			}}
+		>
+			<Popover.Trigger disabled={busy || board.kind !== "ready"}>
+				{#snippet child({ props })}
+					<Button {...props} onclick={openCreate}>
+						<Plus aria-hidden="true" />
+						New label
+					</Button>
+				{/snippet}
+			</Popover.Trigger>
+			<Popover.Content align="end" class="w-[min(20rem,calc(100vw-2rem))] p-3">
+				<Popover.Header class="pb-2">
+					<Popover.Title>{editing ? "Edit label" : "New label"}</Popover.Title>
+				</Popover.Header>
 
-			<section class="flex flex-col gap-4">
-				<div class="flex flex-col gap-1">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">Labels</h2>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Labels cross every team and project. A label can be narrowed to one team, and labels in
-						a group are mutually exclusive — an issue carries at most one of them.
-					</p>
-				</div>
-
-				{#if board.kind === "loading"}
-					<div class="flex flex-col gap-2" aria-busy="true" aria-label="Loading labels">
-						{#each [0, 1, 2, 3] as row (row)}
-							<Skeleton class="h-11 w-full" />
-						{/each}
-					</div>
-				{:else if board.kind === "unavailable"}
-					<Alert.Root variant="destructive">
-						<CircleX aria-hidden="true" />
-						<Alert.Title>Could not load the labels</Alert.Title>
-						<Alert.Description>Check your connection and reload.</Alert.Description>
-					</Alert.Root>
-				{:else if labels.length === 0 && groups.length === 0}
-					<Empty.Root>
-						<Empty.Media variant="icon"><Tags aria-hidden="true" /></Empty.Media>
-						<Empty.Header>
-							<Empty.Title>No labels yet</Empty.Title>
-							<Empty.Description>
-								Add the first one below and it becomes available on every issue in {data.workspace.name}.
-							</Empty.Description>
-						</Empty.Header>
-					</Empty.Root>
-				{:else}
-					{#each sections as section (section.group?.id ?? "ungrouped")}
-						<div class="flex flex-col gap-2">
-							<div class="flex items-center gap-2">
-								<span
-									class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
-								>
-									{section.group ? section.group.name : "Ungrouped"}
-								</span>
-								{#if section.group}
-									<span class="text-sm text-muted-foreground">one per issue</span>
-									<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
-									<Button
-										variant="ghost"
-										size="sm"
-										disabled={busy}
-										onclick={() => removeGroup(section.group!.id, section.group!.name)}
-									>
-										Ungroup these
-									</Button>
-								{:else}
-									<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
-								{/if}
-							</div>
-
-							{#if section.labels.length === 0}
-								<p class="text-sm leading-normal text-muted-foreground">
-									Nothing in this group yet.
-								</p>
-							{:else}
-								<ul class="flex flex-col rounded-lg border border-line-default">
-									{#each section.labels as label (label.id)}
-										<li class="flex flex-col border-b border-line-subtle last:border-b-0">
-											<div class="flex flex-wrap items-center gap-2 px-3 py-2">
-												<Tag name={label.name} color={label.color} />
-												<span class="min-w-0 flex-[1_1_80px] truncate text-md text-ink-900">
-													{label.name}
-												</span>
-
-												{#if label.teamId}
-													<TeamKey key={teamKeyOf(label.teamId)} />
-												{:else}
-													<span class="shrink-0 text-sm text-muted-foreground">Workspace</span>
-												{/if}
-
-												<span class="flex shrink-0 items-center gap-0.5">
-													<Button
-														variant="ghost"
-														size="sm"
-														disabled={busy}
-														onclick={() =>
-															editingId === label.id ? stopEditing() : startEditing(label)}
-													>
-														{editingId === label.id ? "Cancel" : "Edit"}
-													</Button>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														disabled={busy || mergeTargets(label, labels).length === 0}
-														aria-label={mergeTargets(label, labels).length === 0
-															? `No label can absorb ${label.name} — a target must be in the same group and cover its scope`
-															: `Merge ${label.name} into another label`}
-														title={mergeTargets(label, labels).length === 0
-															? "A merge target must be in the same group and cover this label's scope."
-															: undefined}
-														href={panelHref("merge", label)}
-													>
-														<Merge aria-hidden="true" />
-													</Button>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														disabled={busy}
-														aria-label="Remove {label.name}"
-														href={panelHref("remove", label)}
-													>
-														<X aria-hidden="true" />
-													</Button>
-												</span>
-											</div>
-
-											{#if removalId === label.id}
-												<div
-													class="flex flex-col gap-3 border-t border-line-subtle bg-paper-1 px-3 py-3"
-												>
-													<div class="flex flex-col gap-1">
-														<span class="text-sm font-medium text-ink-900">
-															Remove {label.name}
-														</span>
-														{#if usage === null}
-															<p class="text-sm text-muted-foreground">
-																Counting the issues it is on…
-															</p>
-														{:else}
-															<p
-																class="text-sm leading-normal text-muted-foreground text-pretty"
-															>
-																{label.name} is on
-																<strong class="text-ink-900">
-																	{usage}
-																	{usage === 1 ? "issue" : "issues"}
-																</strong>. Removing it takes it off all of them. Nothing else
-																about those issues changes.
-															</p>
-														{/if}
-													</div>
-
-													<div class="flex gap-2">
-														<Button
-															variant="destructive"
-															size="sm"
-															disabled={busy || usage === null}
-															onclick={confirmRemoval}
-														>
-															{working === label.id
-																? "Removing"
-																: usage === null
-																	? "Checking"
-																	: `Remove from ${usage} ${usage === 1 ? "issue" : "issues"}`}
-														</Button>
-														<Button
-															variant="secondary"
-															size="sm"
-															disabled={busy}
-															onclick={closePanels}
-														>
-															Keep it
-														</Button>
-													</div>
-												</div>
-											{/if}
-
-											{#if mergeId === label.id}
-												<div
-													class="flex flex-col gap-3 border-t border-line-subtle bg-paper-1 px-3 py-3"
-												>
-													<div class="flex flex-col gap-1">
-														<span class="text-sm font-medium text-ink-900">
-															Merge {label.name} into another label
-														</span>
-														<p class="text-sm leading-normal text-muted-foreground text-pretty">
-															Every issue carrying {label.name} moves to the label you choose, and
-															{label.name} is removed. Issues already carrying both keep one.
-														</p>
-													</div>
-
-													{#if targets.length === 0}
-														<p class="text-sm leading-normal text-muted-foreground text-pretty">
-															Nothing can absorb this label. A target has to be in the same group
-															and cover this label's scope, so a workspace label cannot merge into
-															a team one.
-														</p>
-														<div>
-															<Button variant="secondary" size="sm" onclick={closePanels}>
-																Close
-															</Button>
-														</div>
-													{:else}
-														<Select.Root
-															type="single"
-															value={mergeInto}
-															disabled={busy}
-															onValueChange={(value) => (mergeInto = value)}
-														>
-															<Select.Trigger aria-label="Merge into">
-																{targets.find((candidate) => candidate.id === mergeInto)?.name ??
-																	"Choose a label"}
-															</Select.Trigger>
-															<Select.Content>
-																{#each targets as candidate (candidate.id)}
-																	<Select.Item value={candidate.id} label={candidate.name}>
-																		{candidate.name}
-																	</Select.Item>
-																{/each}
-															</Select.Content>
-														</Select.Root>
-
-														<div class="flex gap-2">
-															<Button
-																size="sm"
-																disabled={busy || !mergeInto}
-																onclick={confirmMerge}
-															>
-																{working === label.id ? "Merging" : "Merge and move issues"}
-															</Button>
-															<Button
-																variant="secondary"
-																size="sm"
-																disabled={busy}
-																onclick={closePanels}
-															>
-																Cancel
-															</Button>
-														</div>
-													{/if}
-												</div>
-											{/if}
-										</li>
-									{/each}
-								</ul>
-							{/if}
-						</div>
-					{/each}
-				{/if}
-
-				<form
-					id={labelFormId}
-					method="POST"
-					action="?/label"
-					use:enhance
-					class="flex flex-col gap-4"
-				>
+				<form id={labelFormId} method="POST" action="?/label" use:enhance>
 					<input type="hidden" name="workspaceId" value={data.workspace.id} />
 					<input type="hidden" name="labelId" value={editingId} />
 
-					<h3 class="text-sm font-medium text-ink-900">
-						{editing ? `Edit ${editing.name}` : "Add a label"}
-					</h3>
-
-					<Form.Field {form} name="name">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Name</Form.Label>
-								<Input {...props} disabled={busy} placeholder="Bug" bind:value={$formData.name} />
-							{/snippet}
-						</Form.Control>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					<Form.Field {form} name="color">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Colour</Form.Label>
-								<ColorChoice
-									{...props}
-									colors={labelColors}
-									labels={colorLabels}
-									value={$formData.color}
-									name={props.name}
-									disabled={busy}
-									onpick={(color) => ($formData.color = color as LabelColor)}
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.Description class="text-sm text-muted-foreground">
-							These are the only colours labels may use — status and priority own the reds, ambers
-							and greens, so a label can never be mistaken for one.
-						</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					<Form.Field {form} name="groupId">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Group</Form.Label>
-								<Select.Root
-									type="single"
-									name={props.name}
-									value={$formData.groupId}
-									disabled={busy}
-									onValueChange={(value) => ($formData.groupId = value)}
-								>
-									<Select.Trigger {...props}>
-										{groups.find((group) => group.id === $formData.groupId)?.name ?? "No group"}
-									</Select.Trigger>
-									<Select.Content>
-										<Select.Item value="" label="No group">No group</Select.Item>
-										{#each groups as group (group.id)}
-											<Select.Item value={group.id} label={group.name}>{group.name}</Select.Item>
-										{/each}
-									</Select.Content>
-								</Select.Root>
-							{/snippet}
-						</Form.Control>
-						<Form.Description class="text-sm text-muted-foreground">
-							An issue carries at most one label from a group.
-						</Form.Description>
-						<Form.FieldErrors />
-					</Form.Field>
-
-					{#if !editing}
-						<Form.Field {form} name="teamId">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>Scope</Form.Label>
-									<Select.Root
-										type="single"
-										name={props.name}
-										value={$formData.teamId}
-										disabled={busy}
-										onValueChange={(value) => ($formData.teamId = value)}
-									>
-										<Select.Trigger {...props}>
-											{teams.find((team) => team.id === $formData.teamId)?.name ??
-												"Every team in this workspace"}
-										</Select.Trigger>
-										<Select.Content>
-											<Select.Item value="" label="Every team in this workspace">
-												Every team in this workspace
-											</Select.Item>
-											{#each teams as team (team.id)}
-												<Select.Item value={team.id} label={team.name}>{team.name}</Select.Item>
-											{/each}
-										</Select.Content>
-									</Select.Root>
-								{/snippet}
-							</Form.Control>
-							<Form.Description class="text-sm text-muted-foreground">
-								Scope is permanent. To widen or narrow a label later, merge it into one with the
-								scope you want.
-							</Form.Description>
-							<Form.FieldErrors />
-						</Form.Field>
-					{/if}
+					<LabelEditor
+						{form}
+						formId={labelFormId}
+						workspaceId={data.workspace.id}
+						{groups}
+						{teams}
+						editing={editing !== null}
+						submitting={$submitting}
+						ongroupcreated={(group) => (createdGroups = [...createdGroups, group])}
+						oncancel={closeEditor}
+					/>
 				</form>
+			</Popover.Content>
+		</Popover.Root>
+	{/snippet}
 
-				<div class="flex gap-2">
-					<Button type="submit" form={labelFormId} disabled={busy || $submitting}>
-						{#if !editing}
-							<Plus aria-hidden="true" />
-						{/if}
-						{$submitting ? "Saving" : editing ? "Save label" : "Add label"}
-					</Button>
-					{#if editing}
-						<Button variant="secondary" disabled={busy} onclick={stopEditing}>Cancel</Button>
-					{/if}
-				</div>
-			</section>
+	{#if failure}
+		<Alert.Root variant="destructive">
+			<CircleX aria-hidden="true" />
+			<Alert.Title>That did not work</Alert.Title>
+			<Alert.Description>{labelFailureMessage(failure)}</Alert.Description>
+		</Alert.Root>
+	{/if}
 
-			<section class="flex flex-col gap-4">
-				<div class="flex flex-col gap-1">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">Groups</h2>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						A group makes its labels mutually exclusive, for things an issue can only be one of —
-						a severity, a size, a stage.
-					</p>
-				</div>
+	{#if board.kind === "loading"}
+		<div class="flex flex-col gap-2" aria-busy="true" aria-label="Loading labels">
+			{#each [0, 1, 2, 3] as row (row)}
+				<Skeleton class="h-10 w-full" />
+			{/each}
+		</div>
+	{:else if board.kind === "unavailable"}
+		<Alert.Root variant="destructive">
+			<CircleX aria-hidden="true" />
+			<Alert.Title>Could not load the labels</Alert.Title>
+			<Alert.Description>Check your connection and reload.</Alert.Description>
+		</Alert.Root>
+	{:else if labels.length === 0}
+		<Empty.Root>
+			<Empty.Media variant="icon"><Tags aria-hidden="true" /></Empty.Media>
+			<Empty.Header>
+				<Empty.Title>No labels yet</Empty.Title>
+				<Empty.Description>
+					Labels are for the crosscutting things status cannot say — bug, needs spec, tech debt.
+					Four or five is usually the whole set.
+				</Empty.Description>
+			</Empty.Header>
+			<Empty.Content>
+				<Button onclick={openCreate}>
+					<Plus aria-hidden="true" />
+					New label
+				</Button>
+			</Empty.Content>
+		</Empty.Root>
+	{:else}
+		<div class="flex flex-col gap-4">
+			<div class="flex flex-wrap items-center gap-3">
+				<InputGroup.Root class="w-full sm:w-55">
+					<InputGroup.Addon>
+						<Search aria-hidden="true" />
+					</InputGroup.Addon>
+					<InputGroup.Input
+						placeholder="Search labels"
+						aria-label="Search labels"
+						bind:value={query}
+					/>
+				</InputGroup.Root>
+				<span class="flex-1"></span>
+				<span class="font-mono text-2xs text-muted-foreground">{countLine}</span>
+			</div>
 
-				<form
-					id={groupFormId}
-					method="POST"
-					action="?/group"
-					use:groupEnhance
-					class="flex flex-col gap-4"
-				>
-					<input type="hidden" name="workspaceId" value={data.workspace.id} />
-
-					<Form.Field form={groupForm} name="name">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Group name</Form.Label>
+			{#if found.length === 0}
+				<Empty.Root>
+					<Empty.Media variant="icon"><Search aria-hidden="true" /></Empty.Media>
+					<Empty.Header>
+						<Empty.Title>Nothing matches “{query}”</Empty.Title>
+						<Empty.Description>
+							Search runs over label names and their descriptions.
+						</Empty.Description>
+					</Empty.Header>
+				</Empty.Root>
+			{:else}
+				{#each sections as section (section.group?.id ?? "ungrouped")}
+					<div class="flex flex-col gap-2">
+						<div class="flex items-center gap-2">
+							{#if renamingGroupId === section.group?.id}
 								<Input
-									{...props}
+									bind:value={renamedGroup}
 									disabled={busy}
-									placeholder="Severity"
-									bind:value={$groupData.name}
+									aria-label="Group name"
+									class="h-7 w-44"
 								/>
-							{/snippet}
-						</Form.Control>
-						<Form.FieldErrors />
-					</Form.Field>
-				</form>
+								<Button
+									size="icon-sm"
+									disabled={busy}
+									aria-label="Save group name"
+									onclick={() => confirmGroupRename(section.group!)}
+								>
+									<Check aria-hidden="true" />
+								</Button>
+								<Button variant="ghost" size="sm" disabled={busy} onclick={stopRenamingGroup}>
+									Cancel
+								</Button>
+							{:else}
+								<Eyebrow>{section.group ? section.group.name : "Ungrouped"}</Eyebrow>
+								{#if section.group}
+									<span
+										class="rounded-full border border-line-default px-1.5 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+									>
+										one at a time
+									</span>
+								{/if}
+								<span class="h-px flex-1 bg-line-subtle" aria-hidden="true"></span>
+								<span class="font-mono text-2xs text-muted-foreground">
+									{section.labels.length}
+								</span>
+								{#if section.group}
+									<DropdownMenu.Root>
+										<DropdownMenu.Trigger disabled={busy}>
+											{#snippet child({ props })}
+												<Button
+													{...props}
+													variant="ghost"
+													size="icon-sm"
+													aria-label={`Actions for ${section.group!.name}`}
+												>
+													<MoreHorizontal aria-hidden="true" />
+												</Button>
+											{/snippet}
+										</DropdownMenu.Trigger>
+										<DropdownMenu.Content align="end">
+											<DropdownMenu.Item onSelect={() => startRenamingGroup(section.group!)}>
+												<Pencil aria-hidden="true" />
+												Rename group
+											</DropdownMenu.Item>
+											<DropdownMenu.Item
+												variant="destructive"
+												onSelect={() => removeGroup(section.group!)}
+											>
+												<Ungroup aria-hidden="true" />
+												Ungroup these labels
+											</DropdownMenu.Item>
+										</DropdownMenu.Content>
+									</DropdownMenu.Root>
+								{/if}
+							{/if}
+						</div>
 
-				<div>
-					<Button
-						type="submit"
-						form={groupFormId}
-						variant="secondary"
-						disabled={busy || $groupSubmitting}
+						{#if section.labels.length === 0}
+							<p class="text-sm leading-normal text-muted-foreground">Nothing in this group yet.</p>
+						{:else}
+							<ul class="overflow-hidden rounded-lg border border-line-default bg-paper-0">
+								{#each section.labels as label (label.id)}
+									<li
+										class="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 border-b border-line-subtle px-3 py-2 last:border-b-0"
+									>
+										<span class="flex w-30 shrink-0 items-center">
+											<Tag name={label.name} color={label.color} />
+										</span>
+
+										<span class="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+											{label.description}
+										</span>
+
+										{#if label.teamId}
+											<TeamKey key={teamKeyOf(label.teamId)} />
+										{/if}
+
+										<span class="shrink-0 font-mono text-2xs text-muted-foreground">
+											{issueCount(usageOf(usage, label))}
+										</span>
+
+										<DropdownMenu.Root>
+											<DropdownMenu.Trigger disabled={busy}>
+												{#snippet child({ props })}
+													<Button
+														{...props}
+														variant="ghost"
+														size="icon-sm"
+														aria-label={`Actions for ${label.name}`}
+													>
+														<MoreHorizontal aria-hidden="true" />
+													</Button>
+												{/snippet}
+											</DropdownMenu.Trigger>
+											<DropdownMenu.Content align="end">
+												<DropdownMenu.Item onSelect={() => openEdit(label)}>
+													<Pencil aria-hidden="true" />
+													Edit label
+												</DropdownMenu.Item>
+												<DropdownMenu.Item>
+													{#snippet child({ props })}
+														<a {...props} href={workspacePath(slug, `/issues?label=${label.id}`)}>
+															<List aria-hidden="true" />
+															See tagged issues
+														</a>
+													{/snippet}
+												</DropdownMenu.Item>
+												{#if mergeTargets(label, labels).length > 0}
+													<DropdownMenu.Item onSelect={() => openMerge(label)}>
+														<Merge aria-hidden="true" />
+														Merge into another label
+													</DropdownMenu.Item>
+												{/if}
+												<DropdownMenu.Separator />
+												<DropdownMenu.Item
+													variant="destructive"
+													onSelect={() => openRemoval(label)}
+												>
+													<Trash2 aria-hidden="true" />
+													Delete label
+												</DropdownMenu.Item>
+											</DropdownMenu.Content>
+										</DropdownMenu.Root>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</div>
+				{/each}
+
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					A group makes its labels mutually exclusive, so picking one clears the other. Everything
+					else stacks freely. Labels appear on every issue in
+					<a
+						href={workspacePath(slug, "/issues")}
+						class="text-link underline-offset-2 hover:text-link-hover hover:underline"
 					>
-						<Plus aria-hidden="true" />
-						{$groupSubmitting ? "Adding" : "Add group"}
-					</Button>
-				</div>
-			</section>
-
-			<p class="text-sm leading-normal text-muted-foreground text-pretty">
-				Labels appear on every issue in
-				<a
-					href={workspacePath(slug, "/issues")}
-					class="text-link underline-offset-2 hover:text-link-hover hover:underline"
-				>
-					the issue board
-				</a>.
-			</p>
+						the issue board
+					</a>.
+				</p>
+			{/if}
+		</div>
+	{/if}
 </SettingsPage>
+
+<MergeLabelDialog
+	bind:open={mergeOpen}
+	source={mergeSource}
+	{labels}
+	{usage}
+	merging={busy}
+	onconfirm={confirmMerge}
+/>
+
+<DeleteLabelDialog
+	bind:open={removalOpen}
+	label={removalTarget}
+	{labels}
+	usage={removalUsage}
+	removing={busy}
+	onconfirm={confirmRemoval}
+	onmergeinstead={mergeInstead}
+/>

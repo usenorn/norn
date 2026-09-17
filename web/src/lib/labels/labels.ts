@@ -1,4 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
+import type { IssueGroupTally } from "$lib/issues/filter";
 
 export type Label = components["schemas"]["Label"];
 export type LabelGroup = components["schemas"]["LabelGroup"];
@@ -132,6 +133,34 @@ export function refusedLabelFailure(problem: unknown, status: number): LabelFail
 	}
 
 	return status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
+}
+
+export type LabelUsage = Record<string, number>;
+
+export function usageFrom(tallies: IssueGroupTally[] | undefined): LabelUsage {
+	const counts: LabelUsage = {};
+
+	for (const tally of tallies ?? []) {
+		if (tally.key) counts[tally.key] = tally.issues;
+	}
+
+	return counts;
+}
+
+export function usageOf(usage: LabelUsage, label: Label): number {
+	return usage[label.id] ?? 0;
+}
+
+export function issueCount(issues: number): string {
+	return `${issues} ${issues === 1 ? "issue" : "issues"}`;
+}
+
+export function matches(label: Label, query: string): boolean {
+	const needle = query.trim().toLowerCase();
+
+	if (!needle) return true;
+
+	return `${label.name} ${label.description}`.toLowerCase().includes(needle);
 }
 
 export type LabelSection = { group: LabelGroup | null; labels: Label[] };

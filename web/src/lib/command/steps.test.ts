@@ -14,9 +14,9 @@ describe("steps", () => {
 			states: [],
 			cycles: [],
 			labels: [
-				{ id: "l1", workspaceId: "w", name: "Bug", color: "magenta" },
-				{ id: "l2", workspaceId: "w", teamId: "t1", name: "Design", color: "violet" },
-				{ id: "l3", workspaceId: "w", teamId: "t2", name: "Infra", color: "cyan" },
+				{ id: "l1", workspaceId: "w", name: "Bug", description: "", color: "magenta" },
+				{ id: "l2", workspaceId: "w", teamId: "t1", name: "Design", description: "", color: "violet" },
+				{ id: "l3", workspaceId: "w", teamId: "t2", name: "Infra", description: "", color: "cyan" },
 			],
 		});
 
