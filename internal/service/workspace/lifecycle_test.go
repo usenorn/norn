@@ -82,11 +82,12 @@ func pendingWorkspace(id uuid.UUID, requestedAt time.Time) entity.Workspace {
 
 func activeWorkspace(id uuid.UUID) entity.Workspace {
 	return entity.Workspace{
-		ID:       id,
-		Slug:     "northwind",
-		Name:     "Northwind",
-		Status:   entity.WorkspaceStatusActive,
-		Timezone: "Europe/London",
+		ID:           id,
+		Slug:         "northwind",
+		Name:         "Northwind",
+		Status:       entity.WorkspaceStatusActive,
+		Timezone:     "Europe/London",
+		WeekStartsOn: entity.WeekDayMonday,
 	}
 }
 
@@ -97,17 +98,18 @@ func TestUpdateChangesTheNameAndTimezoneAndNeverTheIdentifier(t *testing.T) {
 
 	h.expectActorMayAct(workspaceID, actorID, entity.ActionUpdate, activeWorkspace(workspaceID))
 
-	var capturedName, capturedTimezone string
+	var capturedName, capturedTimezone, capturedSlug string
 
 	h.workspaces.EXPECT().
-		UpdateSettings(gomock.Any(), workspaceID, gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, id uuid.UUID, name, timezone string, _ *uuid.UUID) (entity.Workspace, error) {
-			capturedName = name
-			capturedTimezone = timezone
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, id uuid.UUID, settings repository.WorkspaceSettings) (entity.Workspace, error) {
+			capturedName = settings.Name
+			capturedTimezone = settings.Timezone
+			capturedSlug = settings.Slug
 
 			updated := activeWorkspace(id)
-			updated.Name = name
-			updated.Timezone = timezone
+			updated.Name = settings.Name
+			updated.Timezone = settings.Timezone
 
 			return updated, nil
 		})
@@ -127,8 +129,8 @@ func TestUpdateChangesTheNameAndTimezoneAndNeverTheIdentifier(t *testing.T) {
 		t.Fatalf("wrote name=%q timezone=%q, want %q and %q", capturedName, capturedTimezone, name, timezone)
 	}
 
-	if updated.Slug != "northwind" {
-		t.Errorf("slug = %q, want it untouched by an update", updated.Slug)
+	if capturedSlug != "northwind" || updated.Slug != "northwind" {
+		t.Errorf("slug written %q, returned %q, want it untouched by an update", capturedSlug, updated.Slug)
 	}
 }
 
@@ -142,10 +144,10 @@ func TestUpdateLeavesUnsuppliedFieldsAlone(t *testing.T) {
 	var capturedName, capturedTimezone string
 
 	h.workspaces.EXPECT().
-		UpdateSettings(gomock.Any(), workspaceID, gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, id uuid.UUID, name, timezone string, _ *uuid.UUID) (entity.Workspace, error) {
-			capturedName = name
-			capturedTimezone = timezone
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, id uuid.UUID, settings repository.WorkspaceSettings) (entity.Workspace, error) {
+			capturedName = settings.Name
+			capturedTimezone = settings.Timezone
 
 			return activeWorkspace(id), nil
 		})
@@ -505,6 +507,7 @@ func TestCreateSeedsTheFirstTeamAndMakesItTheDefault(t *testing.T) {
 	workspaceID := uuid.New()
 	teamID := uuid.New()
 
+	h.workspaces.EXPECT().ReserveSlug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.workspaces.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, workspace entity.Workspace) (entity.Workspace, error) {
@@ -550,12 +553,12 @@ func TestCreateSeedsTheFirstTeamAndMakesItTheDefault(t *testing.T) {
 	var capturedDefault *uuid.UUID
 
 	h.workspaces.EXPECT().
-		UpdateSettings(gomock.Any(), workspaceID, gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, id uuid.UUID, name, timezone string, defaultTeamID *uuid.UUID) (entity.Workspace, error) {
-			capturedDefault = defaultTeamID
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, id uuid.UUID, settings repository.WorkspaceSettings) (entity.Workspace, error) {
+			capturedDefault = settings.DefaultTeamID
 
 			seeded := activeWorkspace(id)
-			seeded.DefaultTeamID = defaultTeamID
+			seeded.DefaultTeamID = settings.DefaultTeamID
 
 			return seeded, nil
 		})
@@ -593,6 +596,7 @@ func TestCreateWithoutATeamLeavesTheWorkspaceWithoutADefault(t *testing.T) {
 
 	actorID := uuid.New()
 
+	h.workspaces.EXPECT().ReserveSlug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.workspaces.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, workspace entity.Workspace) (entity.Workspace, error) {
@@ -686,9 +690,9 @@ func TestUpdateAssignsADefaultTeamThatBelongsToTheWorkspace(t *testing.T) {
 	var capturedDefault *uuid.UUID
 
 	h.workspaces.EXPECT().
-		UpdateSettings(gomock.Any(), workspaceID, gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, id uuid.UUID, name, timezone string, defaultTeamID *uuid.UUID) (entity.Workspace, error) {
-			capturedDefault = defaultTeamID
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, id uuid.UUID, settings repository.WorkspaceSettings) (entity.Workspace, error) {
+			capturedDefault = settings.DefaultTeamID
 
 			return activeWorkspace(id), nil
 		})

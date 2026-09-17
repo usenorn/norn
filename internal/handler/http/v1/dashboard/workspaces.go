@@ -2,6 +2,8 @@ package dashboard
 
 import (
 	"context"
+	"errors"
+	"net/http"
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
@@ -77,12 +79,27 @@ func (h *handler) UpdateWorkspace(ctx context.Context, request api.UpdateWorkspa
 		return unauthorized(), nil
 	}
 
-	workspace, err := h.workspaces.Update(ctx, request.WorkspaceId, service.UpdateWorkspaceInput{
+	input := service.UpdateWorkspaceInput{
+		Slug:          request.Body.Slug,
 		Name:          request.Body.Name,
 		Timezone:      request.Body.Timezone,
 		DefaultTeamID: request.Body.DefaultTeamId,
-	})
+	}
+
+	if request.Body.WeekStartsOn != nil {
+		weekStartsOn := entity.WeekDay(*request.Body.WeekStartsOn)
+		input.WeekStartsOn = &weekStartsOn
+	}
+
+	workspace, err := h.workspaces.Update(ctx, request.WorkspaceId, input)
 	if err != nil {
+		switch {
+		case errors.Is(err, entity.ErrWorkspaceSlugTaken):
+			err = entity.NewValidationError(entity.FieldError{Field: "slug", Code: entity.ValidationCodeTaken})
+		case errors.Is(err, entity.ErrWorkspaceSlugPinned):
+			err = entity.NewValidationError(entity.FieldError{Field: "slug", Code: entity.ValidationCodePinned})
+		}
+
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
 		}
@@ -274,4 +291,104 @@ func (h *handler) SetWorkspaceAuthPolicy(ctx context.Context, request api.SetWor
 	}
 
 	return response, nil
+}
+
+func (h *handler) UploadWorkspaceLogo(
+	ctx context.Context,
+	request api.UploadWorkspaceLogoRequestObject,
+) (api.UploadWorkspaceLogoResponseObject, error) {
+	if _, ok := h.currentAccountID(ctx); !ok {
+		return unauthorized(), nil
+	}
+
+	part, err := request.Body.NextPart()
+	if err != nil {
+		return newProblem(http.StatusBadRequest, "the request must carry a single "+avatarFormField+" part"), nil
+	}
+	defer func() { _ = part.Close() }()
+
+	if part.FormName() != avatarFormField {
+		return newProblem(http.StatusBadRequest, "the request must carry a single "+avatarFormField+" part"), nil
+	}
+
+	workspace, err := h.workspaces.UploadLogo(ctx, request.WorkspaceId, part)
+	if err != nil {
+		var oversized *http.MaxBytesError
+		if errors.As(err, &oversized) {
+			return newProblem(http.StatusRequestEntityTooLarge, entity.ErrWorkspaceLogoTooLarge.Error()), nil
+		}
+
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.UploadWorkspaceLogo200JSONResponse(workspaceDTO(workspace)), nil
+}
+
+func (h *handler) RemoveWorkspaceLogo(
+	ctx context.Context,
+	request api.RemoveWorkspaceLogoRequestObject,
+) (api.RemoveWorkspaceLogoResponseObject, error) {
+	if _, ok := h.currentAccountID(ctx); !ok {
+		return unauthorized(), nil
+	}
+
+	workspace, err := h.workspaces.RemoveLogo(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RemoveWorkspaceLogo200JSONResponse(workspaceDTO(workspace)), nil
+}
+
+func (h *handler) DownloadWorkspaceLogo(
+	ctx context.Context,
+	request api.DownloadWorkspaceLogoRequestObject,
+) (api.DownloadWorkspaceLogoResponseObject, error) {
+	if _, ok := h.currentAccountID(ctx); !ok {
+		return unauthorized(), nil
+	}
+
+	target, err := h.workspaces.LogoContent(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.DownloadWorkspaceLogo303Response{
+		Headers: api.DownloadWorkspaceLogo303ResponseHeaders{
+			Location:     &target,
+			CacheControl: &noStore,
+		},
+	}, nil
+}
+
+func (h *handler) ResolveWorkspaceAddress(
+	ctx context.Context,
+	request api.ResolveWorkspaceAddressRequestObject,
+) (api.ResolveWorkspaceAddressResponseObject, error) {
+	if _, ok := h.currentAccountID(ctx); !ok {
+		return unauthorized(), nil
+	}
+
+	workspace, err := h.workspaces.ResolveSlugRedirect(ctx, request.Slug)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ResolveWorkspaceAddress200JSONResponse(workspaceDTO(workspace)), nil
 }

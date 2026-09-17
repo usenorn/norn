@@ -11,6 +11,7 @@ package workspace
 
 import (
 	context "context"
+	io "io"
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
@@ -193,6 +194,21 @@ func (mr *MockWorkspacesMockRecorder) ListSSOIdentities(ctx, workspaceID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSSOIdentities", reflect.TypeOf((*MockWorkspaces)(nil).ListSSOIdentities), ctx, workspaceID)
 }
 
+// LogoContent mocks base method.
+func (m *MockWorkspaces) LogoContent(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LogoContent", ctx, workspaceID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LogoContent indicates an expected call of LogoContent.
+func (mr *MockWorkspacesMockRecorder) LogoContent(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoContent", reflect.TypeOf((*MockWorkspaces)(nil).LogoContent), ctx, workspaceID)
+}
+
 // PreviewMemberRemoval mocks base method.
 func (m *MockWorkspaces) PreviewMemberRemoval(ctx context.Context, workspaceID, accountID uuid.UUID) (service.MemberRemoval, error) {
 	m.ctrl.T.Helper()
@@ -236,6 +252,21 @@ func (mr *MockWorkspacesMockRecorder) RedeemRecoveryCode(ctx, input any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RedeemRecoveryCode", reflect.TypeOf((*MockWorkspaces)(nil).RedeemRecoveryCode), ctx, input)
 }
 
+// RemoveLogo mocks base method.
+func (m *MockWorkspaces) RemoveLogo(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveLogo", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemoveLogo indicates an expected call of RemoveLogo.
+func (mr *MockWorkspacesMockRecorder) RemoveLogo(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLogo", reflect.TypeOf((*MockWorkspaces)(nil).RemoveLogo), ctx, workspaceID)
+}
+
 // RemoveMember mocks base method.
 func (m *MockWorkspaces) RemoveMember(ctx context.Context, workspaceID, accountID uuid.UUID, reassignTo *uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -248,6 +279,21 @@ func (m *MockWorkspaces) RemoveMember(ctx context.Context, workspaceID, accountI
 func (mr *MockWorkspacesMockRecorder) RemoveMember(ctx, workspaceID, accountID, reassignTo any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMember", reflect.TypeOf((*MockWorkspaces)(nil).RemoveMember), ctx, workspaceID, accountID, reassignTo)
+}
+
+// ResolveSlugRedirect mocks base method.
+func (m *MockWorkspaces) ResolveSlugRedirect(ctx context.Context, slug string) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveSlugRedirect", ctx, slug)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveSlugRedirect indicates an expected call of ResolveSlugRedirect.
+func (mr *MockWorkspacesMockRecorder) ResolveSlugRedirect(ctx, slug any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveSlugRedirect", reflect.TypeOf((*MockWorkspaces)(nil).ResolveSlugRedirect), ctx, slug)
 }
 
 // Restore mocks base method.
@@ -307,4 +353,19 @@ func (m *MockWorkspaces) Update(ctx context.Context, workspaceID uuid.UUID, inpu
 func (mr *MockWorkspacesMockRecorder) Update(ctx, workspaceID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockWorkspaces)(nil).Update), ctx, workspaceID, input)
+}
+
+// UploadLogo mocks base method.
+func (m *MockWorkspaces) UploadLogo(ctx context.Context, workspaceID uuid.UUID, body io.Reader) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadLogo", ctx, workspaceID, body)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UploadLogo indicates an expected call of UploadLogo.
+func (mr *MockWorkspacesMockRecorder) UploadLogo(ctx, workspaceID, body any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadLogo", reflect.TypeOf((*MockWorkspaces)(nil).UploadLogo), ctx, workspaceID, body)
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"net/netip"
 
 	"github.com/google/uuid"
@@ -17,6 +18,10 @@ type Workspaces interface {
 	Update(ctx context.Context, workspaceID uuid.UUID, input UpdateWorkspaceInput) (entity.Workspace, error)
 	Delete(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error)
 	Restore(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error)
+	UploadLogo(ctx context.Context, workspaceID uuid.UUID, body io.Reader) (entity.Workspace, error)
+	RemoveLogo(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error)
+	LogoContent(ctx context.Context, workspaceID uuid.UUID) (string, error)
+	ResolveSlugRedirect(ctx context.Context, slug string) (entity.Workspace, error)
 	Purge(ctx context.Context, workspaceID uuid.UUID) error
 	ListForAccount(ctx context.Context, accountID uuid.UUID) ([]entity.Workspace, error)
 	ListMembers(ctx context.Context, workspaceID uuid.UUID, input ListMembersInput) (MemberPage, error)

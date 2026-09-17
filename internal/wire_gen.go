@@ -347,7 +347,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		return nil, nil, err
 	}
 	serviceLicensing := licensing.New(entityLicence, configLicence)
-	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, postgresClient, configWorkspace, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, postgresClient, configWorkspace, attachments, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
 	notificationEvent := notificationevent.New(postgresClient)
 	teams := team2.New(repositoryTeam, teamMember, repositoryWorkspace, repositoryMembership, repositoryAccount, workspaceAuthPolicy, workflowState, scmTransitionRule, notificationEvent, serviceAuthorizer, postgresClient, serviceAudit, serviceEvents, webhookEmitter)
 	repositoryInvitation := invitation.New(postgresClient)
@@ -718,7 +718,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 		return nil, nil, err
 	}
 	serviceLicensing := licensing.New(entityLicence, configLicence)
-	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, client, configWorkspace, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, client, configWorkspace, attachments, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
 	workspacePurgeHandler := job.NewWorkspacePurgeHandler(workspaces)
 	repositoryIssue := issue.New(client)
 	issueRevision := issuerevision.New(client)
