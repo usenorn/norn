@@ -6,7 +6,7 @@ import {
 	boardFor,
 	conflictFailure,
 	labelFailureMessage,
-	usageFrom,
+	usageFor,
 	type LabelFailure,
 } from "$lib/labels/labels";
 import { labelGroupSchema, labelSchema } from "$lib/labels/label-schema";
@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 
 	return {
 		board: boardFor(labels.data, groups.data),
-		usage: usageFrom(tallies.data?.groups),
+		usage: usageFor(tallies),
 		teams: teams ?? [],
 		form: await superValidate<LabelForm, LabelFailure>(zod4(labelSchema), { id: labelFormId }),
 		groupForm: await superValidate<LabelGroupForm, LabelFailure>(zod4(labelGroupSchema), {

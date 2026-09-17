@@ -135,10 +135,14 @@ export function refusedLabelFailure(problem: unknown, status: number): LabelFail
 	return status === 403 ? { kind: "forbidden" } : { kind: "unavailable" };
 }
 
-export type LabelUsage = Record<string, number>;
+export type LabelCounts = Record<string, number>;
 
-export function usageFrom(tallies: IssueGroupTally[] | undefined): LabelUsage {
-	const counts: LabelUsage = {};
+export type LabelUsage = { kind: "counted"; counts: LabelCounts } | { kind: "uncounted" };
+
+export const uncountedLabel = "—";
+
+export function countsFrom(tallies: IssueGroupTally[] | undefined): LabelCounts {
+	const counts: LabelCounts = {};
 
 	for (const tally of tallies ?? []) {
 		if (tally.key) counts[tally.key] = tally.issues;
@@ -147,13 +151,32 @@ export function usageFrom(tallies: IssueGroupTally[] | undefined): LabelUsage {
 	return counts;
 }
 
-export function usageOf(usage: LabelUsage, label: Label): number {
-	return usage[label.id] ?? 0;
+export function usageFor(read: { data?: { groups?: IssueGroupTally[] } }): LabelUsage {
+	if (!read.data) return { kind: "uncounted" };
+
+	return { kind: "counted", counts: countsFrom(read.data.groups) };
+}
+
+export function usageOf(usage: LabelUsage, label: Label): number | null {
+	if (usage.kind === "uncounted") return null;
+
+	return usage.counts[label.id] ?? 0;
 }
 
 export function issueCount(issues: number): string {
 	return `${issues} ${issues === 1 ? "issue" : "issues"}`;
 }
+
+export function usageLabel(usage: LabelUsage, label: Label): string {
+	const counted = usageOf(usage, label);
+
+	return counted === null ? uncountedLabel : issueCount(counted);
+}
+
+export type UsageRead =
+	| { kind: "counting" }
+	| { kind: "counted"; issues: number }
+	| { kind: "refused"; failure: LabelFailure };
 
 export function matches(label: Label, query: string): boolean {
 	const needle = query.trim().toLowerCase();

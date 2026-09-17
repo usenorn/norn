@@ -220,6 +220,53 @@ test.describe("the labels settings page", () => {
 		await expect(row(page, name)).toHaveCount(0);
 	});
 
+	test("a refused usage read offers a retry instead of counting forever", async ({ page }) => {
+		const stamp = Date.now();
+		const name = `Flaky ${stamp}`;
+
+		const created = await seedLabel(page, name, "Its count refuses to load");
+		await applyLabel(page, 3, created.id);
+
+		let refuse = true;
+
+		await page.route(`**/v1/workspaces/*/labels/${created.id}/usage`, async (route) => {
+			if (!refuse) {
+				await route.continue();
+
+				return;
+			}
+
+			await route.fulfill({
+				status: 503,
+				contentType: "application/problem+json",
+				body: JSON.stringify({ status: 503, title: "Service Unavailable" }),
+			});
+		});
+
+		await page.goto(at("/settings/labels"));
+
+		await openRowMenu(page, name);
+		await page.getByRole("menuitem", { name: "Delete label" }).click();
+
+		const dialog = page.getByRole("alertdialog");
+
+		await expect(dialog).not.toContainText("Counting the issues it is on");
+		await expect(dialog.getByRole("button", { name: "Try again" })).toBeVisible();
+		await expect(dialog.getByRole("button", { name: "Delete anyway" })).toHaveCount(0);
+
+		refuse = false;
+		await dialog.getByRole("button", { name: "Try again" }).click();
+
+		await expect(dialog).toContainText("It comes off 1 issue.");
+
+		const remove = dialog.getByRole("button", { name: "Delete anyway" });
+
+		await expect(remove).toBeEnabled();
+		await remove.click();
+
+		await expect(row(page, name)).toHaveCount(0);
+	});
+
 	test("see tagged issues opens the issue list filtered to that label", async ({ page }) => {
 		const stamp = Date.now();
 		const name = `Infra ${stamp}`;

@@ -14,14 +14,14 @@ export const labelsPreviewStates: Record<string, LabelsPreview> = import.meta.en
 			unavailable: { board: { kind: "unavailable" } },
 			empty: { board: { kind: "ready", labels: [], groups: [] } },
 			list: {
-				usage: {
+				usage: { kind: "counted", counts: {
 					"00000000-0000-4000-8000-000000000701": 86,
 					"00000000-0000-4000-8000-000000000702": 41,
 					"00000000-0000-4000-8000-000000000703": 52,
 					"00000000-0000-4000-8000-000000000704": 34,
 					"00000000-0000-4000-8000-000000000705": 12,
 					"00000000-0000-4000-8000-000000000706": 29,
-				},
+				} },
 				teams: [
 					{
 						id: "00000000-0000-4000-8000-000000000101",
@@ -87,13 +87,36 @@ export const labelsPreviewStates: Record<string, LabelsPreview> = import.meta.en
 					],
 				},
 			},
+			uncounted: {
+				usage: { kind: "uncounted" },
+				board: {
+					kind: "ready",
+					groups: [],
+					labels: [
+						{
+							id: "00000000-0000-4000-8000-000000000751",
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							name: "Bug",
+							description: "Something shipped is wrong",
+							color: "magenta",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000752",
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							name: "Chore",
+							description: "Necessary, not user-visible",
+							color: "neutral",
+						},
+					],
+				},
+			},
 			groups: {
-				usage: {
+				usage: { kind: "counted", counts: {
 					"00000000-0000-4000-8000-000000000711": 86,
 					"00000000-0000-4000-8000-000000000712": 41,
 					"00000000-0000-4000-8000-000000000713": 34,
 					"00000000-0000-4000-8000-000000000714": 18,
-				},
+				} },
 				board: {
 					kind: "ready",
 					groups: [
@@ -145,7 +168,7 @@ export const labelsPreviewStates: Record<string, LabelsPreview> = import.meta.en
 			},
 			edit: {
 				opens: "editor",
-				usage: { "00000000-0000-4000-8000-000000000721": 29 },
+				usage: { kind: "counted", counts: { "00000000-0000-4000-8000-000000000721": 29 } },
 				board: {
 					kind: "ready",
 					groups: [
@@ -168,10 +191,10 @@ export const labelsPreviewStates: Record<string, LabelsPreview> = import.meta.en
 			},
 			merge: {
 				opens: "merge",
-				usage: {
+				usage: { kind: "counted", counts: {
 					"00000000-0000-4000-8000-000000000731": 18,
 					"00000000-0000-4000-8000-000000000732": 34,
-				},
+				} },
 				board: {
 					kind: "ready",
 					groups: [],
@@ -195,10 +218,10 @@ export const labelsPreviewStates: Record<string, LabelsPreview> = import.meta.en
 			},
 			delete: {
 				opens: "delete",
-				usage: {
+				usage: { kind: "counted", counts: {
 					"00000000-0000-4000-8000-000000000741": 34,
 					"00000000-0000-4000-8000-000000000742": 18,
-				},
+				} },
 				board: {
 					kind: "ready",
 					groups: [],

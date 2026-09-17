@@ -14,6 +14,7 @@
 	import Search from "@lucide/svelte/icons/search";
 	import Tags from "@lucide/svelte/icons/tags";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
+	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import Ungroup from "@lucide/svelte/icons/ungroup";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
@@ -40,12 +41,15 @@
 		mergeTargets,
 		refusedLabelFailure,
 		sectioned,
+		uncountedLabel,
+		usageLabel,
 		usageOf,
 		type Label,
 		type LabelBoard,
 		type LabelFailure,
 		type LabelGroup,
 		type LabelUsage,
+		type UsageRead,
 	} from "$lib/labels/labels";
 	import { labelSchema } from "$lib/labels/label-schema";
 	import { workspacePath } from "$lib/workspace/navigation";
@@ -74,7 +78,7 @@
 	let mergeOpen = $state(false);
 	let removalTarget = $state<Label | null>(null);
 	let removalOpen = $state(false);
-	let removalUsage = $state<number | null>(null);
+	let removalUsage = $state<UsageRead>({ kind: "counting" });
 
 	let renamingGroupId = $state("");
 	let renamedGroup = $state("");
@@ -89,6 +93,7 @@
 	});
 	const teams = $derived(preview?.teams ?? data.teams);
 	const usage = $derived<LabelUsage>(preview?.usage ?? data.usage);
+	const uncounted = $derived(usage.kind === "uncounted");
 	const slug = $derived(page.params.workspace ?? "");
 
 	const found = $derived(labels.filter((label) => matches(label, query)));
@@ -194,28 +199,46 @@
 		clearFailure();
 	}
 
-	function openRemoval(label: Label) {
-		removalTarget = label;
-		removalUsage = null;
-		removalOpen = true;
-		clearFailure();
+	async function countUsage(label: Label) {
+		removalUsage = { kind: "counting" };
 
 		if (preview) {
-			removalUsage = usageOf(usage, label);
+			removalUsage = { kind: "counted", issues: usageOf(usage, label) ?? 0 };
 
 			return;
 		}
 
-		api
-			.GET("/workspaces/{workspaceId}/labels/{labelId}/usage", {
-				params: { path: { workspaceId: data.workspace.id, labelId: label.id } },
-			})
-			.then(({ data: read }) => {
-				if (read && removalTarget?.id === label.id) removalUsage = read.issues;
-			})
-			.catch(() => {
-				directFailure = { kind: "unavailable" };
-			});
+		const settle = (read: UsageRead) => {
+			if (removalTarget?.id === label.id) removalUsage = read;
+		};
+
+		try {
+			const { data: read, error, response } = await api.GET(
+				"/workspaces/{workspaceId}/labels/{labelId}/usage",
+				{ params: { path: { workspaceId: data.workspace.id, labelId: label.id } } }
+			);
+
+			if (error || !read) {
+				settle({ kind: "refused", failure: readFailure(error, response?.status ?? 0) });
+
+				return;
+			}
+
+			settle({ kind: "counted", issues: read.issues });
+		} catch {
+			settle({ kind: "refused", failure: { kind: "unavailable" } });
+		}
+	}
+
+	function openRemoval(label: Label) {
+		removalTarget = label;
+		removalOpen = true;
+		clearFailure();
+		void countUsage(label);
+	}
+
+	function retryUsage() {
+		if (removalTarget) void countUsage(removalTarget);
 	}
 
 	function mergeInstead() {
@@ -227,8 +250,9 @@
 
 	async function confirmRemoval() {
 		const label = removalTarget;
+		const counted = removalUsage;
 
-		if (!label || removalUsage === null) return;
+		if (!label || counted.kind !== "counted") return;
 
 		working = label.id;
 		clearFailure();
@@ -237,7 +261,7 @@
 			const { error, response } = await api.DELETE("/workspaces/{workspaceId}/labels/{labelId}", {
 				params: {
 					path: { workspaceId: data.workspace.id, labelId: label.id },
-					query: { acknowledgedIssues: removalUsage },
+					query: { acknowledgedIssues: counted.issues },
 				},
 			});
 
@@ -245,12 +269,14 @@
 				const conflict = readFailure(error, response?.status ?? 0);
 				directFailure = conflict;
 
-				if (conflict.kind === "usage_changed") removalUsage = conflict.issues;
+				if (conflict.kind === "usage_changed") {
+					removalUsage = { kind: "counted", issues: conflict.issues };
+				}
 
 				return;
 			}
 
-			showToast(`${label.name} was removed from ${issueCount(removalUsage)}.`);
+			showToast(`${label.name} was removed from ${issueCount(counted.issues)}.`);
 			removalOpen = false;
 			removalTarget = null;
 			await refresh();
@@ -476,6 +502,17 @@
 				<span class="font-mono text-2xs text-muted-foreground">{countLine}</span>
 			</div>
 
+			{#if uncounted}
+				<Alert.Root>
+					<TriangleAlert aria-hidden="true" />
+					<Alert.Title>Issue counts are unavailable</Alert.Title>
+					<Alert.Description>
+						The count of issues carrying each label could not be read, so every label shows {uncountedLabel}
+						instead of a number. Reload to try again. Everything else on this page still works.
+					</Alert.Description>
+				</Alert.Root>
+			{/if}
+
 			{#if found.length === 0}
 				<Empty.Root>
 					<Empty.Media variant="icon"><Search aria-hidden="true" /></Empty.Media>
@@ -574,7 +611,7 @@
 										{/if}
 
 										<span class="shrink-0 font-mono text-2xs text-muted-foreground">
-											{issueCount(usageOf(usage, label))}
+											{usageLabel(usage, label)}
 										</span>
 
 										<DropdownMenu.Root>
@@ -657,5 +694,6 @@
 	usage={removalUsage}
 	removing={busy}
 	onconfirm={confirmRemoval}
+	onretry={retryUsage}
 	onmergeinstead={mergeInstead}
 />

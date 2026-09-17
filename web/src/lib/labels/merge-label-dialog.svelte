@@ -5,7 +5,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { issueCount, mergeTargets, usageOf, type Label, type LabelUsage } from "./labels";
+	import { mergeTargets, usageLabel, type Label, type LabelUsage } from "./labels";
 
 	let {
 		open = $bindable(false),
@@ -56,7 +56,7 @@
 							<Eyebrow>Disappears</Eyebrow>
 							<Tag name={source.name} color={source.color} />
 							<span class="font-mono text-2xs text-muted-foreground">
-								{issueCount(usageOf(usage, source))}
+								{usageLabel(usage, source)}
 							</span>
 						</div>
 
@@ -72,7 +72,7 @@
 							{#if target}
 								<Tag name={target.name} color={target.color} />
 								<span class="font-mono text-2xs text-muted-foreground">
-									{issueCount(usageOf(usage, target))}
+									{usageLabel(usage, target)}
 								</span>
 							{:else}
 								<span class="text-sm text-muted-foreground">Choose a label below.</span>
