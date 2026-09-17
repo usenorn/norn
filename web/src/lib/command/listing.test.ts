@@ -38,7 +38,7 @@ describe("modeOf", () => {
 
 describe("paletteCommands", () => {
 	it("keeps the global commands when nothing is selected or open, and only those", () => {
-		expect(paletteCommands({ kind: "none" }, true).map((command) => command.id)).toEqual([
+		expect(paletteCommands({ kind: "none" }, true, new Set()).map((command) => command.id)).toEqual([
 			"issue-new",
 			"open-triage",
 			"toggle-density",
@@ -46,7 +46,7 @@ describe("paletteCommands", () => {
 	});
 
 	it("adds every issue action once an issue is in scope", () => {
-		expect(paletteCommands(scoped, true).map((command) => command.id)).toEqual([
+		expect(paletteCommands(scoped, true, new Set(["t1"])).map((command) => command.id)).toEqual([
 			"issue-new",
 			"assign",
 			"status",
@@ -56,6 +56,12 @@ describe("paletteCommands", () => {
 			"open-triage",
 			"toggle-density",
 		]);
+	});
+
+	it("leaves out moving to a cycle when the team runs no cycles", () => {
+		expect(paletteCommands(scoped, true, new Set(["t2"])).map((command) => command.id)).not.toContain(
+			"cycle"
+		);
 	});
 });
 
@@ -103,7 +109,7 @@ describe("paletteListing", () => {
 		const listing = paletteListing(
 			sources({
 				mode: { kind: "commands", query: "" },
-				commands: paletteCommands({ kind: "none" }, true),
+				commands: paletteCommands({ kind: "none" }, true, new Set()),
 			})
 		);
 

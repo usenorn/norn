@@ -62,7 +62,7 @@
 		queuedLine,
 		stepOptions,
 	} from "$lib/command/steps";
-	import type { Cycle, TeamCycle } from "$lib/cycles/cycles";
+	import { cyclingTeams, type Cycle, type TeamCycle } from "$lib/cycles/cycles";
 	import { useNewIssue } from "$lib/issues/new-issue.svelte";
 	import type { Label, LabelColor } from "$lib/labels/labels";
 	import { toggleDensity } from "$lib/layout/density";
@@ -167,7 +167,7 @@
 		paletteDestinations({ workspace: workspaceSlug, teams, cycles, views, projects, apple })
 	);
 	const people = $derived(peopleDestinations(workspaceSlug, members));
-	const commands = $derived(paletteCommands(scope, apple));
+	const commands = $derived(paletteCommands(scope, apple, cyclingTeams(cycles)));
 
 	const options = $derived(
 		shownStep
