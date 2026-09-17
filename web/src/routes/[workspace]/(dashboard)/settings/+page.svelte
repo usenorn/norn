@@ -282,7 +282,7 @@
 		<input type="hidden" name="defaultTeamId" value={$formData.defaultTeamId} />
 
 		<section class="flex flex-col gap-3.5" aria-labelledby="workspace-section">
-			<Eyebrow id="workspace-section">Workspace</Eyebrow>
+			<h2><Eyebrow id="workspace-section">Workspace</Eyebrow></h2>
 
 			<div class="flex flex-wrap items-center gap-3">
 				<WorkspaceMark name={$formData.name || workspace.name} {logoUrl} class="size-11 text-xl" />
@@ -374,7 +374,7 @@
 		</section>
 
 		<section class="flex flex-col gap-3.5" aria-labelledby="time-section">
-			<Eyebrow id="time-section">Time and defaults</Eyebrow>
+			<h2><Eyebrow id="time-section">Time and defaults</Eyebrow></h2>
 
 			<div class="flex flex-col divide-y divide-line-default rounded-md border border-line-default">
 				<SettingRow
@@ -452,7 +452,7 @@
 	</form>
 
 	<section class="flex flex-col gap-3.5" aria-labelledby="storage-section">
-		<Eyebrow id="storage-section">Storage</Eyebrow>
+		<h2><Eyebrow id="storage-section">Storage</Eyebrow></h2>
 
 		<div class="flex flex-col gap-2 rounded-md border border-line-default px-3 py-2.5">
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -488,13 +488,13 @@
 
 	{#if !pending && administrator}
 		<section class="flex flex-col gap-3.5" aria-labelledby="delete-section">
-			<Eyebrow id="delete-section" tone="danger">Delete workspace</Eyebrow>
+			<h2><Eyebrow id="delete-section" tone="danger">Delete workspace</Eyebrow></h2>
 
 			<div class="flex flex-col items-start gap-3 rounded-md border border-line-strong p-3.5">
 				<div class="flex flex-col gap-1">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">
+					<h3 class="text-md font-medium tracking-snug text-ink-900">
 						Delete {workspace.name} and everything in it
-					</h2>
+					</h3>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">
 						Deleting locks {workspace.name} straight away and schedules it for permanent removal. An
 						administrator can restore it until that date passes. After that it and everything in it
