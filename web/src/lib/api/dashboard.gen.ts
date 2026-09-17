@@ -8300,6 +8300,8 @@ export interface components {
         InvitationWorkspace: {
             slug: string;
             name: string;
+            /** @description A short-lived link to the workspace logo, issued only for a usable invitation token. */
+            logoUrl?: string;
         };
         AcceptInvitationRequest: {
             token: string;

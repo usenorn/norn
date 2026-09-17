@@ -13054,6 +13054,9 @@ components:
       properties:
         slug: { type: string }
         name: { type: string }
+        logoUrl:
+          type: string
+          description: A short-lived link to the workspace logo, issued only for a usable invitation token.
 
     AcceptInvitationRequest:
       type: object

@@ -6693,8 +6693,10 @@ type InvitationUnusableProblemCode string
 
 // InvitationWorkspace defines model for InvitationWorkspace.
 type InvitationWorkspace struct {
-	Name string `json:"name"`
-	Slug string `json:"slug"`
+	// LogoUrl A short-lived link to the workspace logo, issued only for a usable invitation token.
+	LogoUrl *string `json:"logoUrl,omitempty"`
+	Name    string  `json:"name"`
+	Slug    string  `json:"slug"`
 }
 
 // Issue defines model for Issue.

@@ -91,11 +91,7 @@ func (s *workspacesService) LogoContent(ctx context.Context, workspaceID uuid.UU
 		return "", entity.ErrWorkspaceLogoMissing
 	}
 
-	return s.blobs.PresignGet(ctx, key, entity.ServeSpec{
-		ContentType: entity.AttachmentServedType(entity.AvatarContentType(key)),
-		Disposition: entity.AttachmentDispositionIn,
-		FileName:    "logo",
-	}, s.attachments.LinkTTL)
+	return s.blobs.PresignGet(ctx, key, entity.WorkspaceLogoServeSpec(key), s.attachments.LinkTTL)
 }
 
 func (s *workspacesService) swapLogo(ctx context.Context, workspaceID uuid.UUID, key string) (entity.Workspace, string, error) {

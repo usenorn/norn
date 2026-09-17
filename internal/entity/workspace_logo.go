@@ -28,6 +28,14 @@ func WorkspaceLogoPrefix(workspaceID uuid.UUID) string {
 	return WorkspaceLogoKeyPrefix + "/" + workspaceID.String()
 }
 
+func WorkspaceLogoServeSpec(key string) ServeSpec {
+	return ServeSpec{
+		ContentType: AttachmentServedType(AvatarContentType(key)),
+		Disposition: AttachmentDispositionIn,
+		FileName:    "logo",
+	}
+}
+
 func WorkspaceLogoTooSmall(width, height int) bool {
 	return width < WorkspaceLogoMinDimension || height < WorkspaceLogoMinDimension
 }

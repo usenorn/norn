@@ -324,6 +324,11 @@ func invitationPreviewDTO(preview service.InvitationPreview) api.InvitationPrevi
 		SsoEnforced:   preview.SSOEnforced,
 	}
 
+	if preview.LogoURL != "" {
+		logoURL := preview.LogoURL
+		dto.Workspace.LogoUrl = &logoURL
+	}
+
 	if preview.InvitedBy != nil {
 		dto.InvitedBy = &api.InvitationInviter{
 			Name:  preview.InvitedBy.DisplayName,
