@@ -2,6 +2,7 @@ package entity_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -316,5 +317,141 @@ func TestATeamWithNoActiveOrCompletionStateSeedsNoRuleItCannotHonour(t *testing.
 
 	if len(rules) != 0 {
 		t.Fatalf("seeded %v, want nothing: there is no state for a change to send an issue to", rules)
+	}
+}
+
+func TestAnIssueIsCompleteOnlyOnceEveryChangeResolvingItHasSettledWithAMerge(t *testing.T) {
+	merged := entity.CodeLink{
+		ID:        uuid.New(),
+		Kind:      entity.CodeLinkChange,
+		State:     entity.CodeChangeMerged,
+		Resolving: true,
+	}
+
+	closed := entity.CodeLink{
+		ID:        uuid.New(),
+		Kind:      entity.CodeLinkChange,
+		State:     entity.CodeChangeClosed,
+		Resolving: true,
+	}
+
+	unsettled := func(state entity.CodeChangeState) entity.CodeLink {
+		return entity.CodeLink{
+			ID:        uuid.New(),
+			Kind:      entity.CodeLinkChange,
+			State:     state,
+			Resolving: true,
+		}
+	}
+
+	mentioning := unsettled(entity.CodeChangeOpen)
+	mentioning.Resolving = false
+
+	branch := unsettled(entity.CodeChangeOpen)
+	branch.Kind = entity.CodeLinkBranch
+
+	cases := []struct {
+		name     string
+		links    entity.CodeLinks
+		complete bool
+	}{
+		{name: "no changes at all", links: nil, complete: false},
+		{name: "a single merged change", links: entity.CodeLinks{merged}, complete: true},
+		{name: "a merge beside a change closed unmerged", links: entity.CodeLinks{closed, merged}, complete: true},
+		{name: "every change closed unmerged", links: entity.CodeLinks{closed, unsettled(entity.CodeChangeClosed)}, complete: false},
+		{name: "a merge beside a draft", links: entity.CodeLinks{merged, unsettled(entity.CodeChangeDraft)}, complete: false},
+		{name: "a merge beside an open change", links: entity.CodeLinks{merged, unsettled(entity.CodeChangeOpen)}, complete: false},
+		{name: "a merge beside a change in review", links: entity.CodeLinks{merged, unsettled(entity.CodeChangeReviewRequested)}, complete: false},
+		{name: "a merge beside an approved change", links: entity.CodeLinks{merged, unsettled(entity.CodeChangeApproved)}, complete: false},
+		{name: "a merge beside a reopened change", links: entity.CodeLinks{merged, unsettled(entity.CodeChangeReopened)}, complete: false},
+		{name: "a merge beside a conflicted change", links: entity.CodeLinks{merged, unsettled(entity.CodeChangeConflicted)}, complete: false},
+		{name: "a merge beside a change that only mentions the issue", links: entity.CodeLinks{mentioning, merged}, complete: true},
+		{name: "a merge beside an open branch", links: entity.CodeLinks{branch, merged}, complete: true},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if _, complete := testCase.links.Completion(); complete != testCase.complete {
+				t.Fatalf("Completion reported %v, want %v", complete, testCase.complete)
+			}
+		})
+	}
+}
+
+func TestEveryObserverOfACompletedIssueClaimsItUnderTheSameChange(t *testing.T) {
+	earlier := time.Date(2026, 9, 1, 10, 0, 0, 0, time.UTC)
+	later := earlier.Add(time.Hour)
+	latest := later.Add(time.Hour)
+
+	first := entity.CodeLink{
+		ID: uuid.New(), Kind: entity.CodeLinkChange, State: entity.CodeChangeMerged, Resolving: true, MergedAt: &earlier,
+	}
+	last := entity.CodeLink{
+		ID: uuid.New(), Kind: entity.CodeLinkChange, State: entity.CodeChangeMerged, Resolving: true, MergedAt: &later,
+	}
+	abandoned := entity.CodeLink{
+		ID: uuid.New(), Kind: entity.CodeLinkChange, State: entity.CodeChangeClosed, Resolving: true, ClosedAt: &earlier,
+	}
+	abandonedLast := entity.CodeLink{
+		ID: uuid.New(), Kind: entity.CodeLinkChange, State: entity.CodeChangeClosed, Resolving: true, ClosedAt: &latest,
+	}
+
+	cases := []struct {
+		name  string
+		links []entity.CodeLinks
+		want  uuid.UUID
+	}{
+		{
+			name: "the latest merge settled last",
+			links: []entity.CodeLinks{
+				{first, last, abandoned},
+				{abandoned, last, first},
+				{last, first, abandoned},
+			},
+			want: last.ID,
+		},
+		{
+			name: "a change closed unmerged settled last",
+			links: []entity.CodeLinks{
+				{first, abandonedLast},
+				{abandonedLast, first},
+			},
+			want: abandonedLast.ID,
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			for _, order := range testCase.links {
+				completion, complete := order.Completion()
+				if !complete {
+					t.Fatal("a merge among settled changes must complete the issue")
+				}
+
+				if completion.ID != testCase.want {
+					t.Fatalf(
+						"completion claimed under %s, want the change that settled last %s whatever "+
+							"order the links were read in",
+						completion.ID, testCase.want,
+					)
+				}
+			}
+		})
+	}
+
+	unstamped := first
+	unstamped.MergedAt = nil
+	twin := unstamped
+	twin.ID = uuid.New()
+
+	want := unstamped.ID
+	if twin.ID.String() < unstamped.ID.String() {
+		want = twin.ID
+	}
+
+	for _, order := range []entity.CodeLinks{{unstamped, twin}, {twin, unstamped}} {
+		if completion, _ := order.Completion(); completion.ID != want {
+			t.Fatalf("changes settled without a time claimed under %s, want the smallest id %s", completion.ID, want)
+		}
 	}
 }

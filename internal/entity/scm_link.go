@@ -228,6 +228,18 @@ func (l CodeLink) Disconnected() bool {
 	return l.RepositoryID == uuid.Nil
 }
 
+func (l CodeLink) ResolvingChange() bool {
+	return l.Kind == CodeLinkChange && l.Resolving
+}
+
+func (l CodeLink) SettledAt() *time.Time {
+	if l.State.Merged() {
+		return l.MergedAt
+	}
+
+	return l.ClosedAt
+}
+
 func (l CodeLink) Supersedes(observed *time.Time) bool {
 	if observed == nil {
 		return true
@@ -264,7 +276,7 @@ type SCMTransitionRule struct {
 type SCMTransitionRules []SCMTransitionRule
 
 func (rules SCMTransitionRules) For(link CodeLink) (SCMTransitionRule, bool) {
-	if link.Kind != CodeLinkChange || !link.Resolving {
+	if !link.ResolvingChange() {
 		return SCMTransitionRule{}, false
 	}
 
@@ -275,6 +287,63 @@ func (rules SCMTransitionRules) For(link CodeLink) (SCMTransitionRule, bool) {
 	}
 
 	return SCMTransitionRule{}, false
+}
+
+func (rules SCMTransitionRules) Triggered(trigger CodeChangeState) (SCMTransitionRule, bool) {
+	for _, rule := range rules {
+		if rule.Trigger == trigger {
+			return rule, true
+		}
+	}
+
+	return SCMTransitionRule{}, false
+}
+
+type CodeLinks []CodeLink
+
+func (links CodeLinks) Completion() (CodeLink, bool) {
+	var (
+		completion CodeLink
+		settled    bool
+		merged     bool
+	)
+
+	for _, link := range links {
+		if !link.ResolvingChange() {
+			continue
+		}
+
+		if !link.State.Settled() {
+			return CodeLink{}, false
+		}
+
+		merged = merged || link.State.Merged()
+
+		if !settled || settledLater(link, completion) {
+			completion, settled = link, true
+		}
+	}
+
+	if !merged {
+		return CodeLink{}, false
+	}
+
+	return completion, true
+}
+
+func settledLater(candidate, current CodeLink) bool {
+	candidateAt, currentAt := candidate.SettledAt(), current.SettledAt()
+
+	switch {
+	case candidateAt != nil && currentAt == nil:
+		return true
+	case candidateAt == nil && currentAt != nil:
+		return false
+	case candidateAt != nil && !candidateAt.Equal(*currentAt):
+		return candidateAt.After(*currentAt)
+	default:
+		return slices.Compare(candidate.ID[:], current.ID[:]) < 0
+	}
 }
 
 func DefaultSCMTransitionRules(workspaceID, teamID uuid.UUID, states []WorkflowState) SCMTransitionRules {

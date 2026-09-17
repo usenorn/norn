@@ -3,6 +3,7 @@ package scm
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,11 +31,74 @@ func (s *sync) advance(
 		return err
 	}
 
-	rule, routed := rules.For(link)
+	if rule, routed := rules.For(link); routed && rule.Trigger != entity.CodeChangeMerged {
+		if err := s.transition(ctx, from, decision, tally, link, link.ID, issue, rule); err != nil {
+			return err
+		}
+	}
+
+	if !link.ResolvingChange() || !link.State.Settled() {
+		return nil
+	}
+
+	rule, routed := rules.Triggered(entity.CodeChangeMerged)
 	if !routed {
 		return nil
 	}
 
+	return s.complete(ctx, from, decision, tally, link, issue, rule)
+}
+
+func (s *sync) complete(
+	ctx context.Context,
+	from source,
+	decision entity.Decision,
+	tally *deliveryTally,
+	link entity.CodeLink,
+	issue entity.Issue,
+	rule entity.SCMTransitionRule,
+) error {
+	links, err := s.links.ListByIssue(ctx, from.workspaceID(), issue.ID)
+	if err != nil {
+		return err
+	}
+
+	completion, complete := entity.CodeLinks(links).Completion()
+	if !complete {
+		logging.From(ctx).InfoContext(
+			ctx,
+			"a settled change is waiting for the other changes on its issue before it advances it",
+			"issue_id", issue.ID.String(),
+			"link_id", link.ID.String(),
+		)
+
+		return nil
+	}
+
+	deferred, err := s.links.ListDeferredTransitions(ctx, issue.ID)
+	if err != nil {
+		return err
+	}
+
+	if slices.ContainsFunc(deferred, func(pending entity.CodeTransition) bool {
+		return pending.Transition == entity.CodeChangeMerged
+	}) {
+		return s.Resume(ctx, from.workspaceID(), issue.ID)
+	}
+
+	return s.transition(ctx, from, decision, tally, link, completion.ID, issue, rule)
+}
+
+func (s *sync) transition(
+	ctx context.Context,
+	from source,
+	decision entity.Decision,
+	tally *deliveryTally,
+	link entity.CodeLink,
+	claimID uuid.UUID,
+	issue entity.Issue,
+	rule entity.SCMTransitionRule,
+) error {
 	states, err := s.states.ListByTeamID(ctx, issue.TeamID)
 	if err != nil {
 		return err
@@ -60,12 +124,16 @@ func (s *sync) advance(
 
 	now := time.Now().UTC()
 
-	claimed, err := s.links.ClaimTransition(ctx, link.ID, link.State, issue.ID, target.ID, now)
+	claimed, err := s.links.ClaimTransition(ctx, claimID, rule.Trigger, issue.ID, target.ID, now)
 	if err != nil {
 		return err
 	}
 
 	if !claimed {
+		if rule.Trigger == entity.CodeChangeMerged {
+			return s.Resume(ctx, from.workspaceID(), issue.ID)
+		}
+
 		return nil
 	}
 
@@ -75,7 +143,7 @@ func (s *sync) advance(
 	}
 
 	if blocked != "" {
-		return s.links.DeferTransition(ctx, link.ID, link.State, blocked, now)
+		return s.links.DeferTransition(ctx, claimID, rule.Trigger, blocked, now)
 	}
 
 	tally.advanced++
@@ -148,6 +216,10 @@ func (s *sync) moveIssue(
 				entity.TeamScope{WorkspaceID: issue.WorkspaceID, AllTeams: true, IncludePrivate: true},
 			)
 			if readErr != nil {
+				return "", nil
+			}
+
+			if refreshed.State.ID == stateID {
 				return "", nil
 			}
 
