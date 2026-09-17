@@ -294,6 +294,9 @@ func (h *advanceHarness) mergedChange(t *testing.T) mergedChange {
 		{ID: doneID, Name: "Done", IsCompletion: true},
 	}, nil)
 
+	h.links.EXPECT().ListByIssue(gomock.Any(), workspaceID, issueID).Return([]entity.CodeLink{link}, nil)
+	h.links.EXPECT().ListDeferredTransitions(gomock.Any(), issueID).Return(nil, nil)
+
 	h.links.EXPECT().
 		ClaimTransition(gomock.Any(), linkID, entity.CodeChangeMerged, issueID, doneID, gomock.Any()).
 		Return(true, nil)

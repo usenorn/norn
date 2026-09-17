@@ -33,6 +33,8 @@ func (s *sync) Resume(ctx context.Context, workspaceID, issueID uuid.UUID) error
 		return err
 	}
 
+	_, complete := entity.CodeLinks(links).Completion()
+
 	for _, pending := range deferred {
 		if pending.StateID == uuid.Nil {
 			continue
@@ -43,6 +45,10 @@ func (s *sync) Resume(ctx context.Context, workspaceID, issueID uuid.UUID) error
 				return err
 			}
 
+			continue
+		}
+
+		if pending.Transition == entity.CodeChangeMerged && !complete {
 			continue
 		}
 
