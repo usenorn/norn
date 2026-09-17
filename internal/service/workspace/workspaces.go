@@ -33,6 +33,7 @@ type workspacesService struct {
 	authorizer   service.Authorizer
 	transactor   repository.Transactor
 	workspaceCfg config.Workspace
+	attachments  config.Attachments
 	audit        service.Audit
 	events       service.Events
 	emitter      service.WebhookEmitter
@@ -57,6 +58,7 @@ func New(
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
 	workspaceCfg config.Workspace,
+	attachments config.Attachments,
 	audit service.Audit,
 	events service.Events,
 	emitter service.WebhookEmitter,
@@ -80,6 +82,7 @@ func New(
 		authorizer:   authorizer,
 		transactor:   transactor,
 		workspaceCfg: workspaceCfg,
+		attachments:  attachments,
 		audit:        audit,
 		events:       events,
 		emitter:      emitter,
@@ -120,8 +123,14 @@ func (s *workspacesService) Create(ctx context.Context, input service.CreateWork
 
 	var workspace entity.Workspace
 
+	workspaceID := uuid.New()
+
 	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		created, err := s.workspaces.Create(ctx, entity.Workspace{Slug: input.Slug, Name: input.Name})
+		if err := s.workspaces.ReserveSlug(ctx, input.Slug, workspaceID, time.Now().UTC()); err != nil {
+			return err
+		}
+
+		created, err := s.workspaces.Create(ctx, entity.Workspace{ID: workspaceID, Slug: input.Slug, Name: input.Name})
 		if err != nil {
 			return err
 		}
@@ -191,7 +200,13 @@ func (s *workspacesService) seedFirstTeam(
 		return entity.Workspace{}, err
 	}
 
-	return s.workspaces.UpdateSettings(ctx, workspace.ID, workspace.Name, workspace.Timezone, &team.ID)
+	return s.workspaces.UpdateSettings(ctx, workspace.ID, repository.WorkspaceSettings{
+		Slug:          workspace.Slug,
+		Name:          workspace.Name,
+		Timezone:      workspace.Timezone,
+		WeekStartsOn:  workspace.WeekStartsOn,
+		DefaultTeamID: &team.ID,
+	})
 }
 
 func (s *workspacesService) Get(ctx context.Context, workspaceID uuid.UUID) (entity.Workspace, error) {
@@ -211,24 +226,42 @@ func (s *workspacesService) Update(ctx context.Context, workspaceID uuid.UUID, i
 
 	current := decision.Workspace
 
-	name := current.Name
-	if input.Name != nil {
-		name = *input.Name
+	settings := repository.WorkspaceSettings{
+		Slug:          current.Slug,
+		Name:          current.Name,
+		Timezone:      current.Timezone,
+		WeekStartsOn:  current.WeekStartsOn,
+		DefaultTeamID: current.DefaultTeamID,
 	}
 
-	timezone := current.Timezone
+	if input.Slug != nil {
+		settings.Slug = *input.Slug
+	}
+
+	if input.Name != nil {
+		settings.Name = *input.Name
+	}
+
 	if input.Timezone != nil {
-		timezone = *input.Timezone
+		settings.Timezone = *input.Timezone
+	}
+
+	if input.WeekStartsOn != nil {
+		settings.WeekStartsOn = *input.WeekStartsOn
 	}
 
 	if err := entity.NewValidationError(
-		entity.ValidateWorkspaceName("name", name),
-		entity.ValidateTimezone("timezone", timezone),
+		entity.ValidateWorkspaceSlug("slug", settings.Slug),
+		entity.ValidateWorkspaceName("name", settings.Name),
+		entity.ValidateTimezone("timezone", settings.Timezone),
+		entity.ValidateWeekStart("weekStartsOn", settings.WeekStartsOn),
 	); err != nil {
 		return entity.Workspace{}, err
 	}
 
-	defaultTeamID := current.DefaultTeamID
+	if settings.Slug != current.Slug && entity.WorkspaceSlugReserved(settings.Slug) {
+		return entity.Workspace{}, entity.ErrWorkspaceSlugTaken
+	}
 
 	if input.DefaultTeamID != nil {
 		assignable, err := s.assignableTeam(ctx, workspaceID, *input.DefaultTeamID)
@@ -236,10 +269,27 @@ func (s *workspacesService) Update(ctx context.Context, workspaceID uuid.UUID, i
 			return entity.Workspace{}, err
 		}
 
-		defaultTeamID = &assignable
+		settings.DefaultTeamID = &assignable
 	}
 
-	updated, err := s.workspaces.UpdateSettings(ctx, workspaceID, name, timezone, defaultTeamID)
+	var updated entity.Workspace
+
+	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if settings.Slug != current.Slug {
+			if err := s.moveSlug(ctx, workspaceID, settings.Slug); err != nil {
+				return err
+			}
+		}
+
+		saved, err := s.workspaces.UpdateSettings(ctx, workspaceID, settings)
+		if err != nil {
+			return err
+		}
+
+		updated = saved
+
+		return nil
+	})
 	if err != nil {
 		return entity.Workspace{}, err
 	}
@@ -253,6 +303,54 @@ func (s *workspacesService) Update(ctx context.Context, workspaceID uuid.UUID, i
 	})
 
 	return updated, nil
+}
+
+func (s *workspacesService) moveSlug(ctx context.Context, workspaceID uuid.UUID, slug string) error {
+	if err := s.workspaces.LockByIDs(ctx, []uuid.UUID{workspaceID}); err != nil {
+		return err
+	}
+
+	locked, err := s.workspaces.GetByID(ctx, workspaceID)
+	if err != nil {
+		return err
+	}
+
+	if locked.Slug == slug {
+		return nil
+	}
+
+	if _, err := s.connections.Protocol(ctx, workspaceID); err == nil {
+		return entity.ErrWorkspaceSlugPinned
+	} else if !errors.Is(err, entity.ErrSSOConnectionNotFound) {
+		return err
+	}
+
+	now := time.Now().UTC()
+
+	if err := s.workspaces.ReserveSlug(ctx, slug, workspaceID, now); err != nil {
+		return err
+	}
+
+	return s.workspaces.RecordSlugRedirect(ctx, locked.Slug, workspaceID, now.Add(entity.WorkspaceSlugRedirectTTL))
+}
+
+func (s *workspacesService) ResolveSlugRedirect(ctx context.Context, slug string) (entity.Workspace, error) {
+	workspaceID, err := s.workspaces.ResolveSlugRedirect(ctx, slug, time.Now().UTC())
+	if err != nil {
+		return entity.Workspace{}, err
+	}
+
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{Resource: entity.ResourceWorkspace, Action: entity.ActionRead, WorkspaceID: workspaceID})
+	if err != nil {
+		var denied entity.AccessDeniedError
+		if errors.As(err, &denied) {
+			return entity.Workspace{}, entity.ErrWorkspaceNotFound
+		}
+
+		return entity.Workspace{}, err
+	}
+
+	return decision.Workspace, nil
 }
 
 func (s *workspacesService) assignableTeam(ctx context.Context, workspaceID, teamID uuid.UUID) (uuid.UUID, error) {
@@ -376,6 +474,10 @@ func (s *workspacesService) Purge(ctx context.Context, workspaceID uuid.UUID) er
 		}
 
 		if err := s.blobs.RemoveAll(ctx, entity.ExecutionBlobPrefix(workspaceID)); err != nil {
+			return err
+		}
+
+		if err := s.blobs.RemoveAll(ctx, entity.WorkspaceLogoPrefix(workspaceID)); err != nil {
 			return err
 		}
 

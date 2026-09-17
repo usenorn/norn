@@ -10,6 +10,7 @@ import (
 
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -25,11 +26,13 @@ type invitationsService struct {
 	authPolicies repository.WorkspaceAuthPolicy
 	producer     repository.JobProducer
 	mailer       repository.Mailer
+	blobs        repository.Blob
 	transactor   repository.Transactor
 	authorizer   service.Authorizer
 	registration service.Accounts
 	sessions     service.Sessions
 	app          config.App
+	attachments  config.Attachments
 	audit        service.Audit
 }
 
@@ -43,11 +46,13 @@ func New(
 	authPolicies repository.WorkspaceAuthPolicy,
 	producer repository.JobProducer,
 	mailer repository.Mailer,
+	blobs repository.Blob,
 	transactor repository.Transactor,
 	authorizer service.Authorizer,
 	registration service.Accounts,
 	sessions service.Sessions,
 	app config.App,
+	attachments config.Attachments,
 	audit service.Audit,
 ) service.Invitations {
 	return &invitationsService{
@@ -60,11 +65,13 @@ func New(
 		authPolicies: authPolicies,
 		producer:     producer,
 		mailer:       mailer,
+		blobs:        blobs,
 		transactor:   transactor,
 		authorizer:   authorizer,
 		registration: registration,
 		sessions:     sessions,
 		app:          app,
+		attachments:  attachments,
 		audit:        audit,
 	}
 }
@@ -344,6 +351,7 @@ func (s *invitationsService) Preview(ctx context.Context, token string) (service
 
 	return service.InvitationPreview{
 		Workspace:     workspace,
+		LogoURL:       s.logoLink(ctx, workspace),
 		Email:         invitation.Email,
 		Role:          invitation.Role,
 		InvitedBy:     s.inviter(ctx, invitation.InvitedByAccountID),
@@ -353,6 +361,27 @@ func (s *invitationsService) Preview(ctx context.Context, token string) (service
 		AccountExists: accountExists,
 		SSOEnforced:   policy.Enforcement == entity.AuthEnforcementSSO,
 	}, nil
+}
+
+func (s *invitationsService) logoLink(ctx context.Context, workspace entity.Workspace) string {
+	if workspace.LogoObjectKey == "" {
+		return ""
+	}
+
+	link, err := s.blobs.PresignGet(
+		ctx,
+		workspace.LogoObjectKey,
+		entity.WorkspaceLogoServeSpec(workspace.LogoObjectKey),
+		s.attachments.LinkTTL,
+	)
+	if err != nil {
+		logging.From(ctx).WarnContext(ctx, "presigning workspace logo for invitation failed",
+			"workspace_id", workspace.ID.String(), "error", err.Error())
+
+		return ""
+	}
+
+	return link
 }
 
 func (s *invitationsService) inviter(

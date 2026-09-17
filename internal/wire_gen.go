@@ -347,11 +347,11 @@ func InitApp(cfgFile string) (*App, func(), error) {
 		return nil, nil, err
 	}
 	serviceLicensing := licensing.New(entityLicence, configLicence)
-	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, postgresClient, configWorkspace, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, postgresClient, configWorkspace, attachments, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
 	notificationEvent := notificationevent.New(postgresClient)
 	teams := team2.New(repositoryTeam, teamMember, repositoryWorkspace, repositoryMembership, repositoryAccount, workspaceAuthPolicy, workflowState, scmTransitionRule, notificationEvent, serviceAuthorizer, postgresClient, serviceAudit, serviceEvents, webhookEmitter)
 	repositoryInvitation := invitation.New(postgresClient)
-	invitations := invitation2.New(repositoryInvitation, repositoryMembership, repositoryWorkspace, repositoryAccount, repositoryTeam, teamMember, workspaceAuthPolicy, jobProducer, repositoryMailer, postgresClient, serviceAuthorizer, accounts, sessions, app, serviceAudit)
+	invitations := invitation2.New(repositoryInvitation, repositoryMembership, repositoryWorkspace, repositoryAccount, repositoryTeam, teamMember, workspaceAuthPolicy, jobProducer, repositoryMailer, repositoryBlob, postgresClient, serviceAuthorizer, accounts, sessions, app, attachments, serviceAudit)
 	repositoryIssue := issue.New(postgresClient)
 	issueRevision := issuerevision.New(postgresClient)
 	issueTemplate := issuetemplate.New(postgresClient)
@@ -669,7 +669,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	passwordResetSSONoticeHandler := job.NewPasswordResetSSONoticeHandler(accounts)
 	repositoryInvitation := invitation.New(client)
 	teamMember := teammember.New(client)
-	invitations := invitation2.New(repositoryInvitation, repositoryMembership, repositoryWorkspace, repositoryAccount, repositoryTeam, teamMember, workspaceAuthPolicy, jobProducer, repositoryMailer, client, serviceAuthorizer, accounts, sessions, app, serviceAudit)
+	invitations := invitation2.New(repositoryInvitation, repositoryMembership, repositoryWorkspace, repositoryAccount, repositoryTeam, teamMember, workspaceAuthPolicy, jobProducer, repositoryMailer, repositoryBlob, client, serviceAuthorizer, accounts, sessions, app, attachments, serviceAudit)
 	invitationHandler := job.NewInvitationHandler(invitations)
 	workflowState := workflowstate.New(client)
 	scmTransitionRule := scm.NewSCMTransitionRule(client)
@@ -718,7 +718,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 		return nil, nil, err
 	}
 	serviceLicensing := licensing.New(entityLicence, configLicence)
-	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, client, configWorkspace, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
+	workspaces := workspace2.New(repositoryWorkspace, repositoryMembership, repositoryAccount, repositoryTeam, teamMember, workflowState, scmTransitionRule, workspaceAuthPolicy, ssoConnection, ssoIdentity, breakGlass, signInThrottle, jobProducer, repositoryBlob, serviceAuthorizer, client, configWorkspace, attachments, serviceAudit, serviceEvents, webhookEmitter, serviceLicensing)
 	workspacePurgeHandler := job.NewWorkspacePurgeHandler(workspaces)
 	repositoryIssue := issue.New(client)
 	issueRevision := issuerevision.New(client)

@@ -631,6 +631,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrBulkActionNotFound),
 		errors.Is(err, entity.ErrWorkflowStateNotFound),
 		errors.Is(err, entity.ErrAvatarMissing),
+		errors.Is(err, entity.ErrWorkspaceLogoMissing),
 		errors.Is(err, entity.ErrSSOConnectionNotFound),
 		errors.Is(err, entity.ErrSSOStateNotFound),
 		errors.Is(err, entity.ErrSSOIdentityNotFound),
@@ -764,11 +765,16 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrEmailChangeSameAddress):
 		return newProblem(http.StatusBadRequest, err.Error()), true
 
-	case errors.Is(err, entity.ErrAvatarTooLarge):
+	case errors.Is(err, entity.ErrAvatarTooLarge),
+		errors.Is(err, entity.ErrWorkspaceLogoTooLarge):
 		return newProblem(http.StatusRequestEntityTooLarge, err.Error()), true
 
-	case errors.Is(err, entity.ErrAvatarUnsupportedType):
+	case errors.Is(err, entity.ErrAvatarUnsupportedType),
+		errors.Is(err, entity.ErrWorkspaceLogoUnsupportedType):
 		return newProblem(http.StatusUnsupportedMediaType, err.Error()), true
+
+	case errors.Is(err, entity.ErrWorkspaceLogoTooSmall):
+		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
 	case errors.Is(err, entity.ErrSignInRateLimited):
 		base := baseProblem(http.StatusTooManyRequests, err.Error())
@@ -1989,6 +1995,22 @@ func (r problemResponse) VisitConfirmEmailChangeResponse(w http.ResponseWriter) 
 func (r problemResponse) VisitUploadAvatarResponse(w http.ResponseWriter) error { return r.write(w) }
 
 func (r problemResponse) VisitRemoveAvatarResponse(w http.ResponseWriter) error { return r.write(w) }
+
+func (r problemResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDownloadWorkspaceLogoResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitResolveWorkspaceAddressResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
 
 func (r problemResponse) VisitListWorkspacesResponse(w http.ResponseWriter) error { return r.write(w) }
 

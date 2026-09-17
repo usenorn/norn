@@ -4425,6 +4425,24 @@ func (e WebhookSigningUnavailableProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for WeekDay.
+const (
+	Monday WeekDay = "monday"
+	Sunday WeekDay = "sunday"
+)
+
+// Valid indicates whether the value is a known member of the WeekDay enum.
+func (e WeekDay) Valid() bool {
+	switch e {
+	case Monday:
+		return true
+	case Sunday:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for WorkflowStateConflictProblemCode.
 const (
 	StateIsCompletion   WorkflowStateConflictProblemCode = "state_is_completion"
@@ -6675,8 +6693,10 @@ type InvitationUnusableProblemCode string
 
 // InvitationWorkspace defines model for InvitationWorkspace.
 type InvitationWorkspace struct {
-	Name string `json:"name"`
-	Slug string `json:"slug"`
+	// LogoUrl A short-lived link to the workspace logo, issued only for a usable invitation token.
+	LogoUrl *string `json:"logoUrl,omitempty"`
+	Name    string  `json:"name"`
+	Slug    string  `json:"slug"`
 }
 
 // Issue defines model for Issue.
@@ -8782,7 +8802,9 @@ type UpdateWorkflowStateRequest struct {
 type UpdateWorkspaceRequest struct {
 	DefaultTeamId *openapi_types.UUID `json:"defaultTeamId,omitempty"`
 	Name          *string             `json:"name,omitempty"`
+	Slug          *string             `json:"slug,omitempty"`
 	Timezone      *string             `json:"timezone,omitempty"`
+	WeekStartsOn  *WeekDay            `json:"weekStartsOn,omitempty"`
 }
 
 // UploadExecutionLogsRequest defines model for UploadExecutionLogsRequest.
@@ -8912,6 +8934,9 @@ type WebhookSigningUnavailableProblem struct {
 // WebhookSigningUnavailableProblemCode defines model for WebhookSigningUnavailableProblem.Code.
 type WebhookSigningUnavailableProblemCode string
 
+// WeekDay defines model for WeekDay.
+type WeekDay string
+
 // WorkflowState defines model for WorkflowState.
 type WorkflowState struct {
 	Category     StateCategory      `json:"category"`
@@ -8943,11 +8968,13 @@ type Workspace struct {
 	DefaultTeamId       *openapi_types.UUID `json:"defaultTeamId,omitempty"`
 	DeletionRequestedAt *time.Time          `json:"deletionRequestedAt,omitempty"`
 	Id                  openapi_types.UUID  `json:"id"`
+	LogoUrl             *string             `json:"logoUrl,omitempty"`
 	Name                string              `json:"name"`
 	PurgeAfter          *time.Time          `json:"purgeAfter,omitempty"`
 	Slug                string              `json:"slug"`
 	Status              WorkspaceStatus     `json:"status"`
 	Timezone            string              `json:"timezone"`
+	WeekStartsOn        WeekDay             `json:"weekStartsOn"`
 }
 
 // WorkspaceAPIToken defines model for WorkspaceAPIToken.
@@ -9572,6 +9599,11 @@ type RemoveWorkspaceLabelParams struct {
 	AcknowledgedIssues int32 `form:"acknowledgedIssues" json:"acknowledgedIssues"`
 }
 
+// UploadWorkspaceLogoMultipartBody defines parameters for UploadWorkspaceLogo.
+type UploadWorkspaceLogoMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
 // ListWorkspaceMembersParams defines parameters for ListWorkspaceMembers.
 type ListWorkspaceMembersParams struct {
 	Query  *string `form:"query,omitempty" json:"query,omitempty"`
@@ -9886,6 +9918,9 @@ type UpdateWorkspaceLabelJSONRequestBody = UpdateLabelRequest
 
 // MergeWorkspaceLabelJSONRequestBody defines body for MergeWorkspaceLabel for application/json ContentType.
 type MergeWorkspaceLabelJSONRequestBody = MergeLabelRequest
+
+// UploadWorkspaceLogoMultipartRequestBody defines body for UploadWorkspaceLogo for multipart/form-data ContentType.
+type UploadWorkspaceLogoMultipartRequestBody UploadWorkspaceLogoMultipartBody
 
 // AddWorkspaceMemberJSONRequestBody defines body for AddWorkspaceMember for application/json ContentType.
 type AddWorkspaceMemberJSONRequestBody = AddMemberRequest
@@ -10626,6 +10661,11 @@ type ClientInterface interface {
 	// Corresponds with DELETE /tokens/{tokenId} (the `RevokeAPIToken` operationId).
 	RevokeAPIToken(ctx context.Context, tokenId TokenId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ResolveWorkspaceAddress Find the workspace a former address still points to, for a member of it
+	//
+	// Corresponds with GET /workspace-addresses/{slug} (the `ResolveWorkspaceAddress` operationId).
+	ResolveWorkspaceAddress(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListWorkspaces List the workspaces the signed-in account belongs to
 	//
 	// Corresponds with GET /workspaces (the `ListWorkspaces` operationId).
@@ -10655,14 +10695,14 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId} (the `GetWorkspace` operationId).
 	GetWorkspace(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpdateWorkspaceWithBody Change the workspace display name and timezone
+	// UpdateWorkspaceWithBody Change the workspace name, address, timezone, week start and default team
 	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with PATCH /workspaces/{workspaceId} (the `UpdateWorkspace` operationId).
 	UpdateWorkspaceWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UpdateWorkspace Change the workspace display name and timezone
+	// UpdateWorkspace Change the workspace name, address, timezone, week start and default team
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -11838,6 +11878,23 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/labels/{labelId}/usage (the `GetWorkspaceLabelUsage` operationId).
 	GetWorkspaceLabelUsage(ctx context.Context, workspaceId WorkspaceId, labelId LabelId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveWorkspaceLogo Remove the workspace logo
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/logo (the `RemoveWorkspaceLogo` operationId).
+	RemoveWorkspaceLogo(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadWorkspaceLogo Trade a session for a short-lived link to the workspace logo
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/logo (the `DownloadWorkspaceLogo` operationId).
+	DownloadWorkspaceLogo(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UploadWorkspaceLogoWithBody Replace the workspace logo
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/logo (the `UploadWorkspaceLogo` operationId).
+	UploadWorkspaceLogoWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	//
@@ -14072,6 +14129,21 @@ func (c *Client) RevokeAPIToken(ctx context.Context, tokenId TokenId, reqEditors
 	return c.Client.Do(req)
 }
 
+// ResolveWorkspaceAddress Find the workspace a former address still points to, for a member of it
+//
+// Corresponds with GET /workspace-addresses/{slug} (the `ResolveWorkspaceAddress` operationId).
+func (c *Client) ResolveWorkspaceAddress(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResolveWorkspaceAddressRequest(c.Server, slug)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaces List the workspaces the signed-in account belongs to
 //
 // Corresponds with GET /workspaces (the `ListWorkspaces` operationId).
@@ -14151,7 +14223,7 @@ func (c *Client) GetWorkspace(ctx context.Context, workspaceId WorkspaceId, reqE
 	return c.Client.Do(req)
 }
 
-// UpdateWorkspaceWithBody Change the workspace display name and timezone
+// UpdateWorkspaceWithBody Change the workspace name, address, timezone, week start and default team
 //
 // Takes any type of body and a specified content type.
 //
@@ -14168,7 +14240,7 @@ func (c *Client) UpdateWorkspaceWithBody(ctx context.Context, workspaceId Worksp
 	return c.Client.Do(req)
 }
 
-// UpdateWorkspace Change the workspace display name and timezone
+// UpdateWorkspace Change the workspace name, address, timezone, week start and default team
 //
 // Takes a body of the `application/json` content type.
 //
@@ -17205,6 +17277,53 @@ func (c *Client) MergeWorkspaceLabel(ctx context.Context, workspaceId WorkspaceI
 // Corresponds with GET /workspaces/{workspaceId}/labels/{labelId}/usage (the `GetWorkspaceLabelUsage` operationId).
 func (c *Client) GetWorkspaceLabelUsage(ctx context.Context, workspaceId WorkspaceId, labelId LabelId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetWorkspaceLabelUsageRequest(c.Server, workspaceId, labelId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveWorkspaceLogo Remove the workspace logo
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/logo (the `RemoveWorkspaceLogo` operationId).
+func (c *Client) RemoveWorkspaceLogo(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveWorkspaceLogoRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DownloadWorkspaceLogo Trade a session for a short-lived link to the workspace logo
+//
+// Corresponds with GET /workspaces/{workspaceId}/logo (the `DownloadWorkspaceLogo` operationId).
+func (c *Client) DownloadWorkspaceLogo(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadWorkspaceLogoRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UploadWorkspaceLogoWithBody Replace the workspace logo
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/logo (the `UploadWorkspaceLogo` operationId).
+func (c *Client) UploadWorkspaceLogoWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadWorkspaceLogoRequestWithBody(c.Server, workspaceId, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -21828,6 +21947,40 @@ func NewRevokeAPITokenRequest(server string, tokenId TokenId) (*http.Request, er
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewResolveWorkspaceAddressRequest constructs an http.Request for the ResolveWorkspaceAddress method
+func NewResolveWorkspaceAddressRequest(server string, slug string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "slug", slug, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspace-addresses/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -29077,6 +29230,110 @@ func NewGetWorkspaceLabelUsageRequest(server string, workspaceId WorkspaceId, la
 	return req, nil
 }
 
+// NewRemoveWorkspaceLogoRequest constructs an http.Request for the RemoveWorkspaceLogo method
+func NewRemoveWorkspaceLogoRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/logo", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDownloadWorkspaceLogoRequest constructs an http.Request for the DownloadWorkspaceLogo method
+func NewDownloadWorkspaceLogoRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/logo", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUploadWorkspaceLogoRequestWithBody constructs an http.Request for the UploadWorkspaceLogo method, with any body, and a specified content type
+func NewUploadWorkspaceLogoRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/logo", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListWorkspaceMembersRequest constructs an http.Request for the ListWorkspaceMembers method
 func NewListWorkspaceMembersRequest(server string, workspaceId WorkspaceId, params *ListWorkspaceMembersParams) (*http.Request, error) {
 	var err error
@@ -35856,6 +36113,13 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /tokens/{tokenId} (the `RevokeAPIToken` operationId).
 	RevokeAPITokenWithResponse(ctx context.Context, tokenId TokenId, reqEditors ...RequestEditorFn) (*RevokeAPITokenResponse, error)
 
+	// ResolveWorkspaceAddressWithResponse Find the workspace a former address still points to, for a member of it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspace-addresses/{slug} (the `ResolveWorkspaceAddress` operationId).
+	ResolveWorkspaceAddressWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*ResolveWorkspaceAddressResponse, error)
+
 	// ListWorkspacesWithResponse List the workspaces the signed-in account belongs to
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -35891,14 +36155,14 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId} (the `GetWorkspace` operationId).
 	GetWorkspaceWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceResponse, error)
 
-	// UpdateWorkspaceWithBodyWithResponse Change the workspace display name and timezone
+	// UpdateWorkspaceWithBodyWithResponse Change the workspace name, address, timezone, week start and default team
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with PATCH /workspaces/{workspaceId} (the `UpdateWorkspace` operationId).
 	UpdateWorkspaceWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWorkspaceResponse, error)
 
-	// UpdateWorkspaceWithResponse Change the workspace display name and timezone
+	// UpdateWorkspaceWithResponse Change the workspace name, address, timezone, week start and default team
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -37268,6 +37532,27 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/labels/{labelId}/usage (the `GetWorkspaceLabelUsage` operationId).
 	GetWorkspaceLabelUsageWithResponse(ctx context.Context, workspaceId WorkspaceId, labelId LabelId, reqEditors ...RequestEditorFn) (*GetWorkspaceLabelUsageResponse, error)
+
+	// RemoveWorkspaceLogoWithResponse Remove the workspace logo
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/logo (the `RemoveWorkspaceLogo` operationId).
+	RemoveWorkspaceLogoWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RemoveWorkspaceLogoResponse, error)
+
+	// DownloadWorkspaceLogoWithResponse Trade a session for a short-lived link to the workspace logo
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/logo (the `DownloadWorkspaceLogo` operationId).
+	DownloadWorkspaceLogoWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*DownloadWorkspaceLogoResponse, error)
+
+	// UploadWorkspaceLogoWithBodyWithResponse Replace the workspace logo
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/logo (the `UploadWorkspaceLogo` operationId).
+	UploadWorkspaceLogoWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadWorkspaceLogoResponse, error)
 
 	// ListWorkspaceMembersWithResponse List workspace members, searchable and paged by cursor
 	//
@@ -41758,6 +42043,68 @@ func (r RevokeAPITokenResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RevokeAPITokenResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ResolveWorkspaceAddressResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Workspace
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ResolveWorkspaceAddressResponse) GetJSON200() *Workspace {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ResolveWorkspaceAddressResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ResolveWorkspaceAddressResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ResolveWorkspaceAddressResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ResolveWorkspaceAddressResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ResolveWorkspaceAddressResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResolveWorkspaceAddressResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResolveWorkspaceAddressResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -52518,6 +52865,256 @@ func (r GetWorkspaceLabelUsageResponse) ContentType() string {
 	return ""
 }
 
+type RemoveWorkspaceLogoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Workspace
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *WorkspaceDeleted
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RemoveWorkspaceLogoResponse) GetJSON200() *Workspace {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RemoveWorkspaceLogoResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RemoveWorkspaceLogoResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RemoveWorkspaceLogoResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r RemoveWorkspaceLogoResponse) GetApplicationproblemJSON409() *WorkspaceDeleted {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RemoveWorkspaceLogoResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveWorkspaceLogoResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveWorkspaceLogoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveWorkspaceLogoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveWorkspaceLogoResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DownloadWorkspaceLogoResponse303Headers the declared response headers of an HTTP 303 response for DownloadWorkspaceLogo
+type DownloadWorkspaceLogoResponse303Headers struct {
+	CacheControl *string
+	Location     *string
+}
+
+type DownloadWorkspaceLogoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// Headers303 the parsed response headers for an HTTP 303 response
+	Headers303 *DownloadWorkspaceLogoResponse303Headers
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DownloadWorkspaceLogoResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DownloadWorkspaceLogoResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DownloadWorkspaceLogoResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DownloadWorkspaceLogoResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DownloadWorkspaceLogoResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadWorkspaceLogoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadWorkspaceLogoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DownloadWorkspaceLogoResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UploadWorkspaceLogoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Workspace
+	// ApplicationproblemJSON400 the response for an HTTP 400 `application/problem+json` response
+	ApplicationproblemJSON400 *Problem
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *WorkspaceDeleted
+	// ApplicationproblemJSON413 the response for an HTTP 413 `application/problem+json` response
+	ApplicationproblemJSON413 *Problem
+	// ApplicationproblemJSON415 the response for an HTTP 415 `application/problem+json` response
+	ApplicationproblemJSON415 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UploadWorkspaceLogoResponse) GetJSON200() *Workspace {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON400 returns the response for an HTTP 400 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON400() *Problem {
+	return r.ApplicationproblemJSON400
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON409() *WorkspaceDeleted {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON413 returns the response for an HTTP 413 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON413() *Problem {
+	return r.ApplicationproblemJSON413
+}
+
+// GetApplicationproblemJSON415 returns the response for an HTTP 415 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON415() *Problem {
+	return r.ApplicationproblemJSON415
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r UploadWorkspaceLogoResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r UploadWorkspaceLogoResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UploadWorkspaceLogoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UploadWorkspaceLogoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UploadWorkspaceLogoResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceMembersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -62867,6 +63464,19 @@ func (c *ClientWithResponses) RevokeAPITokenWithResponse(ctx context.Context, to
 	return ParseRevokeAPITokenResponse(rsp)
 }
 
+// ResolveWorkspaceAddressWithResponse Find the workspace a former address still points to, for a member of it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspace-addresses/{slug} (the `ResolveWorkspaceAddress` operationId).
+func (c *ClientWithResponses) ResolveWorkspaceAddressWithResponse(ctx context.Context, slug string, reqEditors ...RequestEditorFn) (*ResolveWorkspaceAddressResponse, error) {
+	rsp, err := c.ResolveWorkspaceAddress(ctx, slug, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResolveWorkspaceAddressResponse(rsp)
+}
+
 // ListWorkspacesWithResponse List the workspaces the signed-in account belongs to
 //
 // Returns a wrapper object for the known response body format(s).
@@ -62932,7 +63542,7 @@ func (c *ClientWithResponses) GetWorkspaceWithResponse(ctx context.Context, work
 	return ParseGetWorkspaceResponse(rsp)
 }
 
-// UpdateWorkspaceWithBodyWithResponse Change the workspace display name and timezone
+// UpdateWorkspaceWithBodyWithResponse Change the workspace name, address, timezone, week start and default team
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -62945,7 +63555,7 @@ func (c *ClientWithResponses) UpdateWorkspaceWithBodyWithResponse(ctx context.Co
 	return ParseUpdateWorkspaceResponse(rsp)
 }
 
-// UpdateWorkspaceWithResponse Change the workspace display name and timezone
+// UpdateWorkspaceWithResponse Change the workspace name, address, timezone, week start and default team
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -65436,6 +66046,45 @@ func (c *ClientWithResponses) GetWorkspaceLabelUsageWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseGetWorkspaceLabelUsageResponse(rsp)
+}
+
+// RemoveWorkspaceLogoWithResponse Remove the workspace logo
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/logo (the `RemoveWorkspaceLogo` operationId).
+func (c *ClientWithResponses) RemoveWorkspaceLogoWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RemoveWorkspaceLogoResponse, error) {
+	rsp, err := c.RemoveWorkspaceLogo(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveWorkspaceLogoResponse(rsp)
+}
+
+// DownloadWorkspaceLogoWithResponse Trade a session for a short-lived link to the workspace logo
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/logo (the `DownloadWorkspaceLogo` operationId).
+func (c *ClientWithResponses) DownloadWorkspaceLogoWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*DownloadWorkspaceLogoResponse, error) {
+	rsp, err := c.DownloadWorkspaceLogo(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadWorkspaceLogoResponse(rsp)
+}
+
+// UploadWorkspaceLogoWithBodyWithResponse Replace the workspace logo
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/logo (the `UploadWorkspaceLogo` operationId).
+func (c *ClientWithResponses) UploadWorkspaceLogoWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadWorkspaceLogoResponse, error) {
+	rsp, err := c.UploadWorkspaceLogoWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadWorkspaceLogoResponse(rsp)
 }
 
 // ListWorkspaceMembersWithResponse List workspace members, searchable and paged by cursor
@@ -70317,6 +70966,53 @@ func ParseRevokeAPITokenResponse(rsp *http.Response) (*RevokeAPITokenResponse, e
 			return nil, err
 		}
 		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResolveWorkspaceAddressResponse parses an HTTP response from a ResolveWorkspaceAddressWithResponse call
+func ParseResolveWorkspaceAddressResponse(rsp *http.Response) (*ResolveWorkspaceAddressResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResolveWorkspaceAddressResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Workspace
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Problem
@@ -78967,6 +79663,226 @@ func ParseGetWorkspaceLabelUsageResponse(rsp *http.Response) (*GetWorkspaceLabel
 	return response, nil
 }
 
+// ParseRemoveWorkspaceLogoResponse parses an HTTP response from a RemoveWorkspaceLogoWithResponse call
+func ParseRemoveWorkspaceLogoResponse(rsp *http.Response) (*RemoveWorkspaceLogoResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveWorkspaceLogoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Workspace
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest WorkspaceDeleted
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadWorkspaceLogoResponse parses an HTTP response from a DownloadWorkspaceLogoWithResponse call
+func ParseDownloadWorkspaceLogoResponse(rsp *http.Response) (*DownloadWorkspaceLogoResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadWorkspaceLogoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 303:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 303:
+		var headers DownloadWorkspaceLogoResponse303Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Location"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Location", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.Location = &value
+		}
+		response.Headers303 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUploadWorkspaceLogoResponse parses an HTTP response from a UploadWorkspaceLogoWithResponse call
+func ParseUploadWorkspaceLogoResponse(rsp *http.Response) (*UploadWorkspaceLogoResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadWorkspaceLogoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Workspace
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest WorkspaceDeleted
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 415:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON415 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceMembersResponse parses an HTTP response from a ListWorkspaceMembersWithResponse call
 func ParseListWorkspaceMembersResponse(rsp *http.Response) (*ListWorkspaceMembersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -86622,6 +87538,9 @@ type ServerInterface interface {
 	// RevokeAPIToken Revoke one of the caller's tokens
 	// (DELETE /tokens/{tokenId})
 	RevokeAPIToken(w http.ResponseWriter, r *http.Request, tokenId TokenId)
+	// ResolveWorkspaceAddress Find the workspace a former address still points to, for a member of it
+	// (GET /workspace-addresses/{slug})
+	ResolveWorkspaceAddress(w http.ResponseWriter, r *http.Request, slug string)
 	// ListWorkspaces List the workspaces the signed-in account belongs to
 	// (GET /workspaces)
 	ListWorkspaces(w http.ResponseWriter, r *http.Request)
@@ -86634,7 +87553,7 @@ type ServerInterface interface {
 	// GetWorkspace Read a workspace the signed-in account belongs to
 	// (GET /workspaces/{workspaceId})
 	GetWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// UpdateWorkspace Change the workspace display name and timezone
+	// UpdateWorkspace Change the workspace name, address, timezone, week start and default team
 	// (PATCH /workspaces/{workspaceId})
 	UpdateWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceAgentProposals Agent actions waiting for a person to approve them
@@ -87063,6 +87982,15 @@ type ServerInterface interface {
 	// GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 	// (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 	GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, labelId LabelId)
+	// RemoveWorkspaceLogo Remove the workspace logo
+	// (DELETE /workspaces/{workspaceId}/logo)
+	RemoveWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DownloadWorkspaceLogo Trade a session for a short-lived link to the workspace logo
+	// (GET /workspaces/{workspaceId}/logo)
+	DownloadWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// UploadWorkspaceLogo Replace the workspace logo
+	// (PUT /workspaces/{workspaceId}/logo)
+	UploadWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMembersParams)
@@ -87756,6 +88684,12 @@ func (_ Unimplemented) RevokeAPIToken(w http.ResponseWriter, r *http.Request, to
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ResolveWorkspaceAddress Find the workspace a former address still points to, for a member of it
+// (GET /workspace-addresses/{slug})
+func (_ Unimplemented) ResolveWorkspaceAddress(w http.ResponseWriter, r *http.Request, slug string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaces List the workspaces the signed-in account belongs to
 // (GET /workspaces)
 func (_ Unimplemented) ListWorkspaces(w http.ResponseWriter, r *http.Request) {
@@ -87780,7 +88714,7 @@ func (_ Unimplemented) GetWorkspace(w http.ResponseWriter, r *http.Request, work
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// UpdateWorkspace Change the workspace display name and timezone
+// UpdateWorkspace Change the workspace name, address, timezone, week start and default team
 // (PATCH /workspaces/{workspaceId})
 func (_ Unimplemented) UpdateWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -88635,6 +89569,24 @@ func (_ Unimplemented) MergeWorkspaceLabel(w http.ResponseWriter, r *http.Reques
 // GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 // (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 func (_ Unimplemented) GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, labelId LabelId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceLogo Remove the workspace logo
+// (DELETE /workspaces/{workspaceId}/logo)
+func (_ Unimplemented) RemoveWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DownloadWorkspaceLogo Trade a session for a short-lived link to the workspace logo
+// (GET /workspaces/{workspaceId}/logo)
+func (_ Unimplemented) DownloadWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UploadWorkspaceLogo Replace the workspace logo
+// (PUT /workspaces/{workspaceId}/logo)
+func (_ Unimplemented) UploadWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -90379,6 +91331,32 @@ func (siw *ServerInterfaceWrapper) RevokeAPIToken(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RevokeAPIToken(w, r, tokenId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveWorkspaceAddress operation middleware
+func (siw *ServerInterfaceWrapper) ResolveWorkspaceAddress(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "slug" -------------
+	var slug string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "slug", chi.URLParam(r, "slug"), &slug, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "slug", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveWorkspaceAddress(w, r, slug)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -95928,6 +96906,84 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceLabelUsage(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// RemoveWorkspaceLogo operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceLogo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceLogo(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DownloadWorkspaceLogo operation middleware
+func (siw *ServerInterfaceWrapper) DownloadWorkspaceLogo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DownloadWorkspaceLogo(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadWorkspaceLogo operation middleware
+func (siw *ServerInterfaceWrapper) UploadWorkspaceLogo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadWorkspaceLogo(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -100892,6 +101948,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Patch(options.BaseURL+"/workspaces/{workspaceId}", wrapper.UpdateWorkspace)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/logo", wrapper.RemoveWorkspaceLogo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/logo", wrapper.DownloadWorkspaceLogo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/logo", wrapper.UploadWorkspaceLogo)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspace-addresses/{slug}", wrapper.ResolveWorkspaceAddress)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/restore", wrapper.RestoreWorkspace)
 	})
 	r.Group(func(r chi.Router) {
@@ -105643,6 +106711,72 @@ func (response RevokeAPIToken404ApplicationProblemPlusJSONResponse) VisitRevokeA
 type RevokeAPIToken500ApplicationProblemPlusJSONResponse Problem
 
 func (response RevokeAPIToken500ApplicationProblemPlusJSONResponse) VisitRevokeAPITokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceAddressRequestObject struct {
+	Slug string `json:"slug"`
+}
+
+type ResolveWorkspaceAddressResponseObject interface {
+	VisitResolveWorkspaceAddressResponse(w http.ResponseWriter) error
+}
+
+type ResolveWorkspaceAddress200JSONResponse Workspace
+
+func (response ResolveWorkspaceAddress200JSONResponse) VisitResolveWorkspaceAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceAddress401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveWorkspaceAddress401ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceAddress404ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveWorkspaceAddress404ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceAddressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceAddress500ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveWorkspaceAddress500ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceAddressResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -119352,6 +120486,347 @@ func (response GetWorkspaceLabelUsage500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type RemoveWorkspaceLogoRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type RemoveWorkspaceLogoResponseObject interface {
+	VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceLogo200JSONResponse Workspace
+
+func (response RemoveWorkspaceLogo200JSONResponse) VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceLogo401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceLogo401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceLogo403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceLogo403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceLogo404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceLogo404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceLogo409ApplicationProblemPlusJSONResponse struct {
+	WorkspaceDeletedApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceLogo409ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceLogo500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceLogo500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceLogoRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type DownloadWorkspaceLogoResponseObject interface {
+	VisitDownloadWorkspaceLogoResponse(w http.ResponseWriter) error
+}
+
+type DownloadWorkspaceLogo303ResponseHeaders struct {
+	CacheControl *string
+	Location     *string
+}
+
+type DownloadWorkspaceLogo303Response struct {
+	Headers DownloadWorkspaceLogo303ResponseHeaders
+}
+
+func (response DownloadWorkspaceLogo303Response) VisitDownloadWorkspaceLogoResponse(w http.ResponseWriter) error {
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(303)
+	return nil
+}
+
+type DownloadWorkspaceLogo401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DownloadWorkspaceLogo401ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceLogo403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DownloadWorkspaceLogo403ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceLogo404ApplicationProblemPlusJSONResponse Problem
+
+func (response DownloadWorkspaceLogo404ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DownloadWorkspaceLogo500ApplicationProblemPlusJSONResponse Problem
+
+func (response DownloadWorkspaceLogo500ApplicationProblemPlusJSONResponse) VisitDownloadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogoRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *multipart.Reader
+}
+
+type UploadWorkspaceLogoResponseObject interface {
+	VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error
+}
+
+type UploadWorkspaceLogo200JSONResponse Workspace
+
+func (response UploadWorkspaceLogo200JSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UploadWorkspaceLogo400ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo401ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceLogo401ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UploadWorkspaceLogo403ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo404ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceLogo404ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo409ApplicationProblemPlusJSONResponse struct {
+	WorkspaceDeletedApplicationProblemPlusJSONResponse
+}
+
+func (response UploadWorkspaceLogo409ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo413ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceLogo413ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo415ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceLogo415ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(415)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo422ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceLogo422ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UploadWorkspaceLogo500ApplicationProblemPlusJSONResponse Problem
+
+func (response UploadWorkspaceLogo500ApplicationProblemPlusJSONResponse) VisitUploadWorkspaceLogoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceMembersRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceMembersParams
@@ -131423,6 +132898,9 @@ type StrictServerInterface interface {
 	// RevokeAPIToken Revoke one of the caller's tokens
 	// (DELETE /tokens/{tokenId})
 	RevokeAPIToken(ctx context.Context, request RevokeAPITokenRequestObject) (RevokeAPITokenResponseObject, error)
+	// ResolveWorkspaceAddress Find the workspace a former address still points to, for a member of it
+	// (GET /workspace-addresses/{slug})
+	ResolveWorkspaceAddress(ctx context.Context, request ResolveWorkspaceAddressRequestObject) (ResolveWorkspaceAddressResponseObject, error)
 	// ListWorkspaces List the workspaces the signed-in account belongs to
 	// (GET /workspaces)
 	ListWorkspaces(ctx context.Context, request ListWorkspacesRequestObject) (ListWorkspacesResponseObject, error)
@@ -131435,7 +132913,7 @@ type StrictServerInterface interface {
 	// GetWorkspace Read a workspace the signed-in account belongs to
 	// (GET /workspaces/{workspaceId})
 	GetWorkspace(ctx context.Context, request GetWorkspaceRequestObject) (GetWorkspaceResponseObject, error)
-	// UpdateWorkspace Change the workspace display name and timezone
+	// UpdateWorkspace Change the workspace name, address, timezone, week start and default team
 	// (PATCH /workspaces/{workspaceId})
 	UpdateWorkspace(ctx context.Context, request UpdateWorkspaceRequestObject) (UpdateWorkspaceResponseObject, error)
 	// ListWorkspaceAgentProposals Agent actions waiting for a person to approve them
@@ -131864,6 +133342,15 @@ type StrictServerInterface interface {
 	// GetWorkspaceLabelUsage How many issues carry this label, within the actor's scope
 	// (GET /workspaces/{workspaceId}/labels/{labelId}/usage)
 	GetWorkspaceLabelUsage(ctx context.Context, request GetWorkspaceLabelUsageRequestObject) (GetWorkspaceLabelUsageResponseObject, error)
+	// RemoveWorkspaceLogo Remove the workspace logo
+	// (DELETE /workspaces/{workspaceId}/logo)
+	RemoveWorkspaceLogo(ctx context.Context, request RemoveWorkspaceLogoRequestObject) (RemoveWorkspaceLogoResponseObject, error)
+	// DownloadWorkspaceLogo Trade a session for a short-lived link to the workspace logo
+	// (GET /workspaces/{workspaceId}/logo)
+	DownloadWorkspaceLogo(ctx context.Context, request DownloadWorkspaceLogoRequestObject) (DownloadWorkspaceLogoResponseObject, error)
+	// UploadWorkspaceLogo Replace the workspace logo
+	// (PUT /workspaces/{workspaceId}/logo)
+	UploadWorkspaceLogo(ctx context.Context, request UploadWorkspaceLogoRequestObject) (UploadWorkspaceLogoResponseObject, error)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(ctx context.Context, request ListWorkspaceMembersRequestObject) (ListWorkspaceMembersResponseObject, error)
@@ -133659,6 +135146,32 @@ func (sh *strictHandler) RevokeAPIToken(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RevokeAPITokenResponseObject); ok {
 		if err := validResponse.VisitRevokeAPITokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveWorkspaceAddress operation middleware
+func (sh *strictHandler) ResolveWorkspaceAddress(w http.ResponseWriter, r *http.Request, slug string) {
+	var request ResolveWorkspaceAddressRequestObject
+
+	request.Slug = slug
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveWorkspaceAddress(ctx, request.(ResolveWorkspaceAddressRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveWorkspaceAddress")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveWorkspaceAddressResponseObject); ok {
+		if err := validResponse.VisitResolveWorkspaceAddressResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -137957,6 +139470,91 @@ func (sh *strictHandler) GetWorkspaceLabelUsage(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceLabelUsageResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceLabelUsageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceLogo operation middleware
+func (sh *strictHandler) RemoveWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request RemoveWorkspaceLogoRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceLogo(ctx, request.(RemoveWorkspaceLogoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceLogo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceLogoResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceLogoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DownloadWorkspaceLogo operation middleware
+func (sh *strictHandler) DownloadWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request DownloadWorkspaceLogoRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DownloadWorkspaceLogo(ctx, request.(DownloadWorkspaceLogoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DownloadWorkspaceLogo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DownloadWorkspaceLogoResponseObject); ok {
+		if err := validResponse.VisitDownloadWorkspaceLogoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadWorkspaceLogo operation middleware
+func (sh *strictHandler) UploadWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request UploadWorkspaceLogoRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadWorkspaceLogo(ctx, request.(UploadWorkspaceLogoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadWorkspaceLogo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadWorkspaceLogoResponseObject); ok {
+		if err := validResponse.VisitUploadWorkspaceLogoResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

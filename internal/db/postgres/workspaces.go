@@ -34,6 +34,8 @@ type Workspace struct {
 	DeletionRequestedAt null.Time   `boil:"deletion_requested_at" json:"deletion_requested_at,omitempty" toml:"deletion_requested_at" yaml:"deletion_requested_at,omitempty"`
 	PurgeAfter          null.Time   `boil:"purge_after" json:"purge_after,omitempty" toml:"purge_after" yaml:"purge_after,omitempty"`
 	DefaultTeamID       null.String `boil:"default_team_id" json:"default_team_id,omitempty" toml:"default_team_id" yaml:"default_team_id,omitempty"`
+	LogoObjectKey       null.String `boil:"logo_object_key" json:"logo_object_key,omitempty" toml:"logo_object_key" yaml:"logo_object_key,omitempty"`
+	WeekStartsOn        string      `boil:"week_starts_on" json:"week_starts_on" toml:"week_starts_on" yaml:"week_starts_on"`
 
 	R *workspaceR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,6 +52,8 @@ var WorkspaceColumns = struct {
 	DeletionRequestedAt string
 	PurgeAfter          string
 	DefaultTeamID       string
+	LogoObjectKey       string
+	WeekStartsOn        string
 }{
 	ID:                  "id",
 	Slug:                "slug",
@@ -61,6 +65,8 @@ var WorkspaceColumns = struct {
 	DeletionRequestedAt: "deletion_requested_at",
 	PurgeAfter:          "purge_after",
 	DefaultTeamID:       "default_team_id",
+	LogoObjectKey:       "logo_object_key",
+	WeekStartsOn:        "week_starts_on",
 }
 
 var WorkspaceTableColumns = struct {
@@ -74,6 +80,8 @@ var WorkspaceTableColumns = struct {
 	DeletionRequestedAt string
 	PurgeAfter          string
 	DefaultTeamID       string
+	LogoObjectKey       string
+	WeekStartsOn        string
 }{
 	ID:                  "workspaces.id",
 	Slug:                "workspaces.slug",
@@ -85,6 +93,8 @@ var WorkspaceTableColumns = struct {
 	DeletionRequestedAt: "workspaces.deletion_requested_at",
 	PurgeAfter:          "workspaces.purge_after",
 	DefaultTeamID:       "workspaces.default_team_id",
+	LogoObjectKey:       "workspaces.logo_object_key",
+	WeekStartsOn:        "workspaces.week_starts_on",
 }
 
 // Generated where
@@ -100,6 +110,8 @@ var WorkspaceWhere = struct {
 	DeletionRequestedAt whereHelpernull_Time
 	PurgeAfter          whereHelpernull_Time
 	DefaultTeamID       whereHelpernull_String
+	LogoObjectKey       whereHelpernull_String
+	WeekStartsOn        whereHelperstring
 }{
 	ID:                  whereHelperstring{field: "\"workspaces\".\"id\""},
 	Slug:                whereHelperstring{field: "\"workspaces\".\"slug\""},
@@ -111,6 +123,8 @@ var WorkspaceWhere = struct {
 	DeletionRequestedAt: whereHelpernull_Time{field: "\"workspaces\".\"deletion_requested_at\""},
 	PurgeAfter:          whereHelpernull_Time{field: "\"workspaces\".\"purge_after\""},
 	DefaultTeamID:       whereHelpernull_String{field: "\"workspaces\".\"default_team_id\""},
+	LogoObjectKey:       whereHelpernull_String{field: "\"workspaces\".\"logo_object_key\""},
+	WeekStartsOn:        whereHelperstring{field: "\"workspaces\".\"week_starts_on\""},
 }
 
 // WorkspaceRels is where relationship names are stored.
@@ -138,6 +152,7 @@ var WorkspaceRels = struct {
 	WorkspaceExecutionServices     string
 	WorkspaceExecutionValidations  string
 	WorkspaceExecutions            string
+	WorkspaceImportFiles           string
 	WorkspaceIntakeDeliveries      string
 	WorkspaceInvitations           string
 	WorkspaceIssueAttachments      string
@@ -158,6 +173,7 @@ var WorkspaceRels = struct {
 	WorkspaceSCMConnections        string
 	WorkspaceSCMIdentities         string
 	WorkspaceSCMRepositories       string
+	WorkspaceSlugRedirects         string
 	WorkspaceTeams                 string
 }{
 	DefaultTeam:                    "DefaultTeam",
@@ -183,6 +199,7 @@ var WorkspaceRels = struct {
 	WorkspaceExecutionServices:     "WorkspaceExecutionServices",
 	WorkspaceExecutionValidations:  "WorkspaceExecutionValidations",
 	WorkspaceExecutions:            "WorkspaceExecutions",
+	WorkspaceImportFiles:           "WorkspaceImportFiles",
 	WorkspaceIntakeDeliveries:      "WorkspaceIntakeDeliveries",
 	WorkspaceInvitations:           "WorkspaceInvitations",
 	WorkspaceIssueAttachments:      "WorkspaceIssueAttachments",
@@ -203,6 +220,7 @@ var WorkspaceRels = struct {
 	WorkspaceSCMConnections:        "WorkspaceSCMConnections",
 	WorkspaceSCMIdentities:         "WorkspaceSCMIdentities",
 	WorkspaceSCMRepositories:       "WorkspaceSCMRepositories",
+	WorkspaceSlugRedirects:         "WorkspaceSlugRedirects",
 	WorkspaceTeams:                 "WorkspaceTeams",
 }
 
@@ -231,6 +249,7 @@ type workspaceR struct {
 	WorkspaceExecutionServices     WorkspaceExecutionServiceSlice     `boil:"WorkspaceExecutionServices" json:"WorkspaceExecutionServices" toml:"WorkspaceExecutionServices" yaml:"WorkspaceExecutionServices"`
 	WorkspaceExecutionValidations  WorkspaceExecutionValidationSlice  `boil:"WorkspaceExecutionValidations" json:"WorkspaceExecutionValidations" toml:"WorkspaceExecutionValidations" yaml:"WorkspaceExecutionValidations"`
 	WorkspaceExecutions            WorkspaceExecutionSlice            `boil:"WorkspaceExecutions" json:"WorkspaceExecutions" toml:"WorkspaceExecutions" yaml:"WorkspaceExecutions"`
+	WorkspaceImportFiles           WorkspaceImportFileSlice           `boil:"WorkspaceImportFiles" json:"WorkspaceImportFiles" toml:"WorkspaceImportFiles" yaml:"WorkspaceImportFiles"`
 	WorkspaceIntakeDeliveries      WorkspaceIntakeDeliverySlice       `boil:"WorkspaceIntakeDeliveries" json:"WorkspaceIntakeDeliveries" toml:"WorkspaceIntakeDeliveries" yaml:"WorkspaceIntakeDeliveries"`
 	WorkspaceInvitations           WorkspaceInvitationSlice           `boil:"WorkspaceInvitations" json:"WorkspaceInvitations" toml:"WorkspaceInvitations" yaml:"WorkspaceInvitations"`
 	WorkspaceIssueAttachments      WorkspaceIssueAttachmentSlice      `boil:"WorkspaceIssueAttachments" json:"WorkspaceIssueAttachments" toml:"WorkspaceIssueAttachments" yaml:"WorkspaceIssueAttachments"`
@@ -251,6 +270,7 @@ type workspaceR struct {
 	WorkspaceSCMConnections        WorkspaceSCMConnectionSlice        `boil:"WorkspaceSCMConnections" json:"WorkspaceSCMConnections" toml:"WorkspaceSCMConnections" yaml:"WorkspaceSCMConnections"`
 	WorkspaceSCMIdentities         WorkspaceSCMIdentitySlice          `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
 	WorkspaceSCMRepositories       WorkspaceSCMRepositorySlice        `boil:"WorkspaceSCMRepositories" json:"WorkspaceSCMRepositories" toml:"WorkspaceSCMRepositories" yaml:"WorkspaceSCMRepositories"`
+	WorkspaceSlugRedirects         WorkspaceSlugRedirectSlice         `boil:"WorkspaceSlugRedirects" json:"WorkspaceSlugRedirects" toml:"WorkspaceSlugRedirects" yaml:"WorkspaceSlugRedirects"`
 	WorkspaceTeams                 WorkspaceTeamSlice                 `boil:"WorkspaceTeams" json:"WorkspaceTeams" toml:"WorkspaceTeams" yaml:"WorkspaceTeams"`
 }
 
@@ -627,6 +647,22 @@ func (r *workspaceR) GetWorkspaceExecutions() WorkspaceExecutionSlice {
 	return r.WorkspaceExecutions
 }
 
+func (o *Workspace) GetWorkspaceImportFiles() WorkspaceImportFileSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceImportFiles()
+}
+
+func (r *workspaceR) GetWorkspaceImportFiles() WorkspaceImportFileSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceImportFiles
+}
+
 func (o *Workspace) GetWorkspaceIntakeDeliveries() WorkspaceIntakeDeliverySlice {
 	if o == nil {
 		return nil
@@ -947,6 +983,22 @@ func (r *workspaceR) GetWorkspaceSCMRepositories() WorkspaceSCMRepositorySlice {
 	return r.WorkspaceSCMRepositories
 }
 
+func (o *Workspace) GetWorkspaceSlugRedirects() WorkspaceSlugRedirectSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceSlugRedirects()
+}
+
+func (r *workspaceR) GetWorkspaceSlugRedirects() WorkspaceSlugRedirectSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceSlugRedirects
+}
+
 func (o *Workspace) GetWorkspaceTeams() WorkspaceTeamSlice {
 	if o == nil {
 		return nil
@@ -967,9 +1019,9 @@ func (r *workspaceR) GetWorkspaceTeams() WorkspaceTeamSlice {
 type workspaceL struct{}
 
 var (
-	workspaceAllColumns            = []string{"id", "slug", "name", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id"}
+	workspaceAllColumns            = []string{"id", "slug", "name", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id", "logo_object_key", "week_starts_on"}
 	workspaceColumnsWithoutDefault = []string{"slug", "name"}
-	workspaceColumnsWithDefault    = []string{"id", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id"}
+	workspaceColumnsWithDefault    = []string{"id", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id", "logo_object_key", "week_starts_on"}
 	workspacePrimaryKeyColumns     = []string{"id"}
 	workspaceGeneratedColumns      = []string{}
 )
@@ -1580,6 +1632,20 @@ func (o *Workspace) WorkspaceExecutions(mods ...qm.QueryMod) workspaceExecutionQ
 	return WorkspaceExecutions(queryMods...)
 }
 
+// WorkspaceImportFiles retrieves all the workspace_import_file's WorkspaceImportFiles with an executor.
+func (o *Workspace) WorkspaceImportFiles(mods ...qm.QueryMod) workspaceImportFileQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_import_files\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceImportFiles(queryMods...)
+}
+
 // WorkspaceIntakeDeliveries retrieves all the workspace_intake_delivery's WorkspaceIntakeDeliveries with an executor.
 func (o *Workspace) WorkspaceIntakeDeliveries(mods ...qm.QueryMod) workspaceIntakeDeliveryQuery {
 	var queryMods []qm.QueryMod
@@ -1858,6 +1924,20 @@ func (o *Workspace) WorkspaceSCMRepositories(mods ...qm.QueryMod) workspaceSCMRe
 	)
 
 	return WorkspaceSCMRepositories(queryMods...)
+}
+
+// WorkspaceSlugRedirects retrieves all the workspace_slug_redirect's WorkspaceSlugRedirects with an executor.
+func (o *Workspace) WorkspaceSlugRedirects(mods ...qm.QueryMod) workspaceSlugRedirectQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_slug_redirects\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceSlugRedirects(queryMods...)
 }
 
 // WorkspaceTeams retrieves all the workspace_team's WorkspaceTeams with an executor.
@@ -4508,6 +4588,119 @@ func (workspaceL) LoadWorkspaceExecutions(ctx context.Context, e boil.ContextExe
 	return nil
 }
 
+// LoadWorkspaceImportFiles allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceImportFiles(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_import_files`),
+		qm.WhereIn(`workspace_import_files.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_import_files")
+	}
+
+	var resultSlice []*WorkspaceImportFile
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_import_files")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_import_files")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_import_files")
+	}
+
+	if len(workspaceImportFileAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceImportFiles = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceImportFileR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceImportFiles = append(local.R.WorkspaceImportFiles, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceImportFileR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceIntakeDeliveries allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceIntakeDeliveries(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -6768,6 +6961,119 @@ func (workspaceL) LoadWorkspaceSCMRepositories(ctx context.Context, e boil.Conte
 	return nil
 }
 
+// LoadWorkspaceSlugRedirects allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceSlugRedirects(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_slug_redirects`),
+		qm.WhereIn(`workspace_slug_redirects.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_slug_redirects")
+	}
+
+	var resultSlice []*WorkspaceSlugRedirect
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_slug_redirects")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_slug_redirects")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_slug_redirects")
+	}
+
+	if len(workspaceSlugRedirectAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceSlugRedirects = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceSlugRedirectR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceSlugRedirects = append(local.R.WorkspaceSlugRedirects, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceSlugRedirectR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceTeams allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceTeams(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -8109,6 +8415,59 @@ func (o *Workspace) AddWorkspaceExecutions(ctx context.Context, exec boil.Contex
 	return nil
 }
 
+// AddWorkspaceImportFiles adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceImportFiles.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceImportFiles(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceImportFile) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_import_files\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceImportFilePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ObjectKey}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceImportFiles: related,
+		}
+	} else {
+		o.R.WorkspaceImportFiles = append(o.R.WorkspaceImportFiles, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceImportFileR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
 // AddWorkspaceIntakeDeliveries adds the given related objects to the existing relationships
 // of the workspace, optionally inserting them as new records.
 // Appends related to o.R.WorkspaceIntakeDeliveries.
@@ -9160,6 +9519,59 @@ func (o *Workspace) AddWorkspaceSCMRepositories(ctx context.Context, exec boil.C
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceSCMRepositoryR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceSlugRedirects adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceSlugRedirects.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceSlugRedirects(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceSlugRedirect) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_slug_redirects\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceSlugRedirectPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.Slug}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceSlugRedirects: related,
+		}
+	} else {
+		o.R.WorkspaceSlugRedirects = append(o.R.WorkspaceSlugRedirects, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceSlugRedirectR{
 				Workspace: o,
 			}
 		} else {

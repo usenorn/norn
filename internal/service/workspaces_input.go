@@ -18,8 +18,10 @@ type CreateWorkspaceTeamInput struct {
 }
 
 type UpdateWorkspaceInput struct {
+	Slug          *string
 	Name          *string
 	Timezone      *string
+	WeekStartsOn  *entity.WeekDay
 	DefaultTeamID *uuid.UUID
 }
 

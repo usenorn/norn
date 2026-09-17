@@ -48,6 +48,7 @@ var TableNames = struct {
 	WorkspaceExecutionServices         string
 	WorkspaceExecutionValidations      string
 	WorkspaceExecutions                string
+	WorkspaceImportFiles               string
 	WorkspaceIntakeDeliveries          string
 	WorkspaceInvitationTeams           string
 	WorkspaceInvitations               string
@@ -96,6 +97,7 @@ var TableNames = struct {
 	WorkspaceSCMRepositories           string
 	WorkspaceSCMRoutes                 string
 	WorkspaceSCMTransitionRules        string
+	WorkspaceSlugRedirects             string
 	WorkspaceSsoConnections            string
 	WorkspaceSsoIdentities             string
 	WorkspaceStorageLedger             string
@@ -154,6 +156,7 @@ var TableNames = struct {
 	WorkspaceExecutionServices:         "workspace_execution_services",
 	WorkspaceExecutionValidations:      "workspace_execution_validations",
 	WorkspaceExecutions:                "workspace_executions",
+	WorkspaceImportFiles:               "workspace_import_files",
 	WorkspaceIntakeDeliveries:          "workspace_intake_deliveries",
 	WorkspaceInvitationTeams:           "workspace_invitation_teams",
 	WorkspaceInvitations:               "workspace_invitations",
@@ -202,6 +205,7 @@ var TableNames = struct {
 	WorkspaceSCMRepositories:           "workspace_scm_repositories",
 	WorkspaceSCMRoutes:                 "workspace_scm_routes",
 	WorkspaceSCMTransitionRules:        "workspace_scm_transition_rules",
+	WorkspaceSlugRedirects:             "workspace_slug_redirects",
 	WorkspaceSsoConnections:            "workspace_sso_connections",
 	WorkspaceSsoIdentities:             "workspace_sso_identities",
 	WorkspaceStorageLedger:             "workspace_storage_ledger",

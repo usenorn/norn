@@ -16,6 +16,7 @@ import (
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
+	repository "github.com/usenorn/norn/internal/repository"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -146,6 +147,49 @@ func (mr *MockWorkspaceMockRecorder) Purge(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockWorkspace)(nil).Purge), ctx, id)
 }
 
+// RecordSlugRedirect mocks base method.
+func (m *MockWorkspace) RecordSlugRedirect(ctx context.Context, slug string, workspaceID uuid.UUID, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordSlugRedirect", ctx, slug, workspaceID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordSlugRedirect indicates an expected call of RecordSlugRedirect.
+func (mr *MockWorkspaceMockRecorder) RecordSlugRedirect(ctx, slug, workspaceID, expiresAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordSlugRedirect", reflect.TypeOf((*MockWorkspace)(nil).RecordSlugRedirect), ctx, slug, workspaceID, expiresAt)
+}
+
+// ReserveSlug mocks base method.
+func (m *MockWorkspace) ReserveSlug(ctx context.Context, slug string, claimant uuid.UUID, now time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReserveSlug", ctx, slug, claimant, now)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReserveSlug indicates an expected call of ReserveSlug.
+func (mr *MockWorkspaceMockRecorder) ReserveSlug(ctx, slug, claimant, now any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReserveSlug", reflect.TypeOf((*MockWorkspace)(nil).ReserveSlug), ctx, slug, claimant, now)
+}
+
+// ResolveSlugRedirect mocks base method.
+func (m *MockWorkspace) ResolveSlugRedirect(ctx context.Context, slug string, now time.Time) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveSlugRedirect", ctx, slug, now)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveSlugRedirect indicates an expected call of ResolveSlugRedirect.
+func (mr *MockWorkspaceMockRecorder) ResolveSlugRedirect(ctx, slug, now any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveSlugRedirect", reflect.TypeOf((*MockWorkspace)(nil).ResolveSlugRedirect), ctx, slug, now)
+}
+
 // Restore mocks base method.
 func (m *MockWorkspace) Restore(ctx context.Context, id uuid.UUID) (entity.Workspace, error) {
 	m.ctrl.T.Helper()
@@ -161,17 +205,32 @@ func (mr *MockWorkspaceMockRecorder) Restore(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockWorkspace)(nil).Restore), ctx, id)
 }
 
-// UpdateSettings mocks base method.
-func (m *MockWorkspace) UpdateSettings(ctx context.Context, id uuid.UUID, name, timezone string, defaultTeamID *uuid.UUID) (entity.Workspace, error) {
+// SetLogo mocks base method.
+func (m *MockWorkspace) SetLogo(ctx context.Context, id uuid.UUID, objectKey string) (entity.Workspace, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSettings", ctx, id, name, timezone, defaultTeamID)
+	ret := m.ctrl.Call(m, "SetLogo", ctx, id, objectKey)
+	ret0, _ := ret[0].(entity.Workspace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetLogo indicates an expected call of SetLogo.
+func (mr *MockWorkspaceMockRecorder) SetLogo(ctx, id, objectKey any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLogo", reflect.TypeOf((*MockWorkspace)(nil).SetLogo), ctx, id, objectKey)
+}
+
+// UpdateSettings mocks base method.
+func (m *MockWorkspace) UpdateSettings(ctx context.Context, id uuid.UUID, settings repository.WorkspaceSettings) (entity.Workspace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSettings", ctx, id, settings)
 	ret0, _ := ret[0].(entity.Workspace)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateSettings indicates an expected call of UpdateSettings.
-func (mr *MockWorkspaceMockRecorder) UpdateSettings(ctx, id, name, timezone, defaultTeamID any) *gomock.Call {
+func (mr *MockWorkspaceMockRecorder) UpdateSettings(ctx, id, settings any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSettings", reflect.TypeOf((*MockWorkspace)(nil).UpdateSettings), ctx, id, name, timezone, defaultTeamID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSettings", reflect.TypeOf((*MockWorkspace)(nil).UpdateSettings), ctx, id, settings)
 }

@@ -13,6 +13,7 @@
 		Target as TargetGlyph,
 	} from "lucide";
 	import AccountSwitcher from "$lib/account/account-switcher.svelte";
+	import { logoSource } from "$lib/workspace/logo";
 	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
@@ -31,6 +32,11 @@
 	const realtime = useRealtime();
 
 	const slug = $derived(data.workspace.slug);
+	const workspaceContext = $derived({
+		slug,
+		name: data.workspace.name,
+		logoUrl: logoSource(data.workspace.logoUrl, data.member.slot),
+	});
 	const pathname = $derived(page.url.pathname);
 	const search = $derived(page.url.searchParams);
 	const current = $derived((href: string) => isCurrent(pathname, search, href));
@@ -177,7 +183,7 @@
 			<AccountSwitcher
 				accounts={data.accounts}
 				actingAccountId={data.member.id}
-				workspace={{ slug, name: data.workspace.name }}
+				workspace={workspaceContext}
 				trigger="person"
 				class="min-w-0 flex-1"
 			/>

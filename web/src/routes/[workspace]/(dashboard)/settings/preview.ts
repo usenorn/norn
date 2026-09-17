@@ -1,4 +1,6 @@
 import type { Team } from "$lib/team/teams";
+import type { LogoActivity } from "$lib/workspace/logo";
+import type { MembershipRole } from "$lib/workspace/members";
 import type { WorkspaceSettings } from "$lib/workspace/settings";
 import type { StorageReading } from "$lib/workspace/storage";
 
@@ -6,12 +8,19 @@ export type WorkspaceSettingsPreview = {
 	settings: WorkspaceSettings;
 	teams: Team[];
 	storage?: StorageReading;
+	draft?: { name?: string; slug?: string };
+	slugError?: string;
+	saving?: boolean;
+	confirmingDelete?: boolean;
+	role?: MembershipRole;
+	logo?: LogoActivity;
+	logoUrl?: string;
 };
 
 export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPreview> = import.meta
 	.env.DEV
 	? {
-			ready: {
+			view: {
 				settings: {
 					kind: "ready",
 					workspace: {
@@ -20,6 +29,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -38,7 +48,329 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				],
+						},
+			editing: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							draft: { name: "Northwind Labs", slug: "northwind-labs" },
 			},
+			saving: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							draft: { name: "Northwind Labs" },
+				saving: true,
+			},
+			conflict: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							draft: { slug: "lakeside" },
+				slugError: "Taken by another workspace on this instance.",
+			},
+			pinned: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							draft: { slug: "northwind-labs" },
+				slugError: "Single sign-on is set up on this address. Turn it off before changing the identifier.",
+			},
+			delete: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							confirmingDelete: true,
+			},
+			restricted: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							role: "member",
+			},
+			with_logo: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							logoUrl:
+					"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22%3E%3Crect width=%22128%22 height=%22128%22 fill=%22%230f766e%22/%3E%3Ccircle cx=%2264%22 cy=%2264%22 r=%2236%22 fill=%22%23f0fdfa%22/%3E%3C/svg%3E",
+			},
+			logo_uploading: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							logo: { kind: "uploading" },
+			},
+			logo_too_small: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							logo: { kind: "failed", failure: "too_small" },
+			},
+			logo_unsupported: {
+				settings: {
+					kind: "ready",
+					workspace: {
+						id: "00000000-0000-4000-8000-000000000000",
+						slug: "northwind",
+						name: "Northwind",
+						status: "active",
+						timezone: "Europe/London",
+						weekStartsOn: "monday",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				},
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+							logo: { kind: "failed", failure: "unsupported" },
+			},
+			forbidden: {
+				settings: { kind: "forbidden" },
+				teams: [
+					{
+						id: "00000000-0000-4000-8000-000000000101",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						key: "MOB",
+						name: "Mobile",
+						description: "",
+						icon: "",
+						iconColor: "neutral",
+						estimation: "none",
+						visibility: "public",
+						status: "active",
+						createdAt: "2026-01-04T09:00:00Z",
+					},
+				],
+						},
 			default_team: {
 				settings: {
 					kind: "ready",
@@ -48,6 +380,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						defaultTeamId: "00000000-0000-4000-8000-000000000102",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
@@ -90,6 +423,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -104,6 +438,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind Trading",
 						status: "active",
 						timezone: "America/New_York",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -133,6 +468,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "pending_deletion",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 						deletionRequestedAt: "2026-08-02T09:00:00Z",
 						purgeAfter: "2026-09-01T09:00:00Z",
@@ -181,6 +517,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -218,6 +555,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -255,6 +593,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -292,6 +631,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -325,6 +665,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},
@@ -361,6 +702,7 @@ export const workspaceSettingsPreviewStates: Record<string, WorkspaceSettingsPre
 						name: "Northwind",
 						status: "active",
 						timezone: "Europe/London",
+						weekStartsOn: "monday",
 						createdAt: "2026-01-04T09:00:00Z",
 					},
 				},

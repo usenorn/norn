@@ -12,6 +12,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
+	blobrepo "github.com/usenorn/norn/internal/repository/blob"
 	invitationrepo "github.com/usenorn/norn/internal/repository/invitation"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
@@ -28,7 +29,10 @@ import (
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 )
 
-const baseURL = "https://norn.test"
+const (
+	baseURL     = "https://norn.test"
+	logoLinkTTL = 5 * time.Minute
+)
 
 type harness struct {
 	invitations  *invitationrepo.MockInvitation
@@ -40,6 +44,7 @@ type harness struct {
 	authPolicies *workspaceauthpolicyrepo.MockWorkspaceAuthPolicy
 	producer     *jobqueuerepo.MockJobProducer
 	mailer       *mailerrepo.MockMailer
+	blobs        *blobrepo.MockBlob
 	transactor   *transactorrepo.MockTransactor
 	authorizer   *authorizersvc.MockAuthorizer
 	registration *accountsvc.MockAccounts
@@ -62,6 +67,7 @@ func newHarness(t *testing.T) *harness {
 		authPolicies: workspaceauthpolicyrepo.NewMockWorkspaceAuthPolicy(ctrl),
 		producer:     jobqueuerepo.NewMockJobProducer(ctrl),
 		mailer:       mailerrepo.NewMockMailer(ctrl),
+		blobs:        blobrepo.NewMockBlob(ctrl),
 		transactor:   transactorrepo.NewMockTransactor(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
 		registration: accountsvc.NewMockAccounts(ctrl),
@@ -85,11 +91,13 @@ func newHarness(t *testing.T) *harness {
 		h.authPolicies,
 		h.producer,
 		h.mailer,
+		h.blobs,
 		h.transactor,
 		h.authorizer,
 		h.registration,
 		h.sessions,
 		config.App{BaseURL: baseURL},
+		config.Attachments{LinkTTL: logoLinkTTL},
 		silentAudit(ctrl),
 	)
 

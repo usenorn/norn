@@ -15,6 +15,7 @@
 	import { Progress } from "$lib/components/ui/progress/index.js";
 	import { createWorkspaceSchema, slugFromName } from "$lib/workspace/create-workspace-schema";
 	import { teamKeyFromName } from "$lib/team/teams";
+	import { slugRedirectDays } from "$lib/workspace/settings";
 	import type { WorkspaceCreationFailure } from "$lib/workspace/types";
 	import { createWorkspacePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
@@ -94,7 +95,7 @@
 	const footer = $derived(
 		additional
 			? "Switch workspaces from the sidebar, or with ⌘⇧O."
-			: "The names can change later. The address and the team key are permanent, because they appear in every issue reference."
+			: `The names and the identifier can change later — old links keep working for ${slugRedirectDays} days. The team key is permanent, because it appears in every issue reference.`
 	);
 
 	function pickSuggestion(slug: string) {

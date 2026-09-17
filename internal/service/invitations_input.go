@@ -31,6 +31,7 @@ type IssuedInvitation struct {
 
 type InvitationPreview struct {
 	Workspace     entity.Workspace
+	LogoURL       string
 	Email         string
 	Role          entity.MembershipRole
 	InvitedBy     *entity.Account

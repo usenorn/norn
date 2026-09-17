@@ -12,9 +12,10 @@
 	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
 	import AccountIdentity from "$lib/account/account-identity.svelte";
 	import { withSlot, type SignedInAccount } from "$lib/account/accounts";
+	import { logoSource } from "$lib/workspace/logo";
 	import { workspacePath } from "$lib/workspace/navigation";
 
-	type WorkspaceContext = { slug: string; name: string };
+	type WorkspaceContext = { slug: string; name: string; logoUrl?: string };
 
 	let {
 		accounts,
@@ -57,7 +58,7 @@
 		aria-label={trigger === "person" ? "Your account" : "Switch account or workspace"}
 	>
 		{#if trigger === "workspace" && workspace}
-			<WorkspaceMark name={workspace.name} />
+			<WorkspaceMark name={workspace.name} logoUrl={workspace.logoUrl} />
 			<span class="min-w-0 flex-1 truncate text-md font-medium tracking-snug text-ink-900">
 				{workspace.name}
 			</span>
@@ -123,6 +124,7 @@
 								>
 									<WorkspaceMark
 										name={reach.workspace.name}
+										logoUrl={logoSource(reach.workspace.logoUrl, reach.slot)}
 										class="size-4.5 rounded-xs text-2xs"
 									/>
 									<span class="min-w-0 flex-1 truncate">{reach.workspace.name}</span>

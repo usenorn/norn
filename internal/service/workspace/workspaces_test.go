@@ -122,6 +122,7 @@ func newHarnessWithLicence(t *testing.T, licence entity.Licence) *harness {
 		h.authorizer,
 		transactor,
 		config.Workspace{DeletionGracePeriod: deletionGracePeriod},
+		config.Attachments{LinkTTL: time.Minute},
 		silentAudit(ctrl),
 		silentEvents(ctrl),
 		silentEmitter(ctrl),
@@ -199,6 +200,7 @@ func TestCreateMakesTheCreatingAccountAnAdministrator(t *testing.T) {
 	actorID := uuid.New()
 	workspaceID := uuid.New()
 
+	h.workspaces.EXPECT().ReserveSlug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.workspaces.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, workspace entity.Workspace) (entity.Workspace, error) {
@@ -316,6 +318,7 @@ func TestCreateUppercasesTheFirstTeamKey(t *testing.T) {
 
 	workspaceID := uuid.New()
 
+	h.workspaces.EXPECT().ReserveSlug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	h.workspaces.EXPECT().
 		Create(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, workspace entity.Workspace) (entity.Workspace, error) {
@@ -339,7 +342,7 @@ func TestCreateUppercasesTheFirstTeamKey(t *testing.T) {
 	h.rules.EXPECT().CreateMany(gomock.Any(), gomock.Any()).Return(nil)
 	h.teamMembers.EXPECT().Create(gomock.Any(), gomock.Any()).Return(entity.TeamMembership{}, nil)
 	h.workspaces.EXPECT().
-		UpdateSettings(gomock.Any(), workspaceID, gomock.Any(), gomock.Any(), gomock.Any()).
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any()).
 		Return(activeWorkspace(workspaceID), nil)
 
 	if _, err := h.service.Create(actingAs(uuid.New()), service.CreateWorkspaceInput{

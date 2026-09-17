@@ -15,6 +15,8 @@ const (
 	WorkspaceNameMaxLen = 80
 	WorkspaceSlugMinLen = 2
 	WorkspaceSlugMaxLen = 40
+
+	WorkspaceSlugRedirectTTL = 30 * 24 * time.Hour
 )
 
 var (
@@ -22,6 +24,7 @@ var (
 	ErrWorkspaceSlugTaken  = errors.New("workspace slug already taken")
 	ErrWorkspaceDeleted    = errors.New("workspace is pending deletion")
 	ErrWorkspaceNotDeleted = errors.New("workspace is not pending deletion")
+	ErrWorkspaceSlugPinned = errors.New("workspace slug is pinned by single sign-on")
 )
 
 type WorkspaceDeletedError struct {
@@ -96,12 +99,30 @@ func (s WorkspaceStatus) CanTransitionTo(target WorkspaceStatus) bool {
 	}
 }
 
+type WeekDay string
+
+const (
+	WeekDayMonday WeekDay = "monday"
+	WeekDaySunday WeekDay = "sunday"
+)
+
+func (d WeekDay) Valid() bool {
+	switch d {
+	case WeekDayMonday, WeekDaySunday:
+		return true
+	default:
+		return false
+	}
+}
+
 type Workspace struct {
 	ID                  uuid.UUID
 	Slug                string
 	Name                string
 	Status              WorkspaceStatus
 	Timezone            string
+	WeekStartsOn        WeekDay
+	LogoObjectKey       string
 	DefaultTeamID       *uuid.UUID
 	DeletionRequestedAt *time.Time
 	PurgeAfter          *time.Time
@@ -145,4 +166,12 @@ func ValidateWorkspaceSlug(field, slug string) FieldError {
 	default:
 		return FieldError{}
 	}
+}
+
+func ValidateWeekStart(field string, day WeekDay) FieldError {
+	if !day.Valid() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
 }

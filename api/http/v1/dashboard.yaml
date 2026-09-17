@@ -896,7 +896,7 @@ paths:
     patch:
       tags: [workspaces]
       operationId: updateWorkspace
-      summary: Change the workspace display name and timezone
+      summary: Change the workspace name, address, timezone, week start and default team
       requestBody:
         required: true
         content:
@@ -928,6 +928,91 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/WorkspaceDeleted' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/logo:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [workspaces]
+      operationId: downloadWorkspaceLogo
+      summary: Trade a session for a short-lived link to the workspace logo
+      responses:
+        '303':
+          description: Follow this link; it expires
+          headers:
+            Location:
+              schema: { type: string }
+            Cache-Control:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [workspaces]
+      operationId: uploadWorkspaceLogo
+      summary: Replace the workspace logo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: The workspace with its new logo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '400': { $ref: '#/components/responses/Problem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/WorkspaceDeleted' }
+        '413': { $ref: '#/components/responses/Problem' }
+        '415': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [workspaces]
+      operationId: removeWorkspaceLogo
+      summary: Remove the workspace logo
+      responses:
+        '200':
+          description: The workspace without a logo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/WorkspaceDeleted' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspace-addresses/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [workspaces]
+      operationId: resolveWorkspaceAddress
+      summary: Find the workspace a former address still points to, for a member of it
+      responses:
+        '200':
+          description: The workspace now living at a different address
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/restore:
@@ -12368,13 +12453,15 @@ components:
 
     Workspace:
       type: object
-      required: [id, slug, name, status, timezone, createdAt]
+      required: [id, slug, name, status, timezone, weekStartsOn, createdAt]
       properties:
         id: { type: string, format: uuid }
         slug: { type: string }
         name: { type: string }
         status: { $ref: '#/components/schemas/WorkspaceStatus' }
         timezone: { type: string }
+        weekStartsOn: { $ref: '#/components/schemas/WeekDay' }
+        logoUrl: { type: string }
         defaultTeamId: { type: string, format: uuid }
         createdAt: { type: string, format: date-time }
         deletionRequestedAt: { type: string, format: date-time }
@@ -12383,9 +12470,15 @@ components:
     UpdateWorkspaceRequest:
       type: object
       properties:
+        slug: { type: string }
         name: { type: string }
         timezone: { type: string }
+        weekStartsOn: { $ref: '#/components/schemas/WeekDay' }
         defaultTeamId: { type: string, format: uuid }
+
+    WeekDay:
+      type: string
+      enum: [monday, sunday]
 
     Membership:
       type: object
@@ -12961,6 +13054,9 @@ components:
       properties:
         slug: { type: string }
         name: { type: string }
+        logoUrl:
+          type: string
+          description: A short-lived link to the workspace logo, issued only for a usable invitation token.
 
     AcceptInvitationRequest:
       type: object

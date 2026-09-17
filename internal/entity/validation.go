@@ -15,6 +15,8 @@ const (
 	ValidationCodeOutOfRange       = "out_of_range"
 	ValidationCodeBreached         = "breached"
 	ValidationCodeReused           = "reused"
+	ValidationCodeTaken            = "taken"
+	ValidationCodePinned           = "pinned"
 )
 
 type FieldError struct {

@@ -2,7 +2,9 @@ package dashboard
 
 import (
 	"encoding/json"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,17 +44,26 @@ func emailChangeDTO(change entity.EmailChange) api.EmailChange {
 }
 
 func workspaceDTO(workspace entity.Workspace) api.Workspace {
-	return api.Workspace{
+	dto := api.Workspace{
 		Id:                  workspace.ID,
 		Slug:                workspace.Slug,
 		Name:                workspace.Name,
 		Status:              api.WorkspaceStatus(workspace.Status),
 		Timezone:            workspace.Timezone,
+		WeekStartsOn:        api.WeekDay(workspace.WeekStartsOn),
 		DefaultTeamId:       workspace.DefaultTeamID,
 		DeletionRequestedAt: workspace.DeletionRequestedAt,
 		PurgeAfter:          workspace.PurgeAfter,
 		CreatedAt:           workspace.CreatedAt,
 	}
+
+	if workspace.LogoObjectKey != "" {
+		version := strings.TrimSuffix(path.Base(workspace.LogoObjectKey), path.Ext(workspace.LogoObjectKey))
+		logoPath := "/v1/workspaces/" + workspace.ID.String() + "/logo?v=" + version
+		dto.LogoUrl = &logoPath
+	}
+
+	return dto
 }
 
 func workspaceDTOs(workspaces []entity.Workspace) []api.Workspace {
@@ -311,6 +322,11 @@ func invitationPreviewDTO(preview service.InvitationPreview) api.InvitationPrevi
 		Teams:         teams,
 		AccountExists: preview.AccountExists,
 		SsoEnforced:   preview.SSOEnforced,
+	}
+
+	if preview.LogoURL != "" {
+		logoURL := preview.LogoURL
+		dto.Workspace.LogoUrl = &logoURL
 	}
 
 	if preview.InvitedBy != nil {

@@ -17,6 +17,21 @@ export const acceptInvitationPreviewStates: Record<string, AcceptInvitation> = i
 				teams: ["Mobile"],
 				role: "member",
 			},
+			create_account_with_logo: {
+				kind: "create_account",
+				workspace: {
+					slug: "northwind",
+					name: "Northwind",
+					logoUrl:
+						"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22%3E%3Crect width=%22128%22 height=%22128%22 fill=%22%23b45309%22/%3E%3Cpath d=%22M34 94V34h14l32 40V34h14v60H80L48 54v40z%22 fill=%22%23fffbeb%22/%3E%3C/svg%3E",
+				},
+				email: "rae@northwind.co",
+				invitedBy: { name: "Jun Park", email: "jun@northwind.co" },
+				invitedAt: "2026-07-28T09:00:00Z",
+				expiresAt: "2026-08-04T09:00:00Z",
+				teams: ["Mobile"],
+				role: "member",
+			},
 			create_account_admin: {
 				kind: "create_account",
 				workspace: { slug: "northwind", name: "Northwind" },

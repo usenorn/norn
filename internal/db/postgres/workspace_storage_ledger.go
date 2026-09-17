@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
@@ -23,9 +24,10 @@ import (
 
 // WorkspaceStorageLedger is an object representing the database table.
 type WorkspaceStorageLedger struct {
-	WorkspaceID string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	StoredBytes int64     `boil:"stored_bytes" json:"stored_bytes" toml:"stored_bytes" yaml:"stored_bytes"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	WorkspaceID string     `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	StoredBytes int64      `boil:"stored_bytes" json:"stored_bytes" toml:"stored_bytes" yaml:"stored_bytes"`
+	UpdatedAt   time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	MaxBytes    null.Int64 `boil:"max_bytes" json:"max_bytes,omitempty" toml:"max_bytes" yaml:"max_bytes,omitempty"`
 
 	R *workspaceStorageLedgerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceStorageLedgerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -35,32 +37,76 @@ var WorkspaceStorageLedgerColumns = struct {
 	WorkspaceID string
 	StoredBytes string
 	UpdatedAt   string
+	MaxBytes    string
 }{
 	WorkspaceID: "workspace_id",
 	StoredBytes: "stored_bytes",
 	UpdatedAt:   "updated_at",
+	MaxBytes:    "max_bytes",
 }
 
 var WorkspaceStorageLedgerTableColumns = struct {
 	WorkspaceID string
 	StoredBytes string
 	UpdatedAt   string
+	MaxBytes    string
 }{
 	WorkspaceID: "workspace_storage_ledger.workspace_id",
 	StoredBytes: "workspace_storage_ledger.stored_bytes",
 	UpdatedAt:   "workspace_storage_ledger.updated_at",
+	MaxBytes:    "workspace_storage_ledger.max_bytes",
 }
 
 // Generated where
+
+type whereHelpernull_Int64 struct{ field string }
+
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelpernull_Int64) IN(slice []int64) qm.QueryMod {
+	values := make([]any, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelpernull_Int64) NIN(slice []int64) qm.QueryMod {
+	values := make([]any, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var WorkspaceStorageLedgerWhere = struct {
 	WorkspaceID whereHelperstring
 	StoredBytes whereHelperint64
 	UpdatedAt   whereHelpertime_Time
+	MaxBytes    whereHelpernull_Int64
 }{
 	WorkspaceID: whereHelperstring{field: "\"workspace_storage_ledger\".\"workspace_id\""},
 	StoredBytes: whereHelperint64{field: "\"workspace_storage_ledger\".\"stored_bytes\""},
 	UpdatedAt:   whereHelpertime_Time{field: "\"workspace_storage_ledger\".\"updated_at\""},
+	MaxBytes:    whereHelpernull_Int64{field: "\"workspace_storage_ledger\".\"max_bytes\""},
 }
 
 // WorkspaceStorageLedgerRels is where relationship names are stored.
@@ -100,9 +146,9 @@ func (r *workspaceStorageLedgerR) GetWorkspace() *Workspace {
 type workspaceStorageLedgerL struct{}
 
 var (
-	workspaceStorageLedgerAllColumns            = []string{"workspace_id", "stored_bytes", "updated_at"}
+	workspaceStorageLedgerAllColumns            = []string{"workspace_id", "stored_bytes", "updated_at", "max_bytes"}
 	workspaceStorageLedgerColumnsWithoutDefault = []string{"workspace_id"}
-	workspaceStorageLedgerColumnsWithDefault    = []string{"stored_bytes", "updated_at"}
+	workspaceStorageLedgerColumnsWithDefault    = []string{"stored_bytes", "updated_at", "max_bytes"}
 	workspaceStorageLedgerPrimaryKeyColumns     = []string{"workspace_id"}
 	workspaceStorageLedgerGeneratedColumns      = []string{}
 )

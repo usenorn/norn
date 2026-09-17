@@ -1,6 +1,7 @@
 import { error, redirect } from "@sveltejs/kit";
 import { keys } from "$lib/api/keys";
-import { reachOfSlug, type SignedInAccount } from "$lib/account/accounts";
+import { reachOfSlug, withSlot, type SignedInAccount } from "$lib/account/accounts";
+import { apiForEvent } from "$lib/api/server";
 import { lastWorkspaceCookie } from "$lib/account/last-workspace";
 import { panelCookie, readPanel, type PanelSizes } from "$lib/layout/panels";
 import type { components } from "$lib/api/dashboard.gen";
@@ -37,20 +38,21 @@ export type WorkspaceScope = {
 	panels: PanelSizes;
 };
 
-export const load: LayoutServerLoad = async ({
-	cookies,
-	depends,
-	locals,
-	params,
-	parent,
-}): Promise<WorkspaceScope> => {
+export const load: LayoutServerLoad = async (event): Promise<WorkspaceScope> => {
+	const { cookies, depends, locals, params, parent } = event;
 	const { accounts, acting } = await parent();
 
 	if (!acting) redirect(307, "/sign-in");
 
 	const reach = reachOfSlug(accounts, params.workspace, acting.slot);
 
-	if (!reach) error(404, "That workspace does not exist, or you are not a member of it.");
+	if (!reach) {
+		const moved = await formerAddressTarget(event, accounts, params.workspace);
+
+		if (moved) redirect(307, moved);
+
+		error(404, "That workspace does not exist, or you are not a member of it.");
+	}
 
 	const workspace = reach.workspace.workspace;
 	const signedIn = reach.account;
@@ -138,4 +140,28 @@ function requiresProvider(problem: unknown): boolean {
 		"reason" in problem &&
 		problem.reason === "auth_method_not_permitted"
 	);
+}
+
+async function formerAddressTarget(
+	event: Parameters<LayoutServerLoad>[0],
+	accounts: SignedInAccount[],
+	former: string
+): Promise<string | undefined> {
+	for (const signedIn of accounts) {
+		const { data } = await apiForEvent(event, Promise.resolve(signedIn.defaultSlot)).GET(
+			"/workspace-addresses/{slug}",
+			{ params: { path: { slug: former } } }
+		);
+
+		const reach = data && signedIn.workspaces.find((held) => held.workspace.id === data.id);
+
+		if (!reach) continue;
+
+		const { pathname, search } = event.url;
+		const rest = pathname.slice(`/${former}`.length);
+
+		return withSlot(`/${reach.workspace.slug}${rest}${search}`, reach.slot);
+	}
+
+	return undefined;
 }
