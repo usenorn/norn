@@ -14,6 +14,7 @@
 	import BadgeCheck from "@lucide/svelte/icons/badge-check";
 	import Bot from "@lucide/svelte/icons/bot";
 	import AccountSwitcher from "$lib/account/account-switcher.svelte";
+	import { logoSource } from "$lib/workspace/logo";
 	import SearchPalette from "$lib/search/search-palette.svelte";
 	import ConnectionIndicator from "$lib/realtime/connection-indicator.svelte";
 	import StaleBanner from "$lib/realtime/stale-banner.svelte";
@@ -85,6 +86,11 @@
 
 
 	const slug = $derived(data.workspace.slug);
+	const workspaceContext = $derived({
+		slug,
+		name: data.workspace.name,
+		logoUrl: logoSource(data.workspace.logoUrl, data.member.slot),
+	});
 	const pathname = $derived(page.url.pathname);
 	const search = $derived(page.url.searchParams);
 	const current = $derived((href: string) => isCurrent(pathname, search, href));
@@ -227,7 +233,7 @@
 		<AccountSwitcher
 			accounts={data.accounts}
 			actingAccountId={data.member.id}
-			workspace={{ slug, name: data.workspace.name }}
+			workspace={workspaceContext}
 		/>
 
 		<button
@@ -378,7 +384,7 @@
 			<AccountSwitcher
 				accounts={data.accounts}
 				actingAccountId={data.member.id}
-				workspace={{ slug, name: data.workspace.name }}
+				workspace={workspaceContext}
 				trigger="person"
 			/>
 			<Button
@@ -407,7 +413,7 @@
 		<header
 			class="flex h-13 flex-none items-center gap-2.5 border-b border-line-default px-4 md:hidden"
 		>
-			<WorkspaceMark name={data.workspace.name} class="size-6" />
+			<WorkspaceMark name={data.workspace.name} logoUrl={workspaceContext.logoUrl} class="size-6" />
 			<span class="min-w-0 flex-1 truncate text-lg font-medium tracking-snug text-ink-900">
 				{data.workspace.name}
 			</span>
@@ -417,7 +423,7 @@
 			<AccountSwitcher
 				accounts={data.accounts}
 				actingAccountId={data.member.id}
-				workspace={{ slug, name: data.workspace.name }}
+				workspace={workspaceContext}
 				trigger="avatar"
 			/>
 		</header>

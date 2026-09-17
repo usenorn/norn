@@ -1,17 +1,24 @@
 <script lang="ts">
+	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import { cn } from "$lib/utils.js";
 
-	let { name, class: className }: { name: string; class?: string } = $props();
+	let {
+		name,
+		logoUrl,
+		class: className,
+	}: { name: string; logoUrl?: string; class?: string } = $props();
 
 	const initial = $derived(name.trim().charAt(0).toUpperCase() || "?");
 </script>
 
-<span
-	class={cn(
-		"inline-flex size-5.5 shrink-0 items-center justify-center rounded-sm bg-primary text-md font-medium text-primary-foreground",
-		className
-	)}
+<Avatar.Root
+	variant="mark"
+	shape="square"
+	class={cn("size-5.5 text-md", className)}
 	aria-hidden="true"
 >
-	{initial}
-</span>
+	{#if logoUrl}
+		<Avatar.Image src={logoUrl} alt="" />
+	{/if}
+	<Avatar.Fallback>{initial}</Avatar.Fallback>
+</Avatar.Root>

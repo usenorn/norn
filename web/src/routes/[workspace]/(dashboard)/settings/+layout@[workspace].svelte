@@ -3,6 +3,7 @@
 	import { withSlot } from "$lib/account/accounts";
 	import { workspaceSettingsNavigation } from "$lib/settings/navigation";
 	import SettingsShell from "$lib/settings/settings-shell.svelte";
+	import { logoSource } from "$lib/workspace/logo";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import type { LayoutProps } from "./$types";
 
@@ -24,7 +25,11 @@
 		<AccountSwitcher
 			accounts={data.accounts}
 			actingAccountId={data.member.id}
-			workspace={{ slug, name: data.workspace.name }}
+			workspace={{
+				slug,
+				name: data.workspace.name,
+				logoUrl: logoSource(data.workspace.logoUrl, data.member.slot),
+			}}
 			context="workspace-settings"
 		/>
 	{/snippet}

@@ -643,8 +643,48 @@ export interface paths {
         delete: operations["deleteWorkspace"];
         options?: never;
         head?: never;
-        /** Change the workspace display name and timezone */
+        /** Change the workspace name, address, timezone, week start and default team */
         patch: operations["updateWorkspace"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Trade a session for a short-lived link to the workspace logo */
+        get: operations["downloadWorkspaceLogo"];
+        /** Replace the workspace logo */
+        put: operations["uploadWorkspaceLogo"];
+        post?: never;
+        /** Remove the workspace logo */
+        delete: operations["removeWorkspaceLogo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspace-addresses/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        /** Find the workspace a former address still points to, for a member of it */
+        get: operations["resolveWorkspaceAddress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/workspaces/{workspaceId}/restore": {
@@ -7850,6 +7890,8 @@ export interface components {
             name: string;
             status: components["schemas"]["WorkspaceStatus"];
             timezone: string;
+            weekStartsOn: components["schemas"]["WeekDay"];
+            logoUrl?: string;
             /** Format: uuid */
             defaultTeamId?: string;
             /** Format: date-time */
@@ -7860,11 +7902,15 @@ export interface components {
             purgeAfter?: string;
         };
         UpdateWorkspaceRequest: {
+            slug?: string;
             name?: string;
             timezone?: string;
+            weekStartsOn?: components["schemas"]["WeekDay"];
             /** Format: uuid */
             defaultTeamId?: string;
         };
+        /** @enum {string} */
+        WeekDay: "monday" | "sunday";
         Membership: {
             /** Format: uuid */
             workspaceId: string;
@@ -10179,6 +10225,122 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["WorkspaceDeleted"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    downloadWorkspaceLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Follow this link; it expires */
+            303: {
+                headers: {
+                    Location?: string;
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    uploadWorkspaceLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The workspace with its new logo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["WorkspaceDeleted"];
+            413: components["responses"]["Problem"];
+            415: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceLogo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace without a logo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["WorkspaceDeleted"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    resolveWorkspaceAddress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace now living at a different address */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

@@ -28,6 +28,7 @@
 		meta,
 		width = "standard",
 		actions,
+		toolbar,
 		children,
 	}: {
 		title: string;
@@ -36,6 +37,7 @@
 		meta?: string;
 		width?: SettingsPageWidth;
 		actions?: Snippet;
+		toolbar?: Snippet;
 		children: Snippet;
 	} = $props();
 </script>
@@ -63,6 +65,10 @@
 			</div>
 		{/if}
 	</header>
+
+	{#if toolbar}
+		{@render toolbar()}
+	{/if}
 
 	<div class="flex-1 overflow-auto">
 		<main class={settingsPageContent({ width })}>
