@@ -86,7 +86,7 @@ export const load: PageServerLoad = async ({
 	if (!issue.data) return { detail: { kind: "unavailable" } };
 
 	if (issue.data.reference !== identifier) {
-		redirect(308, `/${params.workspace}/issues/${issue.data.reference}`);
+		redirect(308, `/${params.workspace}/issues/${issue.data.reference}${url.search}`);
 	}
 
 	depends(keys.issue(issue.data.id));

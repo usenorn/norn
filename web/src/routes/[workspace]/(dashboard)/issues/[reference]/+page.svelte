@@ -162,6 +162,7 @@
 	import { setIssueLabels } from "$lib/labels/set-issue-labels";
 	import { parseDate } from "@internationalized/date";
 	import { workspacePath } from "$lib/workspace/navigation";
+	import { listReturn } from "$lib/issues/return-to-list";
 	import {
 		activityPreviewStates,
 		attachmentPreviewStates,
@@ -363,6 +364,7 @@
 	const labels = $derived(applied ?? issue?.labels ?? []);
 	const slug = $derived(page.params.workspace ?? "");
 	const at = $derived((path: string) => workspacePath(slug, path));
+	const backToList = $derived(listReturn(page.url, slug, at("/issues")));
 
 	const knownLabels = $derived([
 		...(ready?.labels ?? []),
@@ -1682,13 +1684,13 @@
 	<div
 		class="flex h-11 flex-none items-center gap-2 border-b border-line-default pr-2.5 pl-2.5"
 	>
-		<Button variant="outline" size="icon-sm" href={at("/issues")} aria-label="Back to the list">
+		<Button variant="outline" size="icon-sm" href={backToList} aria-label="Back to the list">
 			<ChevronLeft aria-hidden="true" />
 		</Button>
 
 		<div class="flex min-w-0 flex-1 items-center gap-1.75">
 			<a
-				href={at("/issues")}
+				href={backToList}
 				class="text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 			>
 				Issues
@@ -1800,7 +1802,7 @@
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 
-			<Button variant="outline" size="icon-sm" href={at("/issues")} aria-label="Close this issue">
+			<Button variant="outline" size="icon-sm" href={backToList} aria-label="Close this issue">
 				<X aria-hidden="true" />
 			</Button>
 		{/if}
@@ -1919,7 +1921,7 @@
 					It was deleted, or it belongs to a team you are not on. Links to it keep resolving here.
 				</p>
 				<div class="mt-1 flex gap-2">
-					<Button size="sm" href={at("/issues")}>Back to issues</Button>
+					<Button size="sm" href={backToList}>Back to issues</Button>
 				</div>
 			</div>
 		</div>
