@@ -41,11 +41,16 @@ func (s *sync) announce(ctx context.Context, from source, link entity.CodeLink, 
 		return
 	}
 
+	description := ""
+	if from.repository.AnnounceDescription {
+		description = issue.Description
+	}
+
 	if err := forge.PostChangeComment(
 		ctx,
 		from.target(),
 		link.Number,
-		entity.AnnounceIssueOnChange(issue.Reference(), issue.Title, address),
+		entity.AnnounceIssueOnChange(issue.Reference(), issue.Title, address, description),
 	); err != nil {
 		logging.From(ctx).WarnContext(
 			ctx,

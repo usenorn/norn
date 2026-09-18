@@ -246,11 +246,17 @@ func (s *connections) UpdateRepository(
 		polling = *input.WebhooksDisabled
 	}
 
+	described := stored.AnnounceDescription
+	if input.AnnounceDescription != nil {
+		described = *input.AnnounceDescription
+	}
+
 	return s.repositories.UpdateSettings(ctx, repositoryID, repository.SCMRepositorySettings{
-		MirrorLabel:      label,
-		SyncDirection:    direction,
-		WebhooksDisabled: polling,
-		PollInterval:     interval,
+		MirrorLabel:         label,
+		SyncDirection:       direction,
+		WebhooksDisabled:    polling,
+		AnnounceDescription: described,
+		PollInterval:        interval,
 	})
 }
 

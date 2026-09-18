@@ -10,27 +10,28 @@ import (
 const SCMDefaultPollInterval = 5 * time.Minute
 
 type SCMRepository struct {
-	ID               uuid.UUID
-	ConnectionID     uuid.UUID
-	WorkspaceID      uuid.UUID
-	Provider         SCMProvider
-	FullName         string
-	ExternalID       string
-	DefaultBranch    string
-	URL              string
-	WebhookSecretSet bool
-	ExternalHookID   string
-	MirrorLabel      string
-	SyncDirection    MirrorDirection
-	WebhooksDisabled bool
-	PollInterval     time.Duration
-	ReconcileCursor  string
-	ReconciledAt     *time.Time
-	ReconcileAfter   *time.Time
-	LastSeenAt       *time.Time
-	BackfilledAt     *time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ID                  uuid.UUID
+	ConnectionID        uuid.UUID
+	WorkspaceID         uuid.UUID
+	Provider            SCMProvider
+	FullName            string
+	ExternalID          string
+	DefaultBranch       string
+	URL                 string
+	WebhookSecretSet    bool
+	ExternalHookID      string
+	MirrorLabel         string
+	SyncDirection       MirrorDirection
+	WebhooksDisabled    bool
+	AnnounceDescription bool
+	PollInterval        time.Duration
+	ReconcileCursor     string
+	ReconciledAt        *time.Time
+	ReconcileAfter      *time.Time
+	LastSeenAt          *time.Time
+	BackfilledAt        *time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 
 	// How many routes narrow this repository. Zero is the permissive state, not the broken one:
 	// a repository with no routes reaches every team.

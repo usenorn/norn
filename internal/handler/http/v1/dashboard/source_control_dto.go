@@ -106,6 +106,7 @@ func sourceControlRepositoryDTO(stored entity.SCMRepository) api.SourceControlRe
 	direction := api.MirrorDirection(stored.Direction())
 	dto.SyncDirection = &direction
 	dto.WebhooksDisabled = pointer(stored.WebhooksDisabled)
+	dto.AnnounceDescription = pointer(stored.AnnounceDescription)
 	dto.PollIntervalSeconds = pointer(int32(stored.PollInterval / time.Second))
 	dto.RouteCount = pointer(int32(stored.RouteCount))
 	dto.LastSeenAt = stored.LastSeenAt

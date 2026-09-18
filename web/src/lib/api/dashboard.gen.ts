@@ -7203,6 +7203,7 @@ export interface components {
             mirrorLabel: string;
             syncDirection?: components["schemas"]["MirrorDirection"];
             webhooksDisabled?: boolean;
+            announceDescription?: boolean;
             /** Format: int32 */
             pollIntervalSeconds?: number;
             hookInstalled: boolean;
@@ -7237,6 +7238,7 @@ export interface components {
             mirrorLabel?: string;
             syncDirection?: components["schemas"]["MirrorDirection"];
             webhooksDisabled?: boolean;
+            announceDescription?: boolean;
             /** Format: int32 */
             pollIntervalSeconds?: number;
         };

@@ -11432,6 +11432,7 @@ components:
         mirrorLabel: { type: string }
         syncDirection: { $ref: '#/components/schemas/MirrorDirection' }
         webhooksDisabled: { type: boolean }
+        announceDescription: { type: boolean }
         pollIntervalSeconds: { type: integer, format: int32 }
         hookInstalled: { type: boolean }
         routeCount: { type: integer, format: int32 }
@@ -11468,6 +11469,7 @@ components:
         mirrorLabel: { type: string }
         syncDirection: { $ref: '#/components/schemas/MirrorDirection' }
         webhooksDisabled: { type: boolean }
+        announceDescription: { type: boolean }
         pollIntervalSeconds: { type: integer, format: int32 }
 
     MirrorDirection:

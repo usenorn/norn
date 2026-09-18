@@ -3,6 +3,7 @@ package entity
 import (
 	"errors"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -259,8 +260,14 @@ type CodeLinkTransition struct {
 	AppliedAt  time.Time
 }
 
-func AnnounceIssueOnChange(reference, title, address string) string {
-	return "[" + reference + "](" + address + ") **" + title + "**"
+func AnnounceIssueOnChange(reference, title, address, description string) string {
+	announcement := "[" + reference + "](" + address + ") **" + title + "**"
+
+	if strings.TrimSpace(description) == "" {
+		return announcement
+	}
+
+	return announcement + "\n\n" + description
 }
 
 type SCMTransitionRule struct {

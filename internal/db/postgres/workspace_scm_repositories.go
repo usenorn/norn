@@ -45,6 +45,7 @@ type WorkspaceSCMRepository struct {
 	SyncDirection       string     `boil:"sync_direction" json:"sync_direction" toml:"sync_direction" yaml:"sync_direction"`
 	WebhooksDisabled    bool       `boil:"webhooks_disabled" json:"webhooks_disabled" toml:"webhooks_disabled" yaml:"webhooks_disabled"`
 	BackfilledAt        null.Time  `boil:"backfilled_at" json:"backfilled_at,omitempty" toml:"backfilled_at" yaml:"backfilled_at,omitempty"`
+	AnnounceDescription bool       `boil:"announce_description" json:"announce_description" toml:"announce_description" yaml:"announce_description"`
 
 	R *workspaceSCMRepositoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceSCMRepositoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -72,6 +73,7 @@ var WorkspaceSCMRepositoryColumns = struct {
 	SyncDirection       string
 	WebhooksDisabled    string
 	BackfilledAt        string
+	AnnounceDescription string
 }{
 	ID:                  "id",
 	ConnectionID:        "connection_id",
@@ -94,6 +96,7 @@ var WorkspaceSCMRepositoryColumns = struct {
 	SyncDirection:       "sync_direction",
 	WebhooksDisabled:    "webhooks_disabled",
 	BackfilledAt:        "backfilled_at",
+	AnnounceDescription: "announce_description",
 }
 
 var WorkspaceSCMRepositoryTableColumns = struct {
@@ -118,6 +121,7 @@ var WorkspaceSCMRepositoryTableColumns = struct {
 	SyncDirection       string
 	WebhooksDisabled    string
 	BackfilledAt        string
+	AnnounceDescription string
 }{
 	ID:                  "workspace_scm_repositories.id",
 	ConnectionID:        "workspace_scm_repositories.connection_id",
@@ -140,6 +144,7 @@ var WorkspaceSCMRepositoryTableColumns = struct {
 	SyncDirection:       "workspace_scm_repositories.sync_direction",
 	WebhooksDisabled:    "workspace_scm_repositories.webhooks_disabled",
 	BackfilledAt:        "workspace_scm_repositories.backfilled_at",
+	AnnounceDescription: "workspace_scm_repositories.announce_description",
 }
 
 // Generated where
@@ -166,6 +171,7 @@ var WorkspaceSCMRepositoryWhere = struct {
 	SyncDirection       whereHelperstring
 	WebhooksDisabled    whereHelperbool
 	BackfilledAt        whereHelpernull_Time
+	AnnounceDescription whereHelperbool
 }{
 	ID:                  whereHelperstring{field: "\"workspace_scm_repositories\".\"id\""},
 	ConnectionID:        whereHelperstring{field: "\"workspace_scm_repositories\".\"connection_id\""},
@@ -188,6 +194,7 @@ var WorkspaceSCMRepositoryWhere = struct {
 	SyncDirection:       whereHelperstring{field: "\"workspace_scm_repositories\".\"sync_direction\""},
 	WebhooksDisabled:    whereHelperbool{field: "\"workspace_scm_repositories\".\"webhooks_disabled\""},
 	BackfilledAt:        whereHelpernull_Time{field: "\"workspace_scm_repositories\".\"backfilled_at\""},
+	AnnounceDescription: whereHelperbool{field: "\"workspace_scm_repositories\".\"announce_description\""},
 }
 
 // WorkspaceSCMRepositoryRels is where relationship names are stored.
@@ -360,9 +367,9 @@ func (r *workspaceSCMRepositoryR) GetRepositoryWorkspaceSCMRoutes() WorkspaceSCM
 type workspaceSCMRepositoryL struct{}
 
 var (
-	workspaceSCMRepositoryAllColumns            = []string{"id", "connection_id", "workspace_id", "provider", "full_name", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at"}
+	workspaceSCMRepositoryAllColumns            = []string{"id", "connection_id", "workspace_id", "provider", "full_name", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at", "announce_description"}
 	workspaceSCMRepositoryColumnsWithoutDefault = []string{"connection_id", "workspace_id", "provider", "full_name"}
-	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at"}
+	workspaceSCMRepositoryColumnsWithDefault    = []string{"id", "external_id", "default_branch", "url", "webhook_secret_sealed", "external_hook_id", "mirror_label", "poll_interval", "reconcile_cursor", "reconciled_at", "reconcile_after", "last_seen_at", "created_at", "updated_at", "sync_direction", "webhooks_disabled", "backfilled_at", "announce_description"}
 	workspaceSCMRepositoryPrimaryKeyColumns     = []string{"id"}
 	workspaceSCMRepositoryGeneratedColumns      = []string{}
 )

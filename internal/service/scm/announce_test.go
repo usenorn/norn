@@ -25,6 +25,16 @@ type openedChange struct {
 func (h *advanceHarness) openedChange(t *testing.T) openedChange {
 	t.Helper()
 
+	return h.openedChangeDescribed(t, "", false)
+}
+
+func (h *advanceHarness) openedChangeDescribed(
+	t *testing.T,
+	description string,
+	announce bool,
+) openedChange {
+	t.Helper()
+
 	var (
 		workspaceID  = uuid.New()
 		teamID       = uuid.New()
@@ -46,11 +56,12 @@ func (h *advanceHarness) openedChange(t *testing.T) openedChange {
 	}
 
 	stored := entity.SCMRepository{
-		ID:           repositoryID,
-		ConnectionID: connectionID,
-		WorkspaceID:  workspaceID,
-		Provider:     entity.SCMProviderGitHub,
-		FullName:     "acme/api",
+		ID:                  repositoryID,
+		ConnectionID:        connectionID,
+		WorkspaceID:         workspaceID,
+		Provider:            entity.SCMProviderGitHub,
+		FullName:            "acme/api",
+		AnnounceDescription: announce,
 	}
 
 	issue := entity.Issue{
@@ -60,6 +71,7 @@ func (h *advanceHarness) openedChange(t *testing.T) openedChange {
 		ReferenceKey: "ENG",
 		Number:       1,
 		Title:        "Drop the cache",
+		Description:  description,
 		Version:      1,
 		State:        entity.IssueState{ID: todoID, Name: "Todo"},
 	}
@@ -261,5 +273,62 @@ func TestAnAnnouncementTheForgeRefusedIsTriedAgain(t *testing.T) {
 
 	if err := h.sync.Apply(context.Background(), opened.deliveryID); err != nil {
 		t.Fatalf("Apply: %v", err)
+	}
+}
+
+func TestAChangeCarriesTheIssueDescriptionOnlyWhereTheRepositoryAsksForIt(t *testing.T) {
+	const described = "The cache holds stale rows.\n\n- [ ] drop it on deploy"
+
+	cases := []struct {
+		name     string
+		announce bool
+	}{
+		{name: "asked for", announce: true},
+		{name: "left alone", announce: false},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			h := newAdvanceHarness(t)
+			opened := h.openedChangeDescribed(t, described, testCase.announce)
+
+			h.links.EXPECT().
+				ClaimAnnouncement(gomock.Any(), opened.linkID, gomock.Any()).
+				Return(true, nil)
+
+			var announced string
+
+			h.forge.EXPECT().
+				PostChangeComment(gomock.Any(), gomock.Any(), 14, gomock.Any()).
+				DoAndReturn(func(_ context.Context, _ entity.SCMTarget, _ int, body string) error {
+					announced = body
+
+					return nil
+				})
+
+			h.links.EXPECT().
+				ClaimTransition(gomock.Any(), opened.linkID, entity.CodeChangeOpen, opened.issueID, opened.reviewID, gomock.Any()).
+				Return(true, nil)
+
+			h.issueWriter.EXPECT().
+				Update(gomock.Any(), opened.workspaceID, opened.issueID, gomock.Any()).
+				Return(opened.issue, nil)
+
+			if err := h.sync.Apply(context.Background(), opened.deliveryID); err != nil {
+				t.Fatalf("Apply: %v", err)
+			}
+
+			if strings.Contains(announced, described) != testCase.announce {
+				t.Fatalf(
+					"the comment left on the change is %q, want the description carried = %t — "+
+						"a repository nobody asked must keep telling the forge the title alone",
+					announced, testCase.announce,
+				)
+			}
+
+			if !strings.Contains(announced, "Drop the cache") {
+				t.Fatalf("the comment %q dropped the issue title", announced)
+			}
+		})
 	}
 }
