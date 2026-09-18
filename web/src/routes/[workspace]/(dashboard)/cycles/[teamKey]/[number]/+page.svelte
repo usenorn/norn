@@ -16,6 +16,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
 	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
+	import BurndownChart from "$lib/components/norn/burndown-chart.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -30,10 +31,7 @@
 	import { membersOf, rosterFor } from "$lib/team/members";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import {
-		burndownCeiling,
-		burndownIdeal,
-		burndownRuns,
-		burndownStart,
+		burndownSeries,
 		issueAsRecorded,
 		scopeAddedWithin,
 		categoryOf,
@@ -46,7 +44,6 @@
 		cycleStanding,
 		risksBecause,
 		destinationLabels,
-		plannedDays,
 		readCycleFailure,
 		rolloverLabels,
 		scopeChangesOf,
@@ -54,8 +51,6 @@
 		stateNameOf,
 		teamCyclesPath,
 		unfinishedIssues,
-		unknownDays,
-		unrecordedDays,
 		type CycleFailure,
 		type CycleRiskKind,
 		type CycleRollover,
@@ -247,43 +242,16 @@
 		decided.set({ reviewedIssueIds: reviewing, decisions: {} });
 	});
 
-	const chart = $derived.by(() => {
-		if (!cycle || !burndown) return undefined;
+	const chart = $derived(cycle && burndown ? burndownSeries(cycle, burndown) : null);
+	const ticks = $derived.by(() => {
+		if (!cycle) return [];
 
-		const days = plannedDays(cycle);
-		const ideal = burndownIdeal(cycle, burndown);
-		const highest = Math.max(burndownCeiling(burndown), burndownStart(burndown) ?? 0);
-
-		if (days === 0 || burndown.points.length === 0) return undefined;
-
-		const ceiling = Math.max(highest, 1);
-		const x = (index: number) => (days > 1 ? (index / (days - 1)) * 600 : 300);
-		const y = (value: number) => 139 - (value / ceiling) * 133;
-		const path = (values: { at: number; value: number }[]) =>
-			values.map((point, at) => `${at === 0 ? "M" : "L"}${x(point.at)} ${y(point.value)}`).join(" ");
-
-		const runs = burndownRuns(burndown);
-
-		return {
-			ideal: ideal.length > 0 ? path(ideal.map((value, at) => ({ at, value }))) : "",
-			runs: runs
-				.filter((run) => run.points.length > 1)
-				.map((run) =>
-					path(run.points.map((point, at) => ({ at: run.from + at, value: point.remaining })))
-				),
-			dots: runs
-				.filter((run) => run.points.length === 1)
-				.map((run) => ({ x: x(run.from), y: y(run.points[0].remaining) })),
-			ticks:
-				cycle.startsOn === cycle.endsOn
-					? [{ at: "start", label: onCalendarDate(cycle.startsOn) }]
-					: [
-							{ at: "start", label: onCalendarDate(cycle.startsOn) },
-							{ at: "end", label: onCalendarDate(cycle.endsOn) },
-						],
-			missing: unrecordedDays(burndown),
-			uncertain: unknownDays(burndown),
-		};
+		return cycle.startsOn === cycle.endsOn
+			? [{ at: "start", label: onCalendarDate(cycle.startsOn) }]
+			: [
+					{ at: "start", label: onCalendarDate(cycle.startsOn) },
+					{ at: "end", label: onCalendarDate(cycle.endsOn) },
+				];
 	});
 
 	const stats = $derived.by(() => {
@@ -814,42 +782,12 @@
 						</div>
 
 						{#if chart}
-							<div>
-								<svg
-									viewBox="0 0 600 140"
-									preserveAspectRatio="none"
-									class="h-32 w-full"
-									role="img"
-									aria-label="Remaining work across {cycle.name}"
-								>
-									<line x1="0" y1="35" x2="600" y2="35" class="stroke-line-default" />
-									<line x1="0" y1="70" x2="600" y2="70" class="stroke-line-default" />
-									<line x1="0" y1="105" x2="600" y2="105" class="stroke-line-default" />
-									<line x1="0" y1="139" x2="600" y2="139" class="stroke-line-strong" />
-									{#if chart.ideal}
-										<path
-											d={chart.ideal}
-											fill="none"
-											vector-effect="non-scaling-stroke"
-											class="stroke-line-strong"
-										/>
-									{/if}
-									{#each chart.runs as run, at (at)}
-										<path
-											d={run}
-											fill="none"
-											vector-effect="non-scaling-stroke"
-											stroke-width="2"
-											class="stroke-primary"
-										/>
-									{/each}
-									{#each chart.dots as dot, at (at)}
-										<circle cx={dot.x} cy={dot.y} r="3" class="fill-primary" />
-									{/each}
-								</svg>
-							</div>
+							<BurndownChart
+								series={chart}
+								label="Remaining work across {cycle.name}"
+							/>
 							<div class="flex justify-between font-mono text-xs text-muted-foreground tabular-nums">
-								{#each chart.ticks as tick (tick.at)}
+								{#each ticks as tick (tick.at)}
 									<span>{tick.label}</span>
 								{/each}
 							</div>
@@ -867,7 +805,7 @@
 									that day is not in the record.
 								</p>
 							{/if}
-							{#if !chart.ideal}
+							{#if !chart.hasIdeal}
 								<p class="text-xs leading-normal text-muted-foreground text-pretty">
 									The ideal line needs the scope this cycle started with, and that day is not in the
 									record.
