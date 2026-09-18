@@ -123,6 +123,7 @@ func DecodeMembershipCursor(raw string) (MembershipCursor, error) {
 
 type MembershipPage struct {
 	Query  string
+	Kinds  []AccountKind
 	Cursor *MembershipCursor
 	Limit  int
 }

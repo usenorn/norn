@@ -512,7 +512,20 @@ func (s *workspacesService) ListMembers(ctx context.Context, workspaceID uuid.UU
 		return service.MemberPage{}, err
 	}
 
-	page := entity.MembershipPage{Query: input.Query, Limit: input.Limit}.Normalized()
+	for _, kind := range input.Kinds {
+		if !kind.Valid() {
+			return service.MemberPage{}, entity.NewValidationError(entity.FieldError{
+				Field: "kind",
+				Code:  entity.ValidationCodeUnsupportedValue,
+			})
+		}
+	}
+
+	page := entity.MembershipPage{
+		Query: input.Query,
+		Kinds: input.Kinds,
+		Limit: input.Limit,
+	}.Normalized()
 
 	if input.Cursor != "" {
 		cursor, err := entity.DecodeMembershipCursor(input.Cursor)

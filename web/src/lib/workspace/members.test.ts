@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { managesTeams, roleOf, type Membership } from "./members";
+import { kindsFor, managesTeams, roleOf, segmentFrom, type Membership } from "./members";
 
 function member(accountId: string, role: Membership["role"]): Membership {
 	return {
@@ -29,5 +29,22 @@ describe("who may change a team", () => {
 
 	it("reads the role back for the person asked about", () => {
 		expect(roleOf(roster, "ordinary")).toBe("member");
+	});
+});
+
+describe("which segment the page is on", () => {
+	it("falls back to people when the parameter is absent or unknown", () => {
+		expect(segmentFrom(null)).toBe("people");
+		expect(segmentFrom("")).toBe("people");
+		expect(segmentFrom("robots")).toBe("people");
+	});
+
+	it("reads the agents segment from the parameter the tabs write", () => {
+		expect(segmentFrom("agents")).toBe("agents");
+	});
+
+	it("asks the server for both machine kinds under agents, and people alone otherwise", () => {
+		expect(kindsFor("agents")).toEqual(["agent", "integration"]);
+		expect(kindsFor("people")).toEqual(["person"]);
 	});
 });

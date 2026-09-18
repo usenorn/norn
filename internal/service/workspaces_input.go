@@ -27,6 +27,7 @@ type UpdateWorkspaceInput struct {
 
 type ListMembersInput struct {
 	Query  string
+	Kinds  []entity.AccountKind
 	Cursor string
 	Limit  int
 }

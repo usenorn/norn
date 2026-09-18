@@ -88,6 +88,7 @@ WHERE m.workspace_id = $1
        OR position(lower($2) IN lower(coalesce(a.email, ''))) > 0)
   AND ($3::boolean IS NOT TRUE
        OR (lower(coalesce(a.display_name, '')), m.account_id) > ($4, $5::uuid))
+  AND (coalesce(cardinality($7::text[]), 0) = 0 OR a.kind = ANY($7::text[]))
 ORDER BY lower(coalesce(a.display_name, '')), m.account_id
 LIMIT $6`
 
@@ -209,6 +210,15 @@ func (r *membershipRepository) Get(ctx context.Context, workspaceID, accountID u
 	return toEntity(model)
 }
 
+func accountKinds(kinds []entity.AccountKind) []string {
+	raw := make([]string, 0, len(kinds))
+	for _, kind := range kinds {
+		raw = append(raw, string(kind))
+	}
+
+	return raw
+}
+
 func (r *membershipRepository) ListPageByWorkspaceID(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -231,6 +241,7 @@ func (r *membershipRepository) ListPageByWorkspaceID(
 		cursorName,
 		cursorAccountID,
 		page.Limit,
+		accountKinds(page.Kinds),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list workspace members: %w", err)

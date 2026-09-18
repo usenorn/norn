@@ -8913,6 +8913,8 @@ export interface components {
         DirectoryLimit: number;
         DirectoryCursor: string;
         RunId: string;
+        /** @description Repeat to include more than one; left out, every kind is answered. */
+        MemberKindFilter: components["schemas"]["AccountKind"][];
         AuditLimit: number;
         AuditCursor: string;
         AuditActorFilter: string;
@@ -10387,6 +10389,8 @@ export interface operations {
                 query?: string;
                 limit?: number;
                 cursor?: string;
+                /** @description Repeat to include more than one; left out, every kind is answered. */
+                kind?: components["parameters"]["MemberKindFilter"];
             };
             header?: never;
             path: {

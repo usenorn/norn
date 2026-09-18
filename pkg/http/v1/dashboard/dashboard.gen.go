@@ -9209,6 +9209,9 @@ type IssueMirrorId = openapi_types.UUID
 // LabelId defines model for LabelId.
 type LabelId = openapi_types.UUID
 
+// MemberKindFilter defines model for MemberKindFilter.
+type MemberKindFilter = []AccountKind
+
 // NotificationSubjectId defines model for NotificationSubjectId.
 type NotificationSubjectId = openapi_types.UUID
 
@@ -9620,6 +9623,9 @@ type ListWorkspaceMembersParams struct {
 	Query  *string `form:"query,omitempty" json:"query,omitempty"`
 	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Kind Repeat to include more than one; left out, every kind is answered.
+	Kind *MemberKindFilter `form:"kind,omitempty" json:"kind,omitempty"`
 }
 
 // RemoveWorkspaceMemberParams defines parameters for RemoveWorkspaceMember.
@@ -29407,6 +29413,18 @@ func NewListWorkspaceMembersRequest(server string, workspaceId WorkspaceId, para
 		if params.Cursor != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Kind != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "kind", *params.Kind, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -97048,6 +97066,19 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceMembers(w http.ResponseWriter, r
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", r.URL.Query(), &params.Kind, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "kind"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
 		}
 		return
 	}

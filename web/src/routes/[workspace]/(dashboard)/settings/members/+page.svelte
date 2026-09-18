@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
+	import Bot from "@lucide/svelte/icons/bot";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Plug from "@lucide/svelte/icons/plug";
@@ -11,6 +12,7 @@
 	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
+	import * as Tabs from "$lib/components/ui/tabs/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -25,9 +27,12 @@
 		isDeactivated,
 		isDirectoryManaged,
 		joinedOn,
+		kindsFor,
 		lastActive,
+		machine,
 		memberName,
 		memberPageSize,
+		memberSegments,
 		membersOf,
 		membershipFailureMessage,
 		membershipFailureTitle,
@@ -37,10 +42,13 @@
 		roleLabels,
 		roleNotes,
 		searchDebounceMs,
+		segmentFrom,
+		segmentLabels,
 		type MemberAction,
 		type MemberListing,
 		type MemberPaging,
 		type MemberRemoval,
+		type MemberSegment,
 		type Membership,
 		type MembershipFailure,
 		type MembershipNotice,
@@ -85,6 +93,14 @@
 	const workspace = $derived(data.workspace);
 	const viewerId = $derived(preview?.viewerId ?? data.member.id);
 	const committed = $derived(page.url.searchParams.get("q") ?? "");
+
+	const segment = $derived<MemberSegment>(
+		preview?.segment ?? segmentFrom(page.url.searchParams.get("kind"))
+	);
+	const agentsPath = $derived(workspacePath(slug, "/settings/agents"));
+	const clearSearchPath = $derived(
+		workspacePath(slug, `/settings/members${segment === "agents" ? "?kind=agents" : ""}`)
+	);
 
 	const base = $derived<MemberListing>(preview?.listing ?? data.listing);
 	const listing = $derived<MemberListing>(
@@ -168,6 +184,17 @@
 		await goto(next, { replaceState: true, keepFocus: true, noScroll: true });
 	}
 
+	async function chooseSegment(value: string) {
+		const next = new URL(page.url);
+
+		if (value === "agents") next.searchParams.set("kind", "agents");
+		else next.searchParams.delete("kind");
+
+		next.searchParams.delete("remove");
+
+		await goto(next, { noScroll: true });
+	}
+
 	function type(value: string) {
 		draft = value;
 		clearTimeout(debounce);
@@ -191,7 +218,12 @@
 			const { data: next } = await api.GET("/workspaces/{workspaceId}/members", {
 				params: {
 					path: { workspaceId: workspace.id },
-					query: { query: committed || undefined, limit: memberPageSize, cursor: listing.nextCursor },
+					query: {
+						query: committed || undefined,
+						limit: memberPageSize,
+						cursor: listing.nextCursor,
+						kind: kindsFor(segment),
+					},
 				},
 			});
 
@@ -207,7 +239,7 @@
 				nextCursor: next.nextCursor,
 			};
 			localPaging = { kind: "idle" };
-			announcement = `${next.members.length} more people loaded.`;
+			announcement = copy.loaded(next.members.length);
 		} catch {
 			localPaging = { kind: "unavailable" };
 		}
@@ -397,6 +429,34 @@
 		return `${next.pathname}${next.search}`;
 	}
 
+	const copy = $derived(
+		segment === "agents"
+			? {
+					searchLabel: "Search agents and integrations",
+					searchPlaceholder: "Name or email",
+					emptyTitle: "No agents or integrations yet",
+					emptyDescription: `Nothing machine-run reaches ${workspace.name}.`,
+					noMatchesTitle: "No matching agent or integration",
+					noMatchesDescription: (query: string) =>
+						`Nothing machine-run in ${workspace.name} matches “${query}”.`,
+					loadMore: "Load more agents",
+					loaded: (count: number) => `${count} more loaded.`,
+					end: "That’s everything machine-run.",
+				}
+			: {
+					searchLabel: "Search people",
+					searchPlaceholder: "Name or email",
+					emptyTitle: "No people yet",
+					emptyDescription: `Invite the first person to ${workspace.name}.`,
+					noMatchesTitle: "No matching people",
+					noMatchesDescription: (query: string) =>
+						`Nobody in ${workspace.name} matches “${query}”.`,
+					loadMore: "Load more people",
+					loaded: (count: number) => `${count} more people loaded.`,
+					end: "That’s everyone.",
+				}
+	);
+
 	function rowLocked(member: Membership): boolean {
 		return busy || isDirectoryManaged(member) || member.accountId === viewerId;
 	}
@@ -406,12 +466,26 @@
 
 <SettingsPage
 	title="Members"
-	description="People, roles, invitations and workspace API access."
+	description="People, agents, roles, invitations and workspace API access."
 	Icon={UserRound}
 	meta={`${members.length} in view`}
 >
 	{#snippet actions()}
-		<Button size="sm" href={invitePath}>Invite people</Button>
+		{#if segment === "agents"}
+			<Button size="sm" href={agentsPath}>Manage agents</Button>
+		{:else}
+			<Button size="sm" href={invitePath}>Invite people</Button>
+		{/if}
+	{/snippet}
+
+	{#snippet toolbar()}
+		<Tabs.Root value={segment} onValueChange={chooseSegment} class="gap-0">
+			<Tabs.List variant="line" class="w-full justify-start overflow-x-auto px-4 sm:px-5">
+				{#each memberSegments as option (option)}
+					<Tabs.Trigger value={option} class="flex-none">{segmentLabels[option]}</Tabs.Trigger>
+				{/each}
+			</Tabs.List>
+		</Tabs.Root>
 	{/snippet}
 			<p class="sr-only" aria-live="polite" aria-atomic="true">{announcement}</p>
 
@@ -461,17 +535,24 @@
 							there.
 						</p>
 					{/if}
+					{#if segment === "agents"}
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							This is the workspace role each agent and integration account holds. Registering an
+							agent, its scopes and its credential live under
+							<a href={agentsPath} class="text-link hover:text-link-hover hover:underline">Agents</a>.
+						</p>
+					{/if}
 				</div>
 
 				<div class="flex flex-col gap-1.5" role="search">
-					<label for="member-search" class="text-sm font-medium text-ink-900">Search members</label>
+					<label for="member-search" class="text-sm font-medium text-ink-900">{copy.searchLabel}</label>
 					<Input
 						id="member-search"
 						type="search"
 						enterkeyhint="search"
 						autocapitalize="none"
 						spellcheck="false"
-						placeholder="Name or email"
+						placeholder={copy.searchPlaceholder}
 						disabled={busy}
 						value={draft}
 						oninput={(event) => type(event.currentTarget.value)}
@@ -480,7 +561,7 @@
 				</div>
 
 				{#if listing.kind === "loading"}
-					<ul class="flex flex-col gap-px" aria-busy="true" aria-label="Loading members">
+					<ul class="flex flex-col gap-px" aria-busy="true" aria-label="Loading the list">
 						{#each [0, 1, 2] as row (row)}
 							<li class="flex h-14 items-center gap-3 px-3">
 								<Skeleton class="size-8 shrink-0" />
@@ -494,31 +575,45 @@
 				{:else if listing.kind === "unavailable"}
 					<Alert.Root variant="destructive">
 						<CircleX aria-hidden="true" />
-						<Alert.Title>We could not load the members</Alert.Title>
+						<Alert.Title>We could not load the list</Alert.Title>
 						<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
 					</Alert.Root>
 				{:else if listing.kind === "empty"}
 					<Empty.Root>
-						<Empty.Media variant="icon"><UserRound aria-hidden="true" /></Empty.Media>
+						<Empty.Media variant="icon">
+							{#if segment === "agents"}
+								<Bot aria-hidden="true" />
+							{:else}
+								<UserRound aria-hidden="true" />
+							{/if}
+						</Empty.Media>
 						<Empty.Header>
-							<Empty.Title>No members yet</Empty.Title>
-							<Empty.Description>Invite the first person to {workspace.name}.</Empty.Description>
+							<Empty.Title>{copy.emptyTitle}</Empty.Title>
+							<Empty.Description>{copy.emptyDescription}</Empty.Description>
 						</Empty.Header>
 						<Empty.Content>
-							<Button size="sm" href={invitePath}>Invite people</Button>
+							{#if segment === "agents"}
+								<Button size="sm" href={agentsPath}>Register an agent</Button>
+							{:else}
+								<Button size="sm" href={invitePath}>Invite people</Button>
+							{/if}
 						</Empty.Content>
 					</Empty.Root>
 				{:else if listing.kind === "no_matches"}
 					<Empty.Root>
-						<Empty.Media variant="icon"><UserRound aria-hidden="true" /></Empty.Media>
+						<Empty.Media variant="icon">
+							{#if segment === "agents"}
+								<Bot aria-hidden="true" />
+							{:else}
+								<UserRound aria-hidden="true" />
+							{/if}
+						</Empty.Media>
 						<Empty.Header>
-							<Empty.Title>No matching members</Empty.Title>
-							<Empty.Description>Nobody in {workspace.name} matches “{listing.query}”.</Empty.Description>
+							<Empty.Title>{copy.noMatchesTitle}</Empty.Title>
+							<Empty.Description>{copy.noMatchesDescription(listing.query)}</Empty.Description>
 						</Empty.Header>
 						<Empty.Content>
-							<Button variant="secondary" size="sm" href={workspacePath(slug, "/settings/members")}>
-								Clear search
-							</Button>
+							<Button variant="secondary" size="sm" href={clearSearchPath}>Clear search</Button>
 						</Empty.Content>
 					</Empty.Root>
 				{:else}
@@ -625,6 +720,8 @@
 
 										{#if member.kind === "agent"}
 											<Tag name="Agent" />
+										{:else if member.kind === "integration"}
+											<Tag name="Integration" />
 										{/if}
 
 										{#if member.accountId === viewerId}
@@ -638,7 +735,7 @@
 										{/if}
 
 										<span class="ml-auto flex shrink-0 items-center gap-1.5">
-											{#if member.kind !== "agent"}
+											{#if !machine(member.kind)}
 												<label
 													class="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
 												>
@@ -734,18 +831,18 @@
 									disabled={busy || paging.kind === "loading"}
 									onclick={loadMore}
 								>
-									{paging.kind === "loading" ? "Loading" : "Load more people"}
+									{paging.kind === "loading" ? "Loading" : copy.loadMore}
 								</Button>
 							</div>
 							{#if paging.kind === "unavailable"}
 								<p class="text-sm text-destructive">
-									We could not load any more people. Wait a moment and try again.
+									We could not load any more. Wait a moment and try again.
 								</p>
 							{/if}
 						</div>
 					{:else}
 						<p class="text-sm leading-normal text-muted-foreground">
-							{committed ? `That’s everyone matching “${committed}”.` : "That’s everyone."}
+							{committed ? `That’s everything matching “${committed}”.` : copy.end}
 						</p>
 					{/if}
 				{/if}

@@ -1054,6 +1054,7 @@ paths:
           in: query
           required: false
           schema: { type: string }
+        - $ref: '#/components/parameters/MemberKindFilter'
       responses:
         '200':
           description: One page of workspace members
@@ -7171,6 +7172,14 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    MemberKindFilter:
+      name: kind
+      in: query
+      explode: true
+      description: Repeat to include more than one; left out, every kind is answered.
+      schema:
+        type: array
+        items: { $ref: '#/components/schemas/AccountKind' }
     AuditLimit:
       name: limit
       in: query

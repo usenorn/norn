@@ -163,6 +163,12 @@ func (h *handler) ListWorkspaceMembers(ctx context.Context, request api.ListWork
 		input.Limit = int(*request.Params.Limit)
 	}
 
+	if request.Params.Kind != nil {
+		for _, kind := range *request.Params.Kind {
+			input.Kinds = append(input.Kinds, entity.AccountKind(kind))
+		}
+	}
+
 	page, err := h.workspaces.ListMembers(ctx, request.WorkspaceId, input)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
