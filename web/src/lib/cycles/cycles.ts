@@ -1,6 +1,7 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { Issue } from "$lib/issues/issues";
 import { categoryLabels, type StateCategory } from "$lib/team/states";
+import { shiftDays } from "$lib/time";
 
 export type Cycle = components["schemas"]["Cycle"];
 export type CyclePhase = components["schemas"]["CyclePhase"];
@@ -184,6 +185,59 @@ export function unrecordedDays(burndown: CycleBurndown): number {
 
 export function unknownDays(burndown: CycleBurndown): number {
 	return burndown.points.filter((point) => !point.unrecorded && point.unknown > 0).length;
+}
+
+export type BurndownDay = {
+	at: number;
+	on: string;
+	remaining: number | null;
+	scope: number | null;
+	ideal: number | null;
+};
+
+export type BurndownSeries = {
+	span: number;
+	ceiling: number;
+	days: BurndownDay[];
+	isolated: BurndownDay[];
+	hasIdeal: boolean;
+	missing: number;
+	uncertain: number;
+};
+
+export function burndownSeries(cycle: Cycle, burndown: CycleBurndown): BurndownSeries | null {
+	const span = plannedDays(cycle);
+
+	if (span === 0 || burndown.points.length === 0) return null;
+
+	const ideal = burndownIdeal(cycle, burndown);
+	const ceiling = Math.max(burndownCeiling(burndown), burndownStart(burndown) ?? 0, 1);
+
+	const days = Array.from({ length: span }, (_, at): BurndownDay => {
+		const point = burndown.points[at];
+		const known = point !== undefined && burndownKnown(point);
+
+		return {
+			at,
+			on: point?.on ?? shiftDays(cycle.startsOn, at),
+			remaining: known ? point.remaining : null,
+			scope: known ? point.scope : null,
+			ideal: ideal.length > 0 ? ideal[at] : null,
+		};
+	});
+
+	return {
+		span,
+		ceiling,
+		days,
+		isolated: burndownRuns(burndown)
+			.filter((run) => run.points.length === 1)
+			.map((run) => days[run.from])
+			.filter((day) => day !== undefined),
+		hasIdeal: ideal.length > 0,
+		missing: unrecordedDays(burndown),
+		uncertain: unknownDays(burndown),
+	};
 }
 
 export function scopeAddedWithin(scope: CycleScope, cycle: Cycle): number {
