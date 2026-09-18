@@ -18,7 +18,6 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Switch } from "$lib/components/ui/switch/index.js";
 	import Kbd from "$lib/components/norn/kbd.svelte";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import LabelPicker from "$lib/labels/label-picker.svelte";
@@ -41,6 +40,7 @@
 	import type { Project } from "$lib/projects/projects";
 	import type { WorkflowState } from "$lib/team/states";
 	import type { Team } from "$lib/team/teams";
+	import PriorityPicker from "./priority-picker.svelte";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { duePresets } from "./facets";
 	import { newIssueSchema, type NewIssuePrefill } from "./new-issue-schema";
@@ -69,7 +69,7 @@
 		type Document,
 		type DocumentNode,
 	} from "$lib/editor/document";
-	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "./issues";
+	import { issueFailureMessage, readIssueFailure } from "./issues";
 	import type { Issue } from "./issues";
 
 	let {
@@ -897,14 +897,6 @@
 		}))
 	);
 
-	const priorityOptions = $derived<PickerOption[]>(
-		priorities.map((entry) => ({
-			value: entry.value,
-			label: entry.label,
-			checked: entry.value === $formData.priority,
-		}))
-	);
-
 	const assigneeOptions = $derived<PickerOption[]>([
 		...people.map((member) => ({
 			value: member.accountId,
@@ -1232,28 +1224,12 @@
 						{/snippet}
 					</PropertyPicker>
 
-					<PropertyPicker
-						options={priorityOptions}
-						placeholder="Set priority…"
-						class="w-49"
-						onpick={(value) => ($formData.priority = value as typeof $formData.priority)}
-					>
-						{#snippet trigger(props)}
-							<Button
-								{...props}
-								variant="outline"
-								size="sm"
-								disabled={busy || Boolean(raised)}
-								class={chipClass}
-							>
-								<PriorityIcon priority={$formData.priority} />
-								{$formData.priority === "none" ? "Priority" : priorityLabel($formData.priority)}
-							</Button>
-						{/snippet}
-						{#snippet mark(option)}
-							<PriorityIcon priority={option.value as typeof $formData.priority} />
-						{/snippet}
-					</PropertyPicker>
+					<PriorityPicker
+						chosen={$formData.priority}
+						place="dialog"
+						disabled={busy || Boolean(raised)}
+						onchange={(priority) => ($formData.priority = priority)}
+					/>
 
 					<PropertyPicker
 						options={assigneeOptions}

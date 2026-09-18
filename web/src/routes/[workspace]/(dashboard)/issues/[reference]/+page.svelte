@@ -65,7 +65,6 @@
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
 		issueFailureMessage,
-		priorities,
 		priorityLabel,
 		readIssueFailure,
 		type IssueFailure,
@@ -79,6 +78,7 @@
 	import Layers from "@lucide/svelte/icons/layers";
 	import Target from "@lucide/svelte/icons/target";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
+	import PriorityPicker from "$lib/issues/priority-picker.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import Editor from "$lib/editor/editor.svelte";
 	import CriteriaPanel from "$lib/issues/criteria-panel.svelte";
@@ -2674,17 +2674,7 @@
 						{/snippet}
 					</IssueField>
 
-					<IssueField
-						label="Priority"
-						placeholder="Set priority"
-						editable={canEdit}
-						options={priorities.map((choice) => ({
-							value: choice.value,
-							label: choice.label,
-							checked: choice.value === issue.priority,
-						}))}
-						onpick={(picked) => setPriority(picked as IssuePriority)}
-					>
+					<IssueField label="Priority" control={canEdit ? priorityControl : undefined}>
 						{#snippet glyph()}
 							<PriorityIcon priority={issue.priority} />
 						{/snippet}
@@ -2692,6 +2682,14 @@
 							<span class="min-w-0 flex-1 truncate">{priorityLabel(issue.priority)}</span>
 						{/snippet}
 					</IssueField>
+
+					{#snippet priorityControl()}
+						<PriorityPicker
+							chosen={issue.priority}
+							place="field"
+							onchange={(priority) => setPriority(priority)}
+						/>
+					{/snippet}
 
 					<IssueField
 						label="Assignee"

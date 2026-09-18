@@ -42,6 +42,7 @@ export type ImportTargetOption = {
 	id: string;
 	name: string;
 	detail?: string;
+	color?: LabelColor;
 };
 
 export type ImportTargets = {

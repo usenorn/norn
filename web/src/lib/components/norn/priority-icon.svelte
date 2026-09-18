@@ -1,13 +1,13 @@
 <script lang="ts">
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import { cn } from "$lib/utils.js";
-	import { priorityLabels, type TaskPriority } from "$lib/tasks/types";
+	import { priorityLabel, type IssuePriority } from "$lib/issues/issues";
 
 	let {
 		priority,
 		withLabel = false,
 		class: className,
-	}: { priority: TaskPriority; withLabel?: boolean; class?: string } = $props();
+	}: { priority: IssuePriority; withLabel?: boolean; class?: string } = $props();
 
 	const bars = [
 		{ x: 1.5, y: 9, height: 5 },
@@ -30,14 +30,14 @@
 	{#if priority === "urgent"}
 		<CircleAlert
 			class={cn("size-icon-toolbar shrink-0 text-priority-urgent", className)}
-			aria-label={priorityLabels[priority]}
+			aria-label={priorityLabel(priority)}
 		/>
 	{:else}
 		<svg
 			viewBox="0 0 16 16"
 			class={cn("size-icon-toolbar shrink-0", className)}
 			role="img"
-			aria-label={priorityLabels[priority]}
+			aria-label={priorityLabel(priority)}
 		>
 			{#each bars as bar, index (index)}
 				<rect
@@ -56,7 +56,7 @@
 {#if withLabel}
 	<span class="inline-flex items-center gap-1.5 text-md text-foreground">
 		{@render glyph()}
-		{priorityLabels[priority]}
+		{priorityLabel(priority)}
 	</span>
 {:else}
 	{@render glyph()}

@@ -64,7 +64,8 @@
 	} from "$lib/command/steps";
 	import { cyclingTeams, type Cycle, type TeamCycle } from "$lib/cycles/cycles";
 	import { useNewIssue } from "$lib/issues/new-issue.svelte";
-	import type { Label, LabelColor } from "$lib/labels/labels";
+	import LabelDot from "$lib/labels/label-dot.svelte";
+	import type { Label } from "$lib/labels/labels";
 	import { toggleDensity } from "$lib/layout/density";
 	import type { Project } from "$lib/projects/projects";
 	import { chordOf, holdShortcuts } from "$lib/shortcuts/registry.svelte";
@@ -143,15 +144,6 @@
 		project: Layers,
 		team: Users,
 		person: UserRound,
-	};
-
-	const dots: Record<LabelColor, string> = {
-		neutral: "bg-label-neutral",
-		cyan: "bg-label-cyan",
-		blue: "bg-label-blue",
-		violet: "bg-label-violet",
-		orchid: "bg-label-orchid",
-		magenta: "bg-label-magenta",
 	};
 
 	const scope = $derived(preview?.scope ?? targets.scope);
@@ -467,7 +459,7 @@
 			{:else if option.category}
 				<StatusIcon category={option.category} name={option.label} decorative />
 			{:else if option.dot}
-				<span class="size-2 rounded-[2px] {dots[option.dot]}" aria-hidden="true"></span>
+				<LabelDot color={option.dot} />
 			{:else}
 				<Layers aria-hidden="true" />
 			{/if}

@@ -1,5 +1,5 @@
 import { openCycles, phaseLabel, type Cycle } from "$lib/cycles/cycles";
-import type { Label } from "$lib/labels/labels";
+import { selectable, type Label } from "$lib/labels/labels";
 import type { WorkflowState } from "$lib/team/states";
 import { assignees, type Membership } from "$lib/workspace/members";
 import type { BulkChange } from "./apply";
@@ -43,9 +43,11 @@ export function stepOptions(kind: StepKind, sources: StepSources): StepOption[] 
 				{ value: backlogOption, label: "Backlog", hint: "no cycle" },
 			];
 		default:
-			return sources.labels
-				.filter((label) => !label.teamId || label.teamId === sources.teamId)
-				.map((label) => ({ value: label.id, label: label.name, dot: label.color }));
+			return selectable(sources.labels, sources.teamId).map((label) => ({
+				value: label.id,
+				label: label.name,
+				dot: label.color,
+			}));
 	}
 }
 

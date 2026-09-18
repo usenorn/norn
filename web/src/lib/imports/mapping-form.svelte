@@ -6,6 +6,8 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { api } from "$lib/api";
 	import { priorities } from "$lib/issues/issues";
+	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
+	import LabelDot from "$lib/labels/label-dot.svelte";
 	import { mappingSchema, type MappingInput } from "./import-schema";
 	import {
 		counted,
@@ -352,12 +354,16 @@
 														{#if targetsByValue(group.kind)}
 															{#each priorities as priority (priority.value)}
 																<Select.Item value={priority.value} label={priority.label}>
+																	<PriorityIcon priority={priority.value} />
 																	{priority.label}
 																</Select.Item>
 															{/each}
 														{:else}
 															{#each targetsFor(group.kind, targets) as option (option.id)}
 																<Select.Item value={option.id} label={option.name}>
+																	{#if option.color}
+																		<LabelDot color={option.color} />
+																	{/if}
 																	{option.name}
 																	{#if option.detail}
 																		<span class="font-mono text-xs text-muted-foreground">

@@ -213,7 +213,13 @@ export const importRunPreviewStates: Record<string, ImportRunPreview> = import.m
 						],
 						teams: [{ id: "00000000-0000-4000-8000-0000000b0001", name: "Platform", detail: "PLT" }],
 						projects: [{ id: "00000000-0000-4000-8000-0000000c0001", name: "Checkout rebuild" }],
-						labels: [{ id: "00000000-0000-4000-8000-0000000e0001", name: "regression" }],
+						labels: [
+							{
+								id: "00000000-0000-4000-8000-0000000e0001",
+								name: "regression",
+								color: "magenta",
+							},
+						],
 						states: [
 							{ id: "00000000-0000-4000-8000-0000000f0001", name: "Backlog", detail: "PLT" },
 						],
@@ -298,8 +304,8 @@ export const importRunPreviewStates: Record<string, ImportRunPreview> = import.m
 						],
 						projects: [{ id: "00000000-0000-4000-8000-0000000c0001", name: "Checkout rebuild" }],
 						labels: [
-							{ id: "00000000-0000-4000-8000-0000000e0001", name: "regression" },
-							{ id: "00000000-0000-4000-8000-0000000e0002", name: "billing" },
+							{ id: "00000000-0000-4000-8000-0000000e0001", name: "regression", color: "magenta" },
+							{ id: "00000000-0000-4000-8000-0000000e0002", name: "billing", color: "cyan" },
 						],
 						states: [
 							{ id: "00000000-0000-4000-8000-0000000f0001", name: "Backlog", detail: "SUP" },
