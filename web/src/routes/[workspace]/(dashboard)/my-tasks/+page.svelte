@@ -24,6 +24,7 @@
 	import { clearedLink, dueEntries, type FacetCatalogue } from "$lib/issues/facet-options";
 	import { priorities } from "$lib/issues/issues";
 	import { linkTo } from "$lib/issues/linking";
+	import { withReturn } from "$lib/issues/return-to-list";
 	import { surfaceDefaults, surfaceGroupings, surfaceOrderings, writeDisplay } from "$lib/issues/display";
 	import { pickableFacets, type FacetKind } from "$lib/issues/facets";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
@@ -73,6 +74,11 @@
 
 	const linkWith = $derived((changes: Record<string, string | null>) =>
 		linkTo(basePath, params, changes)
+	);
+
+	const returnTo = $derived(linkWith({}));
+	const issueHref = $derived((reference: string) =>
+		withReturn(workspacePath(data.workspace.slug, `/issues/${reference}`), returnTo)
 	);
 
 	const cycles = $derived(
@@ -154,7 +160,7 @@
 
 	const cursor = listCursor(() => ({
 		rows: flat,
-		open: (task) => void goto(workspacePath(data.workspace.slug, `/issues/${task.id}`)),
+		open: (task) => void goto(issueHref(task.id)),
 	}));
 
 	const issueOf = $derived(new Map(loaded.map((issue) => [issue.reference, issue])));
@@ -282,7 +288,7 @@
 					{#each bucket.tasks as task (task.id)}
 						<TaskRow
 							{task}
-							href={workspacePath(data.workspace.slug, `/issues/${task.id}`)}
+							href={issueHref(task.id)}
 							cursor={cursor.holds(task)}
 							shown={data.display.shown}
 						/>

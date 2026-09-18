@@ -49,6 +49,7 @@
 		type FacetCatalogue,
 	} from "$lib/issues/facet-options";
 	import { linkTo } from "$lib/issues/linking";
+	import { withReturn } from "$lib/issues/return-to-list";
 	import { failures, rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
 	import { flash } from "$lib/motion";
@@ -263,6 +264,11 @@
 	);
 
 	const cleared = $derived(clearedLink(pickableFacets, linkWith));
+
+	const returnTo = $derived(linkWith({}));
+	const issueHref = $derived((reference: string) =>
+		withReturn(at(`/issues/${reference}`), returnTo)
+	);
 
 	const catalogue = $derived<FacetCatalogue>({
 		state: states.map((state) => ({ value: state.id, label: stateLabel(state) })),
@@ -887,7 +893,7 @@
 	const cursor = listCursor(() => ({
 		rows: flat,
 		open: (issue) => {
-			if (!draftIDs.has(issue.id)) void goto(at(`/issues/${issue.reference}`));
+			if (!draftIDs.has(issue.id)) void goto(issueHref(issue.reference));
 		},
 		left: () => step(-1),
 		right: () => step(1),
@@ -1487,7 +1493,7 @@
 									{@render dropGap(column.key, index)}
 									<IssueRow
 										{issue}
-										href={at(`/issues/${issue.reference}`)}
+										href={issueHref(issue.reference)}
 										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
 										now={data.now}
 										timezone={data.workspace.timezone}
@@ -1559,7 +1565,7 @@
 									<IssueCard
 										{issue}
 										cursor={cursor.holds(issue)}
-										href={at(`/issues/${issue.reference}`)}
+										href={issueHref(issue.reference)}
 										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
 										now={data.now}
 										timezone={data.workspace.timezone}
