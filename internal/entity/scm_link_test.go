@@ -455,3 +455,37 @@ func TestEveryObserverOfACompletedIssueClaimsItUnderTheSameChange(t *testing.T) 
 		}
 	}
 }
+
+func TestAnAnnouncementCarriesTheDescriptionOnlyWhenThereIsOneToCarry(t *testing.T) {
+	const (
+		reference = "ENG-1"
+		title     = "Drop the cache"
+		address   = "https://norn.example/northwind/issues/ENG-1"
+		titleOnly = "[ENG-1](https://norn.example/northwind/issues/ENG-1) **Drop the cache**"
+	)
+
+	markdown := "The cache holds stale rows.\n\n- [ ] drop it on deploy\n\n> and say so"
+
+	cases := []struct {
+		name        string
+		description string
+		want        string
+	}{
+		{name: "none", description: "", want: titleOnly},
+		{name: "blank", description: "   \n\t\n ", want: titleOnly},
+		{name: "markdown", description: markdown, want: titleOnly + "\n\n" + markdown},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			got := entity.AnnounceIssueOnChange(reference, title, address, testCase.description)
+			if got != testCase.want {
+				t.Fatalf(
+					"the comment left on the change is %q, want %q — a description that says "+
+						"nothing must not cost the reviewer a second block to read",
+					got, testCase.want,
+				)
+			}
+		})
+	}
+}

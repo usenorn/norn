@@ -229,10 +229,11 @@ func (h *handler) UpdateWorkspaceSourceControlRepository(
 		request.WorkspaceId,
 		request.RepositoryId,
 		service.UpdateRepositoryInput{
-			MirrorLabel:      optionalString(request.Body.MirrorLabel),
-			SyncDirection:    optionalDirection(request.Body.SyncDirection),
-			WebhooksDisabled: request.Body.WebhooksDisabled,
-			PollInterval:     optionalInterval(request.Body.PollIntervalSeconds),
+			MirrorLabel:         optionalString(request.Body.MirrorLabel),
+			SyncDirection:       optionalDirection(request.Body.SyncDirection),
+			WebhooksDisabled:    request.Body.WebhooksDisabled,
+			AnnounceDescription: request.Body.AnnounceDescription,
+			PollInterval:        optionalInterval(request.Body.PollIntervalSeconds),
 		},
 	)
 	if err != nil {

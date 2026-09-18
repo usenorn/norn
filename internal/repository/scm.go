@@ -36,10 +36,11 @@ type SCMRepositoryInput struct {
 }
 
 type SCMRepositorySettings struct {
-	MirrorLabel      string
-	SyncDirection    entity.MirrorDirection
-	WebhooksDisabled bool
-	PollInterval     time.Duration
+	MirrorLabel         string
+	SyncDirection       entity.MirrorDirection
+	WebhooksDisabled    bool
+	AnnounceDescription bool
+	PollInterval        time.Duration
 }
 
 type SCMRepository interface {

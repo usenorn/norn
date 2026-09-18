@@ -8456,6 +8456,7 @@ type SourceControlRefusedProblemCode string
 
 // SourceControlRepository One repository reached through a connection. pollIntervalSeconds is per repository because the sweep exists for the one whose webhook never arrives, and hookInstalled is false when the token could not install it — the sweep retries, and until it succeeds the address and secret below are what a person installs by hand.
 type SourceControlRepository struct {
+	AnnounceDescription *bool              `json:"announceDescription,omitempty"`
 	ConnectionId        openapi_types.UUID `json:"connectionId"`
 	CreatedAt           time.Time          `json:"createdAt"`
 	DefaultBranch       *string            `json:"defaultBranch,omitempty"`
@@ -8768,6 +8769,7 @@ type UpdateSavedViewRequest struct {
 
 // UpdateSourceControlRepositoryRequest defines model for UpdateSourceControlRepositoryRequest.
 type UpdateSourceControlRepositoryRequest struct {
+	AnnounceDescription *bool   `json:"announceDescription,omitempty"`
 	MirrorLabel         *string `json:"mirrorLabel,omitempty"`
 	PollIntervalSeconds *int32  `json:"pollIntervalSeconds,omitempty"`
 

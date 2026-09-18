@@ -242,10 +242,11 @@ type ConnectedRepository struct {
 }
 
 type UpdateRepositoryInput struct {
-	MirrorLabel      string
-	SyncDirection    entity.MirrorDirection
-	WebhooksDisabled *bool
-	PollInterval     time.Duration
+	MirrorLabel         string
+	SyncDirection       entity.MirrorDirection
+	WebhooksDisabled    *bool
+	AnnounceDescription *bool
+	PollInterval        time.Duration
 }
 
 type IssueShipping struct {

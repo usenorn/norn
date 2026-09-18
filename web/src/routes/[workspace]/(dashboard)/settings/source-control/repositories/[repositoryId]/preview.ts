@@ -78,6 +78,7 @@ export const sourceControlRepositoryPreviewStates: Record<
 						fullName: "northwind/api",
 						defaultBranch: "main",
 						mirrorLabel: "norn",
+						announceDescription: true,
 						pollIntervalSeconds: 300,
 						hookInstalled: true,
 						routeCount: 2,

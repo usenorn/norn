@@ -49,6 +49,7 @@
 	let disconnecting = $state(false);
 	let confirmingRemove = $state(false);
 	let savingDirection = $state(false);
+	let savingAnnounce = $state(false);
 
 	const view = $derived(loaded ?? preview?.view ?? data.view);
 	const workspace = $derived(page.data.workspace);
@@ -187,6 +188,36 @@
 		);
 
 		savingDirection = false;
+
+		if (error) {
+			record(error);
+
+			return;
+		}
+
+		if (updated && view.kind === "detail") {
+			loaded = { ...view, repository: updated };
+		}
+	}
+
+	async function setAnnounceDescription(announce: boolean) {
+		if (view.kind !== "detail") return;
+
+		savingAnnounce = true;
+		failure = undefined;
+		failureDetail = "";
+
+		const { data: updated, error } = await api.PATCH(
+			"/workspaces/{workspaceId}/source-control/repositories/{repositoryId}",
+			{
+				params: {
+					path: { workspaceId: workspace.id, repositoryId: view.repository.id },
+				},
+				body: { announceDescription: announce },
+			},
+		);
+
+		savingAnnounce = false;
 
 		if (error) {
 			record(error);
@@ -417,6 +448,30 @@
 						<option value={option}>{directionLabel(option)}</option>
 					{/each}
 				</select>
+			</div>
+		</section>
+
+		<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
+			<h2 class="text-md font-medium tracking-snug text-ink-900">
+				What Norn leaves on a change
+			</h2>
+			<p class="text-sm leading-normal text-muted-foreground text-pretty">
+				A change that resolves an issue is answered once with a link to it and its title.
+			</p>
+			<div class="flex items-start gap-2.5">
+				<Checkbox
+					id="announce-description"
+					checked={view.repository.announceDescription ?? false}
+					disabled={savingAnnounce}
+					onCheckedChange={(checked) => setAnnounceDescription(checked === true)}
+				/>
+				<div class="flex flex-col gap-0.5">
+					<Label for="announce-description">Carry the issue description too</Label>
+					<p class="text-sm leading-normal text-muted-foreground text-pretty">
+						The description as it stood when the change arrived, whole. It is written once and
+						never rewritten, so a description edited later stays in Norn alone.
+					</p>
+				</div>
 			</div>
 		</section>
 
