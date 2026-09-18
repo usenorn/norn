@@ -1,8 +1,6 @@
+import type { IssuePriority } from "$lib/issues/issues";
 import type { LabelColor } from "$lib/labels/labels";
 import type { StateCategory } from "$lib/team/states";
-
-export const taskPriorities = ["urgent", "high", "medium", "low", "none"] as const;
-export type TaskPriority = (typeof taskPriorities)[number];
 
 export type TaskLabel = { name: string; color: LabelColor };
 
@@ -12,7 +10,7 @@ export type Task = {
 	id: string;
 	title: string;
 	state: TaskState;
-	priority: TaskPriority;
+	priority: IssuePriority;
 	assignee: string | null;
 	assigneeAccountId: string | null;
 	date: string | null;
@@ -22,11 +20,3 @@ export type Task = {
 };
 
 export type TaskBucket = { key: string; label: string; emphasis: boolean; tasks: Task[] };
-
-export const priorityLabels: Record<TaskPriority, string> = {
-	urgent: "Urgent",
-	high: "High",
-	medium: "Medium",
-	low: "Low",
-	none: "No priority",
-};

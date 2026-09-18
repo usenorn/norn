@@ -7,7 +7,7 @@ export type FacetEntry = { value: string; label: string; color?: LabelColor };
 
 export type FacetCatalogue = Partial<Record<FacetKind, FacetEntry[]>>;
 
-export type FacetChip = { kind: FacetKind; label: string };
+export type FacetChip = { kind: FacetKind; label: string; color?: LabelColor };
 
 export function dueEntries(): FacetEntry[] {
 	return dueWindows.map((window) => ({ value: window, label: dueWindowLabels[window] }));
@@ -88,11 +88,10 @@ export function facetChips(
 		.filter((kind) => Boolean(facets[kind]))
 		.map((kind) => {
 			const value = facets[kind] as string;
-			const named =
-				entriesFor(kind, catalogue).find((entry) => entry.value === value)?.label ??
-				`Unknown ${facetLabels[kind].toLowerCase()}`;
+			const entry = entriesFor(kind, catalogue).find((candidate) => candidate.value === value);
+			const named = entry?.label ?? `Unknown ${facetLabels[kind].toLowerCase()}`;
 
-			return { kind, label: `${facetLabels[kind]}: ${named}` };
+			return { kind, label: `${facetLabels[kind]}: ${named}`, color: entry?.color };
 		});
 }
 

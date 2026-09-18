@@ -39,6 +39,7 @@
 	import IssueCard from "$lib/issues/issue-card.svelte";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
 	import { registerCommandTargets } from "$lib/command/scope.svelte";
+	import PriorityPicker from "$lib/issues/priority-picker.svelte";
 	import PropertyPicker from "$lib/issues/property-picker.svelte";
 	import DisplayMenu from "$lib/issues/display-menu.svelte";
 	import FilterBar from "$lib/issues/filter-bar.svelte";
@@ -1059,31 +1060,13 @@
 {/snippet}
 
 {#snippet priorityControl(issue: Issue)}
-	<PropertyPicker
-		options={priorities.map((entry) => ({
-			value: entry.value,
-			label: entry.label,
-			checked: entry.value === issue.priority,
-		}))}
-		placeholder="Set priority…"
-		class="w-49"
-		onpick={(value) => setPriority(issue, value as IssuePriority)}
-	>
-		{#snippet trigger(props)}
-			<button
-				{...props}
-				type="button"
-				aria-label="Change priority on {issue.reference}"
-				disabled={draftIDs.has(issue.id)}
-				class="inline-flex h-6 w-5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
-			>
-				<PriorityIcon priority={issue.priority} class="size-icon-row" />
-			</button>
-		{/snippet}
-		{#snippet mark(option)}
-			<PriorityIcon priority={option.value as IssuePriority} />
-		{/snippet}
-	</PropertyPicker>
+	<PriorityPicker
+		chosen={issue.priority}
+		place="row"
+		subject={issue.reference}
+		disabled={draftIDs.has(issue.id)}
+		onchange={(priority) => setPriority(issue, priority)}
+	/>
 {/snippet}
 
 {#snippet stateControl(issue: Issue)}

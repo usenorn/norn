@@ -59,7 +59,11 @@ async function targetsFor(
 			id: project.id,
 			name: project.name,
 		})),
-		labels: (labels.data ?? []).map((label) => ({ id: label.id, name: label.name })),
+		labels: (labels.data ?? []).map((label) => ({
+			id: label.id,
+			name: label.name,
+			color: label.color,
+		})),
 		states: states.flatMap((listed, index) =>
 			(listed.data ?? []).map((state) => ({
 				id: state.id,

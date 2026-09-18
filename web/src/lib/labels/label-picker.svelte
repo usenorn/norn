@@ -183,7 +183,11 @@
 		{#if place === "dialog"}
 			<Button {...props} variant="outline" size="sm" {disabled} class={styles.trigger()}>
 				<Tags class="text-muted-foreground" aria-hidden="true" />
-				{chosen.length > 0 ? chosen.map((label) => label.name).join(", ") : "Label"}
+				{#if shownChips.length > 0}
+					<LabelChips labels={shownChips} place="card" />
+				{:else}
+					Label
+				{/if}
 			</Button>
 		{:else}
 			<button

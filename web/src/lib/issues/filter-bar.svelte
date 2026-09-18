@@ -114,6 +114,9 @@
 	<span
 		class="inline-flex shrink-0 items-center gap-1.5 border-b-2 border-line-strong pb-0.5 text-sm whitespace-nowrap text-foreground"
 	>
+		{#if chip.color}
+			<LabelDot color={chip.color} />
+		{/if}
 		{chip.label}
 		<a
 			href={linkWith({ [chip.kind]: null })}

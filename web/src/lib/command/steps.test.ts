@@ -22,4 +22,20 @@ describe("steps", () => {
 
 		expect(options.map((option) => option.label)).toEqual(["Bug", "Design"]);
 	});
+
+	it("offers only workspace labels when no team is in scope", () => {
+		const options = stepOptions("label", {
+			teamId: null,
+			members: [],
+			states: [],
+			cycles: [],
+			labels: [
+				{ id: "l1", workspaceId: "w", name: "Bug", description: "", color: "magenta" },
+				{ id: "l2", workspaceId: "w", teamId: "t1", name: "Design", description: "", color: "violet" },
+				{ id: "l3", workspaceId: "w", teamId: "t2", name: "Infra", description: "", color: "cyan" },
+			],
+		});
+
+		expect(options.map((option) => option.label)).toEqual(["Bug"]);
+	});
 });

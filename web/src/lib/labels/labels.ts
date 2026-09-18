@@ -214,11 +214,11 @@ export function mergeTargets(source: Label, labels: Label[]): Label[] {
 	);
 }
 
-export function appliesTo(label: Label, teamId: string): boolean {
+export function appliesTo(label: Label, teamId: string | null): boolean {
 	return !label.teamId || label.teamId === teamId;
 }
 
-export function selectable(labels: Label[], teamId: string): Label[] {
+export function selectable(labels: Label[], teamId: string | null): Label[] {
 	return labels.filter((label) => appliesTo(label, teamId));
 }
 
