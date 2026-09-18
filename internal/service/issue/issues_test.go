@@ -178,6 +178,11 @@ func newHarness(t *testing.T) *harness {
 		h.authorizer, h.transactor,
 	)
 
+	h.teams.EXPECT().
+		ListByWorkspaceMember(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil, nil).
+		AnyTimes()
+
 	h.triage.EXPECT().
 		Settings(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.TriageSettings, error) {
