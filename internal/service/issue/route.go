@@ -20,11 +20,7 @@ func (s *issuesService) route(
 	}
 
 	settings, err := s.triage.Settings(ctx, arriving.WorkspaceID, arriving.TeamID)
-	if err != nil {
-		if errors.Is(err, entity.ErrTriageDisabled) {
-			return nil
-		}
-
+	if err != nil && !errors.Is(err, entity.ErrTriageDisabled) {
 		return err
 	}
 

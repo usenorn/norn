@@ -17,10 +17,6 @@ func (h *harness) raising(workspaceID, teamID uuid.UUID) *entity.Issue {
 	h.states.EXPECT().
 		DefaultForTeam(gomock.Any(), teamID).
 		Return(entity.WorkflowState{ID: uuid.New(), TeamID: teamID, IsDefault: true}, nil)
-	h.teams.EXPECT().
-		ListByWorkspaceMember(gomock.Any(), workspaceID, gomock.Any()).
-		Return(nil, nil).
-		AnyTimes()
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil)
 
 	raised := &entity.Issue{}
@@ -99,5 +95,48 @@ func TestAnIssueAnAgentRaisesForNobodyStillWaitsInTriage(t *testing.T) {
 				"unowned work before it joins the backlog.",
 			raised.TriageState, raised.TriageSource,
 		)
+	}
+}
+
+func TestOnlyMailWaitsInTriageWhenATeamHasNotConfiguredIt(t *testing.T) {
+	cases := map[string]struct {
+		kind     entity.ActorKind
+		declared entity.TriageSource
+		waiting  bool
+		source   entity.TriageSource
+	}{
+		"an agent":                 {entity.ActorKindAgent, "", false, ""},
+		"an integration":           {entity.ActorKindToken, "", false, ""},
+		"somebody off the team":    {entity.ActorKindUser, "", false, ""},
+		"mail to the team address": {entity.ActorKindToken, entity.TriageSourceEmail, true, entity.TriageSourceEmail},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t)
+			h.actingAs(tc.kind)
+
+			workspaceID, teamID := uuid.New(), uuid.New()
+
+			raised := h.raising(workspaceID, teamID)
+
+			if _, err := h.service.Create(context.Background(), service.CreateIssueInput{
+				WorkspaceID: workspaceID,
+				TeamID:      teamID,
+				Title:       "Storage limits",
+				Source:      tc.declared,
+			}); err != nil {
+				t.Fatalf("Create: %v", err)
+			}
+
+			if raised.TriageState.Waiting() != tc.waiting || raised.TriageSource != tc.source {
+				t.Fatalf(
+					"an issue %s raised in a team that never configured triage was filed as %q from %q, "+
+						"want waiting=%v from %q. A team turns triage on for agents, integrations and "+
+						"outsiders, but mail to its address is held for review whether or not it did.",
+					name, raised.TriageState, raised.TriageSource, tc.waiting, tc.source,
+				)
+			}
+		})
 	}
 }
