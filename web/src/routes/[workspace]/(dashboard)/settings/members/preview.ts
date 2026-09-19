@@ -5,10 +5,12 @@ import type {
 	MemberRemoval,
 	MembershipFailure,
 	MembershipNotice,
+	MemberSegment,
 } from "$lib/workspace/members";
 
 export type MembersPreview = {
 	listing: MemberListing;
+	segment?: MemberSegment;
 	paging?: MemberPaging;
 	removal?: MemberRemoval;
 	action?: MemberAction;
@@ -122,6 +124,41 @@ export const membersPreviewStates: Record<string, MembersPreview> = import.meta.
 				},
 			},
 			no_matches: { listing: { kind: "no_matches", query: "zzz" } },
+			agents_results: {
+				segment: "agents",
+				viewerId: "00000000-0000-4000-8000-000000000301",
+				listing: {
+					kind: "results",
+					members: [
+						{
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							accountId: "00000000-0000-4000-8000-000000000401",
+							role: "member",
+							source: "manual",
+							kind: "agent",
+							displayName: "Triage bot",
+							joinedAt: "2026-05-04T09:00:00Z",
+							lastActiveAt: "2026-08-03T09:00:00Z",
+							hasRunner: true,
+							ownerAccountId: "00000000-0000-4000-8000-000000000301",
+						},
+						{
+							workspaceId: "00000000-0000-4000-8000-000000000000",
+							accountId: "00000000-0000-4000-8000-000000000402",
+							role: "viewer",
+							source: "manual",
+							kind: "integration",
+							displayName: "GitHub",
+							joinedAt: "2026-05-06T09:00:00Z",
+						},
+					],
+				},
+			},
+			agents_empty: { segment: "agents", listing: { kind: "empty" } },
+			agents_no_matches: {
+				segment: "agents",
+				listing: { kind: "no_matches", query: "zzz" },
+			},
 			loading_more: {
 				paging: { kind: "loading" },
 				listing: {

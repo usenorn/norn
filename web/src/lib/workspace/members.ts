@@ -16,8 +16,27 @@ export const searchDebounceMs = 250;
 
 export const membershipRoles: MembershipRole[] = ["admin", "member", "viewer"];
 
+export const machineKinds: AccountKind[] = ["agent", "integration"];
+
 export function machine(kind: AccountKind | undefined): boolean {
-	return kind === "agent" || kind === "integration";
+	return kind !== undefined && machineKinds.includes(kind);
+}
+
+export type MemberSegment = "people" | "agents";
+
+export const memberSegments: MemberSegment[] = ["people", "agents"];
+
+export const segmentLabels: Record<MemberSegment, string> = {
+	people: "People",
+	agents: "Agents & integrations",
+};
+
+export function segmentFrom(value: string | null): MemberSegment {
+	return value === "agents" ? "agents" : "people";
+}
+
+export function kindsFor(segment: MemberSegment): AccountKind[] {
+	return segment === "agents" ? machineKinds : ["person"];
 }
 
 export function assignable(kind: AccountKind | undefined): boolean {

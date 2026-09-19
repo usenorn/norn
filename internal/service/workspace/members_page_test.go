@@ -242,3 +242,61 @@ func TestAnAbsentCursorStartsAtTheFirstPage(t *testing.T) {
 		t.Fatalf("forwarded limit = %d, want the default plus the lookahead row", captured.Limit)
 	}
 }
+
+func TestRequestedKindsReachTheStore(t *testing.T) {
+	h := newHarness(t)
+
+	actorID := uuid.New()
+	workspaceID := uuid.New()
+	kinds := []entity.AccountKind{entity.AccountKindAgent, entity.AccountKindIntegration}
+
+	h.expectActorMayReadMembers(workspaceID, actorID)
+
+	var captured entity.MembershipPage
+
+	h.memberships.EXPECT().
+		ListPageByWorkspaceID(gomock.Any(), workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, page entity.MembershipPage) ([]entity.WorkspaceMember, error) {
+			captured = page
+
+			return nil, nil
+		})
+
+	if _, err := h.service.ListMembers(actingAs(actorID), workspaceID, service.ListMembersInput{
+		Kinds: kinds,
+	}); err != nil {
+		t.Fatalf("ListMembers: %v", err)
+	}
+
+	if len(captured.Kinds) != len(kinds) {
+		t.Fatalf("forwarded kinds = %v, want %v", captured.Kinds, kinds)
+	}
+
+	for i, kind := range kinds {
+		if captured.Kinds[i] != kind {
+			t.Fatalf("forwarded kinds = %v, want %v", captured.Kinds, kinds)
+		}
+	}
+}
+
+func TestAnUnknownKindIsRefusedAsAValidationError(t *testing.T) {
+	h := newHarness(t)
+
+	actorID := uuid.New()
+	workspaceID := uuid.New()
+
+	h.expectActorMayReadMembers(workspaceID, actorID)
+
+	_, err := h.service.ListMembers(actingAs(actorID), workspaceID, service.ListMembersInput{
+		Kinds: []entity.AccountKind{entity.AccountKindPerson, "robot"},
+	})
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("ListMembers error = %v, want a ValidationError", err)
+	}
+
+	if validation.Fields[0].Field != "kind" {
+		t.Fatalf("field = %q, want the error attributed to kind", validation.Fields[0].Field)
+	}
+}
