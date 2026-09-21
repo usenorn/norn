@@ -36,6 +36,7 @@
 	import { calendarDate } from "$lib/time";
 	import ShortcutHelp from "$lib/shortcuts/shortcut-help.svelte";
 	import { bindShortcuts, holdShortcuts, provideShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { drainEarlyKeys } from "$lib/shortcuts/early-keys";
 	import { destinations } from "$lib/shortcuts/destinations";
 	import { bindRoam, provideRoam } from "$lib/shortcuts/roam/roam.svelte";
 	import {
@@ -146,6 +147,10 @@
 
 
 	const shortcuts = provideShortcuts();
+
+	$effect(() => {
+		drainEarlyKeys((event) => shortcuts.handle(event));
+	});
 
 	let helping = $state(false);
 
