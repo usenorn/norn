@@ -12,9 +12,11 @@ import { scopeSubject, sharedTeam, type CommandScope, type PaletteCommand } from
 export function paletteCommands(
 	scope: CommandScope,
 	apple: boolean,
-	cycling: ReadonlySet<string>
+	cycling: ReadonlySet<string>,
+	bound: (id: ShortcutId) => boolean
 ): PaletteCommand[] {
-	const keys = (id: ShortcutId) => displayKeys(shortcutOf(id).keys[0], apple);
+	const keys = (id: ShortcutId) =>
+		bound(id) ? displayKeys(shortcutOf(id).keys[0], apple) : undefined;
 	const scoped = scope.kind === "issues";
 	const subject = scopeSubject(scope);
 	const team = sharedTeam(scope);

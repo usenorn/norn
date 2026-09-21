@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ShortcutId } from "$lib/shortcuts/shortcuts";
 import { paletteCommands } from "./commands";
 import { paletteListing, type ListingSources } from "./listing";
 import { footNote, modeOf, type CommandScope, type Destination } from "./model";
@@ -7,6 +8,8 @@ const scoped: CommandScope = {
 	kind: "issues",
 	issues: [{ id: "i1", reference: "MOB-241", title: "Offline queue", teamId: "t1" }],
 };
+
+const bound = () => true;
 
 const inbox: Destination = { id: "nav:go-inbox", label: "Inbox", href: "/w/inbox", keys: "G N" };
 const billing: Destination = { id: "team-issues:t2", label: "Issues", href: "/w/teams/BIL/issues", context: "Billing" };
@@ -38,7 +41,9 @@ describe("modeOf", () => {
 
 describe("paletteCommands", () => {
 	it("keeps the global commands when nothing is selected or open, and only those", () => {
-		expect(paletteCommands({ kind: "none" }, true, new Set()).map((command) => command.id)).toEqual([
+		expect(
+			paletteCommands({ kind: "none" }, true, new Set(), bound).map((command) => command.id)
+		).toEqual([
 			"issue-new",
 			"open-triage",
 			"toggle-density",
@@ -46,7 +51,9 @@ describe("paletteCommands", () => {
 	});
 
 	it("adds every issue action once an issue is in scope", () => {
-		expect(paletteCommands(scoped, true, new Set(["t1"])).map((command) => command.id)).toEqual([
+		expect(
+			paletteCommands(scoped, true, new Set(["t1"]), bound).map((command) => command.id)
+		).toEqual([
 			"issue-new",
 			"assign",
 			"status",
@@ -59,9 +66,19 @@ describe("paletteCommands", () => {
 	});
 
 	it("leaves out moving to a cycle when the team runs no cycles", () => {
-		expect(paletteCommands(scoped, true, new Set(["t2"])).map((command) => command.id)).not.toContain(
-			"cycle"
-		);
+		expect(
+			paletteCommands(scoped, true, new Set(["t2"]), bound).map((command) => command.id)
+		).not.toContain("cycle");
+	});
+
+	it("only shows the keycap for a shortcut a surface has actually bound", () => {
+		const cycle = (binding: (id: ShortcutId) => boolean) =>
+			paletteCommands(scoped, true, new Set(["t1"]), binding).find(
+				(command) => command.id === "cycle"
+			);
+
+		expect(cycle(() => false)?.keys).toBeUndefined();
+		expect(cycle((id) => id === "bulk-cycle")?.keys).toBe("⇧ C");
 	});
 });
 
@@ -109,7 +126,7 @@ describe("paletteListing", () => {
 		const listing = paletteListing(
 			sources({
 				mode: { kind: "commands", query: "" },
-				commands: paletteCommands({ kind: "none" }, true, new Set()),
+				commands: paletteCommands({ kind: "none" }, true, new Set(), bound),
 			})
 		);
 
