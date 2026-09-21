@@ -4,8 +4,6 @@ import { at, fixture } from "./fixture";
 test("a bulk change that cannot be read back says so and can be asked again", async ({ page }) => {
 	const held = fixture();
 
-	await page.goto(at(`/teams/${held.teamKey}/issues`));
-
 	await page.route("**/v1/workspaces/*/issues/bulk", async (route) => {
 		await route.fulfill({
 			status: 202,
@@ -22,7 +20,19 @@ test("a bulk change that cannot be read back says so and can be asked again", as
 		});
 	});
 
-	await page.keyboard.press("j");
+	await page.goto(at(`/teams/${held.teamKey}/issues`));
+
+	await expect(page.locator("[data-issue]").first()).toBeVisible();
+
+	await expect(async () => {
+		await page.keyboard.press("j");
+		await expect(page.locator("[data-issue]").first()).not.toHaveAttribute(
+			"data-cursor",
+			"true",
+			{ timeout: 1_000 }
+		);
+	}).toPass();
+
 	await page.keyboard.press("x");
 	await page.keyboard.press("j");
 	await page.keyboard.press("x");

@@ -1,7 +1,10 @@
 import * as Sentry from "@sentry/sveltekit";
 import { env } from "$env/dynamic/public";
 import type { HandleClientError } from "@sveltejs/kit";
+import { startEarlyKeys } from "$lib/shortcuts/early-keys";
 import { dataCollection, recordsSessions, reportingFrom } from "$lib/telemetry";
+
+startEarlyKeys();
 
 const reporting = reportingFrom(env);
 
