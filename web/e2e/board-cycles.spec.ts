@@ -70,6 +70,17 @@ function teamCycles(url: URL): boolean {
 	return url.pathname.endsWith("/cycles") && url.searchParams.has("teamId");
 }
 
+async function openPalette(page: Page) {
+	const palette = page.getByRole("dialog");
+
+	await expect(async () => {
+		await page.keyboard.press("ControlOrMeta+k");
+		await expect(palette.getByRole("combobox")).toBeVisible({ timeout: 1_000 });
+	}).toPass();
+
+	return palette;
+}
+
 function card(page: Page, id: string) {
 	return page.locator(`[data-issue="${id}"]`);
 }
@@ -198,10 +209,58 @@ test.describe("cycles from the board", () => {
 		await expect(page.getByRole("button", { name: "Move to cycle" })).toHaveCount(0);
 	});
 
+	test("Shift+C moves the open issue and the palette shows that key on its page", async ({
+		page,
+	}) => {
+		await runCycles(page);
+		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
+
+		const cycle = page.getByRole("button", { name: "Cycle: change" });
+
+		await expect(cycle).toContainText("No cycle");
+
+		await page.keyboard.press("Shift+C");
+		await pickCycle(page);
+
+		await expect(cycle).toContainText(/Cycle \d+/);
+
+		const palette = await openPalette(page);
+
+		await palette.getByRole("combobox").fill(">");
+
+		const move = palette.getByRole("option", { name: /^Move .+ to cycle…/ });
+
+		await expect(move.locator("kbd")).toHaveText("⇧ C");
+	});
+
+	test("Shift+C typed into a comment stays in the comment", async ({ page }) => {
+		await runCycles(page);
+		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
+		await expect(page.getByRole("button", { name: "Cycle: change" })).toBeVisible();
+
+		const comment = page.getByRole("textbox", { name: "Write a comment" });
+
+		await comment.click();
+		await page.keyboard.press("Shift+C");
+
+		await expect(comment).toContainText("C");
+		await expect(page.getByRole("option", { name: "No cycle" })).toHaveCount(0);
+	});
+
 	test("an issue shows the cycle field only while its team runs cycles", async ({ page }) => {
 		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
 		await expect(page.getByRole("button", { name: "Project: change" })).toBeVisible();
 		await expect(page.getByRole("button", { name: "Cycle: change" })).toHaveCount(0);
+
+		await page.keyboard.press("Shift+C");
+		await expect(page.getByRole("option", { name: "No cycle" })).toHaveCount(0);
+
+		const palette = await openPalette(page);
+
+		await palette.getByRole("combobox").fill(">");
+		await expect(palette.getByRole("option", { name: /^Move .+ to cycle…/ })).toHaveCount(0);
+
+		await palette.getByRole("combobox").press("Escape");
 
 		await runCycles(page);
 		await page.reload();

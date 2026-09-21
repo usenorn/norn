@@ -79,6 +79,39 @@ test("a selected issue gets its commands, and Escape backs out of the second ste
 	await expect(input).toHaveAttribute("placeholder", "Search issues, projects, people and views…");
 });
 
+test("a command shows its key only where the page handles it", async ({ page }) => {
+	await page.goto(at(`/teams/${fixture().teamKey}/issues`));
+
+	await expect(page.locator("[data-issue]").first()).toBeVisible();
+
+	await expect(async () => {
+		await page.keyboard.press("j");
+		await expect(page.locator('[data-cursor="true"]')).toBeVisible({ timeout: 1_000 });
+	}).toPass();
+
+	await page.keyboard.press("x");
+	await expect(page.getByText("1 selected")).toBeVisible();
+
+	const selection = await openPalette(page);
+
+	await selection.getByRole("combobox").fill(">assign");
+	await expect(
+		selection.getByRole("option", { name: /^Assign \S+ to…/ }).locator("kbd")
+	).toHaveText("A");
+
+	await page.keyboard.press("Escape");
+	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
+
+	const open = await openPalette(page);
+
+	await open.getByRole("combobox").fill(">assign");
+
+	const assign = open.getByRole("option", { name: /^Assign \S+ to…/ });
+
+	await expect(assign).toBeVisible();
+	await expect(assign.locator("kbd")).toHaveCount(0);
+});
+
 test("the palette fits a 360px screen without scrolling sideways", async ({ page }) => {
 	await page.setViewportSize({ width: 360, height: 760 });
 	await page.goto(at("/my-tasks"));

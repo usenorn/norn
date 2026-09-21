@@ -1241,6 +1241,7 @@
 	let titleField = $state<HTMLInputElement | null>(null);
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
+	let pickingCycle = $state(false);
 	let addingChild = $state(false);
 	let filingUnder = $state.raw<{ id: string; reference: string } | null>(null);
 	let childPrefill = $state<NewIssuePrefill | undefined>(undefined);
@@ -1647,6 +1648,12 @@
 		if (!canEdit || editingField) return;
 
 		return shortcuts.register("issue-edit", () => startEditing("description"));
+	});
+
+	$effect(() => {
+		if (!canEdit || !cycling || editingField) return;
+
+		return shortcuts.register("bulk-cycle", () => (pickingCycle = true));
 	});
 
 	function onKey(event: KeyboardEvent) {
@@ -2793,6 +2800,7 @@
 							label="Cycle"
 							placeholder="Move to cycle"
 							editable={canEdit}
+							bind:open={pickingCycle}
 							options={[
 								{ value: "", label: "No cycle", checked: !issue.cycleId },
 								...ready.cycles.map((cycle) => ({

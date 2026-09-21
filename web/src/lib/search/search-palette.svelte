@@ -68,7 +68,7 @@
 	import type { Label } from "$lib/labels/labels";
 	import { toggleDensity } from "$lib/layout/density";
 	import type { Project } from "$lib/projects/projects";
-	import { chordOf, holdShortcuts } from "$lib/shortcuts/registry.svelte";
+	import { chordOf, holdShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { isApplePlatform, shortcutOf } from "$lib/shortcuts/shortcuts";
 	import type { WorkflowState } from "$lib/team/states";
 	import type { Team } from "$lib/team/teams";
@@ -112,6 +112,7 @@
 
 	const apple = isApplePlatform();
 	const targets = useCommandTargets();
+	const shortcuts = useShortcuts();
 	const raising = useNewIssue();
 
 	holdShortcuts(() => open);
@@ -159,7 +160,9 @@
 		paletteDestinations({ workspace: workspaceSlug, teams, cycles, views, projects, apple })
 	);
 	const people = $derived(peopleDestinations(workspaceSlug, members));
-	const commands = $derived(paletteCommands(scope, apple, cyclingTeams(cycles)));
+	const commands = $derived(
+		paletteCommands(scope, apple, cyclingTeams(cycles), (id) => shortcuts.bound(id))
+	);
 
 	const options = $derived(
 		shownStep
