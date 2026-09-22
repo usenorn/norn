@@ -7,6 +7,7 @@
 	import LabelChips from "$lib/labels/label-chips.svelte";
 	import { cn } from "$lib/utils.js";
 	import { dueLabel, overdue } from "$lib/time";
+	import { finished } from "$lib/team/states";
 	import type { RowProperty } from "./display";
 	import type { Issue } from "./issues";
 
@@ -54,10 +55,8 @@
 
 	const labels = $derived(shown.includes("labels") ? issue.labels : []);
 	const due = $derived(shown.includes("due") ? issue.dueOn : undefined);
-	const settled = $derived(
-		issue.state.category === "complete" || issue.state.category === "abandoned"
-	);
-	const late = $derived(!settled && overdue(due, now, timezone));
+	const done = $derived(finished(issue.state.category));
+	const late = $derived(!done && overdue(due, now, timezone));
 </script>
 
 <div
@@ -131,7 +130,7 @@
 					? 'text-priority-urgent'
 					: 'text-muted-foreground'}"
 			>
-				{dueLabel(due, now, timezone)}
+				{dueLabel(due, now, timezone, done)}
 			</span>
 		{/if}
 		<span class="relative z-1 flex flex-none">
