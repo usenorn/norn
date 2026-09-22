@@ -76,15 +76,23 @@ export function onDayMonth(instant: string, now: string, timezone: string): stri
 	);
 }
 
-export function dueLabel(due: string | undefined, now: string, timezone: string): string {
+export function dueLabel(
+	due: string | undefined,
+	now: string,
+	timezone: string,
+	settled: boolean
+): string {
 	if (!due) return "No due date";
 
 	const today = calendarDate(now, timezone);
 
 	if (due === today) return "Due today";
 	if (due === shiftDays(today, 1)) return "Due tomorrow";
-	if (due === shiftDays(today, -1)) return "Overdue by a day";
-	if (due < today) return `Overdue · ${onDueDate(due, today)}`;
+	if (due === shiftDays(today, -1)) return settled ? "Due yesterday" : "Overdue by a day";
+
+	if (due < today) {
+		return settled ? `Due ${onDueDate(due, today)}` : `Overdue · ${onDueDate(due, today)}`;
+	}
 
 	return `Due ${onDueDate(due, today)}`;
 }

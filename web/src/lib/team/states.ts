@@ -17,6 +17,10 @@ export const categoryLabels: Record<StateCategory, string> = {
 	abandoned: "Abandoned",
 };
 
+export function finished(category: StateCategory): boolean {
+	return category === "complete" || category === "abandoned";
+}
+
 export const categoryHints: Record<StateCategory, string> = {
 	not_started: "Filed, but nobody has picked it up.",
 	active: "Someone is working on it.",

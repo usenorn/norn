@@ -62,6 +62,7 @@
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
+	import { finished } from "$lib/team/states";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
 		issueFailureMessage,
@@ -354,6 +355,7 @@
 	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);
 	const cycling = $derived(issue ? cyclingTeams(data.cycles).has(issue.teamId) : false);
+	const done = $derived(issue ? finished(issue.state.category) : false);
 	registerCommandTargets("open", () => ({
 		issues: issue
 			? [{ id: issue.id, reference: issue.reference, title: issue.title, teamId: issue.teamId }]
@@ -2843,13 +2845,13 @@
 											<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
 											<span
 												class="truncate {issue.dueOn
-													? overdue(issue.dueOn, data.now, data.workspace.timezone)
+													? !done && overdue(issue.dueOn, data.now, data.workspace.timezone)
 														? 'text-priority-urgent'
 														: 'text-ink-900'
 													: 'text-muted-foreground'}"
 											>
 												{issue.dueOn
-													? dueLabel(issue.dueOn, data.now, data.workspace.timezone)
+													? dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)
 													: "No due date"}
 											</span>
 										</button>
@@ -2886,7 +2888,7 @@
 								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
 								<span class="truncate {issue.dueOn ? 'text-ink-900' : 'text-muted-foreground'}">
 									{issue.dueOn
-										? dueLabel(issue.dueOn, data.now, data.workspace.timezone)
+										? dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)
 										: "No due date"}
 								</span>
 							</span>

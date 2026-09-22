@@ -10,6 +10,7 @@
 	import LabelChips from "$lib/labels/label-chips.svelte";
 	import { cn } from "$lib/utils.js";
 	import { dueLabel, overdue } from "$lib/time";
+	import { finished } from "$lib/team/states";
 	import { totalIssues } from "$lib/issues/board";
 	import type { RowProperty } from "$lib/issues/display";
 	import type { Issue } from "$lib/issues/issues";
@@ -58,15 +59,13 @@
 
 	const labels = $derived(shown.includes("labels") ? issue.labels : []);
 	const due = $derived(shown.includes("due") ? issue.dueOn : undefined);
-	const settled = $derived(
-		issue.state.category === "complete" || issue.state.category === "abandoned"
-	);
-	const late = $derived(!settled && overdue(due, now, timezone));
+	const done = $derived(finished(issue.state.category));
+	const late = $derived(!done && overdue(due, now, timezone));
 	const children = $derived(issue.childProgress);
 	const hasChildren = $derived(children ? totalIssues(children) > 0 : false);
 
 	const line = $derived(
-		[issue.reference, due ? dueLabel(due, now, timezone) : "", assignee.split(" ")[0] ?? ""]
+		[issue.reference, due ? dueLabel(due, now, timezone, done) : "", assignee.split(" ")[0] ?? ""]
 			.filter(Boolean)
 			.join(" · ")
 	);
@@ -152,7 +151,7 @@
 					event.preventDefault();
 					onselect(event.shiftKey);
 				}}
-				class="block truncate text-base font-medium tracking-snug after:absolute after:inset-0 sm:text-md sm:font-normal {settled
+				class="block truncate text-base font-medium tracking-snug after:absolute after:inset-0 sm:text-md sm:font-normal {done
 					? 'text-muted-foreground'
 					: 'text-ink-900'}"
 			>
@@ -187,7 +186,7 @@
 					? 'text-priority-urgent'
 					: 'text-muted-foreground'}"
 			>
-				{dueLabel(due, now, timezone)}
+				{dueLabel(due, now, timezone, done)}
 			</span>
 		{/if}
 		{#if assigneeControl}
