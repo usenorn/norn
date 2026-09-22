@@ -81,6 +81,11 @@ export const auditActions: AuditAction[] = [
 	"directory.connected",
 	"directory.disconnected",
 	"directory.token_rotated",
+	"ai_provider.configured",
+	"ai_provider.key_replaced",
+	"ai_provider.model_changed",
+	"ai_provider.endpoint_changed",
+	"ai_provider.removed",
 	"audit.exported",
 	"access.denied",
 ];
@@ -134,6 +139,11 @@ const actionLabels: Record<AuditAction, string> = {
 	"directory.connected": "Directory connected",
 	"directory.disconnected": "Directory disconnected",
 	"directory.token_rotated": "Directory credential replaced",
+	"ai_provider.configured": "AI provider configured",
+	"ai_provider.key_replaced": "AI provider key replaced",
+	"ai_provider.model_changed": "AI default model changed",
+	"ai_provider.endpoint_changed": "AI provider endpoint changed",
+	"ai_provider.removed": "AI provider removed",
 	"audit.exported": "Audit log exported",
 	"access.denied": "Access denied",
 };

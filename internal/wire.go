@@ -30,6 +30,7 @@ import (
 	licencepkg "github.com/usenorn/norn/internal/pkg/licence"
 	"github.com/usenorn/norn/internal/pkg/lineargraph"
 	oidcproviderpkg "github.com/usenorn/norn/internal/pkg/oidcprovider"
+	"github.com/usenorn/norn/internal/pkg/openai"
 	"github.com/usenorn/norn/internal/pkg/outbound"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/pkg/pwned"
@@ -44,6 +45,8 @@ import (
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	agentthrottlerepo "github.com/usenorn/norn/internal/repository/agentthrottle"
+	aimodelrepo "github.com/usenorn/norn/internal/repository/aimodel"
+	aiproviderrepo "github.com/usenorn/norn/internal/repository/aiprovider"
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
 	attachmentrepo "github.com/usenorn/norn/internal/repository/attachment"
 	auditrepo "github.com/usenorn/norn/internal/repository/audit"
@@ -125,6 +128,7 @@ import (
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	agentholdsvc "github.com/usenorn/norn/internal/service/agenthold"
+	aiprovidersvc "github.com/usenorn/norn/internal/service/aiprovider"
 	apitokensvc "github.com/usenorn/norn/internal/service/apitoken"
 	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
@@ -190,6 +194,7 @@ var baseSet = wire.NewSet(
 	crypter.Set,
 	licencepkg.Set,
 	lineargraph.Set,
+	openai.Set,
 	forge.Set,
 	outbound.Set,
 	oidcproviderpkg.Set,
@@ -274,6 +279,8 @@ var baseSet = wire.NewSet(
 	signinchallengerepo.Set,
 	scmappstaterepo.Set,
 	oidcproviderrepo.Set,
+	aimodelrepo.Set,
+	aiproviderrepo.Set,
 	mcpthrottlerepo.Set,
 	webhookrepo.Set,
 	webhooksenderrepo.Set,
@@ -322,6 +329,7 @@ var baseSet = wire.NewSet(
 	authorizersvc.Set,
 	jobssvc.Set,
 	ssoconnectionsvc.Set,
+	aiprovidersvc.Set,
 	auditsvc.Set,
 	licensingsvc.Set,
 	directorysvc.Set,

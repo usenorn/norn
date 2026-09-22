@@ -163,6 +163,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateOpenAI(cfg.OpenAI); err != nil {
+		return err
+	}
+
 	if err := validateSourceControl(cfg.SourceControl); err != nil {
 		return err
 	}
@@ -459,6 +463,50 @@ func validateImports(cfg Imports) error {
 				"hold an unbounded body in memory has no way to refuse it",
 			cfg.MaxAttachmentBytes, cfg.MaxUploadBytes,
 		)
+	}
+
+	return nil
+}
+
+func validateOpenAI(cfg OpenAI) error {
+	if strings.TrimSpace(cfg.Endpoint) == "" {
+		return fmt.Errorf(
+			"openai.endpoint is required; it is where a workspace's own API key is tested and " +
+				"its models are listed, and it is settable so an instance can be pointed at a " +
+				"compatible gateway or a test double",
+		)
+	}
+
+	if cfg.RequestTimeout <= 0 {
+		return fmt.Errorf(
+			"openai.request_timeout (%s) must be positive; an administrator waiting on a test "+
+				"request must get an answer rather than a spinner",
+			cfg.RequestTimeout,
+		)
+	}
+
+	if cfg.DialTimeout <= 0 {
+		return fmt.Errorf("openai.dial_timeout (%s) must be positive", cfg.DialTimeout)
+	}
+
+	if cfg.MaxResponseSize < 1<<20 {
+		return fmt.Errorf(
+			"openai.max_response_size (%d) must be at least 1048576; the model list alone runs "+
+				"to hundreds of kilobytes",
+			cfg.MaxResponseSize,
+		)
+	}
+
+	for _, destination := range cfg.AllowedDestinations {
+		if _, err := netip.ParsePrefix(strings.TrimSpace(destination)); err != nil {
+			return fmt.Errorf(
+				"openai.allowed_destinations entry %q is not a CIDR prefix: %w. A workspace may "+
+					"name its own endpoint, so this is the allow-list that lets a model server on "+
+					"loopback or another refused range be reached, and an entry that does not parse "+
+					"silently protects nothing",
+				destination, err,
+			)
+		}
 	}
 
 	return nil
@@ -861,6 +909,11 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("linear.request_timeout", 30*time.Second)
 	v.SetDefault("linear.max_response_size", int64(32<<20))
 	v.SetDefault("linear.page_size", 100)
+	v.SetDefault("openai.endpoint", "https://api.openai.com/v1")
+	v.SetDefault("openai.request_timeout", 30*time.Second)
+	v.SetDefault("openai.dial_timeout", 5*time.Second)
+	v.SetDefault("openai.allowed_destinations", []string{})
+	v.SetDefault("openai.max_response_size", int64(4<<20))
 
 	v.SetDefault("source_control.github_app_id", "")
 	v.SetDefault("source_control.github_app_slug", "")

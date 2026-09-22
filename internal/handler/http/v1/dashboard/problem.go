@@ -327,6 +327,10 @@ func problemFor(err error) (problemResponse, bool) {
 		return enforcementProblem(refused.Blocker, refused.Error()), true
 	}
 
+	if failure, ok := entity.AIProviderFailureOf(err); ok {
+		return aiProviderRefused(failure, err), true
+	}
+
 	if errors.Is(err, entity.ErrSSOEncryptionKeyMissing) {
 		return newProblem(http.StatusInternalServerError, err.Error()), true
 	}
@@ -1114,6 +1118,24 @@ func problemFor(err error) (problemResponse, bool) {
 			},
 		}, true
 
+	case errors.Is(err, entity.ErrAIProviderNotConfigured):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrAIProviderEncryptionKeyMissing):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.AiProviderSealingUnavailableProblem{
+				Code:     api.AiProviderSealingUnavailableProblemCodeAiProviderSealingUnavailable,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
 	case errors.Is(err, entity.ErrLabelNameTaken):
 		return labelConflictProblem(api.LabelNameTaken, err), true
 
@@ -1395,6 +1417,26 @@ func unauthorized() problemResponse {
 }
 
 func (r problemResponse) VisitGetInstanceLicenceResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRemoveWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
@@ -2517,6 +2559,23 @@ func (r problemResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWrite
 
 func (r problemResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
 	return r.write(w)
+}
+
+func aiProviderRefused(failure entity.AIProviderFailure, err error) problemResponse {
+	base := baseProblem(http.StatusUnprocessableEntity, err.Error())
+	code := api.AiProviderFailure(failure)
+
+	return problemResponse{
+		status: http.StatusUnprocessableEntity,
+		body: api.AiProviderRefusedProblem{
+			Code:     &code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
 }
 
 func sourceControlRefused(

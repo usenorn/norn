@@ -7,6 +7,7 @@ import Network from "@lucide/svelte/icons/network";
 import ScrollText from "@lucide/svelte/icons/scroll-text";
 import Server from "@lucide/svelte/icons/server";
 import Settings from "@lucide/svelte/icons/settings";
+import Sparkles from "@lucide/svelte/icons/sparkles";
 import Tags from "@lucide/svelte/icons/tags";
 import Terminal from "@lucide/svelte/icons/terminal";
 import Users from "@lucide/svelte/icons/users";
@@ -67,6 +68,7 @@ export function workspaceSettingsNavigation(slug: string): SettingsNavigationSec
 				{ href: settings("/source-control"), label: "Source control", icon: GitBranch },
 				{ href: settings("/imports"), label: "Imports", icon: Import },
 				{ href: settings("/webhooks"), label: "Webhooks", icon: Webhook },
+				{ href: settings("/ai-provider"), label: "AI provider", icon: Sparkles },
 			],
 		},
 	];

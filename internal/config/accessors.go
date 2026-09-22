@@ -56,6 +56,8 @@ func NewImports(cfg Config) Imports { return cfg.Imports }
 
 func NewLinear(cfg Config) Linear { return cfg.Linear }
 
+func NewOpenAI(cfg Config) OpenAI { return cfg.OpenAI }
+
 func NewSourceControl(cfg Config) SourceControl { return cfg.SourceControl }
 
 func NewIntake(cfg Config) Intake { return cfg.Intake }

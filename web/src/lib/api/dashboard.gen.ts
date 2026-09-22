@@ -3469,6 +3469,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/ai-provider": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read the AI provider this workspace brings its own key for */
+        get: operations["getWorkspaceAiProvider"];
+        /**
+         * Save the provider, a new key, or a new default model
+         * @description A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+         */
+        put: operations["setWorkspaceAiProvider"];
+        post?: never;
+        /** Remove the provider and discard its key */
+        delete: operations["removeWorkspaceAiProvider"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/ai-provider/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the chat models the stored key can use */
+        get: operations["listWorkspaceAiProviderModels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/ai-provider/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send one small request to the default model and record the outcome */
+        post: operations["testWorkspaceAiProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/source-control/connections": {
         parameters: {
             query?: never;
@@ -6504,7 +6566,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -7450,6 +7512,48 @@ export interface components {
         SourceControlSealingUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "source_control_sealing_unavailable";
+        };
+        /** @enum {string} */
+        AiProviderKind: "openai";
+        /** @enum {string} */
+        AiProviderStatus: "unverified" | "verified" | "failed";
+        /** @enum {string} */
+        AiProviderFailure: "key_rejected" | "model_unavailable" | "quota_exceeded" | "rate_limited" | "unreachable" | "destination_refused";
+        /** @description The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it. */
+        WorkspaceAiProvider: {
+            provider: components["schemas"]["AiProviderKind"];
+            baseUrl: string;
+            allowPrivateAddress: boolean;
+            keyHint: string;
+            defaultModel: string;
+            status: components["schemas"]["AiProviderStatus"];
+            failure?: components["schemas"]["AiProviderFailure"];
+            /** Format: date-time */
+            verifiedAt?: string;
+            /** Format: date-time */
+            failedAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @description baseUrl points the workspace at any endpoint that speaks the provider's API, such as a gateway or a self-hosted model server. Changing it requires apiKey, so a stored key never follows an endpoint somebody else chose. allowPrivateAddress lets this one workspace reach an address on a private network; loopback and cloud metadata stay refused unless the instance allows them. */
+        SetWorkspaceAiProviderRequest: {
+            provider: components["schemas"]["AiProviderKind"];
+            baseUrl?: string;
+            allowPrivateAddress?: boolean;
+            apiKey?: string;
+            defaultModel?: string;
+        };
+        AiProviderModelList: {
+            models: string[];
+        };
+        AiProviderRefusedProblem: components["schemas"]["Problem"] & {
+            code?: components["schemas"]["AiProviderFailure"];
+        };
+        AiProviderSealingUnavailableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "ai_provider_sealing_unavailable";
         };
         Webhook: {
             /** Format: uuid */
@@ -8796,6 +8900,24 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["SourceControlSealingUnavailableProblem"];
+            };
+        };
+        /** @description The provider refused the key or the model, could not be reached, or the input was invalid */
+        AiProviderRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AiProviderRefusedProblem"];
+            };
+        };
+        /** @description This instance has no encryption key, so an API key cannot be stored or read */
+        AiProviderSealingUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AiProviderSealingUnavailableProblem"];
             };
         };
         /** @description The run cannot take this step from where it stands */
@@ -16310,6 +16432,143 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The configured provider; the key itself is never returned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAiProvider"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetWorkspaceAiProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description The saved provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAiProvider"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["AiProviderRefused"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AiProviderSealingUnavailable"];
+        };
+    };
+    removeWorkspaceAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The provider and its key are gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceAiProviderModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The models, as the provider lists them for this key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderModelList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["AiProviderRefused"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AiProviderSealingUnavailable"];
+        };
+    };
+    testWorkspaceAiProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The provider, now verified */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAiProvider"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["AiProviderRefused"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AiProviderSealingUnavailable"];
         };
     };
     listWorkspaceSourceControlConnections: {

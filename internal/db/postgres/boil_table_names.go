@@ -23,6 +23,7 @@ var TableNames = struct {
 	WorkspaceActivity                  string
 	WorkspaceAgentProposals            string
 	WorkspaceAgents                    string
+	WorkspaceAiProviders               string
 	WorkspaceAuthPolicies              string
 	WorkspaceBreakGlassCodes           string
 	WorkspaceBulkActionOutcomes        string
@@ -131,6 +132,7 @@ var TableNames = struct {
 	WorkspaceActivity:                  "workspace_activity",
 	WorkspaceAgentProposals:            "workspace_agent_proposals",
 	WorkspaceAgents:                    "workspace_agents",
+	WorkspaceAiProviders:               "workspace_ai_providers",
 	WorkspaceAuthPolicies:              "workspace_auth_policies",
 	WorkspaceBreakGlassCodes:           "workspace_break_glass_codes",
 	WorkspaceBulkActionOutcomes:        "workspace_bulk_action_outcomes",
