@@ -69,6 +69,17 @@ const (
 	AuditAgentRotated    AuditAction = "agent.credential_rotated"
 	AuditAgentProposal   AuditAction = "agent.proposal_decided"
 
+	AuditAgentSkillAdded         AuditAction = "agent.skill_added"
+	AuditAgentSkillUpdated       AuditAction = "agent.skill_updated"
+	AuditAgentSkillRemoved       AuditAction = "agent.skill_removed"
+	AuditAgentMCPServerAdded     AuditAction = "agent.mcp_server_added"
+	AuditAgentMCPServerUpdated   AuditAction = "agent.mcp_server_updated"
+	AuditAgentMCPServerRemoved   AuditAction = "agent.mcp_server_removed"
+	AuditAgentMCPConnected       AuditAction = "agent.mcp_connected"
+	AuditAgentMCPDisconnected    AuditAction = "agent.mcp_disconnected"
+	AuditAgentCapabilityAttached AuditAction = "agent.capability_attached"
+	AuditAgentCapabilityDetached AuditAction = "agent.capability_detached"
+
 	AuditCodebaseConnected    AuditAction = "codebase.connected"
 	AuditCodebaseDisconnected AuditAction = "codebase.disconnected"
 
@@ -124,6 +135,10 @@ func AuditActions() []AuditAction {
 		AuditTokenMinted, AuditTokenRevoked,
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentEnabled, AuditAgentRotated,
 		AuditAgentProposal,
+		AuditAgentSkillAdded, AuditAgentSkillUpdated, AuditAgentSkillRemoved,
+		AuditAgentMCPServerAdded, AuditAgentMCPServerUpdated, AuditAgentMCPServerRemoved,
+		AuditAgentMCPConnected, AuditAgentMCPDisconnected,
+		AuditAgentCapabilityAttached, AuditAgentCapabilityDetached,
 		AuditRunnerEnrolled, AuditRunnerRevoked, AuditRunnerPaused, AuditRunnerResumed,
 		AuditCodebaseConnected, AuditCodebaseDisconnected,
 		AuditExecutionCancelled, AuditExecutionApproved, AuditExecutionResumed,

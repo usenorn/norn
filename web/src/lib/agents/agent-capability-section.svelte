@@ -1,24 +1,19 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
 
 	let {
 		title,
 		description,
 		emptyLine,
 		empty,
-		action,
-		disabled = false,
-		onadd,
+		actions,
 		children,
 	}: {
 		title: string;
 		description: string;
 		emptyLine: string;
 		empty: boolean;
-		action: string;
-		disabled?: boolean;
-		onadd?: () => void;
+		actions?: Snippet;
 		children?: Snippet;
 	} = $props();
 </script>
@@ -28,9 +23,9 @@
 		<h3 class="text-sm font-medium tracking-snug text-ink-900">{title}</h3>
 		<p class="mt-0.5 text-xs leading-normal text-muted-foreground text-pretty">{description}</p>
 	</div>
-	{#if onadd}
-		<div class="sm:row-span-2">
-			<Button variant="secondary" size="sm" {disabled} onclick={onadd}>{action}</Button>
+	{#if actions}
+		<div class="flex flex-wrap gap-2 sm:row-span-2 sm:justify-end">
+			{@render actions()}
 		</div>
 	{/if}
 	<div class="min-w-0 sm:col-span-2">

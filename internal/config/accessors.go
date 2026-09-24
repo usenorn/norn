@@ -58,6 +58,8 @@ func NewLinear(cfg Config) Linear { return cfg.Linear }
 
 func NewOpenAI(cfg Config) OpenAI { return cfg.OpenAI }
 
+func NewAgentTooling(cfg Config) AgentTooling { return cfg.AgentTooling }
+
 func NewSourceControl(cfg Config) SourceControl { return cfg.SourceControl }
 
 func NewIntake(cfg Config) Intake { return cfg.Intake }

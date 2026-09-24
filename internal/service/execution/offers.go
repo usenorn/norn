@@ -49,6 +49,35 @@ func paramsOf(params entity.ExecutionParams) channelv1.Params {
 	}
 }
 
+func toolkitOf(toolkit entity.AgentToolkit) channelv1.Toolkit {
+	converted := channelv1.Toolkit{
+		Skills:     make([]channelv1.Skill, 0, len(toolkit.Skills)),
+		MCPServers: make([]channelv1.MCPServer, 0, len(toolkit.MCPServers)),
+	}
+
+	for _, skill := range toolkit.Skills {
+		converted.Skills = append(converted.Skills, channelv1.Skill{
+			Name:        skill.Name,
+			ContentHash: skill.ContentHash,
+			DownloadURL: skill.DownloadURL,
+		})
+	}
+
+	for _, server := range toolkit.MCPServers {
+		converted.MCPServers = append(converted.MCPServers, channelv1.MCPServer{
+			Name:      server.Name,
+			Transport: string(server.Transport),
+			Command:   server.Command,
+			Args:      server.Args,
+			Env:       server.Env,
+			URL:       server.URL,
+			Headers:   server.Headers,
+		})
+	}
+
+	return converted
+}
+
 func offerOf(execution entity.Execution, issue entity.Issue, branch string) channelv1.Offer {
 	return channelv1.Offer{
 		ExecutionID: execution.ID,

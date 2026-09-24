@@ -12,6 +12,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/blob"
 	"github.com/usenorn/norn/internal/handler/http/events"
 	"github.com/usenorn/norn/internal/handler/http/inboundmail"
+	"github.com/usenorn/norn/internal/handler/http/mcpoauth"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/handler/http/previewgateway"
 	"github.com/usenorn/norn/internal/handler/http/runnerchannel"
@@ -39,6 +40,7 @@ func New(
 	mcpThrottle repository.MCPThrottle,
 	dashboard api.StrictServerInterface,
 	callback *sso.Callback,
+	mcpCallback *mcpoauth.Callback,
 	samlEdge *sso.SAML,
 	blobEdge *blob.Edge,
 	eventsEdge *events.Edge,
@@ -72,6 +74,7 @@ func New(
 
 	bounded.Get(sourcecontrol.RegisteredPath, sourceControlApps.Registered)
 	bounded.Get(sourcecontrol.ConnectedPath, sourceControlApps.Connected)
+	bounded.Get(mcpoauth.CallbackPath, mcpCallback.Handle)
 
 	// A forge chooses its own payload size and its own timeout, so this route carries its
 	// own byte cap rather than the dashboard's, which is sized for a form.

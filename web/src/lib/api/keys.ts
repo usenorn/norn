@@ -9,6 +9,9 @@ export const keys = {
 	triage: (workspaceId: string) => `norn:triage:${workspaceId}`,
 	agents: (workspaceId: string) => `norn:agents:${workspaceId}`,
 	agent: (workspaceId: string, agentId: string) => `norn:agent:${workspaceId}:${agentId}`,
+	agentCapabilities: (workspaceId: string, agentId: string) =>
+		`norn:agent-capabilities:${workspaceId}:${agentId}`,
+	agentLibrary: (workspaceId: string) => `norn:agent-library:${workspaceId}`,
 	members: (workspaceId: string) => `norn:members:${workspaceId}`,
 	labels: (workspaceId: string) => `norn:labels:${workspaceId}`,
 	states: (workspaceId: string) => `norn:states:${workspaceId}`,

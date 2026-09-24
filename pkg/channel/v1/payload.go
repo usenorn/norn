@@ -61,10 +61,32 @@ type Offer struct {
 	Params      Params `json:"params"`
 }
 
+type Skill struct {
+	Name        string `json:"name"`
+	ContentHash string `json:"content_hash"`
+	DownloadURL string `json:"download_url"`
+}
+
+type MCPServer struct {
+	Name      string            `json:"name"`
+	Transport string            `json:"transport"`
+	Command   string            `json:"command,omitempty"`
+	Args      []string          `json:"args,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
+	URL       string            `json:"url,omitempty"`
+	Headers   map[string]string `json:"headers,omitempty"`
+}
+
+type Toolkit struct {
+	Skills     []Skill     `json:"skills"`
+	MCPServers []MCPServer `json:"mcp_servers"`
+}
+
 type Start struct {
 	ExecutionID    string     `json:"execution_id"`
 	LeaseExpiresAt *time.Time `json:"lease_expires_at"`
 	Params         Params     `json:"params"`
+	Toolkit        Toolkit    `json:"toolkit"`
 }
 
 type Cancellation struct {

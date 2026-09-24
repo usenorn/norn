@@ -11,6 +11,7 @@ import (
 	eventsedge "github.com/usenorn/norn/internal/handler/http/events"
 	gatewayrouteredge "github.com/usenorn/norn/internal/handler/http/gatewayrouter"
 	inboundmailedge "github.com/usenorn/norn/internal/handler/http/inboundmail"
+	mcpoauthedge "github.com/usenorn/norn/internal/handler/http/mcpoauth"
 	previewbrowseredge "github.com/usenorn/norn/internal/handler/http/preview"
 	previewedge "github.com/usenorn/norn/internal/handler/http/previewgateway"
 	previewtunneledge "github.com/usenorn/norn/internal/handler/http/previewtunnel"
@@ -37,13 +38,18 @@ import (
 	samlproviderpkg "github.com/usenorn/norn/internal/pkg/samlprovider"
 	"github.com/usenorn/norn/internal/pkg/smtp"
 	"github.com/usenorn/norn/internal/pkg/taskqueue"
+	"github.com/usenorn/norn/internal/pkg/toolingclient"
 	"github.com/usenorn/norn/internal/pkg/valkey"
 	"github.com/usenorn/norn/internal/repository"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	agentmcpconnectionrepo "github.com/usenorn/norn/internal/repository/agentmcpconnection"
+	agentmcpoauthstaterepo "github.com/usenorn/norn/internal/repository/agentmcpoauthstate"
+	agentmcpserverrepo "github.com/usenorn/norn/internal/repository/agentmcpserver"
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
+	agentskillrepo "github.com/usenorn/norn/internal/repository/agentskill"
 	agentthrottlerepo "github.com/usenorn/norn/internal/repository/agentthrottle"
 	aimodelrepo "github.com/usenorn/norn/internal/repository/aimodel"
 	aiproviderrepo "github.com/usenorn/norn/internal/repository/aiprovider"
@@ -85,6 +91,8 @@ import (
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
+	mcpauthorizerrepo "github.com/usenorn/norn/internal/repository/mcpauthorizer"
+	mcpregistryrepo "github.com/usenorn/norn/internal/repository/mcpregistry"
 	mcpthrottlerepo "github.com/usenorn/norn/internal/repository/mcpthrottle"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	nornapirepo "github.com/usenorn/norn/internal/repository/nornapi"
@@ -114,6 +122,7 @@ import (
 	signinchallengerepo "github.com/usenorn/norn/internal/repository/signinchallenge"
 	signinthrottlerepo "github.com/usenorn/norn/internal/repository/signinthrottle"
 	signuprepo "github.com/usenorn/norn/internal/repository/signup"
+	skillsourcerepo "github.com/usenorn/norn/internal/repository/skillsource"
 	ssoconnectionrepo "github.com/usenorn/norn/internal/repository/ssoconnection"
 	ssoidentityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
@@ -127,6 +136,7 @@ import (
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
+	agentcapabilitysvc "github.com/usenorn/norn/internal/service/agentcapability"
 	agentholdsvc "github.com/usenorn/norn/internal/service/agenthold"
 	aiprovidersvc "github.com/usenorn/norn/internal/service/aiprovider"
 	apitokensvc "github.com/usenorn/norn/internal/service/apitoken"
@@ -195,6 +205,7 @@ var baseSet = wire.NewSet(
 	licencepkg.Set,
 	lineargraph.Set,
 	openai.Set,
+	toolingclient.Set,
 	forge.Set,
 	outbound.Set,
 	oidcproviderpkg.Set,
@@ -281,6 +292,13 @@ var baseSet = wire.NewSet(
 	oidcproviderrepo.Set,
 	aimodelrepo.Set,
 	aiproviderrepo.Set,
+	agentskillrepo.Set,
+	agentmcpserverrepo.Set,
+	agentmcpconnectionrepo.Set,
+	agentmcpoauthstaterepo.Set,
+	skillsourcerepo.Set,
+	mcpregistryrepo.Set,
+	mcpauthorizerrepo.Set,
 	mcpthrottlerepo.Set,
 	webhookrepo.Set,
 	webhooksenderrepo.Set,
@@ -330,6 +348,7 @@ var baseSet = wire.NewSet(
 	jobssvc.Set,
 	ssoconnectionsvc.Set,
 	aiprovidersvc.Set,
+	agentcapabilitysvc.Set,
 	auditsvc.Set,
 	licensingsvc.Set,
 	directorysvc.Set,
@@ -343,6 +362,7 @@ var baseSet = wire.NewSet(
 
 	dashboardhandler.Set,
 	ssohandler.Set,
+	mcpoauthedge.Set,
 	blobedge.Set,
 	eventsedge.Set,
 	runnerchanneledge.Set,

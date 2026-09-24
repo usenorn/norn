@@ -32,6 +32,7 @@ tags:
   - name: imports
   - name: source-control
   - name: ai-provider
+  - name: agent-capabilities
   - name: questions
   - name: runners
   - name: codebases
@@ -6375,6 +6376,398 @@ paths:
         '409': { $ref: '#/components/responses/CodebaseConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents/{agentId}/capabilities:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+    get:
+      tags: [agent-capabilities]
+      operationId: getAgentCapabilities
+      summary: List the skills and MCP servers an agent runs with
+      description: >-
+        Includes the agent's own items and the library items attached to it. Secret values are
+        never returned; only the names of the variables and headers that hold them.
+      responses:
+        '200':
+          description: The agent's skills and MCP servers
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentCapabilities' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/skills:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+    post:
+      tags: [agent-capabilities]
+      operationId: addAgentSkill
+      summary: Give an agent a skill, imported from a repository or written here
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddAgentSkillRequest' }
+      responses:
+        '201':
+          description: The added skill
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSkill' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/AgentCapabilityUpstream' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/mcp-servers:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+    post:
+      tags: [agent-capabilities]
+      operationId: addAgentMcpServer
+      summary: Give an agent an MCP server
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentMcpServerRequest' }
+      responses:
+        '201':
+          description: The added server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentMcpServer' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/AgentCapabilitySealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+      - $ref: '#/components/parameters/AgentSkillId'
+    put:
+      tags: [agent-capabilities]
+      operationId: attachLibrarySkill
+      summary: Let an agent use a skill from the workspace library
+      responses:
+        '204': { description: The agent now uses the skill }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [agent-capabilities]
+      operationId: detachLibrarySkill
+      summary: Stop an agent using a library skill, leaving the skill in the library
+      responses:
+        '204': { description: The agent no longer uses the skill }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+      - $ref: '#/components/parameters/AgentMcpServerId'
+    put:
+      tags: [agent-capabilities]
+      operationId: attachLibraryMcpServer
+      summary: Let an agent use an MCP server from the workspace library
+      responses:
+        '204': { description: The agent now uses the server }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [agent-capabilities]
+      operationId: detachLibraryMcpServer
+      summary: Stop an agent using a library MCP server, leaving the server in the library
+      responses:
+        '204': { description: The agent no longer uses the server }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-library:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [agent-capabilities]
+      operationId: getAgentLibrary
+      summary: List the skills and MCP servers any agent in the workspace can be given
+      responses:
+        '200':
+          description: The library and which agents use each item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentLibrary' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-library/skills:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [agent-capabilities]
+      operationId: addLibrarySkill
+      summary: Add a skill to the workspace library
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddAgentSkillRequest' }
+      responses:
+        '201':
+          description: The added skill
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSkill' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/AgentCapabilityUpstream' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-library/mcp-servers:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [agent-capabilities]
+      operationId: addLibraryMcpServer
+      summary: Add an MCP server to the workspace library
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentMcpServerRequest' }
+      responses:
+        '201':
+          description: The added server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentMcpServer' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/AgentCapabilitySealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-skills/{skillId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentSkillId'
+    patch:
+      tags: [agent-capabilities]
+      operationId: rewriteAgentSkill
+      summary: Replace the contents of a skill that was written here
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RewriteAgentSkillRequest' }
+      responses:
+        '200':
+          description: The rewritten skill
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSkill' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [agent-capabilities]
+      operationId: deleteAgentSkill
+      summary: Delete a skill, taking it from every agent that uses it
+      responses:
+        '204': { description: The skill is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-skills/{skillId}/pull:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentSkillId'
+    post:
+      tags: [agent-capabilities]
+      operationId: pullAgentSkill
+      summary: Update an imported skill to the latest commit of the ref it was imported from
+      responses:
+        '200':
+          description: The skill, updated when its source moved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSkill' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/AgentCapabilityUpstream' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-mcp-servers/{serverId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentMcpServerId'
+    put:
+      tags: [agent-capabilities]
+      operationId: updateAgentMcpServer
+      summary: Change an MCP server
+      description: >-
+        A variable or header sent with an empty value keeps its stored value, and one left out
+        is removed. Changing where or how the server signs in signs it out.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentMcpServerRequest' }
+      responses:
+        '200':
+          description: The changed server
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentMcpServer' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/AgentCapabilitySealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [agent-capabilities]
+      operationId: deleteAgentMcpServer
+      summary: Delete an MCP server, taking it from every agent that uses it
+      responses:
+        '204': { description: The server is gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentMcpServerId'
+    post:
+      tags: [agent-capabilities]
+      operationId: connectAgentMcpServer
+      summary: Start signing an MCP server in with OAuth
+      description: >-
+        Discovers the server's authorization server, registers Norn as a client when no client
+        was given, and answers with the address to send the browser to. The authorization server
+        returns to Norn, which stores the tokens and sends the browser back to returnTo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConnectAgentMcpServerRequest' }
+      responses:
+        '200':
+          description: Where to send the browser
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentMcpAuthorization' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentCapabilityConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/AgentCapabilityUpstream' }
+        '503': { $ref: '#/components/responses/AgentCapabilitySealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentMcpServerId'
+    delete:
+      tags: [agent-capabilities]
+      operationId: disconnectAgentMcpServer
+      summary: Sign an MCP server out and forget its tokens
+      responses:
+        '204': { description: The server is signed out }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/skill-sources:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [agent-capabilities]
+      operationId: resolveSkillSource
+      summary: List the skills a repository, skills.sh page, or install command points at
+      parameters:
+        - name: source
+          in: query
+          required: true
+          schema: { type: string, maxLength: 512 }
+      responses:
+        '200':
+          description: The skills found at the source
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SkillSourceDiscovery' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '502': { $ref: '#/components/responses/AgentCapabilityUpstream' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/mcp-registry:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [agent-capabilities]
+      operationId: searchMcpRegistry
+      summary: Search the MCP registry for servers an agent can be given
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string, maxLength: 200 }
+      responses:
+        '200':
+          description: Matching servers and how each can be run
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/McpRegistryEntry' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '502': { $ref: '#/components/responses/AgentCapabilityUpstream' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/agents/{agentId}/codebases:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7133,6 +7526,18 @@ components:
       required: true
       schema: { type: string, format: uuid }
 
+    AgentSkillId:
+      name: skillId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+    AgentMcpServerId:
+      name: serverId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
     CodebaseId:
       name: codebaseId
       in: path
@@ -7679,6 +8084,21 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/AiProviderSealingUnavailableProblem' }
+    AgentCapabilityConflict:
+      description: The skill or MCP server cannot change as asked
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AgentCapabilityConflictProblem' }
+    AgentCapabilityUpstream:
+      description: A skill source, the MCP registry, or the MCP server could not be reached
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AgentCapabilityUpstreamProblem' }
+    AgentCapabilitySealingUnavailable:
+      description: This instance has no encryption key, so secrets cannot be stored or read
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AgentCapabilitySealingUnavailableProblem' }
     ImportConflict:
       description: The run cannot take this step from where it stands
       content:
@@ -10379,6 +10799,16 @@ components:
         - agent.disabled
         - agent.enabled
         - agent.proposal_decided
+        - agent.skill_added
+        - agent.skill_updated
+        - agent.skill_removed
+        - agent.mcp_server_added
+        - agent.mcp_server_updated
+        - agent.mcp_server_removed
+        - agent.mcp_connected
+        - agent.mcp_disconnected
+        - agent.capability_attached
+        - agent.capability_detached
         - webhook.registered
         - webhook.removed
         - webhook.disabled
@@ -11960,6 +12390,333 @@ components:
           required: [code]
           properties:
             code: { type: string, enum: [ai_provider_sealing_unavailable] }
+
+    AgentSkillSource:
+      type: string
+      enum: [manual, github]
+
+    AgentSkillOrigin:
+      type: object
+      required: [repository, path, ref, revision]
+      properties:
+        repository: { type: string }
+        path: { type: string }
+        ref: { type: string }
+        revision: { type: string }
+
+    AgentSkill:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - source
+        - instructions
+        - contentHash
+        - sizeBytes
+        - fileCount
+        - library
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string }
+        source: { $ref: '#/components/schemas/AgentSkillSource' }
+        origin: { $ref: '#/components/schemas/AgentSkillOrigin' }
+        instructions: { type: string }
+        contentHash: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        fileCount: { type: integer, format: int32 }
+        library: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    AgentMcpTransport:
+      type: string
+      enum: [stdio, http, sse]
+
+    AgentMcpAuth:
+      type: string
+      enum: [none, headers, oauth]
+
+    AgentMcpConnectionStatus:
+      type: string
+      enum: [connected, expired, failed]
+
+    AgentMcpConnection:
+      type: object
+      required: [status, issuer, scopes, connectedAt]
+      properties:
+        status: { $ref: '#/components/schemas/AgentMcpConnectionStatus' }
+        issuer: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+        expiresAt: { type: string, format: date-time }
+        failure:
+          type: string
+          enum: [refresh_rejected, unreachable]
+        connectedAt: { type: string, format: date-time }
+
+    AgentMcpServer:
+      type: object
+      required:
+        - id
+        - name
+        - transport
+        - command
+        - args
+        - url
+        - auth
+        - envKeys
+        - headerKeys
+        - oauthClientId
+        - library
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        transport: { $ref: '#/components/schemas/AgentMcpTransport' }
+        command: { type: string }
+        args:
+          type: array
+          items: { type: string }
+        url: { type: string }
+        auth: { $ref: '#/components/schemas/AgentMcpAuth' }
+        envKeys:
+          type: array
+          items: { type: string }
+        headerKeys:
+          type: array
+          items: { type: string }
+        oauthClientId: { type: string }
+        registryName: { type: string }
+        registryVersion: { type: string }
+        library: { type: boolean }
+        connection: { $ref: '#/components/schemas/AgentMcpConnection' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    AgentCapabilities:
+      type: object
+      required: [skills, mcpServers]
+      properties:
+        skills:
+          type: array
+          items: { $ref: '#/components/schemas/AgentSkill' }
+        mcpServers:
+          type: array
+          items: { $ref: '#/components/schemas/AgentMcpServer' }
+
+    AgentLibrarySkill:
+      type: object
+      required: [skill, agentIds]
+      properties:
+        skill: { $ref: '#/components/schemas/AgentSkill' }
+        agentIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    AgentLibraryMcpServer:
+      type: object
+      required: [server, agentIds]
+      properties:
+        server: { $ref: '#/components/schemas/AgentMcpServer' }
+        agentIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    AgentLibrary:
+      type: object
+      required: [skills, mcpServers]
+      properties:
+        skills:
+          type: array
+          items: { $ref: '#/components/schemas/AgentLibrarySkill' }
+        mcpServers:
+          type: array
+          items: { $ref: '#/components/schemas/AgentLibraryMcpServer' }
+
+    AddAgentSkillRequest:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [import, manual]
+        source:
+          type: string
+          maxLength: 512
+          description: >-
+            A GitHub repository (owner/repo), a github.com or skills.sh address, or an
+            `npx skills add` command. Used when kind is import.
+        path:
+          type: string
+          maxLength: 256
+          description: >-
+            The directory of the skill inside the source, as listed by skill-sources. Leave it out
+            when the source names exactly one skill.
+        instructions:
+          type: string
+          maxLength: 262144
+          description: The SKILL.md to write, frontmatter included. Used when kind is manual.
+        archive:
+          type: string
+          format: byte
+          description: >-
+            A zip of the skill directory with SKILL.md at its root or in one top folder. Used
+            when kind is manual, in place of instructions.
+
+    RewriteAgentSkillRequest:
+      type: object
+      properties:
+        instructions: { type: string, maxLength: 262144 }
+        archive: { type: string, format: byte }
+
+    AgentMcpServerRequest:
+      type: object
+      required: [name, transport]
+      properties:
+        name: { type: string, maxLength: 64 }
+        transport: { $ref: '#/components/schemas/AgentMcpTransport' }
+        command: { type: string, maxLength: 1024 }
+        args:
+          type: array
+          maxItems: 64
+          items: { type: string, maxLength: 4096 }
+        url: { type: string, maxLength: 2048 }
+        auth: { $ref: '#/components/schemas/AgentMcpAuth' }
+        env:
+          type: object
+          additionalProperties: { type: string }
+        headers:
+          type: object
+          additionalProperties: { type: string }
+        oauthClientId: { type: string, maxLength: 512 }
+        oauthClientSecret: { type: string, maxLength: 8192 }
+        registryName: { type: string, maxLength: 256 }
+        registryVersion: { type: string, maxLength: 128 }
+
+    ConnectAgentMcpServerRequest:
+      type: object
+      required: [returnTo]
+      properties:
+        returnTo:
+          type: string
+          maxLength: 2048
+          description: The path inside Norn the browser comes back to once the sign-in is done
+
+    AgentMcpAuthorization:
+      type: object
+      required: [authorizationUrl]
+      properties:
+        authorizationUrl: { type: string }
+
+    SkillCandidate:
+      type: object
+      required: [name, description, path]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        path: { type: string }
+
+    SkillSourceDiscovery:
+      type: object
+      required: [repository, ref, revision, candidates]
+      properties:
+        repository: { type: string }
+        ref: { type: string }
+        revision: { type: string }
+        suggested:
+          type: string
+          description: The path of the skill the source named, when it named one
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/SkillCandidate' }
+
+    McpVariableSpec:
+      type: object
+      required: [key, required, secret]
+      properties:
+        key: { type: string }
+        description: { type: string }
+        required: { type: boolean }
+        secret: { type: boolean }
+        default: { type: string }
+
+    McpServerTemplate:
+      type: object
+      required: [transport, command, args, url, env, headers]
+      properties:
+        transport: { $ref: '#/components/schemas/AgentMcpTransport' }
+        command: { type: string }
+        args:
+          type: array
+          items: { type: string }
+        url: { type: string }
+        env:
+          type: array
+          items: { $ref: '#/components/schemas/McpVariableSpec' }
+        headers:
+          type: array
+          items: { $ref: '#/components/schemas/McpVariableSpec' }
+
+    McpRegistryEntry:
+      type: object
+      required: [name, title, description, version, templates]
+      properties:
+        name: { type: string }
+        title: { type: string }
+        description: { type: string }
+        version: { type: string }
+        websiteUrl: { type: string }
+        repository: { type: string }
+        templates:
+          type: array
+          items: { $ref: '#/components/schemas/McpServerTemplate' }
+
+    AgentCapabilityConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - skill_name_taken
+                - mcp_server_name_taken
+                - skill_limit_reached
+                - mcp_server_limit_reached
+                - already_attached
+                - not_attached
+                - not_library
+                - skill_imported
+                - skill_not_imported
+                - oauth_not_configured
+                - oauth_unsupported
+                - oauth_refused
+                - destination_refused
+
+    AgentCapabilityUpstreamProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [skill_source_unreachable, registry_unreachable, mcp_server_unreachable]
+
+    AgentCapabilitySealingUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [agent_capability_sealing_unavailable] }
 
     Webhook:
       type: object

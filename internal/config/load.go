@@ -167,6 +167,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateAgentTooling(cfg.AgentTooling); err != nil {
+		return err
+	}
+
 	if err := validateSourceControl(cfg.SourceControl); err != nil {
 		return err
 	}
@@ -463,6 +467,54 @@ func validateImports(cfg Imports) error {
 				"hold an unbounded body in memory has no way to refuse it",
 			cfg.MaxAttachmentBytes, cfg.MaxUploadBytes,
 		)
+	}
+
+	return nil
+}
+
+func validateAgentTooling(cfg AgentTooling) error {
+	for name, endpoint := range map[string]string{
+		"agent_tooling.github_endpoint":     cfg.GitHubEndpoint,
+		"agent_tooling.github_raw_endpoint": cfg.GitHubRawEndpoint,
+		"agent_tooling.registry_endpoint":   cfg.RegistryEndpoint,
+	} {
+		parsed, err := url.Parse(strings.TrimSpace(endpoint))
+		if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") {
+			return fmt.Errorf(
+				"%s (%q) must be an absolute http or https URL; skills are imported and mcp "+
+					"servers are looked up there",
+				name, endpoint,
+			)
+		}
+	}
+
+	for name, duration := range map[string]time.Duration{
+		"agent_tooling.request_timeout": cfg.RequestTimeout,
+		"agent_tooling.dial_timeout":    cfg.DialTimeout,
+		"agent_tooling.oauth_state_ttl": cfg.OAuthStateTTL,
+		"agent_tooling.refresh_lead":    cfg.RefreshLead,
+		"agent_tooling.download_ttl":    cfg.DownloadTTL,
+	} {
+		if duration <= 0 {
+			return fmt.Errorf("%s (%s) must be positive", name, duration)
+		}
+	}
+
+	if cfg.MaxResponseSize < 6<<20 {
+		return fmt.Errorf(
+			"agent_tooling.max_response_size (%d) must be at least 6291456; one file of a skill "+
+				"may be as large as the whole 5 MiB bundle a skill is allowed",
+			cfg.MaxResponseSize,
+		)
+	}
+
+	for _, destination := range cfg.AllowedDestinations {
+		if _, err := netip.ParsePrefix(strings.TrimSpace(destination)); err != nil {
+			return fmt.Errorf(
+				"agent_tooling.allowed_destinations entry %q is not a CIDR prefix: %w",
+				destination, err,
+			)
+		}
 	}
 
 	return nil
@@ -914,6 +966,18 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("openai.dial_timeout", 5*time.Second)
 	v.SetDefault("openai.allowed_destinations", []string{})
 	v.SetDefault("openai.max_response_size", int64(4<<20))
+
+	v.SetDefault("agent_tooling.github_endpoint", "https://api.github.com")
+	v.SetDefault("agent_tooling.github_raw_endpoint", "https://raw.githubusercontent.com")
+	v.SetDefault("agent_tooling.github_token", "")
+	v.SetDefault("agent_tooling.registry_endpoint", "https://registry.modelcontextprotocol.io")
+	v.SetDefault("agent_tooling.request_timeout", 30*time.Second)
+	v.SetDefault("agent_tooling.dial_timeout", 5*time.Second)
+	v.SetDefault("agent_tooling.max_response_size", int64(16<<20))
+	v.SetDefault("agent_tooling.allowed_destinations", []string{})
+	v.SetDefault("agent_tooling.oauth_state_ttl", 10*time.Minute)
+	v.SetDefault("agent_tooling.refresh_lead", 5*time.Minute)
+	v.SetDefault("agent_tooling.download_ttl", 15*time.Minute)
 
 	v.SetDefault("source_control.github_app_id", "")
 	v.SetDefault("source_control.github_app_slug", "")

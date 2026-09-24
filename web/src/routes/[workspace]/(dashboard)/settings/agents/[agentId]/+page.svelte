@@ -16,8 +16,7 @@
 	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
-	import AgentCapabilitiesPanel from "$lib/agents/agent-capabilities-panel.svelte";
-	import AgentCapabilityDialog from "$lib/agents/agent-capability-dialog.svelte";
+	import AgentCapabilitiesManager from "$lib/agents/agent-capabilities-manager.svelte";
 	import AgentIcon from "$lib/agents/agent-icon.svelte";
 	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import { api } from "$lib/api";
@@ -30,11 +29,13 @@
 		type Agent,
 	} from "$lib/agents/agents";
 	import {
-		withCapability,
+		agentLibraryPath,
+		agentRows,
+		connectOutcome,
 		type AgentCapabilities,
-		type AgentCapabilityDraft,
-		type AgentCapabilityKind,
+		type AgentLibraryListing,
 	} from "$lib/agents/agent-capabilities";
+	import { deploymentPreview } from "$lib/auth/preview";
 	import {
 		agentLifecycleFailureMessage,
 		type AgentLifecycleAction,
@@ -54,10 +55,7 @@
 	);
 
 	let loadedActivity = $state.raw<ActivityFeed | null>(null);
-	let capabilityOverride = $state.raw<AgentCapabilities | null>(null);
-	let selectedTab = $state<AgentDetailTab>("overview");
-	let capabilityDialogKind = $state<AgentCapabilityKind>("skill");
-	let capabilityDialogOpen = $state(false);
+	let selectedTab = $state<AgentDetailTab>(openingTab(page.url));
 	let working = $state(false);
 	let mutation = $state<AgentLifecycleAction | null>(null);
 	let confirmation = $state<AgentLifecycleAction | null>(null);
@@ -70,10 +68,12 @@
 	const record = $derived(preview?.record ?? data.record);
 	const agent = $derived(record.kind === "ready" ? record.value : null);
 	const activity = $derived<ActivityFeed>(loadedActivity ?? preview?.activity ?? data.activity);
-	const capabilities = $derived<AgentCapabilities>(
-		capabilityOverride ??
-			preview?.capabilities ??
-			(import.meta.env.DEV ? { kind: "empty" } : { kind: "unavailable" })
+	const capabilities = $derived<AgentCapabilities>(preview?.capabilities ?? data.capabilities);
+	const library = $derived<AgentLibraryListing>(preview?.library ?? data.library);
+	const outcome = $derived(preview?.outcome ?? connectOutcome(page.url));
+	const selfHosted = $derived(deploymentPreview(page.url)?.selfHosted ?? data.selfHosted);
+	const administrator = $derived(
+		(preview?.role ?? data.members.find((member) => member.accountId === data.member.id)?.role) === "admin"
 	);
 	const teams = $derived(data.teams ?? []);
 	const mutationAnnouncement = $derived(
@@ -86,9 +86,7 @@
 					: ""
 	);
 
-	holdShortcuts(
-		() => capabilityDialogOpen || confirmation !== null || issuedAgent !== null
-	);
+	holdShortcuts(() => confirmation !== null || issuedAgent !== null);
 
 	$effect.pre(() => {
 		const nextAgentId = page.params.agentId;
@@ -97,10 +95,7 @@
 
 		stateAgentId = nextAgentId;
 		loadedActivity = null;
-		capabilityOverride = null;
-		selectedTab = "overview";
-		capabilityDialogKind = "skill";
-		capabilityDialogOpen = false;
+		selectedTab = openingTab(page.url);
 		working = false;
 		mutation = null;
 		confirmation = null;
@@ -112,11 +107,13 @@
 	$effect(() => {
 		page.params.agentId;
 		if (preview?.tab) selectedTab = preview.tab;
-		if (preview?.dialog) {
-			capabilityDialogKind = preview.dialog;
-			capabilityDialogOpen = true;
-		}
 	});
+
+	function openingTab(url: URL): AgentDetailTab {
+		return url.searchParams.get("tab") === "capabilities" || url.searchParams.has("connection")
+			? "capabilities"
+			: "overview";
+	}
 
 	async function more() {
 		if (activity.kind !== "ready" || !activity.nextCursor || !agent) return;
@@ -262,15 +259,6 @@
 		if (action === "enable") await enableAgent();
 
 		confirmation = null;
-	}
-
-	function openCapabilityDialog(kind: AgentCapabilityKind) {
-		capabilityDialogKind = kind;
-		capabilityDialogOpen = true;
-	}
-
-	function addCapability(draft: AgentCapabilityDraft) {
-		capabilityOverride = withCapability(capabilities, draft);
 	}
 
 	function closeCredential() {
@@ -500,19 +488,21 @@
 
 					<Tabs.Content value="capabilities" class="pt-5">
 						<div class="flex flex-col gap-4">
-							{#if import.meta.env.DEV && capabilities.kind !== "unavailable"}
-								<Alert.Root variant="muted">
-									<CircleAlert aria-hidden="true" />
-									<Alert.Title>Development draft</Alert.Title>
-									<Alert.Description>
-										Changes here stay in this browser session. No runtime capability API exists yet.
-									</Alert.Description>
-								</Alert.Root>
-							{/if}
-							<AgentCapabilitiesPanel
-								{capabilities}
-								canDraft={import.meta.env.DEV}
-								onadd={openCapabilityDialog}
+							<p class="text-sm leading-normal text-muted-foreground text-pretty">
+								What this agent's runs start with. Skills and servers shared across agents live in the
+								<a href={agentLibraryPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">agent library</a>.
+							</p>
+							<AgentCapabilitiesManager
+								workspace={{ id: workspace.id, slug: workspace.slug }}
+								agentId={agent.agent.id}
+								rows={agentRows(capabilities)}
+								{library}
+								canManage
+								canManageLibrary={administrator}
+								{selfHosted}
+								connectForm={data.connectForm}
+								{outcome}
+								dialog={preview?.dialog}
 							/>
 						</div>
 					</Tabs.Content>
@@ -538,14 +528,6 @@
 		</div>
 	</div>
 </div>
-
-{#if import.meta.env.DEV}
-	<AgentCapabilityDialog
-		bind:open={capabilityDialogOpen}
-		kind={capabilityDialogKind}
-		onadd={addCapability}
-	/>
-{/if}
 
 <CredentialDialog
 	open={issuedAgent !== null}

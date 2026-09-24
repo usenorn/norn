@@ -129,152 +129,167 @@ var WorkspaceWhere = struct {
 
 // WorkspaceRels is where relationship names are stored.
 var WorkspaceRels = struct {
-	DefaultTeam                    string
-	WorkspaceAiProvider            string
-	WorkspaceAuthPolicy            string
-	WorkspaceDirectoryConnection   string
-	WorkspaceExecutionPolicy       string
-	WorkspaceOidcConnection        string
-	WorkspaceSsoConnection         string
-	WorkspaceStorageLedger         string
-	APITokenGrants                 string
-	WorkspaceAgentProposals        string
-	WorkspaceAgents                string
-	WorkspaceBreakGlassCodes       string
-	WorkspaceBulkActions           string
-	WorkspaceCodeLinks             string
-	WorkspaceCommentMirrors        string
-	WorkspaceExecutionArtifacts    string
-	WorkspaceExecutionChanges      string
-	WorkspaceExecutionChunks       string
-	WorkspaceExecutionPreviewLinks string
-	WorkspaceExecutionPreviews     string
-	WorkspaceExecutionResults      string
-	WorkspaceExecutionServices     string
-	WorkspaceExecutionValidations  string
-	WorkspaceExecutions            string
-	WorkspaceImportFiles           string
-	WorkspaceIntakeDeliveries      string
-	WorkspaceInvitations           string
-	WorkspaceIssueAttachments      string
-	WorkspaceIssueDelegations      string
-	WorkspaceIssueDrafts           string
-	WorkspaceIssueMirrorConflicts  string
-	WorkspaceIssueMirrors          string
-	WorkspaceIssueQuestions        string
-	WorkspaceIssueTemplates        string
-	WorkspaceLabelGroups           string
-	WorkspaceLabels                string
-	WorkspaceMemberships           string
-	WorkspaceNotificationEvents    string
-	WorkspaceProjects              string
-	WorkspaceRequestKeys           string
-	WorkspaceRunners               string
-	WorkspaceSavedViews            string
-	WorkspaceSCMConnections        string
-	WorkspaceSCMIdentities         string
-	WorkspaceSCMRepositories       string
-	WorkspaceSlugRedirects         string
-	WorkspaceTeams                 string
+	DefaultTeam                        string
+	WorkspaceAiProvider                string
+	WorkspaceAuthPolicy                string
+	WorkspaceDirectoryConnection       string
+	WorkspaceExecutionPolicy           string
+	WorkspaceOidcConnection            string
+	WorkspaceSsoConnection             string
+	WorkspaceStorageLedger             string
+	APITokenGrants                     string
+	WorkspaceAgentMCPConnections       string
+	WorkspaceAgentMCPServerAttachments string
+	WorkspaceAgentMCPServers           string
+	WorkspaceAgentProposals            string
+	WorkspaceAgentSkillAttachments     string
+	WorkspaceAgentSkills               string
+	WorkspaceAgents                    string
+	WorkspaceBreakGlassCodes           string
+	WorkspaceBulkActions               string
+	WorkspaceCodeLinks                 string
+	WorkspaceCommentMirrors            string
+	WorkspaceExecutionArtifacts        string
+	WorkspaceExecutionChanges          string
+	WorkspaceExecutionChunks           string
+	WorkspaceExecutionPreviewLinks     string
+	WorkspaceExecutionPreviews         string
+	WorkspaceExecutionResults          string
+	WorkspaceExecutionServices         string
+	WorkspaceExecutionValidations      string
+	WorkspaceExecutions                string
+	WorkspaceImportFiles               string
+	WorkspaceIntakeDeliveries          string
+	WorkspaceInvitations               string
+	WorkspaceIssueAttachments          string
+	WorkspaceIssueDelegations          string
+	WorkspaceIssueDrafts               string
+	WorkspaceIssueMirrorConflicts      string
+	WorkspaceIssueMirrors              string
+	WorkspaceIssueQuestions            string
+	WorkspaceIssueTemplates            string
+	WorkspaceLabelGroups               string
+	WorkspaceLabels                    string
+	WorkspaceMemberships               string
+	WorkspaceNotificationEvents        string
+	WorkspaceProjects                  string
+	WorkspaceRequestKeys               string
+	WorkspaceRunners                   string
+	WorkspaceSavedViews                string
+	WorkspaceSCMConnections            string
+	WorkspaceSCMIdentities             string
+	WorkspaceSCMRepositories           string
+	WorkspaceSlugRedirects             string
+	WorkspaceTeams                     string
 }{
-	DefaultTeam:                    "DefaultTeam",
-	WorkspaceAiProvider:            "WorkspaceAiProvider",
-	WorkspaceAuthPolicy:            "WorkspaceAuthPolicy",
-	WorkspaceDirectoryConnection:   "WorkspaceDirectoryConnection",
-	WorkspaceExecutionPolicy:       "WorkspaceExecutionPolicy",
-	WorkspaceOidcConnection:        "WorkspaceOidcConnection",
-	WorkspaceSsoConnection:         "WorkspaceSsoConnection",
-	WorkspaceStorageLedger:         "WorkspaceStorageLedger",
-	APITokenGrants:                 "APITokenGrants",
-	WorkspaceAgentProposals:        "WorkspaceAgentProposals",
-	WorkspaceAgents:                "WorkspaceAgents",
-	WorkspaceBreakGlassCodes:       "WorkspaceBreakGlassCodes",
-	WorkspaceBulkActions:           "WorkspaceBulkActions",
-	WorkspaceCodeLinks:             "WorkspaceCodeLinks",
-	WorkspaceCommentMirrors:        "WorkspaceCommentMirrors",
-	WorkspaceExecutionArtifacts:    "WorkspaceExecutionArtifacts",
-	WorkspaceExecutionChanges:      "WorkspaceExecutionChanges",
-	WorkspaceExecutionChunks:       "WorkspaceExecutionChunks",
-	WorkspaceExecutionPreviewLinks: "WorkspaceExecutionPreviewLinks",
-	WorkspaceExecutionPreviews:     "WorkspaceExecutionPreviews",
-	WorkspaceExecutionResults:      "WorkspaceExecutionResults",
-	WorkspaceExecutionServices:     "WorkspaceExecutionServices",
-	WorkspaceExecutionValidations:  "WorkspaceExecutionValidations",
-	WorkspaceExecutions:            "WorkspaceExecutions",
-	WorkspaceImportFiles:           "WorkspaceImportFiles",
-	WorkspaceIntakeDeliveries:      "WorkspaceIntakeDeliveries",
-	WorkspaceInvitations:           "WorkspaceInvitations",
-	WorkspaceIssueAttachments:      "WorkspaceIssueAttachments",
-	WorkspaceIssueDelegations:      "WorkspaceIssueDelegations",
-	WorkspaceIssueDrafts:           "WorkspaceIssueDrafts",
-	WorkspaceIssueMirrorConflicts:  "WorkspaceIssueMirrorConflicts",
-	WorkspaceIssueMirrors:          "WorkspaceIssueMirrors",
-	WorkspaceIssueQuestions:        "WorkspaceIssueQuestions",
-	WorkspaceIssueTemplates:        "WorkspaceIssueTemplates",
-	WorkspaceLabelGroups:           "WorkspaceLabelGroups",
-	WorkspaceLabels:                "WorkspaceLabels",
-	WorkspaceMemberships:           "WorkspaceMemberships",
-	WorkspaceNotificationEvents:    "WorkspaceNotificationEvents",
-	WorkspaceProjects:              "WorkspaceProjects",
-	WorkspaceRequestKeys:           "WorkspaceRequestKeys",
-	WorkspaceRunners:               "WorkspaceRunners",
-	WorkspaceSavedViews:            "WorkspaceSavedViews",
-	WorkspaceSCMConnections:        "WorkspaceSCMConnections",
-	WorkspaceSCMIdentities:         "WorkspaceSCMIdentities",
-	WorkspaceSCMRepositories:       "WorkspaceSCMRepositories",
-	WorkspaceSlugRedirects:         "WorkspaceSlugRedirects",
-	WorkspaceTeams:                 "WorkspaceTeams",
+	DefaultTeam:                        "DefaultTeam",
+	WorkspaceAiProvider:                "WorkspaceAiProvider",
+	WorkspaceAuthPolicy:                "WorkspaceAuthPolicy",
+	WorkspaceDirectoryConnection:       "WorkspaceDirectoryConnection",
+	WorkspaceExecutionPolicy:           "WorkspaceExecutionPolicy",
+	WorkspaceOidcConnection:            "WorkspaceOidcConnection",
+	WorkspaceSsoConnection:             "WorkspaceSsoConnection",
+	WorkspaceStorageLedger:             "WorkspaceStorageLedger",
+	APITokenGrants:                     "APITokenGrants",
+	WorkspaceAgentMCPConnections:       "WorkspaceAgentMCPConnections",
+	WorkspaceAgentMCPServerAttachments: "WorkspaceAgentMCPServerAttachments",
+	WorkspaceAgentMCPServers:           "WorkspaceAgentMCPServers",
+	WorkspaceAgentProposals:            "WorkspaceAgentProposals",
+	WorkspaceAgentSkillAttachments:     "WorkspaceAgentSkillAttachments",
+	WorkspaceAgentSkills:               "WorkspaceAgentSkills",
+	WorkspaceAgents:                    "WorkspaceAgents",
+	WorkspaceBreakGlassCodes:           "WorkspaceBreakGlassCodes",
+	WorkspaceBulkActions:               "WorkspaceBulkActions",
+	WorkspaceCodeLinks:                 "WorkspaceCodeLinks",
+	WorkspaceCommentMirrors:            "WorkspaceCommentMirrors",
+	WorkspaceExecutionArtifacts:        "WorkspaceExecutionArtifacts",
+	WorkspaceExecutionChanges:          "WorkspaceExecutionChanges",
+	WorkspaceExecutionChunks:           "WorkspaceExecutionChunks",
+	WorkspaceExecutionPreviewLinks:     "WorkspaceExecutionPreviewLinks",
+	WorkspaceExecutionPreviews:         "WorkspaceExecutionPreviews",
+	WorkspaceExecutionResults:          "WorkspaceExecutionResults",
+	WorkspaceExecutionServices:         "WorkspaceExecutionServices",
+	WorkspaceExecutionValidations:      "WorkspaceExecutionValidations",
+	WorkspaceExecutions:                "WorkspaceExecutions",
+	WorkspaceImportFiles:               "WorkspaceImportFiles",
+	WorkspaceIntakeDeliveries:          "WorkspaceIntakeDeliveries",
+	WorkspaceInvitations:               "WorkspaceInvitations",
+	WorkspaceIssueAttachments:          "WorkspaceIssueAttachments",
+	WorkspaceIssueDelegations:          "WorkspaceIssueDelegations",
+	WorkspaceIssueDrafts:               "WorkspaceIssueDrafts",
+	WorkspaceIssueMirrorConflicts:      "WorkspaceIssueMirrorConflicts",
+	WorkspaceIssueMirrors:              "WorkspaceIssueMirrors",
+	WorkspaceIssueQuestions:            "WorkspaceIssueQuestions",
+	WorkspaceIssueTemplates:            "WorkspaceIssueTemplates",
+	WorkspaceLabelGroups:               "WorkspaceLabelGroups",
+	WorkspaceLabels:                    "WorkspaceLabels",
+	WorkspaceMemberships:               "WorkspaceMemberships",
+	WorkspaceNotificationEvents:        "WorkspaceNotificationEvents",
+	WorkspaceProjects:                  "WorkspaceProjects",
+	WorkspaceRequestKeys:               "WorkspaceRequestKeys",
+	WorkspaceRunners:                   "WorkspaceRunners",
+	WorkspaceSavedViews:                "WorkspaceSavedViews",
+	WorkspaceSCMConnections:            "WorkspaceSCMConnections",
+	WorkspaceSCMIdentities:             "WorkspaceSCMIdentities",
+	WorkspaceSCMRepositories:           "WorkspaceSCMRepositories",
+	WorkspaceSlugRedirects:             "WorkspaceSlugRedirects",
+	WorkspaceTeams:                     "WorkspaceTeams",
 }
 
 // workspaceR is where relationships are stored.
 type workspaceR struct {
-	DefaultTeam                    *WorkspaceTeam                     `boil:"DefaultTeam" json:"DefaultTeam" toml:"DefaultTeam" yaml:"DefaultTeam"`
-	WorkspaceAiProvider            *WorkspaceAiProvider               `boil:"WorkspaceAiProvider" json:"WorkspaceAiProvider" toml:"WorkspaceAiProvider" yaml:"WorkspaceAiProvider"`
-	WorkspaceAuthPolicy            *WorkspaceAuthPolicy               `boil:"WorkspaceAuthPolicy" json:"WorkspaceAuthPolicy" toml:"WorkspaceAuthPolicy" yaml:"WorkspaceAuthPolicy"`
-	WorkspaceDirectoryConnection   *WorkspaceDirectoryConnection      `boil:"WorkspaceDirectoryConnection" json:"WorkspaceDirectoryConnection" toml:"WorkspaceDirectoryConnection" yaml:"WorkspaceDirectoryConnection"`
-	WorkspaceExecutionPolicy       *WorkspaceExecutionPolicy          `boil:"WorkspaceExecutionPolicy" json:"WorkspaceExecutionPolicy" toml:"WorkspaceExecutionPolicy" yaml:"WorkspaceExecutionPolicy"`
-	WorkspaceOidcConnection        *WorkspaceOidcConnection           `boil:"WorkspaceOidcConnection" json:"WorkspaceOidcConnection" toml:"WorkspaceOidcConnection" yaml:"WorkspaceOidcConnection"`
-	WorkspaceSsoConnection         *WorkspaceSsoConnection            `boil:"WorkspaceSsoConnection" json:"WorkspaceSsoConnection" toml:"WorkspaceSsoConnection" yaml:"WorkspaceSsoConnection"`
-	WorkspaceStorageLedger         *WorkspaceStorageLedger            `boil:"WorkspaceStorageLedger" json:"WorkspaceStorageLedger" toml:"WorkspaceStorageLedger" yaml:"WorkspaceStorageLedger"`
-	APITokenGrants                 APITokenGrantSlice                 `boil:"APITokenGrants" json:"APITokenGrants" toml:"APITokenGrants" yaml:"APITokenGrants"`
-	WorkspaceAgentProposals        WorkspaceAgentProposalSlice        `boil:"WorkspaceAgentProposals" json:"WorkspaceAgentProposals" toml:"WorkspaceAgentProposals" yaml:"WorkspaceAgentProposals"`
-	WorkspaceAgents                WorkspaceAgentSlice                `boil:"WorkspaceAgents" json:"WorkspaceAgents" toml:"WorkspaceAgents" yaml:"WorkspaceAgents"`
-	WorkspaceBreakGlassCodes       WorkspaceBreakGlassCodeSlice       `boil:"WorkspaceBreakGlassCodes" json:"WorkspaceBreakGlassCodes" toml:"WorkspaceBreakGlassCodes" yaml:"WorkspaceBreakGlassCodes"`
-	WorkspaceBulkActions           WorkspaceBulkActionSlice           `boil:"WorkspaceBulkActions" json:"WorkspaceBulkActions" toml:"WorkspaceBulkActions" yaml:"WorkspaceBulkActions"`
-	WorkspaceCodeLinks             WorkspaceCodeLinkSlice             `boil:"WorkspaceCodeLinks" json:"WorkspaceCodeLinks" toml:"WorkspaceCodeLinks" yaml:"WorkspaceCodeLinks"`
-	WorkspaceCommentMirrors        WorkspaceCommentMirrorSlice        `boil:"WorkspaceCommentMirrors" json:"WorkspaceCommentMirrors" toml:"WorkspaceCommentMirrors" yaml:"WorkspaceCommentMirrors"`
-	WorkspaceExecutionArtifacts    WorkspaceExecutionArtifactSlice    `boil:"WorkspaceExecutionArtifacts" json:"WorkspaceExecutionArtifacts" toml:"WorkspaceExecutionArtifacts" yaml:"WorkspaceExecutionArtifacts"`
-	WorkspaceExecutionChanges      WorkspaceExecutionChangeSlice      `boil:"WorkspaceExecutionChanges" json:"WorkspaceExecutionChanges" toml:"WorkspaceExecutionChanges" yaml:"WorkspaceExecutionChanges"`
-	WorkspaceExecutionChunks       WorkspaceExecutionChunkSlice       `boil:"WorkspaceExecutionChunks" json:"WorkspaceExecutionChunks" toml:"WorkspaceExecutionChunks" yaml:"WorkspaceExecutionChunks"`
-	WorkspaceExecutionPreviewLinks WorkspaceExecutionPreviewLinkSlice `boil:"WorkspaceExecutionPreviewLinks" json:"WorkspaceExecutionPreviewLinks" toml:"WorkspaceExecutionPreviewLinks" yaml:"WorkspaceExecutionPreviewLinks"`
-	WorkspaceExecutionPreviews     WorkspaceExecutionPreviewSlice     `boil:"WorkspaceExecutionPreviews" json:"WorkspaceExecutionPreviews" toml:"WorkspaceExecutionPreviews" yaml:"WorkspaceExecutionPreviews"`
-	WorkspaceExecutionResults      WorkspaceExecutionResultSlice      `boil:"WorkspaceExecutionResults" json:"WorkspaceExecutionResults" toml:"WorkspaceExecutionResults" yaml:"WorkspaceExecutionResults"`
-	WorkspaceExecutionServices     WorkspaceExecutionServiceSlice     `boil:"WorkspaceExecutionServices" json:"WorkspaceExecutionServices" toml:"WorkspaceExecutionServices" yaml:"WorkspaceExecutionServices"`
-	WorkspaceExecutionValidations  WorkspaceExecutionValidationSlice  `boil:"WorkspaceExecutionValidations" json:"WorkspaceExecutionValidations" toml:"WorkspaceExecutionValidations" yaml:"WorkspaceExecutionValidations"`
-	WorkspaceExecutions            WorkspaceExecutionSlice            `boil:"WorkspaceExecutions" json:"WorkspaceExecutions" toml:"WorkspaceExecutions" yaml:"WorkspaceExecutions"`
-	WorkspaceImportFiles           WorkspaceImportFileSlice           `boil:"WorkspaceImportFiles" json:"WorkspaceImportFiles" toml:"WorkspaceImportFiles" yaml:"WorkspaceImportFiles"`
-	WorkspaceIntakeDeliveries      WorkspaceIntakeDeliverySlice       `boil:"WorkspaceIntakeDeliveries" json:"WorkspaceIntakeDeliveries" toml:"WorkspaceIntakeDeliveries" yaml:"WorkspaceIntakeDeliveries"`
-	WorkspaceInvitations           WorkspaceInvitationSlice           `boil:"WorkspaceInvitations" json:"WorkspaceInvitations" toml:"WorkspaceInvitations" yaml:"WorkspaceInvitations"`
-	WorkspaceIssueAttachments      WorkspaceIssueAttachmentSlice      `boil:"WorkspaceIssueAttachments" json:"WorkspaceIssueAttachments" toml:"WorkspaceIssueAttachments" yaml:"WorkspaceIssueAttachments"`
-	WorkspaceIssueDelegations      WorkspaceIssueDelegationSlice      `boil:"WorkspaceIssueDelegations" json:"WorkspaceIssueDelegations" toml:"WorkspaceIssueDelegations" yaml:"WorkspaceIssueDelegations"`
-	WorkspaceIssueDrafts           WorkspaceIssueDraftSlice           `boil:"WorkspaceIssueDrafts" json:"WorkspaceIssueDrafts" toml:"WorkspaceIssueDrafts" yaml:"WorkspaceIssueDrafts"`
-	WorkspaceIssueMirrorConflicts  WorkspaceIssueMirrorConflictSlice  `boil:"WorkspaceIssueMirrorConflicts" json:"WorkspaceIssueMirrorConflicts" toml:"WorkspaceIssueMirrorConflicts" yaml:"WorkspaceIssueMirrorConflicts"`
-	WorkspaceIssueMirrors          WorkspaceIssueMirrorSlice          `boil:"WorkspaceIssueMirrors" json:"WorkspaceIssueMirrors" toml:"WorkspaceIssueMirrors" yaml:"WorkspaceIssueMirrors"`
-	WorkspaceIssueQuestions        WorkspaceIssueQuestionSlice        `boil:"WorkspaceIssueQuestions" json:"WorkspaceIssueQuestions" toml:"WorkspaceIssueQuestions" yaml:"WorkspaceIssueQuestions"`
-	WorkspaceIssueTemplates        WorkspaceIssueTemplateSlice        `boil:"WorkspaceIssueTemplates" json:"WorkspaceIssueTemplates" toml:"WorkspaceIssueTemplates" yaml:"WorkspaceIssueTemplates"`
-	WorkspaceLabelGroups           WorkspaceLabelGroupSlice           `boil:"WorkspaceLabelGroups" json:"WorkspaceLabelGroups" toml:"WorkspaceLabelGroups" yaml:"WorkspaceLabelGroups"`
-	WorkspaceLabels                WorkspaceLabelSlice                `boil:"WorkspaceLabels" json:"WorkspaceLabels" toml:"WorkspaceLabels" yaml:"WorkspaceLabels"`
-	WorkspaceMemberships           WorkspaceMembershipSlice           `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
-	WorkspaceNotificationEvents    WorkspaceNotificationEventSlice    `boil:"WorkspaceNotificationEvents" json:"WorkspaceNotificationEvents" toml:"WorkspaceNotificationEvents" yaml:"WorkspaceNotificationEvents"`
-	WorkspaceProjects              WorkspaceProjectSlice              `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
-	WorkspaceRequestKeys           WorkspaceRequestKeySlice           `boil:"WorkspaceRequestKeys" json:"WorkspaceRequestKeys" toml:"WorkspaceRequestKeys" yaml:"WorkspaceRequestKeys"`
-	WorkspaceRunners               WorkspaceRunnerSlice               `boil:"WorkspaceRunners" json:"WorkspaceRunners" toml:"WorkspaceRunners" yaml:"WorkspaceRunners"`
-	WorkspaceSavedViews            WorkspaceSavedViewSlice            `boil:"WorkspaceSavedViews" json:"WorkspaceSavedViews" toml:"WorkspaceSavedViews" yaml:"WorkspaceSavedViews"`
-	WorkspaceSCMConnections        WorkspaceSCMConnectionSlice        `boil:"WorkspaceSCMConnections" json:"WorkspaceSCMConnections" toml:"WorkspaceSCMConnections" yaml:"WorkspaceSCMConnections"`
-	WorkspaceSCMIdentities         WorkspaceSCMIdentitySlice          `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
-	WorkspaceSCMRepositories       WorkspaceSCMRepositorySlice        `boil:"WorkspaceSCMRepositories" json:"WorkspaceSCMRepositories" toml:"WorkspaceSCMRepositories" yaml:"WorkspaceSCMRepositories"`
-	WorkspaceSlugRedirects         WorkspaceSlugRedirectSlice         `boil:"WorkspaceSlugRedirects" json:"WorkspaceSlugRedirects" toml:"WorkspaceSlugRedirects" yaml:"WorkspaceSlugRedirects"`
-	WorkspaceTeams                 WorkspaceTeamSlice                 `boil:"WorkspaceTeams" json:"WorkspaceTeams" toml:"WorkspaceTeams" yaml:"WorkspaceTeams"`
+	DefaultTeam                        *WorkspaceTeam                         `boil:"DefaultTeam" json:"DefaultTeam" toml:"DefaultTeam" yaml:"DefaultTeam"`
+	WorkspaceAiProvider                *WorkspaceAiProvider                   `boil:"WorkspaceAiProvider" json:"WorkspaceAiProvider" toml:"WorkspaceAiProvider" yaml:"WorkspaceAiProvider"`
+	WorkspaceAuthPolicy                *WorkspaceAuthPolicy                   `boil:"WorkspaceAuthPolicy" json:"WorkspaceAuthPolicy" toml:"WorkspaceAuthPolicy" yaml:"WorkspaceAuthPolicy"`
+	WorkspaceDirectoryConnection       *WorkspaceDirectoryConnection          `boil:"WorkspaceDirectoryConnection" json:"WorkspaceDirectoryConnection" toml:"WorkspaceDirectoryConnection" yaml:"WorkspaceDirectoryConnection"`
+	WorkspaceExecutionPolicy           *WorkspaceExecutionPolicy              `boil:"WorkspaceExecutionPolicy" json:"WorkspaceExecutionPolicy" toml:"WorkspaceExecutionPolicy" yaml:"WorkspaceExecutionPolicy"`
+	WorkspaceOidcConnection            *WorkspaceOidcConnection               `boil:"WorkspaceOidcConnection" json:"WorkspaceOidcConnection" toml:"WorkspaceOidcConnection" yaml:"WorkspaceOidcConnection"`
+	WorkspaceSsoConnection             *WorkspaceSsoConnection                `boil:"WorkspaceSsoConnection" json:"WorkspaceSsoConnection" toml:"WorkspaceSsoConnection" yaml:"WorkspaceSsoConnection"`
+	WorkspaceStorageLedger             *WorkspaceStorageLedger                `boil:"WorkspaceStorageLedger" json:"WorkspaceStorageLedger" toml:"WorkspaceStorageLedger" yaml:"WorkspaceStorageLedger"`
+	APITokenGrants                     APITokenGrantSlice                     `boil:"APITokenGrants" json:"APITokenGrants" toml:"APITokenGrants" yaml:"APITokenGrants"`
+	WorkspaceAgentMCPConnections       WorkspaceAgentMCPConnectionSlice       `boil:"WorkspaceAgentMCPConnections" json:"WorkspaceAgentMCPConnections" toml:"WorkspaceAgentMCPConnections" yaml:"WorkspaceAgentMCPConnections"`
+	WorkspaceAgentMCPServerAttachments WorkspaceAgentMCPServerAttachmentSlice `boil:"WorkspaceAgentMCPServerAttachments" json:"WorkspaceAgentMCPServerAttachments" toml:"WorkspaceAgentMCPServerAttachments" yaml:"WorkspaceAgentMCPServerAttachments"`
+	WorkspaceAgentMCPServers           WorkspaceAgentMCPServerSlice           `boil:"WorkspaceAgentMCPServers" json:"WorkspaceAgentMCPServers" toml:"WorkspaceAgentMCPServers" yaml:"WorkspaceAgentMCPServers"`
+	WorkspaceAgentProposals            WorkspaceAgentProposalSlice            `boil:"WorkspaceAgentProposals" json:"WorkspaceAgentProposals" toml:"WorkspaceAgentProposals" yaml:"WorkspaceAgentProposals"`
+	WorkspaceAgentSkillAttachments     WorkspaceAgentSkillAttachmentSlice     `boil:"WorkspaceAgentSkillAttachments" json:"WorkspaceAgentSkillAttachments" toml:"WorkspaceAgentSkillAttachments" yaml:"WorkspaceAgentSkillAttachments"`
+	WorkspaceAgentSkills               WorkspaceAgentSkillSlice               `boil:"WorkspaceAgentSkills" json:"WorkspaceAgentSkills" toml:"WorkspaceAgentSkills" yaml:"WorkspaceAgentSkills"`
+	WorkspaceAgents                    WorkspaceAgentSlice                    `boil:"WorkspaceAgents" json:"WorkspaceAgents" toml:"WorkspaceAgents" yaml:"WorkspaceAgents"`
+	WorkspaceBreakGlassCodes           WorkspaceBreakGlassCodeSlice           `boil:"WorkspaceBreakGlassCodes" json:"WorkspaceBreakGlassCodes" toml:"WorkspaceBreakGlassCodes" yaml:"WorkspaceBreakGlassCodes"`
+	WorkspaceBulkActions               WorkspaceBulkActionSlice               `boil:"WorkspaceBulkActions" json:"WorkspaceBulkActions" toml:"WorkspaceBulkActions" yaml:"WorkspaceBulkActions"`
+	WorkspaceCodeLinks                 WorkspaceCodeLinkSlice                 `boil:"WorkspaceCodeLinks" json:"WorkspaceCodeLinks" toml:"WorkspaceCodeLinks" yaml:"WorkspaceCodeLinks"`
+	WorkspaceCommentMirrors            WorkspaceCommentMirrorSlice            `boil:"WorkspaceCommentMirrors" json:"WorkspaceCommentMirrors" toml:"WorkspaceCommentMirrors" yaml:"WorkspaceCommentMirrors"`
+	WorkspaceExecutionArtifacts        WorkspaceExecutionArtifactSlice        `boil:"WorkspaceExecutionArtifacts" json:"WorkspaceExecutionArtifacts" toml:"WorkspaceExecutionArtifacts" yaml:"WorkspaceExecutionArtifacts"`
+	WorkspaceExecutionChanges          WorkspaceExecutionChangeSlice          `boil:"WorkspaceExecutionChanges" json:"WorkspaceExecutionChanges" toml:"WorkspaceExecutionChanges" yaml:"WorkspaceExecutionChanges"`
+	WorkspaceExecutionChunks           WorkspaceExecutionChunkSlice           `boil:"WorkspaceExecutionChunks" json:"WorkspaceExecutionChunks" toml:"WorkspaceExecutionChunks" yaml:"WorkspaceExecutionChunks"`
+	WorkspaceExecutionPreviewLinks     WorkspaceExecutionPreviewLinkSlice     `boil:"WorkspaceExecutionPreviewLinks" json:"WorkspaceExecutionPreviewLinks" toml:"WorkspaceExecutionPreviewLinks" yaml:"WorkspaceExecutionPreviewLinks"`
+	WorkspaceExecutionPreviews         WorkspaceExecutionPreviewSlice         `boil:"WorkspaceExecutionPreviews" json:"WorkspaceExecutionPreviews" toml:"WorkspaceExecutionPreviews" yaml:"WorkspaceExecutionPreviews"`
+	WorkspaceExecutionResults          WorkspaceExecutionResultSlice          `boil:"WorkspaceExecutionResults" json:"WorkspaceExecutionResults" toml:"WorkspaceExecutionResults" yaml:"WorkspaceExecutionResults"`
+	WorkspaceExecutionServices         WorkspaceExecutionServiceSlice         `boil:"WorkspaceExecutionServices" json:"WorkspaceExecutionServices" toml:"WorkspaceExecutionServices" yaml:"WorkspaceExecutionServices"`
+	WorkspaceExecutionValidations      WorkspaceExecutionValidationSlice      `boil:"WorkspaceExecutionValidations" json:"WorkspaceExecutionValidations" toml:"WorkspaceExecutionValidations" yaml:"WorkspaceExecutionValidations"`
+	WorkspaceExecutions                WorkspaceExecutionSlice                `boil:"WorkspaceExecutions" json:"WorkspaceExecutions" toml:"WorkspaceExecutions" yaml:"WorkspaceExecutions"`
+	WorkspaceImportFiles               WorkspaceImportFileSlice               `boil:"WorkspaceImportFiles" json:"WorkspaceImportFiles" toml:"WorkspaceImportFiles" yaml:"WorkspaceImportFiles"`
+	WorkspaceIntakeDeliveries          WorkspaceIntakeDeliverySlice           `boil:"WorkspaceIntakeDeliveries" json:"WorkspaceIntakeDeliveries" toml:"WorkspaceIntakeDeliveries" yaml:"WorkspaceIntakeDeliveries"`
+	WorkspaceInvitations               WorkspaceInvitationSlice               `boil:"WorkspaceInvitations" json:"WorkspaceInvitations" toml:"WorkspaceInvitations" yaml:"WorkspaceInvitations"`
+	WorkspaceIssueAttachments          WorkspaceIssueAttachmentSlice          `boil:"WorkspaceIssueAttachments" json:"WorkspaceIssueAttachments" toml:"WorkspaceIssueAttachments" yaml:"WorkspaceIssueAttachments"`
+	WorkspaceIssueDelegations          WorkspaceIssueDelegationSlice          `boil:"WorkspaceIssueDelegations" json:"WorkspaceIssueDelegations" toml:"WorkspaceIssueDelegations" yaml:"WorkspaceIssueDelegations"`
+	WorkspaceIssueDrafts               WorkspaceIssueDraftSlice               `boil:"WorkspaceIssueDrafts" json:"WorkspaceIssueDrafts" toml:"WorkspaceIssueDrafts" yaml:"WorkspaceIssueDrafts"`
+	WorkspaceIssueMirrorConflicts      WorkspaceIssueMirrorConflictSlice      `boil:"WorkspaceIssueMirrorConflicts" json:"WorkspaceIssueMirrorConflicts" toml:"WorkspaceIssueMirrorConflicts" yaml:"WorkspaceIssueMirrorConflicts"`
+	WorkspaceIssueMirrors              WorkspaceIssueMirrorSlice              `boil:"WorkspaceIssueMirrors" json:"WorkspaceIssueMirrors" toml:"WorkspaceIssueMirrors" yaml:"WorkspaceIssueMirrors"`
+	WorkspaceIssueQuestions            WorkspaceIssueQuestionSlice            `boil:"WorkspaceIssueQuestions" json:"WorkspaceIssueQuestions" toml:"WorkspaceIssueQuestions" yaml:"WorkspaceIssueQuestions"`
+	WorkspaceIssueTemplates            WorkspaceIssueTemplateSlice            `boil:"WorkspaceIssueTemplates" json:"WorkspaceIssueTemplates" toml:"WorkspaceIssueTemplates" yaml:"WorkspaceIssueTemplates"`
+	WorkspaceLabelGroups               WorkspaceLabelGroupSlice               `boil:"WorkspaceLabelGroups" json:"WorkspaceLabelGroups" toml:"WorkspaceLabelGroups" yaml:"WorkspaceLabelGroups"`
+	WorkspaceLabels                    WorkspaceLabelSlice                    `boil:"WorkspaceLabels" json:"WorkspaceLabels" toml:"WorkspaceLabels" yaml:"WorkspaceLabels"`
+	WorkspaceMemberships               WorkspaceMembershipSlice               `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
+	WorkspaceNotificationEvents        WorkspaceNotificationEventSlice        `boil:"WorkspaceNotificationEvents" json:"WorkspaceNotificationEvents" toml:"WorkspaceNotificationEvents" yaml:"WorkspaceNotificationEvents"`
+	WorkspaceProjects                  WorkspaceProjectSlice                  `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
+	WorkspaceRequestKeys               WorkspaceRequestKeySlice               `boil:"WorkspaceRequestKeys" json:"WorkspaceRequestKeys" toml:"WorkspaceRequestKeys" yaml:"WorkspaceRequestKeys"`
+	WorkspaceRunners                   WorkspaceRunnerSlice                   `boil:"WorkspaceRunners" json:"WorkspaceRunners" toml:"WorkspaceRunners" yaml:"WorkspaceRunners"`
+	WorkspaceSavedViews                WorkspaceSavedViewSlice                `boil:"WorkspaceSavedViews" json:"WorkspaceSavedViews" toml:"WorkspaceSavedViews" yaml:"WorkspaceSavedViews"`
+	WorkspaceSCMConnections            WorkspaceSCMConnectionSlice            `boil:"WorkspaceSCMConnections" json:"WorkspaceSCMConnections" toml:"WorkspaceSCMConnections" yaml:"WorkspaceSCMConnections"`
+	WorkspaceSCMIdentities             WorkspaceSCMIdentitySlice              `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
+	WorkspaceSCMRepositories           WorkspaceSCMRepositorySlice            `boil:"WorkspaceSCMRepositories" json:"WorkspaceSCMRepositories" toml:"WorkspaceSCMRepositories" yaml:"WorkspaceSCMRepositories"`
+	WorkspaceSlugRedirects             WorkspaceSlugRedirectSlice             `boil:"WorkspaceSlugRedirects" json:"WorkspaceSlugRedirects" toml:"WorkspaceSlugRedirects" yaml:"WorkspaceSlugRedirects"`
+	WorkspaceTeams                     WorkspaceTeamSlice                     `boil:"WorkspaceTeams" json:"WorkspaceTeams" toml:"WorkspaceTeams" yaml:"WorkspaceTeams"`
 }
 
 // NewStruct creates a new relationship struct
@@ -426,6 +441,54 @@ func (r *workspaceR) GetAPITokenGrants() APITokenGrantSlice {
 	return r.APITokenGrants
 }
 
+func (o *Workspace) GetWorkspaceAgentMCPConnections() WorkspaceAgentMCPConnectionSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceAgentMCPConnections()
+}
+
+func (r *workspaceR) GetWorkspaceAgentMCPConnections() WorkspaceAgentMCPConnectionSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceAgentMCPConnections
+}
+
+func (o *Workspace) GetWorkspaceAgentMCPServerAttachments() WorkspaceAgentMCPServerAttachmentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceAgentMCPServerAttachments()
+}
+
+func (r *workspaceR) GetWorkspaceAgentMCPServerAttachments() WorkspaceAgentMCPServerAttachmentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceAgentMCPServerAttachments
+}
+
+func (o *Workspace) GetWorkspaceAgentMCPServers() WorkspaceAgentMCPServerSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceAgentMCPServers()
+}
+
+func (r *workspaceR) GetWorkspaceAgentMCPServers() WorkspaceAgentMCPServerSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceAgentMCPServers
+}
+
 func (o *Workspace) GetWorkspaceAgentProposals() WorkspaceAgentProposalSlice {
 	if o == nil {
 		return nil
@@ -440,6 +503,38 @@ func (r *workspaceR) GetWorkspaceAgentProposals() WorkspaceAgentProposalSlice {
 	}
 
 	return r.WorkspaceAgentProposals
+}
+
+func (o *Workspace) GetWorkspaceAgentSkillAttachments() WorkspaceAgentSkillAttachmentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceAgentSkillAttachments()
+}
+
+func (r *workspaceR) GetWorkspaceAgentSkillAttachments() WorkspaceAgentSkillAttachmentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceAgentSkillAttachments
+}
+
+func (o *Workspace) GetWorkspaceAgentSkills() WorkspaceAgentSkillSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceAgentSkills()
+}
+
+func (r *workspaceR) GetWorkspaceAgentSkills() WorkspaceAgentSkillSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceAgentSkills
 }
 
 func (o *Workspace) GetWorkspaceAgents() WorkspaceAgentSlice {
@@ -1452,6 +1547,48 @@ func (o *Workspace) APITokenGrants(mods ...qm.QueryMod) apiTokenGrantQuery {
 	return APITokenGrants(queryMods...)
 }
 
+// WorkspaceAgentMCPConnections retrieves all the workspace_agent_mcp_connection's WorkspaceAgentMCPConnections with an executor.
+func (o *Workspace) WorkspaceAgentMCPConnections(mods ...qm.QueryMod) workspaceAgentMCPConnectionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_mcp_connections\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentMCPConnections(queryMods...)
+}
+
+// WorkspaceAgentMCPServerAttachments retrieves all the workspace_agent_mcp_server_attachment's WorkspaceAgentMCPServerAttachments with an executor.
+func (o *Workspace) WorkspaceAgentMCPServerAttachments(mods ...qm.QueryMod) workspaceAgentMCPServerAttachmentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_mcp_server_attachments\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentMCPServerAttachments(queryMods...)
+}
+
+// WorkspaceAgentMCPServers retrieves all the workspace_agent_mcp_server's WorkspaceAgentMCPServers with an executor.
+func (o *Workspace) WorkspaceAgentMCPServers(mods ...qm.QueryMod) workspaceAgentMCPServerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_mcp_servers\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentMCPServers(queryMods...)
+}
+
 // WorkspaceAgentProposals retrieves all the workspace_agent_proposal's WorkspaceAgentProposals with an executor.
 func (o *Workspace) WorkspaceAgentProposals(mods ...qm.QueryMod) workspaceAgentProposalQuery {
 	var queryMods []qm.QueryMod
@@ -1464,6 +1601,34 @@ func (o *Workspace) WorkspaceAgentProposals(mods ...qm.QueryMod) workspaceAgentP
 	)
 
 	return WorkspaceAgentProposals(queryMods...)
+}
+
+// WorkspaceAgentSkillAttachments retrieves all the workspace_agent_skill_attachment's WorkspaceAgentSkillAttachments with an executor.
+func (o *Workspace) WorkspaceAgentSkillAttachments(mods ...qm.QueryMod) workspaceAgentSkillAttachmentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_skill_attachments\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentSkillAttachments(queryMods...)
+}
+
+// WorkspaceAgentSkills retrieves all the workspace_agent_skill's WorkspaceAgentSkills with an executor.
+func (o *Workspace) WorkspaceAgentSkills(mods ...qm.QueryMod) workspaceAgentSkillQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_skills\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentSkills(queryMods...)
 }
 
 // WorkspaceAgents retrieves all the workspace_agent's WorkspaceAgents with an executor.
@@ -3040,6 +3205,345 @@ func (workspaceL) LoadAPITokenGrants(ctx context.Context, e boil.ContextExecutor
 	return nil
 }
 
+// LoadWorkspaceAgentMCPConnections allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceAgentMCPConnections(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_mcp_connections`),
+		qm.WhereIn(`workspace_agent_mcp_connections.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_mcp_connections")
+	}
+
+	var resultSlice []*WorkspaceAgentMCPConnection
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_mcp_connections")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_mcp_connections")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_mcp_connections")
+	}
+
+	if len(workspaceAgentMCPConnectionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceAgentMCPConnections = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentMCPConnectionR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceAgentMCPConnections = append(local.R.WorkspaceAgentMCPConnections, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentMCPConnectionR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceAgentMCPServerAttachments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceAgentMCPServerAttachments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_mcp_server_attachments`),
+		qm.WhereIn(`workspace_agent_mcp_server_attachments.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_mcp_server_attachments")
+	}
+
+	var resultSlice []*WorkspaceAgentMCPServerAttachment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_mcp_server_attachments")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_mcp_server_attachments")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_mcp_server_attachments")
+	}
+
+	if len(workspaceAgentMCPServerAttachmentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceAgentMCPServerAttachments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentMCPServerAttachmentR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceAgentMCPServerAttachments = append(local.R.WorkspaceAgentMCPServerAttachments, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentMCPServerAttachmentR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceAgentMCPServers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceAgentMCPServers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_mcp_servers`),
+		qm.WhereIn(`workspace_agent_mcp_servers.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_mcp_servers")
+	}
+
+	var resultSlice []*WorkspaceAgentMCPServer
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_mcp_servers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_mcp_servers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_mcp_servers")
+	}
+
+	if len(workspaceAgentMCPServerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceAgentMCPServers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentMCPServerR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceAgentMCPServers = append(local.R.WorkspaceAgentMCPServers, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentMCPServerR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceAgentProposals allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceAgentProposals(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -3143,6 +3647,232 @@ func (workspaceL) LoadWorkspaceAgentProposals(ctx context.Context, e boil.Contex
 				local.R.WorkspaceAgentProposals = append(local.R.WorkspaceAgentProposals, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceAgentProposalR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceAgentSkillAttachments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceAgentSkillAttachments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_skill_attachments`),
+		qm.WhereIn(`workspace_agent_skill_attachments.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_skill_attachments")
+	}
+
+	var resultSlice []*WorkspaceAgentSkillAttachment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_skill_attachments")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_skill_attachments")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_skill_attachments")
+	}
+
+	if len(workspaceAgentSkillAttachmentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceAgentSkillAttachments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentSkillAttachmentR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceAgentSkillAttachments = append(local.R.WorkspaceAgentSkillAttachments, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentSkillAttachmentR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceAgentSkills allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceAgentSkills(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_skills`),
+		qm.WhereIn(`workspace_agent_skills.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_skills")
+	}
+
+	var resultSlice []*WorkspaceAgentSkill
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_skills")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_skills")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_skills")
+	}
+
+	if len(workspaceAgentSkillAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceAgentSkills = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentSkillR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceAgentSkills = append(local.R.WorkspaceAgentSkills, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentSkillR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -7817,6 +8547,165 @@ func (o *Workspace) AddAPITokenGrants(ctx context.Context, exec boil.ContextExec
 	return nil
 }
 
+// AddWorkspaceAgentMCPConnections adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceAgentMCPConnections.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceAgentMCPConnections(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentMCPConnection) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_mcp_connections\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentMCPConnectionPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ServerID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceAgentMCPConnections: related,
+		}
+	} else {
+		o.R.WorkspaceAgentMCPConnections = append(o.R.WorkspaceAgentMCPConnections, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentMCPConnectionR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceAgentMCPServerAttachments adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceAgentMCPServerAttachments.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceAgentMCPServerAttachments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentMCPServerAttachment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_mcp_server_attachments\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentMCPServerAttachmentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.AgentID, rel.ServerID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceAgentMCPServerAttachments: related,
+		}
+	} else {
+		o.R.WorkspaceAgentMCPServerAttachments = append(o.R.WorkspaceAgentMCPServerAttachments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentMCPServerAttachmentR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceAgentMCPServers adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceAgentMCPServers.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceAgentMCPServers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentMCPServer) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_mcp_servers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentMCPServerPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceAgentMCPServers: related,
+		}
+	} else {
+		o.R.WorkspaceAgentMCPServers = append(o.R.WorkspaceAgentMCPServers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentMCPServerR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
 // AddWorkspaceAgentProposals adds the given related objects to the existing relationships
 // of the workspace, optionally inserting them as new records.
 // Appends related to o.R.WorkspaceAgentProposals.
@@ -7861,6 +8750,112 @@ func (o *Workspace) AddWorkspaceAgentProposals(ctx context.Context, exec boil.Co
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceAgentProposalR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceAgentSkillAttachments adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceAgentSkillAttachments.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceAgentSkillAttachments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentSkillAttachment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_skill_attachments\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentSkillAttachmentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.AgentID, rel.SkillID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceAgentSkillAttachments: related,
+		}
+	} else {
+		o.R.WorkspaceAgentSkillAttachments = append(o.R.WorkspaceAgentSkillAttachments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentSkillAttachmentR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceAgentSkills adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceAgentSkills.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceAgentSkills(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentSkill) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_skills\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentSkillPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceAgentSkills: related,
+		}
+	} else {
+		o.R.WorkspaceAgentSkills = append(o.R.WorkspaceAgentSkills, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentSkillR{
 				Workspace: o,
 			}
 		} else {
