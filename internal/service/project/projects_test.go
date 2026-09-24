@@ -14,6 +14,7 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	accountrepo "github.com/usenorn/norn/internal/repository/account"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
@@ -26,6 +27,7 @@ import (
 type harness struct {
 	projects    *projectrepo.MockProject
 	members     *projectrepo.MockProjectMember
+	agents      *agentrepo.MockAgent
 	statuses    *projectrepo.MockProjectStatusUpdate
 	links       *projectrepo.MockProjectLink
 	activity    *activityrepo.MockActivity
@@ -48,6 +50,7 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		projects:    projectrepo.NewMockProject(ctrl),
+		agents:      agentrepo.NewMockAgent(ctrl),
 		members:     projectrepo.NewMockProjectMember(ctrl),
 		statuses:    projectrepo.NewMockProjectStatusUpdate(ctrl),
 		links:       projectrepo.NewMockProjectLink(ctrl),
@@ -72,8 +75,8 @@ func newHarness(t *testing.T) *harness {
 	h.activity.EXPECT().Record(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	h.service = projectsvc.New(
-		h.projects, h.members, h.statuses, h.links, h.activity, h.accounts, h.memberships, h.notify,
-		h.authorizer, silentEmitter(ctrl), h.transactor,
+		h.projects, h.members, h.agents, h.statuses, h.links, h.activity, h.accounts,
+		h.memberships, h.notify, h.authorizer, silentEmitter(ctrl), h.transactor,
 	)
 
 	return h
@@ -497,4 +500,69 @@ func TestAProjectLinkMustBeAWebAddressAndThereIsACeiling(t *testing.T) {
 			t.Fatalf("AddLink error = %v, want ErrProjectLinksFull", err)
 		}
 	})
+}
+
+func TestAProjectAnAgentIsScopedToIsNotDeletedOutFromUnderIt(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.MembershipRoleAdmin, uuid.New())
+
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, h.projectID).
+		Return(h.project(entity.ProjectStateActive), nil)
+	h.agents.EXPECT().
+		ScopedToProject(gomock.Any(), h.workspaceID, h.projectID).
+		Return(true, nil)
+	h.projects.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
+
+	err := h.service.Remove(context.Background(), h.workspaceID, h.projectID)
+
+	if !errors.Is(err, entity.ErrProjectHasScopedAgents) {
+		t.Fatalf(
+			"deleting a project with agents scoped to it returned %v, want %v; anything else "+
+				"reaches the caller as a foreign key violation",
+			err, entity.ErrProjectHasScopedAgents,
+		)
+	}
+}
+
+func TestAProjectNoAgentIsScopedToIsDeleted(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.MembershipRoleAdmin, uuid.New())
+
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, h.projectID).
+		Return(h.project(entity.ProjectStateActive), nil)
+	h.agents.EXPECT().
+		ScopedToProject(gomock.Any(), h.workspaceID, h.projectID).
+		Return(false, nil)
+	h.projects.EXPECT().Delete(gomock.Any(), h.projectID).Return(nil)
+
+	if err := h.service.Remove(context.Background(), h.workspaceID, h.projectID); err != nil {
+		t.Fatalf("Remove: %v", err)
+	}
+}
+
+func TestAnAgentScopedAfterTheCheckStillStopsTheDeletion(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.MembershipRoleAdmin, uuid.New())
+
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, h.projectID).
+		Return(h.project(entity.ProjectStateActive), nil)
+	h.agents.EXPECT().
+		ScopedToProject(gomock.Any(), h.workspaceID, h.projectID).
+		Return(false, nil)
+	h.projects.EXPECT().
+		Delete(gomock.Any(), h.projectID).
+		Return(entity.ErrProjectHasScopedAgents)
+
+	err := h.service.Remove(context.Background(), h.workspaceID, h.projectID)
+
+	if !errors.Is(err, entity.ErrProjectHasScopedAgents) {
+		t.Fatalf(
+			"a reference that arrived after the check returned %v, want %v. Wrapping it here "+
+				"turns the refusal into a 500 at the edge",
+			err, entity.ErrProjectHasScopedAgents,
+		)
+	}
 }

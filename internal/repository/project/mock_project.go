@@ -290,6 +290,21 @@ func (mr *MockProjectMemberMockRecorder) Get(ctx, projectID, accountID any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockProjectMember)(nil).Get), ctx, projectID, accountID)
 }
 
+// ListByAccountID mocks base method.
+func (m *MockProjectMember) ListByAccountID(ctx context.Context, workspaceID, accountID uuid.UUID) ([]entity.ProjectMembership, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByAccountID", ctx, workspaceID, accountID)
+	ret0, _ := ret[0].([]entity.ProjectMembership)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByAccountID indicates an expected call of ListByAccountID.
+func (mr *MockProjectMemberMockRecorder) ListByAccountID(ctx, workspaceID, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByAccountID", reflect.TypeOf((*MockProjectMember)(nil).ListByAccountID), ctx, workspaceID, accountID)
+}
+
 // ListByProjectID mocks base method.
 func (m *MockProjectMember) ListByProjectID(ctx context.Context, projectID uuid.UUID) ([]entity.ProjectMembership, error) {
 	m.ctrl.T.Helper()

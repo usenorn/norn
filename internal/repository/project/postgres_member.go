@@ -44,6 +44,12 @@ FROM workspace_project_members
 WHERE project_id = $1
 ORDER BY created_at, id`
 
+const accountMembersQuery = `
+SELECT` + memberColumns + `
+FROM workspace_project_members
+WHERE workspace_id = $1 AND account_id = $2
+ORDER BY created_at, id`
+
 const deleteMemberQuery = `
 DELETE FROM workspace_project_members WHERE project_id = $1 AND account_id = $2`
 
@@ -151,6 +157,40 @@ func (r *memberRepository) ListByProjectID(
 	projectID uuid.UUID,
 ) ([]entity.ProjectMembership, error) {
 	rows, err := r.db.Querier(ctx).QueryContext(ctx, membersQuery, projectID.String())
+	if err != nil {
+		return nil, fmt.Errorf("list project members: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	memberships := make([]entity.ProjectMembership, 0)
+
+	for rows.Next() {
+		membership, err := scanMembership(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan project member: %w", err)
+		}
+
+		memberships = append(memberships, membership)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate project members: %w", err)
+	}
+
+	return memberships, nil
+}
+
+func (r *memberRepository) ListByAccountID(
+	ctx context.Context,
+	workspaceID, accountID uuid.UUID,
+) ([]entity.ProjectMembership, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		accountMembersQuery,
+		workspaceID.String(),
+		accountID.String(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list project members: %w", err)
 	}

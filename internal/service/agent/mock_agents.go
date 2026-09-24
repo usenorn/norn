@@ -103,6 +103,21 @@ func (mr *MockAgentsMockRecorder) Configure(ctx, input any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockAgents)(nil).Configure), ctx, input)
 }
 
+// Delegatable mocks base method.
+func (m *MockAgents) Delegatable(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Agent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delegatable", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].([]entity.Agent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Delegatable indicates an expected call of Delegatable.
+func (mr *MockAgentsMockRecorder) Delegatable(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delegatable", reflect.TypeOf((*MockAgents)(nil).Delegatable), ctx, workspaceID, issueID)
+}
+
 // Disable mocks base method.
 func (m *MockAgents) Disable(ctx context.Context, workspaceID, agentID uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -205,6 +220,21 @@ func (m *MockAgents) Reject(ctx context.Context, workspaceID, proposalID uuid.UU
 func (mr *MockAgentsMockRecorder) Reject(ctx, workspaceID, proposalID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reject", reflect.TypeOf((*MockAgents)(nil).Reject), ctx, workspaceID, proposalID)
+}
+
+// Rescope mocks base method.
+func (m *MockAgents) Rescope(ctx context.Context, input service.RescopeAgentInput) (service.OwnedAgent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Rescope", ctx, input)
+	ret0, _ := ret[0].(service.OwnedAgent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Rescope indicates an expected call of Rescope.
+func (mr *MockAgentsMockRecorder) Rescope(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rescope", reflect.TypeOf((*MockAgents)(nil).Rescope), ctx, input)
 }
 
 // Rotate mocks base method.

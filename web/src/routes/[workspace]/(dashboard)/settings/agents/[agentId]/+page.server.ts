@@ -9,6 +9,7 @@ import {
 } from "$lib/agents/agent-capabilities";
 import { connectMcpServer, mcpConnectForm, type McpConnectForm } from "$lib/agents/mcp-connect.server";
 import type { AgentRecord } from "$lib/agents/agent-record";
+import type { Project } from "$lib/projects/projects";
 import type { Actions, PageServerLoad } from "./$types";
 
 export type AgentRecordData = {
@@ -18,6 +19,7 @@ export type AgentRecordData = {
 	library: AgentLibraryListing;
 	selfHosted: boolean;
 	connectForm: McpConnectForm;
+	projects: Project[];
 };
 
 export const load: PageServerLoad = async ({
@@ -27,7 +29,7 @@ export const load: PageServerLoad = async ({
 	parent,
 	url,
 }): Promise<AgentRecordData> => {
-	const { workspace } = await parent();
+	const { workspace, projects } = await parent();
 	depends(keys.agent(workspace.id, params.agentId));
 	depends(keys.agentCapabilities(workspace.id, params.agentId));
 	depends(keys.agentLibrary(workspace.id));
@@ -64,6 +66,7 @@ export const load: PageServerLoad = async ({
 		library: listedLibraryItems,
 		selfHosted: instance.selfHosted,
 		connectForm,
+		projects: projects.filter((project) => !project.archived),
 	};
 
 	if (agent.error || !agent.data) {

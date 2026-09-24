@@ -55,6 +55,12 @@ func (h *handler) RegisterWorkspaceAgent(
 		input.Icon = entity.AgentIcon(*request.Body.Icon)
 	}
 
+	if request.Body.Scope != nil {
+		input.Scope = entity.AgentScope(*request.Body.Scope)
+	}
+
+	input.ProjectID = request.Body.ProjectId
+
 	if request.Body.TeamIds != nil {
 		input.TeamIDs = append(input.TeamIDs, *request.Body.TeamIds...)
 	}
@@ -113,6 +119,27 @@ func (h *handler) SetWorkspaceAgentInstructions(
 	}
 
 	return api.SetWorkspaceAgentInstructions200JSONResponse(workspaceAgentDTO(agent)), nil
+}
+
+func (h *handler) SetWorkspaceAgentScope(
+	ctx context.Context,
+	request api.SetWorkspaceAgentScopeRequestObject,
+) (api.SetWorkspaceAgentScopeResponseObject, error) {
+	agent, err := h.agents.Rescope(ctx, service.RescopeAgentInput{
+		WorkspaceID: request.WorkspaceId,
+		AgentID:     request.AgentId,
+		Scope:       entity.AgentScope(request.Body.Scope),
+		ProjectID:   request.Body.ProjectId,
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceAgentScope200JSONResponse(workspaceAgentDTO(agent)), nil
 }
 
 func (h *handler) DisableWorkspaceAgent(

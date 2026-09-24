@@ -1632,14 +1632,26 @@ func agentDTO(agent entity.Agent) api.Agent {
 		Name:           agent.Name,
 		Icon:           api.AgentIcon(agent.Icon.Normalized()),
 		Status:         api.AgentStatus(agent.Status),
+		Scope:          api.AgentScope(agent.Scope.Normalized()),
 		ActionLimit:    int32(agent.Allowance()),
 		CreatedAt:      agent.CreatedAt,
 	}
 
+	dto.ProjectId = agent.ProjectID
 	dto.DisabledAt = agent.DisabledAt
 	dto.AgentInstructions = nilIfEmpty(agent.AgentInstructions)
 
 	return dto
+}
+
+func agentDTOs(agents []entity.Agent) []api.Agent {
+	dtos := make([]api.Agent, 0, len(agents))
+
+	for _, agent := range agents {
+		dtos = append(dtos, agentDTO(agent))
+	}
+
+	return dtos
 }
 
 func workspaceAgentDTO(owned service.OwnedAgent) api.WorkspaceAgent {

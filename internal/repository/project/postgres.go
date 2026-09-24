@@ -20,6 +20,7 @@ const (
 	uniqueViolationCode  = "23505"
 	foreignKeyViolation  = "23503"
 	projectTeamsTeamFkey = "workspace_project_teams_team_fkey"
+	agentProjectFkey     = "workspace_agents_project_fkey"
 	slugUniqueIndex      = "workspace_projects_slug_key"
 	archiveCheck         = "workspace_projects_archive_check"
 	checkViolationCode   = "23514"
@@ -567,6 +568,13 @@ func (r *projectRepository) Unarchive(
 func (r *projectRepository) Delete(ctx context.Context, projectID uuid.UUID) error {
 	result, err := r.db.Querier(ctx).ExecContext(ctx, deleteProjectQuery, projectID.String())
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) &&
+			pgErr.Code == foreignKeyViolation &&
+			pgErr.ConstraintName == agentProjectFkey {
+			return entity.ErrProjectHasScopedAgents
+		}
+
 		return fmt.Errorf("delete project: %w", err)
 	}
 

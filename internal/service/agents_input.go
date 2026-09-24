@@ -14,6 +14,8 @@ type RegisterAgentInput struct {
 	AllTeams    bool
 	TeamIDs     []uuid.UUID
 	ActionLimit *int
+	Scope       entity.AgentScope
+	ProjectID   *uuid.UUID
 }
 
 type RegisteredAgent struct {
@@ -33,6 +35,13 @@ type AgentAuthority struct {
 	Scopes   entity.APIScopeSet
 	AllTeams bool
 	TeamIDs  []uuid.UUID
+}
+
+type RescopeAgentInput struct {
+	WorkspaceID uuid.UUID
+	AgentID     uuid.UUID
+	Scope       entity.AgentScope
+	ProjectID   *uuid.UUID
 }
 
 type SetAgentInstructionsInput struct {

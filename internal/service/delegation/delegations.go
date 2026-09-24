@@ -3,6 +3,7 @@ package delegation
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ type delegationsService struct {
 	delegations repository.IssueDelegation
 	issues      repository.Issue
 	agents      repository.Agent
+	members     repository.ProjectMember
 	activity    repository.Activity
 	emitter     service.WebhookEmitter
 	executions  service.Executions
@@ -29,6 +31,7 @@ func New(
 	delegations repository.IssueDelegation,
 	issues repository.Issue,
 	agents repository.Agent,
+	members repository.ProjectMember,
 	activity repository.Activity,
 	emitter service.WebhookEmitter,
 	executions service.Executions,
@@ -39,12 +42,37 @@ func New(
 		delegations: delegations,
 		issues:      issues,
 		agents:      agents,
+		members:     members,
 		activity:    activity,
 		emitter:     emitter,
 		executions:  executions,
 		authorizer:  authorizer,
 		transactor:  transactor,
 	}
+}
+
+func (s *delegationsService) delegatable(
+	ctx context.Context,
+	decision entity.Decision,
+	issue entity.Issue,
+	agent entity.Agent,
+) (bool, error) {
+	request := entity.AgentDelegation{
+		AccountID:      decision.Actor.Authority(),
+		IssueProjectID: issue.ProjectID,
+	}
+
+	if agent.Scope.Normalized() == entity.AgentScopeProject && agent.ProjectID != nil {
+		if _, err := s.members.Get(ctx, *agent.ProjectID, request.AccountID); err != nil {
+			if !errors.Is(err, entity.ErrProjectMembershipNotFound) {
+				return false, err
+			}
+		} else {
+			request.InProject = true
+		}
+	}
+
+	return agent.DelegatableBy(request), nil
 }
 
 func (s *delegationsService) decide(
@@ -110,7 +138,12 @@ func (s *delegationsService) Delegate(
 			return entity.ErrAgentNotFound
 		}
 
-		if !agent.OwnedBy(decision.Actor.Authority()) {
+		delegatable, err := s.delegatable(ctx, decision, issue, agent)
+		if err != nil {
+			return err
+		}
+
+		if !delegatable {
 			return entity.ErrIssueDelegationAgentNotYours
 		}
 
@@ -186,7 +219,12 @@ func (s *delegationsService) Targets(
 		return service.DelegationTargets{}, entity.ErrAgentNotFound
 	}
 
-	if !agent.OwnedBy(decision.Actor.Authority()) {
+	delegatable, err := s.delegatable(ctx, decision, issue, agent)
+	if err != nil {
+		return service.DelegationTargets{}, err
+	}
+
+	if !delegatable {
 		return service.DelegationTargets{}, entity.ErrIssueDelegationAgentNotYours
 	}
 

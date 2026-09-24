@@ -17,6 +17,7 @@ import (
 type projectsService struct {
 	projects    repository.Project
 	members     repository.ProjectMember
+	agents      repository.Agent
 	statuses    repository.ProjectStatusUpdate
 	links       repository.ProjectLink
 	activity    repository.Activity
@@ -31,6 +32,7 @@ type projectsService struct {
 func New(
 	projects repository.Project,
 	members repository.ProjectMember,
+	agents repository.Agent,
 	statuses repository.ProjectStatusUpdate,
 	links repository.ProjectLink,
 	activity repository.Activity,
@@ -44,6 +46,7 @@ func New(
 	return &projectsService{
 		projects:    projects,
 		members:     members,
+		agents:      agents,
 		statuses:    statuses,
 		links:       links,
 		activity:    activity,
@@ -599,6 +602,15 @@ func (s *projectsService) Remove(ctx context.Context, workspaceID, projectID uui
 	}
 
 	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		scoped, err := s.agents.ScopedToProject(ctx, workspaceID, projectID)
+		if err != nil {
+			return err
+		}
+
+		if scoped {
+			return entity.ErrProjectHasScopedAgents
+		}
+
 		if err := s.projects.Delete(ctx, projectID); err != nil {
 			return err
 		}

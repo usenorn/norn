@@ -17,6 +17,8 @@ const (
 
 	AgentActionWindow     = time.Minute
 	AgentActionsPerWindow = 120
+
+	DefaultAgentScope = AgentScopeMember
 )
 
 var (
@@ -27,6 +29,7 @@ var (
 	ErrAgentAuthorityMissing = errors.New("agent authority cannot be restored")
 	ErrAgentRateLimited      = errors.New("agent is acting faster than its allowance")
 	ErrAgentOwnerInvalid     = errors.New("agent owner must be an active person in this workspace")
+	ErrAgentScopeForbidden   = errors.New("that agent scope is not yours to grant")
 )
 
 type AgentIcon string
@@ -70,6 +73,30 @@ func (i AgentIcon) Normalized() AgentIcon {
 	return i
 }
 
+type AgentScope string
+
+const (
+	AgentScopeMember    AgentScope = "member"
+	AgentScopeProject   AgentScope = "project"
+	AgentScopeWorkspace AgentScope = "workspace"
+)
+
+func AgentScopes() []AgentScope {
+	return []AgentScope{AgentScopeMember, AgentScopeProject, AgentScopeWorkspace}
+}
+
+func (s AgentScope) Valid() bool {
+	return slices.Contains(AgentScopes(), s)
+}
+
+func (s AgentScope) Normalized() AgentScope {
+	if s == "" {
+		return DefaultAgentScope
+	}
+
+	return s
+}
+
 type AgentStatus string
 
 const (
@@ -101,6 +128,8 @@ type Agent struct {
 	Name              string
 	Icon              AgentIcon
 	Status            AgentStatus
+	Scope             AgentScope
+	ProjectID         *uuid.UUID
 	ActionLimit       *int
 	AgentInstructions string
 	DisabledAt        *time.Time
@@ -118,6 +147,27 @@ func (a Agent) OwnedBy(accountID uuid.UUID) bool {
 
 func (a Agent) ManageableBy(accountID uuid.UUID, role MembershipRole) bool {
 	return a.OwnedBy(accountID) || role == MembershipRoleAdmin
+}
+
+type AgentDelegation struct {
+	AccountID      uuid.UUID
+	IssueProjectID uuid.UUID
+	InProject      bool
+}
+
+func (a Agent) DelegatableBy(request AgentDelegation) bool {
+	switch a.Scope.Normalized() {
+	case AgentScopeWorkspace:
+		return true
+	case AgentScopeProject:
+		if a.ProjectID == nil || *a.ProjectID != request.IssueProjectID {
+			return false
+		}
+
+		return request.InProject || a.OwnedBy(request.AccountID)
+	default:
+		return a.OwnedBy(request.AccountID)
+	}
 }
 
 func (a Agent) Allowance() int {
@@ -147,6 +197,23 @@ func ValidateAgentIcon(field string, icon AgentIcon) FieldError {
 	}
 
 	return FieldError{}
+}
+
+func ValidateAgentScope(scopeField, projectField string, scope AgentScope, projectID *uuid.UUID) []FieldError {
+	normalized := scope.Normalized()
+
+	if !normalized.Valid() {
+		return []FieldError{{Field: scopeField, Code: ValidationCodeUnsupportedValue}}
+	}
+
+	switch {
+	case normalized == AgentScopeProject && projectID == nil:
+		return []FieldError{{Field: projectField, Code: ValidationCodeRequired}}
+	case normalized != AgentScopeProject && projectID != nil:
+		return []FieldError{{Field: projectField, Code: ValidationCodeUnsupportedValue}}
+	default:
+		return nil
+	}
 }
 
 func ValidateAgentActionLimit(field string, limit *int) FieldError {

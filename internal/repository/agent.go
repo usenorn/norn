@@ -17,6 +17,8 @@ type Agent interface {
 	GetByAccountID(ctx context.Context, accountID uuid.UUID) (entity.Agent, error)
 	ListByWorkspaceID(ctx context.Context, workspaceID uuid.UUID) ([]entity.Agent, error)
 	SetInstructions(ctx context.Context, workspaceID, agentID uuid.UUID, instructions string) (entity.Agent, error)
+	SetScope(ctx context.Context, workspaceID, agentID uuid.UUID, scope entity.AgentScope, projectID *uuid.UUID) (entity.Agent, error)
+	ScopedToProject(ctx context.Context, workspaceID, projectID uuid.UUID) (bool, error)
 	Disable(ctx context.Context, workspaceID, agentID uuid.UUID, disabledAt time.Time) error
 	Enable(ctx context.Context, workspaceID, agentID uuid.UUID) error
 }

@@ -21,7 +21,7 @@ type AgentOutcome = { kind: "issued"; agent: Agent; value: string } | AgentFailu
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {
 	depends(keys.page(route.id));
 
-	const { workspace, teams } = await parent();
+	const { workspace, teams, projects, members, member } = await parent();
 	depends(keys.agents(workspace.id));
 	const form = await superValidate<RegisterForm, AgentOutcome>(zod4(registerAgentSchema), {
 		id: formId,
@@ -35,11 +35,16 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 	]);
 	const reachable = (teams ?? []).filter((team) => team.status === "active");
 	const grantable = grants.data?.scopes ?? null;
+	const mayOpenToWorkspace =
+		members.find((joined) => joined.accountId === member.id)?.role === "admin";
+	const scopable = projects.filter((project) => !project.archived);
 
 	if (agents.error) {
 		return {
 			form,
 			teams: reachable,
+			projects: scopable,
+			mayOpenToWorkspace,
 			grantable,
 			listing: {
 				kind:
@@ -53,12 +58,21 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 	}
 
 	if (!agents.data || agents.data.length === 0) {
-		return { form, teams: reachable, grantable, listing: { kind: "empty" } as AgentListing };
+		return {
+			form,
+			teams: reachable,
+			projects: scopable,
+			mayOpenToWorkspace,
+			grantable,
+			listing: { kind: "empty" } as AgentListing,
+		};
 	}
 
 	return {
 		form,
 		teams: reachable,
+		projects: scopable,
+		mayOpenToWorkspace,
 		grantable,
 		listing: { kind: "ready", agents: agents.data } as AgentListing,
 	};
@@ -83,6 +97,8 @@ export const actions: Actions = {
 				scopes: form.data.scopes,
 				allTeams: form.data.allTeams,
 				teamIds: form.data.allTeams ? undefined : form.data.teamIds,
+				scope: form.data.scope,
+				projectId: form.data.scope === "project" ? form.data.projectId : undefined,
 				actionLimit: form.data.actionLimit,
 			},
 		});
@@ -99,6 +115,12 @@ export const actions: Actions = {
 					);
 				} else if (field.field === "icon") {
 					setError(form, "icon", "Choose a supported icon.");
+				} else if (field.field === "projectId") {
+					setError(
+						form,
+						"projectId",
+						"Choose the project whose members may hand this agent work."
+					);
 				} else if (field.field === "actionLimit") {
 					setError(form, "actionLimit", "Choose between 1 and 6000 actions a minute.");
 				} else {
@@ -127,6 +149,8 @@ export const actions: Actions = {
 		form.data.scopes = [];
 		form.data.teamIds = [];
 		form.data.allTeams = true;
+		form.data.scope = "member";
+		form.data.projectId = "";
 
 		return message(form, { kind: "issued", agent: data.agent, value: data.value });
 	},

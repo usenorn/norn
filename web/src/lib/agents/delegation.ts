@@ -1,4 +1,5 @@
 import type { components, operations } from "$lib/api/dashboard.gen";
+import type { Agent } from "./agents";
 
 export type IssueDelegation = components["schemas"]["IssueDelegation"];
 export type Member = components["schemas"]["Membership"];
@@ -58,7 +59,7 @@ export function delegationFailureMessage(failure: DelegationFailure): string {
 		case "unassigned":
 			return "Somebody cleared the assignee while you were deciding. Assign it again before handing it over.";
 		case "agent_not_yours":
-			return "Somebody else registered that agent, so only they can hand work to it.";
+			return "That agent is out of your reach on this issue. Its scope decides who may hand it work.";
 		case "gone":
 			return "Nobody is holding this issue.";
 		case "invalid":
@@ -70,17 +71,17 @@ export function delegationFailureMessage(failure: DelegationFailure): string {
 	}
 }
 
+export function delegatableAgents(members: Member[], agents: Agent[]): Member[] {
+	const reachable = new Set(agents.map((agent) => agent.accountId));
+
+	return members.filter(
+		(member) =>
+			member.kind === "agent" && !member.deactivatedAt && reachable.has(member.accountId)
+	);
+}
+
 export function currentDelegation(delegations: IssueDelegation[]): DelegationPanel {
 	const held = delegations.find((delegation) => !delegation.recalledAt);
 
 	return held ? { kind: "held", delegation: held } : { kind: "none" };
-}
-
-export function agentMembers(members: Member[], ownerAccountId: string): Member[] {
-	return members.filter(
-		(member) =>
-			member.kind === "agent" &&
-			!member.deactivatedAt &&
-			member.ownerAccountId === ownerAccountId
-	);
 }

@@ -7,6 +7,7 @@ export type AgentProposal = components["schemas"]["AgentProposal"];
 export type AgentAction = components["schemas"]["AgentAction"];
 export type APIScope = components["schemas"]["APIScope"];
 export type AgentIcon = components["schemas"]["AgentIcon"];
+export type AgentScope = components["schemas"]["AgentScope"];
 
 type RegisterResponses = operations["registerWorkspaceAgent"]["responses"];
 
@@ -31,8 +32,9 @@ export type AgentFailure =
 	| { kind: "disabled" }
 	| { kind: "active" }
 	| { kind: "authority_missing" }
-	| { kind: "scope_exceeds"; scopes: AgentScope[] }
+	| { kind: "scope_exceeds"; scopes: AgentPermission[] }
 	| { kind: "scope_invalid" }
+	| { kind: "scope_forbidden" }
 	| { kind: "grant_invalid" }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -80,7 +82,7 @@ export const agentIconLabels: Record<AgentIcon, string> = {
 	sparkles: "Creative",
 };
 
-export const agentScopes = [
+export const agentPermissions = [
 	"issue:read",
 	"issue:manage",
 	"cycle:read",
@@ -96,7 +98,21 @@ export const agentScopes = [
 	"notification:manage",
 ] as const satisfies readonly APIScope[];
 
-export type AgentScope = (typeof agentScopes)[number];
+export type AgentPermission = (typeof agentPermissions)[number];
+
+export const agentScopes = ["member", "project", "workspace"] as const satisfies readonly AgentScope[];
+
+export const agentScopeLabels: Record<AgentScope, string> = {
+	member: "Only me",
+	project: "A project",
+	workspace: "The whole workspace",
+};
+
+export const agentScopeHints: Record<AgentScope, string> = {
+	member: "Nobody but you can hand this agent an issue.",
+	project: "Everybody on that project can hand it issues belonging to that project.",
+	workspace: "Everybody in the workspace can hand it work.",
+};
 
 export const holdOptionLabels: Record<AgentHold, string> = {
 	never: "Never hold",
@@ -140,18 +156,18 @@ export const holdLabels: {
 	},
 ];
 
-export const agentScopeGroups: { title: string; scopes: AgentScope[] }[] = [
-	{ title: "Issues", scopes: ["issue:read", "issue:manage"] },
-	{ title: "Cycles", scopes: ["cycle:read"] },
-	{ title: "Projects", scopes: ["project:read", "project:manage"] },
-	{ title: "Labels", scopes: ["label:read", "label:manage"] },
-	{ title: "Teams", scopes: ["team:read"] },
-	{ title: "Members", scopes: ["membership:read"] },
-	{ title: "Comments", scopes: ["comment:read", "comment:manage"] },
-	{ title: "Its own inbox", scopes: ["notification:read", "notification:manage"] },
+export const agentPermissionGroups: { title: string; permissions: AgentPermission[] }[] = [
+	{ title: "Issues", permissions: ["issue:read", "issue:manage"] },
+	{ title: "Cycles", permissions: ["cycle:read"] },
+	{ title: "Projects", permissions: ["project:read", "project:manage"] },
+	{ title: "Labels", permissions: ["label:read", "label:manage"] },
+	{ title: "Teams", permissions: ["team:read"] },
+	{ title: "Members", permissions: ["membership:read"] },
+	{ title: "Comments", permissions: ["comment:read", "comment:manage"] },
+	{ title: "Its own inbox", permissions: ["notification:read", "notification:manage"] },
 ];
 
-export const agentScopeLabels: Record<string, string> = {
+export const agentPermissionLabels: Record<string, string> = {
 	"issue:read": "Read issues",
 	"issue:manage": "Raise and change issues",
 	"cycle:read": "Read cycles",
@@ -167,10 +183,26 @@ export const agentScopeLabels: Record<string, string> = {
 	"notification:manage": "Mark its own inbox as read",
 };
 
-export function beyondGrant(scopes: AgentScope[], grantable: APIScope[] | null): AgentScope[] {
+export function reachSummary(agent: Agent, projectName?: string): string {
+	switch (agent.scope) {
+		case "workspace":
+			return "Anybody in the workspace may hand it work";
+		case "project":
+			return projectName
+				? `${projectName} members may hand it work`
+				: "Project members may hand it work";
+		default:
+			return "Only its owner may hand it work";
+	}
+}
+
+export function beyondGrant(
+	permissions: AgentPermission[],
+	grantable: APIScope[] | null
+): AgentPermission[] {
 	if (!grantable) return [];
 
-	return scopes.filter((scope) => !grantable.includes(scope));
+	return permissions.filter((permission) => !grantable.includes(permission));
 }
 
 function listed(names: string[]): string {
@@ -201,6 +233,8 @@ export function registerFailure(problem: RegisterProblem): AgentFailure {
 			return { kind: "authority_missing" };
 		case "agent_proposal_settled":
 			return { kind: "unavailable" };
+		case "agent_scope_forbidden":
+			return { kind: "scope_forbidden" };
 		case "token_scope_invalid":
 			return { kind: "scope_invalid" };
 		case "token_scope_exceeds":
@@ -233,11 +267,16 @@ export function failureMessage(failure: AgentFailure): string {
 			return failure.scopes.length === 0
 				? "An agent cannot do more than you can. Choose fewer permissions."
 				: `An agent cannot do more than you can, and ${listed(
-						failure.scopes.map((scope) => agentScopeLabels[scope] ?? scope)
+						failure.scopes.map((permission) => agentPermissionLabels[permission] ?? permission)
 					)} ${failure.scopes.length === 1 ? "is" : "are"} beyond what your role allows. ` +
 					"Clear those to carry on, or ask an administrator to raise your role.";
 		case "scope_invalid":
 			return "One of those permissions is not recognised.";
+		case "scope_forbidden":
+			return (
+				"Opening an agent to the whole workspace is an administrator's call, and a project " +
+				"agent has to belong to a project you are on. Choose another one."
+			);
 		case "grant_invalid":
 			return "One of those teams is not one you can reach.";
 		case "forbidden":

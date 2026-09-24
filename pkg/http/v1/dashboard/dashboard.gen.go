@@ -627,6 +627,27 @@ func (e AgentProposalStatus) Valid() bool {
 	}
 }
 
+// Defines values for AgentScope.
+const (
+	AgentScopeMember    AgentScope = "member"
+	AgentScopeProject   AgentScope = "project"
+	AgentScopeWorkspace AgentScope = "workspace"
+)
+
+// Valid indicates whether the value is a known member of the AgentScope enum.
+func (e AgentScope) Valid() bool {
+	switch e {
+	case AgentScopeMember:
+		return true
+	case AgentScopeProject:
+		return true
+	case AgentScopeWorkspace:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentSkillSource.
 const (
 	AgentSkillSourceGithub AgentSkillSource = "github"
@@ -671,6 +692,7 @@ const (
 	AgentUnusableProblemCodeAgentNameTaken        AgentUnusableProblemCode = "agent_name_taken"
 	AgentUnusableProblemCodeAgentOwnerInvalid     AgentUnusableProblemCode = "agent_owner_invalid"
 	AgentUnusableProblemCodeAgentProposalSettled  AgentUnusableProblemCode = "agent_proposal_settled"
+	AgentUnusableProblemCodeAgentScopeForbidden   AgentUnusableProblemCode = "agent_scope_forbidden"
 	AgentUnusableProblemCodeTokenGrantInvalid     AgentUnusableProblemCode = "token_grant_invalid"
 	AgentUnusableProblemCodeTokenGrantMissing     AgentUnusableProblemCode = "token_grant_missing"
 	AgentUnusableProblemCodeTokenMayNotMint       AgentUnusableProblemCode = "token_may_not_mint"
@@ -692,6 +714,8 @@ func (e AgentUnusableProblemCode) Valid() bool {
 	case AgentUnusableProblemCodeAgentOwnerInvalid:
 		return true
 	case AgentUnusableProblemCodeAgentProposalSettled:
+		return true
+	case AgentUnusableProblemCodeAgentScopeForbidden:
 		return true
 	case AgentUnusableProblemCodeTokenGrantInvalid:
 		return true
@@ -830,6 +854,7 @@ const (
 	AuditActionAgentMcpServerUpdated        AuditAction = "agent.mcp_server_updated"
 	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
 	AuditActionAgentRegistered              AuditAction = "agent.registered"
+	AuditActionAgentScopeChanged            AuditAction = "agent.scope_changed"
 	AuditActionAgentSkillAdded              AuditAction = "agent.skill_added"
 	AuditActionAgentSkillRemoved            AuditAction = "agent.skill_removed"
 	AuditActionAgentSkillUpdated            AuditAction = "agent.skill_updated"
@@ -918,6 +943,8 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentProposalDecided:
 		return true
 	case AuditActionAgentRegistered:
+		return true
+	case AuditActionAgentScopeChanged:
 		return true
 	case AuditActionAgentSkillAdded:
 		return true
@@ -3176,19 +3203,19 @@ func (e MembershipConflictProblemCode) Valid() bool {
 
 // Defines values for MembershipRole.
 const (
-	Admin  MembershipRole = "admin"
-	Member MembershipRole = "member"
-	Viewer MembershipRole = "viewer"
+	MembershipRoleAdmin  MembershipRole = "admin"
+	MembershipRoleMember MembershipRole = "member"
+	MembershipRoleViewer MembershipRole = "viewer"
 )
 
 // Valid indicates whether the value is a known member of the MembershipRole enum.
 func (e MembershipRole) Valid() bool {
 	switch e {
-	case Admin:
+	case MembershipRoleAdmin:
 		return true
-	case Member:
+	case MembershipRoleMember:
 		return true
-	case Viewer:
+	case MembershipRoleViewer:
 		return true
 	default:
 		return false
@@ -3407,18 +3434,21 @@ func (e PreviewProblemCode) Valid() bool {
 
 // Defines values for ProjectConflictProblemCode.
 const (
-	ProjectConflictProblemCodeProjectArchived     ProjectConflictProblemCode = "project_archived"
-	ProjectConflictProblemCodeProjectLinksFull    ProjectConflictProblemCode = "project_links_full"
-	ProjectConflictProblemCodeProjectMemberExists ProjectConflictProblemCode = "project_member_exists"
-	ProjectConflictProblemCodeProjectNotArchived  ProjectConflictProblemCode = "project_not_archived"
-	ProjectConflictProblemCodeProjectNotFinished  ProjectConflictProblemCode = "project_not_finished"
-	ProjectConflictProblemCodeProjectSlugTaken    ProjectConflictProblemCode = "project_slug_taken"
+	ProjectConflictProblemCodeProjectArchived        ProjectConflictProblemCode = "project_archived"
+	ProjectConflictProblemCodeProjectHasScopedAgents ProjectConflictProblemCode = "project_has_scoped_agents"
+	ProjectConflictProblemCodeProjectLinksFull       ProjectConflictProblemCode = "project_links_full"
+	ProjectConflictProblemCodeProjectMemberExists    ProjectConflictProblemCode = "project_member_exists"
+	ProjectConflictProblemCodeProjectNotArchived     ProjectConflictProblemCode = "project_not_archived"
+	ProjectConflictProblemCodeProjectNotFinished     ProjectConflictProblemCode = "project_not_finished"
+	ProjectConflictProblemCodeProjectSlugTaken       ProjectConflictProblemCode = "project_slug_taken"
 )
 
 // Valid indicates whether the value is a known member of the ProjectConflictProblemCode enum.
 func (e ProjectConflictProblemCode) Valid() bool {
 	switch e {
 	case ProjectConflictProblemCodeProjectArchived:
+		return true
+	case ProjectConflictProblemCodeProjectHasScopedAgents:
 		return true
 	case ProjectConflictProblemCodeProjectLinksFull:
 		return true
@@ -5142,8 +5172,14 @@ type Agent struct {
 	Id                openapi_types.UUID `json:"id"`
 	Name              string             `json:"name"`
 	OwnerAccountId    openapi_types.UUID `json:"ownerAccountId"`
-	Status            AgentStatus        `json:"status"`
-	WorkspaceId       openapi_types.UUID `json:"workspaceId"`
+
+	// ProjectId The project this agent is scoped to, present only when the scope is project.
+	ProjectId *openapi_types.UUID `json:"projectId,omitempty"`
+
+	// Scope Who may hand an issue to this agent. member is its owner alone, project is everyone on the agent's project for issues in that project, and workspace is everyone in the workspace.
+	Scope       AgentScope         `json:"scope"`
+	Status      AgentStatus        `json:"status"`
+	WorkspaceId openapi_types.UUID `json:"workspaceId"`
 }
 
 // AgentAction defines model for AgentAction.
@@ -5372,6 +5408,9 @@ type AgentReasoning struct {
 	Observed  *string        `json:"observed,omitempty"`
 	Uncertain *string        `json:"uncertain,omitempty"`
 }
+
+// AgentScope Who may hand an issue to this agent. member is its owner alone, project is everyone on the agent's project for issues in that project, and workspace is everyone in the workspace.
+type AgentScope string
 
 // AgentSettings defines model for AgentSettings.
 type AgentSettings struct {
@@ -8274,12 +8313,18 @@ type RedeemRecoveryCodeRequest struct {
 
 // RegisterAgentRequest defines model for RegisterAgentRequest.
 type RegisterAgentRequest struct {
-	ActionLimit *int32                `json:"actionLimit,omitempty"`
-	AllTeams    bool                  `json:"allTeams"`
-	Icon        *AgentIcon            `json:"icon,omitempty"`
-	Name        string                `json:"name"`
-	Scopes      []APIScope            `json:"scopes"`
-	TeamIds     *[]openapi_types.UUID `json:"teamIds,omitempty"`
+	ActionLimit *int32     `json:"actionLimit,omitempty"`
+	AllTeams    bool       `json:"allTeams"`
+	Icon        *AgentIcon `json:"icon,omitempty"`
+	Name        string     `json:"name"`
+
+	// ProjectId Required when the scope is project, and refused otherwise.
+	ProjectId *openapi_types.UUID `json:"projectId,omitempty"`
+
+	// Scope Who may hand an issue to this agent. member is its owner alone, project is everyone on the agent's project for issues in that project, and workspace is everyone in the workspace.
+	Scope   *AgentScope           `json:"scope,omitempty"`
+	Scopes  []APIScope            `json:"scopes"`
+	TeamIds *[]openapi_types.UUID `json:"teamIds,omitempty"`
 }
 
 // RegisteredAgent defines model for RegisteredAgent.
@@ -8704,6 +8749,15 @@ type SessionLocation struct {
 type SetAgentInstructionsRequest struct {
 	// Instructions The agent's own standing instructions. An empty value clears them, leaving the workspace's and the project's instructions to stand on their own.
 	Instructions string `json:"instructions"`
+}
+
+// SetAgentScopeRequest defines model for SetAgentScopeRequest.
+type SetAgentScopeRequest struct {
+	// ProjectId Required when the scope is project, and refused otherwise.
+	ProjectId *openapi_types.UUID `json:"projectId,omitempty"`
+
+	// Scope Who may hand an issue to this agent. member is its owner alone, project is everyone on the agent's project for issues in that project, and workspace is everyone in the workspace.
+	Scope AgentScope `json:"scope"`
 }
 
 // SetAuditAccessRequest defines model for SetAuditAccessRequest.
@@ -10507,6 +10561,9 @@ type SetWorkspaceAgentInstructionsJSONRequestBody = SetAgentInstructionsRequest
 // AddAgentMcpServerJSONRequestBody defines body for AddAgentMcpServer for application/json ContentType.
 type AddAgentMcpServerJSONRequestBody = AgentMcpServerRequest
 
+// SetWorkspaceAgentScopeJSONRequestBody defines body for SetWorkspaceAgentScope for application/json ContentType.
+type SetWorkspaceAgentScopeJSONRequestBody = SetAgentScopeRequest
+
 // AddAgentSkillJSONRequestBody defines body for AddAgentSkill for application/json ContentType.
 type AddAgentSkillJSONRequestBody = AddAgentSkillRequest
 
@@ -11685,6 +11742,24 @@ type ClientInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
 	AddAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SetWorkspaceAgentScopeWithBody Set who may hand work to this agent
+	//
+	// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+	SetWorkspaceAgentScopeWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentScope Set who may hand work to this agent
+	//
+	// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+	SetWorkspaceAgentScope(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentScopeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// AddAgentSkillWithBody Give an agent a skill, imported from a repository or written here
 	//
 	// Takes any type of body and a specified content type.
@@ -12509,6 +12584,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
 	DelegateWorkspaceIssue(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body DelegateWorkspaceIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceIssueDelegatableAgents The agents you may hand this issue to
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/agents (the `ListWorkspaceIssueDelegatableAgents` operationId).
+	ListWorkspaceIssueDelegatableAgents(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
 	//
@@ -15847,6 +15927,44 @@ func (c *Client) AddAgentMcpServer(ctx context.Context, workspaceId WorkspaceId,
 	return c.Client.Do(req)
 }
 
+// SetWorkspaceAgentScopeWithBody Set who may hand work to this agent
+//
+// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+func (c *Client) SetWorkspaceAgentScopeWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentScopeRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentScope Set who may hand work to this agent
+//
+// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+func (c *Client) SetWorkspaceAgentScope(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentScopeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentScopeRequest(c.Server, workspaceId, agentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // AddAgentSkillWithBody Give an agent a skill, imported from a repository or written here
 //
 // Takes any type of body and a specified content type.
@@ -17972,6 +18090,21 @@ func (c *Client) DelegateWorkspaceIssueWithBody(ctx context.Context, workspaceId
 // Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
 func (c *Client) DelegateWorkspaceIssue(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body DelegateWorkspaceIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDelegateWorkspaceIssueRequest(c.Server, workspaceId, issueId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceIssueDelegatableAgents The agents you may hand this issue to
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/agents (the `ListWorkspaceIssueDelegatableAgents` operationId).
+func (c *Client) ListWorkspaceIssueDelegatableAgents(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceIssueDelegatableAgentsRequest(c.Server, workspaceId, issueId)
 	if err != nil {
 		return nil, err
 	}
@@ -25053,6 +25186,60 @@ func NewAddAgentMcpServerRequestWithBody(server string, workspaceId WorkspaceId,
 	return req, nil
 }
 
+// NewSetWorkspaceAgentScopeRequest calls the generic SetWorkspaceAgentScope builder with application/json body
+func NewSetWorkspaceAgentScopeRequest(server string, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentScopeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceAgentScopeRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceAgentScopeRequestWithBody constructs an http.Request for the SetWorkspaceAgentScope method, with any body, and a specified content type
+func NewSetWorkspaceAgentScopeRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/scope", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewAddAgentSkillRequest calls the generic AddAgentSkill builder with application/json body
 func NewAddAgentSkillRequest(server string, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -30141,6 +30328,47 @@ func NewDelegateWorkspaceIssueRequestWithBody(server string, workspaceId Workspa
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListWorkspaceIssueDelegatableAgentsRequest constructs an http.Request for the ListWorkspaceIssueDelegatableAgents method
+func NewListWorkspaceIssueDelegatableAgentsRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/delegation/agents", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -39137,6 +39365,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
 	AddAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAgentMcpServerResponse, error)
 
+	// SetWorkspaceAgentScopeWithBodyWithResponse Set who may hand work to this agent
+	//
+	// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+	SetWorkspaceAgentScopeWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentScopeResponse, error)
+
+	// SetWorkspaceAgentScopeWithResponse Set who may hand work to this agent
+	//
+	// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+	SetWorkspaceAgentScopeWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentScopeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentScopeResponse, error)
+
 	// AddAgentSkillWithBodyWithResponse Give an agent a skill, imported from a repository or written here
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -40105,6 +40351,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/delegation (the `DelegateWorkspaceIssue` operationId).
 	DelegateWorkspaceIssueWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, body DelegateWorkspaceIssueJSONRequestBody, reqEditors ...RequestEditorFn) (*DelegateWorkspaceIssueResponse, error)
+
+	// ListWorkspaceIssueDelegatableAgentsWithResponse The agents you may hand this issue to
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/agents (the `ListWorkspaceIssueDelegatableAgents` operationId).
+	ListWorkspaceIssueDelegatableAgentsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDelegatableAgentsResponse, error)
 
 	// GetWorkspaceIssueDelegationTargetsWithResponse Where delegating this issue to an agent would run, before anyone commits to it
 	//
@@ -47602,6 +47855,89 @@ func (r AddAgentMcpServerResponse) ContentType() string {
 	return ""
 }
 
+type SetWorkspaceAgentScopeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAgent
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceAgentScopeResponse) GetJSON200() *WorkspaceAgent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceAgentScopeResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceAgentScopeResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SetWorkspaceAgentScopeResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SetWorkspaceAgentScopeResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceAgentScopeResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceAgentScopeResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceAgentScopeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceAgentScopeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceAgentScopeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceAgentScopeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type AddAgentSkillResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -55049,6 +55385,75 @@ func (r DelegateWorkspaceIssueResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r DelegateWorkspaceIssueResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceIssueDelegatableAgentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]Agent
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceIssueDelegatableAgentsResponse) GetJSON200() *[]Agent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceIssueDelegatableAgentsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceIssueDelegatableAgentsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceIssueDelegatableAgentsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceIssueDelegatableAgentsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceIssueDelegatableAgentsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceIssueDelegatableAgentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceIssueDelegatableAgentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceIssueDelegatableAgentsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -68919,6 +69324,36 @@ func (c *ClientWithResponses) AddAgentMcpServerWithResponse(ctx context.Context,
 	return ParseAddAgentMcpServerResponse(rsp)
 }
 
+// SetWorkspaceAgentScopeWithBodyWithResponse Set who may hand work to this agent
+//
+// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentScopeWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentScopeResponse, error) {
+	rsp, err := c.SetWorkspaceAgentScopeWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentScopeResponse(rsp)
+}
+
+// SetWorkspaceAgentScopeWithResponse Set who may hand work to this agent
+//
+// The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/scope (the `SetWorkspaceAgentScope` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentScopeWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentScopeJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentScopeResponse, error) {
+	rsp, err := c.SetWorkspaceAgentScope(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentScopeResponse(rsp)
+}
+
 // AddAgentSkillWithBodyWithResponse Give an agent a skill, imported from a repository or written here
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -70672,6 +71107,19 @@ func (c *ClientWithResponses) DelegateWorkspaceIssueWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseDelegateWorkspaceIssueResponse(rsp)
+}
+
+// ListWorkspaceIssueDelegatableAgentsWithResponse The agents you may hand this issue to
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/delegation/agents (the `ListWorkspaceIssueDelegatableAgents` operationId).
+func (c *ClientWithResponses) ListWorkspaceIssueDelegatableAgentsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDelegatableAgentsResponse, error) {
+	rsp, err := c.ListWorkspaceIssueDelegatableAgents(ctx, workspaceId, issueId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceIssueDelegatableAgentsResponse(rsp)
 }
 
 // GetWorkspaceIssueDelegationTargetsWithResponse Where delegating this issue to an agent would run, before anyone commits to it
@@ -78376,6 +78824,74 @@ func ParseAddAgentMcpServerResponse(rsp *http.Response) (*AddAgentMcpServerRespo
 	return response, nil
 }
 
+// ParseSetWorkspaceAgentScopeResponse parses an HTTP response from a SetWorkspaceAgentScopeWithResponse call
+func ParseSetWorkspaceAgentScopeResponse(rsp *http.Response) (*SetWorkspaceAgentScopeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceAgentScopeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAgent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseAddAgentSkillResponse parses an HTTP response from a AddAgentSkillWithResponse call
 func ParseAddAgentSkillResponse(rsp *http.Response) (*AddAgentSkillResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -84355,6 +84871,60 @@ func ParseDelegateWorkspaceIssueResponse(rsp *http.Response) (*DelegateWorkspace
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceIssueDelegatableAgentsResponse parses an HTTP response from a ListWorkspaceIssueDelegatableAgentsWithResponse call
+func ParseListWorkspaceIssueDelegatableAgentsResponse(rsp *http.Response) (*ListWorkspaceIssueDelegatableAgentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceIssueDelegatableAgentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Agent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -94470,6 +95040,9 @@ type ServerInterface interface {
 	// AddAgentMcpServer Give an agent an MCP server
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers)
 	AddAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// SetWorkspaceAgentScope Set who may hand work to this agent
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/scope)
+	SetWorkspaceAgentScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// AddAgentSkill Give an agent a skill, imported from a repository or written here
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
 	AddAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
@@ -94776,6 +95349,9 @@ type ServerInterface interface {
 	// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
+	// ListWorkspaceIssueDelegatableAgents The agents you may hand this issue to
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/agents)
+	ListWorkspaceIssueDelegatableAgents(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
 	GetWorkspaceIssueDelegationTargets(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, params GetWorkspaceIssueDelegationTargetsParams)
@@ -95799,6 +96375,12 @@ func (_ Unimplemented) AddAgentMcpServer(w http.ResponseWriter, r *http.Request,
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// SetWorkspaceAgentScope Set who may hand work to this agent
+// (PUT /workspaces/{workspaceId}/agents/{agentId}/scope)
+func (_ Unimplemented) SetWorkspaceAgentScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // AddAgentSkill Give an agent a skill, imported from a repository or written here
 // (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
 func (_ Unimplemented) AddAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
@@ -96408,6 +96990,12 @@ func (_ Unimplemented) ListWorkspaceIssueDelegations(w http.ResponseWriter, r *h
 // DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
 // (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
 func (_ Unimplemented) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceIssueDelegatableAgents The agents you may hand this issue to
+// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/agents)
+func (_ Unimplemented) ListWorkspaceIssueDelegatableAgents(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -99573,6 +100161,41 @@ func (siw *ServerInterfaceWrapper) AddAgentMcpServer(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AddAgentMcpServer(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceAgentScope operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceAgentScope(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceAgentScope(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -103503,6 +104126,41 @@ func (siw *ServerInterfaceWrapper) DelegateWorkspaceIssue(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DelegateWorkspaceIssue(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceIssueDelegatableAgents operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueDelegatableAgents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueDelegatableAgents(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -110058,6 +110716,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/instructions", wrapper.SetWorkspaceAgentInstructions)
 	})
 	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/scope", wrapper.SetWorkspaceAgentScope)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/enable", wrapper.EnableWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
@@ -110359,6 +111020,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation/targets", wrapper.GetWorkspaceIssueDelegationTargets)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/delegation/agents", wrapper.ListWorkspaceIssueDelegatableAgents)
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/labels", wrapper.SetWorkspaceIssueLabels)
@@ -118102,6 +118766,120 @@ func (response AddAgentMcpServer503ApplicationProblemPlusJSONResponse) VisitAddA
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentScopeRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *SetWorkspaceAgentScopeJSONRequestBody
+}
+
+type SetWorkspaceAgentScopeResponseObject interface {
+	VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceAgentScope200JSONResponse WorkspaceAgent
+
+func (response SetWorkspaceAgentScope200JSONResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentScope401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentScope401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentScope403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentScope403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentScope404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentScope404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentScope409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentScope409ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentScope422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentScope422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentScope500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentScope500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -127587,6 +128365,89 @@ func (response DelegateWorkspaceIssue422ApplicationProblemPlusJSONResponse) Visi
 type DelegateWorkspaceIssue500ApplicationProblemPlusJSONResponse Problem
 
 func (response DelegateWorkspaceIssue500ApplicationProblemPlusJSONResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegatableAgentsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueDelegatableAgentsResponseObject interface {
+	VisitListWorkspaceIssueDelegatableAgentsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueDelegatableAgents200JSONResponse []Agent
+
+func (response ListWorkspaceIssueDelegatableAgents200JSONResponse) VisitListWorkspaceIssueDelegatableAgentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegatableAgents401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDelegatableAgents401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegatableAgentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegatableAgents403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDelegatableAgents403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegatableAgentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegatableAgents404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDelegatableAgents404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegatableAgentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDelegatableAgents500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDelegatableAgents500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDelegatableAgentsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -143540,6 +144401,9 @@ type StrictServerInterface interface {
 	// AddAgentMcpServer Give an agent an MCP server
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers)
 	AddAgentMcpServer(ctx context.Context, request AddAgentMcpServerRequestObject) (AddAgentMcpServerResponseObject, error)
+	// SetWorkspaceAgentScope Set who may hand work to this agent
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/scope)
+	SetWorkspaceAgentScope(ctx context.Context, request SetWorkspaceAgentScopeRequestObject) (SetWorkspaceAgentScopeResponseObject, error)
 	// AddAgentSkill Give an agent a skill, imported from a repository or written here
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
 	AddAgentSkill(ctx context.Context, request AddAgentSkillRequestObject) (AddAgentSkillResponseObject, error)
@@ -143846,6 +144710,9 @@ type StrictServerInterface interface {
 	// DelegateWorkspaceIssue Hand this issue to an agent, and tell anything listening that work has begun
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	DelegateWorkspaceIssue(ctx context.Context, request DelegateWorkspaceIssueRequestObject) (DelegateWorkspaceIssueResponseObject, error)
+	// ListWorkspaceIssueDelegatableAgents The agents you may hand this issue to
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/agents)
+	ListWorkspaceIssueDelegatableAgents(ctx context.Context, request ListWorkspaceIssueDelegatableAgentsRequestObject) (ListWorkspaceIssueDelegatableAgentsResponseObject, error)
 	// GetWorkspaceIssueDelegationTargets Where delegating this issue to an agent would run, before anyone commits to it
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/delegation/targets)
 	GetWorkspaceIssueDelegationTargets(ctx context.Context, request GetWorkspaceIssueDelegationTargetsRequestObject) (GetWorkspaceIssueDelegationTargetsResponseObject, error)
@@ -146796,6 +147663,40 @@ func (sh *strictHandler) AddAgentMcpServer(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AddAgentMcpServerResponseObject); ok {
 		if err := validResponse.VisitAddAgentMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceAgentScope operation middleware
+func (sh *strictHandler) SetWorkspaceAgentScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request SetWorkspaceAgentScopeRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body SetWorkspaceAgentScopeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceAgentScope(ctx, request.(SetWorkspaceAgentScopeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceAgentScope")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceAgentScopeResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceAgentScopeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -149759,6 +150660,33 @@ func (sh *strictHandler) DelegateWorkspaceIssue(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DelegateWorkspaceIssueResponseObject); ok {
 		if err := validResponse.VisitDelegateWorkspaceIssueResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceIssueDelegatableAgents operation middleware
+func (sh *strictHandler) ListWorkspaceIssueDelegatableAgents(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueDelegatableAgentsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueDelegatableAgents(ctx, request.(ListWorkspaceIssueDelegatableAgentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueDelegatableAgents")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueDelegatableAgentsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueDelegatableAgentsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

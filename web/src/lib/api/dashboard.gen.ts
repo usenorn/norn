@@ -1576,6 +1576,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/{agentId}/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set who may hand work to this agent
+         * @description The scope decides who may delegate an issue to the agent, and nothing else. Seeing the agent's settings, disabling it and rotating its credential stay with its owner and the workspace administrators whatever the scope says.
+         */
+        put: operations["setWorkspaceAgentScope"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents/{agentId}/enable": {
         parameters: {
             query?: never;
@@ -2934,6 +2954,26 @@ export interface paths {
         };
         /** Where delegating this issue to an agent would run, before anyone commits to it */
         get: operations["getWorkspaceIssueDelegationTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/delegation/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** The agents you may hand this issue to */
+        get: operations["listWorkspaceIssueDelegatableAgents"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6635,7 +6675,7 @@ export interface components {
         };
         ProjectConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full";
+            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents";
         };
         /** @enum {string} */
         CyclePhase: "upcoming" | "current" | "ended" | "closed";
@@ -6900,7 +6940,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -7265,6 +7305,11 @@ export interface components {
         AgentStatus: "active" | "disabled";
         /** @enum {string} */
         AgentIcon: "bot" | "inbox" | "search" | "terminal" | "pencil" | "git-pull-request" | "shield-check" | "scroll-text" | "target" | "sparkles";
+        /**
+         * @description Who may hand an issue to this agent. member is its owner alone, project is everyone on the agent's project for issues in that project, and workspace is everyone in the workspace.
+         * @enum {string}
+         */
+        AgentScope: "member" | "project" | "workspace";
         Agent: {
             /** Format: uuid */
             id: string;
@@ -7277,6 +7322,12 @@ export interface components {
             name: string;
             icon: components["schemas"]["AgentIcon"];
             status: components["schemas"]["AgentStatus"];
+            scope: components["schemas"]["AgentScope"];
+            /**
+             * Format: uuid
+             * @description The project this agent is scoped to, present only when the scope is project.
+             */
+            projectId?: string;
             /**
              * Format: int32
              * @description Actions this agent may take per minute.
@@ -7295,6 +7346,14 @@ export interface components {
             ownerEmail: string;
             authority: components["schemas"]["AgentAuthority"];
         };
+        SetAgentScopeRequest: {
+            scope: components["schemas"]["AgentScope"];
+            /**
+             * Format: uuid
+             * @description Required when the scope is project, and refused otherwise.
+             */
+            projectId?: string;
+        };
         SetAgentInstructionsRequest: {
             /** @description The agent's own standing instructions. An empty value clears them, leaving the workspace's and the project's instructions to stand on their own. */
             instructions: string;
@@ -7310,6 +7369,12 @@ export interface components {
         RegisterAgentRequest: {
             name: string;
             icon?: components["schemas"]["AgentIcon"];
+            scope?: components["schemas"]["AgentScope"];
+            /**
+             * Format: uuid
+             * @description Required when the scope is project, and refused otherwise.
+             */
+            projectId?: string;
             scopes: components["schemas"]["APIScope"][];
             allTeams: boolean;
             teamIds?: string[];
@@ -7411,7 +7476,7 @@ export interface components {
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "agent_name_taken" | "agent_owner_invalid" | "agent_disabled" | "agent_active" | "agent_authority_missing" | "agent_proposal_settled" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
+            code: "agent_name_taken" | "agent_owner_invalid" | "agent_disabled" | "agent_active" | "agent_authority_missing" | "agent_proposal_settled" | "agent_scope_forbidden" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
         };
         AgentHeldProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -12782,6 +12847,39 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
+    setWorkspaceAgentScope: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAgentScopeRequest"];
+            };
+        };
+        responses: {
+            /** @description The agent, carrying the scope as it was saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAgent"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
     enableWorkspaceAgent: {
         parameters: {
             query?: never;
@@ -15775,6 +15873,33 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueDelegatableAgents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agents whose scope reaches you on this issue */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Agent"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

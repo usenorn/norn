@@ -2270,6 +2270,36 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents/{agentId}/scope:
+    put:
+      tags: [agents]
+      operationId: setWorkspaceAgentScope
+      summary: Set who may hand work to this agent
+      description: >-
+        The scope decides who may delegate an issue to the agent, and nothing else. Seeing the
+        agent's settings, disabling it and rotating its credential stay with its owner and the
+        workspace administrators whatever the scope says.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetAgentScopeRequest' }
+      responses:
+        '200':
+          description: The agent, carrying the scope as it was saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/agents/{agentId}/enable:
     post:
       tags: [agents]
@@ -4491,6 +4521,27 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/delegation/agents:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [issues]
+      operationId: listWorkspaceIssueDelegatableAgents
+      summary: The agents you may hand this issue to
+      responses:
+        '200':
+          description: Agents whose scope reaches you on this issue
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Agent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/issues/{issueId}/labels:
@@ -10427,6 +10478,7 @@ components:
                 - project_not_finished
                 - project_member_exists
                 - project_links_full
+                - project_has_scoped_agents
 
     CyclePhase:
       type: string
@@ -10844,6 +10896,7 @@ components:
         - agent.enabled
         - agent.proposal_decided
         - agent.instructions_changed
+        - agent.scope_changed
         - agent.skill_added
         - agent.skill_updated
         - agent.skill_removed
@@ -11415,9 +11468,16 @@ components:
         - target
         - sparkles
 
+    AgentScope:
+      type: string
+      enum: [member, project, workspace]
+      description: >-
+        Who may hand an issue to this agent. member is its owner alone, project is everyone on the
+        agent's project for issues in that project, and workspace is everyone in the workspace.
+
     Agent:
       type: object
-      required: [id, workspaceId, accountId, ownerAccountId, name, icon, status, actionLimit, createdAt]
+      required: [id, workspaceId, accountId, ownerAccountId, name, icon, status, scope, actionLimit, createdAt]
       properties:
         id: { type: string, format: uuid }
         workspaceId: { type: string, format: uuid }
@@ -11426,6 +11486,11 @@ components:
         name: { type: string }
         icon: { $ref: '#/components/schemas/AgentIcon' }
         status: { $ref: '#/components/schemas/AgentStatus' }
+        scope: { $ref: '#/components/schemas/AgentScope' }
+        projectId:
+          type: string
+          format: uuid
+          description: The project this agent is scoped to, present only when the scope is project.
         actionLimit:
           type: integer
           format: int32
@@ -11448,6 +11513,16 @@ components:
         ownerName: { type: string }
         ownerEmail: { type: string }
         authority: { $ref: '#/components/schemas/AgentAuthority' }
+
+    SetAgentScopeRequest:
+      type: object
+      required: [scope]
+      properties:
+        scope: { $ref: '#/components/schemas/AgentScope' }
+        projectId:
+          type: string
+          format: uuid
+          description: Required when the scope is project, and refused otherwise.
 
     SetAgentInstructionsRequest:
       type: object
@@ -11486,6 +11561,11 @@ components:
       properties:
         name: { type: string }
         icon: { $ref: '#/components/schemas/AgentIcon' }
+        scope: { $ref: '#/components/schemas/AgentScope' }
+        projectId:
+          type: string
+          format: uuid
+          description: Required when the scope is project, and refused otherwise.
         scopes:
           type: array
           items: { $ref: '#/components/schemas/APIScope' }
@@ -11644,6 +11724,7 @@ components:
                 - agent_active
                 - agent_authority_missing
                 - agent_proposal_settled
+                - agent_scope_forbidden
                 - token_scope_invalid
                 - token_scope_exceeds
                 - token_may_not_mint
