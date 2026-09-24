@@ -1118,6 +1118,75 @@ func problemFor(err error) (problemResponse, bool) {
 			},
 		}, true
 
+	case errors.Is(err, entity.ErrAgentSkillNameTaken):
+		return agentCapabilityConflict(api.SkillNameTaken, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPServerNameTaken):
+		return agentCapabilityConflict(api.McpServerNameTaken, err), true
+
+	case errors.Is(err, entity.ErrAgentSkillLimitReached):
+		return agentCapabilityConflict(api.SkillLimitReached, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPServerLimitReached):
+		return agentCapabilityConflict(api.McpServerLimitReached, err), true
+
+	case errors.Is(err, entity.ErrAgentCapabilityAttached):
+		return agentCapabilityConflict(api.AlreadyAttached, err), true
+
+	case errors.Is(err, entity.ErrAgentCapabilityNotAttached):
+		return agentCapabilityConflict(api.NotAttached, err), true
+
+	case errors.Is(err, entity.ErrAgentCapabilityNotLibrary):
+		return agentCapabilityConflict(api.NotLibrary, err), true
+
+	case errors.Is(err, entity.ErrAgentSkillImported):
+		return agentCapabilityConflict(api.SkillImported, err), true
+
+	case errors.Is(err, entity.ErrAgentSkillNotImported):
+		return agentCapabilityConflict(api.SkillNotImported, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPOAuthNotConfigured):
+		return agentCapabilityConflict(api.OauthNotConfigured, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPOAuthUnsupported):
+		return agentCapabilityConflict(api.OauthUnsupported, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPOAuthRefused):
+		return agentCapabilityConflict(api.OauthRefused, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPDestinationRefused):
+		return agentCapabilityConflict(api.DestinationRefused, err), true
+
+	case errors.Is(err, entity.ErrAgentSkillSourceUnreachable):
+		return agentCapabilityUpstream(api.SkillSourceUnreachable, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPRegistryUnreachable):
+		return agentCapabilityUpstream(api.RegistryUnreachable, err), true
+
+	case errors.Is(err, entity.ErrAgentMCPServerUnreachable):
+		return agentCapabilityUpstream(api.McpServerUnreachable, err), true
+
+	case errors.Is(err, entity.ErrAgentSkillNotFound),
+		errors.Is(err, entity.ErrAgentMCPServerNotFound),
+		errors.Is(err, entity.ErrAgentMCPConnectionNotFound),
+		errors.Is(err, entity.ErrAgentSkillSourceNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrAgentCapabilityEncryptionKeyMissing):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.AgentCapabilitySealingUnavailableProblem{
+				Code:     api.AgentCapabilitySealingUnavailableProblemCodeAgentCapabilitySealingUnavailable,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
 	case errors.Is(err, entity.ErrAIProviderNotConfigured):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
@@ -1306,6 +1375,38 @@ func apiTokenUnusableProblem(code api.APITokenUnusableProblemCode, err error) pr
 	return problemResponse{
 		status: http.StatusConflict,
 		body: api.APITokenUnusableProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func agentCapabilityConflict(code api.AgentCapabilityConflictProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.AgentCapabilityConflictProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func agentCapabilityUpstream(code api.AgentCapabilityUpstreamProblemCode, err error) problemResponse {
+	base := baseProblem(http.StatusBadGateway, err.Error())
+
+	return problemResponse{
+		status: http.StatusBadGateway,
+		body: api.AgentCapabilityUpstreamProblem{
 			Code:     code,
 			Detail:   base.Detail,
 			Instance: base.Instance,

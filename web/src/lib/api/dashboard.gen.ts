@@ -4179,6 +4179,316 @@ export interface paths {
         patch: operations["confirmCodebase"];
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/{agentId}/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the skills and MCP servers an agent runs with
+         * @description Includes the agent's own items and the library items attached to it. Secret values are never returned; only the names of the variables and headers that hold them.
+         */
+        get: operations["getAgentCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Give an agent a skill, imported from a repository or written here */
+        post: operations["addAgentSkill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/mcp-servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Give an agent an MCP server */
+        post: operations["addAgentMcpServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Let an agent use a skill from the workspace library */
+        put: operations["attachLibrarySkill"];
+        post?: never;
+        /** Stop an agent using a library skill, leaving the skill in the library */
+        delete: operations["detachLibrarySkill"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Let an agent use an MCP server from the workspace library */
+        put: operations["attachLibraryMcpServer"];
+        post?: never;
+        /** Stop an agent using a library MCP server, leaving the server in the library */
+        delete: operations["detachLibraryMcpServer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the skills and MCP servers any agent in the workspace can be given */
+        get: operations["getAgentLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-library/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a skill to the workspace library */
+        post: operations["addLibrarySkill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-library/mcp-servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an MCP server to the workspace library */
+        post: operations["addLibraryMcpServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-skills/{skillId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a skill, taking it from every agent that uses it */
+        delete: operations["deleteAgentSkill"];
+        options?: never;
+        head?: never;
+        /** Replace the contents of a skill that was written here */
+        patch: operations["rewriteAgentSkill"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-skills/{skillId}/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update an imported skill to the latest commit of the ref it was imported from */
+        post: operations["pullAgentSkill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-mcp-servers/{serverId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change an MCP server
+         * @description A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+         */
+        put: operations["updateAgentMcpServer"];
+        post?: never;
+        /** Delete an MCP server, taking it from every agent that uses it */
+        delete: operations["deleteAgentMcpServer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start signing an MCP server in with OAuth
+         * @description Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+         */
+        post: operations["connectAgentMcpServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Sign an MCP server out and forget its tokens */
+        delete: operations["disconnectAgentMcpServer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/skill-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the skills a repository, skills.sh page, or install command points at */
+        get: operations["resolveSkillSource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/mcp-registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Search the MCP registry for servers an agent can be given */
+        get: operations["searchMcpRegistry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents/{agentId}/codebases": {
         parameters: {
             query?: never;
@@ -6566,7 +6876,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -7554,6 +7864,181 @@ export interface components {
         AiProviderSealingUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "ai_provider_sealing_unavailable";
+        };
+        /** @enum {string} */
+        AgentSkillSource: "manual" | "github";
+        AgentSkillOrigin: {
+            repository: string;
+            path: string;
+            ref: string;
+            revision: string;
+        };
+        AgentSkill: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            source: components["schemas"]["AgentSkillSource"];
+            origin?: components["schemas"]["AgentSkillOrigin"];
+            instructions: string;
+            contentHash: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            /** Format: int32 */
+            fileCount: number;
+            library: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @enum {string} */
+        AgentMcpTransport: "stdio" | "http" | "sse";
+        /** @enum {string} */
+        AgentMcpAuth: "none" | "headers" | "oauth";
+        /** @enum {string} */
+        AgentMcpConnectionStatus: "connected" | "expired" | "failed";
+        AgentMcpConnection: {
+            status: components["schemas"]["AgentMcpConnectionStatus"];
+            issuer: string;
+            scopes: string[];
+            /** Format: date-time */
+            expiresAt?: string;
+            /** @enum {string} */
+            failure?: "refresh_rejected" | "unreachable";
+            /** Format: date-time */
+            connectedAt: string;
+        };
+        AgentMcpServer: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            transport: components["schemas"]["AgentMcpTransport"];
+            command: string;
+            args: string[];
+            url: string;
+            auth: components["schemas"]["AgentMcpAuth"];
+            envKeys: string[];
+            headerKeys: string[];
+            oauthClientId: string;
+            registryName?: string;
+            registryVersion?: string;
+            library: boolean;
+            connection?: components["schemas"]["AgentMcpConnection"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AgentCapabilities: {
+            skills: components["schemas"]["AgentSkill"][];
+            mcpServers: components["schemas"]["AgentMcpServer"][];
+        };
+        AgentLibrarySkill: {
+            skill: components["schemas"]["AgentSkill"];
+            agentIds: string[];
+        };
+        AgentLibraryMcpServer: {
+            server: components["schemas"]["AgentMcpServer"];
+            agentIds: string[];
+        };
+        AgentLibrary: {
+            skills: components["schemas"]["AgentLibrarySkill"][];
+            mcpServers: components["schemas"]["AgentLibraryMcpServer"][];
+        };
+        AddAgentSkillRequest: {
+            /** @enum {string} */
+            kind: "import" | "manual";
+            /** @description A GitHub repository (owner/repo), a github.com or skills.sh address, or an `npx skills add` command. Used when kind is import. */
+            source?: string;
+            /** @description The directory of the skill inside the source, as listed by skill-sources. Leave it out when the source names exactly one skill. */
+            path?: string;
+            /** @description The SKILL.md to write, frontmatter included. Used when kind is manual. */
+            instructions?: string;
+            /**
+             * Format: byte
+             * @description A zip of the skill directory with SKILL.md at its root or in one top folder. Used when kind is manual, in place of instructions.
+             */
+            archive?: string;
+        };
+        RewriteAgentSkillRequest: {
+            instructions?: string;
+            /** Format: byte */
+            archive?: string;
+        };
+        AgentMcpServerRequest: {
+            name: string;
+            transport: components["schemas"]["AgentMcpTransport"];
+            command?: string;
+            args?: string[];
+            url?: string;
+            auth?: components["schemas"]["AgentMcpAuth"];
+            env?: {
+                [key: string]: string;
+            };
+            headers?: {
+                [key: string]: string;
+            };
+            oauthClientId?: string;
+            oauthClientSecret?: string;
+            registryName?: string;
+            registryVersion?: string;
+        };
+        ConnectAgentMcpServerRequest: {
+            /** @description The path inside Norn the browser comes back to once the sign-in is done */
+            returnTo: string;
+        };
+        AgentMcpAuthorization: {
+            authorizationUrl: string;
+        };
+        SkillCandidate: {
+            name: string;
+            description: string;
+            path: string;
+        };
+        SkillSourceDiscovery: {
+            repository: string;
+            ref: string;
+            revision: string;
+            /** @description The path of the skill the source named, when it named one */
+            suggested?: string;
+            candidates: components["schemas"]["SkillCandidate"][];
+        };
+        McpVariableSpec: {
+            key: string;
+            description?: string;
+            required: boolean;
+            secret: boolean;
+            default?: string;
+        };
+        McpServerTemplate: {
+            transport: components["schemas"]["AgentMcpTransport"];
+            command: string;
+            args: string[];
+            url: string;
+            env: components["schemas"]["McpVariableSpec"][];
+            headers: components["schemas"]["McpVariableSpec"][];
+        };
+        McpRegistryEntry: {
+            name: string;
+            title: string;
+            description: string;
+            version: string;
+            websiteUrl?: string;
+            repository?: string;
+            templates: components["schemas"]["McpServerTemplate"][];
+        };
+        AgentCapabilityConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "skill_name_taken" | "mcp_server_name_taken" | "skill_limit_reached" | "mcp_server_limit_reached" | "already_attached" | "not_attached" | "not_library" | "skill_imported" | "skill_not_imported" | "oauth_not_configured" | "oauth_unsupported" | "oauth_refused" | "destination_refused";
+        };
+        AgentCapabilityUpstreamProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "skill_source_unreachable" | "registry_unreachable" | "mcp_server_unreachable";
+        };
+        AgentCapabilitySealingUnavailableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "agent_capability_sealing_unavailable";
         };
         Webhook: {
             /** Format: uuid */
@@ -8920,6 +9405,33 @@ export interface components {
                 "application/problem+json": components["schemas"]["AiProviderSealingUnavailableProblem"];
             };
         };
+        /** @description The skill or MCP server cannot change as asked */
+        AgentCapabilityConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AgentCapabilityConflictProblem"];
+            };
+        };
+        /** @description A skill source, the MCP registry, or the MCP server could not be reached */
+        AgentCapabilityUpstream: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AgentCapabilityUpstreamProblem"];
+            };
+        };
+        /** @description This instance has no encryption key, so secrets cannot be stored or read */
+        AgentCapabilitySealingUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["AgentCapabilitySealingUnavailableProblem"];
+            };
+        };
         /** @description The run cannot take this step from where it stands */
         ImportConflict: {
             headers: {
@@ -9009,6 +9521,8 @@ export interface components {
         InvitationId: string;
         TokenId: string;
         AgentId: string;
+        AgentSkillId: string;
+        AgentMcpServerId: string;
         CodebaseId: string;
         ArtifactId: string;
         ExecutionId: string;
@@ -17835,6 +18349,561 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["CodebaseConflict"];
             500: components["responses"]["Problem"];
+        };
+    };
+    getAgentCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent's skills and MCP servers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentCapabilities"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    addAgentSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAgentSkillRequest"];
+            };
+        };
+        responses: {
+            /** @description The added skill */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSkill"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            502: components["responses"]["AgentCapabilityUpstream"];
+        };
+    };
+    addAgentMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description The added server */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMcpServer"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AgentCapabilitySealingUnavailable"];
+        };
+    };
+    attachLibrarySkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent now uses the skill */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    detachLibrarySkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent no longer uses the skill */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    attachLibraryMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent now uses the server */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    detachLibraryMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agent no longer uses the server */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getAgentLibrary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The library and which agents use each item */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentLibrary"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    addLibrarySkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddAgentSkillRequest"];
+            };
+        };
+        responses: {
+            /** @description The added skill */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSkill"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            502: components["responses"]["AgentCapabilityUpstream"];
+        };
+    };
+    addLibraryMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description The added server */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMcpServer"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AgentCapabilitySealingUnavailable"];
+        };
+    };
+    deleteAgentSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The skill is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    rewriteAgentSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RewriteAgentSkillRequest"];
+            };
+        };
+        responses: {
+            /** @description The rewritten skill */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSkill"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    pullAgentSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                skillId: components["parameters"]["AgentSkillId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The skill, updated when its source moved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentSkill"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            502: components["responses"]["AgentCapabilityUpstream"];
+        };
+    };
+    updateAgentMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description The changed server */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMcpServer"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AgentCapabilitySealingUnavailable"];
+        };
+    };
+    deleteAgentMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The server is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    connectAgentMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectAgentMcpServerRequest"];
+            };
+        };
+        responses: {
+            /** @description Where to send the browser */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMcpAuthorization"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentCapabilityConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            502: components["responses"]["AgentCapabilityUpstream"];
+            503: components["responses"]["AgentCapabilitySealingUnavailable"];
+        };
+    };
+    disconnectAgentMcpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                serverId: components["parameters"]["AgentMcpServerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The server is signed out */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    resolveSkillSource: {
+        parameters: {
+            query: {
+                source: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The skills found at the source */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillSourceDiscovery"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            502: components["responses"]["AgentCapabilityUpstream"];
+        };
+    };
+    searchMcpRegistry: {
+        parameters: {
+            query?: {
+                search?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching servers and how each can be run */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["McpRegistryEntry"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+            502: components["responses"]["AgentCapabilityUpstream"];
         };
     };
     listAgentCodebases: {

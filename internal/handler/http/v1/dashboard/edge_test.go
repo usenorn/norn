@@ -10,6 +10,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
+	agentcapabilitysvc "github.com/usenorn/norn/internal/service/agentcapability"
 	aiprovidersvc "github.com/usenorn/norn/internal/service/aiprovider"
 	apitokensvc "github.com/usenorn/norn/internal/service/apitoken"
 	attachmentsvc "github.com/usenorn/norn/internal/service/attachment"
@@ -53,8 +54,9 @@ import (
 )
 
 type edgeServices struct {
-	imports     service.Imports
-	aiProviders service.AIProviders
+	imports           service.Imports
+	aiProviders       service.AIProviders
+	agentCapabilities service.AgentCapabilities
 }
 
 func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
@@ -64,6 +66,10 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 
 	if services.aiProviders == nil {
 		services.aiProviders = aiprovidersvc.NewMockAIProviders(ctrl)
+	}
+
+	if services.agentCapabilities == nil {
+		services.agentCapabilities = agentcapabilitysvc.NewMockAgentCapabilities(ctrl)
 	}
 
 	edge := dashboard.New(
@@ -110,8 +116,9 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		scmsvc.NewMockSourceControl(ctrl),
 		scmsvc.NewMockSourceControlApps(ctrl),
 		services.aiProviders,
+		services.agentCapabilities,
 		config.SourceControl{},
-		config.App{Version: "test"},
+		config.App{Version: "test", BaseURL: "https://norn.test"},
 		config.Instance{},
 		config.Password{},
 		config.Session{},

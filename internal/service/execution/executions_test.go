@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 func TestDelegatingAnIssueOffersTheWorkToTheAgentsMachine(t *testing.T) {
@@ -152,6 +153,55 @@ func TestAcceptingAnOfferLeasesTheRunAndTellsTheMachineToBegin(t *testing.T) {
 
 	if start.ExecutionID != execution.ID {
 		t.Fatalf("the start names %q, want %q", start.ExecutionID, execution.ID)
+	}
+}
+
+func TestAStartCarriesTheSkillsAndServersTheAgentWasGiven(t *testing.T) {
+	h := newHarness(t)
+	h.toolkit = entity.AgentToolkit{
+		Skills: []entity.AgentToolkitSkill{{
+			Name: "release-notes", ContentHash: "4f2a", DownloadURL: "https://blobs.test/release-notes.tar.gz",
+		}},
+		MCPServers: []entity.AgentToolkitServer{{
+			Name:      "linear",
+			Transport: entity.AgentMCPHTTP,
+			URL:       "https://mcp.linear.test/mcp",
+			Headers:   map[string]string{"Authorization": "Bearer at-rae"},
+		}},
+	}
+
+	execution := h.execution(entity.ExecutionQueued)
+	h.holding(execution)
+	h.moving()
+
+	if err := h.service.Accepted(context.Background(), h.runner, message(
+		"01TKT", entity.ChannelExecutionAccepted, execution.ID, nil,
+	)); err != nil {
+		t.Fatalf("accept an offer: %v", err)
+	}
+
+	sent, ok := h.sent(entity.ChannelExecutionStart)
+	if !ok {
+		t.Fatal("the machine accepted an offer and was never told to start")
+	}
+
+	var start channelv1.Start
+	if err := json.Unmarshal(sent.Payload, &start); err != nil {
+		t.Fatalf("decode start: %v", err)
+	}
+
+	if len(start.Toolkit.Skills) != 1 || start.Toolkit.Skills[0].DownloadURL != "https://blobs.test/release-notes.tar.gz" {
+		t.Errorf("skills = %+v, want the agent's one skill with its download link", start.Toolkit.Skills)
+	}
+
+	if len(start.Toolkit.MCPServers) != 1 ||
+		start.Toolkit.MCPServers[0].Headers["Authorization"] != "Bearer at-rae" ||
+		start.Toolkit.MCPServers[0].Transport != "http" {
+		t.Errorf(
+			"mcp servers = %+v, want the signed-in server with its bearer header so the run can "+
+				"reach it without a person present",
+			start.Toolkit.MCPServers,
+		)
 	}
 }
 

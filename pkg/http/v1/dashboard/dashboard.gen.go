@@ -318,6 +318,24 @@ func (e ActivitySubjectKind) Valid() bool {
 	}
 }
 
+// Defines values for AddAgentSkillRequestKind.
+const (
+	AddAgentSkillRequestKindImport AddAgentSkillRequestKind = "import"
+	AddAgentSkillRequestKindManual AddAgentSkillRequestKind = "manual"
+)
+
+// Valid indicates whether the value is a known member of the AddAgentSkillRequestKind enum.
+func (e AddAgentSkillRequestKind) Valid() bool {
+	switch e {
+	case AddAgentSkillRequestKindImport:
+		return true
+	case AddAgentSkillRequestKindManual:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentAction.
 const (
 	AgentActionComment     AgentAction = "comment"
@@ -336,6 +354,93 @@ func (e AgentAction) Valid() bool {
 	case AgentActionIssueEdit:
 		return true
 	case AgentActionStateChange:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentCapabilityConflictProblemCode.
+const (
+	AlreadyAttached       AgentCapabilityConflictProblemCode = "already_attached"
+	DestinationRefused    AgentCapabilityConflictProblemCode = "destination_refused"
+	McpServerLimitReached AgentCapabilityConflictProblemCode = "mcp_server_limit_reached"
+	McpServerNameTaken    AgentCapabilityConflictProblemCode = "mcp_server_name_taken"
+	NotAttached           AgentCapabilityConflictProblemCode = "not_attached"
+	NotLibrary            AgentCapabilityConflictProblemCode = "not_library"
+	OauthNotConfigured    AgentCapabilityConflictProblemCode = "oauth_not_configured"
+	OauthRefused          AgentCapabilityConflictProblemCode = "oauth_refused"
+	OauthUnsupported      AgentCapabilityConflictProblemCode = "oauth_unsupported"
+	SkillImported         AgentCapabilityConflictProblemCode = "skill_imported"
+	SkillLimitReached     AgentCapabilityConflictProblemCode = "skill_limit_reached"
+	SkillNameTaken        AgentCapabilityConflictProblemCode = "skill_name_taken"
+	SkillNotImported      AgentCapabilityConflictProblemCode = "skill_not_imported"
+)
+
+// Valid indicates whether the value is a known member of the AgentCapabilityConflictProblemCode enum.
+func (e AgentCapabilityConflictProblemCode) Valid() bool {
+	switch e {
+	case AlreadyAttached:
+		return true
+	case DestinationRefused:
+		return true
+	case McpServerLimitReached:
+		return true
+	case McpServerNameTaken:
+		return true
+	case NotAttached:
+		return true
+	case NotLibrary:
+		return true
+	case OauthNotConfigured:
+		return true
+	case OauthRefused:
+		return true
+	case OauthUnsupported:
+		return true
+	case SkillImported:
+		return true
+	case SkillLimitReached:
+		return true
+	case SkillNameTaken:
+		return true
+	case SkillNotImported:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentCapabilitySealingUnavailableProblemCode.
+const (
+	AgentCapabilitySealingUnavailableProblemCodeAgentCapabilitySealingUnavailable AgentCapabilitySealingUnavailableProblemCode = "agent_capability_sealing_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the AgentCapabilitySealingUnavailableProblemCode enum.
+func (e AgentCapabilitySealingUnavailableProblemCode) Valid() bool {
+	switch e {
+	case AgentCapabilitySealingUnavailableProblemCodeAgentCapabilitySealingUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentCapabilityUpstreamProblemCode.
+const (
+	McpServerUnreachable   AgentCapabilityUpstreamProblemCode = "mcp_server_unreachable"
+	RegistryUnreachable    AgentCapabilityUpstreamProblemCode = "registry_unreachable"
+	SkillSourceUnreachable AgentCapabilityUpstreamProblemCode = "skill_source_unreachable"
+)
+
+// Valid indicates whether the value is a known member of the AgentCapabilityUpstreamProblemCode enum.
+func (e AgentCapabilityUpstreamProblemCode) Valid() bool {
+	switch e {
+	case McpServerUnreachable:
+		return true
+	case RegistryUnreachable:
+		return true
+	case SkillSourceUnreachable:
 		return true
 	default:
 		return false
@@ -417,6 +522,87 @@ func (e AgentIcon) Valid() bool {
 	}
 }
 
+// Defines values for AgentMcpAuth.
+const (
+	AgentMcpAuthHeaders AgentMcpAuth = "headers"
+	AgentMcpAuthNone    AgentMcpAuth = "none"
+	AgentMcpAuthOauth   AgentMcpAuth = "oauth"
+)
+
+// Valid indicates whether the value is a known member of the AgentMcpAuth enum.
+func (e AgentMcpAuth) Valid() bool {
+	switch e {
+	case AgentMcpAuthHeaders:
+		return true
+	case AgentMcpAuthNone:
+		return true
+	case AgentMcpAuthOauth:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentMcpConnectionFailure.
+const (
+	AgentMcpConnectionFailureRefreshRejected AgentMcpConnectionFailure = "refresh_rejected"
+	AgentMcpConnectionFailureUnreachable     AgentMcpConnectionFailure = "unreachable"
+)
+
+// Valid indicates whether the value is a known member of the AgentMcpConnectionFailure enum.
+func (e AgentMcpConnectionFailure) Valid() bool {
+	switch e {
+	case AgentMcpConnectionFailureRefreshRejected:
+		return true
+	case AgentMcpConnectionFailureUnreachable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentMcpConnectionStatus.
+const (
+	AgentMcpConnectionStatusConnected AgentMcpConnectionStatus = "connected"
+	AgentMcpConnectionStatusExpired   AgentMcpConnectionStatus = "expired"
+	AgentMcpConnectionStatusFailed    AgentMcpConnectionStatus = "failed"
+)
+
+// Valid indicates whether the value is a known member of the AgentMcpConnectionStatus enum.
+func (e AgentMcpConnectionStatus) Valid() bool {
+	switch e {
+	case AgentMcpConnectionStatusConnected:
+		return true
+	case AgentMcpConnectionStatusExpired:
+		return true
+	case AgentMcpConnectionStatusFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentMcpTransport.
+const (
+	AgentMcpTransportHttp  AgentMcpTransport = "http"
+	AgentMcpTransportSse   AgentMcpTransport = "sse"
+	AgentMcpTransportStdio AgentMcpTransport = "stdio"
+)
+
+// Valid indicates whether the value is a known member of the AgentMcpTransport enum.
+func (e AgentMcpTransport) Valid() bool {
+	switch e {
+	case AgentMcpTransportHttp:
+		return true
+	case AgentMcpTransportSse:
+		return true
+	case AgentMcpTransportStdio:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentProposalStatus.
 const (
 	AgentProposalStatusApplied  AgentProposalStatus = "applied"
@@ -435,6 +621,24 @@ func (e AgentProposalStatus) Valid() bool {
 	case AgentProposalStatusPending:
 		return true
 	case AgentProposalStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentSkillSource.
+const (
+	AgentSkillSourceGithub AgentSkillSource = "github"
+	AgentSkillSourceManual AgentSkillSource = "manual"
+)
+
+// Valid indicates whether the value is a known member of the AgentSkillSource enum.
+func (e AgentSkillSource) Valid() bool {
+	switch e {
+	case AgentSkillSourceGithub:
+		return true
+	case AgentSkillSourceManual:
 		return true
 	default:
 		return false
@@ -614,10 +818,20 @@ const (
 	AuditActionAccountEmailChanged          AuditAction = "account.email_changed"
 	AuditActionAccountPasswordChanged       AuditAction = "account.password_changed"
 	AuditActionAccountPasswordReset         AuditAction = "account.password_reset"
+	AuditActionAgentCapabilityAttached      AuditAction = "agent.capability_attached"
+	AuditActionAgentCapabilityDetached      AuditAction = "agent.capability_detached"
 	AuditActionAgentDisabled                AuditAction = "agent.disabled"
 	AuditActionAgentEnabled                 AuditAction = "agent.enabled"
+	AuditActionAgentMcpConnected            AuditAction = "agent.mcp_connected"
+	AuditActionAgentMcpDisconnected         AuditAction = "agent.mcp_disconnected"
+	AuditActionAgentMcpServerAdded          AuditAction = "agent.mcp_server_added"
+	AuditActionAgentMcpServerRemoved        AuditAction = "agent.mcp_server_removed"
+	AuditActionAgentMcpServerUpdated        AuditAction = "agent.mcp_server_updated"
 	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
 	AuditActionAgentRegistered              AuditAction = "agent.registered"
+	AuditActionAgentSkillAdded              AuditAction = "agent.skill_added"
+	AuditActionAgentSkillRemoved            AuditAction = "agent.skill_removed"
+	AuditActionAgentSkillUpdated            AuditAction = "agent.skill_updated"
 	AuditActionAiProviderConfigured         AuditAction = "ai_provider.configured"
 	AuditActionAiProviderEndpointChanged    AuditAction = "ai_provider.endpoint_changed"
 	AuditActionAiProviderKeyReplaced        AuditAction = "ai_provider.key_replaced"
@@ -680,13 +894,33 @@ func (e AuditAction) Valid() bool {
 		return true
 	case AuditActionAccountPasswordReset:
 		return true
+	case AuditActionAgentCapabilityAttached:
+		return true
+	case AuditActionAgentCapabilityDetached:
+		return true
 	case AuditActionAgentDisabled:
 		return true
 	case AuditActionAgentEnabled:
 		return true
+	case AuditActionAgentMcpConnected:
+		return true
+	case AuditActionAgentMcpDisconnected:
+		return true
+	case AuditActionAgentMcpServerAdded:
+		return true
+	case AuditActionAgentMcpServerRemoved:
+		return true
+	case AuditActionAgentMcpServerUpdated:
+		return true
 	case AuditActionAgentProposalDecided:
 		return true
 	case AuditActionAgentRegistered:
+		return true
+	case AuditActionAgentSkillAdded:
+		return true
+	case AuditActionAgentSkillRemoved:
+		return true
+	case AuditActionAgentSkillUpdated:
 		return true
 	case AuditActionAiProviderConfigured:
 		return true
@@ -1919,19 +2153,19 @@ func (e ForbiddenProblemReason) Valid() bool {
 
 // Defines values for GatewayReach.
 const (
-	Reachable    GatewayReach = "reachable"
-	Unconfigured GatewayReach = "unconfigured"
-	Unreachable  GatewayReach = "unreachable"
+	GatewayReachReachable    GatewayReach = "reachable"
+	GatewayReachUnconfigured GatewayReach = "unconfigured"
+	GatewayReachUnreachable  GatewayReach = "unreachable"
 )
 
 // Valid indicates whether the value is a known member of the GatewayReach enum.
 func (e GatewayReach) Valid() bool {
 	switch e {
-	case Reachable:
+	case GatewayReachReachable:
 		return true
-	case Unconfigured:
+	case GatewayReachUnconfigured:
 		return true
-	case Unreachable:
+	case GatewayReachUnreachable:
 		return true
 	default:
 		return false
@@ -2960,16 +3194,16 @@ func (e MembershipRole) Valid() bool {
 
 // Defines values for MembershipSource.
 const (
-	Directory MembershipSource = "directory"
-	Manual    MembershipSource = "manual"
+	MembershipSourceDirectory MembershipSource = "directory"
+	MembershipSourceManual    MembershipSource = "manual"
 )
 
 // Valid indicates whether the value is a known member of the MembershipSource enum.
 func (e MembershipSource) Valid() bool {
 	switch e {
-	case Directory:
+	case MembershipSourceDirectory:
 		return true
-	case Manual:
+	case MembershipSourceManual:
 		return true
 	default:
 		return false
@@ -3731,19 +3965,19 @@ func (e SourceControlDeliveryOutcome) Valid() bool {
 
 // Defines values for SourceControlProvider.
 const (
-	Gitea  SourceControlProvider = "gitea"
-	Github SourceControlProvider = "github"
-	Gitlab SourceControlProvider = "gitlab"
+	SourceControlProviderGitea  SourceControlProvider = "gitea"
+	SourceControlProviderGithub SourceControlProvider = "github"
+	SourceControlProviderGitlab SourceControlProvider = "gitlab"
 )
 
 // Valid indicates whether the value is a known member of the SourceControlProvider enum.
 func (e SourceControlProvider) Valid() bool {
 	switch e {
-	case Gitea:
+	case SourceControlProviderGitea:
 		return true
-	case Github:
+	case SourceControlProviderGithub:
 		return true
-	case Gitlab:
+	case SourceControlProviderGitlab:
 		return true
 	default:
 		return false
@@ -3791,16 +4025,16 @@ func (e SourceControlSealingUnavailableProblemCode) Valid() bool {
 
 // Defines values for SourceControlStatus.
 const (
-	Broken    SourceControlStatus = "broken"
-	Connected SourceControlStatus = "connected"
+	SourceControlStatusBroken    SourceControlStatus = "broken"
+	SourceControlStatusConnected SourceControlStatus = "connected"
 )
 
 // Valid indicates whether the value is a known member of the SourceControlStatus enum.
 func (e SourceControlStatus) Valid() bool {
 	switch e {
-	case Broken:
+	case SourceControlStatusBroken:
 		return true
-	case Connected:
+	case SourceControlStatusConnected:
 		return true
 	default:
 		return false
@@ -4823,6 +5057,25 @@ type ActivityPage struct {
 // ActivitySubjectKind defines model for ActivitySubjectKind.
 type ActivitySubjectKind string
 
+// AddAgentSkillRequest defines model for AddAgentSkillRequest.
+type AddAgentSkillRequest struct {
+	// Archive A zip of the skill directory with SKILL.md at its root or in one top folder. Used when kind is manual, in place of instructions.
+	Archive *[]byte `json:"archive,omitempty"`
+
+	// Instructions The SKILL.md to write, frontmatter included. Used when kind is manual.
+	Instructions *string                  `json:"instructions,omitempty"`
+	Kind         AddAgentSkillRequestKind `json:"kind"`
+
+	// Path The directory of the skill inside the source, as listed by skill-sources. Leave it out when the source names exactly one skill.
+	Path *string `json:"path,omitempty"`
+
+	// Source A GitHub repository (owner/repo), a github.com or skills.sh address, or an `npx skills add` command. Used when kind is import.
+	Source *string `json:"source,omitempty"`
+}
+
+// AddAgentSkillRequestKind defines model for AddAgentSkillRequest.Kind.
+type AddAgentSkillRequestKind string
+
 // AddIssueRelationRequest defines model for AddIssueRelationRequest.
 type AddIssueRelationRequest struct {
 	// CloseDuplicate Also move the duplicate to its team's abandoned state
@@ -4897,6 +5150,54 @@ type AgentAuthority struct {
 	TeamIds  []openapi_types.UUID `json:"teamIds"`
 }
 
+// AgentCapabilities defines model for AgentCapabilities.
+type AgentCapabilities struct {
+	McpServers []AgentMcpServer `json:"mcpServers"`
+	Skills     []AgentSkill     `json:"skills"`
+}
+
+// AgentCapabilityConflictProblem defines model for AgentCapabilityConflictProblem.
+type AgentCapabilityConflictProblem struct {
+	Code     AgentCapabilityConflictProblemCode `json:"code"`
+	Detail   *string                            `json:"detail,omitempty"`
+	Errors   *[]FieldError                      `json:"errors,omitempty"`
+	Instance *string                            `json:"instance,omitempty"`
+	Status   int32                              `json:"status"`
+	Title    string                             `json:"title"`
+	Type     string                             `json:"type"`
+}
+
+// AgentCapabilityConflictProblemCode defines model for AgentCapabilityConflictProblem.Code.
+type AgentCapabilityConflictProblemCode string
+
+// AgentCapabilitySealingUnavailableProblem defines model for AgentCapabilitySealingUnavailableProblem.
+type AgentCapabilitySealingUnavailableProblem struct {
+	Code     AgentCapabilitySealingUnavailableProblemCode `json:"code"`
+	Detail   *string                                      `json:"detail,omitempty"`
+	Errors   *[]FieldError                                `json:"errors,omitempty"`
+	Instance *string                                      `json:"instance,omitempty"`
+	Status   int32                                        `json:"status"`
+	Title    string                                       `json:"title"`
+	Type     string                                       `json:"type"`
+}
+
+// AgentCapabilitySealingUnavailableProblemCode defines model for AgentCapabilitySealingUnavailableProblem.Code.
+type AgentCapabilitySealingUnavailableProblemCode string
+
+// AgentCapabilityUpstreamProblem defines model for AgentCapabilityUpstreamProblem.
+type AgentCapabilityUpstreamProblem struct {
+	Code     AgentCapabilityUpstreamProblemCode `json:"code"`
+	Detail   *string                            `json:"detail,omitempty"`
+	Errors   *[]FieldError                      `json:"errors,omitempty"`
+	Instance *string                            `json:"instance,omitempty"`
+	Status   int32                              `json:"status"`
+	Title    string                             `json:"title"`
+	Type     string                             `json:"type"`
+}
+
+// AgentCapabilityUpstreamProblemCode defines model for AgentCapabilityUpstreamProblem.Code.
+type AgentCapabilityUpstreamProblemCode string
+
 // AgentHeldProblem defines model for AgentHeldProblem.
 type AgentHeldProblem struct {
 	Code       AgentHeldProblemCode `json:"code"`
@@ -4917,6 +5218,87 @@ type AgentHold string
 
 // AgentIcon defines model for AgentIcon.
 type AgentIcon string
+
+// AgentLibrary defines model for AgentLibrary.
+type AgentLibrary struct {
+	McpServers []AgentLibraryMcpServer `json:"mcpServers"`
+	Skills     []AgentLibrarySkill     `json:"skills"`
+}
+
+// AgentLibraryMcpServer defines model for AgentLibraryMcpServer.
+type AgentLibraryMcpServer struct {
+	AgentIds []openapi_types.UUID `json:"agentIds"`
+	Server   AgentMcpServer       `json:"server"`
+}
+
+// AgentLibrarySkill defines model for AgentLibrarySkill.
+type AgentLibrarySkill struct {
+	AgentIds []openapi_types.UUID `json:"agentIds"`
+	Skill    AgentSkill           `json:"skill"`
+}
+
+// AgentMcpAuth defines model for AgentMcpAuth.
+type AgentMcpAuth string
+
+// AgentMcpAuthorization defines model for AgentMcpAuthorization.
+type AgentMcpAuthorization struct {
+	AuthorizationUrl string `json:"authorizationUrl"`
+}
+
+// AgentMcpConnection defines model for AgentMcpConnection.
+type AgentMcpConnection struct {
+	ConnectedAt time.Time                  `json:"connectedAt"`
+	ExpiresAt   *time.Time                 `json:"expiresAt,omitempty"`
+	Failure     *AgentMcpConnectionFailure `json:"failure,omitempty"`
+	Issuer      string                     `json:"issuer"`
+	Scopes      []string                   `json:"scopes"`
+	Status      AgentMcpConnectionStatus   `json:"status"`
+}
+
+// AgentMcpConnectionFailure defines model for AgentMcpConnection.Failure.
+type AgentMcpConnectionFailure string
+
+// AgentMcpConnectionStatus defines model for AgentMcpConnectionStatus.
+type AgentMcpConnectionStatus string
+
+// AgentMcpServer defines model for AgentMcpServer.
+type AgentMcpServer struct {
+	Args            []string            `json:"args"`
+	Auth            AgentMcpAuth        `json:"auth"`
+	Command         string              `json:"command"`
+	Connection      *AgentMcpConnection `json:"connection,omitempty"`
+	CreatedAt       time.Time           `json:"createdAt"`
+	EnvKeys         []string            `json:"envKeys"`
+	HeaderKeys      []string            `json:"headerKeys"`
+	Id              openapi_types.UUID  `json:"id"`
+	Library         bool                `json:"library"`
+	Name            string              `json:"name"`
+	OauthClientId   string              `json:"oauthClientId"`
+	RegistryName    *string             `json:"registryName,omitempty"`
+	RegistryVersion *string             `json:"registryVersion,omitempty"`
+	Transport       AgentMcpTransport   `json:"transport"`
+	UpdatedAt       time.Time           `json:"updatedAt"`
+	Url             string              `json:"url"`
+}
+
+// AgentMcpServerRequest defines model for AgentMcpServerRequest.
+type AgentMcpServerRequest struct {
+	Args              *[]string          `json:"args,omitempty"`
+	Auth              *AgentMcpAuth      `json:"auth,omitempty"`
+	Command           *string            `json:"command,omitempty"`
+	Env               *map[string]string `json:"env,omitempty"`
+	Headers           *map[string]string `json:"headers,omitempty"`
+	Name              string             `json:"name"`
+	OauthClientId     *string            `json:"oauthClientId,omitempty"`
+	OauthClientSecret *string            `json:"oauthClientSecret,omitempty"`
+	RegistryName      *string            `json:"registryName,omitempty"`
+	RegistryVersion   *string            `json:"registryVersion,omitempty"`
+	Transport         AgentMcpTransport  `json:"transport"`
+	Url               *string            `json:"url,omitempty"`
+}
+
+// AgentMcpTransport defines model for AgentMcpTransport.
+type AgentMcpTransport string
 
 // AgentProposal defines model for AgentProposal.
 type AgentProposal struct {
@@ -4999,6 +5381,33 @@ type AgentSettings struct {
 	// HoldStateChanges Whether a write of this kind waits for a person.
 	HoldStateChanges AgentHold `json:"holdStateChanges"`
 }
+
+// AgentSkill defines model for AgentSkill.
+type AgentSkill struct {
+	ContentHash  string             `json:"contentHash"`
+	CreatedAt    time.Time          `json:"createdAt"`
+	Description  string             `json:"description"`
+	FileCount    int32              `json:"fileCount"`
+	Id           openapi_types.UUID `json:"id"`
+	Instructions string             `json:"instructions"`
+	Library      bool               `json:"library"`
+	Name         string             `json:"name"`
+	Origin       *AgentSkillOrigin  `json:"origin,omitempty"`
+	SizeBytes    int64              `json:"sizeBytes"`
+	Source       AgentSkillSource   `json:"source"`
+	UpdatedAt    time.Time          `json:"updatedAt"`
+}
+
+// AgentSkillOrigin defines model for AgentSkillOrigin.
+type AgentSkillOrigin struct {
+	Path       string `json:"path"`
+	Ref        string `json:"ref"`
+	Repository string `json:"repository"`
+	Revision   string `json:"revision"`
+}
+
+// AgentSkillSource defines model for AgentSkillSource.
+type AgentSkillSource string
 
 // AgentSource defines model for AgentSource.
 type AgentSource struct {
@@ -5497,6 +5906,12 @@ type ConfirmedSignUp struct {
 
 	// Slot The session this call issued. Name it to act as the account the link created.
 	Slot string `json:"slot"`
+}
+
+// ConnectAgentMcpServerRequest defines model for ConnectAgentMcpServerRequest.
+type ConnectAgentMcpServerRequest struct {
+	// ReturnTo The path inside Norn the browser comes back to once the sign-in is done
+	ReturnTo string `json:"returnTo"`
 }
 
 // ConnectCodebaseRequest defines model for ConnectCodebaseRequest.
@@ -7403,6 +7818,36 @@ type MapSCMIdentityRequest struct {
 	Provider SourceControlProvider `json:"provider"`
 }
 
+// McpRegistryEntry defines model for McpRegistryEntry.
+type McpRegistryEntry struct {
+	Description string              `json:"description"`
+	Name        string              `json:"name"`
+	Repository  *string             `json:"repository,omitempty"`
+	Templates   []McpServerTemplate `json:"templates"`
+	Title       string              `json:"title"`
+	Version     string              `json:"version"`
+	WebsiteUrl  *string             `json:"websiteUrl,omitempty"`
+}
+
+// McpServerTemplate defines model for McpServerTemplate.
+type McpServerTemplate struct {
+	Args      []string          `json:"args"`
+	Command   string            `json:"command"`
+	Env       []McpVariableSpec `json:"env"`
+	Headers   []McpVariableSpec `json:"headers"`
+	Transport AgentMcpTransport `json:"transport"`
+	Url       string            `json:"url"`
+}
+
+// McpVariableSpec defines model for McpVariableSpec.
+type McpVariableSpec struct {
+	Default     *string `json:"default,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Key         string  `json:"key"`
+	Required    bool    `json:"required"`
+	Secret      bool    `json:"secret"`
+}
+
 // MemberPage defines model for MemberPage.
 type MemberPage struct {
 	Members    []Membership `json:"members"`
@@ -7929,6 +8374,12 @@ type RetainExecutionRequest struct {
 
 // ReviewVerdict defines model for ReviewVerdict.
 type ReviewVerdict string
+
+// RewriteAgentSkillRequest defines model for RewriteAgentSkillRequest.
+type RewriteAgentSkillRequest struct {
+	Archive      *[]byte `json:"archive,omitempty"`
+	Instructions *string `json:"instructions,omitempty"`
+}
 
 // Runner defines model for Runner.
 type Runner struct {
@@ -8470,6 +8921,24 @@ type SignedInWorkspace struct {
 	// Slot The session to name when acting in this workspace.
 	Slot      string    `json:"slot"`
 	Workspace Workspace `json:"workspace"`
+}
+
+// SkillCandidate defines model for SkillCandidate.
+type SkillCandidate struct {
+	Description string `json:"description"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+}
+
+// SkillSourceDiscovery defines model for SkillSourceDiscovery.
+type SkillSourceDiscovery struct {
+	Candidates []SkillCandidate `json:"candidates"`
+	Ref        string           `json:"ref"`
+	Repository string           `json:"repository"`
+	Revision   string           `json:"revision"`
+
+	// Suggested The path of the skill the source named, when it named one
+	Suggested *string `json:"suggested,omitempty"`
 }
 
 // SnoozeNotificationRequest defines model for SnoozeNotificationRequest.
@@ -9284,6 +9753,12 @@ type ActivityOrder string
 // AgentId defines model for AgentId.
 type AgentId = openapi_types.UUID
 
+// AgentMcpServerId defines model for AgentMcpServerId.
+type AgentMcpServerId = openapi_types.UUID
+
+// AgentSkillId defines model for AgentSkillId.
+type AgentSkillId = openapi_types.UUID
+
 // ArtifactId defines model for ArtifactId.
 type ArtifactId = openapi_types.UUID
 
@@ -9454,6 +9929,15 @@ type APITokenUnusable = APITokenUnusableProblem
 
 // AccountLocked defines model for AccountLocked.
 type AccountLocked = AccountLockedProblem
+
+// AgentCapabilityConflict defines model for AgentCapabilityConflict.
+type AgentCapabilityConflict = AgentCapabilityConflictProblem
+
+// AgentCapabilitySealingUnavailable defines model for AgentCapabilitySealingUnavailable.
+type AgentCapabilitySealingUnavailable = AgentCapabilitySealingUnavailableProblem
+
+// AgentCapabilityUpstream defines model for AgentCapabilityUpstream.
+type AgentCapabilityUpstream = AgentCapabilityUpstreamProblem
 
 // AgentHeld defines model for AgentHeld.
 type AgentHeld = AgentHeldProblem
@@ -9783,6 +10267,11 @@ type UploadWorkspaceLogoMultipartBody struct {
 	File openapi_types.File `json:"file"`
 }
 
+// SearchMcpRegistryParams defines parameters for SearchMcpRegistry.
+type SearchMcpRegistryParams struct {
+	Search *string `form:"search,omitempty" json:"search,omitempty"`
+}
+
 // ListWorkspaceMembersParams defines parameters for ListWorkspaceMembers.
 type ListWorkspaceMembersParams struct {
 	Query  *string `form:"query,omitempty" json:"query,omitempty"`
@@ -9845,6 +10334,11 @@ type SearchWorkspaceParams struct {
 	Q     string        `form:"q" json:"q"`
 	Kinds *[]SearchKind `form:"kinds,omitempty" json:"kinds,omitempty"`
 	Limit *int32        `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ResolveSkillSourceParams defines parameters for ResolveSkillSource.
+type ResolveSkillSourceParams struct {
+	Source string `form:"source" json:"source"`
 }
 
 // ListWorkspaceSourceControlInstallationsParams defines parameters for ListWorkspaceSourceControlInstallations.
@@ -9966,11 +10460,32 @@ type CreateWorkspaceJSONRequestBody = CreateWorkspaceRequest
 // UpdateWorkspaceJSONRequestBody defines body for UpdateWorkspace for application/json ContentType.
 type UpdateWorkspaceJSONRequestBody = UpdateWorkspaceRequest
 
+// AddLibraryMcpServerJSONRequestBody defines body for AddLibraryMcpServer for application/json ContentType.
+type AddLibraryMcpServerJSONRequestBody = AgentMcpServerRequest
+
+// AddLibrarySkillJSONRequestBody defines body for AddLibrarySkill for application/json ContentType.
+type AddLibrarySkillJSONRequestBody = AddAgentSkillRequest
+
+// UpdateAgentMcpServerJSONRequestBody defines body for UpdateAgentMcpServer for application/json ContentType.
+type UpdateAgentMcpServerJSONRequestBody = AgentMcpServerRequest
+
+// ConnectAgentMcpServerJSONRequestBody defines body for ConnectAgentMcpServer for application/json ContentType.
+type ConnectAgentMcpServerJSONRequestBody = ConnectAgentMcpServerRequest
+
 // ApproveWorkspaceAgentProposalJSONRequestBody defines body for ApproveWorkspaceAgentProposal for application/json ContentType.
 type ApproveWorkspaceAgentProposalJSONRequestBody = ApproveAgentProposalRequest
 
+// RewriteAgentSkillJSONRequestBody defines body for RewriteAgentSkill for application/json ContentType.
+type RewriteAgentSkillJSONRequestBody = RewriteAgentSkillRequest
+
 // RegisterWorkspaceAgentJSONRequestBody defines body for RegisterWorkspaceAgent for application/json ContentType.
 type RegisterWorkspaceAgentJSONRequestBody = RegisterAgentRequest
+
+// AddAgentMcpServerJSONRequestBody defines body for AddAgentMcpServer for application/json ContentType.
+type AddAgentMcpServerJSONRequestBody = AgentMcpServerRequest
+
+// AddAgentSkillJSONRequestBody defines body for AddAgentSkill for application/json ContentType.
+type AddAgentSkillJSONRequestBody = AddAgentSkillRequest
 
 // SetWorkspaceAiProviderJSONRequestBody defines body for SetWorkspaceAiProvider for application/json ContentType.
 type SetWorkspaceAiProviderJSONRequestBody = SetWorkspaceAiProviderRequest
@@ -10894,6 +11409,85 @@ type ClientInterface interface {
 	// Corresponds with PATCH /workspaces/{workspaceId} (the `UpdateWorkspace` operationId).
 	UpdateWorkspace(ctx context.Context, workspaceId WorkspaceId, body UpdateWorkspaceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAgentLibrary List the skills and MCP servers any agent in the workspace can be given
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agent-library (the `GetAgentLibrary` operationId).
+	GetAgentLibrary(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddLibraryMcpServerWithBody Add an MCP server to the workspace library
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+	AddLibraryMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddLibraryMcpServer Add an MCP server to the workspace library
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+	AddLibraryMcpServer(ctx context.Context, workspaceId WorkspaceId, body AddLibraryMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddLibrarySkillWithBody Add a skill to the workspace library
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+	AddLibrarySkillWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddLibrarySkill Add a skill to the workspace library
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+	AddLibrarySkill(ctx context.Context, workspaceId WorkspaceId, body AddLibrarySkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAgentMcpServer Delete an MCP server, taking it from every agent that uses it
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `DeleteAgentMcpServer` operationId).
+	DeleteAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateAgentMcpServerWithBody Change an MCP server
+	//
+	// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+	UpdateAgentMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateAgentMcpServer Change an MCP server
+	//
+	// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+	UpdateAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body UpdateAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectAgentMcpServerWithBody Start signing an MCP server in with OAuth
+	//
+	// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+	ConnectAgentMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectAgentMcpServer Start signing an MCP server in with OAuth
+	//
+	// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+	ConnectAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body ConnectAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DisconnectAgentMcpServer Sign an MCP server out and forget its tokens
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection (the `DisconnectAgentMcpServer` operationId).
+	DisconnectAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListWorkspaceAgentProposals Agent actions waiting for a person to approve them
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/agent-proposals (the `ListWorkspaceAgentProposals` operationId).
@@ -10917,6 +11511,30 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject (the `RejectWorkspaceAgentProposal` operationId).
 	RejectWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agent-skills/{skillId} (the `DeleteAgentSkill` operationId).
+	DeleteAgentSkill(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RewriteAgentSkillWithBody Replace the contents of a skill that was written here
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+	RewriteAgentSkillWithBody(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RewriteAgentSkill Replace the contents of a skill that was written here
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+	RewriteAgentSkill(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, body RewriteAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PullAgentSkill Update an imported skill to the latest commit of the ref it was imported from
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-skills/{skillId}/pull (the `PullAgentSkill` operationId).
+	PullAgentSkill(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceAgents List the agents registered in this workspace
 	//
@@ -10959,6 +11577,13 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/activity (the `ListWorkspaceAgentActivity` operationId).
 	ListWorkspaceAgentActivity(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, params *ListWorkspaceAgentActivityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetAgentCapabilities List the skills and MCP servers an agent runs with
+	//
+	// Includes the agent's own items and the library items attached to it. Secret values are never returned; only the names of the variables and headers that hold them.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/capabilities (the `GetAgentCapabilities` operationId).
+	GetAgentCapabilities(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAgentCodebases The folders this agent's machines hold
 	//
 	// A runner is somebody's own machine, so this serves the agent's owner and workspace administrators. Anyone else is told the agent does not exist rather than that they may not look. There is deliberately no workspace-wide codebase listing.
@@ -10984,6 +11609,54 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `DetachLibraryMcpServer` operationId).
+	DetachLibraryMcpServer(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AttachLibraryMcpServer Let an agent use an MCP server from the workspace library
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `AttachLibraryMcpServer` operationId).
+	AttachLibraryMcpServer(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DetachLibrarySkill Stop an agent using a library skill, leaving the skill in the library
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `DetachLibrarySkill` operationId).
+	DetachLibrarySkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AttachLibrarySkill Let an agent use a skill from the workspace library
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `AttachLibrarySkill` operationId).
+	AttachLibrarySkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddAgentMcpServerWithBody Give an agent an MCP server
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+	AddAgentMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddAgentMcpServer Give an agent an MCP server
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+	AddAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddAgentSkillWithBody Give an agent a skill, imported from a repository or written here
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+	AddAgentSkillWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddAgentSkill Give an agent a skill, imported from a repository or written here
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+	AddAgentSkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RemoveWorkspaceAiProvider Remove the provider and discard its key
 	//
@@ -12119,6 +12792,11 @@ type ClientInterface interface {
 	// Corresponds with PUT /workspaces/{workspaceId}/logo (the `UploadWorkspaceLogo` operationId).
 	UploadWorkspaceLogoWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SearchMcpRegistry Search the MCP registry for servers an agent can be given
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/mcp-registry (the `SearchMcpRegistry` operationId).
+	SearchMcpRegistry(ctx context.Context, workspaceId WorkspaceId, params *SearchMcpRegistryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/members (the `ListWorkspaceMembers` operationId).
@@ -12439,6 +13117,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/search (the `SearchWorkspace` operationId).
 	SearchWorkspace(ctx context.Context, workspaceId WorkspaceId, params *SearchWorkspaceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResolveSkillSource List the skills a repository, skills.sh page, or install command points at
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/skill-sources (the `ResolveSkillSource` operationId).
+	ResolveSkillSource(ctx context.Context, workspaceId WorkspaceId, params *ResolveSkillSourceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWorkspaceSourceControlApplication Say whether this instance can act as an installed application, and where to install it
 	//
@@ -14480,6 +15163,195 @@ func (c *Client) UpdateWorkspace(ctx context.Context, workspaceId WorkspaceId, b
 	return c.Client.Do(req)
 }
 
+// GetAgentLibrary List the skills and MCP servers any agent in the workspace can be given
+//
+// Corresponds with GET /workspaces/{workspaceId}/agent-library (the `GetAgentLibrary` operationId).
+func (c *Client) GetAgentLibrary(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAgentLibraryRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddLibraryMcpServerWithBody Add an MCP server to the workspace library
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+func (c *Client) AddLibraryMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddLibraryMcpServerRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddLibraryMcpServer Add an MCP server to the workspace library
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+func (c *Client) AddLibraryMcpServer(ctx context.Context, workspaceId WorkspaceId, body AddLibraryMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddLibraryMcpServerRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddLibrarySkillWithBody Add a skill to the workspace library
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+func (c *Client) AddLibrarySkillWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddLibrarySkillRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddLibrarySkill Add a skill to the workspace library
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+func (c *Client) AddLibrarySkill(ctx context.Context, workspaceId WorkspaceId, body AddLibrarySkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddLibrarySkillRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteAgentMcpServer Delete an MCP server, taking it from every agent that uses it
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `DeleteAgentMcpServer` operationId).
+func (c *Client) DeleteAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAgentMcpServerRequest(c.Server, workspaceId, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateAgentMcpServerWithBody Change an MCP server
+//
+// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+func (c *Client) UpdateAgentMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAgentMcpServerRequestWithBody(c.Server, workspaceId, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateAgentMcpServer Change an MCP server
+//
+// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+func (c *Client) UpdateAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body UpdateAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAgentMcpServerRequest(c.Server, workspaceId, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConnectAgentMcpServerWithBody Start signing an MCP server in with OAuth
+//
+// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+func (c *Client) ConnectAgentMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectAgentMcpServerRequestWithBody(c.Server, workspaceId, serverId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConnectAgentMcpServer Start signing an MCP server in with OAuth
+//
+// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+func (c *Client) ConnectAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body ConnectAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectAgentMcpServerRequest(c.Server, workspaceId, serverId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DisconnectAgentMcpServer Sign an MCP server out and forget its tokens
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection (the `DisconnectAgentMcpServer` operationId).
+func (c *Client) DisconnectAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisconnectAgentMcpServerRequest(c.Server, workspaceId, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaceAgentProposals Agent actions waiting for a person to approve them
 //
 // Corresponds with GET /workspaces/{workspaceId}/agent-proposals (the `ListWorkspaceAgentProposals` operationId).
@@ -14534,6 +15406,70 @@ func (c *Client) ApproveWorkspaceAgentProposal(ctx context.Context, workspaceId 
 // Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject (the `RejectWorkspaceAgentProposal` operationId).
 func (c *Client) RejectWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRejectWorkspaceAgentProposalRequest(c.Server, workspaceId, proposalId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agent-skills/{skillId} (the `DeleteAgentSkill` operationId).
+func (c *Client) DeleteAgentSkill(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAgentSkillRequest(c.Server, workspaceId, skillId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RewriteAgentSkillWithBody Replace the contents of a skill that was written here
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+func (c *Client) RewriteAgentSkillWithBody(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRewriteAgentSkillRequestWithBody(c.Server, workspaceId, skillId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RewriteAgentSkill Replace the contents of a skill that was written here
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+func (c *Client) RewriteAgentSkill(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, body RewriteAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRewriteAgentSkillRequest(c.Server, workspaceId, skillId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PullAgentSkill Update an imported skill to the latest commit of the ref it was imported from
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-skills/{skillId}/pull (the `PullAgentSkill` operationId).
+func (c *Client) PullAgentSkill(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPullAgentSkillRequest(c.Server, workspaceId, skillId)
 	if err != nil {
 		return nil, err
 	}
@@ -14655,6 +15591,23 @@ func (c *Client) ListWorkspaceAgentActivity(ctx context.Context, workspaceId Wor
 	return c.Client.Do(req)
 }
 
+// GetAgentCapabilities List the skills and MCP servers an agent runs with
+//
+// Includes the agent's own items and the library items attached to it. Secret values are never returned; only the names of the variables and headers that hold them.
+//
+// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/capabilities (the `GetAgentCapabilities` operationId).
+func (c *Client) GetAgentCapabilities(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAgentCapabilitiesRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListAgentCodebases The folders this agent's machines hold
 //
 // A runner is somebody's own machine, so this serves the agent's owner and workspace administrators. Anyone else is told the agent does not exist rather than that they may not look. There is deliberately no workspace-wide codebase listing.
@@ -14711,6 +15664,134 @@ func (c *Client) RotateWorkspaceAgentCredential(ctx context.Context, workspaceId
 // Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 func (c *Client) EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewEnableWorkspaceAgentRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `DetachLibraryMcpServer` operationId).
+func (c *Client) DetachLibraryMcpServer(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDetachLibraryMcpServerRequest(c.Server, workspaceId, agentId, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AttachLibraryMcpServer Let an agent use an MCP server from the workspace library
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `AttachLibraryMcpServer` operationId).
+func (c *Client) AttachLibraryMcpServer(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAttachLibraryMcpServerRequest(c.Server, workspaceId, agentId, serverId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DetachLibrarySkill Stop an agent using a library skill, leaving the skill in the library
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `DetachLibrarySkill` operationId).
+func (c *Client) DetachLibrarySkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDetachLibrarySkillRequest(c.Server, workspaceId, agentId, skillId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AttachLibrarySkill Let an agent use a skill from the workspace library
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `AttachLibrarySkill` operationId).
+func (c *Client) AttachLibrarySkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAttachLibrarySkillRequest(c.Server, workspaceId, agentId, skillId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddAgentMcpServerWithBody Give an agent an MCP server
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+func (c *Client) AddAgentMcpServerWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddAgentMcpServerRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddAgentMcpServer Give an agent an MCP server
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+func (c *Client) AddAgentMcpServer(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddAgentMcpServerRequest(c.Server, workspaceId, agentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddAgentSkillWithBody Give an agent a skill, imported from a repository or written here
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+func (c *Client) AddAgentSkillWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddAgentSkillRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddAgentSkill Give an agent a skill, imported from a repository or written here
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+func (c *Client) AddAgentSkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddAgentSkillRequest(c.Server, workspaceId, agentId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -17655,6 +18736,21 @@ func (c *Client) UploadWorkspaceLogoWithBody(ctx context.Context, workspaceId Wo
 	return c.Client.Do(req)
 }
 
+// SearchMcpRegistry Search the MCP registry for servers an agent can be given
+//
+// Corresponds with GET /workspaces/{workspaceId}/mcp-registry (the `SearchMcpRegistry` operationId).
+func (c *Client) SearchMcpRegistry(ctx context.Context, workspaceId WorkspaceId, params *SearchMcpRegistryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchMcpRegistryRequest(c.Server, workspaceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaceMembers List workspace members, searchable and paged by cursor
 //
 // Corresponds with GET /workspaces/{workspaceId}/members (the `ListWorkspaceMembers` operationId).
@@ -18496,6 +19592,21 @@ func (c *Client) UpdateWorkspaceSavedView(ctx context.Context, workspaceId Works
 // Corresponds with GET /workspaces/{workspaceId}/search (the `SearchWorkspace` operationId).
 func (c *Client) SearchWorkspace(ctx context.Context, workspaceId WorkspaceId, params *SearchWorkspaceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchWorkspaceRequest(c.Server, workspaceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ResolveSkillSource List the skills a repository, skills.sh page, or install command points at
+//
+// Corresponds with GET /workspaces/{workspaceId}/skill-sources (the `ResolveSkillSource` operationId).
+func (c *Client) ResolveSkillSource(ctx context.Context, workspaceId WorkspaceId, params *ResolveSkillSourceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResolveSkillSourceRequest(c.Server, workspaceId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -22491,6 +23602,324 @@ func NewUpdateWorkspaceRequestWithBody(server string, workspaceId WorkspaceId, c
 	return req, nil
 }
 
+// NewGetAgentLibraryRequest constructs an http.Request for the GetAgentLibrary method
+func NewGetAgentLibraryRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-library", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddLibraryMcpServerRequest calls the generic AddLibraryMcpServer builder with application/json body
+func NewAddLibraryMcpServerRequest(server string, workspaceId WorkspaceId, body AddLibraryMcpServerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddLibraryMcpServerRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewAddLibraryMcpServerRequestWithBody constructs an http.Request for the AddLibraryMcpServer method, with any body, and a specified content type
+func NewAddLibraryMcpServerRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-library/mcp-servers", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAddLibrarySkillRequest calls the generic AddLibrarySkill builder with application/json body
+func NewAddLibrarySkillRequest(server string, workspaceId WorkspaceId, body AddLibrarySkillJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddLibrarySkillRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewAddLibrarySkillRequestWithBody constructs an http.Request for the AddLibrarySkill method, with any body, and a specified content type
+func NewAddLibrarySkillRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-library/skills", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteAgentMcpServerRequest constructs an http.Request for the DeleteAgentMcpServer method
+func NewDeleteAgentMcpServerRequest(server string, workspaceId WorkspaceId, serverId AgentMcpServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "serverId", serverId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-mcp-servers/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateAgentMcpServerRequest calls the generic UpdateAgentMcpServer builder with application/json body
+func NewUpdateAgentMcpServerRequest(server string, workspaceId WorkspaceId, serverId AgentMcpServerId, body UpdateAgentMcpServerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateAgentMcpServerRequestWithBody(server, workspaceId, serverId, "application/json", bodyReader)
+}
+
+// NewUpdateAgentMcpServerRequestWithBody constructs an http.Request for the UpdateAgentMcpServer method, with any body, and a specified content type
+func NewUpdateAgentMcpServerRequestWithBody(server string, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "serverId", serverId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-mcp-servers/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewConnectAgentMcpServerRequest calls the generic ConnectAgentMcpServer builder with application/json body
+func NewConnectAgentMcpServerRequest(server string, workspaceId WorkspaceId, serverId AgentMcpServerId, body ConnectAgentMcpServerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConnectAgentMcpServerRequestWithBody(server, workspaceId, serverId, "application/json", bodyReader)
+}
+
+// NewConnectAgentMcpServerRequestWithBody constructs an http.Request for the ConnectAgentMcpServer method, with any body, and a specified content type
+func NewConnectAgentMcpServerRequestWithBody(server string, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "serverId", serverId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-mcp-servers/%s/connect", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDisconnectAgentMcpServerRequest constructs an http.Request for the DisconnectAgentMcpServer method
+func NewDisconnectAgentMcpServerRequest(server string, workspaceId WorkspaceId, serverId AgentMcpServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "serverId", serverId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-mcp-servers/%s/connection", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceAgentProposalsRequest constructs an http.Request for the ListWorkspaceAgentProposals method
 func NewListWorkspaceAgentProposalsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
 	var err error
@@ -22603,6 +24032,142 @@ func NewRejectWorkspaceAgentProposalRequest(server string, workspaceId Workspace
 	}
 
 	operationPath := fmt.Sprintf("/workspaces/%s/agent-proposals/%s/reject", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteAgentSkillRequest constructs an http.Request for the DeleteAgentSkill method
+func NewDeleteAgentSkillRequest(server string, workspaceId WorkspaceId, skillId AgentSkillId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "skillId", skillId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-skills/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRewriteAgentSkillRequest calls the generic RewriteAgentSkill builder with application/json body
+func NewRewriteAgentSkillRequest(server string, workspaceId WorkspaceId, skillId AgentSkillId, body RewriteAgentSkillJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRewriteAgentSkillRequestWithBody(server, workspaceId, skillId, "application/json", bodyReader)
+}
+
+// NewRewriteAgentSkillRequestWithBody constructs an http.Request for the RewriteAgentSkill method, with any body, and a specified content type
+func NewRewriteAgentSkillRequestWithBody(server string, workspaceId WorkspaceId, skillId AgentSkillId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "skillId", skillId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-skills/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPullAgentSkillRequest constructs an http.Request for the PullAgentSkill method
+func NewPullAgentSkillRequest(server string, workspaceId WorkspaceId, skillId AgentSkillId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "skillId", skillId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-skills/%s/pull", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -22897,6 +24462,47 @@ func NewListWorkspaceAgentActivityRequest(server string, workspaceId WorkspaceId
 	return req, nil
 }
 
+// NewGetAgentCapabilitiesRequest constructs an http.Request for the GetAgentCapabilities method
+func NewGetAgentCapabilitiesRequest(server string, workspaceId WorkspaceId, agentId AgentId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/capabilities", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListAgentCodebasesRequest constructs an http.Request for the ListAgentCodebases method
 func NewListAgentCodebasesRequest(server string, workspaceId WorkspaceId, agentId AgentId) (*http.Request, error) {
 	var err error
@@ -23064,6 +24670,306 @@ func NewEnableWorkspaceAgentRequest(server string, workspaceId WorkspaceId, agen
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewDetachLibraryMcpServerRequest constructs an http.Request for the DetachLibraryMcpServer method
+func NewDetachLibraryMcpServerRequest(server string, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "serverId", serverId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/library-mcp-servers/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAttachLibraryMcpServerRequest constructs an http.Request for the AttachLibraryMcpServer method
+func NewAttachLibraryMcpServerRequest(server string, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "serverId", serverId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/library-mcp-servers/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDetachLibrarySkillRequest constructs an http.Request for the DetachLibrarySkill method
+func NewDetachLibrarySkillRequest(server string, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "skillId", skillId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/library-skills/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAttachLibrarySkillRequest constructs an http.Request for the AttachLibrarySkill method
+func NewAttachLibrarySkillRequest(server string, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "skillId", skillId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/library-skills/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddAgentMcpServerRequest calls the generic AddAgentMcpServer builder with application/json body
+func NewAddAgentMcpServerRequest(server string, workspaceId WorkspaceId, agentId AgentId, body AddAgentMcpServerJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddAgentMcpServerRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewAddAgentMcpServerRequestWithBody constructs an http.Request for the AddAgentMcpServer method, with any body, and a specified content type
+func NewAddAgentMcpServerRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/mcp-servers", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAddAgentSkillRequest calls the generic AddAgentSkill builder with application/json body
+func NewAddAgentSkillRequest(server string, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddAgentSkillRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewAddAgentSkillRequestWithBody constructs an http.Request for the AddAgentSkill method, with any body, and a specified content type
+func NewAddAgentSkillRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/skills", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -29838,6 +31744,67 @@ func NewUploadWorkspaceLogoRequestWithBody(server string, workspaceId WorkspaceI
 	return req, nil
 }
 
+// NewSearchMcpRegistryRequest constructs an http.Request for the SearchMcpRegistry method
+func NewSearchMcpRegistryRequest(server string, workspaceId WorkspaceId, params *SearchMcpRegistryParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/mcp-registry", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Search != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "search", *params.Search, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceMembersRequest constructs an http.Request for the ListWorkspaceMembers method
 func NewListWorkspaceMembersRequest(server string, workspaceId WorkspaceId, params *ListWorkspaceMembersParams) (*http.Request, error) {
 	var err error
@@ -31886,6 +33853,63 @@ func NewSearchWorkspaceRequest(server string, workspaceId WorkspaceId, params *S
 				}
 			}
 
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewResolveSkillSourceRequest constructs an http.Request for the ResolveSkillSource method
+func NewResolveSkillSourceRequest(server string, workspaceId WorkspaceId, params *ResolveSkillSourceParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/skill-sources", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "source", params.Source, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
 		}
 
 		if encoded := queryValues.Encode(); encoded != "" {
@@ -36685,6 +38709,91 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PATCH /workspaces/{workspaceId} (the `UpdateWorkspace` operationId).
 	UpdateWorkspaceWithResponse(ctx context.Context, workspaceId WorkspaceId, body UpdateWorkspaceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWorkspaceResponse, error)
 
+	// GetAgentLibraryWithResponse List the skills and MCP servers any agent in the workspace can be given
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agent-library (the `GetAgentLibrary` operationId).
+	GetAgentLibraryWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetAgentLibraryResponse, error)
+
+	// AddLibraryMcpServerWithBodyWithResponse Add an MCP server to the workspace library
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+	AddLibraryMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddLibraryMcpServerResponse, error)
+
+	// AddLibraryMcpServerWithResponse Add an MCP server to the workspace library
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+	AddLibraryMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, body AddLibraryMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*AddLibraryMcpServerResponse, error)
+
+	// AddLibrarySkillWithBodyWithResponse Add a skill to the workspace library
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+	AddLibrarySkillWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddLibrarySkillResponse, error)
+
+	// AddLibrarySkillWithResponse Add a skill to the workspace library
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+	AddLibrarySkillWithResponse(ctx context.Context, workspaceId WorkspaceId, body AddLibrarySkillJSONRequestBody, reqEditors ...RequestEditorFn) (*AddLibrarySkillResponse, error)
+
+	// DeleteAgentMcpServerWithResponse Delete an MCP server, taking it from every agent that uses it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `DeleteAgentMcpServer` operationId).
+	DeleteAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*DeleteAgentMcpServerResponse, error)
+
+	// UpdateAgentMcpServerWithBodyWithResponse Change an MCP server
+	//
+	// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+	UpdateAgentMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAgentMcpServerResponse, error)
+
+	// UpdateAgentMcpServerWithResponse Change an MCP server
+	//
+	// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+	UpdateAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body UpdateAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAgentMcpServerResponse, error)
+
+	// ConnectAgentMcpServerWithBodyWithResponse Start signing an MCP server in with OAuth
+	//
+	// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+	ConnectAgentMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectAgentMcpServerResponse, error)
+
+	// ConnectAgentMcpServerWithResponse Start signing an MCP server in with OAuth
+	//
+	// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+	ConnectAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body ConnectAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectAgentMcpServerResponse, error)
+
+	// DisconnectAgentMcpServerWithResponse Sign an MCP server out and forget its tokens
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection (the `DisconnectAgentMcpServer` operationId).
+	DisconnectAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*DisconnectAgentMcpServerResponse, error)
+
 	// ListWorkspaceAgentProposalsWithResponse Agent actions waiting for a person to approve them
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -36712,6 +38821,34 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject (the `RejectWorkspaceAgentProposal` operationId).
 	RejectWorkspaceAgentProposalWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*RejectWorkspaceAgentProposalResponse, error)
+
+	// DeleteAgentSkillWithResponse Delete a skill, taking it from every agent that uses it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agent-skills/{skillId} (the `DeleteAgentSkill` operationId).
+	DeleteAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*DeleteAgentSkillResponse, error)
+
+	// RewriteAgentSkillWithBodyWithResponse Replace the contents of a skill that was written here
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+	RewriteAgentSkillWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RewriteAgentSkillResponse, error)
+
+	// RewriteAgentSkillWithResponse Replace the contents of a skill that was written here
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+	RewriteAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, body RewriteAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*RewriteAgentSkillResponse, error)
+
+	// PullAgentSkillWithResponse Update an imported skill to the latest commit of the ref it was imported from
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agent-skills/{skillId}/pull (the `PullAgentSkill` operationId).
+	PullAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*PullAgentSkillResponse, error)
 
 	// ListWorkspaceAgentsWithResponse List the agents registered in this workspace
 	//
@@ -36764,6 +38901,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/activity (the `ListWorkspaceAgentActivity` operationId).
 	ListWorkspaceAgentActivityWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, params *ListWorkspaceAgentActivityParams, reqEditors ...RequestEditorFn) (*ListWorkspaceAgentActivityResponse, error)
 
+	// GetAgentCapabilitiesWithResponse List the skills and MCP servers an agent runs with
+	//
+	// Includes the agent's own items and the library items attached to it. Secret values are never returned; only the names of the variables and headers that hold them.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/capabilities (the `GetAgentCapabilities` operationId).
+	GetAgentCapabilitiesWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*GetAgentCapabilitiesResponse, error)
+
 	// ListAgentCodebasesWithResponse The folders this agent's machines hold
 	//
 	// A runner is somebody's own machine, so this serves the agent's owner and workspace administrators. Anyone else is told the agent does not exist rather than that they may not look. There is deliberately no workspace-wide codebase listing.
@@ -36797,6 +38943,62 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*EnableWorkspaceAgentResponse, error)
+
+	// DetachLibraryMcpServerWithResponse Stop an agent using a library MCP server, leaving the server in the library
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `DetachLibraryMcpServer` operationId).
+	DetachLibraryMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*DetachLibraryMcpServerResponse, error)
+
+	// AttachLibraryMcpServerWithResponse Let an agent use an MCP server from the workspace library
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `AttachLibraryMcpServer` operationId).
+	AttachLibraryMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*AttachLibraryMcpServerResponse, error)
+
+	// DetachLibrarySkillWithResponse Stop an agent using a library skill, leaving the skill in the library
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `DetachLibrarySkill` operationId).
+	DetachLibrarySkillWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*DetachLibrarySkillResponse, error)
+
+	// AttachLibrarySkillWithResponse Let an agent use a skill from the workspace library
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `AttachLibrarySkill` operationId).
+	AttachLibrarySkillWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*AttachLibrarySkillResponse, error)
+
+	// AddAgentMcpServerWithBodyWithResponse Give an agent an MCP server
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+	AddAgentMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddAgentMcpServerResponse, error)
+
+	// AddAgentMcpServerWithResponse Give an agent an MCP server
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+	AddAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAgentMcpServerResponse, error)
+
+	// AddAgentSkillWithBodyWithResponse Give an agent a skill, imported from a repository or written here
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+	AddAgentSkillWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddAgentSkillResponse, error)
+
+	// AddAgentSkillWithResponse Give an agent a skill, imported from a repository or written here
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+	AddAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAgentSkillResponse, error)
 
 	// RemoveWorkspaceAiProviderWithResponse Remove the provider and discard its key
 	//
@@ -38116,6 +40318,13 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /workspaces/{workspaceId}/logo (the `UploadWorkspaceLogo` operationId).
 	UploadWorkspaceLogoWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadWorkspaceLogoResponse, error)
 
+	// SearchMcpRegistryWithResponse Search the MCP registry for servers an agent can be given
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/mcp-registry (the `SearchMcpRegistry` operationId).
+	SearchMcpRegistryWithResponse(ctx context.Context, workspaceId WorkspaceId, params *SearchMcpRegistryParams, reqEditors ...RequestEditorFn) (*SearchMcpRegistryResponse, error)
+
 	// ListWorkspaceMembersWithResponse List workspace members, searchable and paged by cursor
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -38490,6 +40699,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/search (the `SearchWorkspace` operationId).
 	SearchWorkspaceWithResponse(ctx context.Context, workspaceId WorkspaceId, params *SearchWorkspaceParams, reqEditors ...RequestEditorFn) (*SearchWorkspaceResponse, error)
+
+	// ResolveSkillSourceWithResponse List the skills a repository, skills.sh page, or install command points at
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/skill-sources (the `ResolveSkillSource` operationId).
+	ResolveSkillSourceWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ResolveSkillSourceParams, reqEditors ...RequestEditorFn) (*ResolveSkillSourceResponse, error)
 
 	// GetWorkspaceSourceControlApplicationWithResponse Say whether this instance can act as an installed application, and where to install it
 	//
@@ -43025,6 +45241,545 @@ func (r UpdateWorkspaceResponse) ContentType() string {
 	return ""
 }
 
+type GetAgentLibraryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentLibrary
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAgentLibraryResponse) GetJSON200() *AgentLibrary {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetAgentLibraryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetAgentLibraryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetAgentLibraryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAgentLibraryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAgentLibraryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAgentLibraryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAgentLibraryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddLibraryMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AgentMcpServer
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AgentCapabilitySealingUnavailable
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AddLibraryMcpServerResponse) GetJSON201() *AgentMcpServer {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AddLibraryMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AddLibraryMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AddLibraryMcpServerResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r AddLibraryMcpServerResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AddLibraryMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r AddLibraryMcpServerResponse) GetApplicationproblemJSON503() *AgentCapabilitySealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r AddLibraryMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddLibraryMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddLibraryMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddLibraryMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddLibrarySkillResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AgentSkill
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *AgentCapabilityUpstream
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AddLibrarySkillResponse) GetJSON201() *AgentSkill {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AddLibrarySkillResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AddLibrarySkillResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AddLibrarySkillResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r AddLibrarySkillResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AddLibrarySkillResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r AddLibrarySkillResponse) GetApplicationproblemJSON502() *AgentCapabilityUpstream {
+	return r.ApplicationproblemJSON502
+}
+
+// GetBody returns the raw response body bytes
+func (r AddLibrarySkillResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddLibrarySkillResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddLibrarySkillResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddLibrarySkillResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteAgentMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteAgentMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteAgentMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteAgentMcpServerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteAgentMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteAgentMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAgentMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAgentMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAgentMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateAgentMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentMcpServer
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AgentCapabilitySealingUnavailable
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateAgentMcpServerResponse) GetJSON200() *AgentMcpServer {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r UpdateAgentMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r UpdateAgentMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r UpdateAgentMcpServerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r UpdateAgentMcpServerResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r UpdateAgentMcpServerResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r UpdateAgentMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r UpdateAgentMcpServerResponse) GetApplicationproblemJSON503() *AgentCapabilitySealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateAgentMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateAgentMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateAgentMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateAgentMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ConnectAgentMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentMcpAuthorization
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *AgentCapabilityUpstream
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AgentCapabilitySealingUnavailable
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ConnectAgentMcpServerResponse) GetJSON200() *AgentMcpAuthorization {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON502() *AgentCapabilityUpstream {
+	return r.ApplicationproblemJSON502
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r ConnectAgentMcpServerResponse) GetApplicationproblemJSON503() *AgentCapabilitySealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r ConnectAgentMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectAgentMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectAgentMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ConnectAgentMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DisconnectAgentMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DisconnectAgentMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DisconnectAgentMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DisconnectAgentMcpServerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DisconnectAgentMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DisconnectAgentMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DisconnectAgentMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisconnectAgentMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DisconnectAgentMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceAgentProposalsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -43233,6 +45988,241 @@ func (r RejectWorkspaceAgentProposalResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RejectWorkspaceAgentProposalResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteAgentSkillResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteAgentSkillResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteAgentSkillResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteAgentSkillResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteAgentSkillResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteAgentSkillResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAgentSkillResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAgentSkillResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAgentSkillResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RewriteAgentSkillResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentSkill
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RewriteAgentSkillResponse) GetJSON200() *AgentSkill {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RewriteAgentSkillResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RewriteAgentSkillResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RewriteAgentSkillResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r RewriteAgentSkillResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r RewriteAgentSkillResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RewriteAgentSkillResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RewriteAgentSkillResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RewriteAgentSkillResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RewriteAgentSkillResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RewriteAgentSkillResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PullAgentSkillResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentSkill
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *AgentCapabilityUpstream
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r PullAgentSkillResponse) GetJSON200() *AgentSkill {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r PullAgentSkillResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r PullAgentSkillResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r PullAgentSkillResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r PullAgentSkillResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r PullAgentSkillResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r PullAgentSkillResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r PullAgentSkillResponse) GetApplicationproblemJSON502() *AgentCapabilityUpstream {
+	return r.ApplicationproblemJSON502
+}
+
+// GetBody returns the raw response body bytes
+func (r PullAgentSkillResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PullAgentSkillResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PullAgentSkillResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PullAgentSkillResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -43660,6 +46650,75 @@ func (r ListWorkspaceAgentActivityResponse) ContentType() string {
 	return ""
 }
 
+type GetAgentCapabilitiesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentCapabilities
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetAgentCapabilitiesResponse) GetJSON200() *AgentCapabilities {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetAgentCapabilitiesResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetAgentCapabilitiesResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetAgentCapabilitiesResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetAgentCapabilitiesResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetAgentCapabilitiesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAgentCapabilitiesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAgentCapabilitiesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetAgentCapabilitiesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListAgentCodebasesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -43951,6 +47010,448 @@ func (r EnableWorkspaceAgentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r EnableWorkspaceAgentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DetachLibraryMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DetachLibraryMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DetachLibraryMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DetachLibraryMcpServerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DetachLibraryMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DetachLibraryMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DetachLibraryMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DetachLibraryMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DetachLibraryMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AttachLibraryMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AttachLibraryMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AttachLibraryMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r AttachLibraryMcpServerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AttachLibraryMcpServerResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AttachLibraryMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r AttachLibraryMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AttachLibraryMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AttachLibraryMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AttachLibraryMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DetachLibrarySkillResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DetachLibrarySkillResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DetachLibrarySkillResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DetachLibrarySkillResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DetachLibrarySkillResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DetachLibrarySkillResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DetachLibrarySkillResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DetachLibrarySkillResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DetachLibrarySkillResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AttachLibrarySkillResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AttachLibrarySkillResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AttachLibrarySkillResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r AttachLibrarySkillResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AttachLibrarySkillResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AttachLibrarySkillResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r AttachLibrarySkillResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AttachLibrarySkillResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AttachLibrarySkillResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AttachLibrarySkillResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddAgentMcpServerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AgentMcpServer
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AgentCapabilitySealingUnavailable
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AddAgentMcpServerResponse) GetJSON201() *AgentMcpServer {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AddAgentMcpServerResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AddAgentMcpServerResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r AddAgentMcpServerResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AddAgentMcpServerResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r AddAgentMcpServerResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AddAgentMcpServerResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r AddAgentMcpServerResponse) GetApplicationproblemJSON503() *AgentCapabilitySealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r AddAgentMcpServerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddAgentMcpServerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddAgentMcpServerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddAgentMcpServerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddAgentSkillResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AgentSkill
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentCapabilityConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *AgentCapabilityUpstream
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AddAgentSkillResponse) GetJSON201() *AgentSkill {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AddAgentSkillResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AddAgentSkillResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r AddAgentSkillResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AddAgentSkillResponse) GetApplicationproblemJSON409() *AgentCapabilityConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r AddAgentSkillResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AddAgentSkillResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r AddAgentSkillResponse) GetApplicationproblemJSON502() *AgentCapabilityUpstream {
+	return r.ApplicationproblemJSON502
+}
+
+// GetBody returns the raw response body bytes
+func (r AddAgentSkillResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddAgentSkillResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddAgentSkillResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddAgentSkillResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -54050,6 +57551,75 @@ func (r UploadWorkspaceLogoResponse) ContentType() string {
 	return ""
 }
 
+type SearchMcpRegistryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]McpRegistryEntry
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *AgentCapabilityUpstream
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SearchMcpRegistryResponse) GetJSON200() *[]McpRegistryEntry {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SearchMcpRegistryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SearchMcpRegistryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SearchMcpRegistryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r SearchMcpRegistryResponse) GetApplicationproblemJSON502() *AgentCapabilityUpstream {
+	return r.ApplicationproblemJSON502
+}
+
+// GetBody returns the raw response body bytes
+func (r SearchMcpRegistryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchMcpRegistryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchMcpRegistryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SearchMcpRegistryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceMembersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -56874,6 +60444,89 @@ func (r SearchWorkspaceResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SearchWorkspaceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ResolveSkillSourceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *SkillSourceDiscovery
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON502 the response for an HTTP 502 `application/problem+json` response
+	ApplicationproblemJSON502 *AgentCapabilityUpstream
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ResolveSkillSourceResponse) GetJSON200() *SkillSourceDiscovery {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ResolveSkillSourceResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ResolveSkillSourceResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ResolveSkillSourceResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ResolveSkillSourceResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ResolveSkillSourceResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON502 returns the response for an HTTP 502 `application/problem+json` response
+func (r ResolveSkillSourceResponse) GetApplicationproblemJSON502() *AgentCapabilityUpstream {
+	return r.ApplicationproblemJSON502
+}
+
+// GetBody returns the raw response body bytes
+func (r ResolveSkillSourceResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ResolveSkillSourceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResolveSkillSourceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResolveSkillSourceResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -64503,6 +68156,157 @@ func (c *ClientWithResponses) UpdateWorkspaceWithResponse(ctx context.Context, w
 	return ParseUpdateWorkspaceResponse(rsp)
 }
 
+// GetAgentLibraryWithResponse List the skills and MCP servers any agent in the workspace can be given
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/agent-library (the `GetAgentLibrary` operationId).
+func (c *ClientWithResponses) GetAgentLibraryWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetAgentLibraryResponse, error) {
+	rsp, err := c.GetAgentLibrary(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAgentLibraryResponse(rsp)
+}
+
+// AddLibraryMcpServerWithBodyWithResponse Add an MCP server to the workspace library
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+func (c *ClientWithResponses) AddLibraryMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddLibraryMcpServerResponse, error) {
+	rsp, err := c.AddLibraryMcpServerWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddLibraryMcpServerResponse(rsp)
+}
+
+// AddLibraryMcpServerWithResponse Add an MCP server to the workspace library
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/mcp-servers (the `AddLibraryMcpServer` operationId).
+func (c *ClientWithResponses) AddLibraryMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, body AddLibraryMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*AddLibraryMcpServerResponse, error) {
+	rsp, err := c.AddLibraryMcpServer(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddLibraryMcpServerResponse(rsp)
+}
+
+// AddLibrarySkillWithBodyWithResponse Add a skill to the workspace library
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+func (c *ClientWithResponses) AddLibrarySkillWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddLibrarySkillResponse, error) {
+	rsp, err := c.AddLibrarySkillWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddLibrarySkillResponse(rsp)
+}
+
+// AddLibrarySkillWithResponse Add a skill to the workspace library
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-library/skills (the `AddLibrarySkill` operationId).
+func (c *ClientWithResponses) AddLibrarySkillWithResponse(ctx context.Context, workspaceId WorkspaceId, body AddLibrarySkillJSONRequestBody, reqEditors ...RequestEditorFn) (*AddLibrarySkillResponse, error) {
+	rsp, err := c.AddLibrarySkill(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddLibrarySkillResponse(rsp)
+}
+
+// DeleteAgentMcpServerWithResponse Delete an MCP server, taking it from every agent that uses it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `DeleteAgentMcpServer` operationId).
+func (c *ClientWithResponses) DeleteAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*DeleteAgentMcpServerResponse, error) {
+	rsp, err := c.DeleteAgentMcpServer(ctx, workspaceId, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAgentMcpServerResponse(rsp)
+}
+
+// UpdateAgentMcpServerWithBodyWithResponse Change an MCP server
+//
+// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+func (c *ClientWithResponses) UpdateAgentMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAgentMcpServerResponse, error) {
+	rsp, err := c.UpdateAgentMcpServerWithBody(ctx, workspaceId, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAgentMcpServerResponse(rsp)
+}
+
+// UpdateAgentMcpServerWithResponse Change an MCP server
+//
+// A variable or header sent with an empty value keeps its stored value, and one left out is removed. Changing where or how the server signs in signs it out.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId} (the `UpdateAgentMcpServer` operationId).
+func (c *ClientWithResponses) UpdateAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body UpdateAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAgentMcpServerResponse, error) {
+	rsp, err := c.UpdateAgentMcpServer(ctx, workspaceId, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAgentMcpServerResponse(rsp)
+}
+
+// ConnectAgentMcpServerWithBodyWithResponse Start signing an MCP server in with OAuth
+//
+// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+func (c *ClientWithResponses) ConnectAgentMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectAgentMcpServerResponse, error) {
+	rsp, err := c.ConnectAgentMcpServerWithBody(ctx, workspaceId, serverId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectAgentMcpServerResponse(rsp)
+}
+
+// ConnectAgentMcpServerWithResponse Start signing an MCP server in with OAuth
+//
+// Discovers the server's authorization server, registers Norn as a client when no client was given, and answers with the address to send the browser to. The authorization server returns to Norn, which stores the tokens and sends the browser back to returnTo.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect (the `ConnectAgentMcpServer` operationId).
+func (c *ClientWithResponses) ConnectAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, body ConnectAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectAgentMcpServerResponse, error) {
+	rsp, err := c.ConnectAgentMcpServer(ctx, workspaceId, serverId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectAgentMcpServerResponse(rsp)
+}
+
+// DisconnectAgentMcpServerWithResponse Sign an MCP server out and forget its tokens
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection (the `DisconnectAgentMcpServer` operationId).
+func (c *ClientWithResponses) DisconnectAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*DisconnectAgentMcpServerResponse, error) {
+	rsp, err := c.DisconnectAgentMcpServer(ctx, workspaceId, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisconnectAgentMcpServerResponse(rsp)
+}
+
 // ListWorkspaceAgentProposalsWithResponse Agent actions waiting for a person to approve them
 //
 // Returns a wrapper object for the known response body format(s).
@@ -64553,6 +68357,58 @@ func (c *ClientWithResponses) RejectWorkspaceAgentProposalWithResponse(ctx conte
 		return nil, err
 	}
 	return ParseRejectWorkspaceAgentProposalResponse(rsp)
+}
+
+// DeleteAgentSkillWithResponse Delete a skill, taking it from every agent that uses it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agent-skills/{skillId} (the `DeleteAgentSkill` operationId).
+func (c *ClientWithResponses) DeleteAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*DeleteAgentSkillResponse, error) {
+	rsp, err := c.DeleteAgentSkill(ctx, workspaceId, skillId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAgentSkillResponse(rsp)
+}
+
+// RewriteAgentSkillWithBodyWithResponse Replace the contents of a skill that was written here
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+func (c *ClientWithResponses) RewriteAgentSkillWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RewriteAgentSkillResponse, error) {
+	rsp, err := c.RewriteAgentSkillWithBody(ctx, workspaceId, skillId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRewriteAgentSkillResponse(rsp)
+}
+
+// RewriteAgentSkillWithResponse Replace the contents of a skill that was written here
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/agent-skills/{skillId} (the `RewriteAgentSkill` operationId).
+func (c *ClientWithResponses) RewriteAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, body RewriteAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*RewriteAgentSkillResponse, error) {
+	rsp, err := c.RewriteAgentSkill(ctx, workspaceId, skillId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRewriteAgentSkillResponse(rsp)
+}
+
+// PullAgentSkillWithResponse Update an imported skill to the latest commit of the ref it was imported from
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agent-skills/{skillId}/pull (the `PullAgentSkill` operationId).
+func (c *ClientWithResponses) PullAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*PullAgentSkillResponse, error) {
+	rsp, err := c.PullAgentSkill(ctx, workspaceId, skillId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePullAgentSkillResponse(rsp)
 }
 
 // ListWorkspaceAgentsWithResponse List the agents registered in this workspace
@@ -64648,6 +68504,21 @@ func (c *ClientWithResponses) ListWorkspaceAgentActivityWithResponse(ctx context
 	return ParseListWorkspaceAgentActivityResponse(rsp)
 }
 
+// GetAgentCapabilitiesWithResponse List the skills and MCP servers an agent runs with
+//
+// Includes the agent's own items and the library items attached to it. Secret values are never returned; only the names of the variables and headers that hold them.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/capabilities (the `GetAgentCapabilities` operationId).
+func (c *ClientWithResponses) GetAgentCapabilitiesWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*GetAgentCapabilitiesResponse, error) {
+	rsp, err := c.GetAgentCapabilities(ctx, workspaceId, agentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAgentCapabilitiesResponse(rsp)
+}
+
 // ListAgentCodebasesWithResponse The folders this agent's machines hold
 //
 // A runner is somebody's own machine, so this serves the agent's owner and workspace administrators. Anyone else is told the agent does not exist rather than that they may not look. There is deliberately no workspace-wide codebase listing.
@@ -64704,6 +68575,110 @@ func (c *ClientWithResponses) EnableWorkspaceAgentWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseEnableWorkspaceAgentResponse(rsp)
+}
+
+// DetachLibraryMcpServerWithResponse Stop an agent using a library MCP server, leaving the server in the library
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `DetachLibraryMcpServer` operationId).
+func (c *ClientWithResponses) DetachLibraryMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*DetachLibraryMcpServerResponse, error) {
+	rsp, err := c.DetachLibraryMcpServer(ctx, workspaceId, agentId, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDetachLibraryMcpServerResponse(rsp)
+}
+
+// AttachLibraryMcpServerWithResponse Let an agent use an MCP server from the workspace library
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId} (the `AttachLibraryMcpServer` operationId).
+func (c *ClientWithResponses) AttachLibraryMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId, reqEditors ...RequestEditorFn) (*AttachLibraryMcpServerResponse, error) {
+	rsp, err := c.AttachLibraryMcpServer(ctx, workspaceId, agentId, serverId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAttachLibraryMcpServerResponse(rsp)
+}
+
+// DetachLibrarySkillWithResponse Stop an agent using a library skill, leaving the skill in the library
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `DetachLibrarySkill` operationId).
+func (c *ClientWithResponses) DetachLibrarySkillWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*DetachLibrarySkillResponse, error) {
+	rsp, err := c.DetachLibrarySkill(ctx, workspaceId, agentId, skillId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDetachLibrarySkillResponse(rsp)
+}
+
+// AttachLibrarySkillWithResponse Let an agent use a skill from the workspace library
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId} (the `AttachLibrarySkill` operationId).
+func (c *ClientWithResponses) AttachLibrarySkillWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId, reqEditors ...RequestEditorFn) (*AttachLibrarySkillResponse, error) {
+	rsp, err := c.AttachLibrarySkill(ctx, workspaceId, agentId, skillId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAttachLibrarySkillResponse(rsp)
+}
+
+// AddAgentMcpServerWithBodyWithResponse Give an agent an MCP server
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+func (c *ClientWithResponses) AddAgentMcpServerWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddAgentMcpServerResponse, error) {
+	rsp, err := c.AddAgentMcpServerWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddAgentMcpServerResponse(rsp)
+}
+
+// AddAgentMcpServerWithResponse Give an agent an MCP server
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers (the `AddAgentMcpServer` operationId).
+func (c *ClientWithResponses) AddAgentMcpServerWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentMcpServerJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAgentMcpServerResponse, error) {
+	rsp, err := c.AddAgentMcpServer(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddAgentMcpServerResponse(rsp)
+}
+
+// AddAgentSkillWithBodyWithResponse Give an agent a skill, imported from a repository or written here
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+func (c *ClientWithResponses) AddAgentSkillWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddAgentSkillResponse, error) {
+	rsp, err := c.AddAgentSkillWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddAgentSkillResponse(rsp)
+}
+
+// AddAgentSkillWithResponse Give an agent a skill, imported from a repository or written here
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
+func (c *ClientWithResponses) AddAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAgentSkillResponse, error) {
+	rsp, err := c.AddAgentSkill(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddAgentSkillResponse(rsp)
 }
 
 // RemoveWorkspaceAiProviderWithResponse Remove the provider and discard its key
@@ -67104,6 +71079,19 @@ func (c *ClientWithResponses) UploadWorkspaceLogoWithBodyWithResponse(ctx contex
 	return ParseUploadWorkspaceLogoResponse(rsp)
 }
 
+// SearchMcpRegistryWithResponse Search the MCP registry for servers an agent can be given
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/mcp-registry (the `SearchMcpRegistry` operationId).
+func (c *ClientWithResponses) SearchMcpRegistryWithResponse(ctx context.Context, workspaceId WorkspaceId, params *SearchMcpRegistryParams, reqEditors ...RequestEditorFn) (*SearchMcpRegistryResponse, error) {
+	rsp, err := c.SearchMcpRegistry(ctx, workspaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchMcpRegistryResponse(rsp)
+}
+
 // ListWorkspaceMembersWithResponse List workspace members, searchable and paged by cursor
 //
 // Returns a wrapper object for the known response body format(s).
@@ -67795,6 +71783,19 @@ func (c *ClientWithResponses) SearchWorkspaceWithResponse(ctx context.Context, w
 		return nil, err
 	}
 	return ParseSearchWorkspaceResponse(rsp)
+}
+
+// ResolveSkillSourceWithResponse List the skills a repository, skills.sh page, or install command points at
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/skill-sources (the `ResolveSkillSource` operationId).
+func (c *ClientWithResponses) ResolveSkillSourceWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ResolveSkillSourceParams, reqEditors ...RequestEditorFn) (*ResolveSkillSourceResponse, error) {
+	rsp, err := c.ResolveSkillSource(ctx, workspaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResolveSkillSourceResponse(rsp)
 }
 
 // GetWorkspaceSourceControlApplicationWithResponse Say whether this instance can act as an installed application, and where to install it
@@ -72327,6 +76328,446 @@ func ParseUpdateWorkspaceResponse(rsp *http.Response) (*UpdateWorkspaceResponse,
 	return response, nil
 }
 
+// ParseGetAgentLibraryResponse parses an HTTP response from a GetAgentLibraryWithResponse call
+func ParseGetAgentLibraryResponse(rsp *http.Response) (*GetAgentLibraryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAgentLibraryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentLibrary
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddLibraryMcpServerResponse parses an HTTP response from a AddLibraryMcpServerWithResponse call
+func ParseAddLibraryMcpServerResponse(rsp *http.Response) (*AddLibraryMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddLibraryMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentMcpServer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AgentCapabilitySealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddLibrarySkillResponse parses an HTTP response from a AddLibrarySkillWithResponse call
+func ParseAddLibrarySkillResponse(rsp *http.Response) (*AddLibrarySkillResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddLibrarySkillResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentSkill
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest AgentCapabilityUpstream
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAgentMcpServerResponse parses an HTTP response from a DeleteAgentMcpServerWithResponse call
+func ParseDeleteAgentMcpServerResponse(rsp *http.Response) (*DeleteAgentMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAgentMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateAgentMcpServerResponse parses an HTTP response from a UpdateAgentMcpServerWithResponse call
+func ParseUpdateAgentMcpServerResponse(rsp *http.Response) (*UpdateAgentMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateAgentMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentMcpServer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AgentCapabilitySealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectAgentMcpServerResponse parses an HTTP response from a ConnectAgentMcpServerWithResponse call
+func ParseConnectAgentMcpServerResponse(rsp *http.Response) (*ConnectAgentMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectAgentMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentMcpAuthorization
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest AgentCapabilityUpstream
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AgentCapabilitySealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDisconnectAgentMcpServerResponse parses an HTTP response from a DisconnectAgentMcpServerWithResponse call
+func ParseDisconnectAgentMcpServerResponse(rsp *http.Response) (*DisconnectAgentMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisconnectAgentMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceAgentProposalsResponse parses an HTTP response from a ListWorkspaceAgentProposalsWithResponse call
 func ParseListWorkspaceAgentProposalsResponse(rsp *http.Response) (*ListWorkspaceAgentProposalsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -72490,6 +76931,199 @@ func ParseRejectWorkspaceAgentProposalResponse(rsp *http.Response) (*RejectWorks
 			return nil, err
 		}
 		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAgentSkillResponse parses an HTTP response from a DeleteAgentSkillWithResponse call
+func ParseDeleteAgentSkillResponse(rsp *http.Response) (*DeleteAgentSkillResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAgentSkillResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRewriteAgentSkillResponse parses an HTTP response from a RewriteAgentSkillWithResponse call
+func ParseRewriteAgentSkillResponse(rsp *http.Response) (*RewriteAgentSkillResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RewriteAgentSkillResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentSkill
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePullAgentSkillResponse parses an HTTP response from a PullAgentSkillWithResponse call
+func ParsePullAgentSkillResponse(rsp *http.Response) (*PullAgentSkillResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PullAgentSkillResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentSkill
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest AgentCapabilityUpstream
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
 
 	}
 
@@ -72830,6 +77464,60 @@ func ParseListWorkspaceAgentActivityResponse(rsp *http.Response) (*ListWorkspace
 	return response, nil
 }
 
+// ParseGetAgentCapabilitiesResponse parses an HTTP response from a GetAgentCapabilitiesWithResponse call
+func ParseGetAgentCapabilitiesResponse(rsp *http.Response) (*GetAgentCapabilitiesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAgentCapabilitiesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentCapabilities
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListAgentCodebasesResponse parses an HTTP response from a ListAgentCodebasesWithResponse call
 func ParseListAgentCodebasesResponse(rsp *http.Response) (*ListAgentCodebasesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -73061,6 +77749,370 @@ func ParseEnableWorkspaceAgentResponse(rsp *http.Response) (*EnableWorkspaceAgen
 			return nil, err
 		}
 		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDetachLibraryMcpServerResponse parses an HTTP response from a DetachLibraryMcpServerWithResponse call
+func ParseDetachLibraryMcpServerResponse(rsp *http.Response) (*DetachLibraryMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DetachLibraryMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAttachLibraryMcpServerResponse parses an HTTP response from a AttachLibraryMcpServerWithResponse call
+func ParseAttachLibraryMcpServerResponse(rsp *http.Response) (*AttachLibraryMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AttachLibraryMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDetachLibrarySkillResponse parses an HTTP response from a DetachLibrarySkillWithResponse call
+func ParseDetachLibrarySkillResponse(rsp *http.Response) (*DetachLibrarySkillResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DetachLibrarySkillResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAttachLibrarySkillResponse parses an HTTP response from a AttachLibrarySkillWithResponse call
+func ParseAttachLibrarySkillResponse(rsp *http.Response) (*AttachLibrarySkillResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AttachLibrarySkillResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddAgentMcpServerResponse parses an HTTP response from a AddAgentMcpServerWithResponse call
+func ParseAddAgentMcpServerResponse(rsp *http.Response) (*AddAgentMcpServerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddAgentMcpServerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentMcpServer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AgentCapabilitySealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddAgentSkillResponse parses an HTTP response from a AddAgentSkillWithResponse call
+func ParseAddAgentSkillResponse(rsp *http.Response) (*AddAgentSkillResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddAgentSkillResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AgentSkill
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentCapabilityConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest AgentCapabilityUpstream
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
 
 	}
 
@@ -81201,6 +86253,60 @@ func ParseUploadWorkspaceLogoResponse(rsp *http.Response) (*UploadWorkspaceLogoR
 	return response, nil
 }
 
+// ParseSearchMcpRegistryResponse parses an HTTP response from a SearchMcpRegistryWithResponse call
+func ParseSearchMcpRegistryResponse(rsp *http.Response) (*SearchMcpRegistryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchMcpRegistryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []McpRegistryEntry
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest AgentCapabilityUpstream
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceMembersResponse parses an HTTP response from a ListWorkspaceMembersWithResponse call
 func ParseListWorkspaceMembersResponse(rsp *http.Response) (*ListWorkspaceMembersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -83452,6 +88558,74 @@ func ParseSearchWorkspaceResponse(rsp *http.Response) (*SearchWorkspaceResponse,
 			return nil, err
 		}
 		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResolveSkillSourceResponse parses an HTTP response from a ResolveSkillSourceWithResponse call
+func ParseResolveSkillSourceResponse(rsp *http.Response) (*ResolveSkillSourceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResolveSkillSourceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SkillSourceDiscovery
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest AgentCapabilityUpstream
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON502 = &dest
 
 	}
 
@@ -88874,6 +94048,27 @@ type ServerInterface interface {
 	// UpdateWorkspace Change the workspace name, address, timezone, week start and default team
 	// (PATCH /workspaces/{workspaceId})
 	UpdateWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetAgentLibrary List the skills and MCP servers any agent in the workspace can be given
+	// (GET /workspaces/{workspaceId}/agent-library)
+	GetAgentLibrary(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// AddLibraryMcpServer Add an MCP server to the workspace library
+	// (POST /workspaces/{workspaceId}/agent-library/mcp-servers)
+	AddLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// AddLibrarySkill Add a skill to the workspace library
+	// (POST /workspaces/{workspaceId}/agent-library/skills)
+	AddLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DeleteAgentMcpServer Delete an MCP server, taking it from every agent that uses it
+	// (DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId})
+	DeleteAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId)
+	// UpdateAgentMcpServer Change an MCP server
+	// (PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId})
+	UpdateAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId)
+	// ConnectAgentMcpServer Start signing an MCP server in with OAuth
+	// (POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect)
+	ConnectAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId)
+	// DisconnectAgentMcpServer Sign an MCP server out and forget its tokens
+	// (DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection)
+	DisconnectAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId)
 	// ListWorkspaceAgentProposals Agent actions waiting for a person to approve them
 	// (GET /workspaces/{workspaceId}/agent-proposals)
 	ListWorkspaceAgentProposals(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -88883,6 +94078,15 @@ type ServerInterface interface {
 	// RejectWorkspaceAgentProposal Refuse a held agent action so nothing is applied
 	// (POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject)
 	RejectWorkspaceAgentProposal(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, proposalId ProposalId)
+	// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
+	// (DELETE /workspaces/{workspaceId}/agent-skills/{skillId})
+	DeleteAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId)
+	// RewriteAgentSkill Replace the contents of a skill that was written here
+	// (PATCH /workspaces/{workspaceId}/agent-skills/{skillId})
+	RewriteAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId)
+	// PullAgentSkill Update an imported skill to the latest commit of the ref it was imported from
+	// (POST /workspaces/{workspaceId}/agent-skills/{skillId}/pull)
+	PullAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId)
 	// ListWorkspaceAgents List the agents registered in this workspace
 	// (GET /workspaces/{workspaceId}/agents)
 	ListWorkspaceAgents(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -88901,6 +94105,9 @@ type ServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, params ListWorkspaceAgentActivityParams)
+	// GetAgentCapabilities List the skills and MCP servers an agent runs with
+	// (GET /workspaces/{workspaceId}/agents/{agentId}/capabilities)
+	GetAgentCapabilities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// ListAgentCodebases The folders this agent's machines hold
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
 	ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
@@ -88913,6 +94120,24 @@ type ServerInterface interface {
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
+	DetachLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId)
+	// AttachLibraryMcpServer Let an agent use an MCP server from the workspace library
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
+	AttachLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId)
+	// DetachLibrarySkill Stop an agent using a library skill, leaving the skill in the library
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId})
+	DetachLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId)
+	// AttachLibrarySkill Let an agent use a skill from the workspace library
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId})
+	AttachLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId)
+	// AddAgentMcpServer Give an agent an MCP server
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers)
+	AddAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// AddAgentSkill Give an agent a skill, imported from a repository or written here
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
+	AddAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// RemoveWorkspaceAiProvider Remove the provider and discard its key
 	// (DELETE /workspaces/{workspaceId}/ai-provider)
 	RemoveWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -89324,6 +94549,9 @@ type ServerInterface interface {
 	// UploadWorkspaceLogo Replace the workspace logo
 	// (PUT /workspaces/{workspaceId}/logo)
 	UploadWorkspaceLogo(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SearchMcpRegistry Search the MCP registry for servers an agent can be given
+	// (GET /workspaces/{workspaceId}/mcp-registry)
+	SearchMcpRegistry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchMcpRegistryParams)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMembersParams)
@@ -89444,6 +94672,9 @@ type ServerInterface interface {
 	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams)
+	// ResolveSkillSource List the skills a repository, skills.sh page, or install command points at
+	// (GET /workspaces/{workspaceId}/skill-sources)
+	ResolveSkillSource(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ResolveSkillSourceParams)
 	// GetWorkspaceSourceControlApplication Say whether this instance can act as an installed application, and where to install it
 	// (GET /workspaces/{workspaceId}/source-control/application)
 	GetWorkspaceSourceControlApplication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -90053,6 +95284,48 @@ func (_ Unimplemented) UpdateWorkspace(w http.ResponseWriter, r *http.Request, w
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetAgentLibrary List the skills and MCP servers any agent in the workspace can be given
+// (GET /workspaces/{workspaceId}/agent-library)
+func (_ Unimplemented) GetAgentLibrary(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddLibraryMcpServer Add an MCP server to the workspace library
+// (POST /workspaces/{workspaceId}/agent-library/mcp-servers)
+func (_ Unimplemented) AddLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddLibrarySkill Add a skill to the workspace library
+// (POST /workspaces/{workspaceId}/agent-library/skills)
+func (_ Unimplemented) AddLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteAgentMcpServer Delete an MCP server, taking it from every agent that uses it
+// (DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId})
+func (_ Unimplemented) DeleteAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateAgentMcpServer Change an MCP server
+// (PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId})
+func (_ Unimplemented) UpdateAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConnectAgentMcpServer Start signing an MCP server in with OAuth
+// (POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect)
+func (_ Unimplemented) ConnectAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisconnectAgentMcpServer Sign an MCP server out and forget its tokens
+// (DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection)
+func (_ Unimplemented) DisconnectAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceAgentProposals Agent actions waiting for a person to approve them
 // (GET /workspaces/{workspaceId}/agent-proposals)
 func (_ Unimplemented) ListWorkspaceAgentProposals(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
@@ -90068,6 +95341,24 @@ func (_ Unimplemented) ApproveWorkspaceAgentProposal(w http.ResponseWriter, r *h
 // RejectWorkspaceAgentProposal Refuse a held agent action so nothing is applied
 // (POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject)
 func (_ Unimplemented) RejectWorkspaceAgentProposal(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, proposalId ProposalId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
+// (DELETE /workspaces/{workspaceId}/agent-skills/{skillId})
+func (_ Unimplemented) DeleteAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RewriteAgentSkill Replace the contents of a skill that was written here
+// (PATCH /workspaces/{workspaceId}/agent-skills/{skillId})
+func (_ Unimplemented) RewriteAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// PullAgentSkill Update an imported skill to the latest commit of the ref it was imported from
+// (POST /workspaces/{workspaceId}/agent-skills/{skillId}/pull)
+func (_ Unimplemented) PullAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -90107,6 +95398,12 @@ func (_ Unimplemented) ListWorkspaceAgentActivity(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetAgentCapabilities List the skills and MCP servers an agent runs with
+// (GET /workspaces/{workspaceId}/agents/{agentId}/capabilities)
+func (_ Unimplemented) GetAgentCapabilities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListAgentCodebases The folders this agent's machines hold
 // (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
 func (_ Unimplemented) ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
@@ -90128,6 +95425,42 @@ func (_ Unimplemented) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *
 // EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 // (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 func (_ Unimplemented) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
+// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
+func (_ Unimplemented) DetachLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AttachLibraryMcpServer Let an agent use an MCP server from the workspace library
+// (PUT /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
+func (_ Unimplemented) AttachLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DetachLibrarySkill Stop an agent using a library skill, leaving the skill in the library
+// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId})
+func (_ Unimplemented) DetachLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AttachLibrarySkill Let an agent use a skill from the workspace library
+// (PUT /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId})
+func (_ Unimplemented) AttachLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddAgentMcpServer Give an agent an MCP server
+// (POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers)
+func (_ Unimplemented) AddAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddAgentSkill Give an agent a skill, imported from a repository or written here
+// (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
+func (_ Unimplemented) AddAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -90953,6 +96286,12 @@ func (_ Unimplemented) UploadWorkspaceLogo(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// SearchMcpRegistry Search the MCP registry for servers an agent can be given
+// (GET /workspaces/{workspaceId}/mcp-registry)
+func (_ Unimplemented) SearchMcpRegistry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchMcpRegistryParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceMembers List workspace members, searchable and paged by cursor
 // (GET /workspaces/{workspaceId}/members)
 func (_ Unimplemented) ListWorkspaceMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMembersParams) {
@@ -91190,6 +96529,12 @@ func (_ Unimplemented) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.R
 // SearchWorkspace Find issues, comments, projects, teams and people by typing words
 // (GET /workspaces/{workspaceId}/search)
 func (_ Unimplemented) SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ResolveSkillSource List the skills a repository, skills.sh page, or install command points at
+// (GET /workspaces/{workspaceId}/skill-sources)
+func (_ Unimplemented) ResolveSkillSource(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ResolveSkillSourceParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -92835,6 +98180,224 @@ func (siw *ServerInterfaceWrapper) UpdateWorkspace(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// GetAgentLibrary operation middleware
+func (siw *ServerInterfaceWrapper) GetAgentLibrary(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAgentLibrary(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddLibraryMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) AddLibraryMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddLibraryMcpServer(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddLibrarySkill operation middleware
+func (siw *ServerInterfaceWrapper) AddLibrarySkill(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddLibrarySkill(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAgentMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAgentMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "serverId" -------------
+	var serverId AgentMcpServerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serverId", chi.URLParam(r, "serverId"), &serverId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serverId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAgentMcpServer(w, r, workspaceId, serverId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateAgentMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) UpdateAgentMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "serverId" -------------
+	var serverId AgentMcpServerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serverId", chi.URLParam(r, "serverId"), &serverId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serverId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateAgentMcpServer(w, r, workspaceId, serverId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConnectAgentMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) ConnectAgentMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "serverId" -------------
+	var serverId AgentMcpServerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serverId", chi.URLParam(r, "serverId"), &serverId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serverId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConnectAgentMcpServer(w, r, workspaceId, serverId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisconnectAgentMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) DisconnectAgentMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "serverId" -------------
+	var serverId AgentMcpServerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serverId", chi.URLParam(r, "serverId"), &serverId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serverId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisconnectAgentMcpServer(w, r, workspaceId, serverId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceAgentProposals operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceAgentProposals(w http.ResponseWriter, r *http.Request) {
 
@@ -92922,6 +98485,111 @@ func (siw *ServerInterfaceWrapper) RejectWorkspaceAgentProposal(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RejectWorkspaceAgentProposal(w, r, workspaceId, proposalId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAgentSkill operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAgentSkill(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "skillId" -------------
+	var skillId AgentSkillId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "skillId", chi.URLParam(r, "skillId"), &skillId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "skillId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAgentSkill(w, r, workspaceId, skillId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RewriteAgentSkill operation middleware
+func (siw *ServerInterfaceWrapper) RewriteAgentSkill(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "skillId" -------------
+	var skillId AgentSkillId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "skillId", chi.URLParam(r, "skillId"), &skillId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "skillId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RewriteAgentSkill(w, r, workspaceId, skillId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PullAgentSkill operation middleware
+func (siw *ServerInterfaceWrapper) PullAgentSkill(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "skillId" -------------
+	var skillId AgentSkillId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "skillId", chi.URLParam(r, "skillId"), &skillId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "skillId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PullAgentSkill(w, r, workspaceId, skillId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -93143,6 +98811,41 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceAgentActivity(w http.ResponseWri
 	handler.ServeHTTP(w, r)
 }
 
+// GetAgentCapabilities operation middleware
+func (siw *ServerInterfaceWrapper) GetAgentCapabilities(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAgentCapabilities(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListAgentCodebases operation middleware
 func (siw *ServerInterfaceWrapper) ListAgentCodebases(w http.ResponseWriter, r *http.Request) {
 
@@ -93283,6 +98986,252 @@ func (siw *ServerInterfaceWrapper) EnableWorkspaceAgent(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnableWorkspaceAgent(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DetachLibraryMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) DetachLibraryMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "serverId" -------------
+	var serverId AgentMcpServerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serverId", chi.URLParam(r, "serverId"), &serverId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serverId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DetachLibraryMcpServer(w, r, workspaceId, agentId, serverId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AttachLibraryMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) AttachLibraryMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "serverId" -------------
+	var serverId AgentMcpServerId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "serverId", chi.URLParam(r, "serverId"), &serverId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "serverId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AttachLibraryMcpServer(w, r, workspaceId, agentId, serverId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DetachLibrarySkill operation middleware
+func (siw *ServerInterfaceWrapper) DetachLibrarySkill(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "skillId" -------------
+	var skillId AgentSkillId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "skillId", chi.URLParam(r, "skillId"), &skillId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "skillId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DetachLibrarySkill(w, r, workspaceId, agentId, skillId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AttachLibrarySkill operation middleware
+func (siw *ServerInterfaceWrapper) AttachLibrarySkill(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "skillId" -------------
+	var skillId AgentSkillId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "skillId", chi.URLParam(r, "skillId"), &skillId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "skillId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AttachLibrarySkill(w, r, workspaceId, agentId, skillId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddAgentMcpServer operation middleware
+func (siw *ServerInterfaceWrapper) AddAgentMcpServer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddAgentMcpServer(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddAgentSkill operation middleware
+func (siw *ServerInterfaceWrapper) AddAgentSkill(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddAgentSkill(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -98477,6 +104426,48 @@ func (siw *ServerInterfaceWrapper) UploadWorkspaceLogo(w http.ResponseWriter, r 
 	handler.ServeHTTP(w, r)
 }
 
+// SearchMcpRegistry operation middleware
+func (siw *ServerInterfaceWrapper) SearchMcpRegistry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchMcpRegistryParams
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "search", r.URL.Query(), &params.Search, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "search"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchMcpRegistry(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -100046,6 +106037,48 @@ func (siw *ServerInterfaceWrapper) SearchWorkspace(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SearchWorkspace(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveSkillSource operation middleware
+func (siw *ServerInterfaceWrapper) ResolveSkillSource(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ResolveSkillSourceParams
+
+	// ------------- Required query parameter "source" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "source", r.URL.Query(), &params.Source, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "source"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "source", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveSkillSource(w, r, workspaceId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -104228,6 +110261,63 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Patch(options.BaseURL+"/runners/me/codebases/{codebaseId}", wrapper.ConfirmCodebase)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/capabilities", wrapper.GetAgentCapabilities)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/skills", wrapper.AddAgentSkill)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/mcp-servers", wrapper.AddAgentMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId}", wrapper.DetachLibrarySkill)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId}", wrapper.AttachLibrarySkill)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId}", wrapper.DetachLibraryMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId}", wrapper.AttachLibraryMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agent-library", wrapper.GetAgentLibrary)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agent-library/skills", wrapper.AddLibrarySkill)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agent-library/mcp-servers", wrapper.AddLibraryMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agent-skills/{skillId}", wrapper.DeleteAgentSkill)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/agent-skills/{skillId}", wrapper.RewriteAgentSkill)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agent-skills/{skillId}/pull", wrapper.PullAgentSkill)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agent-mcp-servers/{serverId}", wrapper.DeleteAgentMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agent-mcp-servers/{serverId}", wrapper.UpdateAgentMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect", wrapper.ConnectAgentMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection", wrapper.DisconnectAgentMcpServer)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/skill-sources", wrapper.ResolveSkillSource)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/mcp-registry", wrapper.SearchMcpRegistry)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/codebases", wrapper.ListAgentCodebases)
 	})
 	r.Group(func(r chi.Router) {
@@ -104318,6 +110408,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 type APITokenUnusableApplicationProblemPlusJSONResponse APITokenUnusableProblem
 
 type AccountLockedApplicationProblemPlusJSONResponse AccountLockedProblem
+
+type AgentCapabilityConflictApplicationProblemPlusJSONResponse AgentCapabilityConflictProblem
+
+type AgentCapabilitySealingUnavailableApplicationProblemPlusJSONResponse AgentCapabilitySealingUnavailableProblem
+
+type AgentCapabilityUpstreamApplicationProblemPlusJSONResponse AgentCapabilityUpstreamProblem
 
 type AgentHeldApplicationProblemPlusJSONResponse AgentHeldProblem
 
@@ -108737,6 +114833,734 @@ func (response UpdateWorkspace500ApplicationProblemPlusJSONResponse) VisitUpdate
 	return err
 }
 
+type GetAgentLibraryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetAgentLibraryResponseObject interface {
+	VisitGetAgentLibraryResponse(w http.ResponseWriter) error
+}
+
+type GetAgentLibrary200JSONResponse AgentLibrary
+
+func (response GetAgentLibrary200JSONResponse) VisitGetAgentLibraryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAgentLibrary401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAgentLibrary401ApplicationProblemPlusJSONResponse) VisitGetAgentLibraryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAgentLibrary403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetAgentLibrary403ApplicationProblemPlusJSONResponse) VisitGetAgentLibraryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAgentLibrary500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAgentLibrary500ApplicationProblemPlusJSONResponse) VisitGetAgentLibraryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibraryMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *AddLibraryMcpServerJSONRequestBody
+}
+
+type AddLibraryMcpServerResponseObject interface {
+	VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error
+}
+
+type AddLibraryMcpServer201JSONResponse AgentMcpServer
+
+func (response AddLibraryMcpServer201JSONResponse) VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibraryMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibraryMcpServer401ApplicationProblemPlusJSONResponse) VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibraryMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibraryMcpServer403ApplicationProblemPlusJSONResponse) VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibraryMcpServer409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibraryMcpServer409ApplicationProblemPlusJSONResponse) VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibraryMcpServer422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddLibraryMcpServer422ApplicationProblemPlusJSONResponse) VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibraryMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddLibraryMcpServer500ApplicationProblemPlusJSONResponse) VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibraryMcpServer503ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilitySealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibraryMcpServer503ApplicationProblemPlusJSONResponse) VisitAddLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibrarySkillRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *AddLibrarySkillJSONRequestBody
+}
+
+type AddLibrarySkillResponseObject interface {
+	VisitAddLibrarySkillResponse(w http.ResponseWriter) error
+}
+
+type AddLibrarySkill201JSONResponse AgentSkill
+
+func (response AddLibrarySkill201JSONResponse) VisitAddLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibrarySkill401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibrarySkill401ApplicationProblemPlusJSONResponse) VisitAddLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibrarySkill403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibrarySkill403ApplicationProblemPlusJSONResponse) VisitAddLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibrarySkill409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibrarySkill409ApplicationProblemPlusJSONResponse) VisitAddLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibrarySkill422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddLibrarySkill422ApplicationProblemPlusJSONResponse) VisitAddLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibrarySkill500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddLibrarySkill500ApplicationProblemPlusJSONResponse) VisitAddLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddLibrarySkill502ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityUpstreamApplicationProblemPlusJSONResponse
+}
+
+func (response AddLibrarySkill502ApplicationProblemPlusJSONResponse) VisitAddLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId      `json:"workspaceId"`
+	ServerId    AgentMcpServerId `json:"serverId"`
+}
+
+type DeleteAgentMcpServerResponseObject interface {
+	VisitDeleteAgentMcpServerResponse(w http.ResponseWriter) error
+}
+
+type DeleteAgentMcpServer204Response struct {
+}
+
+func (response DeleteAgentMcpServer204Response) VisitDeleteAgentMcpServerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAgentMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAgentMcpServer401ApplicationProblemPlusJSONResponse) VisitDeleteAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAgentMcpServer403ApplicationProblemPlusJSONResponse) VisitDeleteAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentMcpServer404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteAgentMcpServer404ApplicationProblemPlusJSONResponse) VisitDeleteAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteAgentMcpServer500ApplicationProblemPlusJSONResponse) VisitDeleteAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId      `json:"workspaceId"`
+	ServerId    AgentMcpServerId `json:"serverId"`
+	Body        *UpdateAgentMcpServerJSONRequestBody
+}
+
+type UpdateAgentMcpServerResponseObject interface {
+	VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error
+}
+
+type UpdateAgentMcpServer200JSONResponse AgentMcpServer
+
+func (response UpdateAgentMcpServer200JSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateAgentMcpServer401ApplicationProblemPlusJSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateAgentMcpServer403ApplicationProblemPlusJSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServer404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateAgentMcpServer404ApplicationProblemPlusJSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServer409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateAgentMcpServer409ApplicationProblemPlusJSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServer422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateAgentMcpServer422ApplicationProblemPlusJSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateAgentMcpServer500ApplicationProblemPlusJSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateAgentMcpServer503ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilitySealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateAgentMcpServer503ApplicationProblemPlusJSONResponse) VisitUpdateAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId      `json:"workspaceId"`
+	ServerId    AgentMcpServerId `json:"serverId"`
+	Body        *ConnectAgentMcpServerJSONRequestBody
+}
+
+type ConnectAgentMcpServerResponseObject interface {
+	VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error
+}
+
+type ConnectAgentMcpServer200JSONResponse AgentMcpAuthorization
+
+func (response ConnectAgentMcpServer200JSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectAgentMcpServer401ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectAgentMcpServer403ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectAgentMcpServer404ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectAgentMcpServer409ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer422ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectAgentMcpServer422ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectAgentMcpServer500ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer502ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityUpstreamApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectAgentMcpServer502ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectAgentMcpServer503ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilitySealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectAgentMcpServer503ApplicationProblemPlusJSONResponse) VisitConnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId      `json:"workspaceId"`
+	ServerId    AgentMcpServerId `json:"serverId"`
+}
+
+type DisconnectAgentMcpServerResponseObject interface {
+	VisitDisconnectAgentMcpServerResponse(w http.ResponseWriter) error
+}
+
+type DisconnectAgentMcpServer204Response struct {
+}
+
+func (response DisconnectAgentMcpServer204Response) VisitDisconnectAgentMcpServerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisconnectAgentMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectAgentMcpServer401ApplicationProblemPlusJSONResponse) VisitDisconnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectAgentMcpServer403ApplicationProblemPlusJSONResponse) VisitDisconnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentMcpServer404ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectAgentMcpServer404ApplicationProblemPlusJSONResponse) VisitDisconnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectAgentMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectAgentMcpServer500ApplicationProblemPlusJSONResponse) VisitDisconnectAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceAgentProposalsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -109000,6 +115824,326 @@ func (response RejectWorkspaceAgentProposal500ApplicationProblemPlusJSONResponse
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentSkillRequestObject struct {
+	WorkspaceId WorkspaceId  `json:"workspaceId"`
+	SkillId     AgentSkillId `json:"skillId"`
+}
+
+type DeleteAgentSkillResponseObject interface {
+	VisitDeleteAgentSkillResponse(w http.ResponseWriter) error
+}
+
+type DeleteAgentSkill204Response struct {
+}
+
+func (response DeleteAgentSkill204Response) VisitDeleteAgentSkillResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAgentSkill401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAgentSkill401ApplicationProblemPlusJSONResponse) VisitDeleteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentSkill403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAgentSkill403ApplicationProblemPlusJSONResponse) VisitDeleteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentSkill404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteAgentSkill404ApplicationProblemPlusJSONResponse) VisitDeleteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAgentSkill500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteAgentSkill500ApplicationProblemPlusJSONResponse) VisitDeleteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RewriteAgentSkillRequestObject struct {
+	WorkspaceId WorkspaceId  `json:"workspaceId"`
+	SkillId     AgentSkillId `json:"skillId"`
+	Body        *RewriteAgentSkillJSONRequestBody
+}
+
+type RewriteAgentSkillResponseObject interface {
+	VisitRewriteAgentSkillResponse(w http.ResponseWriter) error
+}
+
+type RewriteAgentSkill200JSONResponse AgentSkill
+
+func (response RewriteAgentSkill200JSONResponse) VisitRewriteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RewriteAgentSkill401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RewriteAgentSkill401ApplicationProblemPlusJSONResponse) VisitRewriteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RewriteAgentSkill403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RewriteAgentSkill403ApplicationProblemPlusJSONResponse) VisitRewriteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RewriteAgentSkill404ApplicationProblemPlusJSONResponse Problem
+
+func (response RewriteAgentSkill404ApplicationProblemPlusJSONResponse) VisitRewriteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RewriteAgentSkill409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RewriteAgentSkill409ApplicationProblemPlusJSONResponse) VisitRewriteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RewriteAgentSkill422ApplicationProblemPlusJSONResponse Problem
+
+func (response RewriteAgentSkill422ApplicationProblemPlusJSONResponse) VisitRewriteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RewriteAgentSkill500ApplicationProblemPlusJSONResponse Problem
+
+func (response RewriteAgentSkill500ApplicationProblemPlusJSONResponse) VisitRewriteAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkillRequestObject struct {
+	WorkspaceId WorkspaceId  `json:"workspaceId"`
+	SkillId     AgentSkillId `json:"skillId"`
+}
+
+type PullAgentSkillResponseObject interface {
+	VisitPullAgentSkillResponse(w http.ResponseWriter) error
+}
+
+type PullAgentSkill200JSONResponse AgentSkill
+
+func (response PullAgentSkill200JSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkill401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PullAgentSkill401ApplicationProblemPlusJSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkill403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response PullAgentSkill403ApplicationProblemPlusJSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkill404ApplicationProblemPlusJSONResponse Problem
+
+func (response PullAgentSkill404ApplicationProblemPlusJSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkill409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response PullAgentSkill409ApplicationProblemPlusJSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkill422ApplicationProblemPlusJSONResponse Problem
+
+func (response PullAgentSkill422ApplicationProblemPlusJSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkill500ApplicationProblemPlusJSONResponse Problem
+
+func (response PullAgentSkill500ApplicationProblemPlusJSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PullAgentSkill502ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityUpstreamApplicationProblemPlusJSONResponse
+}
+
+func (response PullAgentSkill502ApplicationProblemPlusJSONResponse) VisitPullAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -109531,6 +116675,89 @@ func (response ListWorkspaceAgentActivity500ApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type GetAgentCapabilitiesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+}
+
+type GetAgentCapabilitiesResponseObject interface {
+	VisitGetAgentCapabilitiesResponse(w http.ResponseWriter) error
+}
+
+type GetAgentCapabilities200JSONResponse AgentCapabilities
+
+func (response GetAgentCapabilities200JSONResponse) VisitGetAgentCapabilitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAgentCapabilities401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAgentCapabilities401ApplicationProblemPlusJSONResponse) VisitGetAgentCapabilitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAgentCapabilities403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetAgentCapabilities403ApplicationProblemPlusJSONResponse) VisitGetAgentCapabilitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAgentCapabilities404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAgentCapabilities404ApplicationProblemPlusJSONResponse) VisitGetAgentCapabilitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAgentCapabilities500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAgentCapabilities500ApplicationProblemPlusJSONResponse) VisitGetAgentCapabilitiesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListAgentCodebasesRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	AgentId     AgentId     `json:"agentId"`
@@ -109908,6 +117135,610 @@ func (response EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse) VisitE
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibraryMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId      `json:"workspaceId"`
+	AgentId     AgentId          `json:"agentId"`
+	ServerId    AgentMcpServerId `json:"serverId"`
+}
+
+type DetachLibraryMcpServerResponseObject interface {
+	VisitDetachLibraryMcpServerResponse(w http.ResponseWriter) error
+}
+
+type DetachLibraryMcpServer204Response struct {
+}
+
+func (response DetachLibraryMcpServer204Response) VisitDetachLibraryMcpServerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DetachLibraryMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DetachLibraryMcpServer401ApplicationProblemPlusJSONResponse) VisitDetachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibraryMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DetachLibraryMcpServer403ApplicationProblemPlusJSONResponse) VisitDetachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibraryMcpServer404ApplicationProblemPlusJSONResponse Problem
+
+func (response DetachLibraryMcpServer404ApplicationProblemPlusJSONResponse) VisitDetachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibraryMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response DetachLibraryMcpServer500ApplicationProblemPlusJSONResponse) VisitDetachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibraryMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId      `json:"workspaceId"`
+	AgentId     AgentId          `json:"agentId"`
+	ServerId    AgentMcpServerId `json:"serverId"`
+}
+
+type AttachLibraryMcpServerResponseObject interface {
+	VisitAttachLibraryMcpServerResponse(w http.ResponseWriter) error
+}
+
+type AttachLibraryMcpServer204Response struct {
+}
+
+func (response AttachLibraryMcpServer204Response) VisitAttachLibraryMcpServerResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AttachLibraryMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AttachLibraryMcpServer401ApplicationProblemPlusJSONResponse) VisitAttachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibraryMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AttachLibraryMcpServer403ApplicationProblemPlusJSONResponse) VisitAttachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibraryMcpServer404ApplicationProblemPlusJSONResponse Problem
+
+func (response AttachLibraryMcpServer404ApplicationProblemPlusJSONResponse) VisitAttachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibraryMcpServer409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AttachLibraryMcpServer409ApplicationProblemPlusJSONResponse) VisitAttachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibraryMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response AttachLibraryMcpServer500ApplicationProblemPlusJSONResponse) VisitAttachLibraryMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibrarySkillRequestObject struct {
+	WorkspaceId WorkspaceId  `json:"workspaceId"`
+	AgentId     AgentId      `json:"agentId"`
+	SkillId     AgentSkillId `json:"skillId"`
+}
+
+type DetachLibrarySkillResponseObject interface {
+	VisitDetachLibrarySkillResponse(w http.ResponseWriter) error
+}
+
+type DetachLibrarySkill204Response struct {
+}
+
+func (response DetachLibrarySkill204Response) VisitDetachLibrarySkillResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DetachLibrarySkill401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DetachLibrarySkill401ApplicationProblemPlusJSONResponse) VisitDetachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibrarySkill403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DetachLibrarySkill403ApplicationProblemPlusJSONResponse) VisitDetachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibrarySkill404ApplicationProblemPlusJSONResponse Problem
+
+func (response DetachLibrarySkill404ApplicationProblemPlusJSONResponse) VisitDetachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DetachLibrarySkill500ApplicationProblemPlusJSONResponse Problem
+
+func (response DetachLibrarySkill500ApplicationProblemPlusJSONResponse) VisitDetachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibrarySkillRequestObject struct {
+	WorkspaceId WorkspaceId  `json:"workspaceId"`
+	AgentId     AgentId      `json:"agentId"`
+	SkillId     AgentSkillId `json:"skillId"`
+}
+
+type AttachLibrarySkillResponseObject interface {
+	VisitAttachLibrarySkillResponse(w http.ResponseWriter) error
+}
+
+type AttachLibrarySkill204Response struct {
+}
+
+func (response AttachLibrarySkill204Response) VisitAttachLibrarySkillResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AttachLibrarySkill401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AttachLibrarySkill401ApplicationProblemPlusJSONResponse) VisitAttachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibrarySkill403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AttachLibrarySkill403ApplicationProblemPlusJSONResponse) VisitAttachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibrarySkill404ApplicationProblemPlusJSONResponse Problem
+
+func (response AttachLibrarySkill404ApplicationProblemPlusJSONResponse) VisitAttachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibrarySkill409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AttachLibrarySkill409ApplicationProblemPlusJSONResponse) VisitAttachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AttachLibrarySkill500ApplicationProblemPlusJSONResponse Problem
+
+func (response AttachLibrarySkill500ApplicationProblemPlusJSONResponse) VisitAttachLibrarySkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServerRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *AddAgentMcpServerJSONRequestBody
+}
+
+type AddAgentMcpServerResponseObject interface {
+	VisitAddAgentMcpServerResponse(w http.ResponseWriter) error
+}
+
+type AddAgentMcpServer201JSONResponse AgentMcpServer
+
+func (response AddAgentMcpServer201JSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServer401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentMcpServer401ApplicationProblemPlusJSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServer403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentMcpServer403ApplicationProblemPlusJSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServer404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgentMcpServer404ApplicationProblemPlusJSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServer409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentMcpServer409ApplicationProblemPlusJSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServer422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgentMcpServer422ApplicationProblemPlusJSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServer500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgentMcpServer500ApplicationProblemPlusJSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentMcpServer503ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilitySealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentMcpServer503ApplicationProblemPlusJSONResponse) VisitAddAgentMcpServerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkillRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *AddAgentSkillJSONRequestBody
+}
+
+type AddAgentSkillResponseObject interface {
+	VisitAddAgentSkillResponse(w http.ResponseWriter) error
+}
+
+type AddAgentSkill201JSONResponse AgentSkill
+
+func (response AddAgentSkill201JSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkill401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentSkill401ApplicationProblemPlusJSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkill403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentSkill403ApplicationProblemPlusJSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkill404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgentSkill404ApplicationProblemPlusJSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkill409ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentSkill409ApplicationProblemPlusJSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkill422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgentSkill422ApplicationProblemPlusJSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkill500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddAgentSkill500ApplicationProblemPlusJSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddAgentSkill502ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityUpstreamApplicationProblemPlusJSONResponse
+}
+
+func (response AddAgentSkill502ApplicationProblemPlusJSONResponse) VisitAddAgentSkillResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -122839,6 +130670,91 @@ func (response UploadWorkspaceLogo500ApplicationProblemPlusJSONResponse) VisitUp
 	return err
 }
 
+type SearchMcpRegistryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      SearchMcpRegistryParams
+}
+
+type SearchMcpRegistryResponseObject interface {
+	VisitSearchMcpRegistryResponse(w http.ResponseWriter) error
+}
+
+type SearchMcpRegistry200JSONResponse []McpRegistryEntry
+
+func (response SearchMcpRegistry200JSONResponse) VisitSearchMcpRegistryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchMcpRegistry401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SearchMcpRegistry401ApplicationProblemPlusJSONResponse) VisitSearchMcpRegistryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchMcpRegistry403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SearchMcpRegistry403ApplicationProblemPlusJSONResponse) VisitSearchMcpRegistryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchMcpRegistry500ApplicationProblemPlusJSONResponse Problem
+
+func (response SearchMcpRegistry500ApplicationProblemPlusJSONResponse) VisitSearchMcpRegistryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SearchMcpRegistry502ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityUpstreamApplicationProblemPlusJSONResponse
+}
+
+func (response SearchMcpRegistry502ApplicationProblemPlusJSONResponse) VisitSearchMcpRegistryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceMembersRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceMembersParams
@@ -126397,6 +134313,119 @@ func (response SearchWorkspace500ApplicationProblemPlusJSONResponse) VisitSearch
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveSkillSourceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ResolveSkillSourceParams
+}
+
+type ResolveSkillSourceResponseObject interface {
+	VisitResolveSkillSourceResponse(w http.ResponseWriter) error
+}
+
+type ResolveSkillSource200JSONResponse SkillSourceDiscovery
+
+func (response ResolveSkillSource200JSONResponse) VisitResolveSkillSourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveSkillSource401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveSkillSource401ApplicationProblemPlusJSONResponse) VisitResolveSkillSourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveSkillSource403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveSkillSource403ApplicationProblemPlusJSONResponse) VisitResolveSkillSourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveSkillSource404ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveSkillSource404ApplicationProblemPlusJSONResponse) VisitResolveSkillSourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveSkillSource422ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveSkillSource422ApplicationProblemPlusJSONResponse) VisitResolveSkillSourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveSkillSource500ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveSkillSource500ApplicationProblemPlusJSONResponse) VisitResolveSkillSourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveSkillSource502ApplicationProblemPlusJSONResponse struct {
+	AgentCapabilityUpstreamApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveSkillSource502ApplicationProblemPlusJSONResponse) VisitResolveSkillSourceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -134928,6 +142957,27 @@ type StrictServerInterface interface {
 	// UpdateWorkspace Change the workspace name, address, timezone, week start and default team
 	// (PATCH /workspaces/{workspaceId})
 	UpdateWorkspace(ctx context.Context, request UpdateWorkspaceRequestObject) (UpdateWorkspaceResponseObject, error)
+	// GetAgentLibrary List the skills and MCP servers any agent in the workspace can be given
+	// (GET /workspaces/{workspaceId}/agent-library)
+	GetAgentLibrary(ctx context.Context, request GetAgentLibraryRequestObject) (GetAgentLibraryResponseObject, error)
+	// AddLibraryMcpServer Add an MCP server to the workspace library
+	// (POST /workspaces/{workspaceId}/agent-library/mcp-servers)
+	AddLibraryMcpServer(ctx context.Context, request AddLibraryMcpServerRequestObject) (AddLibraryMcpServerResponseObject, error)
+	// AddLibrarySkill Add a skill to the workspace library
+	// (POST /workspaces/{workspaceId}/agent-library/skills)
+	AddLibrarySkill(ctx context.Context, request AddLibrarySkillRequestObject) (AddLibrarySkillResponseObject, error)
+	// DeleteAgentMcpServer Delete an MCP server, taking it from every agent that uses it
+	// (DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId})
+	DeleteAgentMcpServer(ctx context.Context, request DeleteAgentMcpServerRequestObject) (DeleteAgentMcpServerResponseObject, error)
+	// UpdateAgentMcpServer Change an MCP server
+	// (PUT /workspaces/{workspaceId}/agent-mcp-servers/{serverId})
+	UpdateAgentMcpServer(ctx context.Context, request UpdateAgentMcpServerRequestObject) (UpdateAgentMcpServerResponseObject, error)
+	// ConnectAgentMcpServer Start signing an MCP server in with OAuth
+	// (POST /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connect)
+	ConnectAgentMcpServer(ctx context.Context, request ConnectAgentMcpServerRequestObject) (ConnectAgentMcpServerResponseObject, error)
+	// DisconnectAgentMcpServer Sign an MCP server out and forget its tokens
+	// (DELETE /workspaces/{workspaceId}/agent-mcp-servers/{serverId}/connection)
+	DisconnectAgentMcpServer(ctx context.Context, request DisconnectAgentMcpServerRequestObject) (DisconnectAgentMcpServerResponseObject, error)
 	// ListWorkspaceAgentProposals Agent actions waiting for a person to approve them
 	// (GET /workspaces/{workspaceId}/agent-proposals)
 	ListWorkspaceAgentProposals(ctx context.Context, request ListWorkspaceAgentProposalsRequestObject) (ListWorkspaceAgentProposalsResponseObject, error)
@@ -134937,6 +142987,15 @@ type StrictServerInterface interface {
 	// RejectWorkspaceAgentProposal Refuse a held agent action so nothing is applied
 	// (POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject)
 	RejectWorkspaceAgentProposal(ctx context.Context, request RejectWorkspaceAgentProposalRequestObject) (RejectWorkspaceAgentProposalResponseObject, error)
+	// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
+	// (DELETE /workspaces/{workspaceId}/agent-skills/{skillId})
+	DeleteAgentSkill(ctx context.Context, request DeleteAgentSkillRequestObject) (DeleteAgentSkillResponseObject, error)
+	// RewriteAgentSkill Replace the contents of a skill that was written here
+	// (PATCH /workspaces/{workspaceId}/agent-skills/{skillId})
+	RewriteAgentSkill(ctx context.Context, request RewriteAgentSkillRequestObject) (RewriteAgentSkillResponseObject, error)
+	// PullAgentSkill Update an imported skill to the latest commit of the ref it was imported from
+	// (POST /workspaces/{workspaceId}/agent-skills/{skillId}/pull)
+	PullAgentSkill(ctx context.Context, request PullAgentSkillRequestObject) (PullAgentSkillResponseObject, error)
 	// ListWorkspaceAgents List the agents registered in this workspace
 	// (GET /workspaces/{workspaceId}/agents)
 	ListWorkspaceAgents(ctx context.Context, request ListWorkspaceAgentsRequestObject) (ListWorkspaceAgentsResponseObject, error)
@@ -134955,6 +143014,9 @@ type StrictServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(ctx context.Context, request ListWorkspaceAgentActivityRequestObject) (ListWorkspaceAgentActivityResponseObject, error)
+	// GetAgentCapabilities List the skills and MCP servers an agent runs with
+	// (GET /workspaces/{workspaceId}/agents/{agentId}/capabilities)
+	GetAgentCapabilities(ctx context.Context, request GetAgentCapabilitiesRequestObject) (GetAgentCapabilitiesResponseObject, error)
 	// ListAgentCodebases The folders this agent's machines hold
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/codebases)
 	ListAgentCodebases(ctx context.Context, request ListAgentCodebasesRequestObject) (ListAgentCodebasesResponseObject, error)
@@ -134967,6 +143029,24 @@ type StrictServerInterface interface {
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(ctx context.Context, request EnableWorkspaceAgentRequestObject) (EnableWorkspaceAgentResponseObject, error)
+	// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
+	DetachLibraryMcpServer(ctx context.Context, request DetachLibraryMcpServerRequestObject) (DetachLibraryMcpServerResponseObject, error)
+	// AttachLibraryMcpServer Let an agent use an MCP server from the workspace library
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
+	AttachLibraryMcpServer(ctx context.Context, request AttachLibraryMcpServerRequestObject) (AttachLibraryMcpServerResponseObject, error)
+	// DetachLibrarySkill Stop an agent using a library skill, leaving the skill in the library
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId})
+	DetachLibrarySkill(ctx context.Context, request DetachLibrarySkillRequestObject) (DetachLibrarySkillResponseObject, error)
+	// AttachLibrarySkill Let an agent use a skill from the workspace library
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/library-skills/{skillId})
+	AttachLibrarySkill(ctx context.Context, request AttachLibrarySkillRequestObject) (AttachLibrarySkillResponseObject, error)
+	// AddAgentMcpServer Give an agent an MCP server
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/mcp-servers)
+	AddAgentMcpServer(ctx context.Context, request AddAgentMcpServerRequestObject) (AddAgentMcpServerResponseObject, error)
+	// AddAgentSkill Give an agent a skill, imported from a repository or written here
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
+	AddAgentSkill(ctx context.Context, request AddAgentSkillRequestObject) (AddAgentSkillResponseObject, error)
 	// RemoveWorkspaceAiProvider Remove the provider and discard its key
 	// (DELETE /workspaces/{workspaceId}/ai-provider)
 	RemoveWorkspaceAiProvider(ctx context.Context, request RemoveWorkspaceAiProviderRequestObject) (RemoveWorkspaceAiProviderResponseObject, error)
@@ -135378,6 +143458,9 @@ type StrictServerInterface interface {
 	// UploadWorkspaceLogo Replace the workspace logo
 	// (PUT /workspaces/{workspaceId}/logo)
 	UploadWorkspaceLogo(ctx context.Context, request UploadWorkspaceLogoRequestObject) (UploadWorkspaceLogoResponseObject, error)
+	// SearchMcpRegistry Search the MCP registry for servers an agent can be given
+	// (GET /workspaces/{workspaceId}/mcp-registry)
+	SearchMcpRegistry(ctx context.Context, request SearchMcpRegistryRequestObject) (SearchMcpRegistryResponseObject, error)
 	// ListWorkspaceMembers List workspace members, searchable and paged by cursor
 	// (GET /workspaces/{workspaceId}/members)
 	ListWorkspaceMembers(ctx context.Context, request ListWorkspaceMembersRequestObject) (ListWorkspaceMembersResponseObject, error)
@@ -135498,6 +143581,9 @@ type StrictServerInterface interface {
 	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(ctx context.Context, request SearchWorkspaceRequestObject) (SearchWorkspaceResponseObject, error)
+	// ResolveSkillSource List the skills a repository, skills.sh page, or install command points at
+	// (GET /workspaces/{workspaceId}/skill-sources)
+	ResolveSkillSource(ctx context.Context, request ResolveSkillSourceRequestObject) (ResolveSkillSourceResponseObject, error)
 	// GetWorkspaceSourceControlApplication Say whether this instance can act as an installed application, and where to install it
 	// (GET /workspaces/{workspaceId}/source-control/application)
 	GetWorkspaceSourceControlApplication(ctx context.Context, request GetWorkspaceSourceControlApplicationRequestObject) (GetWorkspaceSourceControlApplicationResponseObject, error)
@@ -137346,6 +145432,220 @@ func (sh *strictHandler) UpdateWorkspace(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// GetAgentLibrary operation middleware
+func (sh *strictHandler) GetAgentLibrary(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetAgentLibraryRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAgentLibrary(ctx, request.(GetAgentLibraryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAgentLibrary")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAgentLibraryResponseObject); ok {
+		if err := validResponse.VisitGetAgentLibraryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddLibraryMcpServer operation middleware
+func (sh *strictHandler) AddLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request AddLibraryMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body AddLibraryMcpServerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddLibraryMcpServer(ctx, request.(AddLibraryMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddLibraryMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddLibraryMcpServerResponseObject); ok {
+		if err := validResponse.VisitAddLibraryMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddLibrarySkill operation middleware
+func (sh *strictHandler) AddLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request AddLibrarySkillRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body AddLibrarySkillJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddLibrarySkill(ctx, request.(AddLibrarySkillRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddLibrarySkill")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddLibrarySkillResponseObject); ok {
+		if err := validResponse.VisitAddLibrarySkillResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAgentMcpServer operation middleware
+func (sh *strictHandler) DeleteAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	var request DeleteAgentMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ServerId = serverId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAgentMcpServer(ctx, request.(DeleteAgentMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAgentMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAgentMcpServerResponseObject); ok {
+		if err := validResponse.VisitDeleteAgentMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateAgentMcpServer operation middleware
+func (sh *strictHandler) UpdateAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	var request UpdateAgentMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ServerId = serverId
+
+	var body UpdateAgentMcpServerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateAgentMcpServer(ctx, request.(UpdateAgentMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateAgentMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateAgentMcpServerResponseObject); ok {
+		if err := validResponse.VisitUpdateAgentMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConnectAgentMcpServer operation middleware
+func (sh *strictHandler) ConnectAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	var request ConnectAgentMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ServerId = serverId
+
+	var body ConnectAgentMcpServerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConnectAgentMcpServer(ctx, request.(ConnectAgentMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConnectAgentMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConnectAgentMcpServerResponseObject); ok {
+		if err := validResponse.VisitConnectAgentMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisconnectAgentMcpServer operation middleware
+func (sh *strictHandler) DisconnectAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, serverId AgentMcpServerId) {
+	var request DisconnectAgentMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ServerId = serverId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisconnectAgentMcpServer(ctx, request.(DisconnectAgentMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisconnectAgentMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisconnectAgentMcpServerResponseObject); ok {
+		if err := validResponse.VisitDisconnectAgentMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceAgentProposals operation middleware
 func (sh *strictHandler) ListWorkspaceAgentProposals(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	var request ListWorkspaceAgentProposalsRequestObject
@@ -137429,6 +145729,94 @@ func (sh *strictHandler) RejectWorkspaceAgentProposal(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RejectWorkspaceAgentProposalResponseObject); ok {
 		if err := validResponse.VisitRejectWorkspaceAgentProposalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAgentSkill operation middleware
+func (sh *strictHandler) DeleteAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId) {
+	var request DeleteAgentSkillRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SkillId = skillId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAgentSkill(ctx, request.(DeleteAgentSkillRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAgentSkill")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAgentSkillResponseObject); ok {
+		if err := validResponse.VisitDeleteAgentSkillResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RewriteAgentSkill operation middleware
+func (sh *strictHandler) RewriteAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId) {
+	var request RewriteAgentSkillRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SkillId = skillId
+
+	var body RewriteAgentSkillJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RewriteAgentSkill(ctx, request.(RewriteAgentSkillRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RewriteAgentSkill")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RewriteAgentSkillResponseObject); ok {
+		if err := validResponse.VisitRewriteAgentSkillResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PullAgentSkill operation middleware
+func (sh *strictHandler) PullAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId) {
+	var request PullAgentSkillRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.SkillId = skillId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PullAgentSkill(ctx, request.(PullAgentSkillRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PullAgentSkill")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PullAgentSkillResponseObject); ok {
+		if err := validResponse.VisitPullAgentSkillResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -137603,6 +145991,33 @@ func (sh *strictHandler) ListWorkspaceAgentActivity(w http.ResponseWriter, r *ht
 	}
 }
 
+// GetAgentCapabilities operation middleware
+func (sh *strictHandler) GetAgentCapabilities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request GetAgentCapabilitiesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAgentCapabilities(ctx, request.(GetAgentCapabilitiesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAgentCapabilities")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAgentCapabilitiesResponseObject); ok {
+		if err := validResponse.VisitGetAgentCapabilitiesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListAgentCodebases operation middleware
 func (sh *strictHandler) ListAgentCodebases(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	var request ListAgentCodebasesRequestObject
@@ -137705,6 +146120,186 @@ func (sh *strictHandler) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(EnableWorkspaceAgentResponseObject); ok {
 		if err := validResponse.VisitEnableWorkspaceAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DetachLibraryMcpServer operation middleware
+func (sh *strictHandler) DetachLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId) {
+	var request DetachLibraryMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+	request.ServerId = serverId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DetachLibraryMcpServer(ctx, request.(DetachLibraryMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DetachLibraryMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DetachLibraryMcpServerResponseObject); ok {
+		if err := validResponse.VisitDetachLibraryMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AttachLibraryMcpServer operation middleware
+func (sh *strictHandler) AttachLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId) {
+	var request AttachLibraryMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+	request.ServerId = serverId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AttachLibraryMcpServer(ctx, request.(AttachLibraryMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AttachLibraryMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AttachLibraryMcpServerResponseObject); ok {
+		if err := validResponse.VisitAttachLibraryMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DetachLibrarySkill operation middleware
+func (sh *strictHandler) DetachLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId) {
+	var request DetachLibrarySkillRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+	request.SkillId = skillId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DetachLibrarySkill(ctx, request.(DetachLibrarySkillRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DetachLibrarySkill")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DetachLibrarySkillResponseObject); ok {
+		if err := validResponse.VisitDetachLibrarySkillResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AttachLibrarySkill operation middleware
+func (sh *strictHandler) AttachLibrarySkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, skillId AgentSkillId) {
+	var request AttachLibrarySkillRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+	request.SkillId = skillId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AttachLibrarySkill(ctx, request.(AttachLibrarySkillRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AttachLibrarySkill")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AttachLibrarySkillResponseObject); ok {
+		if err := validResponse.VisitAttachLibrarySkillResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddAgentMcpServer operation middleware
+func (sh *strictHandler) AddAgentMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request AddAgentMcpServerRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body AddAgentMcpServerJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddAgentMcpServer(ctx, request.(AddAgentMcpServerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddAgentMcpServer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddAgentMcpServerResponseObject); ok {
+		if err := validResponse.VisitAddAgentMcpServerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddAgentSkill operation middleware
+func (sh *strictHandler) AddAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request AddAgentSkillRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body AddAgentSkillJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddAgentSkill(ctx, request.(AddAgentSkillRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddAgentSkill")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddAgentSkillResponseObject); ok {
+		if err := validResponse.VisitAddAgentSkillResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -141726,6 +150321,33 @@ func (sh *strictHandler) UploadWorkspaceLogo(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// SearchMcpRegistry operation middleware
+func (sh *strictHandler) SearchMcpRegistry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchMcpRegistryParams) {
+	var request SearchMcpRegistryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SearchMcpRegistry(ctx, request.(SearchMcpRegistryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SearchMcpRegistry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SearchMcpRegistryResponseObject); ok {
+		if err := validResponse.VisitSearchMcpRegistryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceMembers operation middleware
 func (sh *strictHandler) ListWorkspaceMembers(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMembersParams) {
 	var request ListWorkspaceMembersRequestObject
@@ -142887,6 +151509,33 @@ func (sh *strictHandler) SearchWorkspace(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SearchWorkspaceResponseObject); ok {
 		if err := validResponse.VisitSearchWorkspaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveSkillSource operation middleware
+func (sh *strictHandler) ResolveSkillSource(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ResolveSkillSourceParams) {
+	var request ResolveSkillSourceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveSkillSource(ctx, request.(ResolveSkillSourceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveSkillSource")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveSkillSourceResponseObject); ok {
+		if err := validResponse.VisitResolveSkillSourceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

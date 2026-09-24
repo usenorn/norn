@@ -30,6 +30,7 @@ type executionsService struct {
 	writer     service.Issues
 	source     service.SourceControl
 	events     service.Events
+	toolkits   service.AgentToolkits
 	authorizer service.Authorizer
 	audit      service.Audit
 	transactor repository.Transactor
@@ -49,6 +50,7 @@ func New(
 	writer service.Issues,
 	source service.SourceControl,
 	events service.Events,
+	toolkits service.AgentToolkits,
 	authorizer service.Authorizer,
 	audit service.Audit,
 	transactor repository.Transactor,
@@ -67,6 +69,7 @@ func New(
 		writer:     writer,
 		source:     source,
 		events:     events,
+		toolkits:   toolkits,
 		authorizer: authorizer,
 		audit:      audit,
 		transactor: transactor,

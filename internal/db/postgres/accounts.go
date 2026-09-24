@@ -201,149 +201,164 @@ var AccountWhere = struct {
 
 // AccountRels is where relationship names are stored.
 var AccountRels = struct {
-	WorkspaceAgent                                    string
-	AccountEmailChanges                               string
-	AccountPasswordHistories                          string
-	AccountPasswordResets                             string
-	APITokens                                         string
-	DirectoryUsers                                    string
-	ActorAccountWorkspaceActivities                   string
-	DecidedByAccountWorkspaceAgentProposals           string
-	OwnerAccountWorkspaceAgents                       string
-	IssuedByWorkspaceBreakGlassCodes                  string
-	RequestedByAccountWorkspaceBulkActions            string
-	ActorAccountWorkspaceCycleScopeChanges            string
-	ClosedByWorkspaceCycles                           string
-	OwnerAccountWorkspaceCycles                       string
-	ActorAccountWorkspaceExecutionEvents              string
-	CreatedByWorkspaceExecutionPreviewLinks           string
-	AcceptedByAccountWorkspaceInvitations             string
-	InvitedByAccountWorkspaceInvitations              string
-	WorkspaceIssueCommentMentions                     string
-	WorkspaceIssueCommentReactions                    string
-	RecordedByAccountWorkspaceIssueCriterionEvidences string
-	DelegatedByAccountWorkspaceIssueDelegations       string
-	RecalledByAccountWorkspaceIssueDelegations        string
-	AuthorAccountWorkspaceIssueDescriptionRevisions   string
-	WorkspaceIssueDrafts                              string
-	AssigneeAccountWorkspaceIssueDrafts               string
-	AnsweredByAccountWorkspaceIssueQuestions          string
-	AskedByAccountWorkspaceIssueQuestions             string
-	SettledByAccountWorkspaceIssueQuestions           string
-	CreatedByAccountWorkspaceIssueRelations           string
-	AssigneeAccountWorkspaceIssueTemplates            string
-	CreatedByAccountWorkspaceIssueTemplates           string
-	AssigneeAccountWorkspaceIssues                    string
-	CreatedByAccountWorkspaceIssues                   string
-	TriageDecidedByAccountWorkspaceIssues             string
-	WorkspaceMemberships                              string
-	ActorAccountWorkspaceNotificationEvents           string
-	TargetAccountWorkspaceNotificationEvents          string
-	AuthorAccountWorkspaceProjectStatusUpdates        string
-	LeadAccountWorkspaceProjects                      string
-	WorkspaceRequestKeys                              string
-	IntegrationAccountWorkspaceSCMConnections         string
-	OwnerAccountWorkspaceSCMConnections               string
-	WorkspaceSCMIdentities                            string
-	WorkspaceSsoIdentities                            string
-	EnabledByAccountWorkspaceTeamIntakeAddresses      string
+	WorkspaceAgent                                      string
+	AccountEmailChanges                                 string
+	AccountPasswordHistories                            string
+	AccountPasswordResets                               string
+	APITokens                                           string
+	DirectoryUsers                                      string
+	ActorAccountWorkspaceActivities                     string
+	ConnectedByAccountWorkspaceAgentMCPConnections      string
+	AttachedByAccountWorkspaceAgentMCPServerAttachments string
+	CreatedByAccountWorkspaceAgentMCPServers            string
+	DecidedByAccountWorkspaceAgentProposals             string
+	AttachedByAccountWorkspaceAgentSkillAttachments     string
+	CreatedByAccountWorkspaceAgentSkills                string
+	OwnerAccountWorkspaceAgents                         string
+	IssuedByWorkspaceBreakGlassCodes                    string
+	RequestedByAccountWorkspaceBulkActions              string
+	ActorAccountWorkspaceCycleScopeChanges              string
+	ClosedByWorkspaceCycles                             string
+	OwnerAccountWorkspaceCycles                         string
+	ActorAccountWorkspaceExecutionEvents                string
+	CreatedByWorkspaceExecutionPreviewLinks             string
+	AcceptedByAccountWorkspaceInvitations               string
+	InvitedByAccountWorkspaceInvitations                string
+	WorkspaceIssueCommentMentions                       string
+	WorkspaceIssueCommentReactions                      string
+	RecordedByAccountWorkspaceIssueCriterionEvidences   string
+	DelegatedByAccountWorkspaceIssueDelegations         string
+	RecalledByAccountWorkspaceIssueDelegations          string
+	AuthorAccountWorkspaceIssueDescriptionRevisions     string
+	WorkspaceIssueDrafts                                string
+	AssigneeAccountWorkspaceIssueDrafts                 string
+	AnsweredByAccountWorkspaceIssueQuestions            string
+	AskedByAccountWorkspaceIssueQuestions               string
+	SettledByAccountWorkspaceIssueQuestions             string
+	CreatedByAccountWorkspaceIssueRelations             string
+	AssigneeAccountWorkspaceIssueTemplates              string
+	CreatedByAccountWorkspaceIssueTemplates             string
+	AssigneeAccountWorkspaceIssues                      string
+	CreatedByAccountWorkspaceIssues                     string
+	TriageDecidedByAccountWorkspaceIssues               string
+	WorkspaceMemberships                                string
+	ActorAccountWorkspaceNotificationEvents             string
+	TargetAccountWorkspaceNotificationEvents            string
+	AuthorAccountWorkspaceProjectStatusUpdates          string
+	LeadAccountWorkspaceProjects                        string
+	WorkspaceRequestKeys                                string
+	IntegrationAccountWorkspaceSCMConnections           string
+	OwnerAccountWorkspaceSCMConnections                 string
+	WorkspaceSCMIdentities                              string
+	WorkspaceSsoIdentities                              string
+	EnabledByAccountWorkspaceTeamIntakeAddresses        string
 }{
-	WorkspaceAgent:                                    "WorkspaceAgent",
-	AccountEmailChanges:                               "AccountEmailChanges",
-	AccountPasswordHistories:                          "AccountPasswordHistories",
-	AccountPasswordResets:                             "AccountPasswordResets",
-	APITokens:                                         "APITokens",
-	DirectoryUsers:                                    "DirectoryUsers",
-	ActorAccountWorkspaceActivities:                   "ActorAccountWorkspaceActivities",
-	DecidedByAccountWorkspaceAgentProposals:           "DecidedByAccountWorkspaceAgentProposals",
-	OwnerAccountWorkspaceAgents:                       "OwnerAccountWorkspaceAgents",
-	IssuedByWorkspaceBreakGlassCodes:                  "IssuedByWorkspaceBreakGlassCodes",
-	RequestedByAccountWorkspaceBulkActions:            "RequestedByAccountWorkspaceBulkActions",
-	ActorAccountWorkspaceCycleScopeChanges:            "ActorAccountWorkspaceCycleScopeChanges",
-	ClosedByWorkspaceCycles:                           "ClosedByWorkspaceCycles",
-	OwnerAccountWorkspaceCycles:                       "OwnerAccountWorkspaceCycles",
-	ActorAccountWorkspaceExecutionEvents:              "ActorAccountWorkspaceExecutionEvents",
-	CreatedByWorkspaceExecutionPreviewLinks:           "CreatedByWorkspaceExecutionPreviewLinks",
-	AcceptedByAccountWorkspaceInvitations:             "AcceptedByAccountWorkspaceInvitations",
-	InvitedByAccountWorkspaceInvitations:              "InvitedByAccountWorkspaceInvitations",
-	WorkspaceIssueCommentMentions:                     "WorkspaceIssueCommentMentions",
-	WorkspaceIssueCommentReactions:                    "WorkspaceIssueCommentReactions",
-	RecordedByAccountWorkspaceIssueCriterionEvidences: "RecordedByAccountWorkspaceIssueCriterionEvidences",
-	DelegatedByAccountWorkspaceIssueDelegations:       "DelegatedByAccountWorkspaceIssueDelegations",
-	RecalledByAccountWorkspaceIssueDelegations:        "RecalledByAccountWorkspaceIssueDelegations",
-	AuthorAccountWorkspaceIssueDescriptionRevisions:   "AuthorAccountWorkspaceIssueDescriptionRevisions",
-	WorkspaceIssueDrafts:                              "WorkspaceIssueDrafts",
-	AssigneeAccountWorkspaceIssueDrafts:               "AssigneeAccountWorkspaceIssueDrafts",
-	AnsweredByAccountWorkspaceIssueQuestions:          "AnsweredByAccountWorkspaceIssueQuestions",
-	AskedByAccountWorkspaceIssueQuestions:             "AskedByAccountWorkspaceIssueQuestions",
-	SettledByAccountWorkspaceIssueQuestions:           "SettledByAccountWorkspaceIssueQuestions",
-	CreatedByAccountWorkspaceIssueRelations:           "CreatedByAccountWorkspaceIssueRelations",
-	AssigneeAccountWorkspaceIssueTemplates:            "AssigneeAccountWorkspaceIssueTemplates",
-	CreatedByAccountWorkspaceIssueTemplates:           "CreatedByAccountWorkspaceIssueTemplates",
-	AssigneeAccountWorkspaceIssues:                    "AssigneeAccountWorkspaceIssues",
-	CreatedByAccountWorkspaceIssues:                   "CreatedByAccountWorkspaceIssues",
-	TriageDecidedByAccountWorkspaceIssues:             "TriageDecidedByAccountWorkspaceIssues",
-	WorkspaceMemberships:                              "WorkspaceMemberships",
-	ActorAccountWorkspaceNotificationEvents:           "ActorAccountWorkspaceNotificationEvents",
-	TargetAccountWorkspaceNotificationEvents:          "TargetAccountWorkspaceNotificationEvents",
-	AuthorAccountWorkspaceProjectStatusUpdates:        "AuthorAccountWorkspaceProjectStatusUpdates",
-	LeadAccountWorkspaceProjects:                      "LeadAccountWorkspaceProjects",
-	WorkspaceRequestKeys:                              "WorkspaceRequestKeys",
-	IntegrationAccountWorkspaceSCMConnections:         "IntegrationAccountWorkspaceSCMConnections",
-	OwnerAccountWorkspaceSCMConnections:               "OwnerAccountWorkspaceSCMConnections",
-	WorkspaceSCMIdentities:                            "WorkspaceSCMIdentities",
-	WorkspaceSsoIdentities:                            "WorkspaceSsoIdentities",
-	EnabledByAccountWorkspaceTeamIntakeAddresses:      "EnabledByAccountWorkspaceTeamIntakeAddresses",
+	WorkspaceAgent:                  "WorkspaceAgent",
+	AccountEmailChanges:             "AccountEmailChanges",
+	AccountPasswordHistories:        "AccountPasswordHistories",
+	AccountPasswordResets:           "AccountPasswordResets",
+	APITokens:                       "APITokens",
+	DirectoryUsers:                  "DirectoryUsers",
+	ActorAccountWorkspaceActivities: "ActorAccountWorkspaceActivities",
+	ConnectedByAccountWorkspaceAgentMCPConnections:      "ConnectedByAccountWorkspaceAgentMCPConnections",
+	AttachedByAccountWorkspaceAgentMCPServerAttachments: "AttachedByAccountWorkspaceAgentMCPServerAttachments",
+	CreatedByAccountWorkspaceAgentMCPServers:            "CreatedByAccountWorkspaceAgentMCPServers",
+	DecidedByAccountWorkspaceAgentProposals:             "DecidedByAccountWorkspaceAgentProposals",
+	AttachedByAccountWorkspaceAgentSkillAttachments:     "AttachedByAccountWorkspaceAgentSkillAttachments",
+	CreatedByAccountWorkspaceAgentSkills:                "CreatedByAccountWorkspaceAgentSkills",
+	OwnerAccountWorkspaceAgents:                         "OwnerAccountWorkspaceAgents",
+	IssuedByWorkspaceBreakGlassCodes:                    "IssuedByWorkspaceBreakGlassCodes",
+	RequestedByAccountWorkspaceBulkActions:              "RequestedByAccountWorkspaceBulkActions",
+	ActorAccountWorkspaceCycleScopeChanges:              "ActorAccountWorkspaceCycleScopeChanges",
+	ClosedByWorkspaceCycles:                             "ClosedByWorkspaceCycles",
+	OwnerAccountWorkspaceCycles:                         "OwnerAccountWorkspaceCycles",
+	ActorAccountWorkspaceExecutionEvents:                "ActorAccountWorkspaceExecutionEvents",
+	CreatedByWorkspaceExecutionPreviewLinks:             "CreatedByWorkspaceExecutionPreviewLinks",
+	AcceptedByAccountWorkspaceInvitations:               "AcceptedByAccountWorkspaceInvitations",
+	InvitedByAccountWorkspaceInvitations:                "InvitedByAccountWorkspaceInvitations",
+	WorkspaceIssueCommentMentions:                       "WorkspaceIssueCommentMentions",
+	WorkspaceIssueCommentReactions:                      "WorkspaceIssueCommentReactions",
+	RecordedByAccountWorkspaceIssueCriterionEvidences:   "RecordedByAccountWorkspaceIssueCriterionEvidences",
+	DelegatedByAccountWorkspaceIssueDelegations:         "DelegatedByAccountWorkspaceIssueDelegations",
+	RecalledByAccountWorkspaceIssueDelegations:          "RecalledByAccountWorkspaceIssueDelegations",
+	AuthorAccountWorkspaceIssueDescriptionRevisions:     "AuthorAccountWorkspaceIssueDescriptionRevisions",
+	WorkspaceIssueDrafts:                                "WorkspaceIssueDrafts",
+	AssigneeAccountWorkspaceIssueDrafts:                 "AssigneeAccountWorkspaceIssueDrafts",
+	AnsweredByAccountWorkspaceIssueQuestions:            "AnsweredByAccountWorkspaceIssueQuestions",
+	AskedByAccountWorkspaceIssueQuestions:               "AskedByAccountWorkspaceIssueQuestions",
+	SettledByAccountWorkspaceIssueQuestions:             "SettledByAccountWorkspaceIssueQuestions",
+	CreatedByAccountWorkspaceIssueRelations:             "CreatedByAccountWorkspaceIssueRelations",
+	AssigneeAccountWorkspaceIssueTemplates:              "AssigneeAccountWorkspaceIssueTemplates",
+	CreatedByAccountWorkspaceIssueTemplates:             "CreatedByAccountWorkspaceIssueTemplates",
+	AssigneeAccountWorkspaceIssues:                      "AssigneeAccountWorkspaceIssues",
+	CreatedByAccountWorkspaceIssues:                     "CreatedByAccountWorkspaceIssues",
+	TriageDecidedByAccountWorkspaceIssues:               "TriageDecidedByAccountWorkspaceIssues",
+	WorkspaceMemberships:                                "WorkspaceMemberships",
+	ActorAccountWorkspaceNotificationEvents:             "ActorAccountWorkspaceNotificationEvents",
+	TargetAccountWorkspaceNotificationEvents:            "TargetAccountWorkspaceNotificationEvents",
+	AuthorAccountWorkspaceProjectStatusUpdates:          "AuthorAccountWorkspaceProjectStatusUpdates",
+	LeadAccountWorkspaceProjects:                        "LeadAccountWorkspaceProjects",
+	WorkspaceRequestKeys:                                "WorkspaceRequestKeys",
+	IntegrationAccountWorkspaceSCMConnections:           "IntegrationAccountWorkspaceSCMConnections",
+	OwnerAccountWorkspaceSCMConnections:                 "OwnerAccountWorkspaceSCMConnections",
+	WorkspaceSCMIdentities:                              "WorkspaceSCMIdentities",
+	WorkspaceSsoIdentities:                              "WorkspaceSsoIdentities",
+	EnabledByAccountWorkspaceTeamIntakeAddresses:        "EnabledByAccountWorkspaceTeamIntakeAddresses",
 }
 
 // accountR is where relationships are stored.
 type accountR struct {
-	WorkspaceAgent                                    *WorkspaceAgent                        `boil:"WorkspaceAgent" json:"WorkspaceAgent" toml:"WorkspaceAgent" yaml:"WorkspaceAgent"`
-	AccountEmailChanges                               AccountEmailChangeSlice                `boil:"AccountEmailChanges" json:"AccountEmailChanges" toml:"AccountEmailChanges" yaml:"AccountEmailChanges"`
-	AccountPasswordHistories                          AccountPasswordHistorySlice            `boil:"AccountPasswordHistories" json:"AccountPasswordHistories" toml:"AccountPasswordHistories" yaml:"AccountPasswordHistories"`
-	AccountPasswordResets                             AccountPasswordResetSlice              `boil:"AccountPasswordResets" json:"AccountPasswordResets" toml:"AccountPasswordResets" yaml:"AccountPasswordResets"`
-	APITokens                                         APITokenSlice                          `boil:"APITokens" json:"APITokens" toml:"APITokens" yaml:"APITokens"`
-	DirectoryUsers                                    DirectoryUserSlice                     `boil:"DirectoryUsers" json:"DirectoryUsers" toml:"DirectoryUsers" yaml:"DirectoryUsers"`
-	ActorAccountWorkspaceActivities                   WorkspaceActivitySlice                 `boil:"ActorAccountWorkspaceActivities" json:"ActorAccountWorkspaceActivities" toml:"ActorAccountWorkspaceActivities" yaml:"ActorAccountWorkspaceActivities"`
-	DecidedByAccountWorkspaceAgentProposals           WorkspaceAgentProposalSlice            `boil:"DecidedByAccountWorkspaceAgentProposals" json:"DecidedByAccountWorkspaceAgentProposals" toml:"DecidedByAccountWorkspaceAgentProposals" yaml:"DecidedByAccountWorkspaceAgentProposals"`
-	OwnerAccountWorkspaceAgents                       WorkspaceAgentSlice                    `boil:"OwnerAccountWorkspaceAgents" json:"OwnerAccountWorkspaceAgents" toml:"OwnerAccountWorkspaceAgents" yaml:"OwnerAccountWorkspaceAgents"`
-	IssuedByWorkspaceBreakGlassCodes                  WorkspaceBreakGlassCodeSlice           `boil:"IssuedByWorkspaceBreakGlassCodes" json:"IssuedByWorkspaceBreakGlassCodes" toml:"IssuedByWorkspaceBreakGlassCodes" yaml:"IssuedByWorkspaceBreakGlassCodes"`
-	RequestedByAccountWorkspaceBulkActions            WorkspaceBulkActionSlice               `boil:"RequestedByAccountWorkspaceBulkActions" json:"RequestedByAccountWorkspaceBulkActions" toml:"RequestedByAccountWorkspaceBulkActions" yaml:"RequestedByAccountWorkspaceBulkActions"`
-	ActorAccountWorkspaceCycleScopeChanges            WorkspaceCycleScopeChangeSlice         `boil:"ActorAccountWorkspaceCycleScopeChanges" json:"ActorAccountWorkspaceCycleScopeChanges" toml:"ActorAccountWorkspaceCycleScopeChanges" yaml:"ActorAccountWorkspaceCycleScopeChanges"`
-	ClosedByWorkspaceCycles                           WorkspaceCycleSlice                    `boil:"ClosedByWorkspaceCycles" json:"ClosedByWorkspaceCycles" toml:"ClosedByWorkspaceCycles" yaml:"ClosedByWorkspaceCycles"`
-	OwnerAccountWorkspaceCycles                       WorkspaceCycleSlice                    `boil:"OwnerAccountWorkspaceCycles" json:"OwnerAccountWorkspaceCycles" toml:"OwnerAccountWorkspaceCycles" yaml:"OwnerAccountWorkspaceCycles"`
-	ActorAccountWorkspaceExecutionEvents              WorkspaceExecutionEventSlice           `boil:"ActorAccountWorkspaceExecutionEvents" json:"ActorAccountWorkspaceExecutionEvents" toml:"ActorAccountWorkspaceExecutionEvents" yaml:"ActorAccountWorkspaceExecutionEvents"`
-	CreatedByWorkspaceExecutionPreviewLinks           WorkspaceExecutionPreviewLinkSlice     `boil:"CreatedByWorkspaceExecutionPreviewLinks" json:"CreatedByWorkspaceExecutionPreviewLinks" toml:"CreatedByWorkspaceExecutionPreviewLinks" yaml:"CreatedByWorkspaceExecutionPreviewLinks"`
-	AcceptedByAccountWorkspaceInvitations             WorkspaceInvitationSlice               `boil:"AcceptedByAccountWorkspaceInvitations" json:"AcceptedByAccountWorkspaceInvitations" toml:"AcceptedByAccountWorkspaceInvitations" yaml:"AcceptedByAccountWorkspaceInvitations"`
-	InvitedByAccountWorkspaceInvitations              WorkspaceInvitationSlice               `boil:"InvitedByAccountWorkspaceInvitations" json:"InvitedByAccountWorkspaceInvitations" toml:"InvitedByAccountWorkspaceInvitations" yaml:"InvitedByAccountWorkspaceInvitations"`
-	WorkspaceIssueCommentMentions                     WorkspaceIssueCommentMentionSlice      `boil:"WorkspaceIssueCommentMentions" json:"WorkspaceIssueCommentMentions" toml:"WorkspaceIssueCommentMentions" yaml:"WorkspaceIssueCommentMentions"`
-	WorkspaceIssueCommentReactions                    WorkspaceIssueCommentReactionSlice     `boil:"WorkspaceIssueCommentReactions" json:"WorkspaceIssueCommentReactions" toml:"WorkspaceIssueCommentReactions" yaml:"WorkspaceIssueCommentReactions"`
-	RecordedByAccountWorkspaceIssueCriterionEvidences WorkspaceIssueCriterionEvidenceSlice   `boil:"RecordedByAccountWorkspaceIssueCriterionEvidences" json:"RecordedByAccountWorkspaceIssueCriterionEvidences" toml:"RecordedByAccountWorkspaceIssueCriterionEvidences" yaml:"RecordedByAccountWorkspaceIssueCriterionEvidences"`
-	DelegatedByAccountWorkspaceIssueDelegations       WorkspaceIssueDelegationSlice          `boil:"DelegatedByAccountWorkspaceIssueDelegations" json:"DelegatedByAccountWorkspaceIssueDelegations" toml:"DelegatedByAccountWorkspaceIssueDelegations" yaml:"DelegatedByAccountWorkspaceIssueDelegations"`
-	RecalledByAccountWorkspaceIssueDelegations        WorkspaceIssueDelegationSlice          `boil:"RecalledByAccountWorkspaceIssueDelegations" json:"RecalledByAccountWorkspaceIssueDelegations" toml:"RecalledByAccountWorkspaceIssueDelegations" yaml:"RecalledByAccountWorkspaceIssueDelegations"`
-	AuthorAccountWorkspaceIssueDescriptionRevisions   WorkspaceIssueDescriptionRevisionSlice `boil:"AuthorAccountWorkspaceIssueDescriptionRevisions" json:"AuthorAccountWorkspaceIssueDescriptionRevisions" toml:"AuthorAccountWorkspaceIssueDescriptionRevisions" yaml:"AuthorAccountWorkspaceIssueDescriptionRevisions"`
-	WorkspaceIssueDrafts                              WorkspaceIssueDraftSlice               `boil:"WorkspaceIssueDrafts" json:"WorkspaceIssueDrafts" toml:"WorkspaceIssueDrafts" yaml:"WorkspaceIssueDrafts"`
-	AssigneeAccountWorkspaceIssueDrafts               WorkspaceIssueDraftSlice               `boil:"AssigneeAccountWorkspaceIssueDrafts" json:"AssigneeAccountWorkspaceIssueDrafts" toml:"AssigneeAccountWorkspaceIssueDrafts" yaml:"AssigneeAccountWorkspaceIssueDrafts"`
-	AnsweredByAccountWorkspaceIssueQuestions          WorkspaceIssueQuestionSlice            `boil:"AnsweredByAccountWorkspaceIssueQuestions" json:"AnsweredByAccountWorkspaceIssueQuestions" toml:"AnsweredByAccountWorkspaceIssueQuestions" yaml:"AnsweredByAccountWorkspaceIssueQuestions"`
-	AskedByAccountWorkspaceIssueQuestions             WorkspaceIssueQuestionSlice            `boil:"AskedByAccountWorkspaceIssueQuestions" json:"AskedByAccountWorkspaceIssueQuestions" toml:"AskedByAccountWorkspaceIssueQuestions" yaml:"AskedByAccountWorkspaceIssueQuestions"`
-	SettledByAccountWorkspaceIssueQuestions           WorkspaceIssueQuestionSlice            `boil:"SettledByAccountWorkspaceIssueQuestions" json:"SettledByAccountWorkspaceIssueQuestions" toml:"SettledByAccountWorkspaceIssueQuestions" yaml:"SettledByAccountWorkspaceIssueQuestions"`
-	CreatedByAccountWorkspaceIssueRelations           WorkspaceIssueRelationSlice            `boil:"CreatedByAccountWorkspaceIssueRelations" json:"CreatedByAccountWorkspaceIssueRelations" toml:"CreatedByAccountWorkspaceIssueRelations" yaml:"CreatedByAccountWorkspaceIssueRelations"`
-	AssigneeAccountWorkspaceIssueTemplates            WorkspaceIssueTemplateSlice            `boil:"AssigneeAccountWorkspaceIssueTemplates" json:"AssigneeAccountWorkspaceIssueTemplates" toml:"AssigneeAccountWorkspaceIssueTemplates" yaml:"AssigneeAccountWorkspaceIssueTemplates"`
-	CreatedByAccountWorkspaceIssueTemplates           WorkspaceIssueTemplateSlice            `boil:"CreatedByAccountWorkspaceIssueTemplates" json:"CreatedByAccountWorkspaceIssueTemplates" toml:"CreatedByAccountWorkspaceIssueTemplates" yaml:"CreatedByAccountWorkspaceIssueTemplates"`
-	AssigneeAccountWorkspaceIssues                    WorkspaceIssueSlice                    `boil:"AssigneeAccountWorkspaceIssues" json:"AssigneeAccountWorkspaceIssues" toml:"AssigneeAccountWorkspaceIssues" yaml:"AssigneeAccountWorkspaceIssues"`
-	CreatedByAccountWorkspaceIssues                   WorkspaceIssueSlice                    `boil:"CreatedByAccountWorkspaceIssues" json:"CreatedByAccountWorkspaceIssues" toml:"CreatedByAccountWorkspaceIssues" yaml:"CreatedByAccountWorkspaceIssues"`
-	TriageDecidedByAccountWorkspaceIssues             WorkspaceIssueSlice                    `boil:"TriageDecidedByAccountWorkspaceIssues" json:"TriageDecidedByAccountWorkspaceIssues" toml:"TriageDecidedByAccountWorkspaceIssues" yaml:"TriageDecidedByAccountWorkspaceIssues"`
-	WorkspaceMemberships                              WorkspaceMembershipSlice               `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
-	ActorAccountWorkspaceNotificationEvents           WorkspaceNotificationEventSlice        `boil:"ActorAccountWorkspaceNotificationEvents" json:"ActorAccountWorkspaceNotificationEvents" toml:"ActorAccountWorkspaceNotificationEvents" yaml:"ActorAccountWorkspaceNotificationEvents"`
-	TargetAccountWorkspaceNotificationEvents          WorkspaceNotificationEventSlice        `boil:"TargetAccountWorkspaceNotificationEvents" json:"TargetAccountWorkspaceNotificationEvents" toml:"TargetAccountWorkspaceNotificationEvents" yaml:"TargetAccountWorkspaceNotificationEvents"`
-	AuthorAccountWorkspaceProjectStatusUpdates        WorkspaceProjectStatusUpdateSlice      `boil:"AuthorAccountWorkspaceProjectStatusUpdates" json:"AuthorAccountWorkspaceProjectStatusUpdates" toml:"AuthorAccountWorkspaceProjectStatusUpdates" yaml:"AuthorAccountWorkspaceProjectStatusUpdates"`
-	LeadAccountWorkspaceProjects                      WorkspaceProjectSlice                  `boil:"LeadAccountWorkspaceProjects" json:"LeadAccountWorkspaceProjects" toml:"LeadAccountWorkspaceProjects" yaml:"LeadAccountWorkspaceProjects"`
-	WorkspaceRequestKeys                              WorkspaceRequestKeySlice               `boil:"WorkspaceRequestKeys" json:"WorkspaceRequestKeys" toml:"WorkspaceRequestKeys" yaml:"WorkspaceRequestKeys"`
-	IntegrationAccountWorkspaceSCMConnections         WorkspaceSCMConnectionSlice            `boil:"IntegrationAccountWorkspaceSCMConnections" json:"IntegrationAccountWorkspaceSCMConnections" toml:"IntegrationAccountWorkspaceSCMConnections" yaml:"IntegrationAccountWorkspaceSCMConnections"`
-	OwnerAccountWorkspaceSCMConnections               WorkspaceSCMConnectionSlice            `boil:"OwnerAccountWorkspaceSCMConnections" json:"OwnerAccountWorkspaceSCMConnections" toml:"OwnerAccountWorkspaceSCMConnections" yaml:"OwnerAccountWorkspaceSCMConnections"`
-	WorkspaceSCMIdentities                            WorkspaceSCMIdentitySlice              `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
-	WorkspaceSsoIdentities                            WorkspaceSsoIdentitySlice              `boil:"WorkspaceSsoIdentities" json:"WorkspaceSsoIdentities" toml:"WorkspaceSsoIdentities" yaml:"WorkspaceSsoIdentities"`
-	EnabledByAccountWorkspaceTeamIntakeAddresses      WorkspaceTeamIntakeAddressSlice        `boil:"EnabledByAccountWorkspaceTeamIntakeAddresses" json:"EnabledByAccountWorkspaceTeamIntakeAddresses" toml:"EnabledByAccountWorkspaceTeamIntakeAddresses" yaml:"EnabledByAccountWorkspaceTeamIntakeAddresses"`
+	WorkspaceAgent                                      *WorkspaceAgent                        `boil:"WorkspaceAgent" json:"WorkspaceAgent" toml:"WorkspaceAgent" yaml:"WorkspaceAgent"`
+	AccountEmailChanges                                 AccountEmailChangeSlice                `boil:"AccountEmailChanges" json:"AccountEmailChanges" toml:"AccountEmailChanges" yaml:"AccountEmailChanges"`
+	AccountPasswordHistories                            AccountPasswordHistorySlice            `boil:"AccountPasswordHistories" json:"AccountPasswordHistories" toml:"AccountPasswordHistories" yaml:"AccountPasswordHistories"`
+	AccountPasswordResets                               AccountPasswordResetSlice              `boil:"AccountPasswordResets" json:"AccountPasswordResets" toml:"AccountPasswordResets" yaml:"AccountPasswordResets"`
+	APITokens                                           APITokenSlice                          `boil:"APITokens" json:"APITokens" toml:"APITokens" yaml:"APITokens"`
+	DirectoryUsers                                      DirectoryUserSlice                     `boil:"DirectoryUsers" json:"DirectoryUsers" toml:"DirectoryUsers" yaml:"DirectoryUsers"`
+	ActorAccountWorkspaceActivities                     WorkspaceActivitySlice                 `boil:"ActorAccountWorkspaceActivities" json:"ActorAccountWorkspaceActivities" toml:"ActorAccountWorkspaceActivities" yaml:"ActorAccountWorkspaceActivities"`
+	ConnectedByAccountWorkspaceAgentMCPConnections      WorkspaceAgentMCPConnectionSlice       `boil:"ConnectedByAccountWorkspaceAgentMCPConnections" json:"ConnectedByAccountWorkspaceAgentMCPConnections" toml:"ConnectedByAccountWorkspaceAgentMCPConnections" yaml:"ConnectedByAccountWorkspaceAgentMCPConnections"`
+	AttachedByAccountWorkspaceAgentMCPServerAttachments WorkspaceAgentMCPServerAttachmentSlice `boil:"AttachedByAccountWorkspaceAgentMCPServerAttachments" json:"AttachedByAccountWorkspaceAgentMCPServerAttachments" toml:"AttachedByAccountWorkspaceAgentMCPServerAttachments" yaml:"AttachedByAccountWorkspaceAgentMCPServerAttachments"`
+	CreatedByAccountWorkspaceAgentMCPServers            WorkspaceAgentMCPServerSlice           `boil:"CreatedByAccountWorkspaceAgentMCPServers" json:"CreatedByAccountWorkspaceAgentMCPServers" toml:"CreatedByAccountWorkspaceAgentMCPServers" yaml:"CreatedByAccountWorkspaceAgentMCPServers"`
+	DecidedByAccountWorkspaceAgentProposals             WorkspaceAgentProposalSlice            `boil:"DecidedByAccountWorkspaceAgentProposals" json:"DecidedByAccountWorkspaceAgentProposals" toml:"DecidedByAccountWorkspaceAgentProposals" yaml:"DecidedByAccountWorkspaceAgentProposals"`
+	AttachedByAccountWorkspaceAgentSkillAttachments     WorkspaceAgentSkillAttachmentSlice     `boil:"AttachedByAccountWorkspaceAgentSkillAttachments" json:"AttachedByAccountWorkspaceAgentSkillAttachments" toml:"AttachedByAccountWorkspaceAgentSkillAttachments" yaml:"AttachedByAccountWorkspaceAgentSkillAttachments"`
+	CreatedByAccountWorkspaceAgentSkills                WorkspaceAgentSkillSlice               `boil:"CreatedByAccountWorkspaceAgentSkills" json:"CreatedByAccountWorkspaceAgentSkills" toml:"CreatedByAccountWorkspaceAgentSkills" yaml:"CreatedByAccountWorkspaceAgentSkills"`
+	OwnerAccountWorkspaceAgents                         WorkspaceAgentSlice                    `boil:"OwnerAccountWorkspaceAgents" json:"OwnerAccountWorkspaceAgents" toml:"OwnerAccountWorkspaceAgents" yaml:"OwnerAccountWorkspaceAgents"`
+	IssuedByWorkspaceBreakGlassCodes                    WorkspaceBreakGlassCodeSlice           `boil:"IssuedByWorkspaceBreakGlassCodes" json:"IssuedByWorkspaceBreakGlassCodes" toml:"IssuedByWorkspaceBreakGlassCodes" yaml:"IssuedByWorkspaceBreakGlassCodes"`
+	RequestedByAccountWorkspaceBulkActions              WorkspaceBulkActionSlice               `boil:"RequestedByAccountWorkspaceBulkActions" json:"RequestedByAccountWorkspaceBulkActions" toml:"RequestedByAccountWorkspaceBulkActions" yaml:"RequestedByAccountWorkspaceBulkActions"`
+	ActorAccountWorkspaceCycleScopeChanges              WorkspaceCycleScopeChangeSlice         `boil:"ActorAccountWorkspaceCycleScopeChanges" json:"ActorAccountWorkspaceCycleScopeChanges" toml:"ActorAccountWorkspaceCycleScopeChanges" yaml:"ActorAccountWorkspaceCycleScopeChanges"`
+	ClosedByWorkspaceCycles                             WorkspaceCycleSlice                    `boil:"ClosedByWorkspaceCycles" json:"ClosedByWorkspaceCycles" toml:"ClosedByWorkspaceCycles" yaml:"ClosedByWorkspaceCycles"`
+	OwnerAccountWorkspaceCycles                         WorkspaceCycleSlice                    `boil:"OwnerAccountWorkspaceCycles" json:"OwnerAccountWorkspaceCycles" toml:"OwnerAccountWorkspaceCycles" yaml:"OwnerAccountWorkspaceCycles"`
+	ActorAccountWorkspaceExecutionEvents                WorkspaceExecutionEventSlice           `boil:"ActorAccountWorkspaceExecutionEvents" json:"ActorAccountWorkspaceExecutionEvents" toml:"ActorAccountWorkspaceExecutionEvents" yaml:"ActorAccountWorkspaceExecutionEvents"`
+	CreatedByWorkspaceExecutionPreviewLinks             WorkspaceExecutionPreviewLinkSlice     `boil:"CreatedByWorkspaceExecutionPreviewLinks" json:"CreatedByWorkspaceExecutionPreviewLinks" toml:"CreatedByWorkspaceExecutionPreviewLinks" yaml:"CreatedByWorkspaceExecutionPreviewLinks"`
+	AcceptedByAccountWorkspaceInvitations               WorkspaceInvitationSlice               `boil:"AcceptedByAccountWorkspaceInvitations" json:"AcceptedByAccountWorkspaceInvitations" toml:"AcceptedByAccountWorkspaceInvitations" yaml:"AcceptedByAccountWorkspaceInvitations"`
+	InvitedByAccountWorkspaceInvitations                WorkspaceInvitationSlice               `boil:"InvitedByAccountWorkspaceInvitations" json:"InvitedByAccountWorkspaceInvitations" toml:"InvitedByAccountWorkspaceInvitations" yaml:"InvitedByAccountWorkspaceInvitations"`
+	WorkspaceIssueCommentMentions                       WorkspaceIssueCommentMentionSlice      `boil:"WorkspaceIssueCommentMentions" json:"WorkspaceIssueCommentMentions" toml:"WorkspaceIssueCommentMentions" yaml:"WorkspaceIssueCommentMentions"`
+	WorkspaceIssueCommentReactions                      WorkspaceIssueCommentReactionSlice     `boil:"WorkspaceIssueCommentReactions" json:"WorkspaceIssueCommentReactions" toml:"WorkspaceIssueCommentReactions" yaml:"WorkspaceIssueCommentReactions"`
+	RecordedByAccountWorkspaceIssueCriterionEvidences   WorkspaceIssueCriterionEvidenceSlice   `boil:"RecordedByAccountWorkspaceIssueCriterionEvidences" json:"RecordedByAccountWorkspaceIssueCriterionEvidences" toml:"RecordedByAccountWorkspaceIssueCriterionEvidences" yaml:"RecordedByAccountWorkspaceIssueCriterionEvidences"`
+	DelegatedByAccountWorkspaceIssueDelegations         WorkspaceIssueDelegationSlice          `boil:"DelegatedByAccountWorkspaceIssueDelegations" json:"DelegatedByAccountWorkspaceIssueDelegations" toml:"DelegatedByAccountWorkspaceIssueDelegations" yaml:"DelegatedByAccountWorkspaceIssueDelegations"`
+	RecalledByAccountWorkspaceIssueDelegations          WorkspaceIssueDelegationSlice          `boil:"RecalledByAccountWorkspaceIssueDelegations" json:"RecalledByAccountWorkspaceIssueDelegations" toml:"RecalledByAccountWorkspaceIssueDelegations" yaml:"RecalledByAccountWorkspaceIssueDelegations"`
+	AuthorAccountWorkspaceIssueDescriptionRevisions     WorkspaceIssueDescriptionRevisionSlice `boil:"AuthorAccountWorkspaceIssueDescriptionRevisions" json:"AuthorAccountWorkspaceIssueDescriptionRevisions" toml:"AuthorAccountWorkspaceIssueDescriptionRevisions" yaml:"AuthorAccountWorkspaceIssueDescriptionRevisions"`
+	WorkspaceIssueDrafts                                WorkspaceIssueDraftSlice               `boil:"WorkspaceIssueDrafts" json:"WorkspaceIssueDrafts" toml:"WorkspaceIssueDrafts" yaml:"WorkspaceIssueDrafts"`
+	AssigneeAccountWorkspaceIssueDrafts                 WorkspaceIssueDraftSlice               `boil:"AssigneeAccountWorkspaceIssueDrafts" json:"AssigneeAccountWorkspaceIssueDrafts" toml:"AssigneeAccountWorkspaceIssueDrafts" yaml:"AssigneeAccountWorkspaceIssueDrafts"`
+	AnsweredByAccountWorkspaceIssueQuestions            WorkspaceIssueQuestionSlice            `boil:"AnsweredByAccountWorkspaceIssueQuestions" json:"AnsweredByAccountWorkspaceIssueQuestions" toml:"AnsweredByAccountWorkspaceIssueQuestions" yaml:"AnsweredByAccountWorkspaceIssueQuestions"`
+	AskedByAccountWorkspaceIssueQuestions               WorkspaceIssueQuestionSlice            `boil:"AskedByAccountWorkspaceIssueQuestions" json:"AskedByAccountWorkspaceIssueQuestions" toml:"AskedByAccountWorkspaceIssueQuestions" yaml:"AskedByAccountWorkspaceIssueQuestions"`
+	SettledByAccountWorkspaceIssueQuestions             WorkspaceIssueQuestionSlice            `boil:"SettledByAccountWorkspaceIssueQuestions" json:"SettledByAccountWorkspaceIssueQuestions" toml:"SettledByAccountWorkspaceIssueQuestions" yaml:"SettledByAccountWorkspaceIssueQuestions"`
+	CreatedByAccountWorkspaceIssueRelations             WorkspaceIssueRelationSlice            `boil:"CreatedByAccountWorkspaceIssueRelations" json:"CreatedByAccountWorkspaceIssueRelations" toml:"CreatedByAccountWorkspaceIssueRelations" yaml:"CreatedByAccountWorkspaceIssueRelations"`
+	AssigneeAccountWorkspaceIssueTemplates              WorkspaceIssueTemplateSlice            `boil:"AssigneeAccountWorkspaceIssueTemplates" json:"AssigneeAccountWorkspaceIssueTemplates" toml:"AssigneeAccountWorkspaceIssueTemplates" yaml:"AssigneeAccountWorkspaceIssueTemplates"`
+	CreatedByAccountWorkspaceIssueTemplates             WorkspaceIssueTemplateSlice            `boil:"CreatedByAccountWorkspaceIssueTemplates" json:"CreatedByAccountWorkspaceIssueTemplates" toml:"CreatedByAccountWorkspaceIssueTemplates" yaml:"CreatedByAccountWorkspaceIssueTemplates"`
+	AssigneeAccountWorkspaceIssues                      WorkspaceIssueSlice                    `boil:"AssigneeAccountWorkspaceIssues" json:"AssigneeAccountWorkspaceIssues" toml:"AssigneeAccountWorkspaceIssues" yaml:"AssigneeAccountWorkspaceIssues"`
+	CreatedByAccountWorkspaceIssues                     WorkspaceIssueSlice                    `boil:"CreatedByAccountWorkspaceIssues" json:"CreatedByAccountWorkspaceIssues" toml:"CreatedByAccountWorkspaceIssues" yaml:"CreatedByAccountWorkspaceIssues"`
+	TriageDecidedByAccountWorkspaceIssues               WorkspaceIssueSlice                    `boil:"TriageDecidedByAccountWorkspaceIssues" json:"TriageDecidedByAccountWorkspaceIssues" toml:"TriageDecidedByAccountWorkspaceIssues" yaml:"TriageDecidedByAccountWorkspaceIssues"`
+	WorkspaceMemberships                                WorkspaceMembershipSlice               `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
+	ActorAccountWorkspaceNotificationEvents             WorkspaceNotificationEventSlice        `boil:"ActorAccountWorkspaceNotificationEvents" json:"ActorAccountWorkspaceNotificationEvents" toml:"ActorAccountWorkspaceNotificationEvents" yaml:"ActorAccountWorkspaceNotificationEvents"`
+	TargetAccountWorkspaceNotificationEvents            WorkspaceNotificationEventSlice        `boil:"TargetAccountWorkspaceNotificationEvents" json:"TargetAccountWorkspaceNotificationEvents" toml:"TargetAccountWorkspaceNotificationEvents" yaml:"TargetAccountWorkspaceNotificationEvents"`
+	AuthorAccountWorkspaceProjectStatusUpdates          WorkspaceProjectStatusUpdateSlice      `boil:"AuthorAccountWorkspaceProjectStatusUpdates" json:"AuthorAccountWorkspaceProjectStatusUpdates" toml:"AuthorAccountWorkspaceProjectStatusUpdates" yaml:"AuthorAccountWorkspaceProjectStatusUpdates"`
+	LeadAccountWorkspaceProjects                        WorkspaceProjectSlice                  `boil:"LeadAccountWorkspaceProjects" json:"LeadAccountWorkspaceProjects" toml:"LeadAccountWorkspaceProjects" yaml:"LeadAccountWorkspaceProjects"`
+	WorkspaceRequestKeys                                WorkspaceRequestKeySlice               `boil:"WorkspaceRequestKeys" json:"WorkspaceRequestKeys" toml:"WorkspaceRequestKeys" yaml:"WorkspaceRequestKeys"`
+	IntegrationAccountWorkspaceSCMConnections           WorkspaceSCMConnectionSlice            `boil:"IntegrationAccountWorkspaceSCMConnections" json:"IntegrationAccountWorkspaceSCMConnections" toml:"IntegrationAccountWorkspaceSCMConnections" yaml:"IntegrationAccountWorkspaceSCMConnections"`
+	OwnerAccountWorkspaceSCMConnections                 WorkspaceSCMConnectionSlice            `boil:"OwnerAccountWorkspaceSCMConnections" json:"OwnerAccountWorkspaceSCMConnections" toml:"OwnerAccountWorkspaceSCMConnections" yaml:"OwnerAccountWorkspaceSCMConnections"`
+	WorkspaceSCMIdentities                              WorkspaceSCMIdentitySlice              `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
+	WorkspaceSsoIdentities                              WorkspaceSsoIdentitySlice              `boil:"WorkspaceSsoIdentities" json:"WorkspaceSsoIdentities" toml:"WorkspaceSsoIdentities" yaml:"WorkspaceSsoIdentities"`
+	EnabledByAccountWorkspaceTeamIntakeAddresses        WorkspaceTeamIntakeAddressSlice        `boil:"EnabledByAccountWorkspaceTeamIntakeAddresses" json:"EnabledByAccountWorkspaceTeamIntakeAddresses" toml:"EnabledByAccountWorkspaceTeamIntakeAddresses" yaml:"EnabledByAccountWorkspaceTeamIntakeAddresses"`
 }
 
 // NewStruct creates a new relationship struct
@@ -463,6 +478,54 @@ func (r *accountR) GetActorAccountWorkspaceActivities() WorkspaceActivitySlice {
 	return r.ActorAccountWorkspaceActivities
 }
 
+func (o *Account) GetConnectedByAccountWorkspaceAgentMCPConnections() WorkspaceAgentMCPConnectionSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetConnectedByAccountWorkspaceAgentMCPConnections()
+}
+
+func (r *accountR) GetConnectedByAccountWorkspaceAgentMCPConnections() WorkspaceAgentMCPConnectionSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ConnectedByAccountWorkspaceAgentMCPConnections
+}
+
+func (o *Account) GetAttachedByAccountWorkspaceAgentMCPServerAttachments() WorkspaceAgentMCPServerAttachmentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAttachedByAccountWorkspaceAgentMCPServerAttachments()
+}
+
+func (r *accountR) GetAttachedByAccountWorkspaceAgentMCPServerAttachments() WorkspaceAgentMCPServerAttachmentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.AttachedByAccountWorkspaceAgentMCPServerAttachments
+}
+
+func (o *Account) GetCreatedByAccountWorkspaceAgentMCPServers() WorkspaceAgentMCPServerSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetCreatedByAccountWorkspaceAgentMCPServers()
+}
+
+func (r *accountR) GetCreatedByAccountWorkspaceAgentMCPServers() WorkspaceAgentMCPServerSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.CreatedByAccountWorkspaceAgentMCPServers
+}
+
 func (o *Account) GetDecidedByAccountWorkspaceAgentProposals() WorkspaceAgentProposalSlice {
 	if o == nil {
 		return nil
@@ -477,6 +540,38 @@ func (r *accountR) GetDecidedByAccountWorkspaceAgentProposals() WorkspaceAgentPr
 	}
 
 	return r.DecidedByAccountWorkspaceAgentProposals
+}
+
+func (o *Account) GetAttachedByAccountWorkspaceAgentSkillAttachments() WorkspaceAgentSkillAttachmentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAttachedByAccountWorkspaceAgentSkillAttachments()
+}
+
+func (r *accountR) GetAttachedByAccountWorkspaceAgentSkillAttachments() WorkspaceAgentSkillAttachmentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.AttachedByAccountWorkspaceAgentSkillAttachments
+}
+
+func (o *Account) GetCreatedByAccountWorkspaceAgentSkills() WorkspaceAgentSkillSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetCreatedByAccountWorkspaceAgentSkills()
+}
+
+func (r *accountR) GetCreatedByAccountWorkspaceAgentSkills() WorkspaceAgentSkillSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.CreatedByAccountWorkspaceAgentSkills
 }
 
 func (o *Account) GetOwnerAccountWorkspaceAgents() WorkspaceAgentSlice {
@@ -1498,6 +1593,48 @@ func (o *Account) ActorAccountWorkspaceActivities(mods ...qm.QueryMod) workspace
 	return WorkspaceActivities(queryMods...)
 }
 
+// ConnectedByAccountWorkspaceAgentMCPConnections retrieves all the workspace_agent_mcp_connection's WorkspaceAgentMCPConnections with an executor via connected_by_account_id column.
+func (o *Account) ConnectedByAccountWorkspaceAgentMCPConnections(mods ...qm.QueryMod) workspaceAgentMCPConnectionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_mcp_connections\".\"connected_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentMCPConnections(queryMods...)
+}
+
+// AttachedByAccountWorkspaceAgentMCPServerAttachments retrieves all the workspace_agent_mcp_server_attachment's WorkspaceAgentMCPServerAttachments with an executor via attached_by_account_id column.
+func (o *Account) AttachedByAccountWorkspaceAgentMCPServerAttachments(mods ...qm.QueryMod) workspaceAgentMCPServerAttachmentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_mcp_server_attachments\".\"attached_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentMCPServerAttachments(queryMods...)
+}
+
+// CreatedByAccountWorkspaceAgentMCPServers retrieves all the workspace_agent_mcp_server's WorkspaceAgentMCPServers with an executor via created_by_account_id column.
+func (o *Account) CreatedByAccountWorkspaceAgentMCPServers(mods ...qm.QueryMod) workspaceAgentMCPServerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_mcp_servers\".\"created_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentMCPServers(queryMods...)
+}
+
 // DecidedByAccountWorkspaceAgentProposals retrieves all the workspace_agent_proposal's WorkspaceAgentProposals with an executor via decided_by_account_id column.
 func (o *Account) DecidedByAccountWorkspaceAgentProposals(mods ...qm.QueryMod) workspaceAgentProposalQuery {
 	var queryMods []qm.QueryMod
@@ -1510,6 +1647,34 @@ func (o *Account) DecidedByAccountWorkspaceAgentProposals(mods ...qm.QueryMod) w
 	)
 
 	return WorkspaceAgentProposals(queryMods...)
+}
+
+// AttachedByAccountWorkspaceAgentSkillAttachments retrieves all the workspace_agent_skill_attachment's WorkspaceAgentSkillAttachments with an executor via attached_by_account_id column.
+func (o *Account) AttachedByAccountWorkspaceAgentSkillAttachments(mods ...qm.QueryMod) workspaceAgentSkillAttachmentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_skill_attachments\".\"attached_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentSkillAttachments(queryMods...)
+}
+
+// CreatedByAccountWorkspaceAgentSkills retrieves all the workspace_agent_skill's WorkspaceAgentSkills with an executor via created_by_account_id column.
+func (o *Account) CreatedByAccountWorkspaceAgentSkills(mods ...qm.QueryMod) workspaceAgentSkillQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_agent_skills\".\"created_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceAgentSkills(queryMods...)
 }
 
 // OwnerAccountWorkspaceAgents retrieves all the workspace_agent's WorkspaceAgents with an executor via owner_account_id column.
@@ -2839,6 +3004,345 @@ func (accountL) LoadActorAccountWorkspaceActivities(ctx context.Context, e boil.
 	return nil
 }
 
+// LoadConnectedByAccountWorkspaceAgentMCPConnections allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadConnectedByAccountWorkspaceAgentMCPConnections(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_mcp_connections`),
+		qm.WhereIn(`workspace_agent_mcp_connections.connected_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_mcp_connections")
+	}
+
+	var resultSlice []*WorkspaceAgentMCPConnection
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_mcp_connections")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_mcp_connections")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_mcp_connections")
+	}
+
+	if len(workspaceAgentMCPConnectionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ConnectedByAccountWorkspaceAgentMCPConnections = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentMCPConnectionR{}
+			}
+			foreign.R.ConnectedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.ConnectedByAccountID {
+				local.R.ConnectedByAccountWorkspaceAgentMCPConnections = append(local.R.ConnectedByAccountWorkspaceAgentMCPConnections, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentMCPConnectionR{}
+				}
+				foreign.R.ConnectedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadAttachedByAccountWorkspaceAgentMCPServerAttachments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadAttachedByAccountWorkspaceAgentMCPServerAttachments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_mcp_server_attachments`),
+		qm.WhereIn(`workspace_agent_mcp_server_attachments.attached_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_mcp_server_attachments")
+	}
+
+	var resultSlice []*WorkspaceAgentMCPServerAttachment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_mcp_server_attachments")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_mcp_server_attachments")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_mcp_server_attachments")
+	}
+
+	if len(workspaceAgentMCPServerAttachmentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.AttachedByAccountWorkspaceAgentMCPServerAttachments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentMCPServerAttachmentR{}
+			}
+			foreign.R.AttachedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AttachedByAccountID {
+				local.R.AttachedByAccountWorkspaceAgentMCPServerAttachments = append(local.R.AttachedByAccountWorkspaceAgentMCPServerAttachments, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentMCPServerAttachmentR{}
+				}
+				foreign.R.AttachedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadCreatedByAccountWorkspaceAgentMCPServers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadCreatedByAccountWorkspaceAgentMCPServers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_mcp_servers`),
+		qm.WhereIn(`workspace_agent_mcp_servers.created_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_mcp_servers")
+	}
+
+	var resultSlice []*WorkspaceAgentMCPServer
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_mcp_servers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_mcp_servers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_mcp_servers")
+	}
+
+	if len(workspaceAgentMCPServerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CreatedByAccountWorkspaceAgentMCPServers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentMCPServerR{}
+			}
+			foreign.R.CreatedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.CreatedByAccountID {
+				local.R.CreatedByAccountWorkspaceAgentMCPServers = append(local.R.CreatedByAccountWorkspaceAgentMCPServers, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentMCPServerR{}
+				}
+				foreign.R.CreatedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadDecidedByAccountWorkspaceAgentProposals allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (accountL) LoadDecidedByAccountWorkspaceAgentProposals(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
@@ -2944,6 +3448,232 @@ func (accountL) LoadDecidedByAccountWorkspaceAgentProposals(ctx context.Context,
 					foreign.R = &workspaceAgentProposalR{}
 				}
 				foreign.R.DecidedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadAttachedByAccountWorkspaceAgentSkillAttachments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadAttachedByAccountWorkspaceAgentSkillAttachments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_skill_attachments`),
+		qm.WhereIn(`workspace_agent_skill_attachments.attached_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_skill_attachments")
+	}
+
+	var resultSlice []*WorkspaceAgentSkillAttachment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_skill_attachments")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_skill_attachments")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_skill_attachments")
+	}
+
+	if len(workspaceAgentSkillAttachmentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.AttachedByAccountWorkspaceAgentSkillAttachments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentSkillAttachmentR{}
+			}
+			foreign.R.AttachedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AttachedByAccountID {
+				local.R.AttachedByAccountWorkspaceAgentSkillAttachments = append(local.R.AttachedByAccountWorkspaceAgentSkillAttachments, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentSkillAttachmentR{}
+				}
+				foreign.R.AttachedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadCreatedByAccountWorkspaceAgentSkills allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadCreatedByAccountWorkspaceAgentSkills(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_skills`),
+		qm.WhereIn(`workspace_agent_skills.created_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_agent_skills")
+	}
+
+	var resultSlice []*WorkspaceAgentSkill
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_agent_skills")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_agent_skills")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_skills")
+	}
+
+	if len(workspaceAgentSkillAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CreatedByAccountWorkspaceAgentSkills = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceAgentSkillR{}
+			}
+			foreign.R.CreatedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.CreatedByAccountID {
+				local.R.CreatedByAccountWorkspaceAgentSkills = append(local.R.CreatedByAccountWorkspaceAgentSkills, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentSkillR{}
+				}
+				foreign.R.CreatedByAccount = local
 				break
 			}
 		}
@@ -7688,6 +8418,165 @@ func (o *Account) RemoveActorAccountWorkspaceActivities(ctx context.Context, exe
 	return nil
 }
 
+// AddConnectedByAccountWorkspaceAgentMCPConnections adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.ConnectedByAccountWorkspaceAgentMCPConnections.
+// Sets related.R.ConnectedByAccount appropriately.
+func (o *Account) AddConnectedByAccountWorkspaceAgentMCPConnections(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentMCPConnection) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ConnectedByAccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_mcp_connections\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"connected_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentMCPConnectionPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ServerID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ConnectedByAccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			ConnectedByAccountWorkspaceAgentMCPConnections: related,
+		}
+	} else {
+		o.R.ConnectedByAccountWorkspaceAgentMCPConnections = append(o.R.ConnectedByAccountWorkspaceAgentMCPConnections, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentMCPConnectionR{
+				ConnectedByAccount: o,
+			}
+		} else {
+			rel.R.ConnectedByAccount = o
+		}
+	}
+	return nil
+}
+
+// AddAttachedByAccountWorkspaceAgentMCPServerAttachments adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.AttachedByAccountWorkspaceAgentMCPServerAttachments.
+// Sets related.R.AttachedByAccount appropriately.
+func (o *Account) AddAttachedByAccountWorkspaceAgentMCPServerAttachments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentMCPServerAttachment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AttachedByAccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_mcp_server_attachments\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"attached_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentMCPServerAttachmentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.AgentID, rel.ServerID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AttachedByAccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			AttachedByAccountWorkspaceAgentMCPServerAttachments: related,
+		}
+	} else {
+		o.R.AttachedByAccountWorkspaceAgentMCPServerAttachments = append(o.R.AttachedByAccountWorkspaceAgentMCPServerAttachments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentMCPServerAttachmentR{
+				AttachedByAccount: o,
+			}
+		} else {
+			rel.R.AttachedByAccount = o
+		}
+	}
+	return nil
+}
+
+// AddCreatedByAccountWorkspaceAgentMCPServers adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.CreatedByAccountWorkspaceAgentMCPServers.
+// Sets related.R.CreatedByAccount appropriately.
+func (o *Account) AddCreatedByAccountWorkspaceAgentMCPServers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentMCPServer) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.CreatedByAccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_mcp_servers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"created_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentMCPServerPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.CreatedByAccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			CreatedByAccountWorkspaceAgentMCPServers: related,
+		}
+	} else {
+		o.R.CreatedByAccountWorkspaceAgentMCPServers = append(o.R.CreatedByAccountWorkspaceAgentMCPServers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentMCPServerR{
+				CreatedByAccount: o,
+			}
+		} else {
+			rel.R.CreatedByAccount = o
+		}
+	}
+	return nil
+}
+
 // AddDecidedByAccountWorkspaceAgentProposals adds the given related objects to the existing relationships
 // of the account, optionally inserting them as new records.
 // Appends related to o.R.DecidedByAccountWorkspaceAgentProposals.
@@ -7812,6 +8701,112 @@ func (o *Account) RemoveDecidedByAccountWorkspaceAgentProposals(ctx context.Cont
 		}
 	}
 
+	return nil
+}
+
+// AddAttachedByAccountWorkspaceAgentSkillAttachments adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.AttachedByAccountWorkspaceAgentSkillAttachments.
+// Sets related.R.AttachedByAccount appropriately.
+func (o *Account) AddAttachedByAccountWorkspaceAgentSkillAttachments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentSkillAttachment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AttachedByAccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_skill_attachments\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"attached_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentSkillAttachmentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.AgentID, rel.SkillID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AttachedByAccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			AttachedByAccountWorkspaceAgentSkillAttachments: related,
+		}
+	} else {
+		o.R.AttachedByAccountWorkspaceAgentSkillAttachments = append(o.R.AttachedByAccountWorkspaceAgentSkillAttachments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentSkillAttachmentR{
+				AttachedByAccount: o,
+			}
+		} else {
+			rel.R.AttachedByAccount = o
+		}
+	}
+	return nil
+}
+
+// AddCreatedByAccountWorkspaceAgentSkills adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.CreatedByAccountWorkspaceAgentSkills.
+// Sets related.R.CreatedByAccount appropriately.
+func (o *Account) AddCreatedByAccountWorkspaceAgentSkills(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceAgentSkill) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.CreatedByAccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_agent_skills\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"created_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceAgentSkillPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.CreatedByAccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			CreatedByAccountWorkspaceAgentSkills: related,
+		}
+	} else {
+		o.R.CreatedByAccountWorkspaceAgentSkills = append(o.R.CreatedByAccountWorkspaceAgentSkills, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceAgentSkillR{
+				CreatedByAccount: o,
+			}
+		} else {
+			rel.R.CreatedByAccount = o
+		}
+	}
 	return nil
 }
 

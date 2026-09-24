@@ -64,10 +64,16 @@ func (s *executionsService) Accepted(
 		return err
 	}
 
+	toolkit, err := s.toolkits.Resolve(ctx, leased.WorkspaceID, leased.AgentID)
+	if err != nil {
+		return err
+	}
+
 	return s.tell(ctx, leased, entity.ChannelExecutionStart, channelv1.Start{
 		ExecutionID:    leased.ID,
 		LeaseExpiresAt: leased.LeaseExpiresAt,
 		Params:         paramsOf(leased.Params),
+		Toolkit:        toolkitOf(toolkit),
 	})
 }
 

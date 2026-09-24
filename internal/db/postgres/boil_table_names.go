@@ -21,7 +21,12 @@ var TableNames = struct {
 	PreviewGateways                    string
 	SCMApps                            string
 	WorkspaceActivity                  string
+	WorkspaceAgentMCPConnections       string
+	WorkspaceAgentMCPServerAttachments string
+	WorkspaceAgentMCPServers           string
 	WorkspaceAgentProposals            string
+	WorkspaceAgentSkillAttachments     string
+	WorkspaceAgentSkills               string
 	WorkspaceAgents                    string
 	WorkspaceAiProviders               string
 	WorkspaceAuthPolicies              string
@@ -130,7 +135,12 @@ var TableNames = struct {
 	PreviewGateways:                    "preview_gateways",
 	SCMApps:                            "scm_apps",
 	WorkspaceActivity:                  "workspace_activity",
+	WorkspaceAgentMCPConnections:       "workspace_agent_mcp_connections",
+	WorkspaceAgentMCPServerAttachments: "workspace_agent_mcp_server_attachments",
+	WorkspaceAgentMCPServers:           "workspace_agent_mcp_servers",
 	WorkspaceAgentProposals:            "workspace_agent_proposals",
+	WorkspaceAgentSkillAttachments:     "workspace_agent_skill_attachments",
+	WorkspaceAgentSkills:               "workspace_agent_skills",
 	WorkspaceAgents:                    "workspace_agents",
 	WorkspaceAiProviders:               "workspace_ai_providers",
 	WorkspaceAuthPolicies:              "workspace_auth_policies",

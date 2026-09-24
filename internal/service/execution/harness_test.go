@@ -23,6 +23,7 @@ import (
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	statesrepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
+	agentcapabilitysvc "github.com/usenorn/norn/internal/service/agentcapability"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
@@ -47,6 +48,8 @@ type harness struct {
 	branch      string
 	branchFails error
 	events      *eventsvc.MockEvents
+	toolkits    *agentcapabilitysvc.MockAgentToolkits
+	toolkit     entity.AgentToolkit
 	authorizer  *authorizersvc.MockAuthorizer
 	audit       *auditsvc.MockAudit
 	service     service.Executions
@@ -88,6 +91,7 @@ func newHarness(t *testing.T) *harness {
 		source:      scmsvc.NewMockSourceControl(ctrl),
 		branch:      "rae/norn-1-a-run",
 		events:      eventsvc.NewMockEvents(ctrl),
+		toolkits:    agentcapabilitysvc.NewMockAgentToolkits(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
 		audit:       auditsvc.NewMockAudit(ctrl),
 		workspaceID: workspaceID,
@@ -199,10 +203,21 @@ func newHarness(t *testing.T) *harness {
 		Return(entity.IssueDescriptionRevision{}, entity.ErrIssueRevisionNotFound).
 		AnyTimes()
 
+	h.toolkits.EXPECT().
+		Resolve(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, workspaceID, agentID uuid.UUID) (entity.AgentToolkit, error) {
+			if workspaceID != h.workspaceID || agentID != h.runner.AgentID {
+				return entity.AgentToolkit{}, nil
+			}
+
+			return h.toolkit, nil
+		}).
+		AnyTimes()
+
 	h.service = executionsvc.New(
 		h.executions, h.changesets, h.previews, h.services, h.runners, h.codebases, h.issues,
 		h.revisions, h.states,
-		h.channels, h.writer, h.source, h.events, h.authorizer, h.audit, transactor,
+		h.channels, h.writer, h.source, h.events, h.toolkits, h.authorizer, h.audit, transactor,
 	)
 
 	return h

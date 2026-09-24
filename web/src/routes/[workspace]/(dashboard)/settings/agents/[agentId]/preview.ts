@@ -1,9 +1,12 @@
 import type { ActivityFeed } from "$lib/activity/activity";
 import type {
 	AgentCapabilities,
-	AgentCapabilityKind,
+	AgentLibraryListing,
+	CapabilityDialogPreview,
+	McpConnectOutcome,
 } from "$lib/agents/agent-capabilities";
 import type { AgentRecord } from "$lib/agents/agent-record";
+import type { MembershipRole } from "$lib/workspace/members";
 
 export type AgentDetailTab = "overview" | "capabilities" | "activity";
 
@@ -11,8 +14,11 @@ export type AgentRecordPreview = {
 	record?: AgentRecord;
 	activity?: ActivityFeed;
 	capabilities?: AgentCapabilities;
+	library?: AgentLibraryListing;
+	outcome?: McpConnectOutcome;
+	role?: MembershipRole;
 	tab?: AgentDetailTab;
-	dialog?: AgentCapabilityKind;
+	dialog?: CapabilityDialogPreview;
 };
 
 export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = import.meta.env.DEV
@@ -100,27 +106,155 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 					kind: "ready",
 					skills: [
 						{
-							kind: "skill",
-							name: "Northwind triage",
-							source: "github.com/northwind-labs/agent-skills/triage-preview",
+							id: "00000000-0000-4000-8000-000000000b01",
+							name: "house-style",
+							description: "Writes issue comments and pull request titles in Northwind's house style.",
+							source: "manual",
+							instructions: "---\nname: house-style\ndescription: Writes in Northwind's house style.\n---\n\nShort sentences.\n",
+							contentHash: "5c1f0b7a",
+							sizeBytes: 812,
+							fileCount: 1,
+							library: true,
+							createdAt: "2026-09-20T09:00:00Z",
+							updatedAt: "2026-09-20T09:00:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000b02",
+							name: "pdf",
+							description: "Fills and reads PDF forms with the bundled scripts.",
+							source: "github",
+							origin: {
+								repository: "anthropics/skills",
+								path: "skills/pdf",
+								ref: "",
+								revision: "9f1c0de5b2a4c6e8f0a1b3c5d7e9f1a3b5c7d9e1",
+							},
+							instructions: "---\nname: pdf\ndescription: Fills PDF forms.\n---\n\nUse scripts/fill.py.\n",
+							contentHash: "a44e21d3",
+							sizeBytes: 48210,
+							fileCount: 7,
+							library: false,
+							createdAt: "2026-09-21T14:30:00Z",
+							updatedAt: "2026-09-21T14:30:00Z",
 						},
 					],
 					mcpServers: [
 						{
-							kind: "mcp",
-							name: "Playwright",
-							transport: "stdio",
-							command: "npx",
-							args: ["@playwright/mcp@latest"],
+							id: "00000000-0000-4000-8000-000000000c01",
+							name: "linear",
+							transport: "http",
+							command: "",
+							args: [],
+							url: "https://mcp.linear.app/mcp",
+							auth: "oauth",
+							envKeys: [],
+							headerKeys: [],
+							oauthClientId: "",
+							registryName: "app.linear/linear",
+							registryVersion: "1.0.0",
+							library: true,
+							connection: {
+								status: "connected",
+								issuer: "https://mcp.linear.app",
+								scopes: ["read", "write"],
+								expiresAt: "2026-09-24T18:00:00Z",
+								connectedAt: "2026-09-22T10:00:00Z",
+							},
+							createdAt: "2026-09-22T09:58:00Z",
+							updatedAt: "2026-09-22T10:00:00Z",
 						},
 						{
-							kind: "mcp",
-							name: "Northwind docs preview",
-							transport: "remote",
-							url: "https://mcp-preview.northwind.invalid/docs",
-							auth: "bearer",
+							id: "00000000-0000-4000-8000-000000000c02",
+							name: "sentry",
+							transport: "http",
+							command: "",
+							args: [],
+							url: "https://mcp.sentry.dev/mcp",
+							auth: "oauth",
+							envKeys: [],
+							headerKeys: [],
+							oauthClientId: "",
+							library: false,
+							createdAt: "2026-09-23T08:00:00Z",
+							updatedAt: "2026-09-23T08:00:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000c03",
+							name: "notion",
+							transport: "http",
+							command: "",
+							args: [],
+							url: "https://mcp.notion.com/mcp",
+							auth: "oauth",
+							envKeys: [],
+							headerKeys: [],
+							oauthClientId: "",
+							library: false,
+							connection: {
+								status: "failed",
+								issuer: "https://api.notion.com",
+								scopes: [],
+								failure: "refresh_rejected",
+								connectedAt: "2026-09-01T08:00:00Z",
+							},
+							createdAt: "2026-09-01T07:58:00Z",
+							updatedAt: "2026-09-23T06:00:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000c04",
+							name: "playwright",
+							transport: "stdio",
+							command: "npx",
+							args: ["-y", "@playwright/mcp@latest"],
+							url: "",
+							auth: "none",
+							envKeys: ["PLAYWRIGHT_BROWSERS_PATH"],
+							headerKeys: [],
+							oauthClientId: "",
+							library: false,
+							createdAt: "2026-09-19T12:00:00Z",
+							updatedAt: "2026-09-19T12:00:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000c05",
+							name: "northwind-docs",
+							transport: "sse",
+							command: "",
+							args: [],
+							url: "https://mcp.northwind.co/docs/sse",
+							auth: "headers",
+							envKeys: [],
+							headerKeys: ["X-Api-Key"],
+							oauthClientId: "",
+							library: false,
+							createdAt: "2026-09-18T12:00:00Z",
+							updatedAt: "2026-09-18T12:00:00Z",
 						},
 					],
+				},
+				library: {
+					kind: "ready",
+					library: {
+						skills: [
+							{
+								skill: {
+									id: "00000000-0000-4000-8000-000000000b03",
+									name: "release-notes",
+									description: "Writes release notes from merged pull requests.",
+									source: "manual",
+									instructions: "---\nname: release-notes\ndescription: Writes release notes.\n---\n\nGroup by area.\n",
+									contentHash: "7d0e9a11",
+									sizeBytes: 640,
+									fileCount: 1,
+									library: true,
+									createdAt: "2026-09-10T09:00:00Z",
+									updatedAt: "2026-09-10T09:00:00Z",
+								},
+								agentIds: [],
+							},
+						],
+						mcpServers: [],
+					},
 				},
 			},
 			disabled: {
@@ -159,12 +293,58 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 			},
 			unavailable: { record: { kind: "unavailable" }, activity: { kind: "unavailable" } },
 			capability_loading: { capabilities: { kind: "loading" }, tab: "capabilities" },
-			capability_empty: { capabilities: { kind: "empty" }, tab: "capabilities" },
-			capability_unavailable: {
-				capabilities: { kind: "unavailable" },
+			capability_empty: {
+				capabilities: { kind: "empty" },
+				library: { kind: "empty" },
 				tab: "capabilities",
+			},
+			capability_forbidden: { capabilities: { kind: "forbidden" }, tab: "capabilities" },
+			capability_unavailable: { capabilities: { kind: "unavailable" }, tab: "capabilities" },
+			signed_in: { capabilities: { kind: "empty" }, tab: "capabilities", outcome: { kind: "connected" } },
+			sign_in_refused: { capabilities: { kind: "empty" }, tab: "capabilities", outcome: { kind: "refused" } },
+			sign_in_expired: { capabilities: { kind: "empty" }, tab: "capabilities", outcome: { kind: "expired" } },
+			sign_in_removed: { capabilities: { kind: "empty" }, tab: "capabilities", outcome: { kind: "removed" } },
+			sign_in_failed: {
+				capabilities: { kind: "empty" },
+				tab: "capabilities",
+				outcome: { kind: "failed", reference: "01J8Z6Q4M2V5" },
 			},
 			add_skill: { capabilities: { kind: "empty" }, tab: "capabilities", dialog: "skill" },
 			add_mcp: { capabilities: { kind: "empty" }, tab: "capabilities", dialog: "mcp" },
+			library_skill: {
+				capabilities: { kind: "empty" },
+				library: {
+					kind: "ready",
+					library: {
+						skills: [
+							{
+								skill: {
+									id: "00000000-0000-4000-8000-000000000b04",
+									name: "triage-rules",
+									description: "Sorts incoming issues by team and severity.",
+									source: "github",
+									origin: {
+										repository: "northwind-labs/agent-skills",
+										path: "triage",
+										ref: "main",
+										revision: "3b7c9e1f2a4d6b8c0e1f3a5b7c9d1e3f5a7b9c1d",
+									},
+									instructions: "---\nname: triage-rules\ndescription: Sorts issues.\n---\n\nRead the team map.\n",
+									contentHash: "c0ffee12",
+									sizeBytes: 2048,
+									fileCount: 2,
+									library: true,
+									createdAt: "2026-09-12T09:00:00Z",
+									updatedAt: "2026-09-12T09:00:00Z",
+								},
+								agentIds: [],
+							},
+						],
+						mcpServers: [],
+					},
+				},
+				tab: "capabilities",
+				dialog: "picker-skill",
+			},
 		}
 	: {};

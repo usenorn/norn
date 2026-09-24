@@ -30,6 +30,7 @@ type Config struct {
 	Imports       Imports       `mapstructure:"imports"`
 	Linear        Linear        `mapstructure:"linear"`
 	OpenAI        OpenAI        `mapstructure:"openai"`
+	AgentTooling  AgentTooling  `mapstructure:"agent_tooling"`
 	SourceControl SourceControl `mapstructure:"source_control"`
 	Intake        Intake        `mapstructure:"intake"`
 	Epostix       Epostix       `mapstructure:"epostix"`
@@ -395,6 +396,20 @@ type OpenAI struct {
 	DialTimeout         time.Duration `mapstructure:"dial_timeout"`
 	MaxResponseSize     int64         `mapstructure:"max_response_size"`
 	AllowedDestinations []string      `mapstructure:"allowed_destinations"`
+}
+
+type AgentTooling struct {
+	GitHubEndpoint      string        `mapstructure:"github_endpoint"`
+	GitHubRawEndpoint   string        `mapstructure:"github_raw_endpoint"`
+	GitHubToken         string        `mapstructure:"github_token"`
+	RegistryEndpoint    string        `mapstructure:"registry_endpoint"`
+	RequestTimeout      time.Duration `mapstructure:"request_timeout"`
+	DialTimeout         time.Duration `mapstructure:"dial_timeout"`
+	MaxResponseSize     int64         `mapstructure:"max_response_size"`
+	AllowedDestinations []string      `mapstructure:"allowed_destinations"`
+	OAuthStateTTL       time.Duration `mapstructure:"oauth_state_ttl"`
+	RefreshLead         time.Duration `mapstructure:"refresh_lead"`
+	DownloadTTL         time.Duration `mapstructure:"download_ttl"`
 }
 
 type SourceControl struct {

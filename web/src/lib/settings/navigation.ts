@@ -3,6 +3,7 @@ import Bot from "@lucide/svelte/icons/bot";
 import GitBranch from "@lucide/svelte/icons/git-branch";
 import Import from "@lucide/svelte/icons/import";
 import KeyRound from "@lucide/svelte/icons/key-round";
+import Library from "@lucide/svelte/icons/library";
 import Network from "@lucide/svelte/icons/network";
 import ScrollText from "@lucide/svelte/icons/scroll-text";
 import Server from "@lucide/svelte/icons/server";
@@ -51,6 +52,7 @@ export function workspaceSettingsNavigation(slug: string): SettingsNavigationSec
 			label: "Automation",
 			entries: [
 				{ href: settings("/agents"), label: "Agents", icon: Bot },
+				{ href: settings("/agent-library"), label: "Agent library", icon: Library },
 				{ href: settings("/runners"), label: "Runners", icon: Server },
 			],
 		},
