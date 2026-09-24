@@ -324,6 +324,56 @@ func (s *agentsService) Get(
 	return s.describe(ctx, agent)
 }
 
+func (s *agentsService) SetInstructions(
+	ctx context.Context,
+	input service.SetAgentInstructionsInput,
+) (service.OwnedAgent, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionManage,
+		WorkspaceID: input.WorkspaceID,
+	})
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return service.OwnedAgent{}, entity.ErrAPITokenMintForbidden
+	}
+
+	instructions := entity.NormaliseAgentInstructions(input.Instructions)
+
+	if err := entity.NewValidationError(
+		entity.ValidateAgentInstructions("instructions", instructions),
+	); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	agent, err := s.agents.GetByID(ctx, input.WorkspaceID, input.AgentID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if err := manageable(agent, decision); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	saved, err := s.agents.SetInstructions(ctx, input.WorkspaceID, input.AgentID, instructions)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  input.WorkspaceID,
+		Action:       entity.AuditAgentInstructions,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   saved.ID,
+		ResourceName: saved.Name,
+	})
+
+	return s.describe(ctx, saved)
+}
+
 func manageable(agent entity.Agent, decision entity.Decision) error {
 	if agent.ManageableBy(decision.Actor.Authority(), decision.Role) {
 		return nil

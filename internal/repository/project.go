@@ -19,12 +19,13 @@ type ProjectFilter struct {
 }
 
 type ProjectSettings struct {
-	Name          string
-	Description   string
-	LeadAccountID *uuid.UUID
-	TargetOn      string
-	ClearTarget   bool
-	ClearLead     bool
+	Name              string
+	Description       *string
+	AgentInstructions *string
+	LeadAccountID     *uuid.UUID
+	TargetOn          string
+	ClearTarget       bool
+	ClearLead         bool
 }
 
 type Project interface {

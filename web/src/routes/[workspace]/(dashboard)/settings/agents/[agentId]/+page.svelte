@@ -18,6 +18,7 @@
 	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
 	import AgentCapabilitiesManager from "$lib/agents/agent-capabilities-manager.svelte";
 	import AgentIcon from "$lib/agents/agent-icon.svelte";
+	import AgentInstructionsForm from "$lib/agents/agent-instructions-form.svelte";
 	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
@@ -35,6 +36,7 @@
 		type AgentCapabilities,
 		type AgentLibraryListing,
 	} from "$lib/agents/agent-capabilities";
+	import { agentInstructionsMessage } from "$lib/agents/instructions";
 	import { deploymentPreview } from "$lib/auth/preview";
 	import {
 		agentLifecycleFailureMessage,
@@ -60,6 +62,8 @@
 	let mutation = $state<AgentLifecycleAction | null>(null);
 	let confirmation = $state<AgentLifecycleAction | null>(null);
 	let lifecycleFailure = $state<AgentLifecycleFailure | null>(null);
+	let instructionsFailure = $state<AgentLifecycleFailure | { kind: "invalid"; message: string } | null>(null);
+	let savingInstructions = $state(false);
 	let issuedAgent = $state.raw<Agent | null>(null);
 	let issuedValue = $state("");
 	let stateAgentId = $state<string | undefined>(page.params.agentId);
@@ -100,6 +104,8 @@
 		mutation = null;
 		confirmation = null;
 		lifecycleFailure = null;
+		instructionsFailure = null;
+		savingInstructions = false;
 		issuedAgent = null;
 		issuedValue = "";
 	});
@@ -194,6 +200,43 @@
 			lifecycleFailure = { kind: "unavailable" };
 		} finally {
 			mutation = null;
+		}
+	}
+
+	async function saveInstructions(input: { instructions: string }) {
+		if (!agent) return false;
+
+		instructionsFailure = null;
+		savingInstructions = true;
+
+		try {
+			const { data: saved, error, response } = await api.PUT(
+				"/workspaces/{workspaceId}/agents/{agentId}/instructions",
+				{
+					params: { path: { workspaceId: workspace.id, agentId: agent.agent.id } },
+					body: { instructions: input.instructions },
+				}
+			);
+
+			if (error || !saved) {
+				const field = error?.errors?.find((entry) => entry.field === "instructions");
+
+				instructionsFailure = field
+					? { kind: "invalid", message: agentInstructionsMessage(field.code) }
+					: lifecycleProblem(error, response.status);
+
+				return false;
+			}
+
+			refreshAfterMutation();
+
+			return true;
+		} catch {
+			instructionsFailure = { kind: "unavailable" };
+
+			return false;
+		} finally {
+			savingInstructions = false;
 		}
 	}
 
@@ -408,6 +451,7 @@
 					<Tabs.List variant="line" class="w-full justify-start overflow-x-auto">
 						<Tabs.Trigger value="overview" class="flex-none">Overview</Tabs.Trigger>
 						<Tabs.Trigger value="capabilities" class="flex-none">Capabilities</Tabs.Trigger>
+						<Tabs.Trigger value="instructions" class="flex-none">Instructions</Tabs.Trigger>
 						<Tabs.Trigger value="activity" class="flex-none">Activity</Tabs.Trigger>
 					</Tabs.List>
 
@@ -503,6 +547,33 @@
 								connectForm={data.connectForm}
 								{outcome}
 								dialog={preview?.dialog}
+							/>
+						</div>
+					</Tabs.Content>
+
+					<Tabs.Content value="instructions" class="pt-5">
+						<div class="flex flex-col gap-4">
+							<p class="text-sm leading-normal text-muted-foreground text-pretty">
+								Kept against this agent, alongside the workspace's instructions and a project's.
+								Nothing hands them to the agent when it runs yet.
+							</p>
+
+							{#if instructionsFailure}
+								<Alert.Root variant="destructive">
+									<CircleAlert aria-hidden="true" />
+									<Alert.Title>Not saved</Alert.Title>
+									<Alert.Description>
+										{instructionsFailure.kind === "invalid"
+											? instructionsFailure.message
+											: agentLifecycleFailureMessage(instructionsFailure)}
+									</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							<AgentInstructionsForm
+								instructions={agent.agent.agentInstructions ?? ""}
+								locked={savingInstructions}
+								onsave={saveInstructions}
 							/>
 						</div>
 					</Tabs.Content>

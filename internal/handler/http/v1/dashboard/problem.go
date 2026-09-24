@@ -1609,6 +1609,10 @@ func (r problemResponse) VisitDisableWorkspaceAgentResponse(w http.ResponseWrite
 	return r.write(w)
 }
 
+func (r problemResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

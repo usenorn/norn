@@ -308,6 +308,10 @@ func (s *projectsService) Update(
 		fields = append(fields, entity.ValidateProjectDescription("description", *input.Description))
 	}
 
+	if input.AgentInstructions != nil {
+		fields = append(fields, entity.ValidateAgentInstructions("agentInstructions", *input.AgentInstructions))
+	}
+
 	if input.TargetOn != nil {
 		fields = append(fields, entity.ValidateTargetDate("targetOn", *input.TargetOn))
 	}
@@ -346,7 +350,12 @@ func (s *projectsService) Update(
 	}
 
 	if input.Description != nil {
-		settings.Description = *input.Description
+		settings.Description = input.Description
+	}
+
+	if input.AgentInstructions != nil {
+		normalised := entity.NormaliseAgentInstructions(*input.AgentInstructions)
+		settings.AgentInstructions = &normalised
 	}
 
 	if input.TargetOn != nil {

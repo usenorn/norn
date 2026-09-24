@@ -35,6 +35,12 @@ type AgentAuthority struct {
 	TeamIDs  []uuid.UUID
 }
 
+type SetAgentInstructionsInput struct {
+	WorkspaceID  uuid.UUID
+	AgentID      uuid.UUID
+	Instructions string
+}
+
 type ConfigureAgentInput struct {
 	WorkspaceID       uuid.UUID
 	TeamID            uuid.UUID

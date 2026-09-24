@@ -28,9 +28,10 @@ type Workspace interface {
 }
 
 type WorkspaceSettings struct {
-	Slug          string
-	Name          string
-	Timezone      string
-	WeekStartsOn  entity.WeekDay
-	DefaultTeamID *uuid.UUID
+	Slug              string
+	Name              string
+	Timezone          string
+	WeekStartsOn      entity.WeekDay
+	AgentInstructions string
+	DefaultTeamID     *uuid.UUID
 }

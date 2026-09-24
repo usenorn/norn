@@ -793,3 +793,86 @@ func assertUsableStateSet(t *testing.T, states []entity.WorkflowState) {
 		t.Errorf("the seeded set has %d completion states, want exactly 1", completions)
 	}
 }
+
+func TestWorkspaceAgentInstructionsAreTrimmedAndSurviveAnUnrelatedEdit(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := uuid.New()
+	actorID := uuid.New()
+
+	held := activeWorkspace(workspaceID)
+	held.AgentInstructions = "Ship small."
+
+	h.expectActorMayAct(workspaceID, actorID, entity.ActionUpdate, held)
+
+	var captured repository.WorkspaceSettings
+
+	h.workspaces.EXPECT().
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, id uuid.UUID, settings repository.WorkspaceSettings) (entity.Workspace, error) {
+			captured = settings
+
+			updated := activeWorkspace(id)
+			updated.AgentInstructions = settings.AgentInstructions
+
+			return updated, nil
+		})
+
+	name := "Northwind Trading"
+
+	if _, err := h.service.Update(actingAs(actorID), workspaceID, service.UpdateWorkspaceInput{
+		Name: &name,
+	}); err != nil {
+		t.Fatalf("Update error = %v", err)
+	}
+
+	if captured.AgentInstructions != "Ship small." {
+		t.Fatalf(
+			"renaming the workspace wrote instructions of %q. A field nobody touched must come "+
+				"through an edit unchanged.",
+			captured.AgentInstructions,
+		)
+	}
+}
+
+func TestWritingWorkspaceAgentInstructionsTrimsThemAndRefusesTooMany(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := uuid.New()
+	actorID := uuid.New()
+
+	h.expectActorMayAct(workspaceID, actorID, entity.ActionUpdate, activeWorkspace(workspaceID))
+
+	var captured repository.WorkspaceSettings
+
+	h.workspaces.EXPECT().
+		UpdateSettings(gomock.Any(), workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, id uuid.UUID, settings repository.WorkspaceSettings) (entity.Workspace, error) {
+			captured = settings
+
+			return activeWorkspace(id), nil
+		})
+
+	padded := "\n  Ship small.  \n"
+
+	if _, err := h.service.Update(actingAs(actorID), workspaceID, service.UpdateWorkspaceInput{
+		AgentInstructions: &padded,
+	}); err != nil {
+		t.Fatalf("Update error = %v", err)
+	}
+
+	if captured.AgentInstructions != "Ship small." {
+		t.Fatalf("the repository was handed %q, want the trimmed body", captured.AgentInstructions)
+	}
+
+	h.expectActorMayAct(workspaceID, actorID, entity.ActionUpdate, activeWorkspace(workspaceID))
+
+	tooMany := strings.Repeat("a", entity.AgentInstructionsMaxLen+1)
+
+	_, err := h.service.Update(actingAs(actorID), workspaceID, service.UpdateWorkspaceInput{
+		AgentInstructions: &tooMany,
+	})
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("Update error = %v, want a validation error", err)
+	}
+}

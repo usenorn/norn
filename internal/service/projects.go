@@ -34,12 +34,13 @@ type CreateProjectInput struct {
 }
 
 type UpdateProjectInput struct {
-	Name          *string
-	Description   *string
-	LeadAccountID *uuid.UUID
-	TargetOn      *string
-	TeamIDs       *[]uuid.UUID
-	Clear         []string
+	Name              *string
+	Description       *string
+	AgentInstructions *string
+	LeadAccountID     *uuid.UUID
+	TargetOn          *string
+	TeamIDs           *[]uuid.UUID
+	Clear             []string
 }
 
 type ListProjectsInput struct {

@@ -26,6 +26,7 @@
 		onsave: (input: {
 			name: string;
 			description: string;
+			agentInstructions: string;
 			targetOn: string;
 			leadAccountId: string;
 			teamIds: string[];
@@ -37,6 +38,7 @@
 	const held = {
 		name: project.name,
 		description: project.description,
+		agentInstructions: project.agentInstructions ?? "",
 		targetOn: project.targetOn ?? "",
 		leadAccountId: project.leadAccountId ?? "",
 		teamIds: project.teamIds ?? [],
@@ -64,6 +66,7 @@
 	const dirty = $derived(
 		$formData.name !== held.name ||
 			$formData.description !== held.description ||
+			$formData.agentInstructions !== held.agentInstructions ||
 			$formData.targetOn !== held.targetOn ||
 			$formData.leadAccountId !== held.leadAccountId ||
 			$formData.teamIds.join() !== held.teamIds.join()
@@ -104,6 +107,25 @@
 		</Form.Control>
 		<Form.Description class="text-sm text-muted-foreground">
 			This is the shared reference. Two paragraphs beats a wiki nobody opens.
+		</Form.Description>
+		<Form.FieldErrors />
+	</Form.Field>
+
+	<Form.Field {form} name="agentInstructions">
+		<Form.Control>
+			{#snippet children({ props })}
+				<Form.Label>Instructions for agents on this project</Form.Label>
+				<Textarea
+					{...props}
+					rows={8}
+					bind:value={$formData.agentInstructions}
+					disabled={locked || $submitting}
+				/>
+			{/snippet}
+		</Form.Control>
+		<Form.Description class="text-sm text-muted-foreground">
+			Saved for now and nothing else: no agent reads them yet. When they are put to work, they
+			will be added to the workspace's instructions rather than replace them.
 		</Form.Description>
 		<Form.FieldErrors />
 	</Form.Field>

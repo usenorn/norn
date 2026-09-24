@@ -24,6 +24,7 @@ import (
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	"github.com/usenorn/norn/internal/service"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
+	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 )
@@ -38,6 +39,7 @@ type harness struct {
 	issues     *issuesvc.MockIssues
 	authorizer *authorizersvc.MockAuthorizer
 	service    service.Agents
+	recorded   []entity.AuditEntry
 
 	workspaceID uuid.UUID
 	adminID     uuid.UUID
@@ -80,6 +82,14 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		}).
 		AnyTimes()
 
+	audit := auditsvc.NewMockAudit(ctrl)
+	audit.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, entry entity.AuditEntry) {
+			h.recorded = append(h.recorded, entry)
+		}).
+		AnyTimes()
+
 	h.service = agentsvc.New(
 		h.agents,
 		agentsettingrepo.NewMockAgentSetting(ctrl),
@@ -95,7 +105,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		h.questions,
 		h.authorizer,
 		transactor,
-		silentAudit(ctrl),
+		audit,
 	)
 
 	return h

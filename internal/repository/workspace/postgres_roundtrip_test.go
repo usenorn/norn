@@ -77,15 +77,20 @@ func TestEveryWorkspaceSettingSurvivesBeingReadBack(t *testing.T) {
 			return err
 		}
 
+		if created.AgentInstructions != "" {
+			t.Errorf("fresh workspace instructions %q, want none", created.AgentInstructions)
+		}
+
 		if created.WeekStartsOn != entity.WeekDayMonday || created.LogoObjectKey != "" {
 			t.Errorf("fresh workspace week start %q logo %q, want monday and none", created.WeekStartsOn, created.LogoObjectKey)
 		}
 
 		settings := repository.WorkspaceSettings{
-			Slug:         uniqueSlug("renamed"),
-			Name:         "Renamed",
-			Timezone:     "Asia/Tokyo",
-			WeekStartsOn: entity.WeekDaySunday,
+			Slug:              uniqueSlug("renamed"),
+			Name:              "Renamed",
+			Timezone:          "Asia/Tokyo",
+			WeekStartsOn:      entity.WeekDaySunday,
+			AgentInstructions: "Ship small.",
 		}
 
 		if _, err := workspaces.UpdateSettings(ctx, created.ID, settings); err != nil {
@@ -104,8 +109,20 @@ func TestEveryWorkspaceSettingSurvivesBeingReadBack(t *testing.T) {
 		}
 
 		if read.Slug != settings.Slug || read.Name != settings.Name || read.Timezone != settings.Timezone ||
-			read.WeekStartsOn != settings.WeekStartsOn || read.LogoObjectKey != logoKey || read.DefaultTeamID != nil {
+			read.WeekStartsOn != settings.WeekStartsOn || read.LogoObjectKey != logoKey ||
+			read.AgentInstructions != settings.AgentInstructions || read.DefaultTeamID != nil {
 			t.Errorf("read back %+v, want %+v with logo %q", read, settings, logoKey)
+		}
+
+		settings.AgentInstructions = ""
+
+		emptied, err := workspaces.UpdateSettings(ctx, created.ID, settings)
+		if err != nil {
+			return err
+		}
+
+		if emptied.AgentInstructions != "" {
+			t.Errorf("instructions after clearing = %q, want none", emptied.AgentInstructions)
 		}
 
 		cleared, err := workspaces.SetLogo(ctx, created.ID, "")

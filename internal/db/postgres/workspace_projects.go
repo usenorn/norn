@@ -24,107 +24,114 @@ import (
 
 // WorkspaceProject is an object representing the database table.
 type WorkspaceProject struct {
-	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID    string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	Slug           string      `boil:"slug" json:"slug" toml:"slug" yaml:"slug"`
-	Name           string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description    string      `boil:"description" json:"description" toml:"description" yaml:"description"`
-	State          string      `boil:"state" json:"state" toml:"state" yaml:"state"`
-	LeadAccountID  null.String `boil:"lead_account_id" json:"lead_account_id,omitempty" toml:"lead_account_id" yaml:"lead_account_id,omitempty"`
-	TargetOn       null.Time   `boil:"target_on" json:"target_on,omitempty" toml:"target_on" yaml:"target_on,omitempty"`
-	ArchivedAt     null.Time   `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	SearchDocument null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
+	ID                string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID       string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	Slug              string      `boil:"slug" json:"slug" toml:"slug" yaml:"slug"`
+	Name              string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description       string      `boil:"description" json:"description" toml:"description" yaml:"description"`
+	State             string      `boil:"state" json:"state" toml:"state" yaml:"state"`
+	LeadAccountID     null.String `boil:"lead_account_id" json:"lead_account_id,omitempty" toml:"lead_account_id" yaml:"lead_account_id,omitempty"`
+	TargetOn          null.Time   `boil:"target_on" json:"target_on,omitempty" toml:"target_on" yaml:"target_on,omitempty"`
+	ArchivedAt        null.Time   `boil:"archived_at" json:"archived_at,omitempty" toml:"archived_at" yaml:"archived_at,omitempty"`
+	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt         time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SearchDocument    null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
+	AgentInstructions string      `boil:"agent_instructions" json:"agent_instructions" toml:"agent_instructions" yaml:"agent_instructions"`
 
 	R *workspaceProjectR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceProjectL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceProjectColumns = struct {
-	ID             string
-	WorkspaceID    string
-	Slug           string
-	Name           string
-	Description    string
-	State          string
-	LeadAccountID  string
-	TargetOn       string
-	ArchivedAt     string
-	CreatedAt      string
-	UpdatedAt      string
-	SearchDocument string
+	ID                string
+	WorkspaceID       string
+	Slug              string
+	Name              string
+	Description       string
+	State             string
+	LeadAccountID     string
+	TargetOn          string
+	ArchivedAt        string
+	CreatedAt         string
+	UpdatedAt         string
+	SearchDocument    string
+	AgentInstructions string
 }{
-	ID:             "id",
-	WorkspaceID:    "workspace_id",
-	Slug:           "slug",
-	Name:           "name",
-	Description:    "description",
-	State:          "state",
-	LeadAccountID:  "lead_account_id",
-	TargetOn:       "target_on",
-	ArchivedAt:     "archived_at",
-	CreatedAt:      "created_at",
-	UpdatedAt:      "updated_at",
-	SearchDocument: "search_document",
+	ID:                "id",
+	WorkspaceID:       "workspace_id",
+	Slug:              "slug",
+	Name:              "name",
+	Description:       "description",
+	State:             "state",
+	LeadAccountID:     "lead_account_id",
+	TargetOn:          "target_on",
+	ArchivedAt:        "archived_at",
+	CreatedAt:         "created_at",
+	UpdatedAt:         "updated_at",
+	SearchDocument:    "search_document",
+	AgentInstructions: "agent_instructions",
 }
 
 var WorkspaceProjectTableColumns = struct {
-	ID             string
-	WorkspaceID    string
-	Slug           string
-	Name           string
-	Description    string
-	State          string
-	LeadAccountID  string
-	TargetOn       string
-	ArchivedAt     string
-	CreatedAt      string
-	UpdatedAt      string
-	SearchDocument string
+	ID                string
+	WorkspaceID       string
+	Slug              string
+	Name              string
+	Description       string
+	State             string
+	LeadAccountID     string
+	TargetOn          string
+	ArchivedAt        string
+	CreatedAt         string
+	UpdatedAt         string
+	SearchDocument    string
+	AgentInstructions string
 }{
-	ID:             "workspace_projects.id",
-	WorkspaceID:    "workspace_projects.workspace_id",
-	Slug:           "workspace_projects.slug",
-	Name:           "workspace_projects.name",
-	Description:    "workspace_projects.description",
-	State:          "workspace_projects.state",
-	LeadAccountID:  "workspace_projects.lead_account_id",
-	TargetOn:       "workspace_projects.target_on",
-	ArchivedAt:     "workspace_projects.archived_at",
-	CreatedAt:      "workspace_projects.created_at",
-	UpdatedAt:      "workspace_projects.updated_at",
-	SearchDocument: "workspace_projects.search_document",
+	ID:                "workspace_projects.id",
+	WorkspaceID:       "workspace_projects.workspace_id",
+	Slug:              "workspace_projects.slug",
+	Name:              "workspace_projects.name",
+	Description:       "workspace_projects.description",
+	State:             "workspace_projects.state",
+	LeadAccountID:     "workspace_projects.lead_account_id",
+	TargetOn:          "workspace_projects.target_on",
+	ArchivedAt:        "workspace_projects.archived_at",
+	CreatedAt:         "workspace_projects.created_at",
+	UpdatedAt:         "workspace_projects.updated_at",
+	SearchDocument:    "workspace_projects.search_document",
+	AgentInstructions: "workspace_projects.agent_instructions",
 }
 
 // Generated where
 
 var WorkspaceProjectWhere = struct {
-	ID             whereHelperstring
-	WorkspaceID    whereHelperstring
-	Slug           whereHelperstring
-	Name           whereHelperstring
-	Description    whereHelperstring
-	State          whereHelperstring
-	LeadAccountID  whereHelpernull_String
-	TargetOn       whereHelpernull_Time
-	ArchivedAt     whereHelpernull_Time
-	CreatedAt      whereHelpertime_Time
-	UpdatedAt      whereHelpertime_Time
-	SearchDocument whereHelpernull_String
+	ID                whereHelperstring
+	WorkspaceID       whereHelperstring
+	Slug              whereHelperstring
+	Name              whereHelperstring
+	Description       whereHelperstring
+	State             whereHelperstring
+	LeadAccountID     whereHelpernull_String
+	TargetOn          whereHelpernull_Time
+	ArchivedAt        whereHelpernull_Time
+	CreatedAt         whereHelpertime_Time
+	UpdatedAt         whereHelpertime_Time
+	SearchDocument    whereHelpernull_String
+	AgentInstructions whereHelperstring
 }{
-	ID:             whereHelperstring{field: "\"workspace_projects\".\"id\""},
-	WorkspaceID:    whereHelperstring{field: "\"workspace_projects\".\"workspace_id\""},
-	Slug:           whereHelperstring{field: "\"workspace_projects\".\"slug\""},
-	Name:           whereHelperstring{field: "\"workspace_projects\".\"name\""},
-	Description:    whereHelperstring{field: "\"workspace_projects\".\"description\""},
-	State:          whereHelperstring{field: "\"workspace_projects\".\"state\""},
-	LeadAccountID:  whereHelpernull_String{field: "\"workspace_projects\".\"lead_account_id\""},
-	TargetOn:       whereHelpernull_Time{field: "\"workspace_projects\".\"target_on\""},
-	ArchivedAt:     whereHelpernull_Time{field: "\"workspace_projects\".\"archived_at\""},
-	CreatedAt:      whereHelpertime_Time{field: "\"workspace_projects\".\"created_at\""},
-	UpdatedAt:      whereHelpertime_Time{field: "\"workspace_projects\".\"updated_at\""},
-	SearchDocument: whereHelpernull_String{field: "\"workspace_projects\".\"search_document\""},
+	ID:                whereHelperstring{field: "\"workspace_projects\".\"id\""},
+	WorkspaceID:       whereHelperstring{field: "\"workspace_projects\".\"workspace_id\""},
+	Slug:              whereHelperstring{field: "\"workspace_projects\".\"slug\""},
+	Name:              whereHelperstring{field: "\"workspace_projects\".\"name\""},
+	Description:       whereHelperstring{field: "\"workspace_projects\".\"description\""},
+	State:             whereHelperstring{field: "\"workspace_projects\".\"state\""},
+	LeadAccountID:     whereHelpernull_String{field: "\"workspace_projects\".\"lead_account_id\""},
+	TargetOn:          whereHelpernull_Time{field: "\"workspace_projects\".\"target_on\""},
+	ArchivedAt:        whereHelpernull_Time{field: "\"workspace_projects\".\"archived_at\""},
+	CreatedAt:         whereHelpertime_Time{field: "\"workspace_projects\".\"created_at\""},
+	UpdatedAt:         whereHelpertime_Time{field: "\"workspace_projects\".\"updated_at\""},
+	SearchDocument:    whereHelpernull_String{field: "\"workspace_projects\".\"search_document\""},
+	AgentInstructions: whereHelperstring{field: "\"workspace_projects\".\"agent_instructions\""},
 }
 
 // WorkspaceProjectRels is where relationship names are stored.
@@ -259,9 +266,9 @@ func (r *workspaceProjectR) GetProjectWorkspaceProjectStatusUpdates() WorkspaceP
 type workspaceProjectL struct{}
 
 var (
-	workspaceProjectAllColumns            = []string{"id", "workspace_id", "slug", "name", "description", "state", "lead_account_id", "target_on", "archived_at", "created_at", "updated_at", "search_document"}
+	workspaceProjectAllColumns            = []string{"id", "workspace_id", "slug", "name", "description", "state", "lead_account_id", "target_on", "archived_at", "created_at", "updated_at", "search_document", "agent_instructions"}
 	workspaceProjectColumnsWithoutDefault = []string{"workspace_id", "slug", "name"}
-	workspaceProjectColumnsWithDefault    = []string{"id", "description", "state", "lead_account_id", "target_on", "archived_at", "created_at", "updated_at", "search_document"}
+	workspaceProjectColumnsWithDefault    = []string{"id", "description", "state", "lead_account_id", "target_on", "archived_at", "created_at", "updated_at", "search_document", "agent_instructions"}
 	workspaceProjectPrimaryKeyColumns     = []string{"id"}
 	workspaceProjectGeneratedColumns      = []string{"search_document"}
 )

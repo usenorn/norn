@@ -36,6 +36,7 @@ type Workspace struct {
 	DefaultTeamID       null.String `boil:"default_team_id" json:"default_team_id,omitempty" toml:"default_team_id" yaml:"default_team_id,omitempty"`
 	LogoObjectKey       null.String `boil:"logo_object_key" json:"logo_object_key,omitempty" toml:"logo_object_key" yaml:"logo_object_key,omitempty"`
 	WeekStartsOn        string      `boil:"week_starts_on" json:"week_starts_on" toml:"week_starts_on" yaml:"week_starts_on"`
+	AgentInstructions   string      `boil:"agent_instructions" json:"agent_instructions" toml:"agent_instructions" yaml:"agent_instructions"`
 
 	R *workspaceR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +55,7 @@ var WorkspaceColumns = struct {
 	DefaultTeamID       string
 	LogoObjectKey       string
 	WeekStartsOn        string
+	AgentInstructions   string
 }{
 	ID:                  "id",
 	Slug:                "slug",
@@ -67,6 +69,7 @@ var WorkspaceColumns = struct {
 	DefaultTeamID:       "default_team_id",
 	LogoObjectKey:       "logo_object_key",
 	WeekStartsOn:        "week_starts_on",
+	AgentInstructions:   "agent_instructions",
 }
 
 var WorkspaceTableColumns = struct {
@@ -82,6 +85,7 @@ var WorkspaceTableColumns = struct {
 	DefaultTeamID       string
 	LogoObjectKey       string
 	WeekStartsOn        string
+	AgentInstructions   string
 }{
 	ID:                  "workspaces.id",
 	Slug:                "workspaces.slug",
@@ -95,6 +99,7 @@ var WorkspaceTableColumns = struct {
 	DefaultTeamID:       "workspaces.default_team_id",
 	LogoObjectKey:       "workspaces.logo_object_key",
 	WeekStartsOn:        "workspaces.week_starts_on",
+	AgentInstructions:   "workspaces.agent_instructions",
 }
 
 // Generated where
@@ -112,6 +117,7 @@ var WorkspaceWhere = struct {
 	DefaultTeamID       whereHelpernull_String
 	LogoObjectKey       whereHelpernull_String
 	WeekStartsOn        whereHelperstring
+	AgentInstructions   whereHelperstring
 }{
 	ID:                  whereHelperstring{field: "\"workspaces\".\"id\""},
 	Slug:                whereHelperstring{field: "\"workspaces\".\"slug\""},
@@ -125,6 +131,7 @@ var WorkspaceWhere = struct {
 	DefaultTeamID:       whereHelpernull_String{field: "\"workspaces\".\"default_team_id\""},
 	LogoObjectKey:       whereHelpernull_String{field: "\"workspaces\".\"logo_object_key\""},
 	WeekStartsOn:        whereHelperstring{field: "\"workspaces\".\"week_starts_on\""},
+	AgentInstructions:   whereHelperstring{field: "\"workspaces\".\"agent_instructions\""},
 }
 
 // WorkspaceRels is where relationship names are stored.
@@ -1133,9 +1140,9 @@ func (r *workspaceR) GetWorkspaceTeams() WorkspaceTeamSlice {
 type workspaceL struct{}
 
 var (
-	workspaceAllColumns            = []string{"id", "slug", "name", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id", "logo_object_key", "week_starts_on"}
+	workspaceAllColumns            = []string{"id", "slug", "name", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id", "logo_object_key", "week_starts_on", "agent_instructions"}
 	workspaceColumnsWithoutDefault = []string{"slug", "name"}
-	workspaceColumnsWithDefault    = []string{"id", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id", "logo_object_key", "week_starts_on"}
+	workspaceColumnsWithDefault    = []string{"id", "created_at", "updated_at", "status", "timezone", "deletion_requested_at", "purge_after", "default_team_id", "logo_object_key", "week_starts_on", "agent_instructions"}
 	workspacePrimaryKeyColumns     = []string{"id"}
 	workspaceGeneratedColumns      = []string{}
 )
