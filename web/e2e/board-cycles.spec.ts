@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectBoardLive } from "./board";
 import { at, fixture } from "./fixture";
 
 const origin = `http://localhost:${process.env.NORN_PREVIEW_PORT ?? 4173}`;
@@ -42,6 +43,7 @@ async function stopCycles(page: Page) {
 async function openBoard(page: Page) {
 	await page.goto(at(`/teams/${fixture().teamKey}/issues?layout=board`));
 	await expect(page.locator('[data-cursor="true"]')).toBeVisible();
+	await expectBoardLive(page);
 }
 
 async function cursorCard(page: Page): Promise<string> {
