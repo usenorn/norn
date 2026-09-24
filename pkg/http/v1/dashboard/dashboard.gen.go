@@ -504,6 +504,87 @@ func (e AgentUnusableProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for AiProviderFailure.
+const (
+	AiProviderDestinationRefused AiProviderFailure = "destination_refused"
+	AiProviderKeyRejected        AiProviderFailure = "key_rejected"
+	AiProviderModelUnavailable   AiProviderFailure = "model_unavailable"
+	AiProviderQuotaExceeded      AiProviderFailure = "quota_exceeded"
+	AiProviderRateLimited        AiProviderFailure = "rate_limited"
+	AiProviderUnreachable        AiProviderFailure = "unreachable"
+)
+
+// Valid indicates whether the value is a known member of the AiProviderFailure enum.
+func (e AiProviderFailure) Valid() bool {
+	switch e {
+	case AiProviderDestinationRefused:
+		return true
+	case AiProviderKeyRejected:
+		return true
+	case AiProviderModelUnavailable:
+		return true
+	case AiProviderQuotaExceeded:
+		return true
+	case AiProviderRateLimited:
+		return true
+	case AiProviderUnreachable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AiProviderKind.
+const (
+	Openai AiProviderKind = "openai"
+)
+
+// Valid indicates whether the value is a known member of the AiProviderKind enum.
+func (e AiProviderKind) Valid() bool {
+	switch e {
+	case Openai:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AiProviderSealingUnavailableProblemCode.
+const (
+	AiProviderSealingUnavailableProblemCodeAiProviderSealingUnavailable AiProviderSealingUnavailableProblemCode = "ai_provider_sealing_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the AiProviderSealingUnavailableProblemCode enum.
+func (e AiProviderSealingUnavailableProblemCode) Valid() bool {
+	switch e {
+	case AiProviderSealingUnavailableProblemCodeAiProviderSealingUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AiProviderStatus.
+const (
+	AiProviderStatusFailed     AiProviderStatus = "failed"
+	AiProviderStatusUnverified AiProviderStatus = "unverified"
+	AiProviderStatusVerified   AiProviderStatus = "verified"
+)
+
+// Valid indicates whether the value is a known member of the AiProviderStatus enum.
+func (e AiProviderStatus) Valid() bool {
+	switch e {
+	case AiProviderStatusFailed:
+		return true
+	case AiProviderStatusUnverified:
+		return true
+	case AiProviderStatusVerified:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AttachmentStatus.
 const (
 	AttachmentStatusDiscarded AttachmentStatus = "discarded"
@@ -537,6 +618,11 @@ const (
 	AuditActionAgentEnabled                 AuditAction = "agent.enabled"
 	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
 	AuditActionAgentRegistered              AuditAction = "agent.registered"
+	AuditActionAiProviderConfigured         AuditAction = "ai_provider.configured"
+	AuditActionAiProviderEndpointChanged    AuditAction = "ai_provider.endpoint_changed"
+	AuditActionAiProviderKeyReplaced        AuditAction = "ai_provider.key_replaced"
+	AuditActionAiProviderModelChanged       AuditAction = "ai_provider.model_changed"
+	AuditActionAiProviderRemoved            AuditAction = "ai_provider.removed"
 	AuditActionAuditExported                AuditAction = "audit.exported"
 	AuditActionCodebaseConnected            AuditAction = "codebase.connected"
 	AuditActionCodebaseDisconnected         AuditAction = "codebase.disconnected"
@@ -601,6 +687,16 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentProposalDecided:
 		return true
 	case AuditActionAgentRegistered:
+		return true
+	case AuditActionAiProviderConfigured:
+		return true
+	case AuditActionAiProviderEndpointChanged:
+		return true
+	case AuditActionAiProviderKeyReplaced:
+		return true
+	case AuditActionAiProviderModelChanged:
+		return true
+	case AuditActionAiProviderRemoved:
 		return true
 	case AuditActionAuditExported:
 		return true
@@ -4927,6 +5023,45 @@ type AgentUnusableProblem struct {
 // AgentUnusableProblemCode defines model for AgentUnusableProblem.Code.
 type AgentUnusableProblemCode string
 
+// AiProviderFailure defines model for AiProviderFailure.
+type AiProviderFailure string
+
+// AiProviderKind defines model for AiProviderKind.
+type AiProviderKind string
+
+// AiProviderModelList defines model for AiProviderModelList.
+type AiProviderModelList struct {
+	Models []string `json:"models"`
+}
+
+// AiProviderRefusedProblem defines model for AiProviderRefusedProblem.
+type AiProviderRefusedProblem struct {
+	Code     *AiProviderFailure `json:"code,omitempty"`
+	Detail   *string            `json:"detail,omitempty"`
+	Errors   *[]FieldError      `json:"errors,omitempty"`
+	Instance *string            `json:"instance,omitempty"`
+	Status   int32              `json:"status"`
+	Title    string             `json:"title"`
+	Type     string             `json:"type"`
+}
+
+// AiProviderSealingUnavailableProblem defines model for AiProviderSealingUnavailableProblem.
+type AiProviderSealingUnavailableProblem struct {
+	Code     AiProviderSealingUnavailableProblemCode `json:"code"`
+	Detail   *string                                 `json:"detail,omitempty"`
+	Errors   *[]FieldError                           `json:"errors,omitempty"`
+	Instance *string                                 `json:"instance,omitempty"`
+	Status   int32                                   `json:"status"`
+	Title    string                                  `json:"title"`
+	Type     string                                  `json:"type"`
+}
+
+// AiProviderSealingUnavailableProblemCode defines model for AiProviderSealingUnavailableProblem.Code.
+type AiProviderSealingUnavailableProblemCode string
+
+// AiProviderStatus defines model for AiProviderStatus.
+type AiProviderStatus string
+
 // AnswerIssueQuestionRequest defines model for AnswerIssueQuestionRequest.
 type AnswerIssueQuestionRequest struct {
 	Answer string `json:"answer"`
@@ -8162,6 +8297,15 @@ type SetTriageSettingsRequest struct {
 	RouteNonMembers   bool `json:"routeNonMembers"`
 }
 
+// SetWorkspaceAiProviderRequest baseUrl points the workspace at any endpoint that speaks the provider's API, such as a gateway or a self-hosted model server. Changing it requires apiKey, so a stored key never follows an endpoint somebody else chose. allowPrivateAddress lets this one workspace reach an address on a private network; loopback and cloud metadata stay refused unless the instance allows them.
+type SetWorkspaceAiProviderRequest struct {
+	AllowPrivateAddress *bool          `json:"allowPrivateAddress,omitempty"`
+	ApiKey              *string        `json:"apiKey,omitempty"`
+	BaseUrl             *string        `json:"baseUrl,omitempty"`
+	DefaultModel        *string        `json:"defaultModel,omitempty"`
+	Provider            AiProviderKind `json:"provider"`
+}
+
 // SetWorkspaceAuthPolicyRequest defines model for SetWorkspaceAuthPolicyRequest.
 type SetWorkspaceAuthPolicyRequest struct {
 	Enforcement AuthEnforcement `json:"enforcement"`
@@ -9003,6 +9147,21 @@ type WorkspaceAgent struct {
 	OwnerName  string         `json:"ownerName"`
 }
 
+// WorkspaceAiProvider The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it.
+type WorkspaceAiProvider struct {
+	AllowPrivateAddress bool               `json:"allowPrivateAddress"`
+	BaseUrl             string             `json:"baseUrl"`
+	CreatedAt           time.Time          `json:"createdAt"`
+	DefaultModel        string             `json:"defaultModel"`
+	FailedAt            *time.Time         `json:"failedAt,omitempty"`
+	Failure             *AiProviderFailure `json:"failure,omitempty"`
+	KeyHint             string             `json:"keyHint"`
+	Provider            AiProviderKind     `json:"provider"`
+	Status              AiProviderStatus   `json:"status"`
+	UpdatedAt           time.Time          `json:"updatedAt"`
+	VerifiedAt          *time.Time         `json:"verifiedAt,omitempty"`
+}
+
 // WorkspaceAuthPolicy defines model for WorkspaceAuthPolicy.
 type WorkspaceAuthPolicy struct {
 	Enforcement AuthEnforcement    `json:"enforcement"`
@@ -9301,6 +9460,12 @@ type AgentHeld = AgentHeldProblem
 
 // AgentUnusable defines model for AgentUnusable.
 type AgentUnusable = AgentUnusableProblem
+
+// AiProviderRefused defines model for AiProviderRefused.
+type AiProviderRefused = AiProviderRefusedProblem
+
+// AiProviderSealingUnavailable defines model for AiProviderSealingUnavailable.
+type AiProviderSealingUnavailable = AiProviderSealingUnavailableProblem
 
 // AuditUnlicensed defines model for AuditUnlicensed.
 type AuditUnlicensed = AuditUnlicensedProblem
@@ -9806,6 +9971,9 @@ type ApproveWorkspaceAgentProposalJSONRequestBody = ApproveAgentProposalRequest
 
 // RegisterWorkspaceAgentJSONRequestBody defines body for RegisterWorkspaceAgent for application/json ContentType.
 type RegisterWorkspaceAgentJSONRequestBody = RegisterAgentRequest
+
+// SetWorkspaceAiProviderJSONRequestBody defines body for SetWorkspaceAiProvider for application/json ContentType.
+type SetWorkspaceAiProviderJSONRequestBody = SetWorkspaceAiProviderRequest
 
 // SetWorkspaceAuthPolicyJSONRequestBody defines body for SetWorkspaceAuthPolicy for application/json ContentType.
 type SetWorkspaceAuthPolicyJSONRequestBody = SetWorkspaceAuthPolicyRequest
@@ -10816,6 +10984,44 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveWorkspaceAiProvider Remove the provider and discard its key
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/ai-provider (the `RemoveWorkspaceAiProvider` operationId).
+	RemoveWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceAiProvider Read the AI provider this workspace brings its own key for
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/ai-provider (the `GetWorkspaceAiProvider` operationId).
+	GetWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAiProviderWithBody Save the provider, a new key, or a new default model
+	//
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+	SetWorkspaceAiProviderWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+	//
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+	SetWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAiProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceAiProviderModels List the chat models the stored key can use
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/ai-provider/models (the `ListWorkspaceAiProviderModels` operationId).
+	ListWorkspaceAiProviderModels(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TestWorkspaceAiProvider Send one small request to the default model and record the outcome
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/ai-provider/test (the `TestWorkspaceAiProvider` operationId).
+	TestWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	//
@@ -14505,6 +14711,104 @@ func (c *Client) RotateWorkspaceAgentCredential(ctx context.Context, workspaceId
 // Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 func (c *Client) EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewEnableWorkspaceAgentRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveWorkspaceAiProvider Remove the provider and discard its key
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/ai-provider (the `RemoveWorkspaceAiProvider` operationId).
+func (c *Client) RemoveWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveWorkspaceAiProviderRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceAiProvider Read the AI provider this workspace brings its own key for
+//
+// Corresponds with GET /workspaces/{workspaceId}/ai-provider (the `GetWorkspaceAiProvider` operationId).
+func (c *Client) GetWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceAiProviderRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAiProviderWithBody Save the provider, a new key, or a new default model
+//
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+func (c *Client) SetWorkspaceAiProviderWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAiProviderRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+//
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+func (c *Client) SetWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAiProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAiProviderRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceAiProviderModels List the chat models the stored key can use
+//
+// Corresponds with GET /workspaces/{workspaceId}/ai-provider/models (the `ListWorkspaceAiProviderModels` operationId).
+func (c *Client) ListWorkspaceAiProviderModels(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceAiProviderModelsRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// TestWorkspaceAiProvider Send one small request to the default model and record the outcome
+//
+// Corresponds with POST /workspaces/{workspaceId}/ai-provider/test (the `TestWorkspaceAiProvider` operationId).
+func (c *Client) TestWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestWorkspaceAiProviderRequest(c.Server, workspaceId)
 	if err != nil {
 		return nil, err
 	}
@@ -22747,6 +23051,189 @@ func NewEnableWorkspaceAgentRequest(server string, workspaceId WorkspaceId, agen
 	}
 
 	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/enable", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRemoveWorkspaceAiProviderRequest constructs an http.Request for the RemoveWorkspaceAiProvider method
+func NewRemoveWorkspaceAiProviderRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/ai-provider", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceAiProviderRequest constructs an http.Request for the GetWorkspaceAiProvider method
+func NewGetWorkspaceAiProviderRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/ai-provider", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetWorkspaceAiProviderRequest calls the generic SetWorkspaceAiProvider builder with application/json body
+func NewSetWorkspaceAiProviderRequest(server string, workspaceId WorkspaceId, body SetWorkspaceAiProviderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceAiProviderRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceAiProviderRequestWithBody constructs an http.Request for the SetWorkspaceAiProvider method, with any body, and a specified content type
+func NewSetWorkspaceAiProviderRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/ai-provider", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListWorkspaceAiProviderModelsRequest constructs an http.Request for the ListWorkspaceAiProviderModels method
+func NewListWorkspaceAiProviderModelsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/ai-provider/models", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewTestWorkspaceAiProviderRequest constructs an http.Request for the TestWorkspaceAiProvider method
+func NewTestWorkspaceAiProviderRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/ai-provider/test", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -36311,6 +36798,52 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*EnableWorkspaceAgentResponse, error)
 
+	// RemoveWorkspaceAiProviderWithResponse Remove the provider and discard its key
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/ai-provider (the `RemoveWorkspaceAiProvider` operationId).
+	RemoveWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RemoveWorkspaceAiProviderResponse, error)
+
+	// GetWorkspaceAiProviderWithResponse Read the AI provider this workspace brings its own key for
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/ai-provider (the `GetWorkspaceAiProvider` operationId).
+	GetWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceAiProviderResponse, error)
+
+	// SetWorkspaceAiProviderWithBodyWithResponse Save the provider, a new key, or a new default model
+	//
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+	SetWorkspaceAiProviderWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAiProviderResponse, error)
+
+	// SetWorkspaceAiProviderWithResponse Save the provider, a new key, or a new default model
+	//
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+	SetWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAiProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAiProviderResponse, error)
+
+	// ListWorkspaceAiProviderModelsWithResponse List the chat models the stored key can use
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/ai-provider/models (the `ListWorkspaceAiProviderModels` operationId).
+	ListWorkspaceAiProviderModelsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceAiProviderModelsResponse, error)
+
+	// TestWorkspaceAiProviderWithResponse Send one small request to the default model and record the outcome
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/ai-provider/test (the `TestWorkspaceAiProvider` operationId).
+	TestWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*TestWorkspaceAiProviderResponse, error)
+
 	// DownloadWorkspaceAttachmentWithResponse Trade access to the issue for a short-lived link to the bytes
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -43418,6 +43951,379 @@ func (r EnableWorkspaceAgentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r EnableWorkspaceAgentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RemoveWorkspaceAiProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RemoveWorkspaceAiProviderResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RemoveWorkspaceAiProviderResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RemoveWorkspaceAiProviderResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RemoveWorkspaceAiProviderResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveWorkspaceAiProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveWorkspaceAiProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveWorkspaceAiProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveWorkspaceAiProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceAiProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAiProvider
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceAiProviderResponse) GetJSON200() *WorkspaceAiProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceAiProviderResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceAiProviderResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceAiProviderResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceAiProviderResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceAiProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceAiProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceAiProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceAiProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceAiProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAiProvider
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *AiProviderRefused
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AiProviderSealingUnavailable
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceAiProviderResponse) GetJSON200() *WorkspaceAiProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceAiProviderResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceAiProviderResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceAiProviderResponse) GetApplicationproblemJSON422() *AiProviderRefused {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceAiProviderResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r SetWorkspaceAiProviderResponse) GetApplicationproblemJSON503() *AiProviderSealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceAiProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceAiProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceAiProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceAiProviderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceAiProviderModelsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AiProviderModelList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *AiProviderRefused
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AiProviderSealingUnavailable
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceAiProviderModelsResponse) GetJSON200() *AiProviderModelList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceAiProviderModelsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceAiProviderModelsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceAiProviderModelsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ListWorkspaceAiProviderModelsResponse) GetApplicationproblemJSON422() *AiProviderRefused {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceAiProviderModelsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r ListWorkspaceAiProviderModelsResponse) GetApplicationproblemJSON503() *AiProviderSealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceAiProviderModelsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceAiProviderModelsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceAiProviderModelsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceAiProviderModelsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type TestWorkspaceAiProviderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAiProvider
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *AiProviderRefused
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AiProviderSealingUnavailable
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r TestWorkspaceAiProviderResponse) GetJSON200() *WorkspaceAiProvider {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r TestWorkspaceAiProviderResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r TestWorkspaceAiProviderResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r TestWorkspaceAiProviderResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r TestWorkspaceAiProviderResponse) GetApplicationproblemJSON422() *AiProviderRefused {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r TestWorkspaceAiProviderResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r TestWorkspaceAiProviderResponse) GetApplicationproblemJSON503() *AiProviderSealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r TestWorkspaceAiProviderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r TestWorkspaceAiProviderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TestWorkspaceAiProviderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r TestWorkspaceAiProviderResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -63800,6 +64706,88 @@ func (c *ClientWithResponses) EnableWorkspaceAgentWithResponse(ctx context.Conte
 	return ParseEnableWorkspaceAgentResponse(rsp)
 }
 
+// RemoveWorkspaceAiProviderWithResponse Remove the provider and discard its key
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/ai-provider (the `RemoveWorkspaceAiProvider` operationId).
+func (c *ClientWithResponses) RemoveWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RemoveWorkspaceAiProviderResponse, error) {
+	rsp, err := c.RemoveWorkspaceAiProvider(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveWorkspaceAiProviderResponse(rsp)
+}
+
+// GetWorkspaceAiProviderWithResponse Read the AI provider this workspace brings its own key for
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/ai-provider (the `GetWorkspaceAiProvider` operationId).
+func (c *ClientWithResponses) GetWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceAiProviderResponse, error) {
+	rsp, err := c.GetWorkspaceAiProvider(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceAiProviderResponse(rsp)
+}
+
+// SetWorkspaceAiProviderWithBodyWithResponse Save the provider, a new key, or a new default model
+//
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+func (c *ClientWithResponses) SetWorkspaceAiProviderWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAiProviderResponse, error) {
+	rsp, err := c.SetWorkspaceAiProviderWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAiProviderResponse(rsp)
+}
+
+// SetWorkspaceAiProviderWithResponse Save the provider, a new key, or a new default model
+//
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
+func (c *ClientWithResponses) SetWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAiProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAiProviderResponse, error) {
+	rsp, err := c.SetWorkspaceAiProvider(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAiProviderResponse(rsp)
+}
+
+// ListWorkspaceAiProviderModelsWithResponse List the chat models the stored key can use
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/ai-provider/models (the `ListWorkspaceAiProviderModels` operationId).
+func (c *ClientWithResponses) ListWorkspaceAiProviderModelsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceAiProviderModelsResponse, error) {
+	rsp, err := c.ListWorkspaceAiProviderModels(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceAiProviderModelsResponse(rsp)
+}
+
+// TestWorkspaceAiProviderWithResponse Send one small request to the default model and record the outcome
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/ai-provider/test (the `TestWorkspaceAiProvider` operationId).
+func (c *ClientWithResponses) TestWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*TestWorkspaceAiProviderResponse, error) {
+	rsp, err := c.TestWorkspaceAiProvider(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTestWorkspaceAiProviderResponse(rsp)
+}
+
 // DownloadWorkspaceAttachmentWithResponse Trade access to the issue for a short-lived link to the bytes
 //
 // Returns a wrapper object for the known response body format(s).
@@ -72073,6 +73061,307 @@ func ParseEnableWorkspaceAgentResponse(rsp *http.Response) (*EnableWorkspaceAgen
 			return nil, err
 		}
 		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRemoveWorkspaceAiProviderResponse parses an HTTP response from a RemoveWorkspaceAiProviderWithResponse call
+func ParseRemoveWorkspaceAiProviderResponse(rsp *http.Response) (*RemoveWorkspaceAiProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveWorkspaceAiProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceAiProviderResponse parses an HTTP response from a GetWorkspaceAiProviderWithResponse call
+func ParseGetWorkspaceAiProviderResponse(rsp *http.Response) (*GetWorkspaceAiProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceAiProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAiProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceAiProviderResponse parses an HTTP response from a SetWorkspaceAiProviderWithResponse call
+func ParseSetWorkspaceAiProviderResponse(rsp *http.Response) (*SetWorkspaceAiProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceAiProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAiProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest AiProviderRefused
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AiProviderSealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceAiProviderModelsResponse parses an HTTP response from a ListWorkspaceAiProviderModelsWithResponse call
+func ParseListWorkspaceAiProviderModelsResponse(rsp *http.Response) (*ListWorkspaceAiProviderModelsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceAiProviderModelsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AiProviderModelList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest AiProviderRefused
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AiProviderSealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseTestWorkspaceAiProviderResponse parses an HTTP response from a TestWorkspaceAiProviderWithResponse call
+func ParseTestWorkspaceAiProviderResponse(rsp *http.Response) (*TestWorkspaceAiProviderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TestWorkspaceAiProviderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAiProvider
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest AiProviderRefused
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AiProviderSealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
 
 	}
 
@@ -87624,6 +88913,21 @@ type ServerInterface interface {
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// RemoveWorkspaceAiProvider Remove the provider and discard its key
+	// (DELETE /workspaces/{workspaceId}/ai-provider)
+	RemoveWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceAiProvider Read the AI provider this workspace brings its own key for
+	// (GET /workspaces/{workspaceId}/ai-provider)
+	GetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+	// (PUT /workspaces/{workspaceId}/ai-provider)
+	SetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceAiProviderModels List the chat models the stored key can use
+	// (GET /workspaces/{workspaceId}/ai-provider/models)
+	ListWorkspaceAiProviderModels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// TestWorkspaceAiProvider Send one small request to the default model and record the outcome
+	// (POST /workspaces/{workspaceId}/ai-provider/test)
+	TestWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, attachmentId AttachmentId)
@@ -88824,6 +90128,36 @@ func (_ Unimplemented) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *
 // EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 // (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 func (_ Unimplemented) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceAiProvider Remove the provider and discard its key
+// (DELETE /workspaces/{workspaceId}/ai-provider)
+func (_ Unimplemented) RemoveWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceAiProvider Read the AI provider this workspace brings its own key for
+// (GET /workspaces/{workspaceId}/ai-provider)
+func (_ Unimplemented) GetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+// (PUT /workspaces/{workspaceId}/ai-provider)
+func (_ Unimplemented) SetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceAiProviderModels List the chat models the stored key can use
+// (GET /workspaces/{workspaceId}/ai-provider/models)
+func (_ Unimplemented) ListWorkspaceAiProviderModels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// TestWorkspaceAiProvider Send one small request to the default model and record the outcome
+// (POST /workspaces/{workspaceId}/ai-provider/test)
+func (_ Unimplemented) TestWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -91949,6 +93283,136 @@ func (siw *ServerInterfaceWrapper) EnableWorkspaceAgent(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnableWorkspaceAgent(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveWorkspaceAiProvider operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceAiProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceAiProvider(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceAiProvider operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceAiProvider(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceAiProvider operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceAiProvider(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceAiProviderModels operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceAiProviderModels(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceAiProviderModels(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TestWorkspaceAiProvider operation middleware
+func (siw *ServerInterfaceWrapper) TestWorkspaceAiProvider(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TestWorkspaceAiProvider(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -102614,6 +104078,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/application/installations", wrapper.ListWorkspaceSourceControlInstallations)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/ai-provider", wrapper.RemoveWorkspaceAiProvider)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/ai-provider", wrapper.GetWorkspaceAiProvider)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/ai-provider", wrapper.SetWorkspaceAiProvider)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/ai-provider/models", wrapper.ListWorkspaceAiProviderModels)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/ai-provider/test", wrapper.TestWorkspaceAiProvider)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections", wrapper.ListWorkspaceSourceControlConnections)
 	})
 	r.Group(func(r chi.Router) {
@@ -102843,6 +104322,10 @@ type AccountLockedApplicationProblemPlusJSONResponse AccountLockedProblem
 type AgentHeldApplicationProblemPlusJSONResponse AgentHeldProblem
 
 type AgentUnusableApplicationProblemPlusJSONResponse AgentUnusableProblem
+
+type AiProviderRefusedApplicationProblemPlusJSONResponse AiProviderRefusedProblem
+
+type AiProviderSealingUnavailableApplicationProblemPlusJSONResponse AiProviderSealingUnavailableProblem
 
 type AuditUnlicensedApplicationProblemPlusJSONResponse AuditUnlicensedProblem
 
@@ -108425,6 +109908,493 @@ func (response EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse) VisitE
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceAiProviderRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type RemoveWorkspaceAiProviderResponseObject interface {
+	VisitRemoveWorkspaceAiProviderResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceAiProvider204Response struct {
+}
+
+func (response RemoveWorkspaceAiProvider204Response) VisitRemoveWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceAiProvider401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceAiProvider401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceAiProvider403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceAiProvider403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceAiProvider404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceAiProvider404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceAiProvider500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceAiProvider500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAiProviderRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceAiProviderResponseObject interface {
+	VisitGetWorkspaceAiProviderResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceAiProvider200JSONResponse WorkspaceAiProvider
+
+func (response GetWorkspaceAiProvider200JSONResponse) VisitGetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAiProvider401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAiProvider401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAiProvider403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAiProvider403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAiProvider404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceAiProvider404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAiProvider500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceAiProvider500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAiProviderRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SetWorkspaceAiProviderJSONRequestBody
+}
+
+type SetWorkspaceAiProviderResponseObject interface {
+	VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceAiProvider200JSONResponse WorkspaceAiProvider
+
+func (response SetWorkspaceAiProvider200JSONResponse) VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAiProvider401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAiProvider401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAiProvider403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAiProvider403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAiProvider422ApplicationProblemPlusJSONResponse struct {
+	AiProviderRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAiProvider422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAiProvider500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAiProvider500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAiProvider503ApplicationProblemPlusJSONResponse struct {
+	AiProviderSealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAiProvider503ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAiProviderModelsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceAiProviderModelsResponseObject interface {
+	VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceAiProviderModels200JSONResponse AiProviderModelList
+
+func (response ListWorkspaceAiProviderModels200JSONResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAiProviderModels401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAiProviderModels401ApplicationProblemPlusJSONResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAiProviderModels403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAiProviderModels403ApplicationProblemPlusJSONResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAiProviderModels404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceAiProviderModels404ApplicationProblemPlusJSONResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAiProviderModels422ApplicationProblemPlusJSONResponse struct {
+	AiProviderRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAiProviderModels422ApplicationProblemPlusJSONResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAiProviderModels500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceAiProviderModels500ApplicationProblemPlusJSONResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceAiProviderModels503ApplicationProblemPlusJSONResponse struct {
+	AiProviderSealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceAiProviderModels503ApplicationProblemPlusJSONResponse) VisitListWorkspaceAiProviderModelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceAiProviderRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type TestWorkspaceAiProviderResponseObject interface {
+	VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error
+}
+
+type TestWorkspaceAiProvider200JSONResponse WorkspaceAiProvider
+
+func (response TestWorkspaceAiProvider200JSONResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceAiProvider401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response TestWorkspaceAiProvider401ApplicationProblemPlusJSONResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceAiProvider403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response TestWorkspaceAiProvider403ApplicationProblemPlusJSONResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceAiProvider404ApplicationProblemPlusJSONResponse Problem
+
+func (response TestWorkspaceAiProvider404ApplicationProblemPlusJSONResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceAiProvider422ApplicationProblemPlusJSONResponse struct {
+	AiProviderRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response TestWorkspaceAiProvider422ApplicationProblemPlusJSONResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceAiProvider500ApplicationProblemPlusJSONResponse Problem
+
+func (response TestWorkspaceAiProvider500ApplicationProblemPlusJSONResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestWorkspaceAiProvider503ApplicationProblemPlusJSONResponse struct {
+	AiProviderSealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response TestWorkspaceAiProvider503ApplicationProblemPlusJSONResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -132997,6 +134967,21 @@ type StrictServerInterface interface {
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(ctx context.Context, request EnableWorkspaceAgentRequestObject) (EnableWorkspaceAgentResponseObject, error)
+	// RemoveWorkspaceAiProvider Remove the provider and discard its key
+	// (DELETE /workspaces/{workspaceId}/ai-provider)
+	RemoveWorkspaceAiProvider(ctx context.Context, request RemoveWorkspaceAiProviderRequestObject) (RemoveWorkspaceAiProviderResponseObject, error)
+	// GetWorkspaceAiProvider Read the AI provider this workspace brings its own key for
+	// (GET /workspaces/{workspaceId}/ai-provider)
+	GetWorkspaceAiProvider(ctx context.Context, request GetWorkspaceAiProviderRequestObject) (GetWorkspaceAiProviderResponseObject, error)
+	// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+	// (PUT /workspaces/{workspaceId}/ai-provider)
+	SetWorkspaceAiProvider(ctx context.Context, request SetWorkspaceAiProviderRequestObject) (SetWorkspaceAiProviderResponseObject, error)
+	// ListWorkspaceAiProviderModels List the chat models the stored key can use
+	// (GET /workspaces/{workspaceId}/ai-provider/models)
+	ListWorkspaceAiProviderModels(ctx context.Context, request ListWorkspaceAiProviderModelsRequestObject) (ListWorkspaceAiProviderModelsResponseObject, error)
+	// TestWorkspaceAiProvider Send one small request to the default model and record the outcome
+	// (POST /workspaces/{workspaceId}/ai-provider/test)
+	TestWorkspaceAiProvider(ctx context.Context, request TestWorkspaceAiProviderRequestObject) (TestWorkspaceAiProviderResponseObject, error)
 	// DownloadWorkspaceAttachment Trade access to the issue for a short-lived link to the bytes
 	// (GET /workspaces/{workspaceId}/attachments/{attachmentId}/content)
 	DownloadWorkspaceAttachment(ctx context.Context, request DownloadWorkspaceAttachmentRequestObject) (DownloadWorkspaceAttachmentResponseObject, error)
@@ -135720,6 +137705,143 @@ func (sh *strictHandler) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(EnableWorkspaceAgentResponseObject); ok {
 		if err := validResponse.VisitEnableWorkspaceAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceAiProvider operation middleware
+func (sh *strictHandler) RemoveWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request RemoveWorkspaceAiProviderRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceAiProvider(ctx, request.(RemoveWorkspaceAiProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceAiProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceAiProviderResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceAiProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceAiProvider operation middleware
+func (sh *strictHandler) GetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceAiProviderRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceAiProvider(ctx, request.(GetWorkspaceAiProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceAiProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceAiProviderResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceAiProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceAiProvider operation middleware
+func (sh *strictHandler) SetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SetWorkspaceAiProviderRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SetWorkspaceAiProviderJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceAiProvider(ctx, request.(SetWorkspaceAiProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceAiProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceAiProviderResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceAiProviderResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceAiProviderModels operation middleware
+func (sh *strictHandler) ListWorkspaceAiProviderModels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceAiProviderModelsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceAiProviderModels(ctx, request.(ListWorkspaceAiProviderModelsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceAiProviderModels")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceAiProviderModelsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceAiProviderModelsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TestWorkspaceAiProvider operation middleware
+func (sh *strictHandler) TestWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request TestWorkspaceAiProviderRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TestWorkspaceAiProvider(ctx, request.(TestWorkspaceAiProviderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TestWorkspaceAiProvider")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TestWorkspaceAiProviderResponseObject); ok {
+		if err := validResponse.VisitTestWorkspaceAiProviderResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

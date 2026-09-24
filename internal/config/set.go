@@ -32,6 +32,7 @@ var Set = wire.NewSet(
 	NewWebhooks,
 	NewImports,
 	NewLinear,
+	NewOpenAI,
 	NewSourceControl,
 	NewIntake,
 	NewEpostix,

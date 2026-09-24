@@ -59,6 +59,7 @@ type handler struct {
 	imports           service.Imports
 	sourceControl     service.SourceControl
 	sourceControlApps service.SourceControlApps
+	aiProviders       service.AIProviders
 	sourceControlCfg  config.SourceControl
 	app               config.App
 	instance          config.Instance
@@ -111,6 +112,7 @@ func New(
 	imports service.Imports,
 	sourceControl service.SourceControl,
 	sourceControlApps service.SourceControlApps,
+	aiProviders service.AIProviders,
 	sourceControlCfg config.SourceControl,
 	app config.App,
 	instance config.Instance,
@@ -162,6 +164,7 @@ func New(
 		imports:           imports,
 		sourceControl:     sourceControl,
 		sourceControlApps: sourceControlApps,
+		aiProviders:       aiProviders,
 		sourceControlCfg:  sourceControlCfg,
 		app:               app,
 		instance:          instance,

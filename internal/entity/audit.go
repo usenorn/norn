@@ -100,6 +100,12 @@ const (
 	AuditDirectoryDisconnected AuditAction = "directory.disconnected"
 	AuditDirectoryTokenRotated AuditAction = "directory.token_rotated"
 
+	AuditAIProviderConfigured      AuditAction = "ai_provider.configured"
+	AuditAIProviderKeyReplaced     AuditAction = "ai_provider.key_replaced"
+	AuditAIProviderModelChanged    AuditAction = "ai_provider.model_changed"
+	AuditAIProviderEndpointChanged AuditAction = "ai_provider.endpoint_changed"
+	AuditAIProviderRemoved         AuditAction = "ai_provider.removed"
+
 	AuditExported     AuditAction = "audit.exported"
 	AuditAccessDenied AuditAction = "access.denied"
 )
@@ -128,6 +134,8 @@ func AuditActions() []AuditAction {
 		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,
 		AuditSourceControlConnected, AuditSourceControlDisconnected,
 		AuditSourceControlTokenReplaced, AuditSourceControlBroken,
+		AuditAIProviderConfigured, AuditAIProviderKeyReplaced, AuditAIProviderModelChanged,
+		AuditAIProviderEndpointChanged, AuditAIProviderRemoved,
 		AuditExported, AuditAccessDenied,
 	}
 }

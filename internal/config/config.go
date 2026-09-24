@@ -29,6 +29,7 @@ type Config struct {
 	Webhooks      Webhooks      `mapstructure:"webhooks"`
 	Imports       Imports       `mapstructure:"imports"`
 	Linear        Linear        `mapstructure:"linear"`
+	OpenAI        OpenAI        `mapstructure:"openai"`
 	SourceControl SourceControl `mapstructure:"source_control"`
 	Intake        Intake        `mapstructure:"intake"`
 	Epostix       Epostix       `mapstructure:"epostix"`
@@ -386,6 +387,14 @@ type Linear struct {
 	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
 	MaxResponseSize int64         `mapstructure:"max_response_size"`
 	PageSize        int           `mapstructure:"page_size"`
+}
+
+type OpenAI struct {
+	Endpoint            string        `mapstructure:"endpoint"`
+	RequestTimeout      time.Duration `mapstructure:"request_timeout"`
+	DialTimeout         time.Duration `mapstructure:"dial_timeout"`
+	MaxResponseSize     int64         `mapstructure:"max_response_size"`
+	AllowedDestinations []string      `mapstructure:"allowed_destinations"`
 }
 
 type SourceControl struct {

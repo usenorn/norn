@@ -31,6 +31,7 @@ tags:
   - name: licence
   - name: imports
   - name: source-control
+  - name: ai-provider
   - name: questions
   - name: runners
   - name: codebases
@@ -5382,6 +5383,98 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/ai-provider:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [ai-provider]
+      operationId: getWorkspaceAiProvider
+      summary: Read the AI provider this workspace brings its own key for
+      responses:
+        '200':
+          description: The configured provider; the key itself is never returned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAiProvider' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [ai-provider]
+      operationId: setWorkspaceAiProvider
+      summary: Save the provider, a new key, or a new default model
+      description: >-
+        A new key is proved against the provider before it is stored, so a key the provider
+        refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any
+        change leaves the provider untested until it is tested again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetWorkspaceAiProviderRequest' }
+      responses:
+        '200':
+          description: The saved provider
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAiProvider' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/AiProviderRefused' }
+        '503': { $ref: '#/components/responses/AiProviderSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [ai-provider]
+      operationId: removeWorkspaceAiProvider
+      summary: Remove the provider and discard its key
+      responses:
+        '204': { description: The provider and its key are gone }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/ai-provider/models:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [ai-provider]
+      operationId: listWorkspaceAiProviderModels
+      summary: List the chat models the stored key can use
+      responses:
+        '200':
+          description: The models, as the provider lists them for this key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiProviderModelList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/AiProviderRefused' }
+        '503': { $ref: '#/components/responses/AiProviderSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/ai-provider/test:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    post:
+      tags: [ai-provider]
+      operationId: testWorkspaceAiProvider
+      summary: Send one small request to the default model and record the outcome
+      responses:
+        '200':
+          description: The provider, now verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAiProvider' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/AiProviderRefused' }
+        '503': { $ref: '#/components/responses/AiProviderSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/source-control/connections:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7576,6 +7669,16 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/SourceControlSealingUnavailableProblem' }
+    AiProviderRefused:
+      description: The provider refused the key or the model, could not be reached, or the input was invalid
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AiProviderRefusedProblem' }
+    AiProviderSealingUnavailable:
+      description: This instance has no encryption key, so an API key cannot be stored or read
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/AiProviderSealingUnavailableProblem' }
     ImportConflict:
       description: The run cannot take this step from where it stands
       content:
@@ -10286,6 +10389,11 @@ components:
         - directory.connected
         - directory.disconnected
         - directory.token_rotated
+        - ai_provider.configured
+        - ai_provider.key_replaced
+        - ai_provider.model_changed
+        - ai_provider.endpoint_changed
+        - ai_provider.removed
         - audit.exported
         - access.denied
 
@@ -11774,6 +11882,84 @@ components:
           required: [code]
           properties:
             code: { type: string, enum: [source_control_sealing_unavailable] }
+
+    AiProviderKind:
+      type: string
+      enum: [openai]
+
+    AiProviderStatus:
+      type: string
+      enum: [unverified, verified, failed]
+
+    AiProviderFailure:
+      type: string
+      enum: [key_rejected, model_unavailable, quota_exceeded, rate_limited, unreachable, destination_refused]
+      x-enum-varnames:
+        - AiProviderKeyRejected
+        - AiProviderModelUnavailable
+        - AiProviderQuotaExceeded
+        - AiProviderRateLimited
+        - AiProviderUnreachable
+        - AiProviderDestinationRefused
+
+    WorkspaceAiProvider:
+      type: object
+      description: >-
+        The key is never returned; keyHint carries its last few characters so an
+        administrator can tell which key is installed. An empty baseUrl means the provider's
+        own endpoint, as this instance is configured to reach it.
+      required: [provider, baseUrl, allowPrivateAddress, keyHint, defaultModel, status, createdAt, updatedAt]
+      properties:
+        provider: { $ref: '#/components/schemas/AiProviderKind' }
+        baseUrl: { type: string }
+        allowPrivateAddress: { type: boolean }
+        keyHint: { type: string }
+        defaultModel: { type: string }
+        status: { $ref: '#/components/schemas/AiProviderStatus' }
+        failure: { $ref: '#/components/schemas/AiProviderFailure' }
+        verifiedAt: { type: string, format: date-time }
+        failedAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    SetWorkspaceAiProviderRequest:
+      type: object
+      description: >-
+        baseUrl points the workspace at any endpoint that speaks the provider's API, such as a
+        gateway or a self-hosted model server. Changing it requires apiKey, so a stored key
+        never follows an endpoint somebody else chose. allowPrivateAddress lets this one
+        workspace reach an address on a private network; loopback and cloud metadata stay
+        refused unless the instance allows them.
+      required: [provider]
+      properties:
+        provider: { $ref: '#/components/schemas/AiProviderKind' }
+        baseUrl: { type: string, maxLength: 2048 }
+        allowPrivateAddress: { type: boolean }
+        apiKey: { type: string, maxLength: 512 }
+        defaultModel: { type: string, maxLength: 128 }
+
+    AiProviderModelList:
+      type: object
+      required: [models]
+      properties:
+        models:
+          type: array
+          items: { type: string }
+
+    AiProviderRefusedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            code: { $ref: '#/components/schemas/AiProviderFailure' }
+
+    AiProviderSealingUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [ai_provider_sealing_unavailable] }
 
     Webhook:
       type: object

@@ -12,6 +12,7 @@ var sensitiveKeys = map[string]struct{}{
 	"access_key_id":         {},
 	"access_token":          {},
 	"api_key":               {},
+	"api_key_sealed":        {},
 	"authorization":         {},
 	"client_secret":         {},
 	"client_secret_sealed":  {},
