@@ -24,18 +24,20 @@ import (
 
 // WorkspaceAgent is an object representing the database table.
 type WorkspaceAgent struct {
-	ID                string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID       string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	AccountID         string    `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
-	OwnerAccountID    string    `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
-	Name              string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Status            string    `boil:"status" json:"status" toml:"status" yaml:"status"`
-	ActionLimit       null.Int  `boil:"action_limit" json:"action_limit,omitempty" toml:"action_limit" yaml:"action_limit,omitempty"`
-	DisabledAt        null.Time `boil:"disabled_at" json:"disabled_at,omitempty" toml:"disabled_at" yaml:"disabled_at,omitempty"`
-	CreatedAt         time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt         time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	Icon              string    `boil:"icon" json:"icon" toml:"icon" yaml:"icon"`
-	AgentInstructions string    `boil:"agent_instructions" json:"agent_instructions" toml:"agent_instructions" yaml:"agent_instructions"`
+	ID                string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID       string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	AccountID         string      `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
+	OwnerAccountID    string      `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
+	Name              string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Status            string      `boil:"status" json:"status" toml:"status" yaml:"status"`
+	ActionLimit       null.Int    `boil:"action_limit" json:"action_limit,omitempty" toml:"action_limit" yaml:"action_limit,omitempty"`
+	DisabledAt        null.Time   `boil:"disabled_at" json:"disabled_at,omitempty" toml:"disabled_at" yaml:"disabled_at,omitempty"`
+	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt         time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Icon              string      `boil:"icon" json:"icon" toml:"icon" yaml:"icon"`
+	AgentInstructions string      `boil:"agent_instructions" json:"agent_instructions" toml:"agent_instructions" yaml:"agent_instructions"`
+	Scope             string      `boil:"scope" json:"scope" toml:"scope" yaml:"scope"`
+	ProjectID         null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
 
 	R *workspaceAgentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceAgentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +56,8 @@ var WorkspaceAgentColumns = struct {
 	UpdatedAt         string
 	Icon              string
 	AgentInstructions string
+	Scope             string
+	ProjectID         string
 }{
 	ID:                "id",
 	WorkspaceID:       "workspace_id",
@@ -67,6 +71,8 @@ var WorkspaceAgentColumns = struct {
 	UpdatedAt:         "updated_at",
 	Icon:              "icon",
 	AgentInstructions: "agent_instructions",
+	Scope:             "scope",
+	ProjectID:         "project_id",
 }
 
 var WorkspaceAgentTableColumns = struct {
@@ -82,6 +88,8 @@ var WorkspaceAgentTableColumns = struct {
 	UpdatedAt         string
 	Icon              string
 	AgentInstructions string
+	Scope             string
+	ProjectID         string
 }{
 	ID:                "workspace_agents.id",
 	WorkspaceID:       "workspace_agents.workspace_id",
@@ -95,6 +103,8 @@ var WorkspaceAgentTableColumns = struct {
 	UpdatedAt:         "workspace_agents.updated_at",
 	Icon:              "workspace_agents.icon",
 	AgentInstructions: "workspace_agents.agent_instructions",
+	Scope:             "workspace_agents.scope",
+	ProjectID:         "workspace_agents.project_id",
 }
 
 // Generated where
@@ -112,6 +122,8 @@ var WorkspaceAgentWhere = struct {
 	UpdatedAt         whereHelpertime_Time
 	Icon              whereHelperstring
 	AgentInstructions whereHelperstring
+	Scope             whereHelperstring
+	ProjectID         whereHelpernull_String
 }{
 	ID:                whereHelperstring{field: "\"workspace_agents\".\"id\""},
 	WorkspaceID:       whereHelperstring{field: "\"workspace_agents\".\"workspace_id\""},
@@ -125,12 +137,15 @@ var WorkspaceAgentWhere = struct {
 	UpdatedAt:         whereHelpertime_Time{field: "\"workspace_agents\".\"updated_at\""},
 	Icon:              whereHelperstring{field: "\"workspace_agents\".\"icon\""},
 	AgentInstructions: whereHelperstring{field: "\"workspace_agents\".\"agent_instructions\""},
+	Scope:             whereHelperstring{field: "\"workspace_agents\".\"scope\""},
+	ProjectID:         whereHelpernull_String{field: "\"workspace_agents\".\"project_id\""},
 }
 
 // WorkspaceAgentRels is where relationship names are stored.
 var WorkspaceAgentRels = struct {
 	Account                                 string
 	OwnerAccount                            string
+	Project                                 string
 	Workspace                               string
 	AgentWorkspaceAgentMCPServerAttachments string
 	AgentWorkspaceAgentMCPServers           string
@@ -143,6 +158,7 @@ var WorkspaceAgentRels = struct {
 }{
 	Account:                                 "Account",
 	OwnerAccount:                            "OwnerAccount",
+	Project:                                 "Project",
 	Workspace:                               "Workspace",
 	AgentWorkspaceAgentMCPServerAttachments: "AgentWorkspaceAgentMCPServerAttachments",
 	AgentWorkspaceAgentMCPServers:           "AgentWorkspaceAgentMCPServers",
@@ -158,6 +174,7 @@ var WorkspaceAgentRels = struct {
 type workspaceAgentR struct {
 	Account                                 *Account                               `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
 	OwnerAccount                            *Account                               `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
+	Project                                 *WorkspaceProject                      `boil:"Project" json:"Project" toml:"Project" yaml:"Project"`
 	Workspace                               *Workspace                             `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 	AgentWorkspaceAgentMCPServerAttachments WorkspaceAgentMCPServerAttachmentSlice `boil:"AgentWorkspaceAgentMCPServerAttachments" json:"AgentWorkspaceAgentMCPServerAttachments" toml:"AgentWorkspaceAgentMCPServerAttachments" yaml:"AgentWorkspaceAgentMCPServerAttachments"`
 	AgentWorkspaceAgentMCPServers           WorkspaceAgentMCPServerSlice           `boil:"AgentWorkspaceAgentMCPServers" json:"AgentWorkspaceAgentMCPServers" toml:"AgentWorkspaceAgentMCPServers" yaml:"AgentWorkspaceAgentMCPServers"`
@@ -204,6 +221,22 @@ func (r *workspaceAgentR) GetOwnerAccount() *Account {
 	}
 
 	return r.OwnerAccount
+}
+
+func (o *WorkspaceAgent) GetProject() *WorkspaceProject {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetProject()
+}
+
+func (r *workspaceAgentR) GetProject() *WorkspaceProject {
+	if r == nil {
+		return nil
+	}
+
+	return r.Project
 }
 
 func (o *WorkspaceAgent) GetWorkspace() *Workspace {
@@ -354,9 +387,9 @@ func (r *workspaceAgentR) GetAgentWorkspaceRunners() WorkspaceRunnerSlice {
 type workspaceAgentL struct{}
 
 var (
-	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions"}
+	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions", "scope", "project_id"}
 	workspaceAgentColumnsWithoutDefault = []string{"workspace_id", "account_id", "owner_account_id", "name"}
-	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions"}
+	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions", "scope", "project_id"}
 	workspaceAgentPrimaryKeyColumns     = []string{"id"}
 	workspaceAgentGeneratedColumns      = []string{}
 )
@@ -686,6 +719,17 @@ func (o *WorkspaceAgent) OwnerAccount(mods ...qm.QueryMod) accountQuery {
 	queryMods = append(queryMods, mods...)
 
 	return Accounts(queryMods...)
+}
+
+// Project pointed to by the foreign key.
+func (o *WorkspaceAgent) Project(mods ...qm.QueryMod) workspaceProjectQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.ProjectID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceProjects(queryMods...)
 }
 
 // Workspace pointed to by the foreign key.
@@ -1043,6 +1087,130 @@ func (workspaceAgentL) LoadOwnerAccount(ctx context.Context, e boil.ContextExecu
 					foreign.R = &accountR{}
 				}
 				foreign.R.OwnerAccountWorkspaceAgents = append(foreign.R.OwnerAccountWorkspaceAgents, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadProject allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceAgentL) LoadProject(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceAgent any, mods queries.Applicator) error {
+	var slice []*WorkspaceAgent
+	var object *WorkspaceAgent
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceAgent.(*WorkspaceAgent)
+		if !ok {
+			object = new(WorkspaceAgent)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceAgent))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceAgent.(*[]*WorkspaceAgent)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceAgent))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceAgentR{}
+		}
+		if !queries.IsNil(object.ProjectID) {
+			args[object.ProjectID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceAgentR{}
+			}
+
+			if !queries.IsNil(obj.ProjectID) {
+				args[obj.ProjectID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_projects`),
+		qm.WhereIn(`workspace_projects.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceProject")
+	}
+
+	var resultSlice []*WorkspaceProject
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceProject")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_projects")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_projects")
+	}
+
+	if len(workspaceProjectAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Project = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceProjectR{}
+		}
+		foreign.R.ProjectWorkspaceAgents = append(foreign.R.ProjectWorkspaceAgents, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.ProjectID, foreign.ID) {
+				local.R.Project = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceProjectR{}
+				}
+				foreign.R.ProjectWorkspaceAgents = append(foreign.R.ProjectWorkspaceAgents, local)
 				break
 			}
 		}
@@ -2166,6 +2334,86 @@ func (o *WorkspaceAgent) SetOwnerAccount(ctx context.Context, exec boil.ContextE
 		related.R.OwnerAccountWorkspaceAgents = append(related.R.OwnerAccountWorkspaceAgents, o)
 	}
 
+	return nil
+}
+
+// SetProject of the workspaceAgent to the related item.
+// Sets o.R.Project to related.
+// Adds o to related.R.ProjectWorkspaceAgents.
+func (o *WorkspaceAgent) SetProject(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceProject) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_agents\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"project_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceAgentPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.ProjectID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceAgentR{
+			Project: related,
+		}
+	} else {
+		o.R.Project = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceProjectR{
+			ProjectWorkspaceAgents: WorkspaceAgentSlice{o},
+		}
+	} else {
+		related.R.ProjectWorkspaceAgents = append(related.R.ProjectWorkspaceAgents, o)
+	}
+
+	return nil
+}
+
+// RemoveProject relationship.
+// Sets o.R.Project to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceAgent) RemoveProject(ctx context.Context, exec boil.ContextExecutor, related *WorkspaceProject) error {
+	var err error
+
+	queries.SetScanner(&o.ProjectID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("project_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Project = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.ProjectWorkspaceAgents {
+		if queries.Equal(o.ProjectID, ri.ProjectID) {
+			continue
+		}
+
+		ln := len(related.R.ProjectWorkspaceAgents)
+		if ln > 1 && i < ln-1 {
+			related.R.ProjectWorkspaceAgents[i] = related.R.ProjectWorkspaceAgents[ln-1]
+		}
+		related.R.ProjectWorkspaceAgents = related.R.ProjectWorkspaceAgents[:ln-1]
+		break
+	}
 	return nil
 }
 

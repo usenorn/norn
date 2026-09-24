@@ -68,6 +68,22 @@ func (h *handler) GetWorkspaceIssueDelegationTargets(
 	), nil
 }
 
+func (h *handler) ListWorkspaceIssueDelegatableAgents(
+	ctx context.Context,
+	request api.ListWorkspaceIssueDelegatableAgentsRequestObject,
+) (api.ListWorkspaceIssueDelegatableAgentsResponseObject, error) {
+	agents, err := h.agents.Delegatable(ctx, request.WorkspaceId, request.IssueId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ListWorkspaceIssueDelegatableAgents200JSONResponse(agentDTOs(agents)), nil
+}
+
 func (h *handler) RecallWorkspaceIssue(
 	ctx context.Context,
 	request api.RecallWorkspaceIssueRequestObject,

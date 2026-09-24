@@ -355,3 +355,195 @@ func TestTargetsWillNotDescribeAnAgentSomebodyElseRegistered(t *testing.T) {
 			err, entity.ErrIssueDelegationAgentNotYours)
 	}
 }
+
+func TestAWorkspaceScopedAgentTakesWorkFromAnybodyInTheWorkspace(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+	agent.Scope = entity.AgentScopeWorkspace
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+	h.expectDelegation(issue, agent)
+
+	if _, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	); err != nil {
+		t.Fatalf("delegating to a workspace agent returned %v, want it to be allowed", err)
+	}
+}
+
+func TestAProjectScopedAgentTakesWorkFromAProjectMember(t *testing.T) {
+	h := newHarness(t)
+
+	project := uuid.New()
+
+	issue := h.issue()
+	issue.ProjectID = project
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+	agent.Scope = entity.AgentScopeProject
+	agent.ProjectID = &project
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+	h.expectProjectMembership(project, h.actorID, true)
+	h.expectDelegation(issue, agent)
+
+	if _, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	); err != nil {
+		t.Fatalf("delegating a project issue to a project agent returned %v, want it to be allowed", err)
+	}
+}
+
+func TestAProjectScopedAgentRefusesSomebodyOutsideTheProject(t *testing.T) {
+	h := newHarness(t)
+
+	project := uuid.New()
+
+	issue := h.issue()
+	issue.ProjectID = project
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+	agent.Scope = entity.AgentScopeProject
+	agent.ProjectID = &project
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+	h.expectProjectMembership(project, h.actorID, false)
+
+	_, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	)
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("somebody outside the project delegating returned %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}
+
+func TestAProjectScopedAgentRefusesAnIssueFromAnotherProject(t *testing.T) {
+	h := newHarness(t)
+
+	project := uuid.New()
+
+	issue := h.issue()
+	issue.ProjectID = uuid.New()
+
+	agent := h.agent()
+	agent.Scope = entity.AgentScopeProject
+	agent.ProjectID = &project
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+	h.expectProjectMembership(project, h.actorID, true)
+
+	_, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	)
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("a project agent taking an issue from another project returned %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}
+
+func TestOwningAProjectScopedAgentDoesNotReachIssuesOutsideItsProject(t *testing.T) {
+	h := newHarness(t)
+
+	project := uuid.New()
+
+	issue := h.issue()
+	issue.ProjectID = uuid.New()
+
+	agent := h.agent()
+	agent.Scope = entity.AgentScopeProject
+	agent.ProjectID = &project
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+	h.expectProjectMembership(project, h.actorID, true)
+
+	_, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	)
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("the owner of a project agent reached an issue outside its project: %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}
+
+func TestNarrowingAScopeClosesAnAgentThatWasOpenBefore(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+	agent.Scope = entity.AgentScopeWorkspace
+
+	h.expectIssue(issue)
+	h.agents.EXPECT().
+		GetByAccountID(gomock.Any(), agent.AccountID).
+		Return(agent, nil)
+	h.expectDelegation(issue, agent)
+
+	if _, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	); err != nil {
+		t.Fatalf("delegating to a workspace agent returned %v, want it to be allowed", err)
+	}
+
+	narrowed := agent
+	narrowed.Scope = entity.AgentScopeMember
+
+	h.agents.EXPECT().
+		GetByAccountID(gomock.Any(), agent.AccountID).
+		Return(narrowed, nil)
+
+	_, err := h.service.Delegate(
+		context.Background(), h.workspaceID, issue.ID,
+		service.DelegateIssueInput{AgentAccountID: agent.AccountID},
+	)
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("an agent narrowed back to its owner still took work: %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}
+
+func TestTargetsRefusesAProjectAgentTheSameWayDelegatingDoes(t *testing.T) {
+	h := newHarness(t)
+
+	project := uuid.New()
+
+	issue := h.issue()
+	issue.ProjectID = project
+
+	agent := h.agent()
+	agent.OwnerAccountID = uuid.New()
+	agent.Scope = entity.AgentScopeProject
+	agent.ProjectID = &project
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+	h.expectProjectMembership(project, h.actorID, false)
+
+	_, err := h.service.Targets(context.Background(), h.workspaceID, issue.ID, agent.AccountID)
+
+	if !errors.Is(err, entity.ErrIssueDelegationAgentNotYours) {
+		t.Fatalf("targets for a project agent out of reach returned %v, want %v",
+			err, entity.ErrIssueDelegationAgentNotYours)
+	}
+}

@@ -19,13 +19,16 @@
 	import AgentCapabilitiesManager from "$lib/agents/agent-capabilities-manager.svelte";
 	import AgentIcon from "$lib/agents/agent-icon.svelte";
 	import AgentInstructionsForm from "$lib/agents/agent-instructions-form.svelte";
+	import AgentScopeForm from "$lib/agents/agent-scope-form.svelte";
 	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
 	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { onDate, onDateAndTime } from "$lib/time";
 	import {
-		agentScopeLabels,
+		agentPermissionLabels,
+		reachSummary,
+		type AgentScope,
 		agentsPath,
 		type Agent,
 	} from "$lib/agents/agents";
@@ -64,6 +67,8 @@
 	let lifecycleFailure = $state<AgentLifecycleFailure | null>(null);
 	let instructionsFailure = $state<AgentLifecycleFailure | { kind: "invalid"; message: string } | null>(null);
 	let savingInstructions = $state(false);
+	let scopeFailure = $state<AgentLifecycleFailure | { kind: "invalid"; message: string } | null>(null);
+	let savingScope = $state(false);
 	let issuedAgent = $state.raw<Agent | null>(null);
 	let issuedValue = $state("");
 	let stateAgentId = $state<string | undefined>(page.params.agentId);
@@ -80,6 +85,7 @@
 		(preview?.role ?? data.members.find((member) => member.accountId === data.member.id)?.role) === "admin"
 	);
 	const teams = $derived(data.teams ?? []);
+	const projects = $derived(preview?.projects ?? data.projects);
 	const mutationAnnouncement = $derived(
 		mutation === "rotate"
 			? "Issuing a new credential."
@@ -106,6 +112,8 @@
 		lifecycleFailure = null;
 		instructionsFailure = null;
 		savingInstructions = false;
+		scopeFailure = null;
+		savingScope = false;
 		issuedAgent = null;
 		issuedValue = "";
 	});
@@ -237,6 +245,47 @@
 			return false;
 		} finally {
 			savingInstructions = false;
+		}
+	}
+
+	async function saveScope(input: { scope: AgentScope; projectId: string }) {
+		if (!agent) return false;
+
+		scopeFailure = null;
+		savingScope = true;
+
+		try {
+			const { data: saved, error, response } = await api.PUT(
+				"/workspaces/{workspaceId}/agents/{agentId}/scope",
+				{
+					params: { path: { workspaceId: workspace.id, agentId: agent.agent.id } },
+					body: {
+						scope: input.scope,
+						projectId: input.scope === "project" ? input.projectId : undefined,
+					},
+				}
+			);
+
+			if (error || !saved) {
+				scopeFailure = error?.errors?.some((entry) => entry.field === "projectId")
+					? {
+							kind: "invalid",
+							message: "Choose the project whose members may hand this agent work.",
+						}
+					: lifecycleProblem(error, response.status);
+
+				return false;
+			}
+
+			refreshAfterMutation();
+
+			return true;
+		} catch {
+			scopeFailure = { kind: "unavailable" };
+
+			return false;
+		} finally {
+			savingScope = false;
 		}
 	}
 
@@ -451,6 +500,7 @@
 					<Tabs.List variant="line" class="w-full justify-start overflow-x-auto">
 						<Tabs.Trigger value="overview" class="flex-none">Overview</Tabs.Trigger>
 						<Tabs.Trigger value="capabilities" class="flex-none">Capabilities</Tabs.Trigger>
+						<Tabs.Trigger value="scope" class="flex-none">Scope</Tabs.Trigger>
 						<Tabs.Trigger value="instructions" class="flex-none">Instructions</Tabs.Trigger>
 						<Tabs.Trigger value="activity" class="flex-none">Activity</Tabs.Trigger>
 					</Tabs.List>
@@ -472,7 +522,7 @@
 										<ul class="mt-3 divide-y divide-line-subtle border border-line-subtle bg-paper-1">
 											{#each agent.authority.scopes as scope (scope)}
 												<li class="flex flex-col gap-0.5 p-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-													<span class="text-sm text-ink-900">{agentScopeLabels[scope] ?? scope}</span>
+													<span class="text-sm text-ink-900">{agentPermissionLabels[scope] ?? scope}</span>
 													<code class="font-mono text-xs text-muted-foreground">{scope}</code>
 												</li>
 											{/each}
@@ -547,6 +597,39 @@
 								connectForm={data.connectForm}
 								{outcome}
 								dialog={preview?.dialog}
+							/>
+						</div>
+					</Tabs.Content>
+
+					<Tabs.Content value="scope" class="pt-5">
+						<div class="flex flex-col gap-4">
+							<p class="text-sm leading-normal text-muted-foreground text-pretty">
+								{reachSummary(
+									agent.agent,
+									projects.find((project) => project.id === agent.agent.projectId)?.name
+								)}. Seeing this page, disabling the agent and rotating its credential stay with
+								its owner and the workspace's administrators whatever this says.
+							</p>
+
+							{#if scopeFailure}
+								<Alert.Root variant="destructive">
+									<CircleAlert aria-hidden="true" />
+									<Alert.Title>Not saved</Alert.Title>
+									<Alert.Description>
+										{scopeFailure.kind === "invalid"
+											? scopeFailure.message
+											: agentLifecycleFailureMessage(scopeFailure)}
+									</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							<AgentScopeForm
+								scope={agent.agent.scope}
+								projectId={agent.agent.projectId ?? ""}
+								{projects}
+								mayOpenToWorkspace={administrator}
+								locked={savingScope}
+								onsave={saveScope}
 							/>
 						</div>
 					</Tabs.Content>

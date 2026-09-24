@@ -7,6 +7,7 @@ import { candidateOf, type Issue, type IssueCandidate } from "$lib/issues/issues
 import type { Label, LabelGroup } from "$lib/labels/labels";
 import type { CommentThread } from "$lib/comments/comments";
 import type { FollowState } from "$lib/notifications/notifications";
+import type { Agent } from "$lib/agents/agents";
 import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
 import type { Execution, IssueChangeSet } from "$lib/executions/executions";
 import type { IssueQuestion } from "$lib/questions/questions";
@@ -50,6 +51,7 @@ export type IssueDetail =
 			attachments: AttachmentPanel;
 			codeLinks: CodeLink[];
 			delegation: DelegationPanel;
+			agents: Agent[];
 			runs: Execution[];
 			changeset?: IssueChangeSet;
 			questions: IssueQuestion[];
@@ -112,6 +114,7 @@ export const load: PageServerLoad = async ({
 		mirrorConflicts,
 		shipping,
 		delegations,
+		delegatable,
 		questions,
 		runs,
 		changeset,
@@ -154,6 +157,9 @@ export const load: PageServerLoad = async ({
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/shipping", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/delegation", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/delegation/agents", {
+			params: { path },
+		}),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/questions", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/executions", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/changeset", { params: { path } }),
@@ -194,6 +200,7 @@ export const load: PageServerLoad = async ({
 			delegation: delegations.data
 				? currentDelegation(delegations.data)
 				: { kind: "unavailable" },
+			agents: delegatable.data ?? [],
 			runs: runs.data ?? [],
 			changeset: changeset.data,
 			questions: questions.data?.questions ?? [],

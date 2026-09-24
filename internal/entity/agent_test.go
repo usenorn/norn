@@ -296,3 +296,118 @@ func TestAnUnownedAgentBelongsToNobody(t *testing.T) {
 		)
 	}
 }
+
+func TestAgentScopeDecidesWhoMayHandOverAnIssue(t *testing.T) {
+	owner, colleague := uuid.New(), uuid.New()
+	project, elsewhere := uuid.New(), uuid.New()
+
+	scoped := func(scope entity.AgentScope, projectID *uuid.UUID) entity.Agent {
+		return entity.Agent{OwnerAccountID: owner, Scope: scope, ProjectID: projectID}
+	}
+
+	cases := map[string]struct {
+		agent   entity.Agent
+		request entity.AgentDelegation
+		want    bool
+	}{
+		"a member agent goes to its owner": {
+			agent:   scoped(entity.AgentScopeMember, nil),
+			request: entity.AgentDelegation{AccountID: owner, IssueProjectID: project},
+			want:    true,
+		},
+		"a member agent refuses everybody else": {
+			agent:   scoped(entity.AgentScopeMember, nil),
+			request: entity.AgentDelegation{AccountID: colleague, IssueProjectID: project},
+			want:    false,
+		},
+		"an unset scope reads as member": {
+			agent:   scoped("", nil),
+			request: entity.AgentDelegation{AccountID: colleague},
+			want:    false,
+		},
+		"a workspace agent goes to anybody": {
+			agent:   scoped(entity.AgentScopeWorkspace, nil),
+			request: entity.AgentDelegation{AccountID: colleague, IssueProjectID: elsewhere},
+			want:    true,
+		},
+		"a project agent goes to a project member on a project issue": {
+			agent:   scoped(entity.AgentScopeProject, &project),
+			request: entity.AgentDelegation{AccountID: colleague, IssueProjectID: project, InProject: true},
+			want:    true,
+		},
+		"a project agent refuses somebody outside the project": {
+			agent:   scoped(entity.AgentScopeProject, &project),
+			request: entity.AgentDelegation{AccountID: colleague, IssueProjectID: project},
+			want:    false,
+		},
+		"a project agent refuses an issue in another project": {
+			agent:   scoped(entity.AgentScopeProject, &project),
+			request: entity.AgentDelegation{AccountID: colleague, IssueProjectID: elsewhere, InProject: true},
+			want:    false,
+		},
+		"a project agent refuses its own owner on an issue in another project": {
+			agent:   scoped(entity.AgentScopeProject, &project),
+			request: entity.AgentDelegation{AccountID: owner, IssueProjectID: elsewhere, InProject: true},
+			want:    false,
+		},
+		"a project agent refuses an issue that belongs to no project": {
+			agent:   scoped(entity.AgentScopeProject, &project),
+			request: entity.AgentDelegation{AccountID: owner},
+			want:    false,
+		},
+		"a project agent goes to its owner without a project membership": {
+			agent:   scoped(entity.AgentScopeProject, &project),
+			request: entity.AgentDelegation{AccountID: owner, IssueProjectID: project},
+			want:    true,
+		},
+	}
+
+	for name, tc := range cases {
+		if got := tc.agent.DelegatableBy(tc.request); got != tc.want {
+			t.Errorf("%s: DelegatableBy = %t, want %t", name, got, tc.want)
+		}
+	}
+}
+
+func TestAgentScopeDoesNotWidenWhoMayManageAnAgent(t *testing.T) {
+	owner, colleague := uuid.New(), uuid.New()
+
+	for _, scope := range entity.AgentScopes() {
+		agent := entity.Agent{OwnerAccountID: owner, Scope: scope}
+
+		if agent.ManageableBy(colleague, entity.MembershipRoleMember) {
+			t.Errorf(
+				"a %s agent became manageable by somebody who does not own it. Scope decides who "+
+					"may hand it work, never who may disable it or rotate its credential.",
+				scope,
+			)
+		}
+	}
+}
+
+func TestAProjectScopeWithoutAProjectIsRefused(t *testing.T) {
+	project := uuid.New()
+
+	cases := map[string]struct {
+		scope     entity.AgentScope
+		projectID *uuid.UUID
+		field     string
+	}{
+		"a project scope needs a project":          {entity.AgentScopeProject, nil, "projectId"},
+		"a member scope refuses one":               {entity.AgentScopeMember, &project, "projectId"},
+		"a workspace scope refuses one":            {entity.AgentScopeWorkspace, &project, "projectId"},
+		"an unknown scope is reported on the name": {entity.AgentScope("team"), nil, "scope"},
+	}
+
+	for name, tc := range cases {
+		fields := entity.ValidateAgentScope("scope", "projectId", tc.scope, tc.projectID)
+
+		if len(fields) != 1 || fields[0].Field != tc.field {
+			t.Errorf("%s: fields = %v, want one on %q", name, fields, tc.field)
+		}
+	}
+
+	if fields := entity.ValidateAgentScope("scope", "projectId", entity.AgentScopeProject, &project); len(fields) != 0 {
+		t.Errorf("a project scope carrying its project was refused: %v", fields)
+	}
+}

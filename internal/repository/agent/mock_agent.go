@@ -131,6 +131,21 @@ func (mr *MockAgentMockRecorder) ListByWorkspaceID(ctx, workspaceID any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByWorkspaceID", reflect.TypeOf((*MockAgent)(nil).ListByWorkspaceID), ctx, workspaceID)
 }
 
+// ScopedToProject mocks base method.
+func (m *MockAgent) ScopedToProject(ctx context.Context, workspaceID, projectID uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ScopedToProject", ctx, workspaceID, projectID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScopedToProject indicates an expected call of ScopedToProject.
+func (mr *MockAgentMockRecorder) ScopedToProject(ctx, workspaceID, projectID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScopedToProject", reflect.TypeOf((*MockAgent)(nil).ScopedToProject), ctx, workspaceID, projectID)
+}
+
 // SetInstructions mocks base method.
 func (m *MockAgent) SetInstructions(ctx context.Context, workspaceID, agentID uuid.UUID, instructions string) (entity.Agent, error) {
 	m.ctrl.T.Helper()
@@ -144,4 +159,19 @@ func (m *MockAgent) SetInstructions(ctx context.Context, workspaceID, agentID uu
 func (mr *MockAgentMockRecorder) SetInstructions(ctx, workspaceID, agentID, instructions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetInstructions", reflect.TypeOf((*MockAgent)(nil).SetInstructions), ctx, workspaceID, agentID, instructions)
+}
+
+// SetScope mocks base method.
+func (m *MockAgent) SetScope(ctx context.Context, workspaceID, agentID uuid.UUID, scope entity.AgentScope, projectID *uuid.UUID) (entity.Agent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetScope", ctx, workspaceID, agentID, scope, projectID)
+	ret0, _ := ret[0].(entity.Agent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetScope indicates an expected call of SetScope.
+func (mr *MockAgentMockRecorder) SetScope(ctx, workspaceID, agentID, scope, projectID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetScope", reflect.TypeOf((*MockAgent)(nil).SetScope), ctx, workspaceID, agentID, scope, projectID)
 }

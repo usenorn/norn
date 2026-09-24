@@ -46,7 +46,7 @@
 	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
 	import DelegationField from "$lib/agents/delegation-field.svelte";
 	import {
-		agentMembers,
+		delegatableAgents,
 		delegationFailureMessage,
 		readDelegationFailure,
 		type DelegationFailure,
@@ -350,7 +350,7 @@
 	const delegation = $derived<DelegationPanel>(
 		delegationPreview?.panel ?? delegated ?? (ready ? ready.delegation : { kind: "loading" })
 	);
-	const agents = $derived(agentMembers(ready?.members ?? [], data.member.id));
+	const agents = $derived(delegatableAgents(ready?.members ?? [], ready?.agents ?? []));
 	const people = $derived(assignees(ready?.members ?? []));
 	const delegationFailure = $derived(delegationFailed ?? delegationPreview?.failure ?? null);
 	const issue = $derived((pushed?.source === ready ? pushed.issue : null) ?? ready?.issue ?? null);

@@ -33,6 +33,7 @@
 		agentPath,
 		approvalsPath,
 		failureMessage,
+		reachSummary,
 		type Agent,
 		type AgentFailure,
 		type AgentListing,
@@ -89,6 +90,9 @@
 	const listing = $derived<AgentListing>(preview?.listing ?? data.listing);
 	const teams = $derived(preview?.teams ?? data.teams);
 	const grantable = $derived(preview?.grantable ?? data.grantable);
+	const projects = $derived(preview?.projects ?? data.projects);
+	const mayOpenToWorkspace = $derived(preview?.mayOpenToWorkspace ?? data.mayOpenToWorkspace);
+	const projectNames = $derived(new Map(projects.map((project) => [project.id, project.name])));
 	const allAgents = $derived(
 		listing.kind === "ready" || listing.kind === "registered" ? listing.agents : []
 	);
@@ -292,6 +296,8 @@
 		workspaceName={workspace.name}
 		origin={page.url.origin}
 		{teams}
+		{projects}
+		{mayOpenToWorkspace}
 		{grantable}
 		initial={submitted?.form ?? data.form}
 		{inline}
@@ -491,6 +497,9 @@
 												</span>
 												<span class="font-mono text-2xs text-muted-foreground">
 													{owned.agent.actionLimit}/min
+												</span>
+												<span class="text-2xs text-muted-foreground">
+													{reachSummary(owned.agent, projectNames.get(owned.agent.projectId ?? ""))}
 												</span>
 												<span class="text-2xs text-muted-foreground">
 													Registered {formatted(owned.agent.createdAt)}

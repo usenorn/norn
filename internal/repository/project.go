@@ -47,6 +47,7 @@ type ProjectMember interface {
 	Create(ctx context.Context, membership entity.ProjectMembership) (entity.ProjectMembership, error)
 	Get(ctx context.Context, projectID, accountID uuid.UUID) (entity.ProjectMembership, error)
 	ListByProjectID(ctx context.Context, projectID uuid.UUID) ([]entity.ProjectMembership, error)
+	ListByAccountID(ctx context.Context, workspaceID, accountID uuid.UUID) ([]entity.ProjectMembership, error)
 	Delete(ctx context.Context, projectID, accountID uuid.UUID) error
 }
 

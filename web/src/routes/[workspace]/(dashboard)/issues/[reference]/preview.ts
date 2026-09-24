@@ -162,6 +162,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					agents: [],
 					changeset: {
 						issueId: "00000000-0000-4000-8000-000000000501",
 						repositories: [
@@ -317,6 +318,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					agents: [],
 			runs: [
 					{
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
@@ -395,6 +397,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					agents: [],
 			runs: [
 					{
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
@@ -463,6 +466,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					agents: [],
 			runs: [
 					{
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
@@ -530,6 +534,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					agents: [],
 			runs: [
 					{
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
@@ -597,6 +602,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					agents: [],
 			runs: [
 					{
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
@@ -715,6 +721,7 @@ export const issueDetailPreviewStates: Record<string, IssueDetailPreview> = impo
 					comments: { kind: "empty" },
 					attachments: { kind: "empty" },
 					delegation: { kind: "none" },
+					agents: [],
 			runs: [
 					{
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",

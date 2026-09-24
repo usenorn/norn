@@ -714,6 +714,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrProjectLinksFull):
 		return projectConflictProblem(api.ProjectConflictProblemCodeProjectLinksFull, err), true
 
+	case errors.Is(err, entity.ErrProjectHasScopedAgents):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectHasScopedAgents, err), true
+
 	case errors.Is(err, entity.ErrCycleClosed):
 		return cycleConflictProblem(api.CycleConflictProblemCodeCycleClosed, err), true
 
@@ -966,6 +969,9 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrAgentOwnerInvalid):
 		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentOwnerInvalid, err), true
+
+	case errors.Is(err, entity.ErrAgentScopeForbidden):
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentScopeForbidden, err), true
 
 	case errors.Is(err, entity.ErrAgentProposalSettled):
 		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentProposalSettled, err), true
@@ -1613,6 +1619,10 @@ func (r problemResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.Respo
 	return r.write(w)
 }
 
+func (r problemResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
@@ -1750,6 +1760,12 @@ func (r problemResponse) VisitListWorkspaceIssueDelegationsResponse(w http.Respo
 }
 
 func (r problemResponse) VisitDelegateWorkspaceIssueResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueDelegatableAgentsResponse(
+	w http.ResponseWriter,
+) error {
 	return r.write(w)
 }
 

@@ -14,6 +14,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import type { Project } from "$lib/projects/projects";
 	import type { Team } from "$lib/team/teams";
 	import { cn } from "$lib/utils.js";
 	import AgentIcon from "./agent-icon.svelte";
@@ -21,13 +22,17 @@
 	import {
 		agentIconLabels,
 		agentIcons,
-		agentScopeGroups,
-		agentScopeLabels,
+		agentPermissionGroups,
+		agentPermissionLabels,
+		agentPermissions,
 		agentScopes,
+		agentScopeHints,
+		agentScopeLabels,
 		beyondGrant,
 		failureMessage,
 		type Agent,
 		type AgentFailure,
+		type AgentPermission,
 		type AgentScope,
 		type APIScope,
 	} from "./agents";
@@ -45,6 +50,8 @@
 		workspaceName,
 		origin,
 		teams,
+		projects,
+		mayOpenToWorkspace,
 		grantable = null,
 		initial,
 		inline = false,
@@ -58,6 +65,8 @@
 		workspaceName: string;
 		origin: string;
 		teams: Team[];
+		projects: Project[];
+		mayOpenToWorkspace: boolean;
 		grantable?: APIScope[] | null;
 		initial?: SuperValidated<RegisterForm, RegistrationOutcome>;
 		inline?: boolean;
@@ -87,7 +96,7 @@
 			? { kind: "scope_exceeds", scopes: beyondGrant($formData.scopes, grantable) }
 			: refused
 	);
-	const withheld = $derived(new Set(beyondGrant([...agentScopes], grantable)));
+	const withheld = $derived(new Set(beyondGrant([...agentPermissions], grantable)));
 
 	$effect(() => {
 		if (!inline && open && !wasOpen) {
@@ -97,6 +106,8 @@
 					...entered,
 					icon: "bot",
 					scopes: [],
+					scope: "member",
+					projectId: "",
 					allTeams: true,
 					teamIds: [],
 					actionLimit: defaultAgentActionLimit,
@@ -121,7 +132,15 @@
 		void pending;
 	});
 
-	function toggleScope(scope: AgentScope, checked: boolean) {
+	const offeredScopes = $derived(
+		agentScopes.filter(
+			(scope) =>
+				(scope !== "workspace" || mayOpenToWorkspace) &&
+				(scope !== "project" || projects.length > 0)
+		)
+	);
+
+	function toggleScope(scope: AgentPermission, checked: boolean) {
 		const next = new Set($formData.scopes);
 
 		if (checked) next.add(scope);
@@ -166,6 +185,10 @@
 			{#each $formData.teamIds as teamId (teamId)}
 				<input type="hidden" name="teamIds" value={teamId} />
 			{/each}
+			<input type="hidden" name="scope" value={$formData.scope} />
+			{#if $formData.projectId}
+				<input type="hidden" name="projectId" value={$formData.projectId} />
+			{/if}
 		{/if}
 
 		<Form.Field {form} name="name">
@@ -243,12 +266,12 @@
 		<Form.Fieldset {form} name="scopes">
 			<Form.Legend>Permissions</Form.Legend>
 			<div class="grid gap-3 sm:grid-cols-2">
-				{#each agentScopeGroups as group (group.title)}
+				{#each agentPermissionGroups as group (group.title)}
 					<fieldset class="flex min-w-0 flex-col gap-1.5">
 						<legend class="mb-2 text-xs font-medium tracking-snug text-ink-900">
 							{group.title}
 						</legend>
-						{#each group.scopes as scope (scope)}
+						{#each group.permissions as scope (scope)}
 							<div class="flex items-start gap-2">
 								{#if inline}
 									<input
@@ -278,7 +301,7 @@
 										withheld.has(scope) && "text-ink-400"
 									)}
 								>
-									{agentScopeLabels[scope] ?? scope}
+									{agentPermissionLabels[scope] ?? scope}
 								</label>
 							</div>
 						{/each}
@@ -368,6 +391,59 @@
 			</div>
 			<Form.FieldErrors />
 		</Form.Fieldset>
+
+		<Form.Fieldset {form} name="scope">
+			<Form.Legend>Who may hand it work</Form.Legend>
+			<div class="flex flex-col gap-2">
+				{#each offeredScopes as scope (scope)}
+					<div class="flex items-start gap-2">
+						<input
+							id={`agent-reach-${scope}`}
+							type="radio"
+							name={inline ? "scope" : undefined}
+							value={scope}
+							disabled={busy}
+							checked={$formData.scope === scope}
+							onchange={() =>
+								formData.update((entered) => ({
+									...entered,
+									scope,
+									projectId: scope === "project" ? entered.projectId : "",
+								}))}
+							class="mt-0.5 size-3.5 accent-ink-900"
+						/>
+						<label for={`agent-reach-${scope}`} class="flex flex-col gap-0.5">
+							<span class="text-sm leading-normal text-ink-900">{agentScopeLabels[scope]}</span>
+							<span class="text-xs leading-normal text-ink-400">{agentScopeHints[scope]}</span>
+						</label>
+					</div>
+				{/each}
+			</div>
+			<Form.FieldErrors />
+		</Form.Fieldset>
+
+		{#if $formData.scope === "project"}
+			<Form.Field {form} name="projectId">
+				<Form.Control>
+					{#snippet children({ props })}
+						<Form.Label>Project</Form.Label>
+						<select
+							{...props}
+							name={inline ? "projectId" : undefined}
+							bind:value={$formData.projectId}
+							disabled={busy}
+							class="h-9 max-w-sm rounded-md border border-line-subtle bg-transparent px-3 text-sm text-ink-900"
+						>
+							<option value="">Choose a project</option>
+							{#each projects as project (project.id)}
+								<option value={project.id}>{project.name}</option>
+							{/each}
+						</select>
+					{/snippet}
+				</Form.Control>
+				<Form.FieldErrors />
+			</Form.Field>
+		{/if}
 
 		<Form.Field {form} name="actionLimit">
 			<Form.Control>

@@ -12,6 +12,7 @@ import (
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
+	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -24,6 +25,7 @@ type harness struct {
 	delegations *delegationrepo.MockIssueDelegation
 	issues      *issuerepo.MockIssue
 	agents      *agentrepo.MockAgent
+	members     *projectrepo.MockProjectMember
 	activity    *activityrepo.MockActivity
 	emitter     *webhooksvc.MockWebhookEmitter
 	executions  *executionsvc.MockExecutions
@@ -47,6 +49,7 @@ func newHarness(t *testing.T) *harness {
 		delegations: delegationrepo.NewMockIssueDelegation(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		agents:      agentrepo.NewMockAgent(ctrl),
+		members:     projectrepo.NewMockProjectMember(ctrl),
 		activity:    activityrepo.NewMockActivity(ctrl),
 		emitter:     webhooksvc.NewMockWebhookEmitter(ctrl),
 		executions:  executionsvc.NewMockExecutions(ctrl),
@@ -87,8 +90,8 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = delegationsvc.New(
-		h.delegations, h.issues, h.agents, h.activity, h.emitter, h.executions, h.authorizer,
-		transactor,
+		h.delegations, h.issues, h.agents, h.members, h.activity, h.emitter, h.executions,
+		h.authorizer, transactor,
 	)
 
 	return h
@@ -106,6 +109,18 @@ func (h *harness) expectAgent(agent entity.Agent) {
 		GetByAccountID(gomock.Any(), agent.AccountID).
 		Return(agent, nil).
 		AnyTimes()
+}
+
+func (h *harness) expectProjectMembership(projectID, accountID uuid.UUID, joined bool) {
+	call := h.members.EXPECT().Get(gomock.Any(), projectID, accountID)
+
+	if joined {
+		call.Return(entity.ProjectMembership{ProjectID: projectID, AccountID: accountID}, nil).AnyTimes()
+
+		return
+	}
+
+	call.Return(entity.ProjectMembership{}, entity.ErrProjectMembershipNotFound).AnyTimes()
 }
 
 func (h *harness) expectDelegation(issue entity.Issue, agent entity.Agent) {

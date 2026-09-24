@@ -3,6 +3,7 @@ package agent_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ import (
 	apitokenrepo "github.com/usenorn/norn/internal/repository/apitoken"
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -30,16 +32,18 @@ import (
 )
 
 type harness struct {
-	agents     *agentrepo.MockAgent
-	accounts   *accountrepo.MockAccount
-	members    *membershiprepo.MockMembership
-	tokens     *apitokenrepo.MockAPIToken
-	proposals  *agentproposalrepo.MockAgentProposal
-	questions  *questionrepo.MockIssueQuestion
-	issues     *issuesvc.MockIssues
-	authorizer *authorizersvc.MockAuthorizer
-	service    service.Agents
-	recorded   []entity.AuditEntry
+	agents         *agentrepo.MockAgent
+	accounts       *accountrepo.MockAccount
+	members        *membershiprepo.MockMembership
+	projects       *projectrepo.MockProject
+	projectMembers *projectrepo.MockProjectMember
+	tokens         *apitokenrepo.MockAPIToken
+	proposals      *agentproposalrepo.MockAgentProposal
+	questions      *questionrepo.MockIssueQuestion
+	issues         *issuesvc.MockIssues
+	authorizer     *authorizersvc.MockAuthorizer
+	service        service.Agents
+	recorded       []entity.AuditEntry
 
 	workspaceID uuid.UUID
 	adminID     uuid.UUID
@@ -51,16 +55,18 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
-		agents:      agentrepo.NewMockAgent(ctrl),
-		accounts:    accountrepo.NewMockAccount(ctrl),
-		members:     membershiprepo.NewMockMembership(ctrl),
-		tokens:      apitokenrepo.NewMockAPIToken(ctrl),
-		proposals:   agentproposalrepo.NewMockAgentProposal(ctrl),
-		questions:   questionrepo.NewMockIssueQuestion(ctrl),
-		issues:      issuesvc.NewMockIssues(ctrl),
-		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
-		workspaceID: uuid.New(),
-		adminID:     uuid.New(),
+		agents:         agentrepo.NewMockAgent(ctrl),
+		accounts:       accountrepo.NewMockAccount(ctrl),
+		members:        membershiprepo.NewMockMembership(ctrl),
+		projects:       projectrepo.NewMockProject(ctrl),
+		projectMembers: projectrepo.NewMockProjectMember(ctrl),
+		tokens:         apitokenrepo.NewMockAPIToken(ctrl),
+		proposals:      agentproposalrepo.NewMockAgentProposal(ctrl),
+		questions:      questionrepo.NewMockIssueQuestion(ctrl),
+		issues:         issuesvc.NewMockIssues(ctrl),
+		authorizer:     authorizersvc.NewMockAuthorizer(ctrl),
+		workspaceID:    uuid.New(),
+		adminID:        uuid.New(),
 	}
 
 	transactor := transactorrepo.NewMockTransactor(ctrl)
@@ -96,6 +102,8 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		h.proposals,
 		h.accounts,
 		h.members,
+		h.projects,
+		h.projectMembers,
 		h.tokens,
 		teamrepo.NewMockTeam(ctrl),
 		activityrepo.NewMockActivity(ctrl),
@@ -634,6 +642,8 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		agentproposalrepo.NewMockAgentProposal(ctrl),
 		accountrepo.NewMockAccount(ctrl),
 		membershiprepo.NewMockMembership(ctrl),
+		projectrepo.NewMockProject(ctrl),
+		projectrepo.NewMockProjectMember(ctrl),
 		apitokenrepo.NewMockAPIToken(ctrl),
 		teamrepo.NewMockTeam(ctrl),
 		activityrepo.NewMockActivity(ctrl),
@@ -1008,6 +1018,8 @@ func TestAnAgentsOwnCredentialCannotAskWhatItMayGrant(t *testing.T) {
 		h.proposals,
 		h.accounts,
 		h.members,
+		h.projects,
+		h.projectMembers,
 		h.tokens,
 		teamrepo.NewMockTeam(ctrl),
 		activityrepo.NewMockActivity(ctrl),
@@ -1165,5 +1177,298 @@ func TestRotatingAnAgentWhoseOnlyAuthorityIsWithheldRefusesRatherThanMintingNoth
 				"store will reject.",
 			err,
 		)
+	}
+}
+
+func expectRegistrationWrites(h *harness) {
+	h.accounts.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, account entity.Account) (entity.Account, error) {
+			account.ID = uuid.New()
+
+			return account, nil
+		})
+	h.members.EXPECT().Create(gomock.Any(), gomock.Any()).Return(entity.Membership{}, nil)
+	h.tokens.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, token entity.APIToken) (entity.APIToken, error) {
+			return token, nil
+		})
+}
+
+func TestOnlyAnAdministratorMayOpenAnAgentToTheWholeWorkspace(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	expectActiveOwner(h, h.adminID)
+
+	_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Scopes:      readScopes(),
+		AllTeams:    true,
+		Scope:       entity.AgentScopeWorkspace,
+	})
+
+	if !errors.Is(err, entity.ErrAgentScopeForbidden) {
+		t.Fatalf("a member opening an agent to the workspace returned %v, want %v",
+			err, entity.ErrAgentScopeForbidden)
+	}
+}
+
+func TestAProjectScopeNeedsTheRegistrarOnThatProject(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+	project := uuid.New()
+
+	expectActiveOwner(h, h.adminID)
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, project).
+		Return(entity.Project{ID: project}, nil)
+	h.projectMembers.EXPECT().
+		Get(gomock.Any(), project, h.adminID).
+		Return(entity.ProjectMembership{}, entity.ErrProjectMembershipNotFound)
+
+	_, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Scopes:      readScopes(),
+		AllTeams:    true,
+		Scope:       entity.AgentScopeProject,
+		ProjectID:   &project,
+	})
+
+	if !errors.Is(err, entity.ErrAgentScopeForbidden) {
+		t.Fatalf("registering a project agent from outside the project returned %v, want %v",
+			err, entity.ErrAgentScopeForbidden)
+	}
+}
+
+func TestAProjectScopedAgentIsStoredWithItsProject(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+	project := uuid.New()
+
+	var created entity.Agent
+
+	expectActiveOwner(h, h.adminID)
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, project).
+		Return(entity.Project{ID: project}, nil)
+	h.projectMembers.EXPECT().
+		Get(gomock.Any(), project, h.adminID).
+		Return(entity.ProjectMembership{ProjectID: project, AccountID: h.adminID}, nil)
+	expectRegistrationWrites(h)
+
+	h.agents.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, agent entity.Agent) (entity.Agent, error) {
+			agent.ID = uuid.New()
+			created = agent
+
+			return agent, nil
+		})
+
+	if _, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Scopes:      readScopes(),
+		AllTeams:    true,
+		Scope:       entity.AgentScopeProject,
+		ProjectID:   &project,
+	}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+
+	if created.Scope != entity.AgentScopeProject {
+		t.Fatalf("stored scope = %q, want project", created.Scope)
+	}
+
+	if created.ProjectID == nil || *created.ProjectID != project {
+		t.Fatalf("stored project = %v, want %s", created.ProjectID, project)
+	}
+}
+
+func TestAnAgentRegisteredWithoutAScopeStaysWithItsOwner(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	var created entity.Agent
+
+	expectActiveOwner(h, h.adminID)
+	expectRegistrationWrites(h)
+
+	h.agents.EXPECT().
+		Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, agent entity.Agent) (entity.Agent, error) {
+			agent.ID = uuid.New()
+			created = agent
+
+			return agent, nil
+		})
+
+	if _, err := h.service.Register(context.Background(), service.RegisterAgentInput{
+		WorkspaceID: h.workspaceID,
+		Name:        "triage-bot",
+		Scopes:      readScopes(),
+		AllTeams:    true,
+	}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+
+	if created.Scope != entity.AgentScopeMember {
+		t.Fatalf("stored scope = %q, want member", created.Scope)
+	}
+}
+
+func TestOnlyTheOwnerOrAnAdministratorMayChangeAnAgentsScope(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(entity.Agent{OwnerAccountID: uuid.New()}, nil)
+
+	_, err := h.service.Rescope(context.Background(), service.RescopeAgentInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     uuid.New(),
+		Scope:       entity.AgentScopeMember,
+	})
+
+	if !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf("rescoping somebody else's agent returned %v, want %v", err, entity.ErrAgentNotFound)
+	}
+}
+
+func TestChangingAScopeIsWrittenAndRecorded(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID := uuid.New()
+
+	agent := entity.Agent{
+		ID:             agentID,
+		WorkspaceID:    h.workspaceID,
+		AccountID:      uuid.New(),
+		OwnerAccountID: h.adminID,
+		Name:           "triage-bot",
+		Status:         entity.AgentStatusActive,
+	}
+
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).Return(agent, nil)
+	h.agents.EXPECT().
+		SetScope(gomock.Any(), h.workspaceID, agentID, entity.AgentScopeWorkspace, nil).
+		DoAndReturn(func(
+			_ context.Context,
+			_, _ uuid.UUID,
+			scope entity.AgentScope,
+			_ *uuid.UUID,
+		) (entity.Agent, error) {
+			saved := agent
+			saved.Scope = scope
+
+			return saved, nil
+		})
+
+	expectActivePerson(h, h.adminID)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), agent.AccountID).
+		Return(entity.APIToken{
+			Scopes: readScopes(),
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}, nil)
+
+	owned, err := h.service.Rescope(context.Background(), service.RescopeAgentInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     agentID,
+		Scope:       entity.AgentScopeWorkspace,
+	})
+	if err != nil {
+		t.Fatalf("Rescope: %v", err)
+	}
+
+	if owned.Agent.Scope != entity.AgentScopeWorkspace {
+		t.Fatalf("scope = %q, want workspace", owned.Agent.Scope)
+	}
+
+	if len(h.recorded) != 1 || h.recorded[0].Action != entity.AuditAgentRescoped {
+		t.Fatalf("audit = %v, want one agent.scope_changed entry", h.recorded)
+	}
+}
+
+func TestTheDelegatableListingReadsEachAgentsScope(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	project := uuid.New()
+	issueID := uuid.New()
+
+	mine := entity.Agent{ID: uuid.New(), Name: "mine", OwnerAccountID: h.adminID}
+	theirs := entity.Agent{ID: uuid.New(), Name: "theirs", OwnerAccountID: uuid.New()}
+	open := entity.Agent{
+		ID:             uuid.New(),
+		Name:           "open",
+		OwnerAccountID: uuid.New(),
+		Scope:          entity.AgentScopeWorkspace,
+	}
+	scoped := entity.Agent{
+		ID:             uuid.New(),
+		Name:           "scoped",
+		OwnerAccountID: uuid.New(),
+		Scope:          entity.AgentScopeProject,
+		ProjectID:      &project,
+	}
+	retired := entity.Agent{
+		ID:             uuid.New(),
+		Name:           "retired",
+		OwnerAccountID: h.adminID,
+		Status:         entity.AgentStatusDisabled,
+	}
+
+	h.issues.EXPECT().
+		Get(gomock.Any(), h.workspaceID, issueID).
+		Return(entity.Issue{ID: issueID, ProjectID: project}, nil)
+	h.agents.EXPECT().
+		ListByWorkspaceID(gomock.Any(), h.workspaceID).
+		Return([]entity.Agent{mine, theirs, open, scoped, retired}, nil)
+	h.projectMembers.EXPECT().
+		ListByAccountID(gomock.Any(), h.workspaceID, h.adminID).
+		Return([]entity.ProjectMembership{{ProjectID: project, AccountID: h.adminID}}, nil)
+
+	agents, err := h.service.Delegatable(context.Background(), h.workspaceID, issueID)
+	if err != nil {
+		t.Fatalf("Delegatable: %v", err)
+	}
+
+	names := make([]string, 0, len(agents))
+	for _, agent := range agents {
+		names = append(names, agent.Name)
+	}
+
+	want := []string{"mine", "open", "scoped"}
+
+	if !reflect.DeepEqual(names, want) {
+		t.Fatalf("delegatable agents = %v, want %v", names, want)
+	}
+}
+
+func TestAWorkspaceScopeDoesNotLetAStrangerDisableAnAgent(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+	agentID := uuid.New()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{
+			ID:             agentID,
+			OwnerAccountID: uuid.New(),
+			Scope:          entity.AgentScopeWorkspace,
+		}, nil).
+		AnyTimes()
+
+	if err := h.service.Disable(context.Background(), h.workspaceID, agentID); !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf("disabling a workspace agent somebody else owns returned %v, want %v",
+			err, entity.ErrAgentNotFound)
+	}
+
+	if _, err := h.service.Rotate(context.Background(), h.workspaceID, agentID); !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf("rotating a workspace agent somebody else owns returned %v, want %v",
+			err, entity.ErrAgentNotFound)
+	}
+
+	if _, err := h.service.Get(context.Background(), h.workspaceID, agentID); !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf("reading a workspace agent somebody else owns returned %v, want %v",
+			err, entity.ErrAgentNotFound)
 	}
 }

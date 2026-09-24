@@ -6,9 +6,10 @@ import type {
 	McpConnectOutcome,
 } from "$lib/agents/agent-capabilities";
 import type { AgentRecord } from "$lib/agents/agent-record";
+import type { Project } from "$lib/projects/projects";
 import type { MembershipRole } from "$lib/workspace/members";
 
-export type AgentDetailTab = "overview" | "capabilities" | "instructions" | "activity";
+export type AgentDetailTab = "overview" | "capabilities" | "scope" | "instructions" | "activity";
 
 export type AgentRecordPreview = {
 	record?: AgentRecord;
@@ -18,6 +19,7 @@ export type AgentRecordPreview = {
 	outcome?: McpConnectOutcome;
 	role?: MembershipRole;
 	tab?: AgentDetailTab;
+	projects?: Project[];
 	dialog?: CapabilityDialogPreview;
 };
 
@@ -40,6 +42,7 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 							name: "triage-bot",
 							icon: "inbox",
 							status: "active",
+							scope: "member",
 							actionLimit: 120,
 							createdAt: "2026-07-02T09:00:00Z",
 						},
@@ -67,6 +70,7 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 							name: "triage-bot",
 							icon: "inbox",
 							status: "active",
+							scope: "member",
 							actionLimit: 120,
 							createdAt: "2026-07-02T09:00:00Z",
 						},
@@ -269,6 +273,7 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 							name: "release-notes",
 							icon: "pencil",
 							status: "disabled",
+							scope: "member",
 							actionLimit: 30,
 							disabledAt: "2026-08-01T11:00:00Z",
 							createdAt: "2026-05-14T09:00:00Z",
@@ -277,6 +282,82 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 						ownerEmail: "rae@northwind.co",
 						authority: {
 							scopes: ["issue:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+			},
+			scope_member: { tab: "scope" },
+			scope_project: {
+				tab: "scope",
+				role: "admin",
+				projects: [
+					{
+						id: "00000000-0000-4000-8000-0000000009b1",
+						workspaceId: "00000000-0000-4000-8000-0000000009a1",
+						slug: "payments",
+						name: "Payments",
+						description: "",
+						state: "active",
+						archived: false,
+						concealedWork: false,
+						health: "on_track",
+						createdAt: "2026-05-01T09:00:00Z",
+					},
+				],
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c1",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d1",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "payments-bot",
+							icon: "target",
+							status: "active",
+							scope: "project",
+							projectId: "00000000-0000-4000-8000-0000000009b1",
+							actionLimit: 120,
+							createdAt: "2026-07-02T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "issue:manage"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+			},
+			scope_workspace: {
+				tab: "scope",
+				role: "admin",
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c1",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d1",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "front-desk",
+							icon: "inbox",
+							status: "active",
+							scope: "workspace",
+							actionLimit: 120,
+							createdAt: "2026-07-02T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read"],
 							allTeams: true,
 							teamIds: [],
 						},

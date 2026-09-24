@@ -22,11 +22,13 @@ const (
 
 const agentColumns = `
 	a.id, a.workspace_id, a.account_id, a.owner_account_id, a.name, a.icon, a.status,
-	a.action_limit, a.agent_instructions, a.disabled_at, a.created_at, a.updated_at`
+	a.action_limit, a.agent_instructions, a.scope, a.project_id, a.disabled_at, a.created_at,
+	a.updated_at`
 
 const insertAgentQuery = `
-	INSERT INTO workspace_agents (id, workspace_id, account_id, owner_account_id, name, icon, action_limit)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	INSERT INTO workspace_agents
+		(id, workspace_id, account_id, owner_account_id, name, icon, action_limit, scope, project_id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 type agentRepository struct {
 	db *postgres.Client
@@ -46,6 +48,11 @@ func (r *agentRepository) Create(ctx context.Context, agent entity.Agent) (entit
 		limit = *agent.ActionLimit
 	}
 
+	var projectID any
+	if agent.ProjectID != nil {
+		projectID = agent.ProjectID.String()
+	}
+
 	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx,
 		insertAgentQuery,
@@ -56,6 +63,8 @@ func (r *agentRepository) Create(ctx context.Context, agent entity.Agent) (entit
 		agent.Name,
 		agent.Icon.Normalized(),
 		limit,
+		agent.Scope.Normalized(),
+		projectID,
 	); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation && pgErr.ConstraintName == nameUniqueIndex {
@@ -181,6 +190,63 @@ func (r *agentRepository) SetInstructions(
 	return r.GetByID(ctx, workspaceID, agentID)
 }
 
+func (r *agentRepository) SetScope(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+	scope entity.AgentScope,
+	projectID *uuid.UUID,
+) (entity.Agent, error) {
+	var project any
+	if projectID != nil {
+		project = projectID.String()
+	}
+
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		`UPDATE workspace_agents
+		 SET scope = $3, project_id = $4, updated_at = now()
+		 WHERE workspace_id = $1 AND id = $2`,
+		workspaceID.String(),
+		agentID.String(),
+		scope.Normalized(),
+		project,
+	)
+	if err != nil {
+		return entity.Agent{}, fmt.Errorf("set agent scope: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return entity.Agent{}, fmt.Errorf("set agent scope: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.Agent{}, entity.ErrAgentNotFound
+	}
+
+	return r.GetByID(ctx, workspaceID, agentID)
+}
+
+func (r *agentRepository) ScopedToProject(
+	ctx context.Context,
+	workspaceID, projectID uuid.UUID,
+) (bool, error) {
+	var scoped bool
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		`SELECT EXISTS (
+			SELECT 1 FROM workspace_agents WHERE workspace_id = $1 AND project_id = $2
+		)`,
+		workspaceID.String(),
+		projectID.String(),
+	).Scan(&scoped); err != nil {
+		return false, fmt.Errorf("find agents scoped to project: %w", err)
+	}
+
+	return scoped, nil
+}
+
 func (r *agentRepository) one(ctx context.Context, query string, args ...any) (entity.Agent, error) {
 	agents, err := r.many(ctx, query, args...)
 	if err != nil {
@@ -210,6 +276,8 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 			rawAccount, rawOwner string
 			name, icon, status   string
 			instructions         string
+			scope                string
+			rawProject           sql.NullString
 			limit                sql.NullInt64
 			disabledAt           sql.NullTime
 			createdAt, updatedAt time.Time
@@ -217,7 +285,7 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 
 		if err := rows.Scan(
 			&rawID, &rawWorkspace, &rawAccount, &rawOwner, &name, &icon, &status,
-			&limit, &instructions, &disabledAt, &createdAt, &updatedAt,
+			&limit, &instructions, &scope, &rawProject, &disabledAt, &createdAt, &updatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan agent: %w", err)
 		}
@@ -226,6 +294,7 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 			Name:              name,
 			Icon:              entity.AgentIcon(icon),
 			Status:            entity.AgentStatus(status),
+			Scope:             entity.AgentScope(scope),
 			AgentInstructions: instructions,
 			CreatedAt:         createdAt,
 			UpdatedAt:         updatedAt,
@@ -243,6 +312,15 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 			}
 
 			*target = parsed
+		}
+
+		if rawProject.Valid {
+			parsed, err := uuid.Parse(rawProject.String)
+			if err != nil {
+				return nil, fmt.Errorf("parse agent identifier: %w", err)
+			}
+
+			agent.ProjectID = &parsed
 		}
 
 		if limit.Valid {

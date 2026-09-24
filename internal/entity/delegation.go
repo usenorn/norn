@@ -18,7 +18,7 @@ var (
 	ErrIssueDelegationNotFound      = errors.New("issue delegation not found")
 	ErrIssueDelegationHeld          = errors.New("this issue is already delegated")
 	ErrIssueDelegationAgentUnusable = errors.New("that agent cannot take work")
-	ErrIssueDelegationAgentNotYours = errors.New("that agent is not yours to hand work to")
+	ErrIssueDelegationAgentNotYours = errors.New("that agent is out of your reach")
 	ErrIssueDelegationUnassigned    = errors.New("an issue nobody is assigned cannot be delegated")
 )
 

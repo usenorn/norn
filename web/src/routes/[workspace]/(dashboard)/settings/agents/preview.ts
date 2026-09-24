@@ -1,9 +1,12 @@
 import type { AgentFailure, AgentListing, APIScope } from "$lib/agents/agents";
+import type { Project } from "$lib/projects/projects";
 import type { Team } from "$lib/team/teams";
 
 export type AgentsPreview = {
 	listing?: AgentListing;
 	teams?: Team[];
+	projects?: Project[];
+	mayOpenToWorkspace?: boolean;
 	busy?: boolean;
 	failure?: AgentFailure;
 	grantable?: APIScope[] | null;
@@ -60,6 +63,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								name: "my-triage-bot",
 								icon: "inbox",
 								status: "active",
+								scope: "member",
 								actionLimit: 120,
 								createdAt: "2026-08-11T09:00:00Z",
 							},
@@ -87,6 +91,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								name: "triage-bot",
 								icon: "search",
 								status: "active",
+								scope: "member",
 								actionLimit: 120,
 								createdAt: "2026-07-02T09:00:00Z",
 							},
@@ -107,6 +112,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								name: "release-notes",
 								icon: "scroll-text",
 								status: "disabled",
+								scope: "member",
 								actionLimit: 30,
 								disabledAt: "2026-08-01T11:00:00Z",
 								createdAt: "2026-05-14T09:00:00Z",
@@ -134,6 +140,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 						name: "triage-bot",
 						icon: "target",
 						status: "active",
+						scope: "member",
 						actionLimit: 120,
 						createdAt: "2026-08-05T12:00:00Z",
 					},
@@ -147,6 +154,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								name: "triage-bot",
 								icon: "target",
 								status: "active",
+								scope: "member",
 								actionLimit: 120,
 								createdAt: "2026-08-05T12:00:00Z",
 							},
@@ -160,6 +168,75 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 						},
 					],
 				},
+			},
+			scoped: {
+				mayOpenToWorkspace: true,
+				projects: [
+					{
+						id: "00000000-0000-4000-8000-0000000009b1",
+						workspaceId: "00000000-0000-4000-8000-0000000009a1",
+						slug: "payments",
+						name: "Payments",
+						description: "",
+						state: "active",
+						archived: false,
+						concealedWork: false,
+						health: "on_track",
+						createdAt: "2026-05-01T09:00:00Z",
+					},
+				],
+				listing: {
+					kind: "ready",
+					agents: [
+						{
+							agent: {
+								id: "00000000-0000-4000-8000-0000000009c4",
+								workspaceId: "00000000-0000-4000-8000-0000000009a1",
+								accountId: "00000000-0000-4000-8000-0000000009d4",
+								ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+								name: "payments-bot",
+								icon: "target",
+								status: "active",
+								scope: "project",
+								projectId: "00000000-0000-4000-8000-0000000009b1",
+								actionLimit: 120,
+								createdAt: "2026-07-02T09:00:00Z",
+							},
+							ownerName: "Rae Chen",
+							ownerEmail: "rae@northwind.co",
+							authority: {
+								scopes: ["issue:read", "issue:manage"],
+								allTeams: true,
+								teamIds: [],
+							},
+						},
+						{
+							agent: {
+								id: "00000000-0000-4000-8000-0000000009c5",
+								workspaceId: "00000000-0000-4000-8000-0000000009a1",
+								accountId: "00000000-0000-4000-8000-0000000009d5",
+								ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+								name: "front-desk",
+								icon: "inbox",
+								status: "active",
+								scope: "workspace",
+								actionLimit: 120,
+								createdAt: "2026-07-04T09:00:00Z",
+							},
+							ownerName: "Rae Chen",
+							ownerEmail: "rae@northwind.co",
+							authority: {
+								scopes: ["issue:read"],
+								allTeams: true,
+								teamIds: [],
+							},
+						},
+					],
+				},
+			},
+			scope_refused: {
+				listing: { kind: "empty" },
+				failure: { kind: "scope_forbidden" },
 			},
 			registering: { listing: { kind: "empty" }, busy: true },
 			action_failed: { listing: { kind: "empty" }, failure: { kind: "unavailable" } },

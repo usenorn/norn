@@ -107,8 +107,9 @@
 
 		{#if agents.length === 0}
 			<p class="text-md leading-normal text-muted-foreground text-pretty">
-				You have not registered an agent yet. Norn only hands work to agents you registered, so
-				this stays empty until one of yours exists.
+				No agent is within your reach on this issue. An agent reaches you when you registered
+				it, when it is open to the whole workspace, or when it belongs to a project you are on
+				and this issue belongs to that project.
 			</p>
 			<a
 				href={agentsPath(page.params.workspace ?? "")}

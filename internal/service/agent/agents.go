@@ -18,6 +18,8 @@ type agentsService struct {
 	proposals   repository.AgentProposal
 	accounts    repository.Account
 	memberships repository.Membership
+	projects    repository.Project
+	members     repository.ProjectMember
 	tokens      repository.APIToken
 	teams       repository.Team
 	activity    repository.Activity
@@ -36,6 +38,8 @@ func New(
 	proposals repository.AgentProposal,
 	accounts repository.Account,
 	memberships repository.Membership,
+	projects repository.Project,
+	members repository.ProjectMember,
 	tokens repository.APIToken,
 	teams repository.Team,
 	activity repository.Activity,
@@ -53,6 +57,8 @@ func New(
 		proposals:   proposals,
 		accounts:    accounts,
 		memberships: memberships,
+		projects:    projects,
+		members:     members,
 		tokens:      tokens,
 		teams:       teams,
 		activity:    activity,
@@ -92,6 +98,12 @@ func (s *agentsService) Register(
 		return service.RegisteredAgent{}, err
 	}
 
+	if err := entity.NewValidationError(
+		entity.ValidateAgentScope("scope", "projectId", input.Scope, input.ProjectID)...,
+	); err != nil {
+		return service.RegisteredAgent{}, err
+	}
+
 	owner := decision.Actor.AccountID
 
 	ownership, err := s.ownerMembership(ctx, input.WorkspaceID, owner)
@@ -107,6 +119,17 @@ func (s *agentsService) Register(
 
 	if !scopes.SubsetOf(entity.AllowedAgentAPIScopesFor(ownership.Role)) {
 		return service.RegisteredAgent{}, entity.ErrAPITokenScopeExceeds
+	}
+
+	if err := s.grantableScope(
+		ctx,
+		input.WorkspaceID,
+		decision.Actor.Authority(),
+		ownership.Role,
+		input.Scope,
+		input.ProjectID,
+	); err != nil {
+		return service.RegisteredAgent{}, err
 	}
 
 	grant, err := s.grant(ctx, input, decision)
@@ -147,6 +170,8 @@ func (s *agentsService) Register(
 			OwnerAccountID: owner,
 			Name:           input.Name,
 			Icon:           input.Icon.Normalized(),
+			Scope:          input.Scope.Normalized(),
+			ProjectID:      input.ProjectID,
 			ActionLimit:    input.ActionLimit,
 		})
 		if err != nil {
@@ -372,6 +397,161 @@ func (s *agentsService) SetInstructions(
 	})
 
 	return s.describe(ctx, saved)
+}
+
+func (s *agentsService) Rescope(
+	ctx context.Context,
+	input service.RescopeAgentInput,
+) (service.OwnedAgent, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionManage,
+		WorkspaceID: input.WorkspaceID,
+	})
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return service.OwnedAgent{}, entity.ErrAPITokenMintForbidden
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateAgentScope("scope", "projectId", input.Scope, input.ProjectID)...,
+	); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	agent, err := s.agents.GetByID(ctx, input.WorkspaceID, input.AgentID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if err := manageable(agent, decision); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if err := s.grantableScope(
+		ctx,
+		input.WorkspaceID,
+		decision.Actor.Authority(),
+		decision.Role,
+		input.Scope,
+		input.ProjectID,
+	); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	saved, err := s.agents.SetScope(ctx, input.WorkspaceID, input.AgentID, input.Scope, input.ProjectID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  input.WorkspaceID,
+		Action:       entity.AuditAgentRescoped,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   saved.ID,
+		ResourceName: saved.Name,
+	})
+
+	return s.describe(ctx, saved)
+}
+
+func (s *agentsService) grantableScope(
+	ctx context.Context,
+	workspaceID, authority uuid.UUID,
+	role entity.MembershipRole,
+	scope entity.AgentScope,
+	projectID *uuid.UUID,
+) error {
+	switch scope.Normalized() {
+	case entity.AgentScopeWorkspace:
+		if role != entity.MembershipRoleAdmin {
+			return entity.ErrAgentScopeForbidden
+		}
+
+		return nil
+	case entity.AgentScopeProject:
+		if _, err := s.projects.GetByID(ctx, workspaceID, *projectID); err != nil {
+			return err
+		}
+
+		if role == entity.MembershipRoleAdmin {
+			return nil
+		}
+
+		if _, err := s.members.Get(ctx, *projectID, authority); err != nil {
+			if errors.Is(err, entity.ErrProjectMembershipNotFound) {
+				return entity.ErrAgentScopeForbidden
+			}
+
+			return err
+		}
+
+		return nil
+	default:
+		return nil
+	}
+}
+
+func (s *agentsService) Delegatable(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) ([]entity.Agent, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	issue, err := s.issues.Get(ctx, workspaceID, issueID)
+	if err != nil {
+		return nil, err
+	}
+
+	agents, err := s.agents.ListByWorkspaceID(ctx, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	memberships, err := s.members.ListByAccountID(ctx, workspaceID, decision.Actor.Authority())
+	if err != nil {
+		return nil, err
+	}
+
+	joined := make(map[uuid.UUID]struct{}, len(memberships))
+
+	for _, membership := range memberships {
+		joined[membership.ProjectID] = struct{}{}
+	}
+
+	delegatable := make([]entity.Agent, 0, len(agents))
+
+	for _, agent := range agents {
+		if agent.Disabled() {
+			continue
+		}
+
+		inProject := false
+
+		if agent.ProjectID != nil {
+			_, inProject = joined[*agent.ProjectID]
+		}
+
+		if agent.DelegatableBy(entity.AgentDelegation{
+			AccountID:      decision.Actor.Authority(),
+			IssueProjectID: issue.ProjectID,
+			InProject:      inProject,
+		}) {
+			delegatable = append(delegatable, agent)
+		}
+	}
+
+	return delegatable, nil
 }
 
 func manageable(agent entity.Agent, decision entity.Decision) error {
