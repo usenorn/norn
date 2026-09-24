@@ -85,21 +85,22 @@ func (h ProjectHealth) Valid() bool {
 }
 
 type Project struct {
-	ID            uuid.UUID
-	WorkspaceID   uuid.UUID
-	Slug          string
-	Name          string
-	Description   string
-	State         ProjectState
-	LeadAccountID uuid.UUID
-	LeadName      string
-	TargetOn      string
-	ArchivedAt    *time.Time
-	TeamIDs       []uuid.UUID
-	Health        ProjectHealth
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	Origin        *ImportOrigin
+	ID                uuid.UUID
+	WorkspaceID       uuid.UUID
+	Slug              string
+	Name              string
+	Description       string
+	AgentInstructions string
+	State             ProjectState
+	LeadAccountID     uuid.UUID
+	LeadName          string
+	TargetOn          string
+	ArchivedAt        *time.Time
+	TeamIDs           []uuid.UUID
+	Health            ProjectHealth
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	Origin            *ImportOrigin
 }
 
 func (p Project) Archived() bool {

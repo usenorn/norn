@@ -110,9 +110,10 @@ func (h *handler) UpdateWorkspaceProject(
 	}
 
 	input := service.UpdateProjectInput{
-		Name:          request.Body.Name,
-		Description:   request.Body.Description,
-		LeadAccountID: request.Body.LeadAccountId,
+		Name:              request.Body.Name,
+		Description:       request.Body.Description,
+		AgentInstructions: request.Body.AgentInstructions,
+		LeadAccountID:     request.Body.LeadAccountId,
 	}
 
 	if request.Body.TargetOn != nil {

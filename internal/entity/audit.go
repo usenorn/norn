@@ -59,15 +59,16 @@ const (
 	AuditTokenMinted  AuditAction = "token.minted"
 	AuditTokenRevoked AuditAction = "token.revoked"
 
-	AuditAgentRegistered AuditAction = "agent.registered"
-	AuditAgentDisabled   AuditAction = "agent.disabled"
-	AuditAgentEnabled    AuditAction = "agent.enabled"
-	AuditRunnerEnrolled  AuditAction = "runner.enrolled"
-	AuditRunnerRevoked   AuditAction = "runner.revoked"
-	AuditRunnerPaused    AuditAction = "runner.paused"
-	AuditRunnerResumed   AuditAction = "runner.resumed"
-	AuditAgentRotated    AuditAction = "agent.credential_rotated"
-	AuditAgentProposal   AuditAction = "agent.proposal_decided"
+	AuditAgentRegistered   AuditAction = "agent.registered"
+	AuditAgentDisabled     AuditAction = "agent.disabled"
+	AuditAgentEnabled      AuditAction = "agent.enabled"
+	AuditRunnerEnrolled    AuditAction = "runner.enrolled"
+	AuditRunnerRevoked     AuditAction = "runner.revoked"
+	AuditRunnerPaused      AuditAction = "runner.paused"
+	AuditRunnerResumed     AuditAction = "runner.resumed"
+	AuditAgentRotated      AuditAction = "agent.credential_rotated"
+	AuditAgentProposal     AuditAction = "agent.proposal_decided"
+	AuditAgentInstructions AuditAction = "agent.instructions_changed"
 
 	AuditAgentSkillAdded         AuditAction = "agent.skill_added"
 	AuditAgentSkillUpdated       AuditAction = "agent.skill_updated"
@@ -134,7 +135,7 @@ func AuditActions() []AuditAction {
 		AuditSSOIdentityLinked, AuditSSOIdentityRefused, AuditSSOAccountOpened,
 		AuditTokenMinted, AuditTokenRevoked,
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentEnabled, AuditAgentRotated,
-		AuditAgentProposal,
+		AuditAgentProposal, AuditAgentInstructions,
 		AuditAgentSkillAdded, AuditAgentSkillUpdated, AuditAgentSkillRemoved,
 		AuditAgentMCPServerAdded, AuditAgentMCPServerUpdated, AuditAgentMCPServerRemoved,
 		AuditAgentMCPConnected, AuditAgentMCPDisconnected,

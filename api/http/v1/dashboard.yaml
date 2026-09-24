@@ -2240,6 +2240,36 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents/{agentId}/instructions:
+    put:
+      tags: [agents]
+      operationId: setWorkspaceAgentInstructions
+      summary: Write the standing instructions this agent reads before it works
+      description: >-
+        What the agent is told on top of the workspace's and the project's instructions. The three
+        are added together rather than replacing one another, so this one narrows the work without
+        undoing anything said above it.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetAgentInstructionsRequest' }
+      responses:
+        '200':
+          description: The agent, carrying the instructions as they were saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/agents/{agentId}/enable:
     post:
       tags: [agents]
@@ -10261,6 +10291,13 @@ components:
         slug: { type: string }
         name: { type: string }
         description: { type: string }
+        agentInstructions:
+          type: string
+          maxLength: 20000
+          description: >-
+            Standing instructions for agents at this level, written the way an AGENTS.md file is.
+            The workspace's, the project's and the agent's own instructions are added together
+            rather than replacing one another, the workspace's carrying the most weight.
         state: { $ref: '#/components/schemas/ProjectState' }
         leadAccountId: { type: string, format: uuid }
         leadName: { type: string }
@@ -10299,6 +10336,13 @@ components:
       properties:
         name: { type: string }
         description: { type: string }
+        agentInstructions:
+          type: string
+          maxLength: 20000
+          description: >-
+            Standing instructions for agents at this level, written the way an AGENTS.md file is.
+            The workspace's, the project's and the agent's own instructions are added together
+            rather than replacing one another, the workspace's carrying the most weight.
         leadAccountId: { type: string, format: uuid }
         targetOn: { type: string, format: date }
         state: { $ref: '#/components/schemas/ProjectState' }
@@ -10799,6 +10843,7 @@ components:
         - agent.disabled
         - agent.enabled
         - agent.proposal_decided
+        - agent.instructions_changed
         - agent.skill_added
         - agent.skill_updated
         - agent.skill_removed
@@ -11385,6 +11430,13 @@ components:
           type: integer
           format: int32
           description: Actions this agent may take per minute.
+        agentInstructions:
+          type: string
+          maxLength: 20000
+          description: >-
+            Standing instructions for agents at this level, written the way an AGENTS.md file is.
+            The workspace's, the project's and the agent's own instructions are added together
+            rather than replacing one another, the workspace's carrying the most weight.
         disabledAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
 
@@ -11396,6 +11448,17 @@ components:
         ownerName: { type: string }
         ownerEmail: { type: string }
         authority: { $ref: '#/components/schemas/AgentAuthority' }
+
+    SetAgentInstructionsRequest:
+      type: object
+      required: [instructions]
+      properties:
+        instructions:
+          type: string
+          maxLength: 20000
+          description: >-
+            The agent's own standing instructions. An empty value clears them, leaving the
+            workspace's and the project's instructions to stand on their own.
 
     GrantableAgentScopes:
       type: object
@@ -13428,6 +13491,13 @@ components:
         timezone: { type: string }
         weekStartsOn: { $ref: '#/components/schemas/WeekDay' }
         logoUrl: { type: string }
+        agentInstructions:
+          type: string
+          maxLength: 20000
+          description: >-
+            Standing instructions for agents at this level, written the way an AGENTS.md file is.
+            The workspace's, the project's and the agent's own instructions are added together
+            rather than replacing one another, the workspace's carrying the most weight.
         defaultTeamId: { type: string, format: uuid }
         createdAt: { type: string, format: date-time }
         deletionRequestedAt: { type: string, format: date-time }
@@ -13440,6 +13510,13 @@ components:
         name: { type: string }
         timezone: { type: string }
         weekStartsOn: { $ref: '#/components/schemas/WeekDay' }
+        agentInstructions:
+          type: string
+          maxLength: 20000
+          description: >-
+            Standing instructions for agents at this level, written the way an AGENTS.md file is.
+            The workspace's, the project's and the agent's own instructions are added together
+            rather than replacing one another, the workspace's carrying the most weight.
         defaultTeamId: { type: string, format: uuid }
 
     WeekDay:

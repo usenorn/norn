@@ -822,6 +822,7 @@ const (
 	AuditActionAgentCapabilityDetached      AuditAction = "agent.capability_detached"
 	AuditActionAgentDisabled                AuditAction = "agent.disabled"
 	AuditActionAgentEnabled                 AuditAction = "agent.enabled"
+	AuditActionAgentInstructionsChanged     AuditAction = "agent.instructions_changed"
 	AuditActionAgentMcpConnected            AuditAction = "agent.mcp_connected"
 	AuditActionAgentMcpDisconnected         AuditAction = "agent.mcp_disconnected"
 	AuditActionAgentMcpServerAdded          AuditAction = "agent.mcp_server_added"
@@ -901,6 +902,8 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentDisabled:
 		return true
 	case AuditActionAgentEnabled:
+		return true
+	case AuditActionAgentInstructionsChanged:
 		return true
 	case AuditActionAgentMcpConnected:
 		return true
@@ -5129,15 +5132,18 @@ type Agent struct {
 	AccountId openapi_types.UUID `json:"accountId"`
 
 	// ActionLimit Actions this agent may take per minute.
-	ActionLimit    int32              `json:"actionLimit"`
-	CreatedAt      time.Time          `json:"createdAt"`
-	DisabledAt     *time.Time         `json:"disabledAt,omitempty"`
-	Icon           AgentIcon          `json:"icon"`
-	Id             openapi_types.UUID `json:"id"`
-	Name           string             `json:"name"`
-	OwnerAccountId openapi_types.UUID `json:"ownerAccountId"`
-	Status         AgentStatus        `json:"status"`
-	WorkspaceId    openapi_types.UUID `json:"workspaceId"`
+	ActionLimit int32 `json:"actionLimit"`
+
+	// AgentInstructions Standing instructions for agents at this level, written the way an AGENTS.md file is. The workspace's, the project's and the agent's own instructions are added together rather than replacing one another, the workspace's carrying the most weight.
+	AgentInstructions *string            `json:"agentInstructions,omitempty"`
+	CreatedAt         time.Time          `json:"createdAt"`
+	DisabledAt        *time.Time         `json:"disabledAt,omitempty"`
+	Icon              AgentIcon          `json:"icon"`
+	Id                openapi_types.UUID `json:"id"`
+	Name              string             `json:"name"`
+	OwnerAccountId    openapi_types.UUID `json:"ownerAccountId"`
+	Status            AgentStatus        `json:"status"`
+	WorkspaceId       openapi_types.UUID `json:"workspaceId"`
 }
 
 // AgentAction defines model for AgentAction.
@@ -8146,8 +8152,10 @@ type Problem struct {
 
 // Project defines model for Project.
 type Project struct {
-	Archived   bool       `json:"archived"`
-	ArchivedAt *time.Time `json:"archivedAt,omitempty"`
+	// AgentInstructions Standing instructions for agents at this level, written the way an AGENTS.md file is. The workspace's, the project's and the agent's own instructions are added together rather than replacing one another, the workspace's carrying the most weight.
+	AgentInstructions *string    `json:"agentInstructions,omitempty"`
+	Archived          bool       `json:"archived"`
+	ArchivedAt        *time.Time `json:"archivedAt,omitempty"`
 
 	// ConcealedWork True when the project holds issues on teams the caller cannot see. The figures they are given cover only their own teams; no count of the concealed work is disclosed.
 	ConcealedWork bool                `json:"concealedWork"`
@@ -8690,6 +8698,12 @@ type SessionClient struct {
 type SessionLocation struct {
 	City        *string `json:"city,omitempty"`
 	CountryCode *string `json:"countryCode,omitempty"`
+}
+
+// SetAgentInstructionsRequest defines model for SetAgentInstructionsRequest.
+type SetAgentInstructionsRequest struct {
+	// Instructions The agent's own standing instructions. An empty value clears them, leaving the workspace's and the project's instructions to stand on their own.
+	Instructions string `json:"instructions"`
 }
 
 // SetAuditAccessRequest defines model for SetAuditAccessRequest.
@@ -9355,12 +9369,14 @@ type UpdateProfileRequest struct {
 
 // UpdateProjectRequest defines model for UpdateProjectRequest.
 type UpdateProjectRequest struct {
-	Clear         *[]UpdateProjectRequestClear `json:"clear,omitempty"`
-	Description   *string                      `json:"description,omitempty"`
-	LeadAccountId *openapi_types.UUID          `json:"leadAccountId,omitempty"`
-	Name          *string                      `json:"name,omitempty"`
-	State         *ProjectState                `json:"state,omitempty"`
-	TargetOn      *openapi_types.Date          `json:"targetOn,omitempty"`
+	// AgentInstructions Standing instructions for agents at this level, written the way an AGENTS.md file is. The workspace's, the project's and the agent's own instructions are added together rather than replacing one another, the workspace's carrying the most weight.
+	AgentInstructions *string                      `json:"agentInstructions,omitempty"`
+	Clear             *[]UpdateProjectRequestClear `json:"clear,omitempty"`
+	Description       *string                      `json:"description,omitempty"`
+	LeadAccountId     *openapi_types.UUID          `json:"leadAccountId,omitempty"`
+	Name              *string                      `json:"name,omitempty"`
+	State             *ProjectState                `json:"state,omitempty"`
+	TargetOn          *openapi_types.Date          `json:"targetOn,omitempty"`
 
 	// TeamIds Replaces the teams the project serves. Omit to leave them alone.
 	TeamIds *[]openapi_types.UUID `json:"teamIds,omitempty"`
@@ -9424,11 +9440,13 @@ type UpdateWorkflowStateRequest struct {
 
 // UpdateWorkspaceRequest defines model for UpdateWorkspaceRequest.
 type UpdateWorkspaceRequest struct {
-	DefaultTeamId *openapi_types.UUID `json:"defaultTeamId,omitempty"`
-	Name          *string             `json:"name,omitempty"`
-	Slug          *string             `json:"slug,omitempty"`
-	Timezone      *string             `json:"timezone,omitempty"`
-	WeekStartsOn  *WeekDay            `json:"weekStartsOn,omitempty"`
+	// AgentInstructions Standing instructions for agents at this level, written the way an AGENTS.md file is. The workspace's, the project's and the agent's own instructions are added together rather than replacing one another, the workspace's carrying the most weight.
+	AgentInstructions *string             `json:"agentInstructions,omitempty"`
+	DefaultTeamId     *openapi_types.UUID `json:"defaultTeamId,omitempty"`
+	Name              *string             `json:"name,omitempty"`
+	Slug              *string             `json:"slug,omitempty"`
+	Timezone          *string             `json:"timezone,omitempty"`
+	WeekStartsOn      *WeekDay            `json:"weekStartsOn,omitempty"`
 }
 
 // UploadExecutionLogsRequest defines model for UploadExecutionLogsRequest.
@@ -9588,6 +9606,8 @@ type WorkflowStateConflictProblemCode string
 
 // Workspace defines model for Workspace.
 type Workspace struct {
+	// AgentInstructions Standing instructions for agents at this level, written the way an AGENTS.md file is. The workspace's, the project's and the agent's own instructions are added together rather than replacing one another, the workspace's carrying the most weight.
+	AgentInstructions   *string             `json:"agentInstructions,omitempty"`
 	CreatedAt           time.Time           `json:"createdAt"`
 	DefaultTeamId       *openapi_types.UUID `json:"defaultTeamId,omitempty"`
 	DeletionRequestedAt *time.Time          `json:"deletionRequestedAt,omitempty"`
@@ -10480,6 +10500,9 @@ type RewriteAgentSkillJSONRequestBody = RewriteAgentSkillRequest
 
 // RegisterWorkspaceAgentJSONRequestBody defines body for RegisterWorkspaceAgent for application/json ContentType.
 type RegisterWorkspaceAgentJSONRequestBody = RegisterAgentRequest
+
+// SetWorkspaceAgentInstructionsJSONRequestBody defines body for SetWorkspaceAgentInstructions for application/json ContentType.
+type SetWorkspaceAgentInstructionsJSONRequestBody = SetAgentInstructionsRequest
 
 // AddAgentMcpServerJSONRequestBody defines body for AddAgentMcpServer for application/json ContentType.
 type AddAgentMcpServerJSONRequestBody = AgentMcpServerRequest
@@ -11609,6 +11632,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentInstructionsWithBody Write the standing instructions this agent reads before it works
+	//
+	// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+	SetWorkspaceAgentInstructionsWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentInstructions Write the standing instructions this agent reads before it works
+	//
+	// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+	SetWorkspaceAgentInstructions(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentInstructionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
 	//
@@ -15664,6 +15705,44 @@ func (c *Client) RotateWorkspaceAgentCredential(ctx context.Context, workspaceId
 // Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 func (c *Client) EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewEnableWorkspaceAgentRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentInstructionsWithBody Write the standing instructions this agent reads before it works
+//
+// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+func (c *Client) SetWorkspaceAgentInstructionsWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentInstructionsRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentInstructions Write the standing instructions this agent reads before it works
+//
+// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+func (c *Client) SetWorkspaceAgentInstructions(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentInstructionsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentInstructionsRequest(c.Server, workspaceId, agentId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -24670,6 +24749,60 @@ func NewEnableWorkspaceAgentRequest(server string, workspaceId WorkspaceId, agen
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSetWorkspaceAgentInstructionsRequest calls the generic SetWorkspaceAgentInstructions builder with application/json body
+func NewSetWorkspaceAgentInstructionsRequest(server string, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentInstructionsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceAgentInstructionsRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceAgentInstructionsRequestWithBody constructs an http.Request for the SetWorkspaceAgentInstructions method, with any body, and a specified content type
+func NewSetWorkspaceAgentInstructionsRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/instructions", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -38944,6 +39077,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*EnableWorkspaceAgentResponse, error)
 
+	// SetWorkspaceAgentInstructionsWithBodyWithResponse Write the standing instructions this agent reads before it works
+	//
+	// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+	SetWorkspaceAgentInstructionsWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentInstructionsResponse, error)
+
+	// SetWorkspaceAgentInstructionsWithResponse Write the standing instructions this agent reads before it works
+	//
+	// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+	SetWorkspaceAgentInstructionsWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentInstructionsJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentInstructionsResponse, error)
+
 	// DetachLibraryMcpServerWithResponse Stop an agent using a library MCP server, leaving the server in the library
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47010,6 +47161,89 @@ func (r EnableWorkspaceAgentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r EnableWorkspaceAgentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceAgentInstructionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAgent
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceAgentInstructionsResponse) GetJSON200() *WorkspaceAgent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceAgentInstructionsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceAgentInstructionsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SetWorkspaceAgentInstructionsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SetWorkspaceAgentInstructionsResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceAgentInstructionsResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceAgentInstructionsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceAgentInstructionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceAgentInstructionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceAgentInstructionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceAgentInstructionsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -68577,6 +68811,36 @@ func (c *ClientWithResponses) EnableWorkspaceAgentWithResponse(ctx context.Conte
 	return ParseEnableWorkspaceAgentResponse(rsp)
 }
 
+// SetWorkspaceAgentInstructionsWithBodyWithResponse Write the standing instructions this agent reads before it works
+//
+// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentInstructionsWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentInstructionsResponse, error) {
+	rsp, err := c.SetWorkspaceAgentInstructionsWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentInstructionsResponse(rsp)
+}
+
+// SetWorkspaceAgentInstructionsWithResponse Write the standing instructions this agent reads before it works
+//
+// What the agent is told on top of the workspace's and the project's instructions. The three are added together rather than replacing one another, so this one narrows the work without undoing anything said above it.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/instructions (the `SetWorkspaceAgentInstructions` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentInstructionsWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentInstructionsJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentInstructionsResponse, error) {
+	rsp, err := c.SetWorkspaceAgentInstructions(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentInstructionsResponse(rsp)
+}
+
 // DetachLibraryMcpServerWithResponse Stop an agent using a library MCP server, leaving the server in the library
 //
 // Returns a wrapper object for the known response body format(s).
@@ -77742,6 +78006,74 @@ func ParseEnableWorkspaceAgentResponse(rsp *http.Response) (*EnableWorkspaceAgen
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceAgentInstructionsResponse parses an HTTP response from a SetWorkspaceAgentInstructionsWithResponse call
+func ParseSetWorkspaceAgentInstructionsResponse(rsp *http.Response) (*SetWorkspaceAgentInstructionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceAgentInstructionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAgent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -94120,6 +94452,9 @@ type ServerInterface interface {
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// SetWorkspaceAgentInstructions Write the standing instructions this agent reads before it works
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/instructions)
+	SetWorkspaceAgentInstructions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
 	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
 	DetachLibraryMcpServer(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, serverId AgentMcpServerId)
@@ -95425,6 +95760,12 @@ func (_ Unimplemented) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *
 // EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 // (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 func (_ Unimplemented) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceAgentInstructions Write the standing instructions this agent reads before it works
+// (PUT /workspaces/{workspaceId}/agents/{agentId}/instructions)
+func (_ Unimplemented) SetWorkspaceAgentInstructions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -98986,6 +99327,41 @@ func (siw *ServerInterfaceWrapper) EnableWorkspaceAgent(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnableWorkspaceAgent(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceAgentInstructions operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceAgentInstructions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceAgentInstructions(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -109679,6 +110055,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}", wrapper.GetWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/instructions", wrapper.SetWorkspaceAgentInstructions)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/enable", wrapper.EnableWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
@@ -117128,6 +117507,120 @@ func (response EnableWorkspaceAgent409ApplicationProblemPlusJSONResponse) VisitE
 type EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse Problem
 
 func (response EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentInstructionsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *SetWorkspaceAgentInstructionsJSONRequestBody
+}
+
+type SetWorkspaceAgentInstructionsResponseObject interface {
+	VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceAgentInstructions200JSONResponse WorkspaceAgent
+
+func (response SetWorkspaceAgentInstructions200JSONResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentInstructions401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentInstructions401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentInstructions403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentInstructions403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentInstructions404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentInstructions404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentInstructions409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentInstructions409ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentInstructions422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentInstructions422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentInstructions500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentInstructions500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -143029,6 +143522,9 @@ type StrictServerInterface interface {
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(ctx context.Context, request EnableWorkspaceAgentRequestObject) (EnableWorkspaceAgentResponseObject, error)
+	// SetWorkspaceAgentInstructions Write the standing instructions this agent reads before it works
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/instructions)
+	SetWorkspaceAgentInstructions(ctx context.Context, request SetWorkspaceAgentInstructionsRequestObject) (SetWorkspaceAgentInstructionsResponseObject, error)
 	// DetachLibraryMcpServer Stop an agent using a library MCP server, leaving the server in the library
 	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/library-mcp-servers/{serverId})
 	DetachLibraryMcpServer(ctx context.Context, request DetachLibraryMcpServerRequestObject) (DetachLibraryMcpServerResponseObject, error)
@@ -146120,6 +146616,40 @@ func (sh *strictHandler) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(EnableWorkspaceAgentResponseObject); ok {
 		if err := validResponse.VisitEnableWorkspaceAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceAgentInstructions operation middleware
+func (sh *strictHandler) SetWorkspaceAgentInstructions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request SetWorkspaceAgentInstructionsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body SetWorkspaceAgentInstructionsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceAgentInstructions(ctx, request.(SetWorkspaceAgentInstructionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceAgentInstructions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceAgentInstructionsResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceAgentInstructionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -94,17 +94,18 @@ func (s AgentStatus) CanTransitionTo(target AgentStatus) bool {
 }
 
 type Agent struct {
-	ID             uuid.UUID
-	WorkspaceID    uuid.UUID
-	AccountID      uuid.UUID
-	OwnerAccountID uuid.UUID
-	Name           string
-	Icon           AgentIcon
-	Status         AgentStatus
-	ActionLimit    *int
-	DisabledAt     *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID                uuid.UUID
+	WorkspaceID       uuid.UUID
+	AccountID         uuid.UUID
+	OwnerAccountID    uuid.UUID
+	Name              string
+	Icon              AgentIcon
+	Status            AgentStatus
+	ActionLimit       *int
+	AgentInstructions string
+	DisabledAt        *time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 func (a Agent) Disabled() bool {

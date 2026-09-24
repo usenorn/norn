@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { agentInstructionsMaxLength, agentInstructionsTooLong } from "$lib/agents/instructions";
 
 export const workspaceSlugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -13,6 +14,7 @@ export const workspaceSettingsSchema = z.object({
 		.regex(workspaceSlugPattern, "Lowercase letters, numbers and dashes. It is the workspace address."),
 	timezone: z.string().trim().min(1, "Choose a timezone."),
 	weekStartsOn: z.enum(["monday", "sunday"]),
+	agentInstructions: z.string().trim().max(agentInstructionsMaxLength, agentInstructionsTooLong).default(""),
 	defaultTeamId: z.string().trim().default(""),
 });
 

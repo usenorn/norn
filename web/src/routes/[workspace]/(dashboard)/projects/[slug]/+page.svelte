@@ -305,6 +305,7 @@
 	async function saveDetails(input: {
 		name: string;
 		description: string;
+		agentInstructions: string;
 		targetOn: string;
 		leadAccountId: string;
 		teamIds: string[];
@@ -317,6 +318,7 @@
 				body: {
 					name: input.name,
 					description: input.description,
+					agentInstructions: input.agentInstructions,
 					...(input.targetOn ? { targetOn: input.targetOn } : {}),
 					...(input.leadAccountId ? { leadAccountId: input.leadAccountId } : {}),
 					...(input.teamIds.join() !== (project.teamIds ?? []).join()

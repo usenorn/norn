@@ -55,15 +55,16 @@ func toEntity(model *dbpostgres.Workspace) (entity.Workspace, error) {
 	}
 
 	workspace := entity.Workspace{
-		ID:            id,
-		Slug:          model.Slug,
-		Name:          model.Name,
-		Status:        entity.WorkspaceStatus(model.Status),
-		Timezone:      model.Timezone,
-		CreatedAt:     model.CreatedAt,
-		UpdatedAt:     model.UpdatedAt,
-		WeekStartsOn:  entity.WeekDay(model.WeekStartsOn),
-		LogoObjectKey: model.LogoObjectKey.String,
+		ID:                id,
+		Slug:              model.Slug,
+		Name:              model.Name,
+		Status:            entity.WorkspaceStatus(model.Status),
+		Timezone:          model.Timezone,
+		CreatedAt:         model.CreatedAt,
+		UpdatedAt:         model.UpdatedAt,
+		WeekStartsOn:      entity.WeekDay(model.WeekStartsOn),
+		LogoObjectKey:     model.LogoObjectKey.String,
+		AgentInstructions: model.AgentInstructions,
 	}
 
 	if model.DeletionRequestedAt.Valid {
@@ -90,14 +91,15 @@ func toEntity(model *dbpostgres.Workspace) (entity.Workspace, error) {
 
 func toModel(workspace entity.Workspace) *dbpostgres.Workspace {
 	model := &dbpostgres.Workspace{
-		ID:           workspace.ID.String(),
-		Slug:         workspace.Slug,
-		Name:         workspace.Name,
-		Status:       string(workspace.Status),
-		Timezone:     workspace.Timezone,
-		CreatedAt:    workspace.CreatedAt,
-		UpdatedAt:    workspace.UpdatedAt,
-		WeekStartsOn: string(workspace.WeekStartsOn),
+		ID:                workspace.ID.String(),
+		Slug:              workspace.Slug,
+		Name:              workspace.Name,
+		Status:            string(workspace.Status),
+		Timezone:          workspace.Timezone,
+		CreatedAt:         workspace.CreatedAt,
+		UpdatedAt:         workspace.UpdatedAt,
+		WeekStartsOn:      string(workspace.WeekStartsOn),
+		AgentInstructions: workspace.AgentInstructions,
 	}
 
 	if workspace.LogoObjectKey != "" {
@@ -190,12 +192,13 @@ func (r *workspaceRepository) UpdateSettings(
 	updated, err := dbpostgres.Workspaces(
 		dbpostgres.WorkspaceWhere.ID.EQ(id.String()),
 	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
-		dbpostgres.WorkspaceColumns.Slug:          settings.Slug,
-		dbpostgres.WorkspaceColumns.Name:          settings.Name,
-		dbpostgres.WorkspaceColumns.Timezone:      settings.Timezone,
-		dbpostgres.WorkspaceColumns.WeekStartsOn:  string(settings.WeekStartsOn),
-		dbpostgres.WorkspaceColumns.DefaultTeamID: defaultTeam,
-		dbpostgres.WorkspaceColumns.UpdatedAt:     time.Now().UTC(),
+		dbpostgres.WorkspaceColumns.Slug:              settings.Slug,
+		dbpostgres.WorkspaceColumns.Name:              settings.Name,
+		dbpostgres.WorkspaceColumns.Timezone:          settings.Timezone,
+		dbpostgres.WorkspaceColumns.WeekStartsOn:      string(settings.WeekStartsOn),
+		dbpostgres.WorkspaceColumns.AgentInstructions: settings.AgentInstructions,
+		dbpostgres.WorkspaceColumns.DefaultTeamID:     defaultTeam,
+		dbpostgres.WorkspaceColumns.UpdatedAt:         time.Now().UTC(),
 	})
 	if err != nil {
 		if slugTaken(err) {

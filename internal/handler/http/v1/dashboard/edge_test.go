@@ -57,6 +57,9 @@ type edgeServices struct {
 	imports           service.Imports
 	aiProviders       service.AIProviders
 	agentCapabilities service.AgentCapabilities
+	workspaces        service.Workspaces
+	projects          service.Projects
+	agents            service.Agents
 }
 
 func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
@@ -72,9 +75,21 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		services.agentCapabilities = agentcapabilitysvc.NewMockAgentCapabilities(ctrl)
 	}
 
+	if services.workspaces == nil {
+		services.workspaces = workspacesvc.NewMockWorkspaces(ctrl)
+	}
+
+	if services.projects == nil {
+		services.projects = projectsvc.NewMockProjects(ctrl)
+	}
+
+	if services.agents == nil {
+		services.agents = agentsvc.NewMockAgents(ctrl)
+	}
+
 	edge := dashboard.New(
 		accountsvc.NewMockAccounts(ctrl),
-		workspacesvc.NewMockWorkspaces(ctrl),
+		services.workspaces,
 		teamsvc.NewMockTeams(ctrl),
 		invitationsvc.NewMockInvitations(ctrl),
 		issuesvc.NewMockIssues(ctrl),
@@ -99,11 +114,11 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		apitokensvc.NewMockAPITokens(ctrl),
 		webhooksvc.NewMockWebhooks(ctrl),
 		webhooksvc.NewMockWebhookDeliveries(ctrl),
-		agentsvc.NewMockAgents(ctrl),
+		services.agents,
 		sessionsvc.NewMockSessions(ctrl),
 		ssoconnectionsvc.NewMockSSOConnections(ctrl),
 		cyclesvc.NewMockCycles(ctrl),
-		projectsvc.NewMockProjects(ctrl),
+		services.projects,
 		savedviewsvc.NewMockSavedViews(ctrl),
 		triagesvc.NewMockTriages(ctrl),
 		intakesvc.NewMockIntakes(ctrl),

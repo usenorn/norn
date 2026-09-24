@@ -1,6 +1,7 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
+import { agentInstructionsMessage } from "$lib/agents/instructions";
 import { workspaceSettingsSchema } from "$lib/workspace/settings-schema";
 import {
 	nameMessage,
@@ -38,6 +39,7 @@ export const load: PageServerLoad = async ({ locals, parent, url }) => {
 			slug: shown.slug,
 			timezone: shown.timezone,
 			weekStartsOn: shown.weekStartsOn,
+			agentInstructions: shown.agentInstructions ?? "",
 			defaultTeamId: shown.defaultTeamId ?? "",
 			...preview?.draft,
 		},
@@ -88,6 +90,7 @@ export const actions: Actions = {
 				slug: form.data.slug,
 				timezone: form.data.timezone,
 				weekStartsOn: form.data.weekStartsOn,
+				agentInstructions: form.data.agentInstructions,
 				defaultTeamId: form.data.defaultTeamId || undefined,
 			},
 		});
@@ -104,6 +107,9 @@ export const actions: Actions = {
 				if (field.field === "slug") setError(form, "slug", slugMessage(field.code));
 				if (field.field === "timezone") setError(form, "timezone", timezoneMessage(field.code));
 				if (field.field === "weekStartsOn") setError(form, "weekStartsOn", weekStartMessage);
+				if (field.field === "agentInstructions") {
+					setError(form, "agentInstructions", agentInstructionsMessage(field.code));
+				}
 				if (field.field === "defaultTeamId") setError(form, "defaultTeamId", defaultTeamMessage);
 			}
 

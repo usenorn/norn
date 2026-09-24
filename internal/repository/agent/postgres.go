@@ -22,7 +22,7 @@ const (
 
 const agentColumns = `
 	a.id, a.workspace_id, a.account_id, a.owner_account_id, a.name, a.icon, a.status,
-	a.action_limit, a.disabled_at, a.created_at, a.updated_at`
+	a.action_limit, a.agent_instructions, a.disabled_at, a.created_at, a.updated_at`
 
 const insertAgentQuery = `
 	INSERT INTO workspace_agents (id, workspace_id, account_id, owner_account_id, name, icon, action_limit)
@@ -151,6 +151,36 @@ func (r *agentRepository) Enable(ctx context.Context, workspaceID, agentID uuid.
 	return nil
 }
 
+func (r *agentRepository) SetInstructions(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+	instructions string,
+) (entity.Agent, error) {
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		`UPDATE workspace_agents
+		 SET agent_instructions = $3, updated_at = now()
+		 WHERE workspace_id = $1 AND id = $2`,
+		workspaceID.String(),
+		agentID.String(),
+		instructions,
+	)
+	if err != nil {
+		return entity.Agent{}, fmt.Errorf("set agent instructions: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return entity.Agent{}, fmt.Errorf("set agent instructions: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.Agent{}, entity.ErrAgentNotFound
+	}
+
+	return r.GetByID(ctx, workspaceID, agentID)
+}
+
 func (r *agentRepository) one(ctx context.Context, query string, args ...any) (entity.Agent, error) {
 	agents, err := r.many(ctx, query, args...)
 	if err != nil {
@@ -179,6 +209,7 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 			rawID, rawWorkspace  string
 			rawAccount, rawOwner string
 			name, icon, status   string
+			instructions         string
 			limit                sql.NullInt64
 			disabledAt           sql.NullTime
 			createdAt, updatedAt time.Time
@@ -186,17 +217,18 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 
 		if err := rows.Scan(
 			&rawID, &rawWorkspace, &rawAccount, &rawOwner, &name, &icon, &status,
-			&limit, &disabledAt, &createdAt, &updatedAt,
+			&limit, &instructions, &disabledAt, &createdAt, &updatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan agent: %w", err)
 		}
 
 		agent := entity.Agent{
-			Name:      name,
-			Icon:      entity.AgentIcon(icon),
-			Status:    entity.AgentStatus(status),
-			CreatedAt: createdAt,
-			UpdatedAt: updatedAt,
+			Name:              name,
+			Icon:              entity.AgentIcon(icon),
+			Status:            entity.AgentStatus(status),
+			AgentInstructions: instructions,
+			CreatedAt:         createdAt,
+			UpdatedAt:         updatedAt,
 		}
 
 		for target, raw := range map[*uuid.UUID]string{

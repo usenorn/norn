@@ -80,10 +80,11 @@ func (h *handler) UpdateWorkspace(ctx context.Context, request api.UpdateWorkspa
 	}
 
 	input := service.UpdateWorkspaceInput{
-		Slug:          request.Body.Slug,
-		Name:          request.Body.Name,
-		Timezone:      request.Body.Timezone,
-		DefaultTeamID: request.Body.DefaultTeamId,
+		Slug:              request.Body.Slug,
+		Name:              request.Body.Name,
+		Timezone:          request.Body.Timezone,
+		AgentInstructions: request.Body.AgentInstructions,
+		DefaultTeamID:     request.Body.DefaultTeamId,
 	}
 
 	if request.Body.WeekStartsOn != nil {

@@ -95,6 +95,26 @@ func (h *handler) GetWorkspaceAgent(
 	return api.GetWorkspaceAgent200JSONResponse(workspaceAgentDTO(agent)), nil
 }
 
+func (h *handler) SetWorkspaceAgentInstructions(
+	ctx context.Context,
+	request api.SetWorkspaceAgentInstructionsRequestObject,
+) (api.SetWorkspaceAgentInstructionsResponseObject, error) {
+	agent, err := h.agents.SetInstructions(ctx, service.SetAgentInstructionsInput{
+		WorkspaceID:  request.WorkspaceId,
+		AgentID:      request.AgentId,
+		Instructions: request.Body.Instructions,
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceAgentInstructions200JSONResponse(workspaceAgentDTO(agent)), nil
+}
+
 func (h *handler) DisableWorkspaceAgent(
 	ctx context.Context,
 	request api.DisableWorkspaceAgentRequestObject,

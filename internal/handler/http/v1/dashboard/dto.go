@@ -57,6 +57,8 @@ func workspaceDTO(workspace entity.Workspace) api.Workspace {
 		CreatedAt:           workspace.CreatedAt,
 	}
 
+	dto.AgentInstructions = nilIfEmpty(workspace.AgentInstructions)
+
 	if workspace.LogoObjectKey != "" {
 		version := strings.TrimSuffix(path.Base(workspace.LogoObjectKey), path.Ext(workspace.LogoObjectKey))
 		logoPath := "/v1/workspaces/" + workspace.ID.String() + "/logo?v=" + version
@@ -529,6 +531,8 @@ func projectDTO(view service.ProjectView) api.Project {
 		ConcealedWork: view.ConcealedWork,
 		CreatedAt:     project.CreatedAt,
 	}
+
+	dto.AgentInstructions = nilIfEmpty(project.AgentInstructions)
 
 	if len(project.TeamIDs) > 0 {
 		teams := project.TeamIDs
@@ -1633,6 +1637,7 @@ func agentDTO(agent entity.Agent) api.Agent {
 	}
 
 	dto.DisabledAt = agent.DisabledAt
+	dto.AgentInstructions = nilIfEmpty(agent.AgentInstructions)
 
 	return dto
 }

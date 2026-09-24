@@ -31,6 +31,7 @@ const projectColumns = `
        p.slug,
        p.name,
        p.description,
+       p.agent_instructions,
        p.state,
        coalesce(p.lead_account_id::text, ''),
        coalesce(a.display_name, ''),
@@ -61,7 +62,7 @@ WITH inserted AS (
     INSERT INTO workspace_projects (workspace_id, slug, name, description, state, lead_account_id,
                                     target_on, created_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6::uuid, $7::date, $8, $9)
-    RETURNING id, workspace_id, slug, name, description, state, lead_account_id,
+    RETURNING id, workspace_id, slug, name, description, agent_instructions, state, lead_account_id,
               target_on, archived_at, created_at, updated_at
 )
 SELECT` + projectColumns + `
@@ -100,15 +101,16 @@ ORDER BY lower(p.name), p.id`
 const updateProjectQuery = `
 WITH updated AS (
     UPDATE workspace_projects
-    SET name            = coalesce($2, name),
-        description     = coalesce($3, description),
-        lead_account_id = CASE WHEN $4::boolean THEN NULL
-                               ELSE coalesce($5::uuid, lead_account_id) END,
-        target_on       = CASE WHEN $6::boolean THEN NULL
-                               ELSE coalesce($7::date, target_on) END,
-        updated_at      = $8
+    SET name               = coalesce($2, name),
+        description        = coalesce($3, description),
+        agent_instructions = coalesce($4, agent_instructions),
+        lead_account_id    = CASE WHEN $5::boolean THEN NULL
+                                  ELSE coalesce($6::uuid, lead_account_id) END,
+        target_on          = CASE WHEN $7::boolean THEN NULL
+                                  ELSE coalesce($8::date, target_on) END,
+        updated_at         = $9
     WHERE id = $1
-    RETURNING id, workspace_id, slug, name, description, state, lead_account_id,
+    RETURNING id, workspace_id, slug, name, description, agent_instructions, state, lead_account_id,
               target_on, archived_at, created_at, updated_at
 )
 SELECT` + projectColumns + `
@@ -124,7 +126,7 @@ WITH updated AS (
     UPDATE workspace_projects
     SET state = $2, updated_at = $3
     WHERE id = $1
-    RETURNING id, workspace_id, slug, name, description, state, lead_account_id,
+    RETURNING id, workspace_id, slug, name, description, agent_instructions, state, lead_account_id,
               target_on, archived_at, created_at, updated_at
 )
 SELECT` + projectColumns + `
@@ -140,7 +142,7 @@ WITH updated AS (
     UPDATE workspace_projects
     SET archived_at = $2, updated_at = $2
     WHERE id = $1 AND archived_at IS NULL
-    RETURNING id, workspace_id, slug, name, description, state, lead_account_id,
+    RETURNING id, workspace_id, slug, name, description, agent_instructions, state, lead_account_id,
               target_on, archived_at, created_at, updated_at
 )
 SELECT` + projectColumns + `
@@ -156,7 +158,7 @@ WITH updated AS (
     UPDATE workspace_projects
     SET archived_at = NULL, updated_at = $2
     WHERE id = $1 AND archived_at IS NOT NULL
-    RETURNING id, workspace_id, slug, name, description, state, lead_account_id,
+    RETURNING id, workspace_id, slug, name, description, agent_instructions, state, lead_account_id,
               target_on, archived_at, created_at, updated_at
 )
 SELECT` + projectColumns + `
@@ -235,6 +237,7 @@ func scanProject(row scanner) (entity.Project, error) {
 		&project.Slug,
 		&project.Name,
 		&project.Description,
+		&project.AgentInstructions,
 		&state,
 		&lead,
 		&project.LeadName,
@@ -432,17 +435,24 @@ func (r *projectRepository) UpdateSettings(
 	settings repository.ProjectSettings,
 ) (entity.Project, error) {
 	var (
-		name        any
-		description any
-		lead        any
-		target      any
+		name         any
+		description  any
+		instructions any
+		lead         any
+		target       any
 	)
 
 	if settings.Name != "" {
 		name = settings.Name
 	}
 
-	description = settings.Description
+	if settings.Description != nil {
+		description = *settings.Description
+	}
+
+	if settings.AgentInstructions != nil {
+		instructions = *settings.AgentInstructions
+	}
 
 	if settings.LeadAccountID != nil {
 		lead = settings.LeadAccountID.String()
@@ -458,6 +468,7 @@ func (r *projectRepository) UpdateSettings(
 		projectID.String(),
 		name,
 		description,
+		instructions,
 		settings.ClearLead,
 		lead,
 		settings.ClearTarget,

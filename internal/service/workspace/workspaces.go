@@ -227,11 +227,12 @@ func (s *workspacesService) Update(ctx context.Context, workspaceID uuid.UUID, i
 	current := decision.Workspace
 
 	settings := repository.WorkspaceSettings{
-		Slug:          current.Slug,
-		Name:          current.Name,
-		Timezone:      current.Timezone,
-		WeekStartsOn:  current.WeekStartsOn,
-		DefaultTeamID: current.DefaultTeamID,
+		Slug:              current.Slug,
+		Name:              current.Name,
+		Timezone:          current.Timezone,
+		WeekStartsOn:      current.WeekStartsOn,
+		AgentInstructions: current.AgentInstructions,
+		DefaultTeamID:     current.DefaultTeamID,
 	}
 
 	if input.Slug != nil {
@@ -250,11 +251,16 @@ func (s *workspacesService) Update(ctx context.Context, workspaceID uuid.UUID, i
 		settings.WeekStartsOn = *input.WeekStartsOn
 	}
 
+	if input.AgentInstructions != nil {
+		settings.AgentInstructions = entity.NormaliseAgentInstructions(*input.AgentInstructions)
+	}
+
 	if err := entity.NewValidationError(
 		entity.ValidateWorkspaceSlug("slug", settings.Slug),
 		entity.ValidateWorkspaceName("name", settings.Name),
 		entity.ValidateTimezone("timezone", settings.Timezone),
 		entity.ValidateWeekStart("weekStartsOn", settings.WeekStartsOn),
+		entity.ValidateAgentInstructions("agentInstructions", settings.AgentInstructions),
 	); err != nil {
 		return entity.Workspace{}, err
 	}

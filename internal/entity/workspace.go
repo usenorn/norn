@@ -123,6 +123,7 @@ type Workspace struct {
 	Timezone            string
 	WeekStartsOn        WeekDay
 	LogoObjectKey       string
+	AgentInstructions   string
 	DefaultTeamID       *uuid.UUID
 	DeletionRequestedAt *time.Time
 	PurgeAfter          *time.Time

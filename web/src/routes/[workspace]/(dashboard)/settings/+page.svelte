@@ -16,6 +16,7 @@
 	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
+	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import { Progress } from "$lib/components/ui/progress/index.js";
 	import { withSlot } from "$lib/account/accounts";
 	import SaveBar from "$lib/settings/save-bar.svelte";
@@ -75,6 +76,7 @@
 			slug: workspace.slug,
 			timezone: workspace.timezone,
 			weekStartsOn: workspace.weekStartsOn,
+			agentInstructions: workspace.agentInstructions ?? "",
 			defaultTeamId: workspace.defaultTeamId ?? "",
 		};
 	}
@@ -448,6 +450,30 @@
 					{/snippet}
 				</SettingRow>
 			</div>
+		</section>
+
+		<section class="flex flex-col gap-3.5" aria-labelledby="agents-section">
+			<h2><Eyebrow id="agents-section">Agent instructions</Eyebrow></h2>
+
+			<Form.Field {form} name="agentInstructions">
+				<Form.Control>
+					{#snippet children({ props })}
+						<Form.Label>Instructions for agents in this workspace</Form.Label>
+						<Textarea
+							{...props}
+							rows={10}
+							bind:value={$formData.agentInstructions}
+							disabled={busy || locked}
+						/>
+					{/snippet}
+				</Form.Control>
+				<Form.Description class="text-sm text-muted-foreground">
+					Written the way an AGENTS.md file is. Saved for now and nothing else: no agent reads
+					them yet. When they are put to work, a project's and an agent's own instructions will
+					be added to these rather than replace them.
+				</Form.Description>
+				<Form.FieldErrors />
+			</Form.Field>
 		</section>
 	</form>
 

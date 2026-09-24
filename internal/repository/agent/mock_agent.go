@@ -130,3 +130,18 @@ func (mr *MockAgentMockRecorder) ListByWorkspaceID(ctx, workspaceID any) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByWorkspaceID", reflect.TypeOf((*MockAgent)(nil).ListByWorkspaceID), ctx, workspaceID)
 }
+
+// SetInstructions mocks base method.
+func (m *MockAgent) SetInstructions(ctx context.Context, workspaceID, agentID uuid.UUID, instructions string) (entity.Agent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetInstructions", ctx, workspaceID, agentID, instructions)
+	ret0, _ := ret[0].(entity.Agent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetInstructions indicates an expected call of SetInstructions.
+func (mr *MockAgentMockRecorder) SetInstructions(ctx, workspaceID, agentID, instructions any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetInstructions", reflect.TypeOf((*MockAgent)(nil).SetInstructions), ctx, workspaceID, agentID, instructions)
+}

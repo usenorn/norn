@@ -24,100 +24,107 @@ import (
 
 // WorkspaceAgent is an object representing the database table.
 type WorkspaceAgent struct {
-	ID             string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID    string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	AccountID      string    `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
-	OwnerAccountID string    `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
-	Name           string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Status         string    `boil:"status" json:"status" toml:"status" yaml:"status"`
-	ActionLimit    null.Int  `boil:"action_limit" json:"action_limit,omitempty" toml:"action_limit" yaml:"action_limit,omitempty"`
-	DisabledAt     null.Time `boil:"disabled_at" json:"disabled_at,omitempty" toml:"disabled_at" yaml:"disabled_at,omitempty"`
-	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt      time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	Icon           string    `boil:"icon" json:"icon" toml:"icon" yaml:"icon"`
+	ID                string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID       string    `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	AccountID         string    `boil:"account_id" json:"account_id" toml:"account_id" yaml:"account_id"`
+	OwnerAccountID    string    `boil:"owner_account_id" json:"owner_account_id" toml:"owner_account_id" yaml:"owner_account_id"`
+	Name              string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Status            string    `boil:"status" json:"status" toml:"status" yaml:"status"`
+	ActionLimit       null.Int  `boil:"action_limit" json:"action_limit,omitempty" toml:"action_limit" yaml:"action_limit,omitempty"`
+	DisabledAt        null.Time `boil:"disabled_at" json:"disabled_at,omitempty" toml:"disabled_at" yaml:"disabled_at,omitempty"`
+	CreatedAt         time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt         time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	Icon              string    `boil:"icon" json:"icon" toml:"icon" yaml:"icon"`
+	AgentInstructions string    `boil:"agent_instructions" json:"agent_instructions" toml:"agent_instructions" yaml:"agent_instructions"`
 
 	R *workspaceAgentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceAgentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceAgentColumns = struct {
-	ID             string
-	WorkspaceID    string
-	AccountID      string
-	OwnerAccountID string
-	Name           string
-	Status         string
-	ActionLimit    string
-	DisabledAt     string
-	CreatedAt      string
-	UpdatedAt      string
-	Icon           string
+	ID                string
+	WorkspaceID       string
+	AccountID         string
+	OwnerAccountID    string
+	Name              string
+	Status            string
+	ActionLimit       string
+	DisabledAt        string
+	CreatedAt         string
+	UpdatedAt         string
+	Icon              string
+	AgentInstructions string
 }{
-	ID:             "id",
-	WorkspaceID:    "workspace_id",
-	AccountID:      "account_id",
-	OwnerAccountID: "owner_account_id",
-	Name:           "name",
-	Status:         "status",
-	ActionLimit:    "action_limit",
-	DisabledAt:     "disabled_at",
-	CreatedAt:      "created_at",
-	UpdatedAt:      "updated_at",
-	Icon:           "icon",
+	ID:                "id",
+	WorkspaceID:       "workspace_id",
+	AccountID:         "account_id",
+	OwnerAccountID:    "owner_account_id",
+	Name:              "name",
+	Status:            "status",
+	ActionLimit:       "action_limit",
+	DisabledAt:        "disabled_at",
+	CreatedAt:         "created_at",
+	UpdatedAt:         "updated_at",
+	Icon:              "icon",
+	AgentInstructions: "agent_instructions",
 }
 
 var WorkspaceAgentTableColumns = struct {
-	ID             string
-	WorkspaceID    string
-	AccountID      string
-	OwnerAccountID string
-	Name           string
-	Status         string
-	ActionLimit    string
-	DisabledAt     string
-	CreatedAt      string
-	UpdatedAt      string
-	Icon           string
+	ID                string
+	WorkspaceID       string
+	AccountID         string
+	OwnerAccountID    string
+	Name              string
+	Status            string
+	ActionLimit       string
+	DisabledAt        string
+	CreatedAt         string
+	UpdatedAt         string
+	Icon              string
+	AgentInstructions string
 }{
-	ID:             "workspace_agents.id",
-	WorkspaceID:    "workspace_agents.workspace_id",
-	AccountID:      "workspace_agents.account_id",
-	OwnerAccountID: "workspace_agents.owner_account_id",
-	Name:           "workspace_agents.name",
-	Status:         "workspace_agents.status",
-	ActionLimit:    "workspace_agents.action_limit",
-	DisabledAt:     "workspace_agents.disabled_at",
-	CreatedAt:      "workspace_agents.created_at",
-	UpdatedAt:      "workspace_agents.updated_at",
-	Icon:           "workspace_agents.icon",
+	ID:                "workspace_agents.id",
+	WorkspaceID:       "workspace_agents.workspace_id",
+	AccountID:         "workspace_agents.account_id",
+	OwnerAccountID:    "workspace_agents.owner_account_id",
+	Name:              "workspace_agents.name",
+	Status:            "workspace_agents.status",
+	ActionLimit:       "workspace_agents.action_limit",
+	DisabledAt:        "workspace_agents.disabled_at",
+	CreatedAt:         "workspace_agents.created_at",
+	UpdatedAt:         "workspace_agents.updated_at",
+	Icon:              "workspace_agents.icon",
+	AgentInstructions: "workspace_agents.agent_instructions",
 }
 
 // Generated where
 
 var WorkspaceAgentWhere = struct {
-	ID             whereHelperstring
-	WorkspaceID    whereHelperstring
-	AccountID      whereHelperstring
-	OwnerAccountID whereHelperstring
-	Name           whereHelperstring
-	Status         whereHelperstring
-	ActionLimit    whereHelpernull_Int
-	DisabledAt     whereHelpernull_Time
-	CreatedAt      whereHelpertime_Time
-	UpdatedAt      whereHelpertime_Time
-	Icon           whereHelperstring
+	ID                whereHelperstring
+	WorkspaceID       whereHelperstring
+	AccountID         whereHelperstring
+	OwnerAccountID    whereHelperstring
+	Name              whereHelperstring
+	Status            whereHelperstring
+	ActionLimit       whereHelpernull_Int
+	DisabledAt        whereHelpernull_Time
+	CreatedAt         whereHelpertime_Time
+	UpdatedAt         whereHelpertime_Time
+	Icon              whereHelperstring
+	AgentInstructions whereHelperstring
 }{
-	ID:             whereHelperstring{field: "\"workspace_agents\".\"id\""},
-	WorkspaceID:    whereHelperstring{field: "\"workspace_agents\".\"workspace_id\""},
-	AccountID:      whereHelperstring{field: "\"workspace_agents\".\"account_id\""},
-	OwnerAccountID: whereHelperstring{field: "\"workspace_agents\".\"owner_account_id\""},
-	Name:           whereHelperstring{field: "\"workspace_agents\".\"name\""},
-	Status:         whereHelperstring{field: "\"workspace_agents\".\"status\""},
-	ActionLimit:    whereHelpernull_Int{field: "\"workspace_agents\".\"action_limit\""},
-	DisabledAt:     whereHelpernull_Time{field: "\"workspace_agents\".\"disabled_at\""},
-	CreatedAt:      whereHelpertime_Time{field: "\"workspace_agents\".\"created_at\""},
-	UpdatedAt:      whereHelpertime_Time{field: "\"workspace_agents\".\"updated_at\""},
-	Icon:           whereHelperstring{field: "\"workspace_agents\".\"icon\""},
+	ID:                whereHelperstring{field: "\"workspace_agents\".\"id\""},
+	WorkspaceID:       whereHelperstring{field: "\"workspace_agents\".\"workspace_id\""},
+	AccountID:         whereHelperstring{field: "\"workspace_agents\".\"account_id\""},
+	OwnerAccountID:    whereHelperstring{field: "\"workspace_agents\".\"owner_account_id\""},
+	Name:              whereHelperstring{field: "\"workspace_agents\".\"name\""},
+	Status:            whereHelperstring{field: "\"workspace_agents\".\"status\""},
+	ActionLimit:       whereHelpernull_Int{field: "\"workspace_agents\".\"action_limit\""},
+	DisabledAt:        whereHelpernull_Time{field: "\"workspace_agents\".\"disabled_at\""},
+	CreatedAt:         whereHelpertime_Time{field: "\"workspace_agents\".\"created_at\""},
+	UpdatedAt:         whereHelpertime_Time{field: "\"workspace_agents\".\"updated_at\""},
+	Icon:              whereHelperstring{field: "\"workspace_agents\".\"icon\""},
+	AgentInstructions: whereHelperstring{field: "\"workspace_agents\".\"agent_instructions\""},
 }
 
 // WorkspaceAgentRels is where relationship names are stored.
@@ -347,9 +354,9 @@ func (r *workspaceAgentR) GetAgentWorkspaceRunners() WorkspaceRunnerSlice {
 type workspaceAgentL struct{}
 
 var (
-	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon"}
+	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions"}
 	workspaceAgentColumnsWithoutDefault = []string{"workspace_id", "account_id", "owner_account_id", "name"}
-	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon"}
+	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions"}
 	workspaceAgentPrimaryKeyColumns     = []string{"id"}
 	workspaceAgentGeneratedColumns      = []string{}
 )

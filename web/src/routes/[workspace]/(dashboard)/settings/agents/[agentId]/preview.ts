@@ -8,7 +8,7 @@ import type {
 import type { AgentRecord } from "$lib/agents/agent-record";
 import type { MembershipRole } from "$lib/workspace/members";
 
-export type AgentDetailTab = "overview" | "capabilities" | "activity";
+export type AgentDetailTab = "overview" | "capabilities" | "instructions" | "activity";
 
 export type AgentRecordPreview = {
 	record?: AgentRecord;
