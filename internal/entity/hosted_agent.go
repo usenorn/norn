@@ -10,6 +10,7 @@ import (
 const (
 	AgentTurnMaxLen           = 8000
 	AgentConversationMaxTurns = 40
+	AIMinOutputTokens         = 16
 )
 
 type AgentTurnRole string
