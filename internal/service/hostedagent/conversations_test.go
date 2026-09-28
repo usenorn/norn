@@ -176,6 +176,28 @@ func TestAConversationNeverSpendsPastItsTokenBudget(t *testing.T) {
 	}
 }
 
+func TestAnAnswerCutOffAtTheOutputLimitStopsWithoutRunningItsTools(t *testing.T) {
+	h := newHarness(t)
+
+	cut := listIssues("call_1")
+	cut.Truncated = true
+	cut.Usage = entity.AITokenUsage{Input: 900, Output: 2048}
+	h.answers(cut)
+
+	reply, err := h.ask("Say hi.")
+	if err != nil {
+		t.Fatalf("Converse: %v", err)
+	}
+
+	if reply.Stop != entity.AgentConversationTokenLimit || len(reply.ToolCalls) != 0 {
+		t.Errorf("stop %q with calls %+v, want token_limit and no tool run", reply.Stop, reply.ToolCalls)
+	}
+
+	if reply.Usage.Output != 2048 {
+		t.Errorf("usage = %+v, want the cut-off step counted", reply.Usage)
+	}
+}
+
 func TestAConversationThatRunsOutOfTimeReturnsWhatItHas(t *testing.T) {
 	h := newHarness(t)
 	h.limits.Timeout = 20 * time.Millisecond

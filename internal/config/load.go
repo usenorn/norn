@@ -1059,8 +1059,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("openai.max_response_size", int64(4<<20))
 	v.SetDefault("agent_hosting.timeout", 20*time.Second)
 	v.SetDefault("agent_hosting.max_tool_rounds", 8)
-	v.SetDefault("agent_hosting.max_output_tokens", 2048)
-	v.SetDefault("agent_hosting.max_total_tokens", 60000)
+	v.SetDefault("agent_hosting.max_output_tokens", 16384)
+	v.SetDefault("agent_hosting.max_total_tokens", 200000)
 	v.SetDefault("agent_hosting.max_tool_result_bytes", 32<<10)
 
 	v.SetDefault("telegram.endpoint", "https://api.telegram.org")

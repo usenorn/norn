@@ -15,6 +15,9 @@ const (
 	outputText        = "output_text"
 	outputRefusal     = "refusal"
 	outputMessageType = "message"
+
+	incompleteStatus      = "incomplete"
+	outputLimitIncomplete = "max_output_tokens"
 )
 
 type responseRequest struct {
@@ -45,6 +48,10 @@ type responseTool struct {
 }
 
 type responseBody struct {
+	Status            string `json:"status"`
+	IncompleteDetails struct {
+		Reason string `json:"reason"`
+	} `json:"incomplete_details"`
 	Output []struct {
 		Type      string `json:"type"`
 		CallID    string `json:"call_id"`
@@ -83,6 +90,10 @@ func (c *Client) Respond(
 		return entity.AIConversationStep{}, fmt.Errorf(
 			"%w: the response was not JSON: %v", entity.ErrAIProviderUnreachable, err,
 		)
+	}
+
+	if answered.Status == incompleteStatus && answered.IncompleteDetails.Reason != outputLimitIncomplete {
+		return entity.AIConversationStep{}, fmt.Errorf("response incomplete: %s", answered.IncompleteDetails.Reason)
 	}
 
 	return stepFrom(answered), nil
@@ -139,6 +150,7 @@ func stepFrom(answered responseBody) entity.AIConversationStep {
 	var text strings.Builder
 
 	step := entity.AIConversationStep{
+		Truncated: answered.Status == incompleteStatus,
 		Usage: entity.AITokenUsage{
 			Input:  answered.Usage.InputTokens,
 			Output: answered.Usage.OutputTokens,
