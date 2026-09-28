@@ -61,6 +61,7 @@ type harness struct {
 	projects      *projectsvc.MockProjects
 	labels        *labelsvc.MockLabels
 	sourceControl *scmsvc.MockSourceControl
+	tools         *mcpserver.Tools
 	edge          *mcpserver.Edge
 	actor         entity.Actor
 }
@@ -88,7 +89,7 @@ func newHarness(t *testing.T) *harness {
 		},
 	}
 
-	h.edge = mcpserver.New(
+	tools, err := mcpserver.NewTools(
 		h.issues,
 		h.relations,
 		h.questions,
@@ -102,9 +103,13 @@ func newHarness(t *testing.T) *harness {
 		h.labels,
 		searchsvc.NewMockSearches(ctrl),
 		h.sourceControl,
-		config.App{Version: "test"},
-		config.MCP{Enabled: true},
 	)
+	if err != nil {
+		t.Fatalf("NewTools: %v", err)
+	}
+
+	h.tools = tools
+	h.edge = mcpserver.New(tools, config.App{Version: "test"}, config.MCP{Enabled: true})
 
 	h.questions.EXPECT().
 		List(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -394,7 +399,7 @@ func TestABranchNameForAHiddenWorkspaceLooksLikeOneForAMissingWorkspace(t *testi
 func TestDisabledMCPAnswers404(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	edge := mcpserver.New(
+	tools, err := mcpserver.NewTools(
 		issuesvc.NewMockIssues(ctrl),
 		issuerelationsvc.NewMockIssueRelations(ctrl),
 		issuequestionsvc.NewMockIssueQuestions(ctrl),
@@ -408,9 +413,12 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 		labelsvc.NewMockLabels(ctrl),
 		searchsvc.NewMockSearches(ctrl),
 		scmsvc.NewMockSourceControl(ctrl),
-		config.App{Version: "test"},
-		config.MCP{Enabled: false},
 	)
+	if err != nil {
+		t.Fatalf("NewTools: %v", err)
+	}
+
+	edge := mcpserver.New(tools, config.App{Version: "test"}, config.MCP{Enabled: false})
 
 	recorder := httptest.NewRecorder()
 	edge.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, mcpserver.Path, nil))

@@ -52,44 +52,15 @@ type Edge struct {
 	cfg     config.MCP
 }
 
-func New(
-	issues service.Issues,
-	relations service.IssueRelations,
-	questions service.IssueQuestions,
-	agents service.Agents,
-	issueComments service.IssueComments,
-	projects service.Projects,
-	cycles service.Cycles,
-	teams service.Teams,
-	workspaces service.Workspaces,
-	workflowStates service.WorkflowStates,
-	labels service.Labels,
-	searches service.Searches,
-	sourceControl service.SourceControl,
-	app config.App,
-	cfg config.MCP,
-) *Edge {
-	tools := &toolset{
-		issues:         issues,
-		relations:      relations,
-		questions:      questions,
-		agents:         agents,
-		issueComments:  issueComments,
-		projects:       projects,
-		cycles:         cycles,
-		teams:          teams,
-		workspaces:     workspaces,
-		workflowStates: workflowStates,
-		labels:         labels,
-		searches:       searches,
-		sourceControl:  sourceControl,
-	}
-
+func New(tools *Tools, app config.App, cfg config.MCP) *Edge {
 	server := mcp.NewServer(
 		&mcp.Implementation{Name: "norn", Version: app.Version},
 		&mcp.ServerOptions{Instructions: untrustedContentInstructions},
 	)
-	tools.register(server)
+
+	for _, install := range tools.installs {
+		install(server)
+	}
 
 	handler := mcp.NewStreamableHTTPHandler(
 		func(*http.Request) *mcp.Server { return server },
@@ -113,27 +84,27 @@ func (e *Edge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e.handler.ServeHTTP(w, r)
 }
 
-func (t *toolset) register(server *mcp.Server) {
+func (t *toolset) register(tools *Tools) {
 	read := &mcp.ToolAnnotations{ReadOnlyHint: true}
 	additive := false
 	create := &mcp.ToolAnnotations{DestructiveHint: &additive}
 	update := &mcp.ToolAnnotations{DestructiveHint: &additive, IdempotentHint: true}
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_list_workspaces",
 		Description: "List every workspace this connection can act in. " +
 			"The returned slugs are the workspace parameter of every other tool.",
 		Annotations: read,
 	}, t.listWorkspaces)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_get_workspace_structure",
 		Description: "List the teams, per-team workflow states, and labels of a workspace. " +
 			"Use it to resolve team keys and state names before creating or updating issues.",
 		Annotations: read,
 	}, t.getWorkspaceStructure)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_list_workspace_members",
 		Description: "List the members of a workspace with their account ids and roles. " +
 			"Only members of kind person can be assigned an issue; an agent takes work " +
@@ -141,7 +112,7 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: read,
 	}, t.listWorkspaceMembers)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_get_issue",
 		Description: "Fetch one issue by reference (like ENG-42) or id with the issues it is " +
 			"related to, optionally with its comment thread. The returned version is the " +
@@ -149,7 +120,7 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: read,
 	}, t.getIssue)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_list_issues",
 		Description: "List issues in a workspace filtered by team, state, state category, " +
 			"assignee, priority, project, or cycle, optionally matching a text query. " +
@@ -157,69 +128,69 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: read,
 	}, t.listIssues)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_search",
 		Description: "Full-text search across issues, comments, projects, teams, and people " +
 			"in one workspace.",
 		Annotations: read,
 	}, t.search)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_list_projects",
 		Description: "List the projects of a workspace with state, health, and lead, optionally " +
 			"only those serving one team.",
 		Annotations: read,
 	}, t.listProjects)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name:        "norn_get_project",
 		Description: "Fetch one project by slug or id, including its status update history.",
 		Annotations: read,
 	}, t.getProject)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_list_cycles",
 		Description: "List the cycles of a workspace, optionally one team's, optionally by " +
 			"phase (upcoming, current, ended, or closed).",
 		Annotations: read,
 	}, t.listCycles)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_get_cycle",
 		Description: "Fetch one cycle by id with its scope: the issues it started with, the " +
 			"issues added later, and every scope change.",
 		Annotations: read,
 	}, t.getCycle)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_issue_branch_name",
 		Description: "Build the branch name for an issue from its team's branch template, " +
 			"ready for git checkout -b. Use it exactly as returned.",
 		Annotations: read,
 	}, t.issueBranchName)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_create_project",
 		Description: "Create a project, optionally naming the teams it serves. A project with no " +
 			"teams belongs to the whole workspace. Requires the write capability.",
 		Annotations: create,
 	}, t.createProject)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_update_project",
 		Description: "Change a project's name, description, state, lead, target date or the teams " +
 			"it serves. Teams given here replace the ones it had.",
 		Annotations: update,
 	}, t.updateProject)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_archive_project",
 		Description: "Archive a project or bring it back. Archiving leaves its issues alone; a " +
 			"project cannot be deleted through this connection.",
 		Annotations: update,
 	}, t.archiveProject)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_create_issue",
 		Description: "Create an issue on a team, optionally in a project or cycle, with labels " +
 			"and an assignee. An assignee of me is the person this connection acts for, which " +
@@ -231,7 +202,7 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: create,
 	}, t.createIssue)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_update_issue",
 		Description: "Update an issue's fields, including moving it to another team. " +
 			"expected_version guards against overwriting someone else's change; when omitted " +
@@ -245,7 +216,7 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: update,
 	}, t.updateIssue)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_change_issue_state",
 		Description: "Move an issue to another workflow state by state name or id. Reads the " +
 			"current version automatically unless expected_version is given. Closing an issue " +
@@ -255,21 +226,21 @@ func (t *toolset) register(server *mcp.Server) {
 
 	destructive := true
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_set_issue_status",
 		Description: "Archive an issue, delete it, or restore it to active. A deleted issue " +
 			"keeps its reference and can be restored for 30 days.",
 		Annotations: &mcp.ToolAnnotations{DestructiveHint: &destructive, IdempotentHint: true},
 	}, t.setIssueStatus)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_set_issue_parent",
 		Description: "File an issue under another issue as its sub-issue, or take it out from " +
 			"under its parent with an empty parent.",
 		Annotations: update,
 	}, t.setIssueParent)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_link_issues",
 		Description: "Relate two issues: one blocks the other, duplicates it, or relates to it. " +
 			"Record a relation this way rather than only mentioning the other issue in a " +
@@ -278,19 +249,19 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: create,
 	}, t.linkIssues)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name:        "norn_unlink_issues",
 		Description: "Remove the relation between two issues, whatever its kind.",
 		Annotations: &mcp.ToolAnnotations{DestructiveHint: &destructive},
 	}, t.unlinkIssues)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name:        "norn_create_comment",
 		Description: "Comment on an issue, optionally as a reply to another comment.",
 		Annotations: create,
 	}, t.createComment)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_whoami",
 		Description: "Report who this connection is, what it is permitted to do, and which of " +
 			"its writes each team holds for a person to approve. Call it before a first write " +
@@ -298,7 +269,7 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: read,
 	}, t.whoami)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_ask",
 		Description: "Ask a person a question about this issue without stopping. Say what you " +
 			"will do if nobody answers before the deadline; that default is recorded, you carry " +
@@ -307,7 +278,7 @@ func (t *toolset) register(server *mcp.Server) {
 		Annotations: create,
 	}, t.ask)
 
-	mcp.AddTool(server, &mcp.Tool{
+	add(tools, &mcp.Tool{
 		Name: "norn_start_issue",
 		Description: "Claim an issue and begin. It moves the issue into the team's first " +
 			"active state and answers with the branch name to use, what done means so far, " +

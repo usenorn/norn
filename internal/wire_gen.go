@@ -568,7 +568,19 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	sourceControlSync := scm2.NewSync(scmConnection, scmRepository, scmRoute, scmTransitionRule, scmTeamSetting, scmIdentity, mirrorConflict, repositoryLabel, repositoryAgent, gate, scmRelease, scmDeployment, scmDelivery, codeLink, issueMirror, workflowState, repositoryIssue, repositoryWorkspace, repositoryActivity, repositoryMembership, scmApp, forges, credentials, serviceAuthorizer, issues, issueComments, jobProducer, postgresClient, sourceControl, app)
 	sourcecontrolEdge := sourcecontrol.New(sourceControlSync, sourceControl)
 	appEdge := sourcecontrol.NewAppEdge(sourceControlApps, app)
-	mcpserverEdge := mcpserver.New(issues, issueRelations, issueQuestions, agents, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, app, mcp)
+	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl)
+	if err != nil {
+		cleanup8()
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	mcpserverEdge := mcpserver.New(tools, app, mcp)
 	runnerChannels := runnerchannel2.New(runnerChannel, runnerSession, repositoryRunner, runners, executions, issueQuestions, changeSets, servicePreviews, executionServices)
 	runnerchannelEdge := runnerchannel3.New(runnerChannels, configRunner)
 	previewGateway := previewgateway.New(postgresClient)

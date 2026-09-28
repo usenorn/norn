@@ -1,5 +1,9 @@
 package mcpserver
 
-import "github.com/goforj/wire"
+import (
+	"github.com/goforj/wire"
 
-var Set = wire.NewSet(New)
+	"github.com/usenorn/norn/internal/service"
+)
+
+var Set = wire.NewSet(NewTools, New, wire.Bind(new(service.NornTools), new(*Tools)))
