@@ -42,6 +42,21 @@ func (m *MockHostedAgents) EXPECT() *MockHostedAgentsMockRecorder {
 	return m.recorder
 }
 
+// Chat mocks base method.
+func (m *MockHostedAgents) Chat(ctx context.Context, workspaceID, agentID uuid.UUID, turns []entity.AgentTurn) (entity.AgentReply, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Chat", ctx, workspaceID, agentID, turns)
+	ret0, _ := ret[0].(entity.AgentReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Chat indicates an expected call of Chat.
+func (mr *MockHostedAgentsMockRecorder) Chat(ctx, workspaceID, agentID, turns any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Chat", reflect.TypeOf((*MockHostedAgents)(nil).Chat), ctx, workspaceID, agentID, turns)
+}
+
 // Converse mocks base method.
 func (m *MockHostedAgents) Converse(ctx context.Context, workspaceID, agentID uuid.UUID, turns []entity.AgentTurn) (entity.AgentReply, error) {
 	m.ctrl.T.Helper()

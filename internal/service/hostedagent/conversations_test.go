@@ -299,3 +299,62 @@ func TestAnAdministratorMayTestSomebodyElsesAgent(t *testing.T) {
 		t.Fatalf("Converse: %v", err)
 	}
 }
+
+func TestTheOwnerMayChatThroughALinkedConnection(t *testing.T) {
+	h := newHarness(t)
+	bot := uuid.New()
+	h.caller = entity.Actor{
+		Kind:           entity.ActorKindToken,
+		AccountID:      h.agent.OwnerAccountID,
+		OwnerAccountID: h.agent.OwnerAccountID,
+		ConnectionID:   &bot,
+		ConnectionName: entity.TelegramConnectionName,
+	}
+	h.answers(entity.AIConversationStep{Text: "Two issues are in progress."})
+
+	reply, err := h.service().Chat(context.Background(), h.workspaceID, h.agent.ID, []entity.AgentTurn{
+		{Role: entity.AgentTurnUser, Text: "What is in progress?"},
+	})
+	if err != nil {
+		t.Fatalf("Chat: %v", err)
+	}
+
+	if reply.Text != "Two issues are in progress." {
+		t.Errorf("reply = %q", reply.Text)
+	}
+}
+
+func TestChatIsRefusedToAnyoneWhoCannotManageTheAgent(t *testing.T) {
+	cases := []struct {
+		name    string
+		arrange func(h *harness)
+		want    error
+	}{
+		{
+			name: "a linked member who does not own the agent",
+			arrange: func(h *harness) {
+				h.caller = entity.Actor{Kind: entity.ActorKindToken, AccountID: uuid.New()}
+			},
+			want: entity.ErrAgentNotFound,
+		},
+		{
+			name:    "another agent",
+			arrange: func(h *harness) { h.caller.Kind = entity.ActorKindAgent },
+			want:    entity.ErrAccountForbidden,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t)
+			tc.arrange(h)
+
+			_, err := h.service().Chat(context.Background(), h.workspaceID, h.agent.ID, []entity.AgentTurn{
+				{Role: entity.AgentTurnUser, Text: "What is in progress?"},
+			})
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("err = %v, want %v", err, tc.want)
+			}
+		})
+	}
+}

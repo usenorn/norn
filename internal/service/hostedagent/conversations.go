@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -64,6 +65,23 @@ func (s *conversations) Converse(
 	workspaceID, agentID uuid.UUID,
 	turns []entity.AgentTurn,
 ) (entity.AgentReply, error) {
+	return s.converse(ctx, workspaceID, agentID, turns, entity.ActorKindUser)
+}
+
+func (s *conversations) Chat(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+	turns []entity.AgentTurn,
+) (entity.AgentReply, error) {
+	return s.converse(ctx, workspaceID, agentID, turns, entity.ActorKindUser, entity.ActorKindToken)
+}
+
+func (s *conversations) converse(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+	turns []entity.AgentTurn,
+	speakers ...entity.ActorKind,
+) (entity.AgentReply, error) {
 	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
 		Resource:    entity.ResourceAgent,
 		Action:      entity.ActionManage,
@@ -73,7 +91,7 @@ func (s *conversations) Converse(
 		return entity.AgentReply{}, err
 	}
 
-	if decision.Actor.Kind != entity.ActorKindUser {
+	if !slices.Contains(speakers, decision.Actor.Kind) {
 		return entity.AgentReply{}, entity.ErrAccountForbidden
 	}
 
