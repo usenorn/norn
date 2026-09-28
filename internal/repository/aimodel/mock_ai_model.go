@@ -41,6 +41,21 @@ func (m *MockAIModel) EXPECT() *MockAIModelMockRecorder {
 	return m.recorder
 }
 
+// Converse mocks base method.
+func (m *MockAIModel) Converse(ctx context.Context, endpoint entity.AIProviderEndpoint, apiKey string, request entity.AIConversationRequest) (entity.AIConversationStep, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Converse", ctx, endpoint, apiKey, request)
+	ret0, _ := ret[0].(entity.AIConversationStep)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Converse indicates an expected call of Converse.
+func (mr *MockAIModelMockRecorder) Converse(ctx, endpoint, apiKey, request any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Converse", reflect.TypeOf((*MockAIModel)(nil).Converse), ctx, endpoint, apiKey, request)
+}
+
 // List mocks base method.
 func (m *MockAIModel) List(ctx context.Context, endpoint entity.AIProviderEndpoint, apiKey string) ([]string, error) {
 	m.ctrl.T.Helper()

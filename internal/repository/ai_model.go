@@ -11,4 +11,10 @@ import (
 type AIModel interface {
 	List(ctx context.Context, endpoint entity.AIProviderEndpoint, apiKey string) ([]string, error)
 	Probe(ctx context.Context, endpoint entity.AIProviderEndpoint, apiKey, model string) error
+	Converse(
+		ctx context.Context,
+		endpoint entity.AIProviderEndpoint,
+		apiKey string,
+		request entity.AIConversationRequest,
+	) (entity.AIConversationStep, error)
 }

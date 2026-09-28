@@ -31,3 +31,12 @@ func (r *openAIModels) Probe(
 ) error {
 	return r.client.Probe(ctx, endpoint, apiKey, model)
 }
+
+func (r *openAIModels) Converse(
+	ctx context.Context,
+	endpoint entity.AIProviderEndpoint,
+	apiKey string,
+	request entity.AIConversationRequest,
+) (entity.AIConversationStep, error) {
+	return r.client.Respond(ctx, endpoint, apiKey, request)
+}
