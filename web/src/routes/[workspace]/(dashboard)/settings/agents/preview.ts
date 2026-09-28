@@ -75,6 +75,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 					],
 				},
@@ -104,6 +105,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 						{
 							agent: {
@@ -127,6 +129,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: false,
 								teamIds: ["00000000-0000-4000-8000-0000000009f1"],
 							},
+							authorityMissing: false,
 						},
 					],
 				},
@@ -170,6 +173,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 					],
 				},
@@ -215,6 +219,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 						{
 							agent: {
@@ -237,6 +242,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 					],
 				},
@@ -248,7 +254,55 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 			registering: { listing: { kind: "empty" }, busy: true },
 			action_failed: { listing: { kind: "empty" }, failure: { kind: "unavailable" } },
 			forbidden: { listing: { kind: "forbidden" } },
-			authority_missing: { listing: { kind: "authority_missing" } },
+			authority_missing_row: {
+				listing: {
+					kind: "ready",
+					agents: [
+						{
+							agent: {
+								id: "00000000-0000-4000-8000-0000000009c3",
+								workspaceId: "00000000-0000-4000-8000-0000000009a1",
+								accountId: "00000000-0000-4000-8000-0000000009d3",
+								ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+								name: "checks-e2e",
+								icon: "bot",
+								status: "active",
+								scope: "member",
+								execution: "runner",
+								actionLimit: 120,
+								createdAt: "2026-08-11T21:30:25Z",
+							},
+							ownerName: "Rae Chen",
+							ownerEmail: "rae@northwind.co",
+							authority: { scopes: [], allTeams: false, teamIds: [] },
+							authorityMissing: true,
+						},
+						{
+							agent: {
+								id: "00000000-0000-4000-8000-0000000009c1",
+								workspaceId: "00000000-0000-4000-8000-0000000009a1",
+								accountId: "00000000-0000-4000-8000-0000000009d1",
+								ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+								name: "triage-bot",
+								icon: "search",
+								status: "active",
+								scope: "member",
+								execution: "runner",
+								actionLimit: 120,
+								createdAt: "2026-07-02T09:00:00Z",
+							},
+							ownerName: "Rae Chen",
+							ownerEmail: "rae@northwind.co",
+							authority: {
+								scopes: ["issue:read", "issue:manage", "comment:read", "comment:manage"],
+								allTeams: true,
+								teamIds: [],
+							},
+							authorityMissing: false,
+						},
+					],
+				},
+			},
 			unavailable: { listing: { kind: "unavailable" } },
 		}
 	: {};

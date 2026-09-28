@@ -47,12 +47,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 			mayOpenToWorkspace,
 			grantable,
 			listing: {
-				kind:
-					agents.error.status === 403
-						? "forbidden"
-						: agents.error.status === 409
-							? "authority_missing"
-							: "unavailable",
+				kind: agents.error.status === 403 ? "forbidden" : "unavailable",
 			} as AgentListing,
 		};
 	}

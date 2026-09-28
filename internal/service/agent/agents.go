@@ -313,8 +313,17 @@ func (s *agentsService) List(ctx context.Context, workspaceID uuid.UUID) ([]serv
 			continue
 		}
 
-		described, err := s.describe(ctx, agent)
+		described, err := s.owned(ctx, agent)
 		if err != nil {
+			return nil, err
+		}
+
+		described.Authority, err = s.authorityOf(ctx, agent)
+
+		switch {
+		case errors.Is(err, entity.ErrAgentAuthorityMissing):
+			described.AuthorityMissing = true
+		case err != nil:
 			return nil, err
 		}
 
@@ -615,39 +624,45 @@ func manageable(agent entity.Agent, decision entity.Decision) error {
 }
 
 func (s *agentsService) describe(ctx context.Context, agent entity.Agent) (service.OwnedAgent, error) {
+	described, err := s.owned(ctx, agent)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if described.Authority, err = s.authorityOf(ctx, agent); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	return described, nil
+}
+
+func (s *agentsService) owned(ctx context.Context, agent entity.Agent) (service.OwnedAgent, error) {
 	owner, err := s.accounts.GetByID(ctx, agent.OwnerAccountID)
 	if err != nil {
 		return service.OwnedAgent{}, err
 	}
 
+	return service.OwnedAgent{Agent: agent, OwnerName: owner.DisplayName, OwnerEmail: owner.Email}, nil
+}
+
+func (s *agentsService) authorityOf(ctx context.Context, agent entity.Agent) (service.AgentAuthority, error) {
 	token, err := s.tokens.GetLatestByOwner(ctx, agent.AccountID)
 	if err != nil {
 		if errors.Is(err, entity.ErrAPITokenNotFound) {
-			return service.OwnedAgent{}, entity.ErrAgentAuthorityMissing
+			return service.AgentAuthority{}, entity.ErrAgentAuthorityMissing
 		}
 
-		return service.OwnedAgent{}, err
+		return service.AgentAuthority{}, err
 	}
 
-	authority, err := agentAuthority(token, agent.WorkspaceID)
-	if err != nil {
-		return service.OwnedAgent{}, err
-	}
-
-	return service.OwnedAgent{
-		Agent:      agent,
-		OwnerName:  owner.DisplayName,
-		OwnerEmail: owner.Email,
-		Authority:  authority,
-	}, nil
+	return agentAuthority(token, agent.WorkspaceID)
 }
 
 func agentAuthority(token entity.APIToken, workspaceID uuid.UUID) (service.AgentAuthority, error) {
 	scopes := token.Scopes.Normalized()
 	grant, ok := token.Grants.For(workspaceID)
 
-	if len(scopes) == 0 || len(scopes) != len(token.Scopes) || !ok ||
-		(!grant.AllTeams && len(grant.TeamIDs) == 0) {
+	if len(scopes) == 0 || !ok || (!grant.AllTeams && len(grant.TeamIDs) == 0) {
 		return service.AgentAuthority{}, entity.ErrAgentAuthorityMissing
 	}
 

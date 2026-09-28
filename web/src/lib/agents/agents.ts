@@ -23,7 +23,6 @@ export type AgentListing =
 	| { kind: "ready"; agents: WorkspaceAgent[] }
 	| { kind: "registered"; agents: WorkspaceAgent[]; agent: Agent; value: string }
 	| { kind: "forbidden" }
-	| { kind: "authority_missing" }
 	| { kind: "unavailable" };
 
 export type AgentFailure =
