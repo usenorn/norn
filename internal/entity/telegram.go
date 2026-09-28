@@ -36,6 +36,7 @@ var (
 	ErrTelegramBotTaken             = errors.New("this telegram bot already serves another agent")
 	ErrTelegramOriginInsecure       = errors.New("telegram only delivers updates to an https origin")
 	ErrTelegramUnreachable          = errors.New("telegram could not be reached")
+	ErrTelegramChatUnavailable      = errors.New("telegram will not deliver to this chat")
 	ErrTelegramEncryptionKeyMissing = errors.New("this instance has no encryption key, so a bot token cannot be stored")
 	ErrTelegramSecretInvalid        = errors.New("telegram update secret is invalid")
 	ErrTelegramUpdateDuplicate      = errors.New("telegram update already received")
