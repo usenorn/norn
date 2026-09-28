@@ -7,6 +7,7 @@ import type {
 } from "$lib/agents/agent-capabilities";
 import type { AgentRecord } from "$lib/agents/agent-record";
 import type { HostedConversation } from "$lib/agents/hosted";
+import type { TelegramOutcome, TelegramPanel } from "$lib/agents/telegram";
 import type { Project } from "$lib/projects/projects";
 import type { MembershipRole } from "$lib/workspace/members";
 
@@ -14,6 +15,7 @@ export type AgentDetailTab =
 	| "overview"
 	| "execution"
 	| "capabilities"
+	| "telegram"
 	| "scope"
 	| "instructions"
 	| "activity";
@@ -29,6 +31,8 @@ export type AgentRecordPreview = {
 	projects?: Project[];
 	dialog?: CapabilityDialogPreview;
 	conversation?: HostedConversation;
+	telegram?: TelegramPanel;
+	telegramOutcome?: TelegramOutcome;
 };
 
 export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = import.meta.env.DEV
@@ -1113,6 +1117,261 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 				activity: { kind: "empty" },
 				capabilities: { kind: "empty" },
 				tab: "execution",
+			},
+			telegram_loading: { tab: "telegram", telegram: { kind: "loading" } },
+			telegram_disconnected: { tab: "telegram", telegram: { kind: "disconnected" } },
+			telegram_forbidden: { tab: "telegram", telegram: { kind: "forbidden" } },
+			telegram_unavailable: { tab: "telegram", telegram: { kind: "unavailable" } },
+			telegram_empty: {
+				tab: "telegram",
+				telegram: {
+					kind: "connected",
+					bot: {
+						id: "00000000-0000-4000-8000-000000000c01",
+						username: "northwind_triage_bot",
+						name: "Northwind triage",
+						tokenHint: "x9Qa",
+						hosted: false,
+						linked: false,
+						connectedBy: "Rae Chen",
+						connectedAt: "2026-09-28T09:00:00Z",
+						members: [],
+						groups: [],
+					},
+				},
+			},
+			telegram_connected: {
+				tab: "telegram",
+				telegram: {
+					kind: "connected",
+					bot: {
+						id: "00000000-0000-4000-8000-000000000c01",
+						username: "northwind_triage_bot",
+						name: "Northwind triage",
+						tokenHint: "x9Qa",
+						hosted: false,
+						linked: true,
+						connectedBy: "Rae Chen",
+						connectedAt: "2026-09-28T09:00:00Z",
+						members: [
+							{
+								accountId: "00000000-0000-4000-8000-0000000009e1",
+								name: "Rae Chen",
+								username: "raechen",
+								linkedAt: "2026-09-28T09:02:00Z",
+							},
+							{
+								accountId: "00000000-0000-4000-8000-000000000c02",
+								name: "Tomás Ferreira-Oyelaran with a name long enough to wrap on a phone",
+								username: "",
+								linkedAt: "2026-09-28T10:15:00Z",
+							},
+						],
+						groups: [
+							{
+								id: "00000000-0000-4000-8000-000000000c03",
+								title: "Northwind · Release crew",
+								boundBy: "Rae Chen",
+								boundAt: "2026-09-28T09:05:00Z",
+							},
+						],
+					},
+				},
+			},
+			telegram_hosted: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "telegram",
+				telegram: {
+					kind: "connected",
+					bot: {
+						id: "00000000-0000-4000-8000-000000000c04",
+						username: "workspace_guide_bot",
+						name: "Workspace guide",
+						tokenHint: "Lm20",
+						hosted: true,
+						linked: true,
+						connectedBy: "Rae Chen",
+						connectedAt: "2026-09-28T09:00:00Z",
+						members: [
+							{
+								accountId: "00000000-0000-4000-8000-0000000009e1",
+								name: "Rae Chen",
+								username: "raechen",
+								linkedAt: "2026-09-28T09:02:00Z",
+							},
+						],
+						groups: [],
+					},
+				},
+			},
+			telegram_disabled: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c1",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d1",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "triage-bot",
+							icon: "inbox",
+							status: "disabled",
+							scope: "member",
+							execution: "runner",
+							actionLimit: 120,
+							createdAt: "2026-07-02T09:00:00Z",
+							disabledAt: "2026-09-26T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "issue:manage"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+			},
+			telegram_connected_outcome: {
+				tab: "telegram",
+				telegram: {
+					kind: "connected",
+					bot: {
+						id: "00000000-0000-4000-8000-000000000c01",
+						username: "northwind_triage_bot",
+						name: "Northwind triage",
+						tokenHint: "x9Qa",
+						hosted: false,
+						linked: false,
+						connectedBy: "Rae Chen",
+						connectedAt: "2026-09-28T09:00:00Z",
+						members: [],
+						groups: [],
+					},
+				},
+				telegramOutcome: { kind: "connected" },
+			},
+			telegram_invited: {
+				tab: "telegram",
+				telegram: {
+					kind: "connected",
+					bot: {
+						id: "00000000-0000-4000-8000-000000000c01",
+						username: "northwind_triage_bot",
+						name: "Northwind triage",
+						tokenHint: "x9Qa",
+						hosted: false,
+						linked: false,
+						connectedBy: "Rae Chen",
+						connectedAt: "2026-09-28T09:00:00Z",
+						members: [],
+						groups: [],
+					},
+				},
+				telegramOutcome: {
+					kind: "invited",
+					purpose: "private",
+					invite: {
+						url: "https://t.me/northwind_triage_bot?start=preview-private-code",
+						expiresAt: "2026-09-28T09:15:00Z",
+					},
+				},
+			},
+			telegram_group_invited: {
+				tab: "telegram",
+				telegram: {
+					kind: "connected",
+					bot: {
+						id: "00000000-0000-4000-8000-000000000c01",
+						username: "northwind_triage_bot",
+						name: "Northwind triage",
+						tokenHint: "x9Qa",
+						hosted: false,
+						linked: true,
+						connectedBy: "Rae Chen",
+						connectedAt: "2026-09-28T09:00:00Z",
+						members: [],
+						groups: [],
+					},
+				},
+				telegramOutcome: {
+					kind: "invited",
+					purpose: "group",
+					invite: {
+						url: "https://t.me/northwind_triage_bot?startgroup=preview-group-code",
+						expiresAt: "2026-09-28T09:15:00Z",
+					},
+				},
+			},
+			telegram_disconnected_outcome: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "disconnected" },
+			},
+			telegram_unlinked: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "unlinked" },
+			},
+			telegram_unbound: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "unbound", title: "Northwind · Release crew" },
+			},
+			telegram_token_rejected: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "failed", failure: { kind: "refused", code: "token_rejected" } },
+			},
+			telegram_bot_taken: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "failed", failure: { kind: "refused", code: "bot_taken" } },
+			},
+			telegram_origin_insecure: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "failed", failure: { kind: "refused", code: "origin_insecure" } },
+			},
+			telegram_unreachable: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "failed", failure: { kind: "refused", code: "unreachable" } },
+			},
+			telegram_sealing_unavailable: {
+				tab: "telegram",
+				telegram: { kind: "disconnected" },
+				telegramOutcome: { kind: "failed", failure: { kind: "sealing_unavailable" } },
 			},
 		}
 	: {};
