@@ -47,6 +47,7 @@ import (
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
+	telegrambotsvc "github.com/usenorn/norn/internal/service/telegrambot"
 	triagesvc "github.com/usenorn/norn/internal/service/triage"
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
@@ -62,6 +63,7 @@ type edgeServices struct {
 	projects          service.Projects
 	agents            service.Agents
 	hostedAgents      service.HostedAgents
+	telegramBots      service.TelegramBots
 }
 
 func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
@@ -91,6 +93,10 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 
 	if services.hostedAgents == nil {
 		services.hostedAgents = hostedagentsvc.NewMockHostedAgents(ctrl)
+	}
+
+	if services.telegramBots == nil {
+		services.telegramBots = telegrambotsvc.NewMockTelegramBots(ctrl)
 	}
 
 	edge := dashboard.New(
@@ -139,6 +145,7 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		services.aiProviders,
 		services.agentCapabilities,
 		services.hostedAgents,
+		services.telegramBots,
 		config.SourceControl{},
 		config.App{Version: "test", BaseURL: "https://norn.test"},
 		config.Instance{},

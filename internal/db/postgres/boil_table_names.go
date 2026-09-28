@@ -115,6 +115,13 @@ var TableNames = struct {
 	WorkspaceTeamSCMSettings           string
 	WorkspaceTeamTriageSettings        string
 	WorkspaceTeams                     string
+	WorkspaceTelegramAccounts          string
+	WorkspaceTelegramBots              string
+	WorkspaceTelegramGroups            string
+	WorkspaceTelegramLinkCodes         string
+	WorkspaceTelegramQuestionMessages  string
+	WorkspaceTelegramTurns             string
+	WorkspaceTelegramUpdates           string
 	WorkspaceWorkflowStates            string
 	Workspaces                         string
 }{
@@ -229,6 +236,13 @@ var TableNames = struct {
 	WorkspaceTeamSCMSettings:           "workspace_team_scm_settings",
 	WorkspaceTeamTriageSettings:        "workspace_team_triage_settings",
 	WorkspaceTeams:                     "workspace_teams",
+	WorkspaceTelegramAccounts:          "workspace_telegram_accounts",
+	WorkspaceTelegramBots:              "workspace_telegram_bots",
+	WorkspaceTelegramGroups:            "workspace_telegram_groups",
+	WorkspaceTelegramLinkCodes:         "workspace_telegram_link_codes",
+	WorkspaceTelegramQuestionMessages:  "workspace_telegram_question_messages",
+	WorkspaceTelegramTurns:             "workspace_telegram_turns",
+	WorkspaceTelegramUpdates:           "workspace_telegram_updates",
 	WorkspaceWorkflowStates:            "workspace_workflow_states",
 	Workspaces:                         "workspaces",
 }

@@ -252,6 +252,10 @@ var AccountRels = struct {
 	WorkspaceSCMIdentities                              string
 	WorkspaceSsoIdentities                              string
 	EnabledByAccountWorkspaceTeamIntakeAddresses        string
+	WorkspaceTelegramAccounts                           string
+	ConnectedByAccountWorkspaceTelegramBots             string
+	BoundByAccountWorkspaceTelegramGroups               string
+	WorkspaceTelegramLinkCodes                          string
 }{
 	WorkspaceAgent:                  "WorkspaceAgent",
 	AccountEmailChanges:             "AccountEmailChanges",
@@ -304,6 +308,10 @@ var AccountRels = struct {
 	WorkspaceSCMIdentities:                              "WorkspaceSCMIdentities",
 	WorkspaceSsoIdentities:                              "WorkspaceSsoIdentities",
 	EnabledByAccountWorkspaceTeamIntakeAddresses:        "EnabledByAccountWorkspaceTeamIntakeAddresses",
+	WorkspaceTelegramAccounts:                           "WorkspaceTelegramAccounts",
+	ConnectedByAccountWorkspaceTelegramBots:             "ConnectedByAccountWorkspaceTelegramBots",
+	BoundByAccountWorkspaceTelegramGroups:               "BoundByAccountWorkspaceTelegramGroups",
+	WorkspaceTelegramLinkCodes:                          "WorkspaceTelegramLinkCodes",
 }
 
 // accountR is where relationships are stored.
@@ -359,6 +367,10 @@ type accountR struct {
 	WorkspaceSCMIdentities                              WorkspaceSCMIdentitySlice              `boil:"WorkspaceSCMIdentities" json:"WorkspaceSCMIdentities" toml:"WorkspaceSCMIdentities" yaml:"WorkspaceSCMIdentities"`
 	WorkspaceSsoIdentities                              WorkspaceSsoIdentitySlice              `boil:"WorkspaceSsoIdentities" json:"WorkspaceSsoIdentities" toml:"WorkspaceSsoIdentities" yaml:"WorkspaceSsoIdentities"`
 	EnabledByAccountWorkspaceTeamIntakeAddresses        WorkspaceTeamIntakeAddressSlice        `boil:"EnabledByAccountWorkspaceTeamIntakeAddresses" json:"EnabledByAccountWorkspaceTeamIntakeAddresses" toml:"EnabledByAccountWorkspaceTeamIntakeAddresses" yaml:"EnabledByAccountWorkspaceTeamIntakeAddresses"`
+	WorkspaceTelegramAccounts                           WorkspaceTelegramAccountSlice          `boil:"WorkspaceTelegramAccounts" json:"WorkspaceTelegramAccounts" toml:"WorkspaceTelegramAccounts" yaml:"WorkspaceTelegramAccounts"`
+	ConnectedByAccountWorkspaceTelegramBots             WorkspaceTelegramBotSlice              `boil:"ConnectedByAccountWorkspaceTelegramBots" json:"ConnectedByAccountWorkspaceTelegramBots" toml:"ConnectedByAccountWorkspaceTelegramBots" yaml:"ConnectedByAccountWorkspaceTelegramBots"`
+	BoundByAccountWorkspaceTelegramGroups               WorkspaceTelegramGroupSlice            `boil:"BoundByAccountWorkspaceTelegramGroups" json:"BoundByAccountWorkspaceTelegramGroups" toml:"BoundByAccountWorkspaceTelegramGroups" yaml:"BoundByAccountWorkspaceTelegramGroups"`
+	WorkspaceTelegramLinkCodes                          WorkspaceTelegramLinkCodeSlice         `boil:"WorkspaceTelegramLinkCodes" json:"WorkspaceTelegramLinkCodes" toml:"WorkspaceTelegramLinkCodes" yaml:"WorkspaceTelegramLinkCodes"`
 }
 
 // NewStruct creates a new relationship struct
@@ -1180,6 +1192,70 @@ func (r *accountR) GetEnabledByAccountWorkspaceTeamIntakeAddresses() WorkspaceTe
 	}
 
 	return r.EnabledByAccountWorkspaceTeamIntakeAddresses
+}
+
+func (o *Account) GetWorkspaceTelegramAccounts() WorkspaceTelegramAccountSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceTelegramAccounts()
+}
+
+func (r *accountR) GetWorkspaceTelegramAccounts() WorkspaceTelegramAccountSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceTelegramAccounts
+}
+
+func (o *Account) GetConnectedByAccountWorkspaceTelegramBots() WorkspaceTelegramBotSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetConnectedByAccountWorkspaceTelegramBots()
+}
+
+func (r *accountR) GetConnectedByAccountWorkspaceTelegramBots() WorkspaceTelegramBotSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ConnectedByAccountWorkspaceTelegramBots
+}
+
+func (o *Account) GetBoundByAccountWorkspaceTelegramGroups() WorkspaceTelegramGroupSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetBoundByAccountWorkspaceTelegramGroups()
+}
+
+func (r *accountR) GetBoundByAccountWorkspaceTelegramGroups() WorkspaceTelegramGroupSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.BoundByAccountWorkspaceTelegramGroups
+}
+
+func (o *Account) GetWorkspaceTelegramLinkCodes() WorkspaceTelegramLinkCodeSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceTelegramLinkCodes()
+}
+
+func (r *accountR) GetWorkspaceTelegramLinkCodes() WorkspaceTelegramLinkCodeSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceTelegramLinkCodes
 }
 
 // accountL is where Load methods for each relationship are stored.
@@ -2207,6 +2283,62 @@ func (o *Account) EnabledByAccountWorkspaceTeamIntakeAddresses(mods ...qm.QueryM
 	)
 
 	return WorkspaceTeamIntakeAddresses(queryMods...)
+}
+
+// WorkspaceTelegramAccounts retrieves all the workspace_telegram_account's WorkspaceTelegramAccounts with an executor.
+func (o *Account) WorkspaceTelegramAccounts(mods ...qm.QueryMod) workspaceTelegramAccountQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_telegram_accounts\".\"account_id\"=?", o.ID),
+	)
+
+	return WorkspaceTelegramAccounts(queryMods...)
+}
+
+// ConnectedByAccountWorkspaceTelegramBots retrieves all the workspace_telegram_bot's WorkspaceTelegramBots with an executor via connected_by_account_id column.
+func (o *Account) ConnectedByAccountWorkspaceTelegramBots(mods ...qm.QueryMod) workspaceTelegramBotQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_telegram_bots\".\"connected_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceTelegramBots(queryMods...)
+}
+
+// BoundByAccountWorkspaceTelegramGroups retrieves all the workspace_telegram_group's WorkspaceTelegramGroups with an executor via bound_by_account_id column.
+func (o *Account) BoundByAccountWorkspaceTelegramGroups(mods ...qm.QueryMod) workspaceTelegramGroupQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_telegram_groups\".\"bound_by_account_id\"=?", o.ID),
+	)
+
+	return WorkspaceTelegramGroups(queryMods...)
+}
+
+// WorkspaceTelegramLinkCodes retrieves all the workspace_telegram_link_code's WorkspaceTelegramLinkCodes with an executor.
+func (o *Account) WorkspaceTelegramLinkCodes(mods ...qm.QueryMod) workspaceTelegramLinkCodeQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_telegram_link_codes\".\"account_id\"=?", o.ID),
+	)
+
+	return WorkspaceTelegramLinkCodes(queryMods...)
 }
 
 // LoadWorkspaceAgent allows an eager lookup of values, cached into the
@@ -7976,6 +8108,458 @@ func (accountL) LoadEnabledByAccountWorkspaceTeamIntakeAddresses(ctx context.Con
 	return nil
 }
 
+// LoadWorkspaceTelegramAccounts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadWorkspaceTelegramAccounts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_telegram_accounts`),
+		qm.WhereIn(`workspace_telegram_accounts.account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_telegram_accounts")
+	}
+
+	var resultSlice []*WorkspaceTelegramAccount
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_accounts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_accounts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_accounts")
+	}
+
+	if len(workspaceTelegramAccountAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceTelegramAccounts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceTelegramAccountR{}
+			}
+			foreign.R.Account = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AccountID {
+				local.R.WorkspaceTelegramAccounts = append(local.R.WorkspaceTelegramAccounts, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceTelegramAccountR{}
+				}
+				foreign.R.Account = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadConnectedByAccountWorkspaceTelegramBots allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadConnectedByAccountWorkspaceTelegramBots(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_telegram_bots`),
+		qm.WhereIn(`workspace_telegram_bots.connected_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_telegram_bots")
+	}
+
+	var resultSlice []*WorkspaceTelegramBot
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_bots")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_bots")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_bots")
+	}
+
+	if len(workspaceTelegramBotAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ConnectedByAccountWorkspaceTelegramBots = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceTelegramBotR{}
+			}
+			foreign.R.ConnectedByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ConnectedByAccountID) {
+				local.R.ConnectedByAccountWorkspaceTelegramBots = append(local.R.ConnectedByAccountWorkspaceTelegramBots, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceTelegramBotR{}
+				}
+				foreign.R.ConnectedByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadBoundByAccountWorkspaceTelegramGroups allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadBoundByAccountWorkspaceTelegramGroups(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_telegram_groups`),
+		qm.WhereIn(`workspace_telegram_groups.bound_by_account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_telegram_groups")
+	}
+
+	var resultSlice []*WorkspaceTelegramGroup
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_groups")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_groups")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_groups")
+	}
+
+	if len(workspaceTelegramGroupAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.BoundByAccountWorkspaceTelegramGroups = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceTelegramGroupR{}
+			}
+			foreign.R.BoundByAccount = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.BoundByAccountID) {
+				local.R.BoundByAccountWorkspaceTelegramGroups = append(local.R.BoundByAccountWorkspaceTelegramGroups, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceTelegramGroupR{}
+				}
+				foreign.R.BoundByAccount = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceTelegramLinkCodes allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (accountL) LoadWorkspaceTelegramLinkCodes(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAccount any, mods queries.Applicator) error {
+	var slice []*Account
+	var object *Account
+
+	if singular {
+		var ok bool
+		object, ok = maybeAccount.(*Account)
+		if !ok {
+			object = new(Account)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAccount))
+			}
+		}
+	} else {
+		s, ok := maybeAccount.(*[]*Account)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAccount)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAccount))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &accountR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &accountR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_telegram_link_codes`),
+		qm.WhereIn(`workspace_telegram_link_codes.account_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_telegram_link_codes")
+	}
+
+	var resultSlice []*WorkspaceTelegramLinkCode
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_link_codes")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_link_codes")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_link_codes")
+	}
+
+	if len(workspaceTelegramLinkCodeAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceTelegramLinkCodes = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceTelegramLinkCodeR{}
+			}
+			foreign.R.Account = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.AccountID {
+				local.R.WorkspaceTelegramLinkCodes = append(local.R.WorkspaceTelegramLinkCodes, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceTelegramLinkCodeR{}
+				}
+				foreign.R.Account = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetWorkspaceAgent of the account to the related item.
 // Sets o.R.WorkspaceAgent to related.
 // Adds o to related.R.Account.
@@ -13041,6 +13625,366 @@ func (o *Account) RemoveEnabledByAccountWorkspaceTeamIntakeAddresses(ctx context
 		}
 	}
 
+	return nil
+}
+
+// AddWorkspaceTelegramAccounts adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceTelegramAccounts.
+// Sets related.R.Account appropriately.
+func (o *Account) AddWorkspaceTelegramAccounts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramAccount) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_telegram_accounts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramAccountPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.BotID, rel.AccountID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			WorkspaceTelegramAccounts: related,
+		}
+	} else {
+		o.R.WorkspaceTelegramAccounts = append(o.R.WorkspaceTelegramAccounts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceTelegramAccountR{
+				Account: o,
+			}
+		} else {
+			rel.R.Account = o
+		}
+	}
+	return nil
+}
+
+// AddConnectedByAccountWorkspaceTelegramBots adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.ConnectedByAccountWorkspaceTelegramBots.
+// Sets related.R.ConnectedByAccount appropriately.
+func (o *Account) AddConnectedByAccountWorkspaceTelegramBots(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramBot) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ConnectedByAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_telegram_bots\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"connected_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramBotPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ConnectedByAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			ConnectedByAccountWorkspaceTelegramBots: related,
+		}
+	} else {
+		o.R.ConnectedByAccountWorkspaceTelegramBots = append(o.R.ConnectedByAccountWorkspaceTelegramBots, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceTelegramBotR{
+				ConnectedByAccount: o,
+			}
+		} else {
+			rel.R.ConnectedByAccount = o
+		}
+	}
+	return nil
+}
+
+// SetConnectedByAccountWorkspaceTelegramBots removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.ConnectedByAccount's ConnectedByAccountWorkspaceTelegramBots accordingly.
+// Replaces o.R.ConnectedByAccountWorkspaceTelegramBots with related.
+// Sets related.R.ConnectedByAccount's ConnectedByAccountWorkspaceTelegramBots accordingly.
+func (o *Account) SetConnectedByAccountWorkspaceTelegramBots(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramBot) error {
+	query := "update \"workspace_telegram_bots\" set \"connected_by_account_id\" = null where \"connected_by_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ConnectedByAccountWorkspaceTelegramBots {
+			queries.SetScanner(&rel.ConnectedByAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.ConnectedByAccount = nil
+		}
+		o.R.ConnectedByAccountWorkspaceTelegramBots = nil
+	}
+
+	return o.AddConnectedByAccountWorkspaceTelegramBots(ctx, exec, insert, related...)
+}
+
+// RemoveConnectedByAccountWorkspaceTelegramBots relationships from objects passed in.
+// Removes related items from R.ConnectedByAccountWorkspaceTelegramBots (uses pointer comparison, removal does not keep order)
+// Sets related.R.ConnectedByAccount.
+func (o *Account) RemoveConnectedByAccountWorkspaceTelegramBots(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceTelegramBot) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ConnectedByAccountID, nil)
+		if rel.R != nil {
+			rel.R.ConnectedByAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("connected_by_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ConnectedByAccountWorkspaceTelegramBots {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ConnectedByAccountWorkspaceTelegramBots)
+			if ln > 1 && i < ln-1 {
+				o.R.ConnectedByAccountWorkspaceTelegramBots[i] = o.R.ConnectedByAccountWorkspaceTelegramBots[ln-1]
+			}
+			o.R.ConnectedByAccountWorkspaceTelegramBots = o.R.ConnectedByAccountWorkspaceTelegramBots[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddBoundByAccountWorkspaceTelegramGroups adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.BoundByAccountWorkspaceTelegramGroups.
+// Sets related.R.BoundByAccount appropriately.
+func (o *Account) AddBoundByAccountWorkspaceTelegramGroups(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramGroup) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.BoundByAccountID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_telegram_groups\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"bound_by_account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramGroupPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.BoundByAccountID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			BoundByAccountWorkspaceTelegramGroups: related,
+		}
+	} else {
+		o.R.BoundByAccountWorkspaceTelegramGroups = append(o.R.BoundByAccountWorkspaceTelegramGroups, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceTelegramGroupR{
+				BoundByAccount: o,
+			}
+		} else {
+			rel.R.BoundByAccount = o
+		}
+	}
+	return nil
+}
+
+// SetBoundByAccountWorkspaceTelegramGroups removes all previously related items of the
+// account replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.BoundByAccount's BoundByAccountWorkspaceTelegramGroups accordingly.
+// Replaces o.R.BoundByAccountWorkspaceTelegramGroups with related.
+// Sets related.R.BoundByAccount's BoundByAccountWorkspaceTelegramGroups accordingly.
+func (o *Account) SetBoundByAccountWorkspaceTelegramGroups(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramGroup) error {
+	query := "update \"workspace_telegram_groups\" set \"bound_by_account_id\" = null where \"bound_by_account_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.BoundByAccountWorkspaceTelegramGroups {
+			queries.SetScanner(&rel.BoundByAccountID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.BoundByAccount = nil
+		}
+		o.R.BoundByAccountWorkspaceTelegramGroups = nil
+	}
+
+	return o.AddBoundByAccountWorkspaceTelegramGroups(ctx, exec, insert, related...)
+}
+
+// RemoveBoundByAccountWorkspaceTelegramGroups relationships from objects passed in.
+// Removes related items from R.BoundByAccountWorkspaceTelegramGroups (uses pointer comparison, removal does not keep order)
+// Sets related.R.BoundByAccount.
+func (o *Account) RemoveBoundByAccountWorkspaceTelegramGroups(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceTelegramGroup) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.BoundByAccountID, nil)
+		if rel.R != nil {
+			rel.R.BoundByAccount = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("bound_by_account_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.BoundByAccountWorkspaceTelegramGroups {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.BoundByAccountWorkspaceTelegramGroups)
+			if ln > 1 && i < ln-1 {
+				o.R.BoundByAccountWorkspaceTelegramGroups[i] = o.R.BoundByAccountWorkspaceTelegramGroups[ln-1]
+			}
+			o.R.BoundByAccountWorkspaceTelegramGroups = o.R.BoundByAccountWorkspaceTelegramGroups[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddWorkspaceTelegramLinkCodes adds the given related objects to the existing relationships
+// of the account, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceTelegramLinkCodes.
+// Sets related.R.Account appropriately.
+func (o *Account) AddWorkspaceTelegramLinkCodes(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramLinkCode) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.AccountID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_telegram_link_codes\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"account_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramLinkCodePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.CodeHash}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.AccountID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &accountR{
+			WorkspaceTelegramLinkCodes: related,
+		}
+	} else {
+		o.R.WorkspaceTelegramLinkCodes = append(o.R.WorkspaceTelegramLinkCodes, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceTelegramLinkCodeR{
+				Account: o,
+			}
+		} else {
+			rel.R.Account = o
+		}
+	}
 	return nil
 }
 

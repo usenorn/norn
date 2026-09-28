@@ -21,6 +21,7 @@
 	import AgentIcon from "$lib/agents/agent-icon.svelte";
 	import AgentInstructionsForm from "$lib/agents/agent-instructions-form.svelte";
 	import AgentScopeForm from "$lib/agents/agent-scope-form.svelte";
+	import AgentTelegramPanel from "$lib/agents/agent-telegram-panel.svelte";
 	import AgentTestConversation from "$lib/agents/agent-test-conversation.svelte";
 	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import { api } from "$lib/api";
@@ -52,6 +53,7 @@
 	} from "$lib/agents/agent-record";
 	import { runnersPath } from "$lib/runners/runners";
 	import type { ActivityFeed } from "$lib/activity/activity";
+	import type { TelegramPanel } from "$lib/agents/telegram";
 	import { agentRecordPreviewStates, type AgentDetailTab } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -85,6 +87,7 @@
 	const activity = $derived<ActivityFeed>(loadedActivity ?? preview?.activity ?? data.activity);
 	const capabilities = $derived<AgentCapabilities>(preview?.capabilities ?? data.capabilities);
 	const library = $derived<AgentLibraryListing>(preview?.library ?? data.library);
+	const telegram = $derived<TelegramPanel>(preview?.telegram ?? data.telegram);
 	const outcome = $derived(preview?.outcome ?? connectOutcome(page.url));
 	const selfHosted = $derived(deploymentPreview(page.url)?.selfHosted ?? data.selfHosted);
 	const administrator = $derived(
@@ -132,6 +135,8 @@
 	});
 
 	function openingTab(url: URL): AgentDetailTab {
+		if (url.searchParams.get("tab") === "telegram") return "telegram";
+
 		return url.searchParams.get("tab") === "capabilities" || url.searchParams.has("connection")
 			? "capabilities"
 			: "overview";
@@ -542,6 +547,7 @@
 						<Tabs.Trigger value="overview" class="flex-none">Overview</Tabs.Trigger>
 						<Tabs.Trigger value="execution" class="flex-none">Execution</Tabs.Trigger>
 						<Tabs.Trigger value="capabilities" class="flex-none">Capabilities</Tabs.Trigger>
+						<Tabs.Trigger value="telegram" class="flex-none">Telegram</Tabs.Trigger>
 						<Tabs.Trigger value="scope" class="flex-none">Scope</Tabs.Trigger>
 						<Tabs.Trigger value="instructions" class="flex-none">Instructions</Tabs.Trigger>
 						<Tabs.Trigger value="activity" class="flex-none">Activity</Tabs.Trigger>
@@ -692,6 +698,23 @@
 								dialog={preview?.dialog}
 							/>
 						</div>
+					</Tabs.Content>
+
+					<Tabs.Content value="telegram" class="pt-5">
+						{#key preview?.telegramOutcome ?? agent.agent.id}
+							<AgentTelegramPanel
+								workspace={{ id: workspace.id, slug: workspace.slug }}
+								agentId={agent.agent.id}
+								agentName={agent.agent.name}
+								hosted={agent.agent.execution === "hosted"}
+								active={agent.agent.status === "active"}
+								panel={telegram}
+								connectForm={data.telegramForm}
+								{selfHosted}
+								timezone={workspace.timezone}
+								opened={preview?.telegramOutcome}
+							/>
+						{/key}
 					</Tabs.Content>
 
 					<Tabs.Content value="scope" class="pt-5">

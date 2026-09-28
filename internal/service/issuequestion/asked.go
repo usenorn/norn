@@ -123,6 +123,8 @@ func (s *questionsService) SweepExpired(ctx context.Context) error {
 			return err
 		}
 
+		s.relay(ctx, settled)
+
 		if !settled.Blocking || settled.ExecutionID == "" {
 			continue
 		}

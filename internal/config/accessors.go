@@ -60,6 +60,8 @@ func NewOpenAI(cfg Config) OpenAI { return cfg.OpenAI }
 
 func NewAgentHosting(cfg Config) AgentHosting { return cfg.AgentHosting }
 
+func NewTelegram(cfg Config) Telegram { return cfg.Telegram }
+
 func NewAgentTooling(cfg Config) AgentTooling { return cfg.AgentTooling }
 
 func NewSourceControl(cfg Config) SourceControl { return cfg.SourceControl }

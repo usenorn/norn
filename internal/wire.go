@@ -20,6 +20,7 @@ import (
 	scimedge "github.com/usenorn/norn/internal/handler/http/scim"
 	sourcecontroledge "github.com/usenorn/norn/internal/handler/http/sourcecontrol"
 	ssohandler "github.com/usenorn/norn/internal/handler/http/sso"
+	telegramedge "github.com/usenorn/norn/internal/handler/http/telegram"
 	dashboardhandler "github.com/usenorn/norn/internal/handler/http/v1/dashboard"
 	"github.com/usenorn/norn/internal/handler/job"
 	mcpserveredge "github.com/usenorn/norn/internal/handler/mcpserver"
@@ -38,6 +39,7 @@ import (
 	samlproviderpkg "github.com/usenorn/norn/internal/pkg/samlprovider"
 	"github.com/usenorn/norn/internal/pkg/smtp"
 	"github.com/usenorn/norn/internal/pkg/taskqueue"
+	"github.com/usenorn/norn/internal/pkg/telegram"
 	"github.com/usenorn/norn/internal/pkg/toolingclient"
 	"github.com/usenorn/norn/internal/pkg/valkey"
 	"github.com/usenorn/norn/internal/repository"
@@ -127,6 +129,11 @@ import (
 	ssoidentityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	teammemberrepo "github.com/usenorn/norn/internal/repository/teammember"
+	telegramaudiencerepo "github.com/usenorn/norn/internal/repository/telegramaudience"
+	telegrambotrepo "github.com/usenorn/norn/internal/repository/telegrambot"
+	telegramconversationrepo "github.com/usenorn/norn/internal/repository/telegramconversation"
+	telegrammessengerrepo "github.com/usenorn/norn/internal/repository/telegrammessenger"
+	telegramupdaterepo "github.com/usenorn/norn/internal/repository/telegramupdate"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	tunnelrepo "github.com/usenorn/norn/internal/repository/tunnel"
 	webhookrepo "github.com/usenorn/norn/internal/repository/webhook"
@@ -185,6 +192,7 @@ import (
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
+	telegrambotsvc "github.com/usenorn/norn/internal/service/telegrambot"
 	triagesvc "github.com/usenorn/norn/internal/service/triage"
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
@@ -206,6 +214,7 @@ var baseSet = wire.NewSet(
 	licencepkg.Set,
 	lineargraph.Set,
 	openai.Set,
+	telegram.Set,
 	toolingclient.Set,
 	forge.Set,
 	outbound.Set,
@@ -293,6 +302,11 @@ var baseSet = wire.NewSet(
 	oidcproviderrepo.Set,
 	aimodelrepo.Set,
 	aiproviderrepo.Set,
+	telegrambotrepo.Set,
+	telegramaudiencerepo.Set,
+	telegramconversationrepo.Set,
+	telegramupdaterepo.Set,
+	telegrammessengerrepo.Set,
 	agentskillrepo.Set,
 	agentmcpserverrepo.Set,
 	agentmcpconnectionrepo.Set,
@@ -350,6 +364,7 @@ var baseSet = wire.NewSet(
 	ssoconnectionsvc.Set,
 	aiprovidersvc.Set,
 	hostedagentsvc.Set,
+	telegrambotsvc.Set,
 	agentcapabilitysvc.Set,
 	auditsvc.Set,
 	licensingsvc.Set,
@@ -372,6 +387,7 @@ var baseSet = wire.NewSet(
 	scimedge.Set,
 	sourcecontroledge.Set,
 	inboundmailedge.Set,
+	telegramedge.Set,
 	mcpserveredge.Set,
 	router.Set,
 	job.Set,

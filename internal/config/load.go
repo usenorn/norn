@@ -172,6 +172,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateTelegram(cfg.Telegram); err != nil {
+		return err
+	}
+
 	if err := validateAgentTooling(cfg.AgentTooling); err != nil {
 		return err
 	}
@@ -604,6 +608,53 @@ func validateAgentHosting(cfg AgentHosting, server HTTP) error {
 	return nil
 }
 
+func validateTelegram(cfg Telegram) error {
+	if strings.TrimSpace(cfg.Endpoint) == "" {
+		return fmt.Errorf(
+			"telegram.endpoint is required; it is where an agent's bot token is verified and " +
+				"its messages are sent, and it is settable so an instance can be pointed at a test double",
+		)
+	}
+
+	if cfg.RequestTimeout <= 0 {
+		return fmt.Errorf("telegram.request_timeout (%s) must be positive", cfg.RequestTimeout)
+	}
+
+	if cfg.DialTimeout <= 0 {
+		return fmt.Errorf("telegram.dial_timeout (%s) must be positive", cfg.DialTimeout)
+	}
+
+	if cfg.MaxResponseSize < 64<<10 {
+		return fmt.Errorf("telegram.max_response_size (%d) must be at least 65536", cfg.MaxResponseSize)
+	}
+
+	if cfg.MaxUpdateBytes < 64<<10 {
+		return fmt.Errorf(
+			"telegram.max_update_bytes (%d) must be at least 65536; a single update carrying a "+
+				"long message and its entities is refused otherwise, and Telegram retries it for a day",
+			cfg.MaxUpdateBytes,
+		)
+	}
+
+	if cfg.LinkTTL <= 0 {
+		return fmt.Errorf("telegram.link_ttl (%s) must be positive", cfg.LinkTTL)
+	}
+
+	if cfg.HistoryTurns <= 0 {
+		return fmt.Errorf("telegram.history_turns (%d) must be positive", cfg.HistoryTurns)
+	}
+
+	if cfg.UpdateRetention <= 0 {
+		return fmt.Errorf("telegram.update_retention (%s) must be positive", cfg.UpdateRetention)
+	}
+
+	if strings.TrimSpace(cfg.SweepSchedule) == "" {
+		return fmt.Errorf("telegram.sweep_schedule is required")
+	}
+
+	return nil
+}
+
 func validateLinear(cfg Linear) error {
 	if strings.TrimSpace(cfg.Endpoint) == "" {
 		return fmt.Errorf(
@@ -1011,6 +1062,16 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("agent_hosting.max_output_tokens", 2048)
 	v.SetDefault("agent_hosting.max_total_tokens", 60000)
 	v.SetDefault("agent_hosting.max_tool_result_bytes", 32<<10)
+
+	v.SetDefault("telegram.endpoint", "https://api.telegram.org")
+	v.SetDefault("telegram.request_timeout", 10*time.Second)
+	v.SetDefault("telegram.dial_timeout", 5*time.Second)
+	v.SetDefault("telegram.max_response_size", int64(1<<20))
+	v.SetDefault("telegram.max_update_bytes", int64(256<<10))
+	v.SetDefault("telegram.link_ttl", 15*time.Minute)
+	v.SetDefault("telegram.history_turns", 20)
+	v.SetDefault("telegram.update_retention", 7*24*time.Hour)
+	v.SetDefault("telegram.sweep_schedule", "23 * * * *")
 
 	v.SetDefault("agent_tooling.github_endpoint", "https://api.github.com")
 	v.SetDefault("agent_tooling.github_raw_endpoint", "https://raw.githubusercontent.com")

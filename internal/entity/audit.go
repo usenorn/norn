@@ -72,16 +72,20 @@ const (
 	AuditAgentRescoped     AuditAction = "agent.scope_changed"
 	AuditAgentExecution    AuditAction = "agent.execution_changed"
 
-	AuditAgentSkillAdded         AuditAction = "agent.skill_added"
-	AuditAgentSkillUpdated       AuditAction = "agent.skill_updated"
-	AuditAgentSkillRemoved       AuditAction = "agent.skill_removed"
-	AuditAgentMCPServerAdded     AuditAction = "agent.mcp_server_added"
-	AuditAgentMCPServerUpdated   AuditAction = "agent.mcp_server_updated"
-	AuditAgentMCPServerRemoved   AuditAction = "agent.mcp_server_removed"
-	AuditAgentMCPConnected       AuditAction = "agent.mcp_connected"
-	AuditAgentMCPDisconnected    AuditAction = "agent.mcp_disconnected"
-	AuditAgentCapabilityAttached AuditAction = "agent.capability_attached"
-	AuditAgentCapabilityDetached AuditAction = "agent.capability_detached"
+	AuditAgentSkillAdded           AuditAction = "agent.skill_added"
+	AuditAgentSkillUpdated         AuditAction = "agent.skill_updated"
+	AuditAgentSkillRemoved         AuditAction = "agent.skill_removed"
+	AuditAgentMCPServerAdded       AuditAction = "agent.mcp_server_added"
+	AuditAgentMCPServerUpdated     AuditAction = "agent.mcp_server_updated"
+	AuditAgentMCPServerRemoved     AuditAction = "agent.mcp_server_removed"
+	AuditAgentMCPConnected         AuditAction = "agent.mcp_connected"
+	AuditAgentMCPDisconnected      AuditAction = "agent.mcp_disconnected"
+	AuditAgentCapabilityAttached   AuditAction = "agent.capability_attached"
+	AuditAgentCapabilityDetached   AuditAction = "agent.capability_detached"
+	AuditAgentTelegramConnected    AuditAction = "agent.telegram_connected"
+	AuditAgentTelegramDisconnected AuditAction = "agent.telegram_disconnected"
+	AuditAgentTelegramGroupBound   AuditAction = "agent.telegram_group_bound"
+	AuditAgentTelegramGroupUnbound AuditAction = "agent.telegram_group_unbound"
 
 	AuditCodebaseConnected    AuditAction = "codebase.connected"
 	AuditCodebaseDisconnected AuditAction = "codebase.disconnected"
@@ -142,6 +146,8 @@ func AuditActions() []AuditAction {
 		AuditAgentMCPServerAdded, AuditAgentMCPServerUpdated, AuditAgentMCPServerRemoved,
 		AuditAgentMCPConnected, AuditAgentMCPDisconnected,
 		AuditAgentCapabilityAttached, AuditAgentCapabilityDetached,
+		AuditAgentTelegramConnected, AuditAgentTelegramDisconnected,
+		AuditAgentTelegramGroupBound, AuditAgentTelegramGroupUnbound,
 		AuditRunnerEnrolled, AuditRunnerRevoked, AuditRunnerPaused, AuditRunnerResumed,
 		AuditCodebaseConnected, AuditCodebaseDisconnected,
 		AuditExecutionCancelled, AuditExecutionApproved, AuditExecutionResumed,

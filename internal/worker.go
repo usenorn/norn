@@ -30,6 +30,7 @@ type Worker struct {
 	sourceControl config.SourceControl
 	executions    config.Executions
 	questions     config.Questions
+	telegram      config.Telegram
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	inspector     *taskqueue.Inspector
@@ -69,6 +70,10 @@ func NewServeMux(
 	executionUploadSweep *job.ExecutionUploadSweepHandler,
 	questionExpirySweep *job.QuestionExpirySweepHandler,
 	intakeDelivery *job.IntakeDeliveryHandler,
+	telegramUpdate *job.TelegramUpdateHandler,
+	telegramQuestion *job.TelegramQuestionHandler,
+	telegramSettlement *job.TelegramSettlementHandler,
+	telegramSweep *job.TelegramSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -102,6 +107,10 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeExecutionUploadSweep, executionUploadSweep)
 	mux.Handle(entity.TaskTypeQuestionExpirySweep, questionExpirySweep)
 	mux.Handle(entity.TaskTypeIntakeDelivery, intakeDelivery)
+	mux.Handle(entity.TaskTypeTelegramUpdate, telegramUpdate)
+	mux.Handle(entity.TaskTypeTelegramQuestion, telegramQuestion)
+	mux.Handle(entity.TaskTypeTelegramSettlement, telegramSettlement)
+	mux.Handle(entity.TaskTypeTelegramSweep, telegramSweep)
 
 	return mux
 }
@@ -119,6 +128,7 @@ func NewWorker(
 	sourceControl config.SourceControl,
 	executions config.Executions,
 	questions config.Questions,
+	telegram config.Telegram,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	inspector *taskqueue.Inspector,
@@ -138,6 +148,7 @@ func NewWorker(
 		sourceControl: sourceControl,
 		executions:    executions,
 		questions:     questions,
+		telegram:      telegram,
 		server:        server,
 		scheduler:     scheduler,
 		inspector:     inspector,
@@ -219,6 +230,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register question expiry sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.telegram.SweepSchedule,
+		asynq.NewTask(entity.TaskTypeTelegramSweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register telegram update sweep: %w", err)
 	}
 
 	if _, err := w.scheduler.Register(

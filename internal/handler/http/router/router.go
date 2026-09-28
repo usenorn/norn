@@ -19,6 +19,7 @@ import (
 	"github.com/usenorn/norn/internal/handler/http/scim"
 	"github.com/usenorn/norn/internal/handler/http/sourcecontrol"
 	"github.com/usenorn/norn/internal/handler/http/sso"
+	"github.com/usenorn/norn/internal/handler/http/telegram"
 	"github.com/usenorn/norn/internal/handler/mcpserver"
 	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/repository"
@@ -47,6 +48,7 @@ func New(
 	auditEdge *auditexport.Edge,
 	scimEdge *scim.Edge,
 	inboundMailEdge *inboundmail.Edge,
+	telegramEdge *telegram.Edge,
 	sourceControlEdge *sourcecontrol.Edge,
 	sourceControlApps *sourcecontrol.AppEdge,
 	mcpEdge *mcpserver.Edge,
@@ -82,6 +84,7 @@ func New(
 	deliveries.Post(sourcecontrol.DeliveryPath, sourceControlEdge.Deliver)
 	deliveries.Post(sourcecontrol.AppDeliveryPath, sourceControlEdge.DeliverToApp)
 	deliveries.Post(inboundmail.DeliveryPath, inboundMailEdge.Deliver)
+	deliveries.Post(telegram.UpdatePath, telegramEdge.Deliver)
 
 	transfers := base.With(chimiddleware.Timeout(attachmentCfg.TransferTimeout))
 	transfers.Put(blob.UploadPath, blobEdge.Receive)

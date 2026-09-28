@@ -12,4 +12,5 @@ import (
 
 type HostedAgents interface {
 	Converse(ctx context.Context, workspaceID, agentID uuid.UUID, turns []entity.AgentTurn) (entity.AgentReply, error)
+	Chat(ctx context.Context, workspaceID, agentID uuid.UUID, turns []entity.AgentTurn) (entity.AgentReply, error)
 }

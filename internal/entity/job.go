@@ -39,6 +39,10 @@ const (
 	TaskTypeExecutionUploadSweep    = "execution:upload_sweep"
 	TaskTypeQuestionExpirySweep     = "question:expiry_sweep"
 	TaskTypeIntakeDelivery          = "intake:delivery"
+	TaskTypeTelegramUpdate          = "telegram:update"
+	TaskTypeTelegramQuestion        = "telegram:question"
+	TaskTypeTelegramSettlement      = "telegram:settlement"
+	TaskTypeTelegramSweep           = "telegram:retention_sweep"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
@@ -118,6 +122,15 @@ type SCMDeliveryPayload struct {
 
 type IntakeDeliveryPayload struct {
 	DeliveryID uuid.UUID
+}
+
+type TelegramUpdatePayload struct {
+	UpdateID uuid.UUID
+}
+
+type TelegramQuestionPayload struct {
+	WorkspaceID uuid.UUID
+	QuestionID  uuid.UUID
 }
 
 type SCMBackfillPayload struct {

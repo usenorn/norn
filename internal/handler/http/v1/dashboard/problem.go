@@ -1202,6 +1202,38 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrAIProviderNotConfigured):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
+	case errors.Is(err, entity.ErrTelegramBotNotFound),
+		errors.Is(err, entity.ErrTelegramGroupNotFound),
+		errors.Is(err, entity.ErrTelegramAccountNotLinked):
+		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrTelegramTokenRejected):
+		return telegramRefused(api.TelegramRefusalTokenRejected, err), true
+
+	case errors.Is(err, entity.ErrTelegramBotTaken):
+		return telegramRefused(api.TelegramRefusalBotTaken, err), true
+
+	case errors.Is(err, entity.ErrTelegramOriginInsecure):
+		return telegramRefused(api.TelegramRefusalOriginInsecure, err), true
+
+	case errors.Is(err, entity.ErrTelegramUnreachable), errors.Is(err, entity.ErrTelegramChatUnavailable):
+		return telegramRefused(api.TelegramRefusalUnreachable, err), true
+
+	case errors.Is(err, entity.ErrTelegramEncryptionKeyMissing):
+		base := baseProblem(http.StatusServiceUnavailable, err.Error())
+
+		return problemResponse{
+			status: http.StatusServiceUnavailable,
+			body: api.TelegramSealingUnavailableProblem{
+				Code:     api.TelegramSealingUnavailableProblemCodeTelegramSealingUnavailable,
+				Detail:   base.Detail,
+				Instance: base.Instance,
+				Status:   base.Status,
+				Title:    base.Title,
+				Type:     base.Type,
+			},
+		}, true
+
 	case errors.Is(err, entity.ErrAIProviderEncryptionKeyMissing):
 		base := baseProblem(http.StatusServiceUnavailable, err.Error())
 
@@ -1550,6 +1582,34 @@ func (r problemResponse) VisitListWorkspaceAiProviderModelsResponse(w http.Respo
 }
 
 func (r problemResponse) VisitTestWorkspaceAiProviderResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDisconnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnlinkWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnbindWorkspaceAgentTelegramGroupResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceTelegramBotsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
@@ -2694,6 +2754,22 @@ func (r problemResponse) VisitRevertWorkspaceImportResponse(w http.ResponseWrite
 
 func (r problemResponse) VisitGetWorkspaceImportReportResponse(w http.ResponseWriter) error {
 	return r.write(w)
+}
+
+func telegramRefused(code api.TelegramRefusal, err error) problemResponse {
+	base := baseProblem(http.StatusUnprocessableEntity, err.Error())
+
+	return problemResponse{
+		status: http.StatusUnprocessableEntity,
+		body: api.TelegramRefusedProblem{
+			Code:     code,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
 }
 
 func aiProviderRefused(failure entity.AIProviderFailure, err error) problemResponse {

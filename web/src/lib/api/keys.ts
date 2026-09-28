@@ -12,6 +12,8 @@ export const keys = {
 	agentCapabilities: (workspaceId: string, agentId: string) =>
 		`norn:agent-capabilities:${workspaceId}:${agentId}`,
 	agentLibrary: (workspaceId: string) => `norn:agent-library:${workspaceId}`,
+	agentTelegram: (workspaceId: string, agentId: string) => `norn:agent-telegram:${workspaceId}:${agentId}`,
+	telegramBots: (workspaceId: string) => `norn:telegram-bots:${workspaceId}`,
 	members: (workspaceId: string) => `norn:members:${workspaceId}`,
 	labels: (workspaceId: string) => `norn:labels:${workspaceId}`,
 	states: (workspaceId: string) => `norn:states:${workspaceId}`,

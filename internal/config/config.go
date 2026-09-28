@@ -31,6 +31,7 @@ type Config struct {
 	Linear        Linear        `mapstructure:"linear"`
 	OpenAI        OpenAI        `mapstructure:"openai"`
 	AgentHosting  AgentHosting  `mapstructure:"agent_hosting"`
+	Telegram      Telegram      `mapstructure:"telegram"`
 	AgentTooling  AgentTooling  `mapstructure:"agent_tooling"`
 	SourceControl SourceControl `mapstructure:"source_control"`
 	Intake        Intake        `mapstructure:"intake"`
@@ -405,6 +406,18 @@ type AgentHosting struct {
 	MaxOutputTokens    int           `mapstructure:"max_output_tokens"`
 	MaxTotalTokens     int           `mapstructure:"max_total_tokens"`
 	MaxToolResultBytes int           `mapstructure:"max_tool_result_bytes"`
+}
+
+type Telegram struct {
+	Endpoint        string        `mapstructure:"endpoint"`
+	RequestTimeout  time.Duration `mapstructure:"request_timeout"`
+	DialTimeout     time.Duration `mapstructure:"dial_timeout"`
+	MaxResponseSize int64         `mapstructure:"max_response_size"`
+	MaxUpdateBytes  int64         `mapstructure:"max_update_bytes"`
+	LinkTTL         time.Duration `mapstructure:"link_ttl"`
+	HistoryTurns    int           `mapstructure:"history_turns"`
+	UpdateRetention time.Duration `mapstructure:"update_retention"`
+	SweepSchedule   string        `mapstructure:"sweep_schedule"`
 }
 
 type AgentTooling struct {

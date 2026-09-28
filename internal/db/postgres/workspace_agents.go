@@ -154,6 +154,7 @@ var WorkspaceAgentRels = struct {
 	OwnerAccount                            string
 	Project                                 string
 	Workspace                               string
+	AgentWorkspaceTelegramBot               string
 	AgentWorkspaceAgentMCPServerAttachments string
 	AgentWorkspaceAgentMCPServers           string
 	AgentWorkspaceAgentProposals            string
@@ -167,6 +168,7 @@ var WorkspaceAgentRels = struct {
 	OwnerAccount:                            "OwnerAccount",
 	Project:                                 "Project",
 	Workspace:                               "Workspace",
+	AgentWorkspaceTelegramBot:               "AgentWorkspaceTelegramBot",
 	AgentWorkspaceAgentMCPServerAttachments: "AgentWorkspaceAgentMCPServerAttachments",
 	AgentWorkspaceAgentMCPServers:           "AgentWorkspaceAgentMCPServers",
 	AgentWorkspaceAgentProposals:            "AgentWorkspaceAgentProposals",
@@ -183,6 +185,7 @@ type workspaceAgentR struct {
 	OwnerAccount                            *Account                               `boil:"OwnerAccount" json:"OwnerAccount" toml:"OwnerAccount" yaml:"OwnerAccount"`
 	Project                                 *WorkspaceProject                      `boil:"Project" json:"Project" toml:"Project" yaml:"Project"`
 	Workspace                               *Workspace                             `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	AgentWorkspaceTelegramBot               *WorkspaceTelegramBot                  `boil:"AgentWorkspaceTelegramBot" json:"AgentWorkspaceTelegramBot" toml:"AgentWorkspaceTelegramBot" yaml:"AgentWorkspaceTelegramBot"`
 	AgentWorkspaceAgentMCPServerAttachments WorkspaceAgentMCPServerAttachmentSlice `boil:"AgentWorkspaceAgentMCPServerAttachments" json:"AgentWorkspaceAgentMCPServerAttachments" toml:"AgentWorkspaceAgentMCPServerAttachments" yaml:"AgentWorkspaceAgentMCPServerAttachments"`
 	AgentWorkspaceAgentMCPServers           WorkspaceAgentMCPServerSlice           `boil:"AgentWorkspaceAgentMCPServers" json:"AgentWorkspaceAgentMCPServers" toml:"AgentWorkspaceAgentMCPServers" yaml:"AgentWorkspaceAgentMCPServers"`
 	AgentWorkspaceAgentProposals            WorkspaceAgentProposalSlice            `boil:"AgentWorkspaceAgentProposals" json:"AgentWorkspaceAgentProposals" toml:"AgentWorkspaceAgentProposals" yaml:"AgentWorkspaceAgentProposals"`
@@ -260,6 +263,22 @@ func (r *workspaceAgentR) GetWorkspace() *Workspace {
 	}
 
 	return r.Workspace
+}
+
+func (o *WorkspaceAgent) GetAgentWorkspaceTelegramBot() *WorkspaceTelegramBot {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetAgentWorkspaceTelegramBot()
+}
+
+func (r *workspaceAgentR) GetAgentWorkspaceTelegramBot() *WorkspaceTelegramBot {
+	if r == nil {
+		return nil
+	}
+
+	return r.AgentWorkspaceTelegramBot
 }
 
 func (o *WorkspaceAgent) GetAgentWorkspaceAgentMCPServerAttachments() WorkspaceAgentMCPServerAttachmentSlice {
@@ -748,6 +767,17 @@ func (o *WorkspaceAgent) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	queryMods = append(queryMods, mods...)
 
 	return Workspaces(queryMods...)
+}
+
+// AgentWorkspaceTelegramBot pointed to by the foreign key.
+func (o *WorkspaceAgent) AgentWorkspaceTelegramBot(mods ...qm.QueryMod) workspaceTelegramBotQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"agent_id\" = ?", o.ID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceTelegramBots(queryMods...)
 }
 
 // AgentWorkspaceAgentMCPServerAttachments retrieves all the workspace_agent_mcp_server_attachment's WorkspaceAgentMCPServerAttachments with an executor via agent_id column.
@@ -1338,6 +1368,123 @@ func (workspaceAgentL) LoadWorkspace(ctx context.Context, e boil.ContextExecutor
 					foreign.R = &workspaceR{}
 				}
 				foreign.R.WorkspaceAgents = append(foreign.R.WorkspaceAgents, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadAgentWorkspaceTelegramBot allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-1 relationship.
+func (workspaceAgentL) LoadAgentWorkspaceTelegramBot(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceAgent any, mods queries.Applicator) error {
+	var slice []*WorkspaceAgent
+	var object *WorkspaceAgent
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceAgent.(*WorkspaceAgent)
+		if !ok {
+			object = new(WorkspaceAgent)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceAgent))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceAgent.(*[]*WorkspaceAgent)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceAgent)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceAgent))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceAgentR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceAgentR{}
+			}
+
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_telegram_bots`),
+		qm.WhereIn(`workspace_telegram_bots.agent_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceTelegramBot")
+	}
+
+	var resultSlice []*WorkspaceTelegramBot
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceTelegramBot")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_telegram_bots")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_bots")
+	}
+
+	if len(workspaceTelegramBotAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.AgentWorkspaceTelegramBot = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceTelegramBotR{}
+		}
+		foreign.R.Agent = object
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.ID == foreign.AgentID {
+				local.R.AgentWorkspaceTelegramBot = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceTelegramBotR{}
+				}
+				foreign.R.Agent = local
 				break
 			}
 		}
@@ -2468,6 +2615,56 @@ func (o *WorkspaceAgent) SetWorkspace(ctx context.Context, exec boil.ContextExec
 		related.R.WorkspaceAgents = append(related.R.WorkspaceAgents, o)
 	}
 
+	return nil
+}
+
+// SetAgentWorkspaceTelegramBot of the workspaceAgent to the related item.
+// Sets o.R.AgentWorkspaceTelegramBot to related.
+// Adds o to related.R.Agent.
+func (o *WorkspaceAgent) SetAgentWorkspaceTelegramBot(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceTelegramBot) error {
+	var err error
+
+	if insert {
+		related.AgentID = o.ID
+
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	} else {
+		updateQuery := fmt.Sprintf(
+			"UPDATE \"workspace_telegram_bots\" SET %s WHERE %s",
+			strmangle.SetParamNames("\"", "\"", 1, []string{"agent_id"}),
+			strmangle.WhereClause("\"", "\"", 2, workspaceTelegramBotPrimaryKeyColumns),
+		)
+		values := []any{o.ID, related.ID}
+
+		if boil.IsDebug(ctx) {
+			writer := boil.DebugWriterFrom(ctx)
+			fmt.Fprintln(writer, updateQuery)
+			fmt.Fprintln(writer, values)
+		}
+		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+			return errors.Wrap(err, "failed to update foreign table")
+		}
+
+		related.AgentID = o.ID
+	}
+
+	if o.R == nil {
+		o.R = &workspaceAgentR{
+			AgentWorkspaceTelegramBot: related,
+		}
+	} else {
+		o.R.AgentWorkspaceTelegramBot = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceTelegramBotR{
+			Agent: o,
+		}
+	} else {
+		related.R.Agent = o
+	}
 	return nil
 }
 

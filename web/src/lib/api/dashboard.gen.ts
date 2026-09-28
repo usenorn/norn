@@ -3631,6 +3631,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/{agentId}/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        /** Read the Telegram bot this agent speaks through */
+        get: operations["getWorkspaceAgentTelegram"];
+        /**
+         * Connect a bot made with BotFather, or replace its token
+         * @description The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+         */
+        put: operations["connectWorkspaceAgentTelegram"];
+        post?: never;
+        /** Disconnect the bot and forget everyone and every group linked to it */
+        delete: operations["disconnectWorkspaceAgentTelegram"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/telegram/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a one-time link that ties a Telegram account or group to the caller
+         * @description A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+         */
+        post: operations["createWorkspaceAgentTelegramLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/telegram/links/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop receiving this agent's questions on Telegram */
+        delete: operations["unlinkWorkspaceAgentTelegram"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop posting this agent's questions to a group */
+        delete: operations["unbindWorkspaceAgentTelegramGroup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/telegram-bots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the agents with a Telegram bot, and whether the caller has linked to each */
+        get: operations["listWorkspaceTelegramBots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/source-control/connections": {
         parameters: {
             query?: never;
@@ -6980,7 +7088,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -8040,6 +8148,70 @@ export interface components {
         AiProviderSealingUnavailableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
             code: "ai_provider_sealing_unavailable";
+        };
+        /** @description The token is never returned; tokenHint carries its last few characters so a manager can tell which token is installed. linked says whether the caller's own Telegram account is linked to this bot. */
+        AgentTelegramBot: {
+            /** Format: uuid */
+            id: string;
+            username: string;
+            name: string;
+            tokenHint: string;
+            hosted: boolean;
+            linked: boolean;
+            connectedBy?: string;
+            /** Format: date-time */
+            connectedAt: string;
+            members: components["schemas"]["TelegramMember"][];
+            groups: components["schemas"]["TelegramGroup"][];
+        };
+        TelegramMember: {
+            /** Format: uuid */
+            accountId: string;
+            name: string;
+            username: string;
+            /** Format: date-time */
+            linkedAt: string;
+        };
+        TelegramGroup: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            boundBy?: string;
+            /** Format: date-time */
+            boundAt: string;
+        };
+        ConnectAgentTelegramRequest: {
+            token: string;
+        };
+        /** @enum {string} */
+        TelegramLinkPurpose: "private" | "group";
+        CreateAgentTelegramLinkRequest: {
+            purpose: components["schemas"]["TelegramLinkPurpose"];
+        };
+        TelegramLinkInvite: {
+            url: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        MemberTelegramBot: {
+            /** Format: uuid */
+            agentId: string;
+            agentName: string;
+            username: string;
+            linked: boolean;
+            linkedAs?: string;
+        };
+        MemberTelegramBotList: {
+            bots: components["schemas"]["MemberTelegramBot"][];
+        };
+        /** @enum {string} */
+        TelegramRefusal: "token_rejected" | "bot_taken" | "origin_insecure" | "unreachable";
+        TelegramRefusedProblem: components["schemas"]["Problem"] & {
+            code: components["schemas"]["TelegramRefusal"];
+        };
+        TelegramSealingUnavailableProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "telegram_sealing_unavailable";
         };
         /** @enum {string} */
         AgentSkillSource: "manual" | "github";
@@ -9583,6 +9755,24 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["AiProviderSealingUnavailableProblem"];
+            };
+        };
+        /** @description Telegram refused the token, the bot already serves another agent, or this instance cannot receive its updates */
+        TelegramRefused: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["TelegramRefusedProblem"];
+            };
+        };
+        /** @description This instance has no encryption key, so a bot token cannot be stored or read */
+        TelegramSealingUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["TelegramSealingUnavailableProblem"];
             };
         };
         /** @description The skill or MCP server cannot change as asked */
@@ -17423,6 +17613,200 @@ export interface operations {
             422: components["responses"]["AiProviderRefused"];
             500: components["responses"]["Problem"];
             503: components["responses"]["AiProviderSealingUnavailable"];
+        };
+    };
+    getWorkspaceAgentTelegram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The connected bot, who has linked their Telegram to it, and the groups it posts to */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentTelegramBot"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    connectWorkspaceAgentTelegram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectAgentTelegramRequest"];
+            };
+        };
+        responses: {
+            /** @description The connected bot */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentTelegramBot"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
+            422: components["responses"]["TelegramRefused"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["TelegramSealingUnavailable"];
+        };
+    };
+    disconnectWorkspaceAgentTelegram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The bot is disconnected and its webhook removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceAgentTelegramLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAgentTelegramLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description The link to open in Telegram */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLinkInvite"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unlinkWorkspaceAgentTelegram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's Telegram account is no longer linked to the bot */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unbindWorkspaceAgentTelegramGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The group no longer receives the agent's questions */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceTelegramBots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The agents a member can receive questions from on Telegram */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberTelegramBotList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
         };
     };
     listWorkspaceSourceControlConnections: {

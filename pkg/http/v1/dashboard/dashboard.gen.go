@@ -925,6 +925,10 @@ const (
 	AuditActionAgentSkillAdded              AuditAction = "agent.skill_added"
 	AuditActionAgentSkillRemoved            AuditAction = "agent.skill_removed"
 	AuditActionAgentSkillUpdated            AuditAction = "agent.skill_updated"
+	AuditActionAgentTelegramConnected       AuditAction = "agent.telegram_connected"
+	AuditActionAgentTelegramDisconnected    AuditAction = "agent.telegram_disconnected"
+	AuditActionAgentTelegramGroupBound      AuditAction = "agent.telegram_group_bound"
+	AuditActionAgentTelegramGroupUnbound    AuditAction = "agent.telegram_group_unbound"
 	AuditActionAiProviderConfigured         AuditAction = "ai_provider.configured"
 	AuditActionAiProviderEndpointChanged    AuditAction = "ai_provider.endpoint_changed"
 	AuditActionAiProviderKeyReplaced        AuditAction = "ai_provider.key_replaced"
@@ -1020,6 +1024,14 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentSkillRemoved:
 		return true
 	case AuditActionAgentSkillUpdated:
+		return true
+	case AuditActionAgentTelegramConnected:
+		return true
+	case AuditActionAgentTelegramDisconnected:
+		return true
+	case AuditActionAgentTelegramGroupBound:
+		return true
+	case AuditActionAgentTelegramGroupUnbound:
 		return true
 	case AuditActionAiProviderConfigured:
 		return true
@@ -4394,16 +4406,73 @@ func (e TeamStatus) Valid() bool {
 
 // Defines values for TeamVisibility.
 const (
-	Private TeamVisibility = "private"
-	Public  TeamVisibility = "public"
+	TeamVisibilityPrivate TeamVisibility = "private"
+	TeamVisibilityPublic  TeamVisibility = "public"
 )
 
 // Valid indicates whether the value is a known member of the TeamVisibility enum.
 func (e TeamVisibility) Valid() bool {
 	switch e {
-	case Private:
+	case TeamVisibilityPrivate:
 		return true
-	case Public:
+	case TeamVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TelegramLinkPurpose.
+const (
+	TelegramLinkPurposeGroup   TelegramLinkPurpose = "group"
+	TelegramLinkPurposePrivate TelegramLinkPurpose = "private"
+)
+
+// Valid indicates whether the value is a known member of the TelegramLinkPurpose enum.
+func (e TelegramLinkPurpose) Valid() bool {
+	switch e {
+	case TelegramLinkPurposeGroup:
+		return true
+	case TelegramLinkPurposePrivate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TelegramRefusal.
+const (
+	TelegramRefusalBotTaken       TelegramRefusal = "bot_taken"
+	TelegramRefusalOriginInsecure TelegramRefusal = "origin_insecure"
+	TelegramRefusalTokenRejected  TelegramRefusal = "token_rejected"
+	TelegramRefusalUnreachable    TelegramRefusal = "unreachable"
+)
+
+// Valid indicates whether the value is a known member of the TelegramRefusal enum.
+func (e TelegramRefusal) Valid() bool {
+	switch e {
+	case TelegramRefusalBotTaken:
+		return true
+	case TelegramRefusalOriginInsecure:
+		return true
+	case TelegramRefusalTokenRejected:
+		return true
+	case TelegramRefusalUnreachable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TelegramSealingUnavailableProblemCode.
+const (
+	TelegramSealingUnavailableProblemCodeTelegramSealingUnavailable TelegramSealingUnavailableProblemCode = "telegram_sealing_unavailable"
+)
+
+// Valid indicates whether the value is a known member of the TelegramSealingUnavailableProblemCode enum.
+func (e TelegramSealingUnavailableProblemCode) Valid() bool {
+	switch e {
+	case TelegramSealingUnavailableProblemCodeTelegramSealingUnavailable:
 		return true
 	default:
 		return false
@@ -5565,6 +5634,20 @@ type AgentSource struct {
 // AgentStatus defines model for AgentStatus.
 type AgentStatus string
 
+// AgentTelegramBot The token is never returned; tokenHint carries its last few characters so a manager can tell which token is installed. linked says whether the caller's own Telegram account is linked to this bot.
+type AgentTelegramBot struct {
+	ConnectedAt time.Time          `json:"connectedAt"`
+	ConnectedBy *string            `json:"connectedBy,omitempty"`
+	Groups      []TelegramGroup    `json:"groups"`
+	Hosted      bool               `json:"hosted"`
+	Id          openapi_types.UUID `json:"id"`
+	Linked      bool               `json:"linked"`
+	Members     []TelegramMember   `json:"members"`
+	Name        string             `json:"name"`
+	TokenHint   string             `json:"tokenHint"`
+	Username    string             `json:"username"`
+}
+
 // AgentToolCall defines model for AgentToolCall.
 type AgentToolCall struct {
 	Name string `json:"name"`
@@ -6078,6 +6161,11 @@ type ConnectAgentMcpServerRequest struct {
 	ReturnTo string `json:"returnTo"`
 }
 
+// ConnectAgentTelegramRequest defines model for ConnectAgentTelegramRequest.
+type ConnectAgentTelegramRequest struct {
+	Token string `json:"token"`
+}
+
 // ConnectCodebaseRequest defines model for ConnectCodebaseRequest.
 type ConnectCodebaseRequest struct {
 	// Name What to call this folder. Defaults to its root path.
@@ -6104,6 +6192,11 @@ type ConnectSourceControlRequest struct {
 	// Provider `gitea` covers Forgejo as well: Forgejo is a fork of Gitea and serves the same api, so one connection type reaches both. It has no hosted service, so a connection to it always names the address of somebody's own instance.
 	Provider SourceControlProvider `json:"provider"`
 	Token    *string               `json:"token,omitempty"`
+}
+
+// CreateAgentTelegramLinkRequest defines model for CreateAgentTelegramLinkRequest.
+type CreateAgentTelegramLinkRequest struct {
+	Purpose TelegramLinkPurpose `json:"purpose"`
 }
 
 // CreateImportRequest defines model for CreateImportRequest.
@@ -8026,6 +8119,20 @@ type MemberRemovalPreview struct {
 	Teams            []Team     `json:"teams"`
 }
 
+// MemberTelegramBot defines model for MemberTelegramBot.
+type MemberTelegramBot struct {
+	AgentId   openapi_types.UUID `json:"agentId"`
+	AgentName string             `json:"agentName"`
+	Linked    bool               `json:"linked"`
+	LinkedAs  *string            `json:"linkedAs,omitempty"`
+	Username  string             `json:"username"`
+}
+
+// MemberTelegramBotList defines model for MemberTelegramBotList.
+type MemberTelegramBotList struct {
+	Bots []MemberTelegramBot `json:"bots"`
+}
+
 // Membership defines model for Membership.
 type Membership struct {
 	AccountId     openapi_types.UUID `json:"accountId"`
@@ -9460,6 +9567,59 @@ type TeamStatus string
 // TeamVisibility defines model for TeamVisibility.
 type TeamVisibility string
 
+// TelegramGroup defines model for TelegramGroup.
+type TelegramGroup struct {
+	BoundAt time.Time          `json:"boundAt"`
+	BoundBy *string            `json:"boundBy,omitempty"`
+	Id      openapi_types.UUID `json:"id"`
+	Title   string             `json:"title"`
+}
+
+// TelegramLinkInvite defines model for TelegramLinkInvite.
+type TelegramLinkInvite struct {
+	ExpiresAt time.Time `json:"expiresAt"`
+	Url       string    `json:"url"`
+}
+
+// TelegramLinkPurpose defines model for TelegramLinkPurpose.
+type TelegramLinkPurpose string
+
+// TelegramMember defines model for TelegramMember.
+type TelegramMember struct {
+	AccountId openapi_types.UUID `json:"accountId"`
+	LinkedAt  time.Time          `json:"linkedAt"`
+	Name      string             `json:"name"`
+	Username  string             `json:"username"`
+}
+
+// TelegramRefusal defines model for TelegramRefusal.
+type TelegramRefusal string
+
+// TelegramRefusedProblem defines model for TelegramRefusedProblem.
+type TelegramRefusedProblem struct {
+	Code     TelegramRefusal `json:"code"`
+	Detail   *string         `json:"detail,omitempty"`
+	Errors   *[]FieldError   `json:"errors,omitempty"`
+	Instance *string         `json:"instance,omitempty"`
+	Status   int32           `json:"status"`
+	Title    string          `json:"title"`
+	Type     string          `json:"type"`
+}
+
+// TelegramSealingUnavailableProblem defines model for TelegramSealingUnavailableProblem.
+type TelegramSealingUnavailableProblem struct {
+	Code     TelegramSealingUnavailableProblemCode `json:"code"`
+	Detail   *string                               `json:"detail,omitempty"`
+	Errors   *[]FieldError                         `json:"errors,omitempty"`
+	Instance *string                               `json:"instance,omitempty"`
+	Status   int32                                 `json:"status"`
+	Title    string                                `json:"title"`
+	Type     string                                `json:"type"`
+}
+
+// TelegramSealingUnavailableProblemCode defines model for TelegramSealingUnavailableProblem.Code.
+type TelegramSealingUnavailableProblemCode string
+
 // TelemetryMode defines model for TelemetryMode.
 type TelemetryMode string
 
@@ -10270,6 +10430,12 @@ type StorageRefused = StorageRefusedProblem
 // TeamConflict defines model for TeamConflict.
 type TeamConflict = TeamConflictProblem
 
+// TelegramRefused defines model for TelegramRefused.
+type TelegramRefused = TelegramRefusedProblem
+
+// TelegramSealingUnavailable defines model for TelegramSealingUnavailable.
+type TelegramSealingUnavailable = TelegramSealingUnavailableProblem
+
 // TooManyAttempts defines model for TooManyAttempts.
 type TooManyAttempts = RateLimitedProblem
 
@@ -10697,6 +10863,12 @@ type SetWorkspaceAgentScopeJSONRequestBody = SetAgentScopeRequest
 
 // AddAgentSkillJSONRequestBody defines body for AddAgentSkill for application/json ContentType.
 type AddAgentSkillJSONRequestBody = AddAgentSkillRequest
+
+// ConnectWorkspaceAgentTelegramJSONRequestBody defines body for ConnectWorkspaceAgentTelegram for application/json ContentType.
+type ConnectWorkspaceAgentTelegramJSONRequestBody = ConnectAgentTelegramRequest
+
+// CreateWorkspaceAgentTelegramLinkJSONRequestBody defines body for CreateWorkspaceAgentTelegramLink for application/json ContentType.
+type CreateWorkspaceAgentTelegramLinkJSONRequestBody = CreateAgentTelegramLinkRequest
 
 // SetWorkspaceAiProviderJSONRequestBody defines body for SetWorkspaceAiProvider for application/json ContentType.
 type SetWorkspaceAiProviderJSONRequestBody = SetWorkspaceAiProviderRequest
@@ -11940,6 +12112,62 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
 	AddAgentSkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DisconnectWorkspaceAgentTelegram Disconnect the bot and forget everyone and every group linked to it
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram (the `DisconnectWorkspaceAgentTelegram` operationId).
+	DisconnectWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceAgentTelegram Read the Telegram bot this agent speaks through
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/telegram (the `GetWorkspaceAgentTelegram` operationId).
+	GetWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectWorkspaceAgentTelegramWithBody Connect a bot made with BotFather, or replace its token
+	//
+	// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+	ConnectWorkspaceAgentTelegramWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConnectWorkspaceAgentTelegram Connect a bot made with BotFather, or replace its token
+	//
+	// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+	ConnectWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConnectWorkspaceAgentTelegramJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnbindWorkspaceAgentTelegramGroup Stop posting this agent's questions to a group
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId} (the `UnbindWorkspaceAgentTelegramGroup` operationId).
+	UnbindWorkspaceAgentTelegramGroup(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWorkspaceAgentTelegramLinkWithBody Create a one-time link that ties a Telegram account or group to the caller
+	//
+	// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+	CreateWorkspaceAgentTelegramLinkWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWorkspaceAgentTelegramLink Create a one-time link that ties a Telegram account or group to the caller
+	//
+	// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+	CreateWorkspaceAgentTelegramLink(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body CreateWorkspaceAgentTelegramLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnlinkWorkspaceAgentTelegram Stop receiving this agent's questions on Telegram
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me (the `UnlinkWorkspaceAgentTelegram` operationId).
+	UnlinkWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RemoveWorkspaceAiProvider Remove the provider and discard its key
 	//
@@ -13996,6 +14224,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/unarchive (the `UnarchiveWorkspaceTeam` operationId).
 	UnarchiveWorkspaceTeam(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceTelegramBots List the agents with a Telegram bot, and whether the caller has linked to each
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/telegram-bots (the `ListWorkspaceTelegramBots` operationId).
+	ListWorkspaceTelegramBots(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceAPITokens List every live token that reaches this workspace, for its administrators
 	//
@@ -16232,6 +16465,142 @@ func (c *Client) AddAgentSkillWithBody(ctx context.Context, workspaceId Workspac
 // Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
 func (c *Client) AddAgentSkill(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAddAgentSkillRequest(c.Server, workspaceId, agentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DisconnectWorkspaceAgentTelegram Disconnect the bot and forget everyone and every group linked to it
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram (the `DisconnectWorkspaceAgentTelegram` operationId).
+func (c *Client) DisconnectWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisconnectWorkspaceAgentTelegramRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceAgentTelegram Read the Telegram bot this agent speaks through
+//
+// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/telegram (the `GetWorkspaceAgentTelegram` operationId).
+func (c *Client) GetWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceAgentTelegramRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConnectWorkspaceAgentTelegramWithBody Connect a bot made with BotFather, or replace its token
+//
+// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+func (c *Client) ConnectWorkspaceAgentTelegramWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectWorkspaceAgentTelegramRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConnectWorkspaceAgentTelegram Connect a bot made with BotFather, or replace its token
+//
+// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+func (c *Client) ConnectWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConnectWorkspaceAgentTelegramJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConnectWorkspaceAgentTelegramRequest(c.Server, workspaceId, agentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnbindWorkspaceAgentTelegramGroup Stop posting this agent's questions to a group
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId} (the `UnbindWorkspaceAgentTelegramGroup` operationId).
+func (c *Client) UnbindWorkspaceAgentTelegramGroup(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnbindWorkspaceAgentTelegramGroupRequest(c.Server, workspaceId, agentId, groupId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateWorkspaceAgentTelegramLinkWithBody Create a one-time link that ties a Telegram account or group to the caller
+//
+// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+func (c *Client) CreateWorkspaceAgentTelegramLinkWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWorkspaceAgentTelegramLinkRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateWorkspaceAgentTelegramLink Create a one-time link that ties a Telegram account or group to the caller
+//
+// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+func (c *Client) CreateWorkspaceAgentTelegramLink(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body CreateWorkspaceAgentTelegramLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWorkspaceAgentTelegramLinkRequest(c.Server, workspaceId, agentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnlinkWorkspaceAgentTelegram Stop receiving this agent's questions on Telegram
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me (the `UnlinkWorkspaceAgentTelegram` operationId).
+func (c *Client) UnlinkWorkspaceAgentTelegram(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnlinkWorkspaceAgentTelegramRequest(c.Server, workspaceId, agentId)
 	if err != nil {
 		return nil, err
 	}
@@ -21638,6 +22007,21 @@ func (c *Client) UnarchiveWorkspaceTeam(ctx context.Context, workspaceId Workspa
 	return c.Client.Do(req)
 }
 
+// ListWorkspaceTelegramBots List the agents with a Telegram bot, and whether the caller has linked to each
+//
+// Corresponds with GET /workspaces/{workspaceId}/telegram-bots (the `ListWorkspaceTelegramBots` operationId).
+func (c *Client) ListWorkspaceTelegramBots(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceTelegramBotsRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaceAPITokens List every live token that reaches this workspace, for its administrators
 //
 // Corresponds with GET /workspaces/{workspaceId}/tokens (the `ListWorkspaceAPITokens` operationId).
@@ -25641,6 +26025,285 @@ func NewAddAgentSkillRequestWithBody(server string, workspaceId WorkspaceId, age
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDisconnectWorkspaceAgentTelegramRequest constructs an http.Request for the DisconnectWorkspaceAgentTelegram method
+func NewDisconnectWorkspaceAgentTelegramRequest(server string, workspaceId WorkspaceId, agentId AgentId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/telegram", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceAgentTelegramRequest constructs an http.Request for the GetWorkspaceAgentTelegram method
+func NewGetWorkspaceAgentTelegramRequest(server string, workspaceId WorkspaceId, agentId AgentId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/telegram", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewConnectWorkspaceAgentTelegramRequest calls the generic ConnectWorkspaceAgentTelegram builder with application/json body
+func NewConnectWorkspaceAgentTelegramRequest(server string, workspaceId WorkspaceId, agentId AgentId, body ConnectWorkspaceAgentTelegramJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConnectWorkspaceAgentTelegramRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewConnectWorkspaceAgentTelegramRequestWithBody constructs an http.Request for the ConnectWorkspaceAgentTelegram method, with any body, and a specified content type
+func NewConnectWorkspaceAgentTelegramRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/telegram", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnbindWorkspaceAgentTelegramGroupRequest constructs an http.Request for the UnbindWorkspaceAgentTelegramGroup method
+func NewUnbindWorkspaceAgentTelegramGroupRequest(server string, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "groupId", groupId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/telegram/groups/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateWorkspaceAgentTelegramLinkRequest calls the generic CreateWorkspaceAgentTelegramLink builder with application/json body
+func NewCreateWorkspaceAgentTelegramLinkRequest(server string, workspaceId WorkspaceId, agentId AgentId, body CreateWorkspaceAgentTelegramLinkJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateWorkspaceAgentTelegramLinkRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewCreateWorkspaceAgentTelegramLinkRequestWithBody constructs an http.Request for the CreateWorkspaceAgentTelegramLink method, with any body, and a specified content type
+func NewCreateWorkspaceAgentTelegramLinkRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/telegram/links", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnlinkWorkspaceAgentTelegramRequest constructs an http.Request for the UnlinkWorkspaceAgentTelegram method
+func NewUnlinkWorkspaceAgentTelegramRequest(server string, workspaceId WorkspaceId, agentId AgentId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/telegram/links/me", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -37944,6 +38607,40 @@ func NewUnarchiveWorkspaceTeamRequest(server string, workspaceId WorkspaceId, te
 	return req, nil
 }
 
+// NewListWorkspaceTelegramBotsRequest constructs an http.Request for the ListWorkspaceTelegramBots method
+func NewListWorkspaceTelegramBotsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/telegram-bots", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceAPITokensRequest constructs an http.Request for the ListWorkspaceAPITokens method
 func NewListWorkspaceAPITokensRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
 	var err error
@@ -39783,6 +40480,70 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/skills (the `AddAgentSkill` operationId).
 	AddAgentSkillWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body AddAgentSkillJSONRequestBody, reqEditors ...RequestEditorFn) (*AddAgentSkillResponse, error)
+
+	// DisconnectWorkspaceAgentTelegramWithResponse Disconnect the bot and forget everyone and every group linked to it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram (the `DisconnectWorkspaceAgentTelegram` operationId).
+	DisconnectWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*DisconnectWorkspaceAgentTelegramResponse, error)
+
+	// GetWorkspaceAgentTelegramWithResponse Read the Telegram bot this agent speaks through
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/telegram (the `GetWorkspaceAgentTelegram` operationId).
+	GetWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*GetWorkspaceAgentTelegramResponse, error)
+
+	// ConnectWorkspaceAgentTelegramWithBodyWithResponse Connect a bot made with BotFather, or replace its token
+	//
+	// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+	ConnectWorkspaceAgentTelegramWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectWorkspaceAgentTelegramResponse, error)
+
+	// ConnectWorkspaceAgentTelegramWithResponse Connect a bot made with BotFather, or replace its token
+	//
+	// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+	ConnectWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConnectWorkspaceAgentTelegramJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectWorkspaceAgentTelegramResponse, error)
+
+	// UnbindWorkspaceAgentTelegramGroupWithResponse Stop posting this agent's questions to a group
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId} (the `UnbindWorkspaceAgentTelegramGroup` operationId).
+	UnbindWorkspaceAgentTelegramGroupWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnbindWorkspaceAgentTelegramGroupResponse, error)
+
+	// CreateWorkspaceAgentTelegramLinkWithBodyWithResponse Create a one-time link that ties a Telegram account or group to the caller
+	//
+	// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+	CreateWorkspaceAgentTelegramLinkWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWorkspaceAgentTelegramLinkResponse, error)
+
+	// CreateWorkspaceAgentTelegramLinkWithResponse Create a one-time link that ties a Telegram account or group to the caller
+	//
+	// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+	CreateWorkspaceAgentTelegramLinkWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body CreateWorkspaceAgentTelegramLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWorkspaceAgentTelegramLinkResponse, error)
+
+	// UnlinkWorkspaceAgentTelegramWithResponse Stop receiving this agent's questions on Telegram
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me (the `UnlinkWorkspaceAgentTelegram` operationId).
+	UnlinkWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*UnlinkWorkspaceAgentTelegramResponse, error)
 
 	// RemoveWorkspaceAiProviderWithResponse Remove the provider and discard its key
 	//
@@ -42183,6 +42944,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/teams/{teamId}/unarchive (the `UnarchiveWorkspaceTeam` operationId).
 	UnarchiveWorkspaceTeamWithResponse(ctx context.Context, workspaceId WorkspaceId, teamId TeamId, reqEditors ...RequestEditorFn) (*UnarchiveWorkspaceTeamResponse, error)
+
+	// ListWorkspaceTelegramBotsWithResponse List the agents with a Telegram bot, and whether the caller has linked to each
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/telegram-bots (the `ListWorkspaceTelegramBots` operationId).
+	ListWorkspaceTelegramBotsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceTelegramBotsResponse, error)
 
 	// ListWorkspaceAPITokensWithResponse List every live token that reaches this workspace, for its administrators
 	//
@@ -48582,6 +49350,427 @@ func (r AddAgentSkillResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r AddAgentSkillResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DisconnectWorkspaceAgentTelegramResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DisconnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DisconnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DisconnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DisconnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DisconnectWorkspaceAgentTelegramResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DisconnectWorkspaceAgentTelegramResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisconnectWorkspaceAgentTelegramResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DisconnectWorkspaceAgentTelegramResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceAgentTelegramResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentTelegramBot
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceAgentTelegramResponse) GetJSON200() *AgentTelegramBot {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceAgentTelegramResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceAgentTelegramResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceAgentTelegramResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceAgentTelegramResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceAgentTelegramResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceAgentTelegramResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceAgentTelegramResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceAgentTelegramResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ConnectWorkspaceAgentTelegramResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentTelegramBot
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *TelegramRefused
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *TelegramSealingUnavailable
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetJSON200() *AgentTelegramBot {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON422() *TelegramRefused {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r ConnectWorkspaceAgentTelegramResponse) GetApplicationproblemJSON503() *TelegramSealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r ConnectWorkspaceAgentTelegramResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ConnectWorkspaceAgentTelegramResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConnectWorkspaceAgentTelegramResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ConnectWorkspaceAgentTelegramResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnbindWorkspaceAgentTelegramGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r UnbindWorkspaceAgentTelegramGroupResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r UnbindWorkspaceAgentTelegramGroupResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r UnbindWorkspaceAgentTelegramGroupResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r UnbindWorkspaceAgentTelegramGroupResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r UnbindWorkspaceAgentTelegramGroupResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnbindWorkspaceAgentTelegramGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnbindWorkspaceAgentTelegramGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnbindWorkspaceAgentTelegramGroupResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateWorkspaceAgentTelegramLinkResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *TelegramLinkInvite
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateWorkspaceAgentTelegramLinkResponse) GetJSON201() *TelegramLinkInvite {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r CreateWorkspaceAgentTelegramLinkResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r CreateWorkspaceAgentTelegramLinkResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r CreateWorkspaceAgentTelegramLinkResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CreateWorkspaceAgentTelegramLinkResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r CreateWorkspaceAgentTelegramLinkResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateWorkspaceAgentTelegramLinkResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateWorkspaceAgentTelegramLinkResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateWorkspaceAgentTelegramLinkResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateWorkspaceAgentTelegramLinkResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnlinkWorkspaceAgentTelegramResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r UnlinkWorkspaceAgentTelegramResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r UnlinkWorkspaceAgentTelegramResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r UnlinkWorkspaceAgentTelegramResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r UnlinkWorkspaceAgentTelegramResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r UnlinkWorkspaceAgentTelegramResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnlinkWorkspaceAgentTelegramResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnlinkWorkspaceAgentTelegramResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnlinkWorkspaceAgentTelegramResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -67062,6 +68251,68 @@ func (r UnarchiveWorkspaceTeamResponse) ContentType() string {
 	return ""
 }
 
+type ListWorkspaceTelegramBotsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *MemberTelegramBotList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceTelegramBotsResponse) GetJSON200() *MemberTelegramBotList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceTelegramBotsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceTelegramBotsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceTelegramBotsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceTelegramBotsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceTelegramBotsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceTelegramBotsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceTelegramBotsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceAPITokensResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -69998,6 +71249,118 @@ func (c *ClientWithResponses) AddAgentSkillWithResponse(ctx context.Context, wor
 		return nil, err
 	}
 	return ParseAddAgentSkillResponse(rsp)
+}
+
+// DisconnectWorkspaceAgentTelegramWithResponse Disconnect the bot and forget everyone and every group linked to it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram (the `DisconnectWorkspaceAgentTelegram` operationId).
+func (c *ClientWithResponses) DisconnectWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*DisconnectWorkspaceAgentTelegramResponse, error) {
+	rsp, err := c.DisconnectWorkspaceAgentTelegram(ctx, workspaceId, agentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisconnectWorkspaceAgentTelegramResponse(rsp)
+}
+
+// GetWorkspaceAgentTelegramWithResponse Read the Telegram bot this agent speaks through
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/telegram (the `GetWorkspaceAgentTelegram` operationId).
+func (c *ClientWithResponses) GetWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*GetWorkspaceAgentTelegramResponse, error) {
+	rsp, err := c.GetWorkspaceAgentTelegram(ctx, workspaceId, agentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceAgentTelegramResponse(rsp)
+}
+
+// ConnectWorkspaceAgentTelegramWithBodyWithResponse Connect a bot made with BotFather, or replace its token
+//
+// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+func (c *ClientWithResponses) ConnectWorkspaceAgentTelegramWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConnectWorkspaceAgentTelegramResponse, error) {
+	rsp, err := c.ConnectWorkspaceAgentTelegramWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectWorkspaceAgentTelegramResponse(rsp)
+}
+
+// ConnectWorkspaceAgentTelegramWithResponse Connect a bot made with BotFather, or replace its token
+//
+// The token is proved against Telegram and the bot's webhook is pointed at this instance before anything is stored, so a token Telegram refuses never replaces one that works. The same bot keeps its linked people and groups; a different bot starts with none. The token itself is never returned.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/telegram (the `ConnectWorkspaceAgentTelegram` operationId).
+func (c *ClientWithResponses) ConnectWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConnectWorkspaceAgentTelegramJSONRequestBody, reqEditors ...RequestEditorFn) (*ConnectWorkspaceAgentTelegramResponse, error) {
+	rsp, err := c.ConnectWorkspaceAgentTelegram(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConnectWorkspaceAgentTelegramResponse(rsp)
+}
+
+// UnbindWorkspaceAgentTelegramGroupWithResponse Stop posting this agent's questions to a group
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId} (the `UnbindWorkspaceAgentTelegramGroup` operationId).
+func (c *ClientWithResponses) UnbindWorkspaceAgentTelegramGroupWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnbindWorkspaceAgentTelegramGroupResponse, error) {
+	rsp, err := c.UnbindWorkspaceAgentTelegramGroup(ctx, workspaceId, agentId, groupId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnbindWorkspaceAgentTelegramGroupResponse(rsp)
+}
+
+// CreateWorkspaceAgentTelegramLinkWithBodyWithResponse Create a one-time link that ties a Telegram account or group to the caller
+//
+// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+func (c *ClientWithResponses) CreateWorkspaceAgentTelegramLinkWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWorkspaceAgentTelegramLinkResponse, error) {
+	rsp, err := c.CreateWorkspaceAgentTelegramLinkWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWorkspaceAgentTelegramLinkResponse(rsp)
+}
+
+// CreateWorkspaceAgentTelegramLinkWithResponse Create a one-time link that ties a Telegram account or group to the caller
+//
+// A private link opens the bot and links the Telegram account that presses Start to the caller. A group link adds the bot to a group the caller chooses, and only binds it when the caller's own linked Telegram account starts it there. Group links are for the agent's managers. Each link works once and expires.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links (the `CreateWorkspaceAgentTelegramLink` operationId).
+func (c *ClientWithResponses) CreateWorkspaceAgentTelegramLinkWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body CreateWorkspaceAgentTelegramLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWorkspaceAgentTelegramLinkResponse, error) {
+	rsp, err := c.CreateWorkspaceAgentTelegramLink(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWorkspaceAgentTelegramLinkResponse(rsp)
+}
+
+// UnlinkWorkspaceAgentTelegramWithResponse Stop receiving this agent's questions on Telegram
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me (the `UnlinkWorkspaceAgentTelegram` operationId).
+func (c *ClientWithResponses) UnlinkWorkspaceAgentTelegramWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*UnlinkWorkspaceAgentTelegramResponse, error) {
+	rsp, err := c.UnlinkWorkspaceAgentTelegram(ctx, workspaceId, agentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnlinkWorkspaceAgentTelegramResponse(rsp)
 }
 
 // RemoveWorkspaceAiProviderWithResponse Remove the provider and discard its key
@@ -74402,6 +75765,19 @@ func (c *ClientWithResponses) UnarchiveWorkspaceTeamWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseUnarchiveWorkspaceTeamResponse(rsp)
+}
+
+// ListWorkspaceTelegramBotsWithResponse List the agents with a Telegram bot, and whether the caller has linked to each
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/telegram-bots (the `ListWorkspaceTelegramBots` operationId).
+func (c *ClientWithResponses) ListWorkspaceTelegramBotsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceTelegramBotsResponse, error) {
+	rsp, err := c.ListWorkspaceTelegramBots(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceTelegramBotsResponse(rsp)
 }
 
 // ListWorkspaceAPITokensWithResponse List every live token that reaches this workspace, for its administrators
@@ -79724,6 +81100,346 @@ func ParseAddAgentSkillResponse(rsp *http.Response) (*AddAgentSkillResponse, err
 			return nil, err
 		}
 		response.ApplicationproblemJSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDisconnectWorkspaceAgentTelegramResponse parses an HTTP response from a DisconnectWorkspaceAgentTelegramWithResponse call
+func ParseDisconnectWorkspaceAgentTelegramResponse(rsp *http.Response) (*DisconnectWorkspaceAgentTelegramResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisconnectWorkspaceAgentTelegramResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceAgentTelegramResponse parses an HTTP response from a GetWorkspaceAgentTelegramWithResponse call
+func ParseGetWorkspaceAgentTelegramResponse(rsp *http.Response) (*GetWorkspaceAgentTelegramResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceAgentTelegramResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentTelegramBot
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseConnectWorkspaceAgentTelegramResponse parses an HTTP response from a ConnectWorkspaceAgentTelegramWithResponse call
+func ParseConnectWorkspaceAgentTelegramResponse(rsp *http.Response) (*ConnectWorkspaceAgentTelegramResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConnectWorkspaceAgentTelegramResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentTelegramBot
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest TelegramRefused
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest TelegramSealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnbindWorkspaceAgentTelegramGroupResponse parses an HTTP response from a UnbindWorkspaceAgentTelegramGroupWithResponse call
+func ParseUnbindWorkspaceAgentTelegramGroupResponse(rsp *http.Response) (*UnbindWorkspaceAgentTelegramGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnbindWorkspaceAgentTelegramGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateWorkspaceAgentTelegramLinkResponse parses an HTTP response from a CreateWorkspaceAgentTelegramLinkWithResponse call
+func ParseCreateWorkspaceAgentTelegramLinkResponse(rsp *http.Response) (*CreateWorkspaceAgentTelegramLinkResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateWorkspaceAgentTelegramLinkResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest TelegramLinkInvite
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnlinkWorkspaceAgentTelegramResponse parses an HTTP response from a UnlinkWorkspaceAgentTelegramWithResponse call
+func ParseUnlinkWorkspaceAgentTelegramResponse(rsp *http.Response) (*UnlinkWorkspaceAgentTelegramResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnlinkWorkspaceAgentTelegramResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
 
 	}
 
@@ -94559,6 +96275,53 @@ func ParseUnarchiveWorkspaceTeamResponse(rsp *http.Response) (*UnarchiveWorkspac
 	return response, nil
 }
 
+// ParseListWorkspaceTelegramBotsResponse parses an HTTP response from a ListWorkspaceTelegramBotsWithResponse call
+func ParseListWorkspaceTelegramBotsResponse(rsp *http.Response) (*ListWorkspaceTelegramBotsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceTelegramBotsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MemberTelegramBotList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceAPITokensResponse parses an HTTP response from a ListWorkspaceAPITokensWithResponse call
 func ParseListWorkspaceAPITokensResponse(rsp *http.Response) (*ListWorkspaceAPITokensResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -95815,6 +97578,24 @@ type ServerInterface interface {
 	// AddAgentSkill Give an agent a skill, imported from a repository or written here
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
 	AddAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// DisconnectWorkspaceAgentTelegram Disconnect the bot and forget everyone and every group linked to it
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram)
+	DisconnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// GetWorkspaceAgentTelegram Read the Telegram bot this agent speaks through
+	// (GET /workspaces/{workspaceId}/agents/{agentId}/telegram)
+	GetWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// ConnectWorkspaceAgentTelegram Connect a bot made with BotFather, or replace its token
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/telegram)
+	ConnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// UnbindWorkspaceAgentTelegramGroup Stop posting this agent's questions to a group
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId})
+	UnbindWorkspaceAgentTelegramGroup(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID)
+	// CreateWorkspaceAgentTelegramLink Create a one-time link that ties a Telegram account or group to the caller
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links)
+	CreateWorkspaceAgentTelegramLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// UnlinkWorkspaceAgentTelegram Stop receiving this agent's questions on Telegram
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me)
+	UnlinkWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// RemoveWorkspaceAiProvider Remove the provider and discard its key
 	// (DELETE /workspaces/{workspaceId}/ai-provider)
 	RemoveWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -96577,6 +98358,9 @@ type ServerInterface interface {
 	// UnarchiveWorkspaceTeam Return an archived team to active use
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 	UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId)
+	// ListWorkspaceTelegramBots List the agents with a Telegram bot, and whether the caller has linked to each
+	// (GET /workspaces/{workspaceId}/telegram-bots)
+	ListWorkspaceTelegramBots(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceAPITokens List every live token that reaches this workspace, for its administrators
 	// (GET /workspaces/{workspaceId}/tokens)
 	ListWorkspaceAPITokens(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -97165,6 +98949,42 @@ func (_ Unimplemented) SetWorkspaceAgentScope(w http.ResponseWriter, r *http.Req
 // AddAgentSkill Give an agent a skill, imported from a repository or written here
 // (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
 func (_ Unimplemented) AddAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DisconnectWorkspaceAgentTelegram Disconnect the bot and forget everyone and every group linked to it
+// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram)
+func (_ Unimplemented) DisconnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceAgentTelegram Read the Telegram bot this agent speaks through
+// (GET /workspaces/{workspaceId}/agents/{agentId}/telegram)
+func (_ Unimplemented) GetWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConnectWorkspaceAgentTelegram Connect a bot made with BotFather, or replace its token
+// (PUT /workspaces/{workspaceId}/agents/{agentId}/telegram)
+func (_ Unimplemented) ConnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnbindWorkspaceAgentTelegramGroup Stop posting this agent's questions to a group
+// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId})
+func (_ Unimplemented) UnbindWorkspaceAgentTelegramGroup(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateWorkspaceAgentTelegramLink Create a one-time link that ties a Telegram account or group to the caller
+// (POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links)
+func (_ Unimplemented) CreateWorkspaceAgentTelegramLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnlinkWorkspaceAgentTelegram Stop receiving this agent's questions on Telegram
+// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me)
+func (_ Unimplemented) UnlinkWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -98689,6 +100509,12 @@ func (_ Unimplemented) SetTeamTriageSettings(w http.ResponseWriter, r *http.Requ
 // UnarchiveWorkspaceTeam Return an archived team to active use
 // (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 func (_ Unimplemented) UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, teamId TeamId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceTelegramBots List the agents with a Telegram bot, and whether the caller has linked to each
+// (GET /workspaces/{workspaceId}/telegram-bots)
+func (_ Unimplemented) ListWorkspaceTelegramBots(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -101082,6 +102908,225 @@ func (siw *ServerInterfaceWrapper) AddAgentSkill(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AddAgentSkill(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DisconnectWorkspaceAgentTelegram operation middleware
+func (siw *ServerInterfaceWrapper) DisconnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisconnectWorkspaceAgentTelegram(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceAgentTelegram operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceAgentTelegram(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConnectWorkspaceAgentTelegram operation middleware
+func (siw *ServerInterfaceWrapper) ConnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConnectWorkspaceAgentTelegram(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnbindWorkspaceAgentTelegramGroup operation middleware
+func (siw *ServerInterfaceWrapper) UnbindWorkspaceAgentTelegramGroup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "groupId" -------------
+	var groupId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupId", chi.URLParam(r, "groupId"), &groupId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "groupId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnbindWorkspaceAgentTelegramGroup(w, r, workspaceId, agentId, groupId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkspaceAgentTelegramLink operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkspaceAgentTelegramLink(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkspaceAgentTelegramLink(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnlinkWorkspaceAgentTelegram operation middleware
+func (siw *ServerInterfaceWrapper) UnlinkWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnlinkWorkspaceAgentTelegram(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -110447,6 +112492,32 @@ func (siw *ServerInterfaceWrapper) UnarchiveWorkspaceTeam(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceTelegramBots operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceTelegramBots(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceTelegramBots(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceAPITokens operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceAPITokens(w http.ResponseWriter, r *http.Request) {
 
@@ -112026,6 +114097,27 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/ai-provider/test", wrapper.TestWorkspaceAiProvider)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/telegram", wrapper.DisconnectWorkspaceAgentTelegram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/telegram", wrapper.GetWorkspaceAgentTelegram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/telegram", wrapper.ConnectWorkspaceAgentTelegram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/telegram/links", wrapper.CreateWorkspaceAgentTelegramLink)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/telegram/links/me", wrapper.UnlinkWorkspaceAgentTelegram)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId}", wrapper.UnbindWorkspaceAgentTelegramGroup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/telegram-bots", wrapper.ListWorkspaceTelegramBots)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/source-control/connections", wrapper.ListWorkspaceSourceControlConnections)
 	})
 	r.Group(func(r chi.Router) {
@@ -112419,6 +114511,10 @@ type SsoFailedApplicationProblemPlusJSONResponse SsoProblem
 type StorageRefusedApplicationProblemPlusJSONResponse StorageRefusedProblem
 
 type TeamConflictApplicationProblemPlusJSONResponse TeamConflictProblem
+
+type TelegramRefusedApplicationProblemPlusJSONResponse TelegramRefusedProblem
+
+type TelegramSealingUnavailableApplicationProblemPlusJSONResponse TelegramSealingUnavailableProblem
 
 type TooManyAttemptsResponseHeaders struct {
 	RetryAfter *int32
@@ -120113,6 +122209,551 @@ func (response AddAgentSkill502ApplicationProblemPlusJSONResponse) VisitAddAgent
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceAgentTelegramRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+}
+
+type DisconnectWorkspaceAgentTelegramResponseObject interface {
+	VisitDisconnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error
+}
+
+type DisconnectWorkspaceAgentTelegram204Response struct {
+}
+
+func (response DisconnectWorkspaceAgentTelegram204Response) VisitDisconnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisconnectWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DisconnectWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DisconnectWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse Problem
+
+func (response DisconnectWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse) VisitDisconnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentTelegramRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+}
+
+type GetWorkspaceAgentTelegramResponseObject interface {
+	VisitGetWorkspaceAgentTelegramResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceAgentTelegram200JSONResponse AgentTelegramBot
+
+func (response GetWorkspaceAgentTelegram200JSONResponse) VisitGetWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegramRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *ConnectWorkspaceAgentTelegramJSONRequestBody
+}
+
+type ConnectWorkspaceAgentTelegramResponseObject interface {
+	VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error
+}
+
+type ConnectWorkspaceAgentTelegram200JSONResponse AgentTelegramBot
+
+func (response ConnectWorkspaceAgentTelegram200JSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegram409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceAgentTelegram409ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegram422ApplicationProblemPlusJSONResponse struct {
+	TelegramRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceAgentTelegram422ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConnectWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConnectWorkspaceAgentTelegram503ApplicationProblemPlusJSONResponse struct {
+	TelegramSealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response ConnectWorkspaceAgentTelegram503ApplicationProblemPlusJSONResponse) VisitConnectWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnbindWorkspaceAgentTelegramGroupRequestObject struct {
+	WorkspaceId WorkspaceId        `json:"workspaceId"`
+	AgentId     AgentId            `json:"agentId"`
+	GroupId     openapi_types.UUID `json:"groupId"`
+}
+
+type UnbindWorkspaceAgentTelegramGroupResponseObject interface {
+	VisitUnbindWorkspaceAgentTelegramGroupResponse(w http.ResponseWriter) error
+}
+
+type UnbindWorkspaceAgentTelegramGroup204Response struct {
+}
+
+func (response UnbindWorkspaceAgentTelegramGroup204Response) VisitUnbindWorkspaceAgentTelegramGroupResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnbindWorkspaceAgentTelegramGroup401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnbindWorkspaceAgentTelegramGroup401ApplicationProblemPlusJSONResponse) VisitUnbindWorkspaceAgentTelegramGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnbindWorkspaceAgentTelegramGroup403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnbindWorkspaceAgentTelegramGroup403ApplicationProblemPlusJSONResponse) VisitUnbindWorkspaceAgentTelegramGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnbindWorkspaceAgentTelegramGroup404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnbindWorkspaceAgentTelegramGroup404ApplicationProblemPlusJSONResponse) VisitUnbindWorkspaceAgentTelegramGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnbindWorkspaceAgentTelegramGroup500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnbindWorkspaceAgentTelegramGroup500ApplicationProblemPlusJSONResponse) VisitUnbindWorkspaceAgentTelegramGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceAgentTelegramLinkRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *CreateWorkspaceAgentTelegramLinkJSONRequestBody
+}
+
+type CreateWorkspaceAgentTelegramLinkResponseObject interface {
+	VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkspaceAgentTelegramLink201JSONResponse TelegramLinkInvite
+
+func (response CreateWorkspaceAgentTelegramLink201JSONResponse) VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceAgentTelegramLink401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceAgentTelegramLink401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceAgentTelegramLink403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceAgentTelegramLink403ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceAgentTelegramLink404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceAgentTelegramLink404ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceAgentTelegramLink422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceAgentTelegramLink422ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceAgentTelegramLink500ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceAgentTelegramLink500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceAgentTelegramLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceAgentTelegramRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+}
+
+type UnlinkWorkspaceAgentTelegramResponseObject interface {
+	VisitUnlinkWorkspaceAgentTelegramResponse(w http.ResponseWriter) error
+}
+
+type UnlinkWorkspaceAgentTelegram204Response struct {
+}
+
+func (response UnlinkWorkspaceAgentTelegram204Response) VisitUnlinkWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnlinkWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceAgentTelegram401ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceAgentTelegram403ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceAgentTelegram404ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceAgentTelegram500ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceAgentTelegramResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -143673,6 +146314,74 @@ func (response UnarchiveWorkspaceTeam500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type ListWorkspaceTelegramBotsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceTelegramBotsResponseObject interface {
+	VisitListWorkspaceTelegramBotsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceTelegramBots200JSONResponse MemberTelegramBotList
+
+func (response ListWorkspaceTelegramBots200JSONResponse) VisitListWorkspaceTelegramBotsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTelegramBots401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceTelegramBots401ApplicationProblemPlusJSONResponse) VisitListWorkspaceTelegramBotsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTelegramBots403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceTelegramBots403ApplicationProblemPlusJSONResponse) VisitListWorkspaceTelegramBotsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceTelegramBots500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceTelegramBots500ApplicationProblemPlusJSONResponse) VisitListWorkspaceTelegramBotsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceAPITokensRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -145516,6 +148225,24 @@ type StrictServerInterface interface {
 	// AddAgentSkill Give an agent a skill, imported from a repository or written here
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/skills)
 	AddAgentSkill(ctx context.Context, request AddAgentSkillRequestObject) (AddAgentSkillResponseObject, error)
+	// DisconnectWorkspaceAgentTelegram Disconnect the bot and forget everyone and every group linked to it
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram)
+	DisconnectWorkspaceAgentTelegram(ctx context.Context, request DisconnectWorkspaceAgentTelegramRequestObject) (DisconnectWorkspaceAgentTelegramResponseObject, error)
+	// GetWorkspaceAgentTelegram Read the Telegram bot this agent speaks through
+	// (GET /workspaces/{workspaceId}/agents/{agentId}/telegram)
+	GetWorkspaceAgentTelegram(ctx context.Context, request GetWorkspaceAgentTelegramRequestObject) (GetWorkspaceAgentTelegramResponseObject, error)
+	// ConnectWorkspaceAgentTelegram Connect a bot made with BotFather, or replace its token
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/telegram)
+	ConnectWorkspaceAgentTelegram(ctx context.Context, request ConnectWorkspaceAgentTelegramRequestObject) (ConnectWorkspaceAgentTelegramResponseObject, error)
+	// UnbindWorkspaceAgentTelegramGroup Stop posting this agent's questions to a group
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId})
+	UnbindWorkspaceAgentTelegramGroup(ctx context.Context, request UnbindWorkspaceAgentTelegramGroupRequestObject) (UnbindWorkspaceAgentTelegramGroupResponseObject, error)
+	// CreateWorkspaceAgentTelegramLink Create a one-time link that ties a Telegram account or group to the caller
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/telegram/links)
+	CreateWorkspaceAgentTelegramLink(ctx context.Context, request CreateWorkspaceAgentTelegramLinkRequestObject) (CreateWorkspaceAgentTelegramLinkResponseObject, error)
+	// UnlinkWorkspaceAgentTelegram Stop receiving this agent's questions on Telegram
+	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me)
+	UnlinkWorkspaceAgentTelegram(ctx context.Context, request UnlinkWorkspaceAgentTelegramRequestObject) (UnlinkWorkspaceAgentTelegramResponseObject, error)
 	// RemoveWorkspaceAiProvider Remove the provider and discard its key
 	// (DELETE /workspaces/{workspaceId}/ai-provider)
 	RemoveWorkspaceAiProvider(ctx context.Context, request RemoveWorkspaceAiProviderRequestObject) (RemoveWorkspaceAiProviderResponseObject, error)
@@ -146278,6 +149005,9 @@ type StrictServerInterface interface {
 	// UnarchiveWorkspaceTeam Return an archived team to active use
 	// (POST /workspaces/{workspaceId}/teams/{teamId}/unarchive)
 	UnarchiveWorkspaceTeam(ctx context.Context, request UnarchiveWorkspaceTeamRequestObject) (UnarchiveWorkspaceTeamResponseObject, error)
+	// ListWorkspaceTelegramBots List the agents with a Telegram bot, and whether the caller has linked to each
+	// (GET /workspaces/{workspaceId}/telegram-bots)
+	ListWorkspaceTelegramBots(ctx context.Context, request ListWorkspaceTelegramBotsRequestObject) (ListWorkspaceTelegramBotsResponseObject, error)
 	// ListWorkspaceAPITokens List every live token that reaches this workspace, for its administrators
 	// (GET /workspaces/{workspaceId}/tokens)
 	ListWorkspaceAPITokens(ctx context.Context, request ListWorkspaceAPITokensRequestObject) (ListWorkspaceAPITokensResponseObject, error)
@@ -148908,6 +151638,183 @@ func (sh *strictHandler) AddAgentSkill(w http.ResponseWriter, r *http.Request, w
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AddAgentSkillResponseObject); ok {
 		if err := validResponse.VisitAddAgentSkillResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DisconnectWorkspaceAgentTelegram operation middleware
+func (sh *strictHandler) DisconnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request DisconnectWorkspaceAgentTelegramRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisconnectWorkspaceAgentTelegram(ctx, request.(DisconnectWorkspaceAgentTelegramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisconnectWorkspaceAgentTelegram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisconnectWorkspaceAgentTelegramResponseObject); ok {
+		if err := validResponse.VisitDisconnectWorkspaceAgentTelegramResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceAgentTelegram operation middleware
+func (sh *strictHandler) GetWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request GetWorkspaceAgentTelegramRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceAgentTelegram(ctx, request.(GetWorkspaceAgentTelegramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceAgentTelegram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceAgentTelegramResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceAgentTelegramResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConnectWorkspaceAgentTelegram operation middleware
+func (sh *strictHandler) ConnectWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request ConnectWorkspaceAgentTelegramRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body ConnectWorkspaceAgentTelegramJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConnectWorkspaceAgentTelegram(ctx, request.(ConnectWorkspaceAgentTelegramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConnectWorkspaceAgentTelegram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConnectWorkspaceAgentTelegramResponseObject); ok {
+		if err := validResponse.VisitConnectWorkspaceAgentTelegramResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnbindWorkspaceAgentTelegramGroup operation middleware
+func (sh *strictHandler) UnbindWorkspaceAgentTelegramGroup(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, groupId openapi_types.UUID) {
+	var request UnbindWorkspaceAgentTelegramGroupRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+	request.GroupId = groupId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnbindWorkspaceAgentTelegramGroup(ctx, request.(UnbindWorkspaceAgentTelegramGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnbindWorkspaceAgentTelegramGroup")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnbindWorkspaceAgentTelegramGroupResponseObject); ok {
+		if err := validResponse.VisitUnbindWorkspaceAgentTelegramGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkspaceAgentTelegramLink operation middleware
+func (sh *strictHandler) CreateWorkspaceAgentTelegramLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request CreateWorkspaceAgentTelegramLinkRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body CreateWorkspaceAgentTelegramLinkJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkspaceAgentTelegramLink(ctx, request.(CreateWorkspaceAgentTelegramLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkspaceAgentTelegramLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkspaceAgentTelegramLinkResponseObject); ok {
+		if err := validResponse.VisitCreateWorkspaceAgentTelegramLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnlinkWorkspaceAgentTelegram operation middleware
+func (sh *strictHandler) UnlinkWorkspaceAgentTelegram(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request UnlinkWorkspaceAgentTelegramRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnlinkWorkspaceAgentTelegram(ctx, request.(UnlinkWorkspaceAgentTelegramRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnlinkWorkspaceAgentTelegram")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnlinkWorkspaceAgentTelegramResponseObject); ok {
+		if err := validResponse.VisitUnlinkWorkspaceAgentTelegramResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -156324,6 +159231,32 @@ func (sh *strictHandler) UnarchiveWorkspaceTeam(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnarchiveWorkspaceTeamResponseObject); ok {
 		if err := validResponse.VisitUnarchiveWorkspaceTeamResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceTelegramBots operation middleware
+func (sh *strictHandler) ListWorkspaceTelegramBots(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceTelegramBotsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceTelegramBots(ctx, request.(ListWorkspaceTelegramBotsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceTelegramBots")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceTelegramBotsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceTelegramBotsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

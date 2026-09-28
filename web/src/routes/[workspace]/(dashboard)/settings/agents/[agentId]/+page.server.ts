@@ -8,6 +8,8 @@ import {
 	type AgentLibraryListing,
 } from "$lib/agents/agent-capabilities";
 import { connectMcpServer, mcpConnectForm, type McpConnectForm } from "$lib/agents/mcp-connect.server";
+import { connectTelegram, telegramConnectForm, type TelegramConnectForm } from "$lib/agents/telegram-connect.server";
+import type { TelegramPanel } from "$lib/agents/telegram";
 import type { AgentRecord } from "$lib/agents/agent-record";
 import type { Project } from "$lib/projects/projects";
 import type { Actions, PageServerLoad } from "./$types";
@@ -19,6 +21,8 @@ export type AgentRecordData = {
 	library: AgentLibraryListing;
 	selfHosted: boolean;
 	connectForm: McpConnectForm;
+	telegram: TelegramPanel;
+	telegramForm: TelegramConnectForm;
 	projects: Project[];
 };
 
@@ -33,10 +37,11 @@ export const load: PageServerLoad = async ({
 	depends(keys.agent(workspace.id, params.agentId));
 	depends(keys.agentCapabilities(workspace.id, params.agentId));
 	depends(keys.agentLibrary(workspace.id));
+	depends(keys.agentTelegram(workspace.id, params.agentId));
 
 	const path = { workspaceId: workspace.id, agentId: params.agentId };
 
-	const [agent, activity, capabilities, library, instance, connectForm] = await Promise.all([
+	const [agent, activity, capabilities, library, instance, connectForm, telegram, telegramForm] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/agents/{agentId}", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/agents/{agentId}/activity", {
 			params: { path, query: { limit: 50 } },
@@ -47,6 +52,8 @@ export const load: PageServerLoad = async ({
 		}),
 		reachInstance(locals.api, url),
 		mcpConnectForm(workspace.id, `${url.pathname}?tab=capabilities`),
+		locals.api.GET("/workspaces/{workspaceId}/agents/{agentId}/telegram", { params: { path } }),
+		telegramConnectForm(workspace.id, params.agentId),
 	]);
 
 	const listedCapability: AgentCapabilities = capabilities.data
@@ -61,11 +68,21 @@ export const load: PageServerLoad = async ({
 			? { kind: "forbidden" }
 			: { kind: "unavailable" };
 
+	const telegramPanel: TelegramPanel = telegram.data
+		? { kind: "connected", bot: telegram.data }
+		: telegram.response.status === 404
+			? { kind: "disconnected" }
+			: telegram.response.status === 403
+				? { kind: "forbidden" }
+				: { kind: "unavailable" };
+
 	const shared = {
 		capabilities: listedCapability,
 		library: listedLibraryItems,
 		selfHosted: instance.selfHosted,
 		connectForm,
+		telegram: telegramPanel,
+		telegramForm,
 		projects: projects.filter((project) => !project.archived),
 	};
 
@@ -106,4 +123,5 @@ export const load: PageServerLoad = async ({
 
 export const actions: Actions = {
 	connect: connectMcpServer,
+	telegram: connectTelegram,
 };

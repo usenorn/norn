@@ -294,6 +294,48 @@ func (mr *MockJobProducerMockRecorder) EnqueueSignUpVerification(ctx, payload an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueSignUpVerification", reflect.TypeOf((*MockJobProducer)(nil).EnqueueSignUpVerification), ctx, payload)
 }
 
+// EnqueueTelegramQuestion mocks base method.
+func (m *MockJobProducer) EnqueueTelegramQuestion(ctx context.Context, payload entity.TelegramQuestionPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueTelegramQuestion", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueTelegramQuestion indicates an expected call of EnqueueTelegramQuestion.
+func (mr *MockJobProducerMockRecorder) EnqueueTelegramQuestion(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueTelegramQuestion", reflect.TypeOf((*MockJobProducer)(nil).EnqueueTelegramQuestion), ctx, payload)
+}
+
+// EnqueueTelegramSettlement mocks base method.
+func (m *MockJobProducer) EnqueueTelegramSettlement(ctx context.Context, payload entity.TelegramQuestionPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueTelegramSettlement", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueTelegramSettlement indicates an expected call of EnqueueTelegramSettlement.
+func (mr *MockJobProducerMockRecorder) EnqueueTelegramSettlement(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueTelegramSettlement", reflect.TypeOf((*MockJobProducer)(nil).EnqueueTelegramSettlement), ctx, payload)
+}
+
+// EnqueueTelegramUpdate mocks base method.
+func (m *MockJobProducer) EnqueueTelegramUpdate(ctx context.Context, payload entity.TelegramUpdatePayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueTelegramUpdate", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueTelegramUpdate indicates an expected call of EnqueueTelegramUpdate.
+func (mr *MockJobProducerMockRecorder) EnqueueTelegramUpdate(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueTelegramUpdate", reflect.TypeOf((*MockJobProducer)(nil).EnqueueTelegramUpdate), ctx, payload)
+}
+
 // EnqueueWebhookDeliver mocks base method.
 func (m *MockJobProducer) EnqueueWebhookDeliver(ctx context.Context, payload entity.WebhookDeliverPayload, processAt time.Time) error {
 	m.ctrl.T.Helper()
