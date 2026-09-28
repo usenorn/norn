@@ -1564,3 +1564,33 @@ func TestAWorkspaceScopeDoesNotLetAStrangerDisableAnAgent(t *testing.T) {
 			err, entity.ErrAgentNotFound)
 	}
 }
+
+func TestAScopeWithdrawnFromTheCatalogGrantsNothingButKeepsTheAgentListed(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	agent := entity.Agent{
+		ID:             uuid.New(),
+		WorkspaceID:    h.workspaceID,
+		AccountID:      uuid.New(),
+		OwnerAccountID: h.adminID,
+		Name:           "from-before-checks-went",
+	}
+
+	h.agents.EXPECT().ListByWorkspaceID(gomock.Any(), h.workspaceID).Return([]entity.Agent{agent}, nil)
+	h.accounts.EXPECT().GetByID(gomock.Any(), h.adminID).Return(entity.Account{ID: h.adminID}, nil)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), agent.AccountID).
+		Return(entity.APIToken{
+			Scopes: entity.APIScopeSet{"check:manage", "check:read", "issue:read"},
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}, nil)
+
+	listed, err := h.service.List(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(listed) != 1 || !reflect.DeepEqual(listed[0].Authority.Scopes, readScopes()) {
+		t.Fatalf("listed = %+v, want the agent with only the scopes the catalog still offers", listed)
+	}
+}

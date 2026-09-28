@@ -646,8 +646,7 @@ func agentAuthority(token entity.APIToken, workspaceID uuid.UUID) (service.Agent
 	scopes := token.Scopes.Normalized()
 	grant, ok := token.Grants.For(workspaceID)
 
-	if len(scopes) == 0 || len(scopes) != len(token.Scopes) || !ok ||
-		(!grant.AllTeams && len(grant.TeamIDs) == 0) {
+	if len(scopes) == 0 || !ok || (!grant.AllTeams && len(grant.TeamIDs) == 0) {
 		return service.AgentAuthority{}, entity.ErrAgentAuthorityMissing
 	}
 
