@@ -18,7 +18,8 @@ const (
 	AgentActionWindow     = time.Minute
 	AgentActionsPerWindow = 120
 
-	DefaultAgentScope = AgentScopeMember
+	DefaultAgentScope     = AgentScopeMember
+	DefaultAgentExecution = AgentExecutionRunner
 )
 
 var (
@@ -30,6 +31,8 @@ var (
 	ErrAgentRateLimited      = errors.New("agent is acting faster than its allowance")
 	ErrAgentOwnerInvalid     = errors.New("agent owner must be an active person in this workspace")
 	ErrAgentScopeForbidden   = errors.New("that agent scope is not yours to grant")
+	ErrAgentNotHosted        = errors.New("agent does not run hosted by norn")
+	ErrAgentHosted           = errors.New("agent runs hosted by norn and takes no delegated work")
 )
 
 type AgentIcon string
@@ -97,6 +100,29 @@ func (s AgentScope) Normalized() AgentScope {
 	return s
 }
 
+type AgentExecution string
+
+const (
+	AgentExecutionRunner AgentExecution = "runner"
+	AgentExecutionHosted AgentExecution = "hosted"
+)
+
+func AgentExecutions() []AgentExecution {
+	return []AgentExecution{AgentExecutionRunner, AgentExecutionHosted}
+}
+
+func (e AgentExecution) Valid() bool {
+	return slices.Contains(AgentExecutions(), e)
+}
+
+func (e AgentExecution) Normalized() AgentExecution {
+	if e == "" {
+		return DefaultAgentExecution
+	}
+
+	return e
+}
+
 type AgentStatus string
 
 const (
@@ -129,6 +155,7 @@ type Agent struct {
 	Icon              AgentIcon
 	Status            AgentStatus
 	Scope             AgentScope
+	Execution         AgentExecution
 	ProjectID         *uuid.UUID
 	ActionLimit       *int
 	AgentInstructions string
@@ -139,6 +166,41 @@ type Agent struct {
 
 func (a Agent) Disabled() bool {
 	return a.Status == AgentStatusDisabled
+}
+
+func (a Agent) Hosted() bool {
+	return a.Execution.Normalized() == AgentExecutionHosted
+}
+
+func (a Agent) ActingWith(token APIToken, now time.Time) (Actor, error) {
+	if token.AccountID != a.AccountID || !token.Usable(now) {
+		return Actor{}, ErrAgentAuthorityMissing
+	}
+
+	grant, ok := token.Grants.For(a.WorkspaceID)
+	scopes := token.Scopes.Normalized()
+
+	if !ok || len(scopes) == 0 || (!grant.AllTeams && len(grant.TeamIDs) == 0) {
+		return Actor{}, ErrAgentAuthorityMissing
+	}
+
+	authority := RequestedAuthority{
+		AllTeams: grant.AllTeams,
+		TeamIDs:  grant.TeamIDs,
+		Scopes:   AgentAPIScopes(scopes),
+	}
+
+	actor := authority.Replay(ActorKindAgent, a.AccountID, "", a.WorkspaceID)
+	agentID := a.ID
+	tokenID := token.ID
+
+	actor.TokenID = &tokenID
+	actor.TokenName = token.Name
+	actor.AgentID = &agentID
+	actor.AgentAllowance = a.Allowance()
+	actor.OwnerAccountID = a.OwnerAccountID
+
+	return actor, nil
 }
 
 func (a Agent) OwnedBy(accountID uuid.UUID) bool {
@@ -214,6 +276,14 @@ func ValidateAgentScope(scopeField, projectField string, scope AgentScope, proje
 	default:
 		return nil
 	}
+}
+
+func ValidateAgentExecution(field string, execution AgentExecution) FieldError {
+	if !execution.Valid() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
 }
 
 func ValidateAgentActionLimit(field string, limit *int) FieldError {
