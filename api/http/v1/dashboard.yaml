@@ -2160,7 +2160,6 @@ paths:
                 items: { $ref: '#/components/schemas/WorkspaceAgent' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
-        '409': { $ref: '#/components/responses/AgentUnusable' }
         '500': { $ref: '#/components/responses/Problem' }
     post:
       tags: [agents]
@@ -11733,12 +11732,16 @@ components:
 
     WorkspaceAgent:
       type: object
-      required: [agent, ownerName, ownerEmail, authority]
+      description: >-
+        authorityMissing is true when the agent has no credential, or none that reaches this
+        workspace; its authority is then empty and a replacement agent has to be registered.
+      required: [agent, ownerName, ownerEmail, authority, authorityMissing]
       properties:
         agent: { $ref: '#/components/schemas/Agent' }
         ownerName: { type: string }
         ownerEmail: { type: string }
         authority: { $ref: '#/components/schemas/AgentAuthority' }
+        authorityMissing: { type: boolean }
 
     SetAgentScopeRequest:
       type: object

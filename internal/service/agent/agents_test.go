@@ -1594,3 +1594,50 @@ func TestAScopeWithdrawnFromTheCatalogGrantsNothingButKeepsTheAgentListed(t *tes
 		t.Fatalf("listed = %+v, want the agent with only the scopes the catalog still offers", listed)
 	}
 }
+
+func TestAnAgentWithoutAuthorityIsListedMarkedRatherThanHidingTheRoster(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	broken := entity.Agent{ID: uuid.New(), WorkspaceID: h.workspaceID, AccountID: uuid.New(), OwnerAccountID: h.adminID}
+	healthy := entity.Agent{ID: uuid.New(), WorkspaceID: h.workspaceID, AccountID: uuid.New(), OwnerAccountID: h.adminID}
+
+	h.agents.EXPECT().ListByWorkspaceID(gomock.Any(), h.workspaceID).Return([]entity.Agent{broken, healthy}, nil)
+	h.accounts.EXPECT().GetByID(gomock.Any(), h.adminID).Return(entity.Account{ID: h.adminID}, nil).Times(2)
+	h.tokens.EXPECT().GetLatestByOwner(gomock.Any(), broken.AccountID).Return(entity.APIToken{}, entity.ErrAPITokenNotFound)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), healthy.AccountID).
+		Return(entity.APIToken{
+			Scopes: readScopes(),
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}, nil)
+
+	listed, err := h.service.List(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	if len(listed) != 2 {
+		t.Fatalf("listed %d agents, want both", len(listed))
+	}
+
+	if !listed[0].AuthorityMissing || len(listed[0].Authority.Scopes) != 0 {
+		t.Errorf("broken agent = %+v, want it marked without authority", listed[0])
+	}
+
+	if listed[1].AuthorityMissing || len(listed[1].Authority.Scopes) != 1 {
+		t.Errorf("healthy agent = %+v, want its authority", listed[1])
+	}
+}
+
+func TestOpeningAnAgentWithoutAuthorityStillSaysSo(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agent := entity.Agent{ID: uuid.New(), WorkspaceID: h.workspaceID, AccountID: uuid.New(), OwnerAccountID: h.adminID}
+
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agent.ID).Return(agent, nil)
+	h.accounts.EXPECT().GetByID(gomock.Any(), h.adminID).Return(entity.Account{ID: h.adminID}, nil)
+	h.tokens.EXPECT().GetLatestByOwner(gomock.Any(), agent.AccountID).Return(entity.APIToken{}, entity.ErrAPITokenNotFound)
+
+	if _, err := h.service.Get(context.Background(), h.workspaceID, agent.ID); !errors.Is(err, entity.ErrAgentAuthorityMissing) {
+		t.Fatalf("Get error = %v, want ErrAgentAuthorityMissing", err)
+	}
+}

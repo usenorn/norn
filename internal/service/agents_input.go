@@ -25,10 +25,11 @@ type RegisteredAgent struct {
 }
 
 type OwnedAgent struct {
-	Agent      entity.Agent
-	OwnerName  string
-	OwnerEmail string
-	Authority  AgentAuthority
+	Agent            entity.Agent
+	OwnerName        string
+	OwnerEmail       string
+	Authority        AgentAuthority
+	AuthorityMissing bool
 }
 
 type AgentAuthority struct {

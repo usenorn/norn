@@ -1668,6 +1668,7 @@ func workspaceAgentDTO(owned service.OwnedAgent) api.WorkspaceAgent {
 			AllTeams: owned.Authority.AllTeams,
 			TeamIds:  teamIDs,
 		},
+		AuthorityMissing: owned.AuthorityMissing,
 	}
 }
 

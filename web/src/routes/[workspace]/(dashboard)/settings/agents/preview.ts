@@ -75,6 +75,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 					],
 				},
@@ -104,6 +105,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 						{
 							agent: {
@@ -127,6 +129,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: false,
 								teamIds: ["00000000-0000-4000-8000-0000000009f1"],
 							},
+							authorityMissing: false,
 						},
 					],
 				},
@@ -170,6 +173,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 					],
 				},
@@ -215,6 +219,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 						{
 							agent: {
@@ -237,6 +242,7 @@ export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.en
 								allTeams: true,
 								teamIds: [],
 							},
+							authorityMissing: false,
 						},
 					],
 				},

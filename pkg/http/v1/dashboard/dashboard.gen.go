@@ -9967,12 +9967,13 @@ type WorkspaceAPIToken struct {
 	Token      APIToken `json:"token"`
 }
 
-// WorkspaceAgent defines model for WorkspaceAgent.
+// WorkspaceAgent authorityMissing is true when the agent has no credential, or none that reaches this workspace; its authority is then empty and a replacement agent has to be registered.
 type WorkspaceAgent struct {
-	Agent      Agent          `json:"agent"`
-	Authority  AgentAuthority `json:"authority"`
-	OwnerEmail string         `json:"ownerEmail"`
-	OwnerName  string         `json:"ownerName"`
+	Agent            Agent          `json:"agent"`
+	Authority        AgentAuthority `json:"authority"`
+	AuthorityMissing bool           `json:"authorityMissing"`
+	OwnerEmail       string         `json:"ownerEmail"`
+	OwnerName        string         `json:"ownerName"`
 }
 
 // WorkspaceAiProvider The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it.
@@ -47797,8 +47798,6 @@ type ListWorkspaceAgentsResponse struct {
 	ApplicationproblemJSON401 *Problem
 	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
 	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
-	ApplicationproblemJSON409 *AgentUnusable
 	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
 	ApplicationproblemJSON500 *Problem
 }
@@ -47816,11 +47815,6 @@ func (r ListWorkspaceAgentsResponse) GetApplicationproblemJSON401() *Problem {
 // GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
 func (r ListWorkspaceAgentsResponse) GetApplicationproblemJSON403() *Forbidden {
 	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
-func (r ListWorkspaceAgentsResponse) GetApplicationproblemJSON409() *AgentUnusable {
-	return r.ApplicationproblemJSON409
 }
 
 // GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
@@ -79872,13 +79866,6 @@ func ParseListWorkspaceAgentsResponse(rsp *http.Response) (*ListWorkspaceAgentsR
 			return nil, err
 		}
 		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest AgentUnusable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -120194,22 +120181,6 @@ func (response ListWorkspaceAgents403ApplicationProblemPlusJSONResponse) VisitLi
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceAgents409ApplicationProblemPlusJSONResponse struct {
-	AgentUnusableApplicationProblemPlusJSONResponse
-}
-
-func (response ListWorkspaceAgents409ApplicationProblemPlusJSONResponse) VisitListWorkspaceAgentsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }

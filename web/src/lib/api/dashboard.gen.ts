@@ -7494,11 +7494,13 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /** @description authorityMissing is true when the agent has no credential, or none that reaches this workspace; its authority is then empty and a replacement agent has to be registered. */
         WorkspaceAgent: {
             agent: components["schemas"]["Agent"];
             ownerName: string;
             ownerEmail: string;
             authority: components["schemas"]["AgentAuthority"];
+            authorityMissing: boolean;
         };
         SetAgentScopeRequest: {
             scope: components["schemas"]["AgentScope"];
@@ -12971,7 +12973,6 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
-            409: components["responses"]["AgentUnusable"];
             500: components["responses"]["Problem"];
         };
     };
