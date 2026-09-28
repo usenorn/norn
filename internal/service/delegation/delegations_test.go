@@ -104,6 +104,35 @@ func TestADisabledAgentCannotBeHandedWork(t *testing.T) {
 	}
 }
 
+func TestAHostedAgentIsNeverHandedCodingWork(t *testing.T) {
+	h := newHarness(t)
+	issue := h.issue()
+
+	agent := h.agent()
+	agent.Execution = entity.AgentExecutionHosted
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	_, err := h.service.Delegate(context.Background(), h.workspaceID, issue.ID, service.DelegateIssueInput{
+		AgentAccountID: agent.AccountID,
+	})
+	if !errors.Is(err, entity.ErrAgentHosted) {
+		t.Fatalf(
+			"delegating to a hosted agent returned %v, want %v; it has no runner, so the run "+
+				"would queue forever",
+			err, entity.ErrAgentHosted,
+		)
+	}
+
+	h.expectIssue(issue)
+	h.expectAgent(agent)
+
+	if _, err := h.service.Targets(context.Background(), h.workspaceID, issue.ID, agent.AccountID); !errors.Is(err, entity.ErrAgentHosted) {
+		t.Fatalf("targets for a hosted agent returned %v, want %v", err, entity.ErrAgentHosted)
+	}
+}
+
 func TestAnIssueNobodyIsAssignedCannotBeHandedToAnAgent(t *testing.T) {
 	h := newHarness(t)
 

@@ -147,6 +147,10 @@ func (s *delegationsService) Delegate(
 			return entity.ErrIssueDelegationAgentNotYours
 		}
 
+		if agent.Hosted() {
+			return entity.ErrAgentHosted
+		}
+
 		if agent.Disabled() {
 			return entity.ErrIssueDelegationAgentUnusable
 		}
@@ -226,6 +230,10 @@ func (s *delegationsService) Targets(
 
 	if !delegatable {
 		return service.DelegationTargets{}, entity.ErrIssueDelegationAgentNotYours
+	}
+
+	if agent.Hosted() {
+		return service.DelegationTargets{}, entity.ErrAgentHosted
 	}
 
 	placement, err := s.executions.Placement(ctx, issue, agent.ID)
