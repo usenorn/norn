@@ -359,19 +359,6 @@
 						<Alert.Title>You may not manage agents here</Alert.Title>
 						<Alert.Description>Ask an administrator of {workspace.name}.</Alert.Description>
 					</Alert.Root>
-				{:else if listing.kind === "authority_missing"}
-					<Alert.Root variant="warning">
-						<CircleAlert aria-hidden="true" />
-						<Alert.Title>An agent has no authority to restore</Alert.Title>
-						<Alert.Description>
-							Register a replacement agent with the authority it needs.
-						</Alert.Description>
-						<Alert.Action>
-							<Button href={registerHref} variant="secondary" size="sm" onclick={openRegister}>
-								Register replacement
-							</Button>
-						</Alert.Action>
-					</Alert.Root>
 				{:else if listing.kind === "unavailable"}
 					<Alert.Root variant="destructive">
 						<TriangleAlert aria-hidden="true" />
@@ -491,14 +478,19 @@
 												<span class="font-mono text-2xs text-muted-foreground">
 													{agentExecutionLabels[owned.agent.execution]}
 												</span>
-												<span class="font-mono text-2xs text-muted-foreground">
-													{owned.authority.scopes.length} permissions
-												</span>
-												<span class="font-mono text-2xs text-muted-foreground">
-													{owned.authority.allTeams
-														? "All reachable teams"
-														: `${owned.authority.teamIds.length} teams`}
-												</span>
+												{#if owned.authorityMissing}
+													<Tag name="No authority" />
+													<span class="text-2xs text-muted-foreground">Register a replacement</span>
+												{:else}
+													<span class="font-mono text-2xs text-muted-foreground">
+														{owned.authority.scopes.length} permissions
+													</span>
+													<span class="font-mono text-2xs text-muted-foreground">
+														{owned.authority.allTeams
+															? "All reachable teams"
+															: `${owned.authority.teamIds.length} teams`}
+													</span>
+												{/if}
 												<span class="font-mono text-2xs text-muted-foreground">
 													{owned.agent.actionLimit}/min
 												</span>
