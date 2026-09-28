@@ -421,6 +421,38 @@ func TestSomebodyWhoCannotManageTheAgentIsToldWhoCan(t *testing.T) {
 	}
 }
 
+func TestAnAgentThatStopsWithoutAnAnswerSaysWhy(t *testing.T) {
+	cases := map[entity.AgentConversationStop]string{
+		entity.AgentConversationAnswered:   "Ada had nothing to say.",
+		entity.AgentConversationRoundLimit: "Ada stopped after using as many tools as one answer may.",
+		entity.AgentConversationTokenLimit: "Ada stopped at this instance&#39;s limit on model usage for one answer.",
+		entity.AgentConversationTimeLimit:  "Ada ran out of time before it finished.",
+	}
+
+	for stop, want := range cases {
+		h := newHarness(t)
+
+		id := h.applying(privately("say hi"))
+		h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).
+			Return(h.linked(h.agent.OwnerAccountID, senderID), nil)
+		h.settles(id, entity.TelegramUpdateApplied)
+		h.messenger.EXPECT().Typing(gomock.Any(), botToken, gomock.Any()).Return(nil)
+		h.conversation.EXPECT().Append(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+		h.conversation.EXPECT().History(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return([]entity.AgentTurn{{Role: entity.AgentTurnUser, Text: "say hi"}}, nil)
+		h.hosted.EXPECT().Chat(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(entity.AgentReply{Stop: stop}, nil)
+
+		if err := h.updatesService().Apply(context.Background(), id); err != nil {
+			t.Fatalf("%s: Apply: %v", stop, err)
+		}
+
+		if len(h.sent) != 1 || h.sent[0].Text != want {
+			t.Errorf("%s: sent = %+v, want %q", stop, h.sent, want)
+		}
+	}
+}
+
 func TestAnAlreadyAppliedUpdateIsNotAppliedAgain(t *testing.T) {
 	h := newHarness(t)
 	id := uuid.New()

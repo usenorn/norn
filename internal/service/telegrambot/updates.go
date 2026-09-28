@@ -643,8 +643,17 @@ func (s *updates) reply(ctx context.Context, chat pendingChat) (string, error) {
 		return "", err
 	}
 
+	if answered.Stop != entity.AgentConversationAnswered || answered.Text == "" {
+		logging.From(ctx).WarnContext(ctx, "a telegram conversation stopped early",
+			"stop", string(answered.Stop),
+			"input_tokens", answered.Usage.Input,
+			"output_tokens", answered.Usage.Output,
+			"agent_id", target.agent.ID,
+		)
+	}
+
 	if answered.Text == "" {
-		return plain(fmt.Sprintf("%s had nothing to say.", target.agent.Name)), nil
+		return plain(stoppedText(target.agent.Name, answered.Stop)), nil
 	}
 
 	if err := s.conversation.Append(ctx, target.bot.ID, chat.message.ChatID, entity.AgentTurn{
@@ -659,6 +668,19 @@ func (s *updates) reply(ctx context.Context, chat pendingChat) (string, error) {
 	}
 
 	return replyText(answered.Text), nil
+}
+
+func stoppedText(agentName string, stop entity.AgentConversationStop) string {
+	switch stop {
+	case entity.AgentConversationRoundLimit:
+		return fmt.Sprintf("%s stopped after using as many tools as one answer may.", agentName)
+	case entity.AgentConversationTokenLimit:
+		return fmt.Sprintf("%s stopped at this instance's limit on model usage for one answer.", agentName)
+	case entity.AgentConversationTimeLimit:
+		return fmt.Sprintf("%s ran out of time before it finished.", agentName)
+	default:
+		return fmt.Sprintf("%s had nothing to say.", agentName)
+	}
 }
 
 func conversable(history []entity.AgentTurn) []entity.AgentTurn {
