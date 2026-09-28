@@ -146,6 +146,21 @@ func (mr *MockAgentMockRecorder) ScopedToProject(ctx, workspaceID, projectID any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScopedToProject", reflect.TypeOf((*MockAgent)(nil).ScopedToProject), ctx, workspaceID, projectID)
 }
 
+// SetExecution mocks base method.
+func (m *MockAgent) SetExecution(ctx context.Context, workspaceID, agentID uuid.UUID, execution entity.AgentExecution) (entity.Agent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetExecution", ctx, workspaceID, agentID, execution)
+	ret0, _ := ret[0].(entity.Agent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetExecution indicates an expected call of SetExecution.
+func (mr *MockAgentMockRecorder) SetExecution(ctx, workspaceID, agentID, execution any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExecution", reflect.TypeOf((*MockAgent)(nil).SetExecution), ctx, workspaceID, agentID, execution)
+}
+
 // SetInstructions mocks base method.
 func (m *MockAgent) SetInstructions(ctx context.Context, workspaceID, agentID uuid.UUID, instructions string) (entity.Agent, error) {
 	m.ctrl.T.Helper()

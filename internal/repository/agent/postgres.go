@@ -22,8 +22,8 @@ const (
 
 const agentColumns = `
 	a.id, a.workspace_id, a.account_id, a.owner_account_id, a.name, a.icon, a.status,
-	a.action_limit, a.agent_instructions, a.scope, a.project_id, a.disabled_at, a.created_at,
-	a.updated_at`
+	a.action_limit, a.agent_instructions, a.scope, a.execution, a.project_id, a.disabled_at,
+	a.created_at, a.updated_at`
 
 const insertAgentQuery = `
 	INSERT INTO workspace_agents
@@ -227,6 +227,36 @@ func (r *agentRepository) SetScope(
 	return r.GetByID(ctx, workspaceID, agentID)
 }
 
+func (r *agentRepository) SetExecution(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+	execution entity.AgentExecution,
+) (entity.Agent, error) {
+	result, err := r.db.Querier(ctx).ExecContext(
+		ctx,
+		`UPDATE workspace_agents
+		 SET execution = $3, updated_at = now()
+		 WHERE workspace_id = $1 AND id = $2`,
+		workspaceID.String(),
+		agentID.String(),
+		execution.Normalized(),
+	)
+	if err != nil {
+		return entity.Agent{}, fmt.Errorf("set agent execution: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return entity.Agent{}, fmt.Errorf("set agent execution: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.Agent{}, entity.ErrAgentNotFound
+	}
+
+	return r.GetByID(ctx, workspaceID, agentID)
+}
+
 func (r *agentRepository) ScopedToProject(
 	ctx context.Context,
 	workspaceID, projectID uuid.UUID,
@@ -276,7 +306,7 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 			rawAccount, rawOwner string
 			name, icon, status   string
 			instructions         string
-			scope                string
+			scope, execution     string
 			rawProject           sql.NullString
 			limit                sql.NullInt64
 			disabledAt           sql.NullTime
@@ -285,7 +315,7 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 
 		if err := rows.Scan(
 			&rawID, &rawWorkspace, &rawAccount, &rawOwner, &name, &icon, &status,
-			&limit, &instructions, &scope, &rawProject, &disabledAt, &createdAt, &updatedAt,
+			&limit, &instructions, &scope, &execution, &rawProject, &disabledAt, &createdAt, &updatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan agent: %w", err)
 		}
@@ -295,6 +325,7 @@ func (r *agentRepository) many(ctx context.Context, query string, args ...any) (
 			Icon:              entity.AgentIcon(icon),
 			Status:            entity.AgentStatus(status),
 			Scope:             entity.AgentScope(scope),
+			Execution:         entity.AgentExecution(execution),
 			AgentInstructions: instructions,
 			CreatedAt:         createdAt,
 			UpdatedAt:         updatedAt,
