@@ -40,6 +40,7 @@ var (
 	ErrTelegramEncryptionKeyMissing = errors.New("this instance has no encryption key, so a bot token cannot be stored")
 	ErrTelegramSecretInvalid        = errors.New("telegram update secret is invalid")
 	ErrTelegramUpdateDuplicate      = errors.New("telegram update already received")
+	ErrTelegramUpdateNotFound       = errors.New("telegram update not found")
 	ErrTelegramLinkCodeInvalid      = errors.New("telegram link code is invalid or expired")
 	ErrTelegramAccountNotLinked     = errors.New("telegram account is not linked")
 	ErrTelegramGroupNotFound        = errors.New("telegram group not found")
@@ -146,11 +147,17 @@ type TelegramLinkCode struct {
 }
 
 type TelegramUpdate struct {
-	ID         uuid.UUID
-	BotID      uuid.UUID
-	UpdateID   int64
-	Payload    []byte
-	ReceivedAt time.Time
+	ID          uuid.UUID
+	BotID       uuid.UUID
+	UpdateID    int64
+	Payload     []byte
+	Outcome     TelegramUpdateOutcome
+	ReceivedAt  time.Time
+	ProcessedAt *time.Time
+}
+
+func (u TelegramUpdate) Processed() bool {
+	return u.ProcessedAt != nil
 }
 
 type TelegramSender struct {
@@ -274,6 +281,7 @@ type TelegramQuestionMessage struct {
 	ChatID     int64
 	MessageID  int64
 	QuestionID uuid.UUID
+	Settled    bool
 }
 
 func TelegramTokenHint(token string) string {
