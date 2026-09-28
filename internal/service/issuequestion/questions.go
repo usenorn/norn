@@ -3,12 +3,14 @@ package issuequestion
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -22,6 +24,7 @@ type questionsService struct {
 	notify      repository.NotificationEvent
 	executions  service.Executions
 	events      service.Events
+	jobs        repository.JobProducer
 	transactor  repository.Transactor
 	authorizer  service.Authorizer
 }
@@ -34,6 +37,7 @@ func New(
 	notify repository.NotificationEvent,
 	executions service.Executions,
 	events service.Events,
+	jobs repository.JobProducer,
 	transactor repository.Transactor,
 	authorizer service.Authorizer,
 ) service.IssueQuestions {
@@ -45,6 +49,7 @@ func New(
 		notify:      notify,
 		executions:  executions,
 		events:      events,
+		jobs:        jobs,
 		transactor:  transactor,
 		authorizer:  authorizer,
 	}
@@ -169,6 +174,7 @@ func (s *questionsService) ask(
 		}
 
 		s.announce(ctx, target, asked, entity.EventQuestionAsked)
+		s.relay(ctx, asked)
 
 		return nil
 	})
@@ -288,6 +294,7 @@ func (s *questionsService) Answer(
 		}
 
 		s.announce(ctx, subject(issue), answered, entity.EventQuestionSettled)
+		s.relay(ctx, answered)
 
 		return nil
 	}); err != nil {
@@ -337,6 +344,7 @@ func (s *questionsService) Dismiss(
 	}
 
 	s.announce(ctx, subject(issue), dismissed, entity.EventQuestionSettled)
+	s.relay(ctx, dismissed)
 
 	if dismissed.Blocking && dismissed.ExecutionID != "" {
 		if err := s.executions.Unanswerable(ctx, dismissed, dismissedNote); err != nil {
@@ -354,6 +362,24 @@ func (s *questionsService) awaitedBy(ctx context.Context, target asking) uuid.UU
 	}
 
 	return delegation.DelegatedByAccountID
+}
+
+func (s *questionsService) relay(ctx context.Context, question entity.IssueQuestion) {
+	payload := entity.TelegramQuestionPayload{WorkspaceID: question.WorkspaceID, QuestionID: question.ID}
+
+	enqueue := s.jobs.EnqueueTelegramQuestion
+	if question.Settled() {
+		enqueue = s.jobs.EnqueueTelegramSettlement
+	}
+
+	postgres.AfterCommit(ctx, func(ctx context.Context) {
+		if err := enqueue(ctx, payload); err != nil {
+			logging.From(ctx).WarnContext(
+				ctx, "queueing a question for telegram failed",
+				slog.String("question_id", question.ID.String()), slog.String("error", err.Error()),
+			)
+		}
+	})
 }
 
 func (s *questionsService) announce(

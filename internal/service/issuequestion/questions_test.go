@@ -344,3 +344,63 @@ func TestAQuestionNobodyCouldAnswerIsRefusedWhenTheRunAsksIt(t *testing.T) {
 		)
 	}
 }
+
+func TestEveryQuestionIsQueuedForTelegramWhenAskedAndAgainWhenSettled(t *testing.T) {
+	cases := []struct {
+		name   string
+		settle func(t *testing.T, h *harness, asked entity.IssueQuestion)
+	}{
+		{
+			name: "answered",
+			settle: func(t *testing.T, h *harness, asked entity.IssueQuestion) {
+				if _, err := h.service.Answer(
+					context.Background(), h.workspaceID, h.issue.ID, asked.ID,
+					service.AnswerQuestionInput{Answer: "Remove now"},
+				); err != nil {
+					t.Fatalf("answer: %v", err)
+				}
+			},
+		},
+		{
+			name: "dismissed",
+			settle: func(t *testing.T, h *harness, asked entity.IssueQuestion) {
+				if _, err := h.service.Dismiss(context.Background(), h.workspaceID, h.issue.ID, asked.ID); err != nil {
+					t.Fatalf("dismiss: %v", err)
+				}
+			},
+		},
+		{
+			name: "expired",
+			settle: func(t *testing.T, h *harness, _ entity.IssueQuestion) {
+				h.stored[0].Deadline = time.Now().UTC().Add(-time.Hour)
+
+				if err := h.service.SweepExpired(context.Background()); err != nil {
+					t.Fatalf("sweep: %v", err)
+				}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t)
+
+			if err := h.service.Asked(h.asRunner(context.Background()), h.runner, h.asking("01REF", false)); err != nil {
+				t.Fatalf("record what a run asked: %v", err)
+			}
+
+			asked := h.only(t)
+			want := entity.TelegramQuestionPayload{WorkspaceID: h.workspaceID, QuestionID: asked.ID}
+
+			if len(h.relayed) != 1 || h.relayed[0] != want {
+				t.Fatalf("queued for telegram %+v, want the asked question once", h.relayed)
+			}
+
+			tc.settle(t, h, asked)
+
+			if len(h.settled) != 1 || h.settled[0] != want {
+				t.Fatalf("queued settlements %+v, want the question once", h.settled)
+			}
+		})
+	}
+}

@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	activityrepo "github.com/usenorn/norn/internal/repository/activity"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	jobrepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	notifyrepo "github.com/usenorn/norn/internal/repository/notificationevent"
@@ -33,6 +34,7 @@ type harness struct {
 	executions  *executionsvc.MockExecutions
 	events      *eventsvc.MockEvents
 	authorizer  *authorizersvc.MockAuthorizer
+	jobs        *jobrepo.MockJobProducer
 	service     service.IssueQuestions
 
 	workspaceID uuid.UUID
@@ -45,6 +47,8 @@ type harness struct {
 	recorded []entity.Activity
 	answered []entity.IssueQuestion
 	stranded []entity.IssueQuestion
+	relayed  []entity.TelegramQuestionPayload
+	settled  []entity.TelegramQuestionPayload
 }
 
 func newHarness(t *testing.T) *harness {
@@ -65,6 +69,7 @@ func newHarness(t *testing.T) *harness {
 		executions:  executionsvc.NewMockExecutions(ctrl),
 		events:      eventsvc.NewMockEvents(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
+		jobs:        jobrepo.NewMockJobProducer(ctrl),
 		workspaceID: workspaceID,
 		caller:      uuid.New(),
 		issue: entity.Issue{
@@ -104,13 +109,34 @@ func newHarness(t *testing.T) *harness {
 
 	h.expectStore()
 	h.expectSurroundings()
+	h.expectRelays()
 
 	h.service = questionsvc.New(
 		h.questions, h.issues, h.delegations, h.activity, h.notify,
-		h.executions, h.events, transactor, h.authorizer,
+		h.executions, h.events, h.jobs, transactor, h.authorizer,
 	)
 
 	return h
+}
+
+func (h *harness) expectRelays() {
+	h.jobs.EXPECT().
+		EnqueueTelegramQuestion(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, payload entity.TelegramQuestionPayload) error {
+			h.relayed = append(h.relayed, payload)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.jobs.EXPECT().
+		EnqueueTelegramSettlement(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, payload entity.TelegramQuestionPayload) error {
+			h.settled = append(h.settled, payload)
+
+			return nil
+		}).
+		AnyTimes()
 }
 
 // expectStore keeps the rows the service writes in memory and enforces the two rules the schema
