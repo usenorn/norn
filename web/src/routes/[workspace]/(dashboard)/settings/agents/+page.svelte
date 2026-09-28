@@ -30,6 +30,7 @@
 	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import { onDate } from "$lib/time";
 	import {
+		agentExecutionLabels,
 		agentPath,
 		approvalsPath,
 		failureMessage,
@@ -487,6 +488,9 @@
 											/>
 											<div class="flex flex-wrap items-center gap-x-3 gap-y-1 pl-11">
 												<Tag name={owned.agent.status === "active" ? "Active" : "Disabled"} />
+												<span class="font-mono text-2xs text-muted-foreground">
+													{agentExecutionLabels[owned.agent.execution]}
+												</span>
 												<span class="font-mono text-2xs text-muted-foreground">
 													{owned.authority.scopes.length} permissions
 												</span>

@@ -131,3 +131,7 @@ export function failureMessage(
 			return "We could not reach the server. Nothing changed.";
 	}
 }
+
+export function aiProviderPath(workspace: string): string {
+	return `/${workspace}/settings/ai-provider`;
+}

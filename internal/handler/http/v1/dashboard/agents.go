@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"errors"
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
@@ -140,6 +141,70 @@ func (h *handler) SetWorkspaceAgentScope(
 	}
 
 	return api.SetWorkspaceAgentScope200JSONResponse(workspaceAgentDTO(agent)), nil
+}
+
+func (h *handler) SetWorkspaceAgentExecution(
+	ctx context.Context,
+	request api.SetWorkspaceAgentExecutionRequestObject,
+) (api.SetWorkspaceAgentExecutionResponseObject, error) {
+	agent, err := h.agents.SetExecution(ctx, service.SetAgentExecutionInput{
+		WorkspaceID: request.WorkspaceId,
+		AgentID:     request.AgentId,
+		Execution:   entity.AgentExecution(request.Body.Execution),
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceAgentExecution200JSONResponse(workspaceAgentDTO(agent)), nil
+}
+
+func (h *handler) ConverseWithWorkspaceAgent(
+	ctx context.Context,
+	request api.ConverseWithWorkspaceAgentRequestObject,
+) (api.ConverseWithWorkspaceAgentResponseObject, error) {
+	turns := make([]entity.AgentTurn, 0, len(request.Body.Turns))
+
+	for _, turn := range request.Body.Turns {
+		turns = append(turns, entity.AgentTurn{Role: entity.AgentTurnRole(turn.Role), Text: turn.Text})
+	}
+
+	reply, err := h.hostedAgents.Converse(ctx, request.WorkspaceId, request.AgentId, turns)
+	if err != nil {
+		if errors.Is(err, entity.ErrAIProviderNotConfigured) {
+			return agentUnusableProblem(api.AgentUnusableProblemCodeAiProviderNotConfigured, err), nil
+		}
+
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ConverseWithWorkspaceAgent200JSONResponse(agentReplyDTO(reply)), nil
+}
+
+func agentReplyDTO(reply entity.AgentReply) api.AgentConversationReply {
+	calls := make([]api.AgentToolCall, 0, len(reply.ToolCalls))
+
+	for _, call := range reply.ToolCalls {
+		calls = append(calls, api.AgentToolCall{Name: call.Name, Refusal: nilIfEmpty(call.Refusal)})
+	}
+
+	return api.AgentConversationReply{
+		Text:      reply.Text,
+		ToolCalls: calls,
+		Usage: api.AgentConversationUsage{
+			InputTokens:  int32(reply.Usage.Input),
+			OutputTokens: int32(reply.Usage.Output),
+		},
+		Stop: api.AgentConversationStop(reply.Stop),
+	}
 }
 
 func (h *handler) DisableWorkspaceAgent(

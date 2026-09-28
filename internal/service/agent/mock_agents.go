@@ -252,6 +252,21 @@ func (mr *MockAgentsMockRecorder) Rotate(ctx, workspaceID, agentID any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rotate", reflect.TypeOf((*MockAgents)(nil).Rotate), ctx, workspaceID, agentID)
 }
 
+// SetExecution mocks base method.
+func (m *MockAgents) SetExecution(ctx context.Context, input service.SetAgentExecutionInput) (service.OwnedAgent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetExecution", ctx, input)
+	ret0, _ := ret[0].(service.OwnedAgent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetExecution indicates an expected call of SetExecution.
+func (mr *MockAgentsMockRecorder) SetExecution(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetExecution", reflect.TypeOf((*MockAgents)(nil).SetExecution), ctx, input)
+}
+
 // SetInstructions mocks base method.
 func (m *MockAgents) SetInstructions(ctx context.Context, input service.SetAgentInstructionsInput) (service.OwnedAgent, error) {
 	m.ctrl.T.Helper()

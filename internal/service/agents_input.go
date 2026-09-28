@@ -44,6 +44,12 @@ type RescopeAgentInput struct {
 	ProjectID   *uuid.UUID
 }
 
+type SetAgentExecutionInput struct {
+	WorkspaceID uuid.UUID
+	AgentID     uuid.UUID
+	Execution   entity.AgentExecution
+}
+
 type SetAgentInstructionsInput struct {
 	WorkspaceID  uuid.UUID
 	AgentID      uuid.UUID

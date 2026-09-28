@@ -13,6 +13,7 @@ function agent(fields: Partial<Agent>): Agent {
 		icon: "bot",
 		status: "active",
 		scope: "member",
+		execution: "runner",
 		actionLimit: 120,
 		createdAt: "2026-07-02T09:00:00Z",
 		...fields,

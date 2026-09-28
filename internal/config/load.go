@@ -18,6 +18,7 @@ const (
 	envPrefix                  = "NORN"
 	workspaceStorageKey        = "attachments.max_workspace_bytes"
 	cloudWorkspaceStorageBytes = int64(1 << 30)
+	minimumOutputTokens        = 16
 )
 
 func New(cfgFile string) (Config, error) {
@@ -164,6 +165,10 @@ func validate(cfg Config) error {
 	}
 
 	if err := validateOpenAI(cfg.OpenAI); err != nil {
+		return err
+	}
+
+	if err := validateAgentHosting(cfg.AgentHosting, cfg.HTTP); err != nil {
 		return err
 	}
 
@@ -559,6 +564,41 @@ func validateOpenAI(cfg OpenAI) error {
 				destination, err,
 			)
 		}
+	}
+
+	return nil
+}
+
+func validateAgentHosting(cfg AgentHosting, server HTTP) error {
+	if cfg.Timeout <= 0 || cfg.Timeout >= server.RequestTimeout {
+		return fmt.Errorf(
+			"agent_hosting.timeout (%s) must be positive and shorter than http.request_timeout "+
+				"(%s); a conversation that outlives the request is cut off without its answer",
+			cfg.Timeout, server.RequestTimeout,
+		)
+	}
+
+	if cfg.MaxToolRounds <= 0 {
+		return fmt.Errorf("agent_hosting.max_tool_rounds (%d) must be positive", cfg.MaxToolRounds)
+	}
+
+	if cfg.MaxOutputTokens < minimumOutputTokens {
+		return fmt.Errorf(
+			"agent_hosting.max_output_tokens (%d) must be at least %d; the Responses API refuses "+
+				"anything smaller",
+			cfg.MaxOutputTokens, minimumOutputTokens,
+		)
+	}
+
+	if cfg.MaxTotalTokens < cfg.MaxOutputTokens {
+		return fmt.Errorf(
+			"agent_hosting.max_total_tokens (%d) must be at least agent_hosting.max_output_tokens (%d)",
+			cfg.MaxTotalTokens, cfg.MaxOutputTokens,
+		)
+	}
+
+	if cfg.MaxToolResultBytes <= 0 {
+		return fmt.Errorf("agent_hosting.max_tool_result_bytes (%d) must be positive", cfg.MaxToolResultBytes)
 	}
 
 	return nil
@@ -966,6 +1006,11 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("openai.dial_timeout", 5*time.Second)
 	v.SetDefault("openai.allowed_destinations", []string{})
 	v.SetDefault("openai.max_response_size", int64(4<<20))
+	v.SetDefault("agent_hosting.timeout", 20*time.Second)
+	v.SetDefault("agent_hosting.max_tool_rounds", 8)
+	v.SetDefault("agent_hosting.max_output_tokens", 2048)
+	v.SetDefault("agent_hosting.max_total_tokens", 60000)
+	v.SetDefault("agent_hosting.max_tool_result_bytes", 32<<10)
 
 	v.SetDefault("agent_tooling.github_endpoint", "https://api.github.com")
 	v.SetDefault("agent_tooling.github_raw_endpoint", "https://raw.githubusercontent.com")

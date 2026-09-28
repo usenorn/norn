@@ -153,6 +153,7 @@ import (
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	executionservicesvc "github.com/usenorn/norn/internal/service/executionservice"
 	executionuploadsvc "github.com/usenorn/norn/internal/service/executionupload"
+	hostedagentsvc "github.com/usenorn/norn/internal/service/hostedagent"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
 	csvfilesvc "github.com/usenorn/norn/internal/service/imports/csvfile"
 	linearsvc "github.com/usenorn/norn/internal/service/imports/linear"
@@ -348,6 +349,7 @@ var baseSet = wire.NewSet(
 	jobssvc.Set,
 	ssoconnectionsvc.Set,
 	aiprovidersvc.Set,
+	hostedagentsvc.Set,
 	agentcapabilitysvc.Set,
 	auditsvc.Set,
 	licensingsvc.Set,

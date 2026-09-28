@@ -38,6 +38,7 @@ type WorkspaceAgent struct {
 	AgentInstructions string      `boil:"agent_instructions" json:"agent_instructions" toml:"agent_instructions" yaml:"agent_instructions"`
 	Scope             string      `boil:"scope" json:"scope" toml:"scope" yaml:"scope"`
 	ProjectID         null.String `boil:"project_id" json:"project_id,omitempty" toml:"project_id" yaml:"project_id,omitempty"`
+	Execution         string      `boil:"execution" json:"execution" toml:"execution" yaml:"execution"`
 
 	R *workspaceAgentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceAgentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -58,6 +59,7 @@ var WorkspaceAgentColumns = struct {
 	AgentInstructions string
 	Scope             string
 	ProjectID         string
+	Execution         string
 }{
 	ID:                "id",
 	WorkspaceID:       "workspace_id",
@@ -73,6 +75,7 @@ var WorkspaceAgentColumns = struct {
 	AgentInstructions: "agent_instructions",
 	Scope:             "scope",
 	ProjectID:         "project_id",
+	Execution:         "execution",
 }
 
 var WorkspaceAgentTableColumns = struct {
@@ -90,6 +93,7 @@ var WorkspaceAgentTableColumns = struct {
 	AgentInstructions string
 	Scope             string
 	ProjectID         string
+	Execution         string
 }{
 	ID:                "workspace_agents.id",
 	WorkspaceID:       "workspace_agents.workspace_id",
@@ -105,6 +109,7 @@ var WorkspaceAgentTableColumns = struct {
 	AgentInstructions: "workspace_agents.agent_instructions",
 	Scope:             "workspace_agents.scope",
 	ProjectID:         "workspace_agents.project_id",
+	Execution:         "workspace_agents.execution",
 }
 
 // Generated where
@@ -124,6 +129,7 @@ var WorkspaceAgentWhere = struct {
 	AgentInstructions whereHelperstring
 	Scope             whereHelperstring
 	ProjectID         whereHelpernull_String
+	Execution         whereHelperstring
 }{
 	ID:                whereHelperstring{field: "\"workspace_agents\".\"id\""},
 	WorkspaceID:       whereHelperstring{field: "\"workspace_agents\".\"workspace_id\""},
@@ -139,6 +145,7 @@ var WorkspaceAgentWhere = struct {
 	AgentInstructions: whereHelperstring{field: "\"workspace_agents\".\"agent_instructions\""},
 	Scope:             whereHelperstring{field: "\"workspace_agents\".\"scope\""},
 	ProjectID:         whereHelpernull_String{field: "\"workspace_agents\".\"project_id\""},
+	Execution:         whereHelperstring{field: "\"workspace_agents\".\"execution\""},
 }
 
 // WorkspaceAgentRels is where relationship names are stored.
@@ -387,9 +394,9 @@ func (r *workspaceAgentR) GetAgentWorkspaceRunners() WorkspaceRunnerSlice {
 type workspaceAgentL struct{}
 
 var (
-	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions", "scope", "project_id"}
+	workspaceAgentAllColumns            = []string{"id", "workspace_id", "account_id", "owner_account_id", "name", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions", "scope", "project_id", "execution"}
 	workspaceAgentColumnsWithoutDefault = []string{"workspace_id", "account_id", "owner_account_id", "name"}
-	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions", "scope", "project_id"}
+	workspaceAgentColumnsWithDefault    = []string{"id", "status", "action_limit", "disabled_at", "created_at", "updated_at", "icon", "agent_instructions", "scope", "project_id", "execution"}
 	workspaceAgentPrimaryKeyColumns     = []string{"id"}
 	workspaceAgentGeneratedColumns      = []string{}
 )

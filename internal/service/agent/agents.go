@@ -458,6 +458,58 @@ func (s *agentsService) Rescope(
 	return s.describe(ctx, saved)
 }
 
+func (s *agentsService) SetExecution(
+	ctx context.Context,
+	input service.SetAgentExecutionInput,
+) (service.OwnedAgent, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionManage,
+		WorkspaceID: input.WorkspaceID,
+	})
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return service.OwnedAgent{}, entity.ErrAPITokenMintForbidden
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateAgentExecution("execution", input.Execution),
+	); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	agent, err := s.agents.GetByID(ctx, input.WorkspaceID, input.AgentID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if err := manageable(agent, decision); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if agent.Execution.Normalized() == input.Execution {
+		return s.describe(ctx, agent)
+	}
+
+	saved, err := s.agents.SetExecution(ctx, input.WorkspaceID, input.AgentID, input.Execution)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  input.WorkspaceID,
+		Action:       entity.AuditAgentExecution,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   saved.ID,
+		ResourceName: saved.Name,
+	})
+
+	return s.describe(ctx, saved)
+}
+
 func (s *agentsService) grantableScope(
 	ctx context.Context,
 	workspaceID, authority uuid.UUID,
@@ -532,7 +584,7 @@ func (s *agentsService) Delegatable(
 	delegatable := make([]entity.Agent, 0, len(agents))
 
 	for _, agent := range agents {
-		if agent.Disabled() {
+		if agent.Disabled() || agent.Hosted() {
 			continue
 		}
 

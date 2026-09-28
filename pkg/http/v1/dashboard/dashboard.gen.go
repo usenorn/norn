@@ -447,6 +447,48 @@ func (e AgentCapabilityUpstreamProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for AgentConversationStop.
+const (
+	AgentConversationStopAnswered   AgentConversationStop = "answered"
+	AgentConversationStopRoundLimit AgentConversationStop = "round_limit"
+	AgentConversationStopTimeLimit  AgentConversationStop = "time_limit"
+	AgentConversationStopTokenLimit AgentConversationStop = "token_limit"
+)
+
+// Valid indicates whether the value is a known member of the AgentConversationStop enum.
+func (e AgentConversationStop) Valid() bool {
+	switch e {
+	case AgentConversationStopAnswered:
+		return true
+	case AgentConversationStopRoundLimit:
+		return true
+	case AgentConversationStopTimeLimit:
+		return true
+	case AgentConversationStopTokenLimit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AgentExecution.
+const (
+	AgentExecutionHosted AgentExecution = "hosted"
+	AgentExecutionRunner AgentExecution = "runner"
+)
+
+// Valid indicates whether the value is a known member of the AgentExecution enum.
+func (e AgentExecution) Valid() bool {
+	switch e {
+	case AgentExecutionHosted:
+		return true
+	case AgentExecutionRunner:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentHeldProblemCode.
 const (
 	AgentActionHeld AgentHeldProblemCode = "agent_action_held"
@@ -684,20 +726,40 @@ func (e AgentStatus) Valid() bool {
 	}
 }
 
+// Defines values for AgentTurnRole.
+const (
+	AgentTurnRoleAssistant AgentTurnRole = "assistant"
+	AgentTurnRoleUser      AgentTurnRole = "user"
+)
+
+// Valid indicates whether the value is a known member of the AgentTurnRole enum.
+func (e AgentTurnRole) Valid() bool {
+	switch e {
+	case AgentTurnRoleAssistant:
+		return true
+	case AgentTurnRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AgentUnusableProblemCode.
 const (
-	AgentUnusableProblemCodeAgentActive           AgentUnusableProblemCode = "agent_active"
-	AgentUnusableProblemCodeAgentAuthorityMissing AgentUnusableProblemCode = "agent_authority_missing"
-	AgentUnusableProblemCodeAgentDisabled         AgentUnusableProblemCode = "agent_disabled"
-	AgentUnusableProblemCodeAgentNameTaken        AgentUnusableProblemCode = "agent_name_taken"
-	AgentUnusableProblemCodeAgentOwnerInvalid     AgentUnusableProblemCode = "agent_owner_invalid"
-	AgentUnusableProblemCodeAgentProposalSettled  AgentUnusableProblemCode = "agent_proposal_settled"
-	AgentUnusableProblemCodeAgentScopeForbidden   AgentUnusableProblemCode = "agent_scope_forbidden"
-	AgentUnusableProblemCodeTokenGrantInvalid     AgentUnusableProblemCode = "token_grant_invalid"
-	AgentUnusableProblemCodeTokenGrantMissing     AgentUnusableProblemCode = "token_grant_missing"
-	AgentUnusableProblemCodeTokenMayNotMint       AgentUnusableProblemCode = "token_may_not_mint"
-	AgentUnusableProblemCodeTokenScopeExceeds     AgentUnusableProblemCode = "token_scope_exceeds"
-	AgentUnusableProblemCodeTokenScopeInvalid     AgentUnusableProblemCode = "token_scope_invalid"
+	AgentUnusableProblemCodeAgentActive             AgentUnusableProblemCode = "agent_active"
+	AgentUnusableProblemCodeAgentAuthorityMissing   AgentUnusableProblemCode = "agent_authority_missing"
+	AgentUnusableProblemCodeAgentDisabled           AgentUnusableProblemCode = "agent_disabled"
+	AgentUnusableProblemCodeAgentNameTaken          AgentUnusableProblemCode = "agent_name_taken"
+	AgentUnusableProblemCodeAgentNotHosted          AgentUnusableProblemCode = "agent_not_hosted"
+	AgentUnusableProblemCodeAgentOwnerInvalid       AgentUnusableProblemCode = "agent_owner_invalid"
+	AgentUnusableProblemCodeAgentProposalSettled    AgentUnusableProblemCode = "agent_proposal_settled"
+	AgentUnusableProblemCodeAgentScopeForbidden     AgentUnusableProblemCode = "agent_scope_forbidden"
+	AgentUnusableProblemCodeAiProviderNotConfigured AgentUnusableProblemCode = "ai_provider_not_configured"
+	AgentUnusableProblemCodeTokenGrantInvalid       AgentUnusableProblemCode = "token_grant_invalid"
+	AgentUnusableProblemCodeTokenGrantMissing       AgentUnusableProblemCode = "token_grant_missing"
+	AgentUnusableProblemCodeTokenMayNotMint         AgentUnusableProblemCode = "token_may_not_mint"
+	AgentUnusableProblemCodeTokenScopeExceeds       AgentUnusableProblemCode = "token_scope_exceeds"
+	AgentUnusableProblemCodeTokenScopeInvalid       AgentUnusableProblemCode = "token_scope_invalid"
 )
 
 // Valid indicates whether the value is a known member of the AgentUnusableProblemCode enum.
@@ -711,11 +773,15 @@ func (e AgentUnusableProblemCode) Valid() bool {
 		return true
 	case AgentUnusableProblemCodeAgentNameTaken:
 		return true
+	case AgentUnusableProblemCodeAgentNotHosted:
+		return true
 	case AgentUnusableProblemCodeAgentOwnerInvalid:
 		return true
 	case AgentUnusableProblemCodeAgentProposalSettled:
 		return true
 	case AgentUnusableProblemCodeAgentScopeForbidden:
+		return true
+	case AgentUnusableProblemCodeAiProviderNotConfigured:
 		return true
 	case AgentUnusableProblemCodeTokenGrantInvalid:
 		return true
@@ -846,6 +912,7 @@ const (
 	AuditActionAgentCapabilityDetached      AuditAction = "agent.capability_detached"
 	AuditActionAgentDisabled                AuditAction = "agent.disabled"
 	AuditActionAgentEnabled                 AuditAction = "agent.enabled"
+	AuditActionAgentExecutionChanged        AuditAction = "agent.execution_changed"
 	AuditActionAgentInstructionsChanged     AuditAction = "agent.instructions_changed"
 	AuditActionAgentMcpConnected            AuditAction = "agent.mcp_connected"
 	AuditActionAgentMcpDisconnected         AuditAction = "agent.mcp_disconnected"
@@ -927,6 +994,8 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentDisabled:
 		return true
 	case AuditActionAgentEnabled:
+		return true
+	case AuditActionAgentExecutionChanged:
 		return true
 	case AuditActionAgentInstructionsChanged:
 		return true
@@ -2643,6 +2712,7 @@ const (
 	IssueConflictProblemCodeCycleTeamMismatch            IssueConflictProblemCode = "cycle_team_mismatch"
 	IssueConflictProblemCodeIssueAlreadyOnTeam           IssueConflictProblemCode = "issue_already_on_team"
 	IssueConflictProblemCodeIssueChildrenOpen            IssueConflictProblemCode = "issue_children_open"
+	IssueConflictProblemCodeIssueDelegationAgentHosted   IssueConflictProblemCode = "issue_delegation_agent_hosted"
 	IssueConflictProblemCodeIssueDelegationAgentNotYours IssueConflictProblemCode = "issue_delegation_agent_not_yours"
 	IssueConflictProblemCodeIssueDelegationAgentUnusable IssueConflictProblemCode = "issue_delegation_agent_unusable"
 	IssueConflictProblemCodeIssueDelegationHeld          IssueConflictProblemCode = "issue_delegation_held"
@@ -2672,6 +2742,8 @@ func (e IssueConflictProblemCode) Valid() bool {
 	case IssueConflictProblemCodeIssueAlreadyOnTeam:
 		return true
 	case IssueConflictProblemCodeIssueChildrenOpen:
+		return true
+	case IssueConflictProblemCodeIssueDelegationAgentHosted:
 		return true
 	case IssueConflictProblemCodeIssueDelegationAgentNotYours:
 		return true
@@ -5165,13 +5237,16 @@ type Agent struct {
 	ActionLimit int32 `json:"actionLimit"`
 
 	// AgentInstructions Standing instructions for agents at this level, written the way an AGENTS.md file is. The workspace's, the project's and the agent's own instructions are added together rather than replacing one another, the workspace's carrying the most weight.
-	AgentInstructions *string            `json:"agentInstructions,omitempty"`
-	CreatedAt         time.Time          `json:"createdAt"`
-	DisabledAt        *time.Time         `json:"disabledAt,omitempty"`
-	Icon              AgentIcon          `json:"icon"`
-	Id                openapi_types.UUID `json:"id"`
-	Name              string             `json:"name"`
-	OwnerAccountId    openapi_types.UUID `json:"ownerAccountId"`
+	AgentInstructions *string    `json:"agentInstructions,omitempty"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	DisabledAt        *time.Time `json:"disabledAt,omitempty"`
+
+	// Execution Where the agent works. runner is a Norn Runner its owner enrolled, taking delegated coding work; hosted is Norn itself, answering in conversation with the workspace's AI provider.
+	Execution      AgentExecution     `json:"execution"`
+	Icon           AgentIcon          `json:"icon"`
+	Id             openapi_types.UUID `json:"id"`
+	Name           string             `json:"name"`
+	OwnerAccountId openapi_types.UUID `json:"ownerAccountId"`
 
 	// ProjectId The project this agent is scoped to, present only when the scope is project.
 	ProjectId *openapi_types.UUID `json:"projectId,omitempty"`
@@ -5239,6 +5314,33 @@ type AgentCapabilityUpstreamProblem struct {
 
 // AgentCapabilityUpstreamProblemCode defines model for AgentCapabilityUpstreamProblem.Code.
 type AgentCapabilityUpstreamProblemCode string
+
+// AgentConversationReply defines model for AgentConversationReply.
+type AgentConversationReply struct {
+	// Stop Why the agent stopped. answered is a finished answer; the others are this instance's limits on tool rounds, tokens and time, reached before the agent finished.
+	Stop      AgentConversationStop  `json:"stop"`
+	Text      string                 `json:"text"`
+	ToolCalls []AgentToolCall        `json:"toolCalls"`
+	Usage     AgentConversationUsage `json:"usage"`
+}
+
+// AgentConversationRequest defines model for AgentConversationRequest.
+type AgentConversationRequest struct {
+	// Turns The conversation so far, oldest first, ending with the question to answer.
+	Turns []AgentTurn `json:"turns"`
+}
+
+// AgentConversationStop Why the agent stopped. answered is a finished answer; the others are this instance's limits on tool rounds, tokens and time, reached before the agent finished.
+type AgentConversationStop string
+
+// AgentConversationUsage defines model for AgentConversationUsage.
+type AgentConversationUsage struct {
+	InputTokens  int32 `json:"inputTokens"`
+	OutputTokens int32 `json:"outputTokens"`
+}
+
+// AgentExecution Where the agent works. runner is a Norn Runner its owner enrolled, taking delegated coding work; hosted is Norn itself, answering in conversation with the workspace's AI provider.
+type AgentExecution string
 
 // AgentHeldProblem defines model for AgentHeldProblem.
 type AgentHeldProblem struct {
@@ -5462,6 +5564,23 @@ type AgentSource struct {
 
 // AgentStatus defines model for AgentStatus.
 type AgentStatus string
+
+// AgentToolCall defines model for AgentToolCall.
+type AgentToolCall struct {
+	Name string `json:"name"`
+
+	// Refusal The code Norn refused the call with, absent when the tool answered.
+	Refusal *string `json:"refusal,omitempty"`
+}
+
+// AgentTurn defines model for AgentTurn.
+type AgentTurn struct {
+	Role AgentTurnRole `json:"role"`
+	Text string        `json:"text"`
+}
+
+// AgentTurnRole defines model for AgentTurnRole.
+type AgentTurnRole string
 
 // AgentUnusableProblem defines model for AgentUnusableProblem.
 type AgentUnusableProblem struct {
@@ -8745,6 +8864,12 @@ type SessionLocation struct {
 	CountryCode *string `json:"countryCode,omitempty"`
 }
 
+// SetAgentExecutionRequest defines model for SetAgentExecutionRequest.
+type SetAgentExecutionRequest struct {
+	// Execution Where the agent works. runner is a Norn Runner its owner enrolled, taking delegated coding work; hosted is Norn itself, answering in conversation with the workspace's AI provider.
+	Execution AgentExecution `json:"execution"`
+}
+
 // SetAgentInstructionsRequest defines model for SetAgentInstructionsRequest.
 type SetAgentInstructionsRequest struct {
 	// Instructions The agent's own standing instructions. An empty value clears them, leaving the workspace's and the project's instructions to stand on their own.
@@ -10555,6 +10680,12 @@ type RewriteAgentSkillJSONRequestBody = RewriteAgentSkillRequest
 // RegisterWorkspaceAgentJSONRequestBody defines body for RegisterWorkspaceAgent for application/json ContentType.
 type RegisterWorkspaceAgentJSONRequestBody = RegisterAgentRequest
 
+// ConverseWithWorkspaceAgentJSONRequestBody defines body for ConverseWithWorkspaceAgent for application/json ContentType.
+type ConverseWithWorkspaceAgentJSONRequestBody = AgentConversationRequest
+
+// SetWorkspaceAgentExecutionJSONRequestBody defines body for SetWorkspaceAgentExecution for application/json ContentType.
+type SetWorkspaceAgentExecutionJSONRequestBody = SetAgentExecutionRequest
+
 // SetWorkspaceAgentInstructionsJSONRequestBody defines body for SetWorkspaceAgentInstructions for application/json ContentType.
 type SetWorkspaceAgentInstructionsJSONRequestBody = SetAgentInstructionsRequest
 
@@ -11678,6 +11809,24 @@ type ClientInterface interface {
 	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId} (the `DisconnectAgentCodebase` operationId).
 	DisconnectAgentCodebase(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ConverseWithWorkspaceAgentWithBody Ask a hosted agent a question and wait for its answer
+	//
+	// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+	ConverseWithWorkspaceAgentWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConverseWithWorkspaceAgent Ask a hosted agent a question and wait for its answer
+	//
+	// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+	ConverseWithWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConverseWithWorkspaceAgentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	//
 	// The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
@@ -11689,6 +11838,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentExecutionWithBody Choose whether the agent runs on a Norn Runner or is hosted by Norn
+	//
+	// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+	SetWorkspaceAgentExecutionWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentExecution Choose whether the agent runs on a Norn Runner or is hosted by Norn
+	//
+	// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+	SetWorkspaceAgentExecution(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SetWorkspaceAgentInstructionsWithBody Write the standing instructions this agent reads before it works
 	//
@@ -15763,6 +15930,44 @@ func (c *Client) DisconnectAgentCodebase(ctx context.Context, workspaceId Worksp
 	return c.Client.Do(req)
 }
 
+// ConverseWithWorkspaceAgentWithBody Ask a hosted agent a question and wait for its answer
+//
+// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+func (c *Client) ConverseWithWorkspaceAgentWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConverseWithWorkspaceAgentRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConverseWithWorkspaceAgent Ask a hosted agent a question and wait for its answer
+//
+// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+func (c *Client) ConverseWithWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConverseWithWorkspaceAgentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConverseWithWorkspaceAgentRequest(c.Server, workspaceId, agentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 //
 // The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
@@ -15785,6 +15990,44 @@ func (c *Client) RotateWorkspaceAgentCredential(ctx context.Context, workspaceId
 // Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 func (c *Client) EnableWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewEnableWorkspaceAgentRequest(c.Server, workspaceId, agentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentExecutionWithBody Choose whether the agent runs on a Norn Runner or is hosted by Norn
+//
+// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+func (c *Client) SetWorkspaceAgentExecutionWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentExecutionRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentExecution Choose whether the agent runs on a Norn Runner or is hosted by Norn
+//
+// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+func (c *Client) SetWorkspaceAgentExecution(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentExecutionRequest(c.Server, workspaceId, agentId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -24804,6 +25047,60 @@ func NewDisconnectAgentCodebaseRequest(server string, workspaceId WorkspaceId, a
 	return req, nil
 }
 
+// NewConverseWithWorkspaceAgentRequest calls the generic ConverseWithWorkspaceAgent builder with application/json body
+func NewConverseWithWorkspaceAgentRequest(server string, workspaceId WorkspaceId, agentId AgentId, body ConverseWithWorkspaceAgentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConverseWithWorkspaceAgentRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewConverseWithWorkspaceAgentRequestWithBody constructs an http.Request for the ConverseWithWorkspaceAgent method, with any body, and a specified content type
+func NewConverseWithWorkspaceAgentRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/conversation", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewRotateWorkspaceAgentCredentialRequest constructs an http.Request for the RotateWorkspaceAgentCredential method
 func NewRotateWorkspaceAgentCredentialRequest(server string, workspaceId WorkspaceId, agentId AgentId) (*http.Request, error) {
 	var err error
@@ -24882,6 +25179,60 @@ func NewEnableWorkspaceAgentRequest(server string, workspaceId WorkspaceId, agen
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSetWorkspaceAgentExecutionRequest calls the generic SetWorkspaceAgentExecution builder with application/json body
+func NewSetWorkspaceAgentExecutionRequest(server string, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentExecutionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceAgentExecutionRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceAgentExecutionRequestWithBody constructs an http.Request for the SetWorkspaceAgentExecution method, with any body, and a specified content type
+func NewSetWorkspaceAgentExecutionRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/execution", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -39289,6 +39640,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId} (the `DisconnectAgentCodebase` operationId).
 	DisconnectAgentCodebaseWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId, reqEditors ...RequestEditorFn) (*DisconnectAgentCodebaseResponse, error)
 
+	// ConverseWithWorkspaceAgentWithBodyWithResponse Ask a hosted agent a question and wait for its answer
+	//
+	// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+	ConverseWithWorkspaceAgentWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConverseWithWorkspaceAgentResponse, error)
+
+	// ConverseWithWorkspaceAgentWithResponse Ask a hosted agent a question and wait for its answer
+	//
+	// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+	ConverseWithWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConverseWithWorkspaceAgentJSONRequestBody, reqEditors ...RequestEditorFn) (*ConverseWithWorkspaceAgentResponse, error)
+
 	// RotateWorkspaceAgentCredentialWithResponse Issue a fresh credential for an agent, revoking the one it had
 	//
 	// The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
@@ -39304,6 +39673,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/enable (the `EnableWorkspaceAgent` operationId).
 	EnableWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, reqEditors ...RequestEditorFn) (*EnableWorkspaceAgentResponse, error)
+
+	// SetWorkspaceAgentExecutionWithBodyWithResponse Choose whether the agent runs on a Norn Runner or is hosted by Norn
+	//
+	// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+	SetWorkspaceAgentExecutionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentExecutionResponse, error)
+
+	// SetWorkspaceAgentExecutionWithResponse Choose whether the agent runs on a Norn Runner or is hosted by Norn
+	//
+	// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+	SetWorkspaceAgentExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentExecutionResponse, error)
 
 	// SetWorkspaceAgentInstructionsWithBodyWithResponse Write the standing instructions this agent reads before it works
 	//
@@ -47268,6 +47655,96 @@ func (r DisconnectAgentCodebaseResponse) ContentType() string {
 	return ""
 }
 
+type ConverseWithWorkspaceAgentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AgentConversationReply
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *AiProviderRefused
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *AiProviderSealingUnavailable
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ConverseWithWorkspaceAgentResponse) GetJSON200() *AgentConversationReply {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ConverseWithWorkspaceAgentResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ConverseWithWorkspaceAgentResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ConverseWithWorkspaceAgentResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ConverseWithWorkspaceAgentResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ConverseWithWorkspaceAgentResponse) GetApplicationproblemJSON422() *AiProviderRefused {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ConverseWithWorkspaceAgentResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r ConverseWithWorkspaceAgentResponse) GetApplicationproblemJSON503() *AiProviderSealingUnavailable {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r ConverseWithWorkspaceAgentResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ConverseWithWorkspaceAgentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConverseWithWorkspaceAgentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ConverseWithWorkspaceAgentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type RotateWorkspaceAgentCredentialResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -47414,6 +47891,89 @@ func (r EnableWorkspaceAgentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r EnableWorkspaceAgentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceAgentExecutionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAgent
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceAgentExecutionResponse) GetJSON200() *WorkspaceAgent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceAgentExecutionResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceAgentExecutionResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SetWorkspaceAgentExecutionResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SetWorkspaceAgentExecutionResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceAgentExecutionResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceAgentExecutionResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceAgentExecutionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceAgentExecutionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceAgentExecutionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceAgentExecutionResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -69188,6 +69748,36 @@ func (c *ClientWithResponses) DisconnectAgentCodebaseWithResponse(ctx context.Co
 	return ParseDisconnectAgentCodebaseResponse(rsp)
 }
 
+// ConverseWithWorkspaceAgentWithBodyWithResponse Ask a hosted agent a question and wait for its answer
+//
+// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+func (c *ClientWithResponses) ConverseWithWorkspaceAgentWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConverseWithWorkspaceAgentResponse, error) {
+	rsp, err := c.ConverseWithWorkspaceAgentWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConverseWithWorkspaceAgentResponse(rsp)
+}
+
+// ConverseWithWorkspaceAgentWithResponse Ask a hosted agent a question and wait for its answer
+//
+// Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/agents/{agentId}/conversation (the `ConverseWithWorkspaceAgent` operationId).
+func (c *ClientWithResponses) ConverseWithWorkspaceAgentWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body ConverseWithWorkspaceAgentJSONRequestBody, reqEditors ...RequestEditorFn) (*ConverseWithWorkspaceAgentResponse, error) {
+	rsp, err := c.ConverseWithWorkspaceAgent(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConverseWithWorkspaceAgentResponse(rsp)
+}
+
 // RotateWorkspaceAgentCredentialWithResponse Issue a fresh credential for an agent, revoking the one it had
 //
 // The value is shown once and never stored, so a lost credential is replaced rather than recovered. The old one stops working the moment this returns, and the agent keeps its permissions, its name, and everything it has already done.
@@ -69214,6 +69804,36 @@ func (c *ClientWithResponses) EnableWorkspaceAgentWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseEnableWorkspaceAgentResponse(rsp)
+}
+
+// SetWorkspaceAgentExecutionWithBodyWithResponse Choose whether the agent runs on a Norn Runner or is hosted by Norn
+//
+// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentExecutionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentExecutionResponse, error) {
+	rsp, err := c.SetWorkspaceAgentExecutionWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentExecutionResponse(rsp)
+}
+
+// SetWorkspaceAgentExecutionWithResponse Choose whether the agent runs on a Norn Runner or is hosted by Norn
+//
+// A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/execution (the `SetWorkspaceAgentExecution` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentExecutionResponse, error) {
+	rsp, err := c.SetWorkspaceAgentExecution(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentExecutionResponse(rsp)
 }
 
 // SetWorkspaceAgentInstructionsWithBodyWithResponse Write the standing instructions this agent reads before it works
@@ -78345,6 +78965,81 @@ func ParseDisconnectAgentCodebaseResponse(rsp *http.Response) (*DisconnectAgentC
 	return response, nil
 }
 
+// ParseConverseWithWorkspaceAgentResponse parses an HTTP response from a ConverseWithWorkspaceAgentWithResponse call
+func ParseConverseWithWorkspaceAgentResponse(rsp *http.Response) (*ConverseWithWorkspaceAgentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConverseWithWorkspaceAgentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AgentConversationReply
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest AiProviderRefused
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest AiProviderSealingUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseRotateWorkspaceAgentCredentialResponse parses an HTTP response from a RotateWorkspaceAgentCredentialWithResponse call
 func ParseRotateWorkspaceAgentCredentialResponse(rsp *http.Response) (*RotateWorkspaceAgentCredentialResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -78454,6 +79149,74 @@ func ParseEnableWorkspaceAgentResponse(rsp *http.Response) (*EnableWorkspaceAgen
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceAgentExecutionResponse parses an HTTP response from a SetWorkspaceAgentExecutionWithResponse call
+func ParseSetWorkspaceAgentExecutionResponse(rsp *http.Response) (*SetWorkspaceAgentExecutionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceAgentExecutionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAgent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -95016,12 +95779,18 @@ type ServerInterface interface {
 	// DisconnectAgentCodebase Stop using this folder, leaving everything that already named it resolvable
 	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId})
 	DisconnectAgentCodebase(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, codebaseId CodebaseId)
+	// ConverseWithWorkspaceAgent Ask a hosted agent a question and wait for its answer
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/conversation)
+	ConverseWithWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
+	// SetWorkspaceAgentExecution Choose whether the agent runs on a Norn Runner or is hosted by Norn
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/execution)
+	SetWorkspaceAgentExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// SetWorkspaceAgentInstructions Write the standing instructions this agent reads before it works
 	// (PUT /workspaces/{workspaceId}/agents/{agentId}/instructions)
 	SetWorkspaceAgentInstructions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
@@ -96327,6 +97096,12 @@ func (_ Unimplemented) DisconnectAgentCodebase(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ConverseWithWorkspaceAgent Ask a hosted agent a question and wait for its answer
+// (POST /workspaces/{workspaceId}/agents/{agentId}/conversation)
+func (_ Unimplemented) ConverseWithWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 // (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 func (_ Unimplemented) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
@@ -96336,6 +97111,12 @@ func (_ Unimplemented) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *
 // EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 // (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 func (_ Unimplemented) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceAgentExecution Choose whether the agent runs on a Norn Runner or is hosted by Norn
+// (PUT /workspaces/{workspaceId}/agents/{agentId}/execution)
+func (_ Unimplemented) SetWorkspaceAgentExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -99854,6 +100635,41 @@ func (siw *ServerInterfaceWrapper) DisconnectAgentCodebase(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// ConverseWithWorkspaceAgent operation middleware
+func (siw *ServerInterfaceWrapper) ConverseWithWorkspaceAgent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConverseWithWorkspaceAgent(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RotateWorkspaceAgentCredential operation middleware
 func (siw *ServerInterfaceWrapper) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request) {
 
@@ -99915,6 +100731,41 @@ func (siw *ServerInterfaceWrapper) EnableWorkspaceAgent(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EnableWorkspaceAgent(w, r, workspaceId, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceAgentExecution operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceAgentExecution(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceAgentExecution(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -110719,6 +111570,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/scope", wrapper.SetWorkspaceAgentScope)
 	})
 	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/execution", wrapper.SetWorkspaceAgentExecution)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/conversation", wrapper.ConverseWithWorkspaceAgent)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/enable", wrapper.EnableWorkspaceAgent)
 	})
 	r.Group(func(r chi.Router) {
@@ -117984,6 +118841,138 @@ func (response DisconnectAgentCodebase500ApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type ConverseWithWorkspaceAgentRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *ConverseWithWorkspaceAgentJSONRequestBody
+}
+
+type ConverseWithWorkspaceAgentResponseObject interface {
+	VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error
+}
+
+type ConverseWithWorkspaceAgent200JSONResponse AgentConversationReply
+
+func (response ConverseWithWorkspaceAgent200JSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConverseWithWorkspaceAgent401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConverseWithWorkspaceAgent401ApplicationProblemPlusJSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConverseWithWorkspaceAgent403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConverseWithWorkspaceAgent403ApplicationProblemPlusJSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConverseWithWorkspaceAgent404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConverseWithWorkspaceAgent404ApplicationProblemPlusJSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConverseWithWorkspaceAgent409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response ConverseWithWorkspaceAgent409ApplicationProblemPlusJSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConverseWithWorkspaceAgent422ApplicationProblemPlusJSONResponse struct {
+	AiProviderRefusedApplicationProblemPlusJSONResponse
+}
+
+func (response ConverseWithWorkspaceAgent422ApplicationProblemPlusJSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConverseWithWorkspaceAgent500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConverseWithWorkspaceAgent500ApplicationProblemPlusJSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConverseWithWorkspaceAgent503ApplicationProblemPlusJSONResponse struct {
+	AiProviderSealingUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response ConverseWithWorkspaceAgent503ApplicationProblemPlusJSONResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RotateWorkspaceAgentCredentialRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	AgentId     AgentId     `json:"agentId"`
@@ -118171,6 +119160,120 @@ func (response EnableWorkspaceAgent409ApplicationProblemPlusJSONResponse) VisitE
 type EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse Problem
 
 func (response EnableWorkspaceAgent500ApplicationProblemPlusJSONResponse) VisitEnableWorkspaceAgentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentExecutionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *SetWorkspaceAgentExecutionJSONRequestBody
+}
+
+type SetWorkspaceAgentExecutionResponseObject interface {
+	VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceAgentExecution200JSONResponse WorkspaceAgent
+
+func (response SetWorkspaceAgentExecution200JSONResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentExecution401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentExecution401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentExecution403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentExecution403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentExecution404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentExecution404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentExecution409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentExecution409ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentExecution422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentExecution422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentExecution500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentExecution500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -144377,12 +145480,18 @@ type StrictServerInterface interface {
 	// DisconnectAgentCodebase Stop using this folder, leaving everything that already named it resolvable
 	// (DELETE /workspaces/{workspaceId}/agents/{agentId}/codebases/{codebaseId})
 	DisconnectAgentCodebase(ctx context.Context, request DisconnectAgentCodebaseRequestObject) (DisconnectAgentCodebaseResponseObject, error)
+	// ConverseWithWorkspaceAgent Ask a hosted agent a question and wait for its answer
+	// (POST /workspaces/{workspaceId}/agents/{agentId}/conversation)
+	ConverseWithWorkspaceAgent(ctx context.Context, request ConverseWithWorkspaceAgentRequestObject) (ConverseWithWorkspaceAgentResponseObject, error)
 	// RotateWorkspaceAgentCredential Issue a fresh credential for an agent, revoking the one it had
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/credential)
 	RotateWorkspaceAgentCredential(ctx context.Context, request RotateWorkspaceAgentCredentialRequestObject) (RotateWorkspaceAgentCredentialResponseObject, error)
 	// EnableWorkspaceAgent Re-enable an agent and issue a fresh credential with its previous authority
 	// (POST /workspaces/{workspaceId}/agents/{agentId}/enable)
 	EnableWorkspaceAgent(ctx context.Context, request EnableWorkspaceAgentRequestObject) (EnableWorkspaceAgentResponseObject, error)
+	// SetWorkspaceAgentExecution Choose whether the agent runs on a Norn Runner or is hosted by Norn
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/execution)
+	SetWorkspaceAgentExecution(ctx context.Context, request SetWorkspaceAgentExecutionRequestObject) (SetWorkspaceAgentExecutionResponseObject, error)
 	// SetWorkspaceAgentInstructions Write the standing instructions this agent reads before it works
 	// (PUT /workspaces/{workspaceId}/agents/{agentId}/instructions)
 	SetWorkspaceAgentInstructions(ctx context.Context, request SetWorkspaceAgentInstructionsRequestObject) (SetWorkspaceAgentInstructionsResponseObject, error)
@@ -147436,6 +148545,40 @@ func (sh *strictHandler) DisconnectAgentCodebase(w http.ResponseWriter, r *http.
 	}
 }
 
+// ConverseWithWorkspaceAgent operation middleware
+func (sh *strictHandler) ConverseWithWorkspaceAgent(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request ConverseWithWorkspaceAgentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body ConverseWithWorkspaceAgentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConverseWithWorkspaceAgent(ctx, request.(ConverseWithWorkspaceAgentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConverseWithWorkspaceAgent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConverseWithWorkspaceAgentResponseObject); ok {
+		if err := validResponse.VisitConverseWithWorkspaceAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RotateWorkspaceAgentCredential operation middleware
 func (sh *strictHandler) RotateWorkspaceAgentCredential(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	var request RotateWorkspaceAgentCredentialRequestObject
@@ -147483,6 +148626,40 @@ func (sh *strictHandler) EnableWorkspaceAgent(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(EnableWorkspaceAgentResponseObject); ok {
 		if err := validResponse.VisitEnableWorkspaceAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceAgentExecution operation middleware
+func (sh *strictHandler) SetWorkspaceAgentExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request SetWorkspaceAgentExecutionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body SetWorkspaceAgentExecutionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceAgentExecution(ctx, request.(SetWorkspaceAgentExecutionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceAgentExecution")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceAgentExecutionResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceAgentExecutionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

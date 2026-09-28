@@ -2300,6 +2300,69 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents/{agentId}/execution:
+    put:
+      tags: [agents]
+      operationId: setWorkspaceAgentExecution
+      summary: Choose whether the agent runs on a Norn Runner or is hosted by Norn
+      description: >-
+        A runner agent takes delegated coding work on a machine its owner enrolled. A hosted
+        agent answers in conversation inside Norn, using the workspace's AI provider and the Norn
+        tools its credential permits, and takes no delegated work.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetAgentExecutionRequest' }
+      responses:
+        '200':
+          description: The agent, carrying the execution as it was saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/conversation:
+    post:
+      tags: [agents]
+      operationId: converseWithWorkspaceAgent
+      summary: Ask a hosted agent a question and wait for its answer
+      description: >-
+        Nothing is stored: the caller sends the conversation so far and receives the next answer.
+        The agent reads and acts through the Norn tools as itself, with its own credential, so a
+        tool its permissions do not cover is refused and reported rather than borrowed from the
+        person asking. A conversation that reaches this instance's limit on time, tool rounds or
+        tokens returns what it has with the stop that ended it.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentConversationRequest' }
+      responses:
+        '200':
+          description: The agent's answer and what it took to reach it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentConversationReply' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '422': { $ref: '#/components/responses/AiProviderRefused' }
+        '503': { $ref: '#/components/responses/AiProviderSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/agents/{agentId}/enable:
     post:
       tags: [agents]
@@ -10266,6 +10329,7 @@ components:
                 - issue_delegation_held
                 - issue_delegation_agent_unusable
                 - issue_delegation_agent_not_yours
+                - issue_delegation_agent_hosted
                 - issue_delegation_unassigned
                 - issue_relation_exists
                 - issue_relation_self
@@ -10897,6 +10961,7 @@ components:
         - agent.proposal_decided
         - agent.instructions_changed
         - agent.scope_changed
+        - agent.execution_changed
         - agent.skill_added
         - agent.skill_updated
         - agent.skill_removed
@@ -11475,9 +11540,17 @@ components:
         Who may hand an issue to this agent. member is its owner alone, project is everyone on the
         agent's project for issues in that project, and workspace is everyone in the workspace.
 
+    AgentExecution:
+      type: string
+      enum: [runner, hosted]
+      description: >-
+        Where the agent works. runner is a Norn Runner its owner enrolled, taking delegated
+        coding work; hosted is Norn itself, answering in conversation with the workspace's AI
+        provider.
+
     Agent:
       type: object
-      required: [id, workspaceId, accountId, ownerAccountId, name, icon, status, scope, actionLimit, createdAt]
+      required: [id, workspaceId, accountId, ownerAccountId, name, icon, status, scope, execution, actionLimit, createdAt]
       properties:
         id: { type: string, format: uuid }
         workspaceId: { type: string, format: uuid }
@@ -11487,6 +11560,7 @@ components:
         icon: { $ref: '#/components/schemas/AgentIcon' }
         status: { $ref: '#/components/schemas/AgentStatus' }
         scope: { $ref: '#/components/schemas/AgentScope' }
+        execution: { $ref: '#/components/schemas/AgentExecution' }
         projectId:
           type: string
           format: uuid
@@ -11523,6 +11597,68 @@ components:
           type: string
           format: uuid
           description: Required when the scope is project, and refused otherwise.
+
+    SetAgentExecutionRequest:
+      type: object
+      required: [execution]
+      properties:
+        execution: { $ref: '#/components/schemas/AgentExecution' }
+
+    AgentTurnRole:
+      type: string
+      enum: [user, assistant]
+
+    AgentTurn:
+      type: object
+      required: [role, text]
+      properties:
+        role: { $ref: '#/components/schemas/AgentTurnRole' }
+        text: { type: string, maxLength: 8000 }
+
+    AgentConversationRequest:
+      type: object
+      required: [turns]
+      properties:
+        turns:
+          type: array
+          minItems: 1
+          maxItems: 40
+          description: The conversation so far, oldest first, ending with the question to answer.
+          items: { $ref: '#/components/schemas/AgentTurn' }
+
+    AgentConversationStop:
+      type: string
+      enum: [answered, round_limit, token_limit, time_limit]
+      description: >-
+        Why the agent stopped. answered is a finished answer; the others are this instance's
+        limits on tool rounds, tokens and time, reached before the agent finished.
+
+    AgentToolCall:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        refusal:
+          type: string
+          description: The code Norn refused the call with, absent when the tool answered.
+
+    AgentConversationUsage:
+      type: object
+      required: [inputTokens, outputTokens]
+      properties:
+        inputTokens: { type: integer, format: int32 }
+        outputTokens: { type: integer, format: int32 }
+
+    AgentConversationReply:
+      type: object
+      required: [text, toolCalls, usage, stop]
+      properties:
+        text: { type: string }
+        toolCalls:
+          type: array
+          items: { $ref: '#/components/schemas/AgentToolCall' }
+        usage: { $ref: '#/components/schemas/AgentConversationUsage' }
+        stop: { $ref: '#/components/schemas/AgentConversationStop' }
 
     SetAgentInstructionsRequest:
       type: object
@@ -11725,6 +11861,8 @@ components:
                 - agent_authority_missing
                 - agent_proposal_settled
                 - agent_scope_forbidden
+                - agent_not_hosted
+                - ai_provider_not_configured
                 - token_scope_invalid
                 - token_scope_exceeds
                 - token_may_not_mint

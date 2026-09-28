@@ -1389,6 +1389,92 @@ func TestChangingAScopeIsWrittenAndRecorded(t *testing.T) {
 	}
 }
 
+func TestOnlyTheOwnerOrAnAdministratorMayMoveAnAgentToNorn(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(entity.Agent{OwnerAccountID: uuid.New()}, nil)
+
+	_, err := h.service.SetExecution(context.Background(), service.SetAgentExecutionInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     uuid.New(),
+		Execution:   entity.AgentExecutionHosted,
+	})
+
+	if !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf("moving somebody else's agent returned %v, want %v", err, entity.ErrAgentNotFound)
+	}
+}
+
+func TestAnExecutionNobodyOffersIsRefusedBeforeTheAgentIsRead(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	_, err := h.service.SetExecution(context.Background(), service.SetAgentExecutionInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     uuid.New(),
+		Execution:   "cloud",
+	})
+
+	var validation entity.ValidationError
+	if !errors.As(err, &validation) {
+		t.Fatalf("an unknown execution returned %v, want a validation error", err)
+	}
+}
+
+func TestMovingAnAgentToNornIsWrittenAndRecordedOnce(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID := uuid.New()
+
+	agent := entity.Agent{
+		ID:             agentID,
+		WorkspaceID:    h.workspaceID,
+		AccountID:      uuid.New(),
+		OwnerAccountID: h.adminID,
+		Name:           "helper",
+		Status:         entity.AgentStatusActive,
+	}
+	hosted := agent
+	hosted.Execution = entity.AgentExecutionHosted
+
+	gomock.InOrder(
+		h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).Return(agent, nil),
+		h.agents.EXPECT().
+			SetExecution(gomock.Any(), h.workspaceID, agentID, entity.AgentExecutionHosted).
+			Return(hosted, nil),
+		h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).Return(hosted, nil),
+	)
+
+	expectActivePerson(h, h.adminID)
+	expectActivePerson(h, h.adminID)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), agent.AccountID).
+		Return(entity.APIToken{
+			Scopes: readScopes(),
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}, nil).
+		Times(2)
+
+	for range 2 {
+		owned, err := h.service.SetExecution(context.Background(), service.SetAgentExecutionInput{
+			WorkspaceID: h.workspaceID,
+			AgentID:     agentID,
+			Execution:   entity.AgentExecutionHosted,
+		})
+		if err != nil {
+			t.Fatalf("SetExecution: %v", err)
+		}
+
+		if !owned.Agent.Hosted() {
+			t.Fatalf("execution = %q, want hosted", owned.Agent.Execution)
+		}
+	}
+
+	if len(h.recorded) != 1 || h.recorded[0].Action != entity.AuditAgentExecution {
+		t.Fatalf("audit = %v, want one agent.execution_changed entry for one actual change", h.recorded)
+	}
+}
+
 func TestTheDelegatableListingReadsEachAgentsScope(t *testing.T) {
 	h := newHarness(t, entity.MembershipRoleMember)
 
@@ -1416,13 +1502,19 @@ func TestTheDelegatableListingReadsEachAgentsScope(t *testing.T) {
 		OwnerAccountID: h.adminID,
 		Status:         entity.AgentStatusDisabled,
 	}
+	hosted := entity.Agent{
+		ID:             uuid.New(),
+		Name:           "hosted",
+		OwnerAccountID: h.adminID,
+		Execution:      entity.AgentExecutionHosted,
+	}
 
 	h.issues.EXPECT().
 		Get(gomock.Any(), h.workspaceID, issueID).
 		Return(entity.Issue{ID: issueID, ProjectID: project}, nil)
 	h.agents.EXPECT().
 		ListByWorkspaceID(gomock.Any(), h.workspaceID).
-		Return([]entity.Agent{mine, theirs, open, scoped, retired}, nil)
+		Return([]entity.Agent{mine, theirs, open, scoped, retired, hosted}, nil)
 	h.projectMembers.EXPECT().
 		ListByAccountID(gomock.Any(), h.workspaceID, h.adminID).
 		Return([]entity.ProjectMembership{{ProjectID: project, AccountID: h.adminID}}, nil)

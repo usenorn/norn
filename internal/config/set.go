@@ -33,6 +33,7 @@ var Set = wire.NewSet(
 	NewImports,
 	NewLinear,
 	NewOpenAI,
+	NewAgentHosting,
 	NewAgentTooling,
 	NewSourceControl,
 	NewIntake,
