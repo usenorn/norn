@@ -382,6 +382,41 @@ func (c *Client) EnqueueIntakeDelivery(ctx context.Context, payload entity.Intak
 	return nil
 }
 
+func (c *Client) EnqueueTelegramUpdate(ctx context.Context, payload entity.TelegramUpdatePayload) error {
+	return c.enqueueOnce(ctx, entity.TaskTypeTelegramUpdate, "telegram-update:"+payload.UpdateID.String(), payload)
+}
+
+func (c *Client) EnqueueTelegramQuestion(ctx context.Context, payload entity.TelegramQuestionPayload) error {
+	return c.enqueueOnce(ctx, entity.TaskTypeTelegramQuestion, "telegram-question:"+payload.QuestionID.String(), payload)
+}
+
+func (c *Client) EnqueueTelegramSettlement(ctx context.Context, payload entity.TelegramQuestionPayload) error {
+	return c.enqueueOnce(
+		ctx, entity.TaskTypeTelegramSettlement, "telegram-settlement:"+payload.QuestionID.String(), payload,
+	)
+}
+
+func (c *Client) enqueueOnce(ctx context.Context, taskType, taskID string, payload any) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode %s payload: %w", taskType, err)
+	}
+
+	if _, err := c.producer.EnqueueContext(ctx, asynq.NewTask(taskType, encoded),
+		asynq.Queue(entity.QueueDefault),
+		asynq.MaxRetry(c.maxRetry),
+		asynq.TaskID(taskID),
+	); err != nil {
+		if errors.Is(err, asynq.ErrTaskIDConflict) {
+			return nil
+		}
+
+		return fmt.Errorf("enqueue %s: %w", taskType, err)
+	}
+
+	return nil
+}
+
 // EnqueueSCMDelivery keys a task by the delivery and the attempt, so a forge redelivering
 // the same event while the first attempt is still queued adds nothing, and a genuine retry
 // after a rate limit is a different task rather than a conflict.
