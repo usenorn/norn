@@ -61,6 +61,7 @@ type handler struct {
 	sourceControlApps service.SourceControlApps
 	aiProviders       service.AIProviders
 	agentCapabilities service.AgentCapabilities
+	hostedAgents      service.HostedAgents
 	sourceControlCfg  config.SourceControl
 	app               config.App
 	instance          config.Instance
@@ -115,6 +116,7 @@ func New(
 	sourceControlApps service.SourceControlApps,
 	aiProviders service.AIProviders,
 	agentCapabilities service.AgentCapabilities,
+	hostedAgents service.HostedAgents,
 	sourceControlCfg config.SourceControl,
 	app config.App,
 	instance config.Instance,
@@ -168,6 +170,7 @@ func New(
 		sourceControlApps: sourceControlApps,
 		aiProviders:       aiProviders,
 		agentCapabilities: agentCapabilities,
+		hostedAgents:      hostedAgents,
 		sourceControlCfg:  sourceControlCfg,
 		app:               app,
 		instance:          instance,

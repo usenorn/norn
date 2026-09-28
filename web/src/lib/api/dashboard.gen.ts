@@ -1596,6 +1596,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/{agentId}/execution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Choose whether the agent runs on a Norn Runner or is hosted by Norn
+         * @description A runner agent takes delegated coding work on a machine its owner enrolled. A hosted agent answers in conversation inside Norn, using the workspace's AI provider and the Norn tools its credential permits, and takes no delegated work.
+         */
+        put: operations["setWorkspaceAgentExecution"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/agents/{agentId}/conversation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask a hosted agent a question and wait for its answer
+         * @description Nothing is stored: the caller sends the conversation so far and receives the next answer. The agent reads and acts through the Norn tools as itself, with its own credential, so a tool its permissions do not cover is refused and reported rather than borrowed from the person asking. A conversation that reaches this instance's limit on time, tool rounds or tokens returns what it has with the stop that ended it.
+         */
+        post: operations["converseWithWorkspaceAgent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents/{agentId}/enable": {
         parameters: {
             query?: never;
@@ -6543,7 +6583,7 @@ export interface components {
         };
         IssueConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_agent_not_yours" | "issue_delegation_unassigned" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
+            code: "issue_stale" | "issue_reference_taken" | "issue_already_on_team" | "issue_labels_out_of_scope" | "issue_not_waiting" | "issue_destination_incapable" | "issue_status_transition" | "issue_parent_cycle" | "issue_parent_too_deep" | "issue_parent_not_active" | "issue_children_open" | "issue_delegation_held" | "issue_delegation_agent_unusable" | "issue_delegation_agent_not_yours" | "issue_delegation_agent_hosted" | "issue_delegation_unassigned" | "issue_relation_exists" | "issue_relation_self" | "label_out_of_scope" | "cycle_closed" | "cycle_team_mismatch" | "project_archived";
             /** Format: int32 */
             version?: number;
             conflicts?: string[];
@@ -6940,7 +6980,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -7310,6 +7350,11 @@ export interface components {
          * @enum {string}
          */
         AgentScope: "member" | "project" | "workspace";
+        /**
+         * @description Where the agent works. runner is a Norn Runner its owner enrolled, taking delegated coding work; hosted is Norn itself, answering in conversation with the workspace's AI provider.
+         * @enum {string}
+         */
+        AgentExecution: "runner" | "hosted";
         Agent: {
             /** Format: uuid */
             id: string;
@@ -7323,6 +7368,7 @@ export interface components {
             icon: components["schemas"]["AgentIcon"];
             status: components["schemas"]["AgentStatus"];
             scope: components["schemas"]["AgentScope"];
+            execution: components["schemas"]["AgentExecution"];
             /**
              * Format: uuid
              * @description The project this agent is scoped to, present only when the scope is project.
@@ -7353,6 +7399,41 @@ export interface components {
              * @description Required when the scope is project, and refused otherwise.
              */
             projectId?: string;
+        };
+        SetAgentExecutionRequest: {
+            execution: components["schemas"]["AgentExecution"];
+        };
+        /** @enum {string} */
+        AgentTurnRole: "user" | "assistant";
+        AgentTurn: {
+            role: components["schemas"]["AgentTurnRole"];
+            text: string;
+        };
+        AgentConversationRequest: {
+            /** @description The conversation so far, oldest first, ending with the question to answer. */
+            turns: components["schemas"]["AgentTurn"][];
+        };
+        /**
+         * @description Why the agent stopped. answered is a finished answer; the others are this instance's limits on tool rounds, tokens and time, reached before the agent finished.
+         * @enum {string}
+         */
+        AgentConversationStop: "answered" | "round_limit" | "token_limit" | "time_limit";
+        AgentToolCall: {
+            name: string;
+            /** @description The code Norn refused the call with, absent when the tool answered. */
+            refusal?: string;
+        };
+        AgentConversationUsage: {
+            /** Format: int32 */
+            inputTokens: number;
+            /** Format: int32 */
+            outputTokens: number;
+        };
+        AgentConversationReply: {
+            text: string;
+            toolCalls: components["schemas"]["AgentToolCall"][];
+            usage: components["schemas"]["AgentConversationUsage"];
+            stop: components["schemas"]["AgentConversationStop"];
         };
         SetAgentInstructionsRequest: {
             /** @description The agent's own standing instructions. An empty value clears them, leaving the workspace's and the project's instructions to stand on their own. */
@@ -7476,7 +7557,7 @@ export interface components {
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "agent_name_taken" | "agent_owner_invalid" | "agent_disabled" | "agent_active" | "agent_authority_missing" | "agent_proposal_settled" | "agent_scope_forbidden" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
+            code: "agent_name_taken" | "agent_owner_invalid" | "agent_disabled" | "agent_active" | "agent_authority_missing" | "agent_proposal_settled" | "agent_scope_forbidden" | "agent_not_hosted" | "ai_provider_not_configured" | "token_scope_invalid" | "token_scope_exceeds" | "token_may_not_mint" | "token_grant_invalid" | "token_grant_missing";
         };
         AgentHeldProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -12878,6 +12959,73 @@ export interface operations {
             409: components["responses"]["AgentUnusable"];
             422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceAgentExecution: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAgentExecutionRequest"];
+            };
+        };
+        responses: {
+            /** @description The agent, carrying the execution as it was saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAgent"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    converseWithWorkspaceAgent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description The agent's answer and what it took to reach it */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentConversationReply"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
+            422: components["responses"]["AiProviderRefused"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["AiProviderSealingUnavailable"];
         };
     };
     enableWorkspaceAgent: {

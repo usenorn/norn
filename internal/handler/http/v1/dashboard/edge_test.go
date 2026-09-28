@@ -24,6 +24,7 @@ import (
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	executionservicesvc "github.com/usenorn/norn/internal/service/executionservice"
 	executionuploadsvc "github.com/usenorn/norn/internal/service/executionupload"
+	hostedagentsvc "github.com/usenorn/norn/internal/service/hostedagent"
 	importssvc "github.com/usenorn/norn/internal/service/imports"
 	intakesvc "github.com/usenorn/norn/internal/service/intake"
 	invitationsvc "github.com/usenorn/norn/internal/service/invitation"
@@ -60,6 +61,7 @@ type edgeServices struct {
 	workspaces        service.Workspaces
 	projects          service.Projects
 	agents            service.Agents
+	hostedAgents      service.HostedAgents
 }
 
 func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
@@ -85,6 +87,10 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 
 	if services.agents == nil {
 		services.agents = agentsvc.NewMockAgents(ctrl)
+	}
+
+	if services.hostedAgents == nil {
+		services.hostedAgents = hostedagentsvc.NewMockHostedAgents(ctrl)
 	}
 
 	edge := dashboard.New(
@@ -132,6 +138,7 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		scmsvc.NewMockSourceControlApps(ctrl),
 		services.aiProviders,
 		services.agentCapabilities,
+		services.hostedAgents,
 		config.SourceControl{},
 		config.App{Version: "test", BaseURL: "https://norn.test"},
 		config.Instance{},

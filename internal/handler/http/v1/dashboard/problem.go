@@ -481,6 +481,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrIssueDelegationAgentNotYours):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationAgentNotYours, err), true
 
+	case errors.Is(err, entity.ErrAgentHosted):
+		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationAgentHosted, err), true
+
 	case errors.Is(err, entity.ErrIssueDelegationUnassigned):
 		return issueConflictProblem(api.IssueConflictProblemCodeIssueDelegationUnassigned, err), true
 
@@ -972,6 +975,9 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrAgentScopeForbidden):
 		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentScopeForbidden, err), true
+
+	case errors.Is(err, entity.ErrAgentNotHosted):
+		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentNotHosted, err), true
 
 	case errors.Is(err, entity.ErrAgentProposalSettled):
 		return agentUnusableProblem(api.AgentUnusableProblemCodeAgentProposalSettled, err), true
@@ -1620,6 +1626,14 @@ func (r problemResponse) VisitSetWorkspaceAgentInstructionsResponse(w http.Respo
 }
 
 func (r problemResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConverseWithWorkspaceAgentResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

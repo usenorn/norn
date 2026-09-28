@@ -1633,6 +1633,7 @@ func agentDTO(agent entity.Agent) api.Agent {
 		Icon:           api.AgentIcon(agent.Icon.Normalized()),
 		Status:         api.AgentStatus(agent.Status),
 		Scope:          api.AgentScope(agent.Scope.Normalized()),
+		Execution:      api.AgentExecution(agent.Execution.Normalized()),
 		ActionLimit:    int32(agent.Allowance()),
 		CreatedAt:      agent.CreatedAt,
 	}
