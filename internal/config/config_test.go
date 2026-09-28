@@ -141,7 +141,7 @@ func TestAHostedBudgetSmallerThanOneAnswerIsRefused(t *testing.T) {
 }
 
 func TestTheDefaultHostingLimitsAreAWorkingConfiguration(t *testing.T) {
-	if err := hostingLimits(t, "20s", "2048", "60000"); err != nil {
+	if err := hostingLimits(t, "20s", "16384", "200000"); err != nil {
 		t.Fatalf("config.New() = %v, want the default hosting limits accepted", err)
 	}
 }
