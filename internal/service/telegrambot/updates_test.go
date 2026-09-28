@@ -93,12 +93,13 @@ func TestStartWithAPrivateCodeLinksTheTelegramUserToItsAccount(t *testing.T) {
 
 	accountID := uuid.New()
 	id := h.applying(privately("/start " + code))
-	h.audience.EXPECT().Redeem(gomock.Any(), h.bot.ID, hash, gomock.Any()).Return(entity.TelegramLinkCode{
+	h.audience.EXPECT().LinkCode(gomock.Any(), h.bot.ID, hash, gomock.Any()).Return(entity.TelegramLinkCode{
 		BotID: h.bot.ID, AccountID: accountID, Purpose: entity.TelegramLinkPrivate,
 	}, nil)
 	h.audience.EXPECT().Link(gomock.Any(), entity.TelegramAccount{
 		BotID: h.bot.ID, AccountID: accountID, TelegramUserID: senderID, ChatID: senderID, Username: "rae",
 	}).Return(nil)
+	h.audience.EXPECT().SpendCode(gomock.Any(), h.bot.ID, hash).Return(nil)
 	h.settles(id, entity.TelegramUpdateApplied)
 
 	if err := h.updatesService().Apply(context.Background(), id); err != nil {
@@ -110,26 +111,118 @@ func TestStartWithAPrivateCodeLinksTheTelegramUserToItsAccount(t *testing.T) {
 	}
 }
 
-func TestAGroupIsBoundOnlyByThePersonWhoCreatedItsLink(t *testing.T) {
+func TestAGroupRefusedToAnotherPersonKeepsItsLinkForTheCreator(t *testing.T) {
+	for name, linked := range map[string]bool{"unlinked sender": false, "another linked account": true} {
+		h := newHarness(t)
+		code, hash, err := entity.NewTelegramLinkCode()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		id := h.applying(groupChatter("/start@ada_bot " + code))
+		h.audience.EXPECT().LinkCode(gomock.Any(), h.bot.ID, hash, gomock.Any()).Return(entity.TelegramLinkCode{
+			BotID: h.bot.ID, AccountID: uuid.New(), Purpose: entity.TelegramLinkGroup,
+		}, nil)
+
+		if linked {
+			h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(uuid.New(), senderID), nil)
+		} else {
+			h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).
+				Return(entity.TelegramAccount{}, entity.ErrTelegramAccountNotLinked)
+		}
+
+		h.settles(id, entity.TelegramUpdateApplied)
+
+		if err := h.updatesService().Apply(context.Background(), id); err != nil {
+			t.Fatalf("%s: Apply: %v", name, err)
+		}
+
+		if len(h.sent) != 1 || !strings.HasPrefix(h.sent[0].Text, "Only the person who created this link") {
+			t.Errorf("%s: sent = %+v", name, h.sent)
+		}
+	}
+}
+
+func TestTheCreatorOfAGroupLinkConnectsTheGroupAndSpendsTheLink(t *testing.T) {
 	h := newHarness(t)
-	code, _, err := entity.NewTelegramLinkCode()
+	code, hash, err := entity.NewTelegramLinkCode()
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	accountID := uuid.New()
 	incoming := groupChatter("/start@ada_bot " + code)
+	incoming.Message.ChatTitle = "Launch"
 	id := h.applying(incoming)
-	h.audience.EXPECT().Redeem(gomock.Any(), h.bot.ID, gomock.Any(), gomock.Any()).Return(entity.TelegramLinkCode{
-		BotID: h.bot.ID, AccountID: uuid.New(), Purpose: entity.TelegramLinkGroup,
+	h.audience.EXPECT().LinkCode(gomock.Any(), h.bot.ID, hash, gomock.Any()).Return(entity.TelegramLinkCode{
+		BotID: h.bot.ID, AccountID: accountID, Purpose: entity.TelegramLinkGroup,
 	}, nil)
-	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(uuid.New(), senderID), nil)
+	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(accountID, senderID), nil)
+	bound := entity.TelegramGroup{BotID: h.bot.ID, ChatID: groupChat, Title: "Launch", BoundBy: accountID}
+	h.audience.EXPECT().Bind(gomock.Any(), bound).Return(bound, nil)
+	h.audience.EXPECT().SpendCode(gomock.Any(), h.bot.ID, hash).Return(nil)
 	h.settles(id, entity.TelegramUpdateApplied)
 
 	if err := h.updatesService().Apply(context.Background(), id); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 
-	if len(h.sent) != 1 || !strings.HasPrefix(h.sent[0].Text, "Only the person who created this link") {
+	if len(h.sent) != 1 || !strings.HasPrefix(h.sent[0].Text, "Connected.") {
+		t.Errorf("sent = %+v", h.sent)
+	}
+}
+
+func TestALinkOpenedInTheWrongKindOfChatIsExplainedAndKept(t *testing.T) {
+	cases := []struct {
+		name     string
+		purpose  entity.TelegramLinkPurpose
+		incoming func(string) entity.TelegramIncoming
+		reply    string
+	}{
+		{"group link in a private chat", entity.TelegramLinkGroup, privately, "This link connects a group."},
+		{"private link in a group", entity.TelegramLinkPrivate, groupChatter, "This link is for your private chat"},
+	}
+
+	for _, c := range cases {
+		h := newHarness(t)
+		code, hash, err := entity.NewTelegramLinkCode()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		id := h.applying(c.incoming("/start " + code))
+		h.audience.EXPECT().LinkCode(gomock.Any(), h.bot.ID, hash, gomock.Any()).Return(entity.TelegramLinkCode{
+			BotID: h.bot.ID, AccountID: uuid.New(), Purpose: c.purpose,
+		}, nil)
+		h.settles(id, entity.TelegramUpdateApplied)
+
+		if err := h.updatesService().Apply(context.Background(), id); err != nil {
+			t.Fatalf("%s: Apply: %v", c.name, err)
+		}
+
+		if len(h.sent) != 1 || !strings.HasPrefix(h.sent[0].Text, c.reply) {
+			t.Errorf("%s: sent = %+v", c.name, h.sent)
+		}
+	}
+}
+
+func TestAnExpiredOrUsedLinkSaysSo(t *testing.T) {
+	h := newHarness(t)
+	code, hash, err := entity.NewTelegramLinkCode()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	id := h.applying(groupChatter("/start@ada_bot " + code))
+	h.audience.EXPECT().LinkCode(gomock.Any(), h.bot.ID, hash, gomock.Any()).
+		Return(entity.TelegramLinkCode{}, entity.ErrTelegramLinkCodeInvalid)
+	h.settles(id, entity.TelegramUpdateApplied)
+
+	if err := h.updatesService().Apply(context.Background(), id); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+
+	if len(h.sent) != 1 || !strings.HasPrefix(h.sent[0].Text, "This link has expired or was already used.") {
 		t.Errorf("sent = %+v", h.sent)
 	}
 }

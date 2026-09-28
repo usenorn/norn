@@ -9,7 +9,7 @@ import (
 	"github.com/usenorn/norn/internal/entity"
 )
 
-func TestALinkCodeRedeemsOnceAndOnlyBeforeItExpires(t *testing.T) {
+func TestALinkCodeStaysUntilSpentAndOnlyBeforeItExpires(t *testing.T) {
 	db := reach(t)
 	audience := New(db)
 
@@ -39,21 +39,27 @@ func TestALinkCodeRedeemsOnceAndOnlyBeforeItExpires(t *testing.T) {
 			return err
 		}
 
-		redeemed, err := audience.Redeem(ctx, f.botID, fresh, now)
-		if err != nil {
+		for range 2 {
+			found, err := audience.LinkCode(ctx, f.botID, fresh, now)
+			if err != nil {
+				return err
+			}
+
+			if found.AccountID != f.accountID || found.Purpose != entity.TelegramLinkGroup {
+				t.Errorf("found = %+v", found)
+			}
+		}
+
+		if err := audience.SpendCode(ctx, f.botID, fresh); err != nil {
 			return err
 		}
 
-		if redeemed.AccountID != f.accountID || redeemed.Purpose != entity.TelegramLinkGroup {
-			t.Errorf("redeemed = %+v", redeemed)
+		if _, err := audience.LinkCode(ctx, f.botID, fresh, now); !errors.Is(err, entity.ErrTelegramLinkCodeInvalid) {
+			t.Errorf("spent code: err = %v, want ErrTelegramLinkCodeInvalid", err)
 		}
 
-		if _, err := audience.Redeem(ctx, f.botID, fresh, now); !errors.Is(err, entity.ErrTelegramLinkCodeInvalid) {
-			t.Errorf("second redeem: err = %v, want ErrTelegramLinkCodeInvalid", err)
-		}
-
-		if _, err := audience.Redeem(ctx, f.botID, stale, now.Add(time.Minute)); !errors.Is(err, entity.ErrTelegramLinkCodeInvalid) {
-			t.Errorf("expired redeem: err = %v, want ErrTelegramLinkCodeInvalid", err)
+		if _, err := audience.LinkCode(ctx, f.botID, stale, now.Add(time.Minute)); !errors.Is(err, entity.ErrTelegramLinkCodeInvalid) {
+			t.Errorf("expired code: err = %v, want ErrTelegramLinkCodeInvalid", err)
 		}
 
 		return errRollback
