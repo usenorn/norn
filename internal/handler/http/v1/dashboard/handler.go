@@ -62,6 +62,7 @@ type handler struct {
 	aiProviders       service.AIProviders
 	agentCapabilities service.AgentCapabilities
 	hostedAgents      service.HostedAgents
+	telegramBots      service.TelegramBots
 	sourceControlCfg  config.SourceControl
 	app               config.App
 	instance          config.Instance
@@ -117,6 +118,7 @@ func New(
 	aiProviders service.AIProviders,
 	agentCapabilities service.AgentCapabilities,
 	hostedAgents service.HostedAgents,
+	telegramBots service.TelegramBots,
 	sourceControlCfg config.SourceControl,
 	app config.App,
 	instance config.Instance,
@@ -171,6 +173,7 @@ func New(
 		aiProviders:       aiProviders,
 		agentCapabilities: agentCapabilities,
 		hostedAgents:      hostedAgents,
+		telegramBots:      telegramBots,
 		sourceControlCfg:  sourceControlCfg,
 		app:               app,
 		instance:          instance,

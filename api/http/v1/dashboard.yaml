@@ -33,6 +33,7 @@ tags:
   - name: source-control
   - name: ai-provider
   - name: agent-capabilities
+  - name: agent-telegram
   - name: questions
   - name: runners
   - name: codebases
@@ -5620,6 +5621,143 @@ paths:
         '503': { $ref: '#/components/responses/AiProviderSealingUnavailable' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents/{agentId}/telegram:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+    get:
+      tags: [agent-telegram]
+      operationId: getWorkspaceAgentTelegram
+      summary: Read the Telegram bot this agent speaks through
+      responses:
+        '200':
+          description: The connected bot, who has linked their Telegram to it, and the groups it posts to
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentTelegramBot' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [agent-telegram]
+      operationId: connectWorkspaceAgentTelegram
+      summary: Connect a bot made with BotFather, or replace its token
+      description: >-
+        The token is proved against Telegram and the bot's webhook is pointed at this instance
+        before anything is stored, so a token Telegram refuses never replaces one that works. The
+        same bot keeps its linked people and groups; a different bot starts with none. The token
+        itself is never returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConnectAgentTelegramRequest' }
+      responses:
+        '200':
+          description: The connected bot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentTelegramBot' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '422': { $ref: '#/components/responses/TelegramRefused' }
+        '503': { $ref: '#/components/responses/TelegramSealingUnavailable' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [agent-telegram]
+      operationId: disconnectWorkspaceAgentTelegram
+      summary: Disconnect the bot and forget everyone and every group linked to it
+      responses:
+        '204': { description: The bot is disconnected and its webhook removed }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/telegram/links:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+    post:
+      tags: [agent-telegram]
+      operationId: createWorkspaceAgentTelegramLink
+      summary: Create a one-time link that ties a Telegram account or group to the caller
+      description: >-
+        A private link opens the bot and links the Telegram account that presses Start to the
+        caller. A group link adds the bot to a group the caller chooses, and only binds it when
+        the caller's own linked Telegram account starts it there. Group links are for the agent's
+        managers. Each link works once and expires.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAgentTelegramLinkRequest' }
+      responses:
+        '201':
+          description: The link to open in Telegram
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TelegramLinkInvite' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/telegram/links/me:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+    delete:
+      tags: [agent-telegram]
+      operationId: unlinkWorkspaceAgentTelegram
+      summary: Stop receiving this agent's questions on Telegram
+      responses:
+        '204': { description: The caller's Telegram account is no longer linked to the bot }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/agents/{agentId}/telegram/groups/{groupId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/AgentId'
+      - name: groupId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [agent-telegram]
+      operationId: unbindWorkspaceAgentTelegramGroup
+      summary: Stop posting this agent's questions to a group
+      responses:
+        '204': { description: The group no longer receives the agent's questions }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/telegram-bots:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [agent-telegram]
+      operationId: listWorkspaceTelegramBots
+      summary: List the agents with a Telegram bot, and whether the caller has linked to each
+      responses:
+        '200':
+          description: The agents a member can receive questions from on Telegram
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemberTelegramBotList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/source-control/connections:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -8228,6 +8366,16 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/AiProviderSealingUnavailableProblem' }
+    TelegramRefused:
+      description: Telegram refused the token, the bot already serves another agent, or this instance cannot receive its updates
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/TelegramRefusedProblem' }
+    TelegramSealingUnavailable:
+      description: This instance has no encryption key, so a bot token cannot be stored or read
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/TelegramSealingUnavailableProblem' }
     AgentCapabilityConflict:
       description: The skill or MCP server cannot change as asked
       content:
@@ -10972,6 +11120,10 @@ components:
         - agent.mcp_disconnected
         - agent.capability_attached
         - agent.capability_detached
+        - agent.telegram_connected
+        - agent.telegram_disconnected
+        - agent.telegram_group_bound
+        - agent.telegram_group_unbound
         - webhook.registered
         - webhook.removed
         - webhook.disabled
@@ -12672,6 +12824,108 @@ components:
           required: [code]
           properties:
             code: { type: string, enum: [ai_provider_sealing_unavailable] }
+
+    AgentTelegramBot:
+      type: object
+      description: >-
+        The token is never returned; tokenHint carries its last few characters so a manager can
+        tell which token is installed. linked says whether the caller's own Telegram account is
+        linked to this bot.
+      required: [id, username, name, tokenHint, hosted, linked, connectedAt, members, groups]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        name: { type: string }
+        tokenHint: { type: string }
+        hosted: { type: boolean }
+        linked: { type: boolean }
+        connectedBy: { type: string }
+        connectedAt: { type: string, format: date-time }
+        members:
+          type: array
+          items: { $ref: '#/components/schemas/TelegramMember' }
+        groups:
+          type: array
+          items: { $ref: '#/components/schemas/TelegramGroup' }
+
+    TelegramMember:
+      type: object
+      required: [accountId, name, username, linkedAt]
+      properties:
+        accountId: { type: string, format: uuid }
+        name: { type: string }
+        username: { type: string }
+        linkedAt: { type: string, format: date-time }
+
+    TelegramGroup:
+      type: object
+      required: [id, title, boundAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        boundBy: { type: string }
+        boundAt: { type: string, format: date-time }
+
+    ConnectAgentTelegramRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, maxLength: 128 }
+
+    TelegramLinkPurpose:
+      type: string
+      enum: [private, group]
+
+    CreateAgentTelegramLinkRequest:
+      type: object
+      required: [purpose]
+      properties:
+        purpose: { $ref: '#/components/schemas/TelegramLinkPurpose' }
+
+    TelegramLinkInvite:
+      type: object
+      required: [url, expiresAt]
+      properties:
+        url: { type: string }
+        expiresAt: { type: string, format: date-time }
+
+    MemberTelegramBot:
+      type: object
+      required: [agentId, agentName, username, linked]
+      properties:
+        agentId: { type: string, format: uuid }
+        agentName: { type: string }
+        username: { type: string }
+        linked: { type: boolean }
+        linkedAs: { type: string }
+
+    MemberTelegramBotList:
+      type: object
+      required: [bots]
+      properties:
+        bots:
+          type: array
+          items: { $ref: '#/components/schemas/MemberTelegramBot' }
+
+    TelegramRefusal:
+      type: string
+      enum: [token_rejected, bot_taken, origin_insecure, unreachable]
+
+    TelegramRefusedProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { $ref: '#/components/schemas/TelegramRefusal' }
+
+    TelegramSealingUnavailableProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, enum: [telegram_sealing_unavailable] }
 
     AgentSkillSource:
       type: string
