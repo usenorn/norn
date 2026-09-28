@@ -17,17 +17,21 @@
 	import Tag from "$lib/components/norn/tag.svelte";
 	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
 	import AgentCapabilitiesManager from "$lib/agents/agent-capabilities-manager.svelte";
+	import AgentExecutionForm from "$lib/agents/agent-execution-form.svelte";
 	import AgentIcon from "$lib/agents/agent-icon.svelte";
 	import AgentInstructionsForm from "$lib/agents/agent-instructions-form.svelte";
 	import AgentScopeForm from "$lib/agents/agent-scope-form.svelte";
+	import AgentTestConversation from "$lib/agents/agent-test-conversation.svelte";
 	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
 	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
 	import { onDate, onDateAndTime } from "$lib/time";
 	import {
+		agentExecutionLabels,
 		agentPermissionLabels,
 		reachSummary,
+		type AgentExecution,
 		type AgentScope,
 		agentsPath,
 		type Agent,
@@ -69,6 +73,8 @@
 	let savingInstructions = $state(false);
 	let scopeFailure = $state<AgentLifecycleFailure | { kind: "invalid"; message: string } | null>(null);
 	let savingScope = $state(false);
+	let executionFailure = $state<AgentLifecycleFailure | null>(null);
+	let savingExecution = $state(false);
 	let issuedAgent = $state.raw<Agent | null>(null);
 	let issuedValue = $state("");
 	let stateAgentId = $state<string | undefined>(page.params.agentId);
@@ -114,6 +120,8 @@
 		savingInstructions = false;
 		scopeFailure = null;
 		savingScope = false;
+		executionFailure = null;
+		savingExecution = false;
 		issuedAgent = null;
 		issuedValue = "";
 	});
@@ -286,6 +294,39 @@
 			return false;
 		} finally {
 			savingScope = false;
+		}
+	}
+
+	async function saveExecution(input: { execution: AgentExecution }) {
+		if (!agent) return false;
+
+		executionFailure = null;
+		savingExecution = true;
+
+		try {
+			const { data: saved, error, response } = await api.PUT(
+				"/workspaces/{workspaceId}/agents/{agentId}/execution",
+				{
+					params: { path: { workspaceId: workspace.id, agentId: agent.agent.id } },
+					body: { execution: input.execution },
+				}
+			);
+
+			if (error || !saved) {
+				executionFailure = lifecycleProblem(error, response.status);
+
+				return false;
+			}
+
+			refreshAfterMutation();
+
+			return true;
+		} catch {
+			executionFailure = { kind: "unavailable" };
+
+			return false;
+		} finally {
+			savingExecution = false;
 		}
 	}
 
@@ -499,6 +540,7 @@
 				<Tabs.Root bind:value={selectedTab} class="gap-0">
 					<Tabs.List variant="line" class="w-full justify-start overflow-x-auto">
 						<Tabs.Trigger value="overview" class="flex-none">Overview</Tabs.Trigger>
+						<Tabs.Trigger value="execution" class="flex-none">Execution</Tabs.Trigger>
 						<Tabs.Trigger value="capabilities" class="flex-none">Capabilities</Tabs.Trigger>
 						<Tabs.Trigger value="scope" class="flex-none">Scope</Tabs.Trigger>
 						<Tabs.Trigger value="instructions" class="flex-none">Instructions</Tabs.Trigger>
@@ -565,6 +607,10 @@
 											<dd class="mt-0.5 text-ink-900">{agent.ownerName || agent.ownerEmail}</dd>
 										</div>
 										<div>
+											<dt class="text-xs text-muted-foreground">Execution</dt>
+											<dd class="mt-0.5 text-ink-900">{agentExecutionLabels[agent.agent.execution]}</dd>
+										</div>
+										<div>
 											<dt class="text-xs text-muted-foreground">Registered</dt>
 											<dd class="mt-0.5 text-ink-900">{onDate(agent.agent.createdAt, workspace.timezone)}</dd>
 										</div>
@@ -577,6 +623,53 @@
 									</dl>
 								</section>
 							</div>
+						</div>
+					</Tabs.Content>
+
+					<Tabs.Content value="execution" class="pt-5">
+						<div class="flex flex-col gap-4">
+							<p class="text-sm leading-normal text-muted-foreground text-pretty">
+								{agent.agent.execution === "hosted"
+									? "Norn runs this agent itself, so it needs no runner. It cannot be handed issues while it is hosted."
+									: "This agent works on a runner its owner enrolled. Its computers are listed on the"}
+								{#if agent.agent.execution === "runner"}
+									<a href={runnersPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">runners screen</a>.
+								{/if}
+							</p>
+
+							{#if executionFailure}
+								<Alert.Root variant="destructive">
+									<CircleAlert aria-hidden="true" />
+									<Alert.Title>Not saved</Alert.Title>
+									<Alert.Description>{agentLifecycleFailureMessage(executionFailure)}</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							<AgentExecutionForm
+								execution={agent.agent.execution}
+								locked={savingExecution}
+								onsave={saveExecution}
+							/>
+
+							{#if agent.agent.execution === "hosted"}
+								{#if agent.agent.status === "active"}
+									{#key preview?.conversation ?? agent.agent.id}
+										<AgentTestConversation
+											workspace={{ id: workspace.id, slug: workspace.slug }}
+											agentId={agent.agent.id}
+											{administrator}
+											{selfHosted}
+											opened={preview?.conversation}
+										/>
+									{/key}
+								{:else}
+									<Alert.Root variant="muted">
+										<CircleAlert aria-hidden="true" />
+										<Alert.Title>This agent is disabled</Alert.Title>
+										<Alert.Description>Enable it to test it here.</Alert.Description>
+									</Alert.Root>
+								{/if}
+							{/if}
 						</div>
 					</Tabs.Content>
 

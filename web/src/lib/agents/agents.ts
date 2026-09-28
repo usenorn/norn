@@ -8,6 +8,7 @@ export type AgentAction = components["schemas"]["AgentAction"];
 export type APIScope = components["schemas"]["APIScope"];
 export type AgentIcon = components["schemas"]["AgentIcon"];
 export type AgentScope = components["schemas"]["AgentScope"];
+export type AgentExecution = components["schemas"]["AgentExecution"];
 
 type RegisterResponses = operations["registerWorkspaceAgent"]["responses"];
 
@@ -112,6 +113,19 @@ export const agentScopeHints: Record<AgentScope, string> = {
 	member: "Nobody but you can hand this agent an issue.",
 	project: "Everybody on that project can hand it issues belonging to that project.",
 	workspace: "Everybody in the workspace can hand it work.",
+};
+
+export const agentExecutions = ["hosted", "runner"] as const satisfies readonly AgentExecution[];
+
+export const agentExecutionLabels: Record<AgentExecution, string> = {
+	hosted: "Norn-hosted",
+	runner: "Norn Runner",
+};
+
+export const agentExecutionHints: Record<AgentExecution, string> = {
+	hosted:
+		"Answers questions inside Norn with the workspace's AI provider and the Norn tools its permissions allow. It takes no delegated work.",
+	runner: "Takes delegated coding work on a computer its owner enrolled as a runner.",
 };
 
 export const holdOptionLabels: Record<AgentHold, string> = {

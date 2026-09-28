@@ -6,10 +6,17 @@ import type {
 	McpConnectOutcome,
 } from "$lib/agents/agent-capabilities";
 import type { AgentRecord } from "$lib/agents/agent-record";
+import type { HostedConversation } from "$lib/agents/hosted";
 import type { Project } from "$lib/projects/projects";
 import type { MembershipRole } from "$lib/workspace/members";
 
-export type AgentDetailTab = "overview" | "capabilities" | "scope" | "instructions" | "activity";
+export type AgentDetailTab =
+	| "overview"
+	| "execution"
+	| "capabilities"
+	| "scope"
+	| "instructions"
+	| "activity";
 
 export type AgentRecordPreview = {
 	record?: AgentRecord;
@@ -21,6 +28,7 @@ export type AgentRecordPreview = {
 	tab?: AgentDetailTab;
 	projects?: Project[];
 	dialog?: CapabilityDialogPreview;
+	conversation?: HostedConversation;
 };
 
 export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = import.meta.env.DEV
@@ -431,6 +439,680 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 				},
 				tab: "capabilities",
 				dialog: "picker-skill",
+			},
+			execution_runner: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "runner",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+			},
+			hosted_idle: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: { kind: "idle", exchanges: [] },
+			},
+			hosted_asking: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "asking",
+					exchanges: [
+						{
+							question: "Which issues are in progress on the Payments team?",
+							reply: {
+								text: "Two are in progress: PAY-41 \"Retry failed card captures\" (Rae Chen) and PAY-44 \"Refund webhook signature check\" (unassigned).",
+								toolCalls: [
+									{ name: "norn_get_workspace_structure" },
+									{ name: "norn_list_issues" },
+								],
+								usage: { inputTokens: 5120, outputTokens: 142 },
+								stop: "answered",
+							},
+						},
+					],
+					question: "Who opened PAY-44?",
+				},
+			},
+			hosted_answered: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "idle",
+					exchanges: [
+						{
+							question: "Which issues are in progress on the Payments team?",
+							reply: {
+								text: "Two are in progress: PAY-41 \"Retry failed card captures\" (Rae Chen) and PAY-44 \"Refund webhook signature check\" (unassigned).",
+								toolCalls: [
+									{ name: "norn_get_workspace_structure" },
+									{ name: "norn_list_issues" },
+								],
+								usage: { inputTokens: 5120, outputTokens: 142 },
+								stop: "answered",
+							},
+						},
+						{
+							question: "Who is on the Payments team?",
+							reply: {
+								text: "I can't list the workspace's members: this agent was not granted membership:read. Ask its owner to widen its permissions if it should answer that.",
+								toolCalls: [{ name: "norn_list_workspace_members", refusal: "permission_denied" }],
+								usage: { inputTokens: 5480, outputTokens: 61 },
+								stop: "answered",
+							},
+						},
+					],
+				},
+			},
+			hosted_round_limit: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "idle",
+					exchanges: [
+						{
+							question: "Summarise every open issue in the workspace.",
+							reply: {
+								text: "",
+								toolCalls: [
+									{ name: "norn_list_issues" },
+									{ name: "norn_list_issues" },
+									{ name: "norn_get_issue" },
+								],
+								usage: { inputTokens: 21400, outputTokens: 320 },
+								stop: "round_limit",
+							},
+						},
+					],
+				},
+			},
+			hosted_token_limit: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "idle",
+					exchanges: [
+						{
+							question: "Summarise every open issue in the workspace.",
+							reply: {
+								text: "",
+								toolCalls: [
+									{ name: "norn_list_issues" },
+									{ name: "norn_list_issues" },
+									{ name: "norn_get_issue" },
+								],
+								usage: { inputTokens: 21400, outputTokens: 320 },
+								stop: "token_limit",
+							},
+						},
+					],
+				},
+			},
+			hosted_time_limit: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "idle",
+					exchanges: [
+						{
+							question: "Summarise every open issue in the workspace.",
+							reply: {
+								text: "",
+								toolCalls: [
+									{ name: "norn_list_issues" },
+									{ name: "norn_list_issues" },
+									{ name: "norn_get_issue" },
+								],
+								usage: { inputTokens: 21400, outputTokens: 320 },
+								stop: "time_limit",
+							},
+						},
+					],
+				},
+			},
+			hosted_not_configured: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "not_configured" },
+				},
+				role: "admin",
+			},
+			hosted_not_configured_member: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "not_configured" },
+				},
+				role: "member",
+			},
+			hosted_provider_failure: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "provider", code: "quota_exceeded" },
+				},
+				role: "admin",
+			},
+			hosted_rate_limited: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "provider", code: "rate_limited" },
+				},
+				role: "admin",
+			},
+			hosted_sealing_unavailable: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "sealing_unavailable" },
+				},
+			},
+			hosted_authority_missing: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "authority_missing" },
+				},
+			},
+			hosted_forbidden: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "forbidden" },
+				},
+			},
+			hosted_unavailable: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "failed",
+					exchanges: [],
+					question: "Which issues are in progress on the Payments team?",
+					failure: { kind: "unavailable" },
+				},
+			},
+			hosted_full: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "active",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
+				conversation: {
+					kind: "idle",
+					exchanges: Array.from({ length: 20 }, (_, turn) => ({
+						question: `Follow-up question ${turn + 1}`,
+						reply: {
+							text: `Answer ${turn + 1}.`,
+							toolCalls: [],
+							usage: { inputTokens: 900, outputTokens: 20 },
+							stop: "answered" as const,
+						},
+					})),
+				},
+			},
+			hosted_disabled: {
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "workspace-guide",
+							icon: "search",
+							status: "disabled",
+							scope: "member",
+							execution: "hosted",
+							actionLimit: 120,
+							createdAt: "2026-09-20T09:00:00Z",
+							disabledAt: "2026-09-26T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "project:read", "cycle:read", "comment:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+				tab: "execution",
 			},
 		}
 	: {};
