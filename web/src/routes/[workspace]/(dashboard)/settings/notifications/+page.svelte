@@ -10,6 +10,8 @@
 	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { api } from "$lib/api";
 	import PreferenceGrid from "$lib/notifications/preference-grid.svelte";
+	import TelegramLinks from "$lib/agents/telegram-links.svelte";
+	import { deploymentPreview } from "$lib/auth/preview";
 	import type { NotificationPreferences } from "$lib/notifications/notifications";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { notificationSettingsPreviewStates } from "./preview";
@@ -30,6 +32,8 @@
 	let failed = $state(false);
 
 	const panel = $derived(preview?.panel ?? data.panel);
+	const telegram = $derived(preview?.telegram ?? data.telegram);
+	const selfHosted = $derived(deploymentPreview(page.url)?.selfHosted ?? data.selfHosted);
 	const slug = $derived(data.workspace.slug);
 	const stored = $derived(panel.kind === "ready" ? panel.settings.preferences : null);
 	const preferences = $derived(draft ?? stored);
@@ -127,4 +131,14 @@
 					>.
 				</p>
 			{/if}
+
+			{#key preview?.telegramOutcome}
+				<TelegramLinks
+					workspaceId={data.workspace.id}
+					bots={telegram}
+					{selfHosted}
+					timezone={data.workspace.timezone}
+					opened={preview?.telegramOutcome}
+				/>
+			{/key}
 </SettingsPage>
