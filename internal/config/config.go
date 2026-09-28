@@ -30,6 +30,7 @@ type Config struct {
 	Imports       Imports       `mapstructure:"imports"`
 	Linear        Linear        `mapstructure:"linear"`
 	OpenAI        OpenAI        `mapstructure:"openai"`
+	AgentHosting  AgentHosting  `mapstructure:"agent_hosting"`
 	AgentTooling  AgentTooling  `mapstructure:"agent_tooling"`
 	SourceControl SourceControl `mapstructure:"source_control"`
 	Intake        Intake        `mapstructure:"intake"`
@@ -396,6 +397,14 @@ type OpenAI struct {
 	DialTimeout         time.Duration `mapstructure:"dial_timeout"`
 	MaxResponseSize     int64         `mapstructure:"max_response_size"`
 	AllowedDestinations []string      `mapstructure:"allowed_destinations"`
+}
+
+type AgentHosting struct {
+	Timeout            time.Duration `mapstructure:"timeout"`
+	MaxToolRounds      int           `mapstructure:"max_tool_rounds"`
+	MaxOutputTokens    int           `mapstructure:"max_output_tokens"`
+	MaxTotalTokens     int           `mapstructure:"max_total_tokens"`
+	MaxToolResultBytes int           `mapstructure:"max_tool_result_bytes"`
 }
 
 type AgentTooling struct {

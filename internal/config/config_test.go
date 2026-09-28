@@ -105,3 +105,43 @@ func TestLimitsThatLeaveRoomAreAccepted(t *testing.T) {
 		t.Fatalf("config.New() = %v, want limits that leave room to be accepted", err)
 	}
 }
+
+func hostingLimits(t *testing.T, timeout, outputTokens, totalTokens string) error {
+	t.Helper()
+
+	t.Setenv("NORN_SECURITY_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef")
+	t.Setenv("NORN_SMTP_HOST", "smtp.test")
+	t.Setenv("NORN_SMTP_FROM_ADDRESS", "no-reply@norn.test")
+	t.Setenv("NORN_HTTP_REQUEST_TIMEOUT", "25s")
+	t.Setenv("NORN_AGENT_HOSTING_TIMEOUT", timeout)
+	t.Setenv("NORN_AGENT_HOSTING_MAX_OUTPUT_TOKENS", outputTokens)
+	t.Setenv("NORN_AGENT_HOSTING_MAX_TOTAL_TOKENS", totalTokens)
+
+	_, err := config.New("")
+
+	return err
+}
+
+func TestAHostedConversationMustFinishInsideTheRequestThatAskedIt(t *testing.T) {
+	err := hostingLimits(t, "25s", "2048", "60000")
+	if err == nil || !strings.Contains(err.Error(), "agent_hosting.timeout") {
+		t.Fatalf(
+			"a hosted timeout as long as the request answered %v; the request would be cut off "+
+				"before the conversation could return what it had",
+			err,
+		)
+	}
+}
+
+func TestAHostedBudgetSmallerThanOneAnswerIsRefused(t *testing.T) {
+	err := hostingLimits(t, "20s", "2048", "1024")
+	if err == nil || !strings.Contains(err.Error(), "agent_hosting.max_total_tokens") {
+		t.Fatalf("a total budget below one answer's budget answered %v", err)
+	}
+}
+
+func TestTheDefaultHostingLimitsAreAWorkingConfiguration(t *testing.T) {
+	if err := hostingLimits(t, "20s", "2048", "60000"); err != nil {
+		t.Fatalf("config.New() = %v, want the default hosting limits accepted", err)
+	}
+}
