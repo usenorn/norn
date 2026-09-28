@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -99,6 +100,38 @@ func TestRespondJoinsTheTextOfTheAnswer(t *testing.T) {
 
 	if step.Text != "Three issues are in progress." || len(step.Calls) != 0 {
 		t.Errorf("step = %+v, want the whole answer and no calls", step)
+	}
+}
+
+func TestRespondMarksAnAnswerCutOffAtTheOutputLimit(t *testing.T) {
+	client := answering(t, func(writer http.ResponseWriter, _ *http.Request) {
+		_, _ = writer.Write([]byte(`{"status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},
+			"output":[{"type":"reasoning","summary":[]}],"usage":{"input_tokens":900,"output_tokens":2048}}`))
+	})
+
+	step, err := client.Respond(context.Background(), entity.AIProviderEndpoint{}, "sk-test", entity.AIConversationRequest{
+		Model: "gpt-6-sol",
+	})
+	if err != nil {
+		t.Fatalf("Respond: %v", err)
+	}
+
+	if !step.Truncated || step.Text != "" || step.Usage != (entity.AITokenUsage{Input: 900, Output: 2048}) {
+		t.Errorf("step = %+v, want a truncated step with its usage", step)
+	}
+}
+
+func TestRespondFailsAnAnswerTheProviderStoppedForAnotherReason(t *testing.T) {
+	client := answering(t, func(writer http.ResponseWriter, _ *http.Request) {
+		_, _ = writer.Write([]byte(`{"status":"incomplete","incomplete_details":{"reason":"content_filter"},
+			"output":[],"usage":{"input_tokens":10,"output_tokens":0}}`))
+	})
+
+	_, err := client.Respond(context.Background(), entity.AIProviderEndpoint{}, "sk-test", entity.AIConversationRequest{
+		Model: "gpt-6-sol",
+	})
+	if err == nil || !strings.Contains(err.Error(), "content_filter") {
+		t.Errorf("err = %v, want the incomplete reason", err)
 	}
 }
 

@@ -234,6 +234,12 @@ func (s *conversations) run(ctx context.Context, prepared conversation) (entity.
 			reply.Text = step.Text
 		}
 
+		if step.Truncated {
+			reply.Stop = entity.AgentConversationTokenLimit
+
+			return reply, nil
+		}
+
 		if len(step.Calls) == 0 {
 			reply.Stop = entity.AgentConversationAnswered
 

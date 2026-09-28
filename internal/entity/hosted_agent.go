@@ -150,7 +150,8 @@ type AIConversationRequest struct {
 }
 
 type AIConversationStep struct {
-	Text  string
-	Calls []AIToolCall
-	Usage AITokenUsage
+	Text      string
+	Calls     []AIToolCall
+	Usage     AITokenUsage
+	Truncated bool
 }
