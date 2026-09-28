@@ -161,6 +161,21 @@ func (mr *MockTelegramAudienceMockRecorder) Link(ctx, account any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Link", reflect.TypeOf((*MockTelegramAudience)(nil).Link), ctx, account)
 }
 
+// LinkCode mocks base method.
+func (m *MockTelegramAudience) LinkCode(ctx context.Context, botID uuid.UUID, hash []byte, now time.Time) (entity.TelegramLinkCode, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LinkCode", ctx, botID, hash, now)
+	ret0, _ := ret[0].(entity.TelegramLinkCode)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LinkCode indicates an expected call of LinkCode.
+func (mr *MockTelegramAudienceMockRecorder) LinkCode(ctx, botID, hash, now any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkCode", reflect.TypeOf((*MockTelegramAudience)(nil).LinkCode), ctx, botID, hash, now)
+}
+
 // MoveGroup mocks base method.
 func (m *MockTelegramAudience) MoveGroup(ctx context.Context, botID uuid.UUID, fromChatID, toChatID int64) error {
 	m.ctrl.T.Helper()
@@ -175,19 +190,18 @@ func (mr *MockTelegramAudienceMockRecorder) MoveGroup(ctx, botID, fromChatID, to
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MoveGroup", reflect.TypeOf((*MockTelegramAudience)(nil).MoveGroup), ctx, botID, fromChatID, toChatID)
 }
 
-// Redeem mocks base method.
-func (m *MockTelegramAudience) Redeem(ctx context.Context, botID uuid.UUID, hash []byte, now time.Time) (entity.TelegramLinkCode, error) {
+// SpendCode mocks base method.
+func (m *MockTelegramAudience) SpendCode(ctx context.Context, botID uuid.UUID, hash []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Redeem", ctx, botID, hash, now)
-	ret0, _ := ret[0].(entity.TelegramLinkCode)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "SpendCode", ctx, botID, hash)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// Redeem indicates an expected call of Redeem.
-func (mr *MockTelegramAudienceMockRecorder) Redeem(ctx, botID, hash, now any) *gomock.Call {
+// SpendCode indicates an expected call of SpendCode.
+func (mr *MockTelegramAudienceMockRecorder) SpendCode(ctx, botID, hash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Redeem", reflect.TypeOf((*MockTelegramAudience)(nil).Redeem), ctx, botID, hash, now)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpendCode", reflect.TypeOf((*MockTelegramAudience)(nil).SpendCode), ctx, botID, hash)
 }
 
 // Unbind mocks base method.

@@ -13,7 +13,8 @@ import (
 
 type TelegramAudience interface {
 	IssueCode(ctx context.Context, code entity.TelegramLinkCode, hash []byte) error
-	Redeem(ctx context.Context, botID uuid.UUID, hash []byte, now time.Time) (entity.TelegramLinkCode, error)
+	LinkCode(ctx context.Context, botID uuid.UUID, hash []byte, now time.Time) (entity.TelegramLinkCode, error)
+	SpendCode(ctx context.Context, botID uuid.UUID, hash []byte) error
 	Link(ctx context.Context, account entity.TelegramAccount) error
 	AccountOf(ctx context.Context, botID uuid.UUID, telegramUserID int64) (entity.TelegramAccount, error)
 	AccountFor(ctx context.Context, botID, accountID uuid.UUID) (entity.TelegramAccount, error)

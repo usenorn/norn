@@ -349,39 +349,51 @@ func (s *updates) redeem(
 	message entity.TelegramMessage,
 	code string,
 ) (entity.TelegramUpdateOutcome, *pendingChat, error) {
-	redeemed, err := s.audience.Redeem(ctx, target.bot.ID, entity.HashTelegramSecret(code), time.Now().UTC())
-	if err != nil && !errors.Is(err, entity.ErrTelegramLinkCodeInvalid) {
+	hash := entity.HashTelegramSecret(code)
+
+	redeemed, err := s.audience.LinkCode(ctx, target.bot.ID, hash, time.Now().UTC())
+	if errors.Is(err, entity.ErrTelegramLinkCodeInvalid) {
+		return s.say(ctx, target, message, plain(
+			"This link has expired or was already used. Open Norn and create a new one.",
+		))
+	}
+
+	if err != nil {
 		return "", nil, err
 	}
 
-	expired := plain("This link has expired or was already used. Open Norn and create a new one.")
-
-	if err != nil {
-		return s.say(ctx, target, message, expired)
-	}
-
 	switch {
-	case message.ChatType == entity.TelegramChatPrivate && redeemed.Purpose == entity.TelegramLinkPrivate:
-		if err := s.audience.Link(ctx, entity.TelegramAccount{
-			BotID:          target.bot.ID,
-			AccountID:      redeemed.AccountID,
-			TelegramUserID: message.Sender.ID,
-			ChatID:         message.ChatID,
-			Username:       message.Sender.Username,
-		}); err != nil {
-			return "", nil, err
-		}
-
+	case redeemed.Purpose == entity.TelegramLinkGroup && !message.ChatType.Grouped():
 		return s.say(ctx, target, message, plain(fmt.Sprintf(
-			"Linked. %s will send its questions for you here.", target.agent.Name,
+			"This link connects a group. Add @%s to a group with it instead.", target.bot.Username,
 		)))
 
-	case message.ChatType.Grouped() && redeemed.Purpose == entity.TelegramLinkGroup:
-		return s.bind(ctx, target, message, redeemed)
+	case redeemed.Purpose == entity.TelegramLinkPrivate && message.ChatType != entity.TelegramChatPrivate:
+		return s.say(ctx, target, message, plain(fmt.Sprintf(
+			"This link is for your private chat with @%s. Open it from Telegram directly.", target.bot.Username,
+		)))
 
-	default:
-		return s.say(ctx, target, message, expired)
+	case redeemed.Purpose == entity.TelegramLinkGroup:
+		return s.bind(ctx, target, message, redeemed, hash)
 	}
+
+	if err := s.audience.Link(ctx, entity.TelegramAccount{
+		BotID:          target.bot.ID,
+		AccountID:      redeemed.AccountID,
+		TelegramUserID: message.Sender.ID,
+		ChatID:         message.ChatID,
+		Username:       message.Sender.Username,
+	}); err != nil {
+		return "", nil, err
+	}
+
+	if err := s.audience.SpendCode(ctx, target.bot.ID, hash); err != nil {
+		return "", nil, err
+	}
+
+	return s.say(ctx, target, message, plain(fmt.Sprintf(
+		"Linked. %s will send its questions for you here.", target.agent.Name,
+	)))
 }
 
 func (s *updates) bind(
@@ -389,6 +401,7 @@ func (s *updates) bind(
 	target delivery,
 	message entity.TelegramMessage,
 	redeemed entity.TelegramLinkCode,
+	hash []byte,
 ) (entity.TelegramUpdateOutcome, *pendingChat, error) {
 	account, err := s.audience.AccountOf(ctx, target.bot.ID, message.Sender.ID)
 	if err != nil && !errors.Is(err, entity.ErrTelegramAccountNotLinked) {
@@ -409,6 +422,10 @@ func (s *updates) bind(
 		BoundBy: account.AccountID,
 	})
 	if err != nil {
+		return "", nil, err
+	}
+
+	if err := s.audience.SpendCode(ctx, target.bot.ID, hash); err != nil {
 		return "", nil, err
 	}
 

@@ -18,10 +18,14 @@ const issueCodeQuery = `
 INSERT INTO workspace_telegram_link_codes (code_hash, bot_id, account_id, purpose, expires_at, created_at)
 VALUES ($1, $2, $3, $4, $5, $6)`
 
-const redeemCodeQuery = `
-DELETE FROM workspace_telegram_link_codes
+const linkCodeQuery = `
+SELECT bot_id, account_id, purpose, expires_at
+FROM workspace_telegram_link_codes
 WHERE code_hash = $1 AND bot_id = $2
-RETURNING bot_id, account_id, purpose, expires_at`
+FOR UPDATE`
+
+const spendCodeQuery = `
+DELETE FROM workspace_telegram_link_codes WHERE code_hash = $1 AND bot_id = $2`
 
 const pruneCodesQuery = `
 DELETE FROM workspace_telegram_link_codes WHERE expires_at <= $1`
@@ -138,7 +142,7 @@ func (r *telegramAudienceRepository) IssueCode(
 	return nil
 }
 
-func (r *telegramAudienceRepository) Redeem(
+func (r *telegramAudienceRepository) LinkCode(
 	ctx context.Context,
 	botID uuid.UUID,
 	hash []byte,
@@ -150,14 +154,14 @@ func (r *telegramAudienceRepository) Redeem(
 		purpose      string
 	)
 
-	if err := r.db.Querier(ctx).QueryRowContext(ctx, redeemCodeQuery, hash, botID.String()).Scan(
+	if err := r.db.Querier(ctx).QueryRowContext(ctx, linkCodeQuery, hash, botID.String()).Scan(
 		&bot, &account, &purpose, &code.ExpiresAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.TelegramLinkCode{}, entity.ErrTelegramLinkCodeInvalid
 		}
 
-		return entity.TelegramLinkCode{}, fmt.Errorf("redeem telegram link code: %w", err)
+		return entity.TelegramLinkCode{}, fmt.Errorf("find telegram link code: %w", err)
 	}
 
 	if !now.Before(code.ExpiresAt) {
@@ -177,6 +181,14 @@ func (r *telegramAudienceRepository) Redeem(
 	code.Purpose = entity.TelegramLinkPurpose(purpose)
 
 	return code, nil
+}
+
+func (r *telegramAudienceRepository) SpendCode(ctx context.Context, botID uuid.UUID, hash []byte) error {
+	if _, err := r.db.Querier(ctx).ExecContext(ctx, spendCodeQuery, hash, botID.String()); err != nil {
+		return fmt.Errorf("spend telegram link code: %w", err)
+	}
+
+	return nil
 }
 
 func (r *telegramAudienceRepository) Link(ctx context.Context, account entity.TelegramAccount) error {
