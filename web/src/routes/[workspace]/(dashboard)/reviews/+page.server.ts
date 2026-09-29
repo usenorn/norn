@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({
 	depends(keys.reviews(workspace.id));
 
 	const waiting = await locals.api.GET("/workspaces/{workspaceId}/executions", {
-		params: { path: { workspaceId: workspace.id }, query: { state: ["awaiting_review"] } },
+		params: { path: { workspaceId: workspace.id }, query: { state: ["awaiting_plan_approval", "awaiting_review"] } },
 	});
 
 	if (!waiting.data) return { queue: { kind: "unavailable" } };

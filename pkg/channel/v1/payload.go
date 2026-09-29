@@ -6,9 +6,11 @@ import (
 )
 
 const (
-	ResumeApproved = "approved"
-	ResumeFeedback = "review_feedback"
-	ResumeAnswer   = "answer"
+	ResumeApproved     = "approved"
+	ResumeFeedback     = "review_feedback"
+	ResumeAnswer       = "answer"
+	ResumePlanApproved = "plan_approved"
+	ResumePlanRevision = "plan_revision"
 )
 
 const (
@@ -87,6 +89,7 @@ type Start struct {
 	ExecutionID    string     `json:"execution_id"`
 	LeaseExpiresAt *time.Time `json:"lease_expires_at"`
 	Params         Params     `json:"params"`
+	Stage          Stage      `json:"stage"`
 	Instructions   string     `json:"instructions,omitempty"`
 	Toolkit        Toolkit    `json:"toolkit"`
 }
@@ -96,10 +99,16 @@ type Cancellation struct {
 }
 
 type Instruction struct {
-	Reason      string `json:"reason"`
-	Instruction string `json:"instruction,omitempty"`
-	QuestionID  string `json:"question_id,omitempty"`
-	QuestionRef string `json:"question_ref,omitempty"`
+	Reason      string   `json:"reason"`
+	Stage       Stage    `json:"stage"`
+	Instruction string   `json:"instruction,omitempty"`
+	Answers     []Answer `json:"answers,omitempty"`
+}
+
+type Plan struct {
+	Ref      string    `json:"ref"`
+	Body     string    `json:"body"`
+	Proposed time.Time `json:"ts"`
 }
 
 type QuestionContext struct {
@@ -124,6 +133,7 @@ type Question struct {
 type Answer struct {
 	QuestionID string    `json:"question_id"`
 	Ref        string    `json:"ref"`
+	Question   string    `json:"question,omitempty"`
 	Answer     string    `json:"answer"`
 	AnsweredBy string    `json:"answered_by"`
 	AnsweredAt time.Time `json:"ts"`

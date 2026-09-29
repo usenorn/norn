@@ -21,6 +21,8 @@ export type RealtimeEventKind =
 	| "execution.updated"
 	| "execution.event"
 	| "execution.changeset"
+	| "execution.plan"
+	| "execution.review"
 	| "question.asked"
 	| "question.settled";
 
@@ -220,8 +222,11 @@ export function invalidatedBy(event: RealtimeEvent, workspaceId: string): string
 			return [keys.members(workspaceId), keys.workspaceScope(workspaceId)];
 		case "execution.updated":
 			return [keys.issue(event.issueId), keys.issues(workspaceId)];
+		case "execution.plan":
+			return [keys.reviews(workspaceId)];
 		case "execution.event":
 		case "execution.changeset":
+		case "execution.review":
 			return [];
 		case "question.asked":
 		case "question.settled":
@@ -241,6 +246,8 @@ const eventKinds: RealtimeEventKind[] = [
 	"execution.updated",
 	"execution.event",
 	"execution.changeset",
+	"execution.plan",
+	"execution.review",
 	"question.asked",
 	"question.settled",
 ];

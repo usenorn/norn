@@ -7,7 +7,6 @@
 		changeTotals,
 		noChangesLine,
 		validationLabel,
-		type DiffView,
 		type Execution,
 		type ExecutionChangeSet,
 	} from "./executions";
@@ -16,18 +15,14 @@
 		execution,
 		changeset,
 		links,
-		diffs,
-		opened,
+		review,
 		downloadOf,
-		ondiff,
 	}: {
 		execution: Execution;
 		changeset?: ExecutionChangeSet;
 		links: CodeLink[];
-		diffs: Record<string, DiffView>;
-		opened: string;
+		review: string;
 		downloadOf: (artifactId: string) => string;
-		ondiff: (artifactId: string) => void;
 	} = $props();
 
 	const changes = $derived(changeset?.repositories ?? []);
@@ -58,12 +53,11 @@
 		<ul class="flex min-w-0 flex-col">
 			{#each changes as change (change.repository)}
 				<RepoChange
+					{execution}
 					{change}
 					{links}
-					diff={diffs[change.diffArtifactId ?? ""] ?? { kind: "idle" }}
+					{review}
 					download={downloadOf(change.diffArtifactId ?? "")}
-					opened={opened !== "" && opened === change.diffArtifactId}
-					{ondiff}
 				/>
 			{/each}
 		</ul>

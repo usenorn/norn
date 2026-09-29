@@ -103,6 +103,8 @@ func (s *channelsService) Receive(
 		return s.executions.Kept(ctx, session.Runner, message)
 	case entity.ChannelQuestionAsked:
 		return s.questions.Asked(ctx, session.Runner, message)
+	case entity.ChannelPlanProposed:
+		return s.executions.PlanProposed(ctx, session.Runner, message)
 	case entity.ChannelChangeSetUpdated:
 		return s.changesets.Updated(ctx, session.Runner, message)
 	case entity.ChannelExecutionResult:

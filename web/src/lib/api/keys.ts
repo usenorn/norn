@@ -3,6 +3,7 @@ export const keys = {
 	workspaceScope: (workspaceId: string) => `norn:workspace:${workspaceId}`,
 	issue: (issueId: string) => `norn:issue:${issueId}`,
 	execution: (executionId: string) => `norn:execution:${executionId}`,
+	executionReview: (executionId: string) => `norn:execution-review:${executionId}`,
 	reviews: (workspaceId: string) => `norn:reviews:${workspaceId}`,
 	issues: (workspaceId: string) => `norn:issues:${workspaceId}`,
 	inbox: (workspaceId: string) => `norn:inbox:${workspaceId}`,

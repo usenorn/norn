@@ -30,6 +30,7 @@ type opening struct {
 
 type move struct {
 	to             entity.ExecutionState
+	stage          entity.ExecutionStage
 	reason         string
 	actor          entity.ExecutionActor
 	runnerID       uuid.UUID
@@ -350,6 +351,11 @@ func (s *executionsService) advance(
 		lease = nil
 	}
 
+	stage := step.stage
+	if stage == "" {
+		stage = entity.StageAfter(execution.State, execution.Stage, step.to)
+	}
+
 	var moved entity.Execution
 
 	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
@@ -358,6 +364,7 @@ func (s *executionsService) advance(
 		moved, err = s.executions.Move(ctx, execution.ID, repository.ExecutionMove{
 			From:           execution.State,
 			To:             step.to,
+			Stage:          stage,
 			Reason:         step.reason,
 			RunnerID:       step.runnerID,
 			LeaseExpiresAt: lease,

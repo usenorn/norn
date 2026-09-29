@@ -92,6 +92,8 @@ const (
 
 	AuditExecutionCancelled AuditAction = "execution.cancelled"
 	AuditExecutionApproved  AuditAction = "execution.approved"
+	AuditExecutionPlanned   AuditAction = "execution.plan_approved"
+	AuditExecutionReplanned AuditAction = "execution.plan_revision_requested"
 	AuditExecutionResumed   AuditAction = "execution.resumed"
 	AuditExecutionStranded  AuditAction = "execution.stranded"
 	AuditExecutionRetained  AuditAction = "execution.retained"
@@ -150,8 +152,8 @@ func AuditActions() []AuditAction {
 		AuditAgentTelegramGroupBound, AuditAgentTelegramGroupUnbound,
 		AuditRunnerEnrolled, AuditRunnerRevoked, AuditRunnerPaused, AuditRunnerResumed,
 		AuditCodebaseConnected, AuditCodebaseDisconnected,
-		AuditExecutionCancelled, AuditExecutionApproved, AuditExecutionResumed,
-		AuditExecutionStranded, AuditExecutionRetained,
+		AuditExecutionCancelled, AuditExecutionApproved, AuditExecutionPlanned,
+		AuditExecutionReplanned, AuditExecutionResumed, AuditExecutionStranded, AuditExecutionRetained,
 		AuditPreviewOpened, AuditPreviewShared, AuditPreviewShareRevoked,
 		AuditWebhookRegistered, AuditWebhookRemoved, AuditWebhookDisabled,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,

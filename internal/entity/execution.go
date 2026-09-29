@@ -35,13 +35,17 @@ var (
 	ErrExecutionFinished        = errors.New("this execution has already finished")
 	ErrExecutionUnfinished      = errors.New("this execution has not finished yet")
 	ErrExecutionStateNotRunners = errors.New("a runner may not put an execution into that state")
-	ErrExecutionNotReviewable   = errors.New("this execution is not waiting to be reviewed")
 	ErrExecutionSelfApproval    = errors.New("an agent may not approve its own work")
 	ErrExecutionNoRunner        = errors.New("this agent has no runner to hand the work to")
 	ErrExecutionAlreadyLive     = errors.New("this delegation already has a run in flight")
 	ErrExecutionNotDelegated    = errors.New("this issue is not delegated to an agent")
 	ErrExecutionEventRecorded   = errors.New("this timeline entry has already been recorded")
 	ErrExecutionLeaseLapsed     = errors.New("the runner stopped reporting and its lease lapsed")
+	ErrExecutionNotPlanning     = errors.New("this execution is not waiting for its plan to be approved")
+	ErrExecutionPlanMissing     = errors.New("this execution has not proposed a plan to decide on")
+	ErrExecutionPlanStale       = errors.New("a newer revision of this plan has been proposed")
+	ErrExecutionQuestionsOpen   = errors.New("this execution still has questions waiting on an answer")
+	ErrExecutionPlanRecorded    = errors.New("this run has already proposed that plan")
 )
 
 type ExecutionState = channelv1.State
@@ -52,6 +56,7 @@ const (
 	ExecutionPreparing       = channelv1.StatePreparing
 	ExecutionRunning         = channelv1.StateRunning
 	ExecutionWaitingForInput = channelv1.StateWaitingForInput
+	ExecutionAwaitingPlan    = channelv1.StateAwaitingPlan
 	ExecutionQueuedForResume = channelv1.StateQueuedForResume
 	ExecutionFinalizing      = channelv1.StateFinalizing
 	ExecutionAwaitingReview  = channelv1.StateAwaitingReview
@@ -89,6 +94,32 @@ func IssueStateFor(state ExecutionState, states []WorkflowState) (WorkflowState,
 		return CompletionState(states)
 	default:
 		return WorkflowState{}, false
+	}
+}
+
+type ExecutionStage = channelv1.Stage
+
+const (
+	StagePlanning       = channelv1.StagePlanning
+	StageImplementation = channelv1.StageImplementation
+	StageReview         = channelv1.StageReview
+	StagePublication    = channelv1.StagePublication
+)
+
+func ExecutionStages() []ExecutionStage {
+	return channelv1.Stages()
+}
+
+func StageAfter(from ExecutionState, stage ExecutionStage, to ExecutionState) ExecutionStage {
+	switch {
+	case to == ExecutionAwaitingReview:
+		return StageReview
+	case to == ExecutionApproved:
+		return StagePublication
+	case stage == StageReview && to == ExecutionQueuedForResume:
+		return StageImplementation
+	default:
+		return stage
 	}
 }
 
@@ -141,6 +172,7 @@ type Execution struct {
 	RequirementsMoved bool
 	Attempt           int
 	State             ExecutionState
+	Stage             ExecutionStage
 	Reason            string
 	QueuedReason      ExecutionQueuedReason
 	Params            ExecutionParams

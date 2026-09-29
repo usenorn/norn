@@ -2330,10 +2330,11 @@
 							<ul class="flex min-w-0 flex-col">
 								{#each changed as change (change.repository)}
 									<RepoChange
+										execution={runs.find((run) => run.id === change.executionId)}
 										{change}
 										links={codeLinks}
-										diff={{ kind: "idle" }}
 										download={`/v1/workspaces/${data.workspace.id}/executions/${change.executionId}/artifacts/${change.diffArtifactId}/content`}
+										review={workspacePath(data.workspace.slug, `/executions/${change.executionId}/review`)}
 									/>
 								{/each}
 							</ul>

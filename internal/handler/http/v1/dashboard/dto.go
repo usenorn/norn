@@ -2241,6 +2241,7 @@ func executionDTO(execution entity.Execution) api.Execution {
 
 		Attempt:        execution.Attempt,
 		State:          api.ExecutionState(execution.State),
+		Stage:          api.ExecutionStage(execution.Stage),
 		Reason:         nilIfEmpty(execution.Reason),
 		QueuedReason:   executionQueuedReasonDTO(execution.QueuedReason),
 		Params:         executionParamsDTO(execution.Params),

@@ -1,33 +1,31 @@
 <script lang="ts">
 	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import GitBranch from "@lucide/svelte/icons/git-branch";
-	import { Button } from "$lib/components/ui/button/index.js";
 	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
 	import type { CodeLink } from "$lib/source-control/source-control";
-	import DiffView from "./diff-view.svelte";
 	import {
 		diffReach,
 		diffStatLine,
+		noDiffLine,
 		noPullRequestLine,
 		pullRequestReach,
-		type DiffView as Diff,
+		reviewLinkLabel,
+		type Execution,
 		type ExecutionRepositoryChange,
 	} from "./executions";
 
 	let {
+		execution,
 		change,
 		links,
-		diff,
 		download,
-		opened = false,
-		ondiff,
+		review,
 	}: {
+		execution?: Execution;
 		change: ExecutionRepositoryChange;
 		links: CodeLink[];
-		diff: Diff;
 		download: string;
-		opened?: boolean;
-		ondiff?: (artifactId: string) => void;
+		review: string;
 	} = $props();
 
 	const reach = $derived(pullRequestReach(change, links));
@@ -65,32 +63,23 @@
 			<ExternalLink aria-hidden="true" class="size-3 shrink-0" />
 		</a>
 	{:else}
-		<p class="text-2xs text-muted-foreground">{noPullRequestLine(change)}</p>
+		<p class="text-2xs text-muted-foreground">{noPullRequestLine(execution, change)}</p>
 	{/if}
 
-	{#if patch.kind === "available" && ondiff}
-		<div class="flex flex-wrap items-center gap-2">
-			<Button
-				variant="ghost"
-				size="sm"
-				aria-expanded={opened}
-				onclick={() => ondiff(patch.artifactId)}
-			>
-				{opened ? "Hide the diff" : "Show the diff"}
-			</Button>
-		</div>
-
-		{#if opened}
-			<DiffView view={diff} {download} />
-		{/if}
-	{:else if patch.kind === "available"}
-		<a
-			href={download}
-			class="text-xs text-ink-900 underline underline-offset-2 hover:text-foreground"
-		>
-			Download the diff
+	<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+		<a href={review} class="text-xs text-ink-900 underline underline-offset-2 hover:text-foreground">
+			{reviewLinkLabel(execution)}
 		</a>
-	{:else}
-		<DiffView view={{ kind: "absent" }} {download} />
-	{/if}
+
+		{#if patch.kind === "available"}
+			<a
+				href={download}
+				class="text-2xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+			>
+				Download the diff
+			</a>
+		{:else}
+			<span class="text-2xs text-muted-foreground">{noDiffLine}</span>
+		{/if}
+	</div>
 </li>

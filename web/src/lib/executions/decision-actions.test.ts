@@ -1,9 +1,18 @@
 import { flushSync, mount, unmount } from "svelte";
 import { describe, expect, it } from "vitest";
-import ReviewActions from "./review-actions.svelte";
-import type { Execution } from "./executions";
+import DecisionActions from "./decision-actions.svelte";
 
-const waiting = { state: "awaiting_review" } as Execution;
+const copy = {
+	approveLabel: "Approve the plan",
+	confirmPrompt: "Build this plan?",
+	confirmLabel: "Approve it",
+	requestLabel: "Ask for changes",
+	feedbackLabel: "What should change",
+	feedbackPlaceholder: "Say what should change.",
+	sendLabel: "Send it back",
+	sendHint: "The coding agent revises the plan.",
+	feedbackMaxLength: 4000,
+};
 
 function press(target: HTMLElement, name: string) {
 	const button = [...target.querySelectorAll("button")].find(
@@ -38,23 +47,55 @@ async function settled() {
 	flushSync();
 }
 
-function opened(onrequestchanges: (feedback: string) => Promise<boolean>) {
+function mounted(props: { onrequest?: (feedback: string) => Promise<boolean>; blocked?: string }) {
 	const target = document.createElement("div");
 
 	document.body.append(target);
 
-	const held = mount(ReviewActions, {
+	const held = mount(DecisionActions, {
 		target,
-		props: { execution: waiting, working: false, onapprove: () => {}, onrequestchanges },
+		props: {
+			...copy,
+			working: false,
+			blocked: props.blocked,
+			onapprove: () => {},
+			onrequest: props.onrequest ?? (async () => true),
+		},
 	});
 
 	flushSync();
-	press(target, "Request changes");
 
 	return { target, held };
 }
 
-describe("asking a run for changes", () => {
+function opened(onrequest: (feedback: string) => Promise<boolean>) {
+	const { target, held } = mounted({ onrequest });
+
+	press(target, "Ask for changes");
+
+	return { target, held };
+}
+
+describe("deciding while something still blocks approval", () => {
+	it("keeps approval out of reach and says why, but still lets changes be asked for", () => {
+		const { target, held } = mounted({ blocked: "Answer the open question before approving." });
+
+		const approve = [...target.querySelectorAll("button")].find(
+			(button) => button.textContent?.trim() === "Approve the plan"
+		);
+
+		expect(approve?.disabled).toBe(true);
+		expect(target.textContent).toContain("Answer the open question before approving.");
+
+		press(target, "Ask for changes");
+		expect(target.querySelector("textarea")).not.toBe(null);
+
+		unmount(held);
+		target.remove();
+	});
+});
+
+describe("asking for changes", () => {
 	it("keeps the words when the request is refused", async () => {
 		let asked = "";
 

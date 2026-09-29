@@ -11,6 +11,7 @@ const (
 	StateRunning         State = "running"
 	StateWaitingForInput State = "waiting_for_input"
 	StateQueuedForResume State = "queued_for_resume"
+	StateAwaitingPlan    State = "awaiting_plan_approval"
 	StateFinalizing      State = "finalizing"
 	StateAwaitingReview  State = "awaiting_review"
 	StateApproved        State = "approved"
@@ -23,7 +24,7 @@ const (
 func States() []State {
 	return []State{
 		StateQueued, StateLeased, StatePreparing, StateRunning, StateWaitingForInput,
-		StateQueuedForResume, StateFinalizing, StateAwaitingReview, StateApproved, StateCompleted,
+		StateAwaitingPlan, StateQueuedForResume, StateFinalizing, StateAwaitingReview, StateApproved, StateCompleted,
 		StateFailed, StateCancelled, StateInterrupted,
 	}
 }
@@ -34,8 +35,8 @@ func TerminalStates() []State {
 
 func RunnerDrivenStates() []State {
 	return []State{
-		StatePreparing, StateRunning, StateWaitingForInput, StateFinalizing, StateAwaitingReview,
-		StateCompleted, StateFailed,
+		StatePreparing, StateRunning, StateWaitingForInput, StateAwaitingPlan, StateFinalizing,
+		StateAwaitingReview, StateCompleted, StateFailed,
 	}
 }
 
@@ -52,7 +53,7 @@ func (s State) RunnerDriven() bool {
 }
 
 func (s State) Parked() bool {
-	return s == StateWaitingForInput || s == StateAwaitingReview
+	return s == StateWaitingForInput || s == StateAwaitingPlan || s == StateAwaitingReview
 }
 
 func (s State) HoldsLease() bool {
@@ -65,7 +66,8 @@ func (s State) HoldsSlot() bool {
 }
 
 func (s State) Recoverable() bool {
-	return s == StateWaitingForInput || s == StateQueuedForResume || s == StateAwaitingReview
+	return s == StateWaitingForInput || s == StateAwaitingPlan || s == StateQueuedForResume ||
+		s == StateAwaitingReview
 }
 
 func (s State) CanTransitionTo(target State) bool {
@@ -81,8 +83,9 @@ func (s State) CanTransitionTo(target State) bool {
 	case StatePreparing:
 		return target == StateRunning || abandons(target)
 	case StateRunning:
-		return target == StateFinalizing || target == StateWaitingForInput || abandons(target)
-	case StateWaitingForInput:
+		return target == StateFinalizing || target == StateWaitingForInput ||
+			target == StateAwaitingPlan || abandons(target)
+	case StateWaitingForInput, StateAwaitingPlan:
 		return target == StateQueuedForResume || abandons(target)
 	case StateQueuedForResume:
 		return target == StateRunning || abandons(target)
@@ -100,6 +103,27 @@ func (s State) CanTransitionTo(target State) bool {
 
 func abandons(target State) bool {
 	return target == StateFailed || target == StateCancelled || target == StateInterrupted
+}
+
+type Stage string
+
+const (
+	StagePlanning       Stage = "planning"
+	StageImplementation Stage = "implementation"
+	StageReview         Stage = "review"
+	StagePublication    Stage = "publication"
+)
+
+func Stages() []Stage {
+	return []Stage{StagePlanning, StageImplementation, StageReview, StagePublication}
+}
+
+func (s Stage) Valid() bool {
+	return slices.Contains(Stages(), s)
+}
+
+func (s Stage) Implements() bool {
+	return s == StageImplementation || s == StageReview || s == StagePublication
 }
 
 type EventKind string

@@ -159,9 +159,12 @@ var WorkspaceRels = struct {
 	WorkspaceExecutionArtifacts        string
 	WorkspaceExecutionChanges          string
 	WorkspaceExecutionChunks           string
+	WorkspaceExecutionPlans            string
 	WorkspaceExecutionPreviewLinks     string
 	WorkspaceExecutionPreviews         string
 	WorkspaceExecutionResults          string
+	WorkspaceExecutionReviewComments   string
+	WorkspaceExecutionReviews          string
 	WorkspaceExecutionServices         string
 	WorkspaceExecutionValidations      string
 	WorkspaceExecutions                string
@@ -213,9 +216,12 @@ var WorkspaceRels = struct {
 	WorkspaceExecutionArtifacts:        "WorkspaceExecutionArtifacts",
 	WorkspaceExecutionChanges:          "WorkspaceExecutionChanges",
 	WorkspaceExecutionChunks:           "WorkspaceExecutionChunks",
+	WorkspaceExecutionPlans:            "WorkspaceExecutionPlans",
 	WorkspaceExecutionPreviewLinks:     "WorkspaceExecutionPreviewLinks",
 	WorkspaceExecutionPreviews:         "WorkspaceExecutionPreviews",
 	WorkspaceExecutionResults:          "WorkspaceExecutionResults",
+	WorkspaceExecutionReviewComments:   "WorkspaceExecutionReviewComments",
+	WorkspaceExecutionReviews:          "WorkspaceExecutionReviews",
 	WorkspaceExecutionServices:         "WorkspaceExecutionServices",
 	WorkspaceExecutionValidations:      "WorkspaceExecutionValidations",
 	WorkspaceExecutions:                "WorkspaceExecutions",
@@ -270,9 +276,12 @@ type workspaceR struct {
 	WorkspaceExecutionArtifacts        WorkspaceExecutionArtifactSlice        `boil:"WorkspaceExecutionArtifacts" json:"WorkspaceExecutionArtifacts" toml:"WorkspaceExecutionArtifacts" yaml:"WorkspaceExecutionArtifacts"`
 	WorkspaceExecutionChanges          WorkspaceExecutionChangeSlice          `boil:"WorkspaceExecutionChanges" json:"WorkspaceExecutionChanges" toml:"WorkspaceExecutionChanges" yaml:"WorkspaceExecutionChanges"`
 	WorkspaceExecutionChunks           WorkspaceExecutionChunkSlice           `boil:"WorkspaceExecutionChunks" json:"WorkspaceExecutionChunks" toml:"WorkspaceExecutionChunks" yaml:"WorkspaceExecutionChunks"`
+	WorkspaceExecutionPlans            WorkspaceExecutionPlanSlice            `boil:"WorkspaceExecutionPlans" json:"WorkspaceExecutionPlans" toml:"WorkspaceExecutionPlans" yaml:"WorkspaceExecutionPlans"`
 	WorkspaceExecutionPreviewLinks     WorkspaceExecutionPreviewLinkSlice     `boil:"WorkspaceExecutionPreviewLinks" json:"WorkspaceExecutionPreviewLinks" toml:"WorkspaceExecutionPreviewLinks" yaml:"WorkspaceExecutionPreviewLinks"`
 	WorkspaceExecutionPreviews         WorkspaceExecutionPreviewSlice         `boil:"WorkspaceExecutionPreviews" json:"WorkspaceExecutionPreviews" toml:"WorkspaceExecutionPreviews" yaml:"WorkspaceExecutionPreviews"`
 	WorkspaceExecutionResults          WorkspaceExecutionResultSlice          `boil:"WorkspaceExecutionResults" json:"WorkspaceExecutionResults" toml:"WorkspaceExecutionResults" yaml:"WorkspaceExecutionResults"`
+	WorkspaceExecutionReviewComments   WorkspaceExecutionReviewCommentSlice   `boil:"WorkspaceExecutionReviewComments" json:"WorkspaceExecutionReviewComments" toml:"WorkspaceExecutionReviewComments" yaml:"WorkspaceExecutionReviewComments"`
+	WorkspaceExecutionReviews          WorkspaceExecutionReviewSlice          `boil:"WorkspaceExecutionReviews" json:"WorkspaceExecutionReviews" toml:"WorkspaceExecutionReviews" yaml:"WorkspaceExecutionReviews"`
 	WorkspaceExecutionServices         WorkspaceExecutionServiceSlice         `boil:"WorkspaceExecutionServices" json:"WorkspaceExecutionServices" toml:"WorkspaceExecutionServices" yaml:"WorkspaceExecutionServices"`
 	WorkspaceExecutionValidations      WorkspaceExecutionValidationSlice      `boil:"WorkspaceExecutionValidations" json:"WorkspaceExecutionValidations" toml:"WorkspaceExecutionValidations" yaml:"WorkspaceExecutionValidations"`
 	WorkspaceExecutions                WorkspaceExecutionSlice                `boil:"WorkspaceExecutions" json:"WorkspaceExecutions" toml:"WorkspaceExecutions" yaml:"WorkspaceExecutions"`
@@ -675,6 +684,22 @@ func (r *workspaceR) GetWorkspaceExecutionChunks() WorkspaceExecutionChunkSlice 
 	return r.WorkspaceExecutionChunks
 }
 
+func (o *Workspace) GetWorkspaceExecutionPlans() WorkspaceExecutionPlanSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceExecutionPlans()
+}
+
+func (r *workspaceR) GetWorkspaceExecutionPlans() WorkspaceExecutionPlanSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceExecutionPlans
+}
+
 func (o *Workspace) GetWorkspaceExecutionPreviewLinks() WorkspaceExecutionPreviewLinkSlice {
 	if o == nil {
 		return nil
@@ -721,6 +746,38 @@ func (r *workspaceR) GetWorkspaceExecutionResults() WorkspaceExecutionResultSlic
 	}
 
 	return r.WorkspaceExecutionResults
+}
+
+func (o *Workspace) GetWorkspaceExecutionReviewComments() WorkspaceExecutionReviewCommentSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceExecutionReviewComments()
+}
+
+func (r *workspaceR) GetWorkspaceExecutionReviewComments() WorkspaceExecutionReviewCommentSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceExecutionReviewComments
+}
+
+func (o *Workspace) GetWorkspaceExecutionReviews() WorkspaceExecutionReviewSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceExecutionReviews()
+}
+
+func (r *workspaceR) GetWorkspaceExecutionReviews() WorkspaceExecutionReviewSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceExecutionReviews
 }
 
 func (o *Workspace) GetWorkspaceExecutionServices() WorkspaceExecutionServiceSlice {
@@ -1769,6 +1826,20 @@ func (o *Workspace) WorkspaceExecutionChunks(mods ...qm.QueryMod) workspaceExecu
 	return WorkspaceExecutionChunks(queryMods...)
 }
 
+// WorkspaceExecutionPlans retrieves all the workspace_execution_plan's WorkspaceExecutionPlans with an executor.
+func (o *Workspace) WorkspaceExecutionPlans(mods ...qm.QueryMod) workspaceExecutionPlanQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_execution_plans\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceExecutionPlans(queryMods...)
+}
+
 // WorkspaceExecutionPreviewLinks retrieves all the workspace_execution_preview_link's WorkspaceExecutionPreviewLinks with an executor.
 func (o *Workspace) WorkspaceExecutionPreviewLinks(mods ...qm.QueryMod) workspaceExecutionPreviewLinkQuery {
 	var queryMods []qm.QueryMod
@@ -1809,6 +1880,34 @@ func (o *Workspace) WorkspaceExecutionResults(mods ...qm.QueryMod) workspaceExec
 	)
 
 	return WorkspaceExecutionResults(queryMods...)
+}
+
+// WorkspaceExecutionReviewComments retrieves all the workspace_execution_review_comment's WorkspaceExecutionReviewComments with an executor.
+func (o *Workspace) WorkspaceExecutionReviewComments(mods ...qm.QueryMod) workspaceExecutionReviewCommentQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_execution_review_comments\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceExecutionReviewComments(queryMods...)
+}
+
+// WorkspaceExecutionReviews retrieves all the workspace_execution_review's WorkspaceExecutionReviews with an executor.
+func (o *Workspace) WorkspaceExecutionReviews(mods ...qm.QueryMod) workspaceExecutionReviewQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_execution_reviews\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceExecutionReviews(queryMods...)
 }
 
 // WorkspaceExecutionServices retrieves all the workspace_execution_service's WorkspaceExecutionServices with an executor.
@@ -4827,6 +4926,119 @@ func (workspaceL) LoadWorkspaceExecutionChunks(ctx context.Context, e boil.Conte
 	return nil
 }
 
+// LoadWorkspaceExecutionPlans allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceExecutionPlans(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_execution_plans`),
+		qm.WhereIn(`workspace_execution_plans.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_execution_plans")
+	}
+
+	var resultSlice []*WorkspaceExecutionPlan
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_execution_plans")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_execution_plans")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_execution_plans")
+	}
+
+	if len(workspaceExecutionPlanAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceExecutionPlans = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceExecutionPlanR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceExecutionPlans = append(local.R.WorkspaceExecutionPlans, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceExecutionPlanR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceExecutionPreviewLinks allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceExecutionPreviewLinks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -5156,6 +5368,232 @@ func (workspaceL) LoadWorkspaceExecutionResults(ctx context.Context, e boil.Cont
 				local.R.WorkspaceExecutionResults = append(local.R.WorkspaceExecutionResults, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceExecutionResultR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceExecutionReviewComments allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceExecutionReviewComments(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_execution_review_comments`),
+		qm.WhereIn(`workspace_execution_review_comments.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_execution_review_comments")
+	}
+
+	var resultSlice []*WorkspaceExecutionReviewComment
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_execution_review_comments")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_execution_review_comments")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_execution_review_comments")
+	}
+
+	if len(workspaceExecutionReviewCommentAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceExecutionReviewComments = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceExecutionReviewCommentR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceExecutionReviewComments = append(local.R.WorkspaceExecutionReviewComments, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceExecutionReviewCommentR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceExecutionReviews allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceExecutionReviews(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_execution_reviews`),
+		qm.WhereIn(`workspace_execution_reviews.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_execution_reviews")
+	}
+
+	var resultSlice []*WorkspaceExecutionReview
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_execution_reviews")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_execution_reviews")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_execution_reviews")
+	}
+
+	if len(workspaceExecutionReviewAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceExecutionReviews = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceExecutionReviewR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceExecutionReviews = append(local.R.WorkspaceExecutionReviews, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceExecutionReviewR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -9442,6 +9880,59 @@ func (o *Workspace) AddWorkspaceExecutionChunks(ctx context.Context, exec boil.C
 	return nil
 }
 
+// AddWorkspaceExecutionPlans adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceExecutionPlans.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceExecutionPlans(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceExecutionPlan) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_execution_plans\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceExecutionPlanPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceExecutionPlans: related,
+		}
+	} else {
+		o.R.WorkspaceExecutionPlans = append(o.R.WorkspaceExecutionPlans, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceExecutionPlanR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
 // AddWorkspaceExecutionPreviewLinks adds the given related objects to the existing relationships
 // of the workspace, optionally inserting them as new records.
 // Appends related to o.R.WorkspaceExecutionPreviewLinks.
@@ -9592,6 +10083,112 @@ func (o *Workspace) AddWorkspaceExecutionResults(ctx context.Context, exec boil.
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceExecutionResultR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceExecutionReviewComments adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceExecutionReviewComments.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceExecutionReviewComments(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceExecutionReviewComment) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_execution_review_comments\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceExecutionReviewCommentPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceExecutionReviewComments: related,
+		}
+	} else {
+		o.R.WorkspaceExecutionReviewComments = append(o.R.WorkspaceExecutionReviewComments, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceExecutionReviewCommentR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceExecutionReviews adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceExecutionReviews.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceExecutionReviews(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceExecutionReview) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_execution_reviews\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceExecutionReviewPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceExecutionReviews: related,
+		}
+	} else {
+		o.R.WorkspaceExecutionReviews = append(o.R.WorkspaceExecutionReviews, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceExecutionReviewR{
 				Workspace: o,
 			}
 		} else {

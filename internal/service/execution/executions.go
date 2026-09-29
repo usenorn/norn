@@ -19,6 +19,11 @@ const sweepBatch = 200
 type executionsService struct {
 	executions repository.Execution
 	changesets repository.ChangeSet
+	plans      repository.ExecutionPlan
+	reviews    repository.ExecutionReview
+	questions  repository.IssueQuestion
+	delegates  repository.IssueDelegation
+	notify     repository.NotificationEvent
 	previews   repository.Preview
 	services   repository.ExecutionService
 	runners    repository.Runner
@@ -39,6 +44,11 @@ type executionsService struct {
 func New(
 	executions repository.Execution,
 	changesets repository.ChangeSet,
+	plans repository.ExecutionPlan,
+	reviews repository.ExecutionReview,
+	questions repository.IssueQuestion,
+	delegates repository.IssueDelegation,
+	notify repository.NotificationEvent,
 	previews repository.Preview,
 	services repository.ExecutionService,
 	runners repository.Runner,
@@ -58,6 +68,11 @@ func New(
 	return &executionsService{
 		executions: executions,
 		changesets: changesets,
+		plans:      plans,
+		reviews:    reviews,
+		questions:  questions,
+		delegates:  delegates,
+		notify:     notify,
 		previews:   previews,
 		services:   services,
 		runners:    runners,
@@ -285,88 +300,6 @@ func (s *executionsService) Cancel(
 	s.record(ctx, entity.AuditExecutionCancelled, cancelled)
 
 	return cancelled, nil
-}
-
-func (s *executionsService) Approve(
-	ctx context.Context,
-	workspaceID uuid.UUID,
-	executionID string,
-) (entity.Execution, error) {
-	decision, execution, err := s.visible(ctx, workspaceID, executionID, entity.ActionManage)
-	if err != nil {
-		return entity.Execution{}, err
-	}
-
-	if execution.State != entity.ExecutionAwaitingReview {
-		return entity.Execution{}, entity.ErrExecutionNotReviewable
-	}
-
-	if acting := decision.Actor.AgentID; acting != nil && *acting == execution.AgentID {
-		return entity.Execution{}, entity.ErrExecutionSelfApproval
-	}
-
-	approved, err := s.advance(ctx, execution, move{
-		to:    entity.ExecutionApproved,
-		actor: entity.ExecutionActorOf(decision.Actor),
-	})
-	if err != nil {
-		return entity.Execution{}, err
-	}
-
-	if approved.RunnerID != uuid.Nil {
-		if err := s.tell(ctx, approved, entity.ChannelExecutionResume, channelv1.Instruction{
-			Reason: channelv1.ResumeApproved,
-		}); err != nil {
-			return entity.Execution{}, err
-		}
-	}
-
-	s.record(ctx, entity.AuditExecutionApproved, approved)
-
-	return approved, nil
-}
-
-func (s *executionsService) Resume(
-	ctx context.Context,
-	workspaceID uuid.UUID,
-	executionID, feedback string,
-) (entity.Execution, error) {
-	decision, execution, err := s.visible(ctx, workspaceID, executionID, entity.ActionManage)
-	if err != nil {
-		return entity.Execution{}, err
-	}
-
-	if err := entity.NewValidationError(
-		entity.ValidateExecutionFeedback("feedback", feedback),
-	); err != nil {
-		return entity.Execution{}, err
-	}
-
-	if execution.State != entity.ExecutionAwaitingReview {
-		return entity.Execution{}, entity.ErrExecutionNotReviewable
-	}
-
-	instruction := strings.TrimSpace(feedback)
-
-	resumed, err := s.advance(ctx, execution, move{
-		to:     entity.ExecutionQueuedForResume,
-		reason: instruction,
-		actor:  entity.ExecutionActorOf(decision.Actor),
-	})
-	if err != nil {
-		return entity.Execution{}, err
-	}
-
-	if resumed.RunnerID != uuid.Nil {
-		if err := s.tell(ctx, resumed, entity.ChannelExecutionResume, channelv1.Instruction{
-			Reason:      channelv1.ResumeFeedback,
-			Instruction: instruction,
-		}); err != nil {
-			return entity.Execution{}, err
-		}
-	}
-
-	return resumed, nil
 }
 
 func (s *executionsService) Restart(

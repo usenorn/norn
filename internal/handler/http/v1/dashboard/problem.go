@@ -544,8 +544,41 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrExecutionUnfinished):
 		return executionConflictProblem(api.ExecutionUnfinished, err), true
 
-	case errors.Is(err, entity.ErrExecutionNotReviewable):
-		return executionConflictProblem(api.ExecutionNotReviewable, err), true
+	case errors.Is(err, entity.ErrExecutionNotPlanning):
+		return executionConflictProblem(api.ExecutionNotPlanning, err), true
+
+	case errors.Is(err, entity.ErrExecutionPlanMissing):
+		return executionConflictProblem(api.ExecutionPlanMissing, err), true
+
+	case errors.Is(err, entity.ErrExecutionPlanStale):
+		return executionConflictProblem(api.ExecutionPlanStale, err), true
+
+	case errors.Is(err, entity.ErrExecutionQuestionsOpen):
+		return executionConflictProblem(api.ExecutionQuestionsOpen, err), true
+
+	case errors.Is(err, entity.ErrReviewClosed):
+		return executionConflictProblem(api.ReviewClosed, err), true
+
+	case errors.Is(err, entity.ErrReviewStale):
+		return executionConflictProblem(api.ReviewStale, err), true
+
+	case errors.Is(err, entity.ErrReviewEmpty):
+		return executionProblem(http.StatusUnprocessableEntity, api.ReviewEmpty, err), true
+
+	case errors.Is(err, entity.ErrReviewCommentNotYours):
+		return executionProblem(http.StatusForbidden, api.ReviewCommentNotYours, err), true
+
+	case errors.Is(err, entity.ErrReviewCommentReply):
+		return executionProblem(http.StatusUnprocessableEntity, api.ReviewCommentReply, err), true
+
+	case errors.Is(err, entity.ErrReviewCommentAnchor):
+		return executionProblem(http.StatusUnprocessableEntity, api.ReviewCommentAnchor, err), true
+
+	case errors.Is(err, entity.ErrReviewCommentsFull):
+		return executionConflictProblem(api.ReviewCommentsFull, err), true
+
+	case errors.Is(err, entity.ErrReviewCommentNotFound):
+		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrExecutionSelfApproval):
 		return executionProblem(http.StatusForbidden, api.ExecutionSelfApproval, err), true
@@ -2855,11 +2888,39 @@ func (r problemResponse) VisitRestartWorkspaceExecutionResponse(w http.ResponseW
 	return r.write(w)
 }
 
-func (r problemResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
+func (r problemResponse) VisitListWorkspaceExecutionPlansResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
-func (r problemResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
+func (r problemResponse) VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

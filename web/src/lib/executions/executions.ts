@@ -1,5 +1,6 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { CodeLink } from "$lib/source-control/source-control";
+import type { ExecutionPlan } from "./plans";
 
 export type Execution = components["schemas"]["Execution"];
 export type ExecutionState = components["schemas"]["ExecutionState"];
@@ -40,6 +41,7 @@ export type RunView =
 			logCursor?: number;
 			changeset?: ExecutionChangeSet;
 			codeLinks: CodeLink[];
+			plans: ExecutionPlan[];
 	  };
 
 export const chunkPageSize = 8;
@@ -72,6 +74,8 @@ export function stateLabel(state: ExecutionState): string {
 			return "Running";
 		case "waiting_for_input":
 			return "Waiting on you";
+		case "awaiting_plan_approval":
+			return "Plan waiting for approval";
 		case "queued_for_resume":
 			return "Waiting for a slot";
 		case "finalizing":
@@ -100,6 +104,7 @@ export function elapsedLabel(state: ExecutionState): string {
 		case "leased":
 		case "queued_for_resume":
 		case "waiting_for_input":
+		case "awaiting_plan_approval":
 			return "waiting for";
 		default:
 			return "open for";
@@ -119,6 +124,7 @@ export function stateTone(state: ExecutionState): StateTone {
 		case "finalizing":
 			return "working";
 		case "waiting_for_input":
+		case "awaiting_plan_approval":
 		case "awaiting_review":
 			return "attention";
 		case "approved":
@@ -143,14 +149,16 @@ export function standingLine(execution: Execution): string {
 			return "The coding agent is working.";
 		case "waiting_for_input":
 			return "The coding agent stopped to ask something and cannot go on until somebody answers.";
+		case "awaiting_plan_approval":
+			return "The coding agent has proposed a plan. Nothing is written until somebody approves it.";
 		case "queued_for_resume":
-			return "The answer is in. This run starts again as soon as the machine has a slot free.";
+			return "A decision is in. This run starts again as soon as the machine has a slot free.";
 		case "finalizing":
-			return "The coding agent has finished. The machine is pushing branches and collecting what changed.";
+			return "The coding agent has finished. The machine is collecting what changed for review.";
 		case "awaiting_review":
-			return "The work is done and waiting for somebody to accept or reject it.";
+			return "The changes are ready to review. Nothing has been pushed yet.";
 		case "approved":
-			return "Somebody accepted this work. The machine is giving the workspace back.";
+			return "Somebody approved the changes. The machine is pushing the branch and opening the pull request.";
 		case "completed":
 			return "This run is finished and the machine has given the workspace back.";
 		case "failed":
@@ -192,14 +200,6 @@ export function canRetain(execution: Execution): boolean {
 	return execution.state === "awaiting_review";
 }
 
-export function canApprove(execution: Execution): boolean {
-	return execution.state === "awaiting_review";
-}
-
-export function canRequestChanges(execution: Execution): boolean {
-	return execution.state === "awaiting_review";
-}
-
 export function blockingQuestion(questions: IssueQuestion[]): IssueQuestion | undefined {
 	return questions.find(
 		(question) => question.blocking && question.state === "asked" && !question.expired
@@ -212,6 +212,17 @@ export type RunFailure =
 	| { kind: "unfinished" }
 	| { kind: "not_reviewable" }
 	| { kind: "self_approval" }
+	| { kind: "not_planning" }
+	| { kind: "plan_missing" }
+	| { kind: "plan_stale" }
+	| { kind: "questions_open" }
+	| { kind: "review_closed" }
+	| { kind: "review_stale" }
+	| { kind: "review_empty" }
+	| { kind: "comment_not_yours" }
+	| { kind: "comment_reply" }
+	| { kind: "comment_anchor" }
+	| { kind: "comments_full" }
 	| { kind: "no_runner" }
 	| { kind: "preview_closed" }
 	| { kind: "preview_not_routable" }
@@ -237,6 +248,28 @@ export function readRunFailure(error: unknown): RunFailure {
 			return { kind: "not_reviewable" };
 		case "execution_self_approval":
 			return { kind: "self_approval" };
+		case "execution_not_planning":
+			return { kind: "not_planning" };
+		case "execution_plan_missing":
+			return { kind: "plan_missing" };
+		case "execution_plan_stale":
+			return { kind: "plan_stale" };
+		case "execution_questions_open":
+			return { kind: "questions_open" };
+		case "review_closed":
+			return { kind: "review_closed" };
+		case "review_stale":
+			return { kind: "review_stale" };
+		case "review_empty":
+			return { kind: "review_empty" };
+		case "review_comment_not_yours":
+			return { kind: "comment_not_yours" };
+		case "review_comment_reply":
+			return { kind: "comment_reply" };
+		case "review_comment_anchor":
+			return { kind: "comment_anchor" };
+		case "review_comments_full":
+			return { kind: "comments_full" };
 		case "execution_no_runner":
 			return { kind: "no_runner" };
 		case "preview_closed":
@@ -270,6 +303,28 @@ export function runFailureMessage(failure: RunFailure): string {
 			return "This run is not waiting to be reviewed.";
 		case "self_approval":
 			return "A machine may not accept its own work. Somebody else has to review this run.";
+		case "not_planning":
+			return "This run is not waiting for its plan to be approved any more. Reload to see where it got to.";
+		case "plan_missing":
+			return "The coding agent has not proposed a plan yet.";
+		case "plan_stale":
+			return "The coding agent has proposed a newer revision of the plan. Read that one before deciding.";
+		case "questions_open":
+			return "The run is still waiting on an answer. Answer every open question before deciding.";
+		case "review_closed":
+			return "These changes are no longer waiting for review. Reload to see where the run got to.";
+		case "review_stale":
+			return "The changes moved on since you opened them. Reload to review what is there now.";
+		case "review_empty":
+			return "Say what should change, in the summary or on a line, before sending the work back.";
+		case "comment_not_yours":
+			return "Only the person who wrote a comment can change or remove it.";
+		case "comment_reply":
+			return "Reply to the first comment of a thread, not to a reply.";
+		case "comment_anchor":
+			return "That line is not part of the changes under review.";
+		case "comments_full":
+			return "This run already carries as many review comments as norn keeps.";
 		case "no_runner":
 			return "This agent has no machine to hand the work to.";
 		case "preview_closed":
@@ -517,6 +572,10 @@ export function noChangesLine(execution: Execution): string {
 		return "The machine reported no repository it touched.";
 	}
 
+	if (execution.stage === "planning") {
+		return "Nothing is built until somebody approves the plan.";
+	}
+
 	return "Nothing yet. What the run changed appears here once the coding agent has finished.";
 }
 
@@ -540,7 +599,16 @@ export function pullRequestReach(
 	return { kind: "none" };
 }
 
-export function noPullRequestLine(change: ExecutionRepositoryChange): string {
+export function noPullRequestLine(
+	execution: Execution | undefined,
+	change: ExecutionRepositoryChange
+): string {
+	if (execution && execution.stage !== "publication") {
+		return "Nothing is pushed until somebody approves the changes.";
+	}
+
+	if (execution?.state === "approved") return "Pushing the branch and opening the pull request.";
+
 	if (change.branch) return `Pushed to ${change.branch}. No pull request was opened.`;
 
 	return "No pull request was opened.";
@@ -552,103 +620,6 @@ export function diffReach(change: ExecutionRepositoryChange): DiffReach {
 	if (change.diffArtifactId) return { kind: "available", artifactId: change.diffArtifactId };
 
 	return { kind: "absent" };
-}
-
-export const noDiffLine =
-	"The full diff was not kept for this repository. The branch still has every commit.";
-
-export type DiffLineKind = "add" | "remove" | "context";
-
-export type DiffLine = { kind: DiffLineKind; text: string };
-
-export type DiffHunk = { header: string; lines: DiffLine[] };
-
-export type DiffFile = {
-	path: string;
-	additions: number;
-	deletions: number;
-	hunks: DiffHunk[];
-	binary: boolean;
-};
-
-export type DiffView =
-	| { kind: "idle" }
-	| { kind: "loading" }
-	| { kind: "absent" }
-	| { kind: "failed"; message: string }
-	| { kind: "ready"; files: DiffFile[]; truncated: boolean };
-
-export const diffFailedLine =
-	"The diff could not be read. It may have been swept with the rest of this run's uploads.";
-
-export const diffTruncatedLine =
-	"This is the beginning of the diff. Download it to read the rest.";
-
-function pathOfDiffHeader(line: string): string {
-	const parts = line.split(" ");
-	const named = parts.at(-1) ?? "";
-
-	return named.startsWith("b/") ? named.slice(2) : named;
-}
-
-export function parseDiff(patch: string): DiffFile[] {
-	const files: DiffFile[] = [];
-
-	let file: DiffFile | undefined;
-	let hunk: DiffHunk | undefined;
-
-	for (const line of patch.split("\n")) {
-		if (line.startsWith("diff --git ")) {
-			file = { path: pathOfDiffHeader(line), additions: 0, deletions: 0, hunks: [], binary: false };
-			hunk = undefined;
-			files.push(file);
-
-			continue;
-		}
-
-		if (!file) continue;
-
-		if (line.startsWith("Binary files ") || line.startsWith("GIT binary patch")) {
-			file.binary = true;
-
-			continue;
-		}
-
-		if (line.startsWith("+++ b/")) {
-			file.path = line.slice(6);
-
-			continue;
-		}
-
-		if (line.startsWith("@@")) {
-			hunk = { header: line, lines: [] };
-			file.hunks.push(hunk);
-
-			continue;
-		}
-
-		if (!hunk) continue;
-
-		if (line.startsWith("+")) {
-			file.additions += 1;
-			hunk.lines.push({ kind: "add", text: line.slice(1) });
-
-			continue;
-		}
-
-		if (line.startsWith("-")) {
-			file.deletions += 1;
-			hunk.lines.push({ kind: "remove", text: line.slice(1) });
-
-			continue;
-		}
-
-		if (line.startsWith("\\")) continue;
-
-		hunk.lines.push({ kind: "context", text: line.startsWith(" ") ? line.slice(1) : line });
-	}
-
-	return files;
 }
 
 export function validationLabel(status: ExecutionValidation["status"]): string {
@@ -743,4 +714,10 @@ export const retainLongerSeconds = 3600;
 
 export const feedbackMaxLength = 4000;
 
-export const diffMaxBytes = 512 * 1024;
+
+export function reviewLinkLabel(execution: Execution | undefined): string {
+	return execution?.state === "awaiting_review" ? "Review the changes" : "Read the review";
+}
+
+export const noDiffLine =
+	"The full diff was not kept for this repository. The branch still has every commit.";
