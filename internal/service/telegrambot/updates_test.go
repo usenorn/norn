@@ -242,6 +242,12 @@ func (h *harness) question(options ...string) entity.IssueQuestion {
 	}
 }
 
+func (h *harness) posted(asked entity.IssueQuestion) entity.TelegramDecisionMessage {
+	return entity.TelegramDecisionMessage{
+		BotID: h.bot.ID, ChatID: groupChat, MessageID: 77, Kind: entity.TelegramDecisionQuestion, QuestionID: asked.ID,
+	}
+}
+
 func TestATappedOptionAnswersAsTheLinkedAccount(t *testing.T) {
 	h := newHarness(t)
 	asked := h.question("Friday", "Monday")
@@ -250,7 +256,7 @@ func TestATappedOptionAnswersAsTheLinkedAccount(t *testing.T) {
 	id := h.applying(entity.TelegramIncoming{UpdateID: 3, Callback: &entity.TelegramCallback{
 		ID: "cb-1", Sender: entity.TelegramSender{ID: senderID}, ChatID: groupChat, MessageID: 77, Data: "a:1",
 	}})
-	h.conversation.EXPECT().QuestionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(asked.ID, nil)
+	h.conversation.EXPECT().DecisionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(h.posted(asked), nil)
 	h.questions.EXPECT().GetByID(gomock.Any(), h.workspaceID, asked.ID).Return(asked, nil)
 	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(accountID, senderID), nil)
 	h.answers.EXPECT().
@@ -278,10 +284,9 @@ func TestAnUnlinkedTapIsToldToLinkAndAnswersNothing(t *testing.T) {
 	id := h.applying(entity.TelegramIncoming{UpdateID: 4, Callback: &entity.TelegramCallback{
 		ID: "cb-2", Sender: entity.TelegramSender{ID: senderID}, ChatID: groupChat, MessageID: 77, Data: "a:0",
 	}})
-	h.conversation.EXPECT().QuestionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(asked.ID, nil)
-	h.questions.EXPECT().GetByID(gomock.Any(), h.workspaceID, asked.ID).Return(asked, nil)
+	h.conversation.EXPECT().DecisionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(h.posted(asked), nil)
 	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(entity.TelegramAccount{}, entity.ErrTelegramAccountNotLinked)
-	h.messenger.EXPECT().AnswerCallback(gomock.Any(), botToken, "cb-2", "Link your Telegram in Norn to answer.").Return(nil)
+	h.messenger.EXPECT().AnswerCallback(gomock.Any(), botToken, "cb-2", "Link your Telegram in Norn to decide.").Return(nil)
 	h.settles(id, entity.TelegramUpdateApplied)
 
 	if err := h.updatesService().Apply(context.Background(), id); err != nil {
@@ -296,7 +301,8 @@ func TestAForgedOptionIndexIsRefused(t *testing.T) {
 	id := h.applying(entity.TelegramIncoming{UpdateID: 5, Callback: &entity.TelegramCallback{
 		ID: "cb-3", Sender: entity.TelegramSender{ID: senderID}, ChatID: groupChat, MessageID: 77, Data: "a:9",
 	}})
-	h.conversation.EXPECT().QuestionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(asked.ID, nil)
+	h.conversation.EXPECT().DecisionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(h.posted(asked), nil)
+	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(uuid.New(), senderID), nil)
 	h.questions.EXPECT().GetByID(gomock.Any(), h.workspaceID, asked.ID).Return(asked, nil)
 	h.messenger.EXPECT().AnswerCallback(gomock.Any(), botToken, "cb-3", "That option is not available.").Return(nil)
 	h.settles(id, entity.TelegramUpdateApplied)
@@ -318,7 +324,7 @@ func TestAReplyToAQuestionAnswersItInFreeText(t *testing.T) {
 
 	h.audience.EXPECT().Group(gomock.Any(), h.bot.ID, int64(groupChat)).Return(entity.TelegramGroup{}, nil)
 	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(accountID, senderID), nil)
-	h.conversation.EXPECT().QuestionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(asked.ID, nil)
+	h.conversation.EXPECT().DecisionAt(gomock.Any(), h.bot.ID, int64(groupChat), int64(77)).Return(h.posted(asked), nil)
 	h.questions.EXPECT().GetByID(gomock.Any(), h.workspaceID, asked.ID).Return(asked, nil)
 	h.answers.EXPECT().
 		Answer(gomock.Any(), h.workspaceID, asked.IssueID, asked.ID, service.AnswerQuestionInput{Answer: "Wednesday works"}).

@@ -386,14 +386,18 @@ func (c *Client) EnqueueTelegramUpdate(ctx context.Context, payload entity.Teleg
 	return c.enqueueOnce(ctx, entity.TaskTypeTelegramUpdate, "telegram-update:"+payload.UpdateID.String(), payload)
 }
 
-func (c *Client) EnqueueTelegramQuestion(ctx context.Context, payload entity.TelegramQuestionPayload) error {
-	return c.enqueueOnce(ctx, entity.TaskTypeTelegramQuestion, "telegram-question:"+payload.QuestionID.String(), payload)
+func (c *Client) EnqueueTelegramDecision(ctx context.Context, decision entity.TelegramDecision) error {
+	return c.enqueueOnce(ctx, entity.TaskTypeTelegramDecision, telegramTaskID("telegram-decision", decision), decision)
 }
 
-func (c *Client) EnqueueTelegramSettlement(ctx context.Context, payload entity.TelegramQuestionPayload) error {
+func (c *Client) EnqueueTelegramSettlement(ctx context.Context, decision entity.TelegramDecision) error {
 	return c.enqueueOnce(
-		ctx, entity.TaskTypeTelegramSettlement, "telegram-settlement:"+payload.QuestionID.String(), payload,
+		ctx, entity.TaskTypeTelegramSettlement, telegramTaskID("telegram-settlement", decision), decision,
 	)
+}
+
+func telegramTaskID(prefix string, decision entity.TelegramDecision) string {
+	return fmt.Sprintf("%s:%s:%s:%s", prefix, decision.Kind, decision.Subject(), decision.Round)
 }
 
 func (c *Client) enqueueOnce(ctx context.Context, taskType, taskID string, payload any) error {

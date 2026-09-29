@@ -34,12 +34,18 @@ type updates struct {
 	messenger    repository.TelegramMessenger
 	agents       repository.Agent
 	questions    repository.IssueQuestion
+	executions   repository.Execution
+	plans        repository.ExecutionPlan
+	reviews      repository.ExecutionReview
+	changesets   repository.ChangeSet
 	issues       repository.Issue
 	delegations  repository.IssueDelegation
+	settings     repository.NotificationSetting
 	workspaces   repository.Workspace
 	jobs         repository.JobProducer
 	transactor   repository.Transactor
 	answers      service.IssueQuestions
+	decisions    service.Executions
 	hosted       service.HostedAgents
 	audit        service.Audit
 	app          config.App
@@ -54,12 +60,18 @@ func NewUpdates(
 	messenger repository.TelegramMessenger,
 	agents repository.Agent,
 	questions repository.IssueQuestion,
+	executions repository.Execution,
+	plans repository.ExecutionPlan,
+	reviews repository.ExecutionReview,
+	changesets repository.ChangeSet,
 	issues repository.Issue,
 	delegations repository.IssueDelegation,
+	settings repository.NotificationSetting,
 	workspaces repository.Workspace,
 	jobs repository.JobProducer,
 	transactor repository.Transactor,
 	answers service.IssueQuestions,
+	decisions service.Executions,
 	hosted service.HostedAgents,
 	audit service.Audit,
 	app config.App,
@@ -73,12 +85,18 @@ func NewUpdates(
 		messenger:    messenger,
 		agents:       agents,
 		questions:    questions,
+		executions:   executions,
+		plans:        plans,
+		reviews:      reviews,
+		changesets:   changesets,
 		issues:       issues,
 		delegations:  delegations,
+		settings:     settings,
 		workspaces:   workspaces,
 		jobs:         jobs,
 		transactor:   transactor,
 		answers:      answers,
+		decisions:    decisions,
 		hosted:       hosted,
 		audit:        audit,
 		app:          app,
@@ -304,12 +322,12 @@ func (s *updates) message(
 	linked := err == nil
 
 	if message.ReplyToID != 0 {
-		questionID, err := s.conversation.QuestionAt(ctx, target.bot.ID, message.ChatID, message.ReplyToID)
+		decision, err := s.conversation.DecisionAt(ctx, target.bot.ID, message.ChatID, message.ReplyToID)
 
 		switch {
 		case err == nil:
-			return s.replied(ctx, target, message, account, linked, questionID)
-		case !errors.Is(err, entity.ErrIssueQuestionNotFound):
+			return s.replied(ctx, target, message, account, linked, decision)
+		case !errors.Is(err, entity.ErrTelegramDecisionNotFound):
 			return "", nil, err
 		}
 	}
@@ -449,13 +467,22 @@ func (s *updates) replied(
 	message entity.TelegramMessage,
 	account entity.TelegramAccount,
 	linked bool,
-	questionID uuid.UUID,
+	decision entity.TelegramDecisionMessage,
 ) (entity.TelegramUpdateOutcome, *pendingChat, error) {
 	if !linked {
 		return s.say(ctx, target, message, s.unlinkedText(ctx, target))
 	}
 
-	question, err := s.questions.GetByID(ctx, target.bot.WorkspaceID, questionID)
+	if decision.Kind != entity.TelegramDecisionQuestion {
+		outcome, err := s.feedback(ctx, account, decision, message.Text)
+		if err != nil {
+			return "", nil, err
+		}
+
+		return s.say(ctx, target, message, plain(outcome))
+	}
+
+	question, err := s.questions.GetByID(ctx, target.bot.WorkspaceID, decision.QuestionID)
 	if err != nil {
 		return "", nil, err
 	}
@@ -495,16 +522,33 @@ func (s *updates) callback(
 }
 
 func (s *updates) chosen(ctx context.Context, target delivery, callback entity.TelegramCallback) (string, error) {
-	questionID, err := s.conversation.QuestionAt(ctx, target.bot.ID, callback.ChatID, callback.MessageID)
-	if errors.Is(err, entity.ErrIssueQuestionNotFound) {
-		return "This question is no longer open.", nil
+	decision, err := s.conversation.DecisionAt(ctx, target.bot.ID, callback.ChatID, callback.MessageID)
+	if errors.Is(err, entity.ErrTelegramDecisionNotFound) {
+		return "This is no longer open.", nil
 	}
 
 	if err != nil {
 		return "", err
 	}
 
-	question, err := s.questions.GetByID(ctx, target.bot.WorkspaceID, questionID)
+	if decision.Settled {
+		return "This was already decided.", nil
+	}
+
+	account, err := s.audience.AccountOf(ctx, target.bot.ID, callback.Sender.ID)
+	if errors.Is(err, entity.ErrTelegramAccountNotLinked) {
+		return "Link your Telegram in Norn to decide.", nil
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	if decision.Kind != entity.TelegramDecisionQuestion {
+		return s.pressed(ctx, account, decision, callback.Data)
+	}
+
+	question, err := s.questions.GetByID(ctx, target.bot.WorkspaceID, decision.QuestionID)
 	if err != nil {
 		return "", err
 	}
@@ -512,15 +556,6 @@ func (s *updates) chosen(ctx context.Context, target delivery, callback entity.T
 	index, ok := callback.Option()
 	if !ok || index >= len(question.Options) {
 		return "That option is not available.", nil
-	}
-
-	account, err := s.audience.AccountOf(ctx, target.bot.ID, callback.Sender.ID)
-	if errors.Is(err, entity.ErrTelegramAccountNotLinked) {
-		return "Link your Telegram in Norn to answer.", nil
-	}
-
-	if err != nil {
-		return "", err
 	}
 
 	return s.answer(ctx, account, question, question.Options[index])
@@ -542,24 +577,11 @@ func (s *updates) answer(
 		return err
 	})
 
-	var (
-		invalid entity.ValidationError
-		denied  entity.AccessDeniedError
-	)
-
-	switch {
-	case err == nil:
-		return "Answered.", nil
-	case errors.Is(err, entity.ErrIssueQuestionAnswered), errors.Is(err, entity.ErrIssueQuestionSettled):
-		return "This question was already settled.", nil
-	case errors.Is(err, entity.ErrIssueQuestionUnanswerable), errors.As(err, &invalid):
+	if errors.Is(err, entity.ErrIssueQuestionUnanswerable) {
 		return "That answer is not one this question accepts.", nil
-	case errors.Is(err, entity.ErrIssueQuestionNotFound), errors.Is(err, entity.ErrIssueNotFound),
-		errors.Is(err, entity.ErrAccountForbidden), errors.As(err, &denied):
-		return "You cannot answer questions on this issue.", nil
-	default:
-		return "", err
 	}
+
+	return s.outcome(ctx, question.WorkspaceID, question.IssueID, err, "Answered.")
 }
 
 func (s *updates) say(

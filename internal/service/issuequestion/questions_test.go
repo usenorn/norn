@@ -392,7 +392,7 @@ func TestEveryQuestionIsQueuedForTelegramWhenAskedAndAgainWhenSettled(t *testing
 			}
 
 			asked := h.only(t)
-			want := entity.TelegramQuestionPayload{WorkspaceID: h.workspaceID, QuestionID: asked.ID}
+			want := entity.TelegramDecision{WorkspaceID: h.workspaceID, Kind: entity.TelegramDecisionQuestion, QuestionID: asked.ID}
 
 			if len(h.relayed) != 1 || h.relayed[0] != want {
 				t.Fatalf("queued for telegram %+v, want the asked question once", h.relayed)

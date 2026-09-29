@@ -392,15 +392,15 @@ func (s *questionsService) authorised(
 }
 
 func (s *questionsService) relay(ctx context.Context, question entity.IssueQuestion) {
-	payload := entity.TelegramQuestionPayload{WorkspaceID: question.WorkspaceID, QuestionID: question.ID}
+	decision := entity.TelegramQuestionDecision(question)
 
-	enqueue := s.jobs.EnqueueTelegramQuestion
+	enqueue := s.jobs.EnqueueTelegramDecision
 	if question.Settled() {
 		enqueue = s.jobs.EnqueueTelegramSettlement
 	}
 
 	postgres.AfterCommit(ctx, func(ctx context.Context) {
-		if err := enqueue(ctx, payload); err != nil {
+		if err := enqueue(ctx, decision); err != nil {
 			logging.From(ctx).WarnContext(
 				ctx, "queueing a question for telegram failed",
 				slog.String("question_id", question.ID.String()), slog.String("error", err.Error()),

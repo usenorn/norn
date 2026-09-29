@@ -56,6 +56,21 @@ func (mr *MockNotificationSettingMockRecorder) Clear(ctx, workspaceID, accountID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clear", reflect.TypeOf((*MockNotificationSetting)(nil).Clear), ctx, workspaceID, accountID, teamID)
 }
 
+// DecisionChannel mocks base method.
+func (m *MockNotificationSetting) DecisionChannel(ctx context.Context, workspaceID, accountID uuid.UUID) (entity.DecisionChannel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecisionChannel", ctx, workspaceID, accountID)
+	ret0, _ := ret[0].(entity.DecisionChannel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DecisionChannel indicates an expected call of DecisionChannel.
+func (mr *MockNotificationSettingMockRecorder) DecisionChannel(ctx, workspaceID, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecisionChannel", reflect.TypeOf((*MockNotificationSetting)(nil).DecisionChannel), ctx, workspaceID, accountID)
+}
+
 // List mocks base method.
 func (m *MockNotificationSetting) List(ctx context.Context, workspaceID, accountID uuid.UUID) ([]entity.NotificationSettings, error) {
 	m.ctrl.T.Helper()
@@ -98,4 +113,18 @@ func (m *MockNotificationSetting) Save(ctx context.Context, settings entity.Noti
 func (mr *MockNotificationSettingMockRecorder) Save(ctx, settings any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockNotificationSetting)(nil).Save), ctx, settings)
+}
+
+// SaveDecisionChannel mocks base method.
+func (m *MockNotificationSetting) SaveDecisionChannel(ctx context.Context, workspaceID, accountID uuid.UUID, channel entity.DecisionChannel) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveDecisionChannel", ctx, workspaceID, accountID, channel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveDecisionChannel indicates an expected call of SaveDecisionChannel.
+func (mr *MockNotificationSettingMockRecorder) SaveDecisionChannel(ctx, workspaceID, accountID, channel any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveDecisionChannel", reflect.TypeOf((*MockNotificationSetting)(nil).SaveDecisionChannel), ctx, workspaceID, accountID, channel)
 }

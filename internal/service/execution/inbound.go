@@ -262,6 +262,10 @@ func (s *executionsService) Reported(
 }
 
 func (s *executionsService) awaitDecision(ctx context.Context, execution entity.Execution) error {
+	if err := s.relayWaiting(ctx, execution); err != nil {
+		return err
+	}
+
 	authority, err := s.delegates.Authority(ctx, execution.WorkspaceID, execution.IssueID)
 	if err != nil {
 		return err

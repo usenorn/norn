@@ -462,7 +462,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	}
 	mcpAuthorizer := mcpauthorizer.New(toolingclientClient)
 	agentToolkits := agentcapability.NewToolkits(repositoryWorkspace, repositoryProject, repositoryAgent, agentSkill, agentMCPServer, agentMCPConnection, mcpAuthorizer, repositoryBlob, instance, agentTooling)
-	executions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, issueDelegation, notificationEvent, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, postgresClient)
+	executions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, issueDelegation, notificationEvent, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, jobProducer, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, postgresClient)
 	delegations := delegation.New(issueDelegation, repositoryIssue, repositoryAgent, projectMember, repositoryActivity, webhookEmitter, executions, serviceAuthorizer, postgresClient)
 	issueQuestions := issuequestion2.New(issueQuestion, repositoryIssue, issueDelegation, repositoryActivity, notificationEvent, executions, serviceEvents, jobProducer, postgresClient, serviceAuthorizer)
 	codebases := codebase2.New(repositoryCodebase, repositoryRunner, repositoryAgent, serviceAuthorizer, serviceAudit, postgresClient)
@@ -600,7 +600,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	inboundmailEdge := inboundmail2.New(intakes, configIntake, epostix)
 	telegramConversation := telegramconversation.New(postgresClient)
 	telegramUpdate := telegramupdate.New(postgresClient)
-	telegramUpdates := telegrambot2.NewUpdates(telegramBot, telegramAudience, telegramConversation, telegramUpdate, telegramMessenger, repositoryAgent, issueQuestion, repositoryIssue, issueDelegation, repositoryWorkspace, jobProducer, postgresClient, issueQuestions, hostedAgents, serviceAudit, app, configTelegram)
+	telegramUpdates := telegrambot2.NewUpdates(telegramBot, telegramAudience, telegramConversation, telegramUpdate, telegramMessenger, repositoryAgent, issueQuestion, repositoryExecution, executionPlan, executionReview, changeSet, repositoryIssue, issueDelegation, notificationSetting, repositoryWorkspace, jobProducer, postgresClient, issueQuestions, executions, hostedAgents, serviceAudit, app, configTelegram)
 	telegramEdge := telegram2.New(telegramUpdates, configTelegram)
 	sourceControlSync := scm2.NewSync(scmConnection, scmRepository, scmRoute, scmTransitionRule, scmTeamSetting, scmIdentity, mirrorConflict, repositoryLabel, repositoryAgent, gate, scmRelease, scmDeployment, scmDelivery, codeLink, issueMirror, workflowState, repositoryIssue, repositoryWorkspace, repositoryActivity, repositoryMembership, scmApp, forges, credentials, serviceAuthorizer, issues, issueComments, jobProducer, postgresClient, sourceControl, app)
 	sourcecontrolEdge := sourcecontrol.New(sourceControlSync, sourceControl)
@@ -976,7 +976,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	}
 	mcpAuthorizer := mcpauthorizer.New(toolingclientClient)
 	agentToolkits := agentcapability.NewToolkits(repositoryWorkspace, repositoryProject, repositoryAgent, agentSkill, agentMCPServer, agentMCPConnection, mcpAuthorizer, repositoryBlob, instance, agentTooling)
-	serviceExecutions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, issueDelegation, notificationEvent, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, client)
+	serviceExecutions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, issueDelegation, notificationEvent, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, jobProducer, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, client)
 	executionLeaseSweepHandler := job.NewExecutionLeaseSweepHandler(serviceExecutions)
 	executionUpload := executionupload.New(client)
 	executionPolicy := executionpolicy.New(client)
@@ -1033,12 +1033,12 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	}
 	agentHosting := config.NewAgentHosting(configConfig)
 	hostedAgents := hostedagent.New(repositoryAgent, apiToken, repositoryWorkspace, repositoryProject, aiProvider, aiModel, serviceAuthorizer, tools, agentHosting)
-	telegramUpdates := telegrambot2.NewUpdates(telegramBot, telegramAudience, telegramConversation, telegramUpdate, telegramMessenger, repositoryAgent, issueQuestion, repositoryIssue, issueDelegation, repositoryWorkspace, jobProducer, client, issueQuestions, hostedAgents, serviceAudit, app, configTelegram)
+	telegramUpdates := telegrambot2.NewUpdates(telegramBot, telegramAudience, telegramConversation, telegramUpdate, telegramMessenger, repositoryAgent, issueQuestion, repositoryExecution, executionPlan, executionReview, changeSet, repositoryIssue, issueDelegation, notificationSetting, repositoryWorkspace, jobProducer, client, issueQuestions, serviceExecutions, hostedAgents, serviceAudit, app, configTelegram)
 	telegramUpdateHandler := job.NewTelegramUpdateHandler(telegramUpdates)
-	telegramQuestionHandler := job.NewTelegramQuestionHandler(telegramUpdates)
+	telegramDecisionHandler := job.NewTelegramDecisionHandler(telegramUpdates)
 	telegramSettlementHandler := job.NewTelegramSettlementHandler(telegramUpdates)
 	telegramSweepHandler := job.NewTelegramSweepHandler(telegramUpdates)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, signInCodeHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler, executionUploadSweepHandler, questionExpirySweepHandler, intakeDeliveryHandler, telegramUpdateHandler, telegramQuestionHandler, telegramSettlementHandler, telegramSweepHandler)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, signInCodeHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler, executionUploadSweepHandler, questionExpirySweepHandler, intakeDeliveryHandler, telegramUpdateHandler, telegramDecisionHandler, telegramSettlementHandler, telegramSweepHandler)
 	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, configImports, sourceControl, executions, questions, configTelegram, server, scheduler, inspector, serveMux, logger)
 	return internalWorker, func() {
 		cleanup8()

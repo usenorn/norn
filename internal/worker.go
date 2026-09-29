@@ -71,7 +71,7 @@ func NewServeMux(
 	questionExpirySweep *job.QuestionExpirySweepHandler,
 	intakeDelivery *job.IntakeDeliveryHandler,
 	telegramUpdate *job.TelegramUpdateHandler,
-	telegramQuestion *job.TelegramQuestionHandler,
+	telegramDecision *job.TelegramDecisionHandler,
 	telegramSettlement *job.TelegramSettlementHandler,
 	telegramSweep *job.TelegramSweepHandler,
 ) *asynq.ServeMux {
@@ -108,7 +108,7 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeQuestionExpirySweep, questionExpirySweep)
 	mux.Handle(entity.TaskTypeIntakeDelivery, intakeDelivery)
 	mux.Handle(entity.TaskTypeTelegramUpdate, telegramUpdate)
-	mux.Handle(entity.TaskTypeTelegramQuestion, telegramQuestion)
+	mux.Handle(entity.TaskTypeTelegramDecision, telegramDecision)
 	mux.Handle(entity.TaskTypeTelegramSettlement, telegramSettlement)
 	mux.Handle(entity.TaskTypeTelegramSweep, telegramSweep)
 

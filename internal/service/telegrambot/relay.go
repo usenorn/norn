@@ -13,46 +13,57 @@ import (
 	"github.com/usenorn/norn/internal/observability/logging"
 )
 
-func (s *updates) Relay(ctx context.Context, workspaceID, questionID uuid.UUID) error {
-	question, target, err := s.relayed(ctx, workspaceID, questionID)
-	if err != nil || question.Settled() {
+const (
+	executionsSegment = "executions"
+	reviewSegment     = "review"
+	reviewsSegment    = "reviews"
+	planFragment      = "#plan"
+)
+
+type outbound struct {
+	target   delivery
+	about    decisionContext
+	text     string
+	buttons  []entity.TelegramButton
+	template entity.TelegramDecisionMessage
+}
+
+func (s *updates) Relay(ctx context.Context, decision entity.TelegramDecision) error {
+	prepared, open, err := s.prepare(ctx, decision)
+	if err != nil || !open {
 		return ignoreAbsent(err)
 	}
 
-	about, err := s.contextOf(ctx, target, question)
+	chats, err := s.recipients(ctx, prepared.target.bot, decision.WorkspaceID, prepared.about.issueID)
 	if err != nil {
 		return err
 	}
 
-	chats, err := s.recipients(ctx, target.bot, question)
-	if err != nil {
-		return err
-	}
-
-	posted, err := s.conversation.Posted(ctx, question.ID)
+	posted, err := s.conversation.Posted(ctx, decision)
 	if err != nil {
 		return err
 	}
 
 	sent := make(map[int64]bool, len(posted))
-	for _, message := range posted {
-		sent[message.ChatID] = true
-	}
 
-	text := questionText(about, question)
+	for _, message := range posted {
+		if message.BotID == prepared.target.bot.ID && sameRound(message, prepared.template) {
+			sent[message.ChatID] = true
+		}
+	}
 
 	for _, chatID := range chats {
 		if sent[chatID] {
 			continue
 		}
 
-		messageID, err := s.messenger.Send(ctx, target.token, entity.TelegramOutgoing{
+		messageID, err := s.messenger.Send(ctx, prepared.target.token, entity.TelegramOutgoing{
 			ChatID:  chatID,
-			Text:    text,
-			Options: question.Options,
+			Text:    prepared.text,
+			Buttons: prepared.buttons,
 		})
 		if errors.Is(err, entity.ErrTelegramChatUnavailable) {
-			logging.From(ctx).WarnContext(ctx, "telegram refused a question for one chat", "error", err.Error())
+			logging.From(ctx).WarnContext(ctx, "telegram refused a decision for one chat", "error", err.Error())
 
 			continue
 		}
@@ -61,12 +72,12 @@ func (s *updates) Relay(ctx context.Context, workspaceID, questionID uuid.UUID) 
 			return err
 		}
 
-		if err := s.conversation.Remember(ctx, entity.TelegramQuestionMessage{
-			BotID:      target.bot.ID,
-			ChatID:     chatID,
-			MessageID:  messageID,
-			QuestionID: question.ID,
-		}); err != nil {
+		message := prepared.template
+		message.BotID = prepared.target.bot.ID
+		message.ChatID = chatID
+		message.MessageID = messageID
+
+		if err := s.conversation.Remember(ctx, message); err != nil {
 			return err
 		}
 
@@ -76,30 +87,141 @@ func (s *updates) Relay(ctx context.Context, workspaceID, questionID uuid.UUID) 
 	return nil
 }
 
-func (s *updates) Settle(ctx context.Context, workspaceID, questionID uuid.UUID) error {
-	question, target, err := s.relayed(ctx, workspaceID, questionID)
-	if err != nil || !question.Settled() {
-		return ignoreAbsent(err)
+func sameRound(posted, template entity.TelegramDecisionMessage) bool {
+	switch template.Kind {
+	case entity.TelegramDecisionPlan:
+		return posted.PlanRevision == template.PlanRevision
+	case entity.TelegramDecisionReview:
+		return posted.ReviewHeads.Matches(template.ReviewHeads)
+	default:
+		return true
+	}
+}
+
+func (s *updates) prepare(ctx context.Context, decision entity.TelegramDecision) (outbound, bool, error) {
+	switch decision.Kind {
+	case entity.TelegramDecisionQuestion:
+		return s.prepareQuestion(ctx, decision)
+	case entity.TelegramDecisionPlan:
+		return s.preparePlan(ctx, decision)
+	case entity.TelegramDecisionReview:
+		return s.prepareReview(ctx, decision)
+	default:
+		return outbound{}, false, nil
+	}
+}
+
+func (s *updates) prepareQuestion(ctx context.Context, decision entity.TelegramDecision) (outbound, bool, error) {
+	question, target, err := s.relayed(ctx, decision.WorkspaceID, decision.QuestionID)
+	if err != nil || question.Settled() {
+		return outbound{}, false, err
 	}
 
-	posted, err := s.conversation.Posted(ctx, question.ID)
+	about, err := s.contextOf(ctx, target, question.WorkspaceID, question.IssueID, "")
+	if err != nil {
+		return outbound{}, false, err
+	}
+
+	return outbound{
+		target:   target,
+		about:    about,
+		text:     questionText(about, question),
+		buttons:  entity.TelegramOptionButtons(question.Options),
+		template: entity.TelegramDecisionMessage{Kind: entity.TelegramDecisionQuestion, QuestionID: question.ID},
+	}, true, nil
+}
+
+func (s *updates) preparePlan(ctx context.Context, decision entity.TelegramDecision) (outbound, bool, error) {
+	execution, target, err := s.executed(ctx, decision)
+	if err != nil || execution.State != entity.ExecutionAwaitingPlan {
+		return outbound{}, false, err
+	}
+
+	plans, err := s.plans.ListByExecution(ctx, execution.ID)
+	if err != nil {
+		return outbound{}, false, err
+	}
+
+	plan, ok := entity.LatestPlan(plans)
+	if !ok || !plan.Undecided() {
+		return outbound{}, false, nil
+	}
+
+	about, err := s.contextOf(ctx, target, execution.WorkspaceID, execution.IssueID, execution.ID)
+	if err != nil {
+		return outbound{}, false, err
+	}
+
+	return outbound{
+		target: target,
+		about:  about,
+		text:   planText(about, plan),
+		buttons: []entity.TelegramButton{
+			{Label: "Approve plan", Data: entity.TelegramCallbackApprove},
+			{Label: "Ask for changes", Data: entity.TelegramCallbackChanges},
+		},
+		template: entity.TelegramDecisionMessage{
+			Kind:         entity.TelegramDecisionPlan,
+			ExecutionID:  execution.ID,
+			PlanRevision: plan.Revision,
+		},
+	}, true, nil
+}
+
+func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDecision) (outbound, bool, error) {
+	execution, target, err := s.executed(ctx, decision)
+	if err != nil || execution.State != entity.ExecutionAwaitingReview {
+		return outbound{}, false, err
+	}
+
+	changeset, err := s.changesets.Get(ctx, execution.ID)
+	if err != nil {
+		return outbound{}, false, err
+	}
+
+	about, err := s.contextOf(ctx, target, execution.WorkspaceID, execution.IssueID, execution.ID)
+	if err != nil {
+		return outbound{}, false, err
+	}
+
+	return outbound{
+		target: target,
+		about:  about,
+		text:   reviewText(about, changeset),
+		buttons: []entity.TelegramButton{
+			{Label: "Approve changes", Data: entity.TelegramCallbackApprove},
+			{Label: "Request changes", Data: entity.TelegramCallbackChanges},
+		},
+		template: entity.TelegramDecisionMessage{
+			Kind:        entity.TelegramDecisionReview,
+			ExecutionID: execution.ID,
+			ReviewHeads: entity.HeadsOf(changeset.Changes),
+		},
+	}, true, nil
+}
+
+func (s *updates) Settle(ctx context.Context, decision entity.TelegramDecision) error {
+	posted, err := s.conversation.Posted(ctx, decision)
 	if err != nil || len(posted) == 0 {
 		return err
 	}
 
-	about, err := s.contextOf(ctx, target, question)
+	settle, err := s.settlement(ctx, decision)
 	if err != nil {
-		return err
+		return ignoreAbsent(err)
 	}
 
-	text := settledText(about, question)
-
 	for _, message := range posted {
-		if message.Settled || message.BotID != target.bot.ID {
+		if message.Settled || message.BotID != settle.target.bot.ID {
 			continue
 		}
 
-		err := s.messenger.Edit(ctx, target.token, message.ChatID, message.MessageID, text)
+		text, closed := settle.text(message)
+		if !closed {
+			continue
+		}
+
+		err := s.messenger.Edit(ctx, settle.target.token, message.ChatID, message.MessageID, text)
 		if err != nil && !errors.Is(err, entity.ErrTelegramChatUnavailable) {
 			return err
 		}
@@ -110,6 +232,66 @@ func (s *updates) Settle(ctx context.Context, workspaceID, questionID uuid.UUID)
 	}
 
 	return nil
+}
+
+type settlement struct {
+	target delivery
+	text   func(message entity.TelegramDecisionMessage) (string, bool)
+}
+
+func (s *updates) settlement(ctx context.Context, decision entity.TelegramDecision) (settlement, error) {
+	if decision.Kind == entity.TelegramDecisionQuestion {
+		question, target, err := s.relayed(ctx, decision.WorkspaceID, decision.QuestionID)
+		if err != nil {
+			return settlement{}, err
+		}
+
+		about, err := s.contextOf(ctx, target, question.WorkspaceID, question.IssueID, "")
+		if err != nil {
+			return settlement{}, err
+		}
+
+		return settlement{target: target, text: func(entity.TelegramDecisionMessage) (string, bool) {
+			return settledText(about, question), question.Settled()
+		}}, nil
+	}
+
+	execution, target, err := s.executed(ctx, decision)
+	if err != nil {
+		return settlement{}, err
+	}
+
+	about, err := s.contextOf(ctx, target, execution.WorkspaceID, execution.IssueID, execution.ID)
+	if err != nil {
+		return settlement{}, err
+	}
+
+	if decision.Kind == entity.TelegramDecisionPlan {
+		plans, err := s.plans.ListByExecution(ctx, execution.ID)
+		if err != nil {
+			return settlement{}, err
+		}
+
+		return settlement{target: target, text: func(message entity.TelegramDecisionMessage) (string, bool) {
+			return planSettled(about, execution, plans, message.PlanRevision)
+		}}, nil
+	}
+
+	reviews, err := s.reviews.ListReviews(ctx, execution.ID)
+	if err != nil {
+		return settlement{}, err
+	}
+
+	changeset, err := s.changesets.Get(ctx, execution.ID)
+	if err != nil {
+		return settlement{}, err
+	}
+
+	current := entity.HeadsOf(changeset.Changes)
+
+	return settlement{target: target, text: func(message entity.TelegramDecisionMessage) (string, bool) {
+		return reviewSettled(about, execution, reviews, current, message.ReviewHeads)
+	}}, nil
 }
 
 func (s *updates) relayed(
@@ -130,76 +312,131 @@ func (s *updates) relayed(
 		return entity.IssueQuestion{}, delivery{}, err
 	}
 
+	target, err := s.agentDelivery(ctx, workspaceID, agent)
+
+	return question, target, err
+}
+
+func (s *updates) executed(ctx context.Context, decision entity.TelegramDecision) (entity.Execution, delivery, error) {
+	execution, err := s.executions.GetByID(ctx, decision.ExecutionID)
+	if err != nil {
+		return entity.Execution{}, delivery{}, err
+	}
+
+	if execution.WorkspaceID != decision.WorkspaceID {
+		return entity.Execution{}, delivery{}, entity.ErrExecutionNotFound
+	}
+
+	agent, err := s.agents.GetByID(ctx, execution.WorkspaceID, execution.AgentID)
+	if err != nil {
+		return entity.Execution{}, delivery{}, err
+	}
+
+	target, err := s.agentDelivery(ctx, execution.WorkspaceID, agent)
+
+	return execution, target, err
+}
+
+func (s *updates) agentDelivery(ctx context.Context, workspaceID uuid.UUID, agent entity.Agent) (delivery, error) {
 	if agent.WorkspaceID != workspaceID || agent.Disabled() {
-		return entity.IssueQuestion{}, delivery{}, entity.ErrAgentNotFound
+		return delivery{}, entity.ErrAgentNotFound
 	}
 
 	bot, err := s.bots.Get(ctx, workspaceID, agent.ID)
 	if err != nil {
-		return entity.IssueQuestion{}, delivery{}, err
+		return delivery{}, err
 	}
 
 	token, err := s.bots.Token(ctx, bot.ID)
 	if err != nil {
-		return entity.IssueQuestion{}, delivery{}, err
+		return delivery{}, err
 	}
 
-	return question, delivery{bot: bot, agent: agent, token: token}, nil
+	return delivery{bot: bot, agent: agent, token: token}, nil
 }
 
 func (s *updates) contextOf(
 	ctx context.Context,
 	target delivery,
-	question entity.IssueQuestion,
-) (questionContext, error) {
-	issue, err := s.issues.GetVisible(ctx, question.WorkspaceID, question.IssueID, entity.TeamScope{
-		WorkspaceID:    question.WorkspaceID,
+	workspaceID, issueID uuid.UUID,
+	executionID string,
+) (decisionContext, error) {
+	issue, err := s.issues.GetVisible(ctx, workspaceID, issueID, entity.TeamScope{
+		WorkspaceID:    workspaceID,
 		AllTeams:       true,
 		IncludePrivate: true,
 	})
 	if err != nil {
-		return questionContext{}, err
+		return decisionContext{}, err
 	}
 
-	workspace, err := s.workspaces.GetByID(ctx, question.WorkspaceID)
+	workspace, err := s.workspaces.GetByID(ctx, workspaceID)
 	if err != nil {
-		return questionContext{}, err
+		return decisionContext{}, err
 	}
 
-	link, err := url.JoinPath(s.app.BaseURL, workspace.Slug, issuesSegment, issue.Reference())
+	issueURL, err := url.JoinPath(s.app.BaseURL, workspace.Slug, issuesSegment, issue.Reference())
 	if err != nil {
-		return questionContext{}, err
+		return decisionContext{}, err
 	}
 
-	return questionContext{
-		agentName: target.agent.Name,
-		reference: issue.Reference(),
-		title:     strings.TrimSpace(issue.Title),
-		issueURL:  link,
-	}, nil
+	reviewsURL, err := url.JoinPath(s.app.BaseURL, workspace.Slug, reviewsSegment)
+	if err != nil {
+		return decisionContext{}, err
+	}
+
+	about := decisionContext{
+		agentName:  target.agent.Name,
+		issueID:    issue.ID,
+		reference:  issue.Reference(),
+		title:      strings.TrimSpace(issue.Title),
+		issueURL:   issueURL,
+		reviewsURL: reviewsURL,
+	}
+
+	if executionID == "" {
+		return about, nil
+	}
+
+	if about.runURL, err = url.JoinPath(s.app.BaseURL, workspace.Slug, executionsSegment, executionID); err != nil {
+		return decisionContext{}, err
+	}
+
+	if about.reviewURL, err = url.JoinPath(about.runURL, reviewSegment); err != nil {
+		return decisionContext{}, err
+	}
+
+	return about, nil
 }
 
 func (s *updates) recipients(
 	ctx context.Context,
 	bot entity.TelegramBot,
-	question entity.IssueQuestion,
+	workspaceID, issueID uuid.UUID,
 ) ([]int64, error) {
 	var chats []int64
 
-	delegation, err := s.delegations.Open(ctx, question.WorkspaceID, question.IssueID)
+	authority, err := s.delegations.Authority(ctx, workspaceID, issueID)
+	if err != nil {
+		return nil, err
+	}
 
-	switch {
-	case err == nil && delegation.DelegatedByAccountID != uuid.Nil:
-		linked, err := s.audience.AccountFor(ctx, bot.ID, delegation.DelegatedByAccountID)
-
-		switch {
-		case err == nil:
-			chats = append(chats, linked.ChatID)
-		case !errors.Is(err, entity.ErrTelegramAccountNotLinked):
+	if maker := authority.Maker(); maker != uuid.Nil {
+		channel, err := s.settings.DecisionChannel(ctx, workspaceID, maker)
+		if err != nil {
 			return nil, err
 		}
-	case err != nil && !errors.Is(err, entity.ErrIssueDelegationNotFound):
-		return nil, err
+
+		if channel == entity.DecisionChannelTelegram {
+			linked, err := s.audience.AccountFor(ctx, bot.ID, maker)
+
+			switch {
+			case err == nil:
+				chats = append(chats, linked.ChatID)
+			case !errors.Is(err, entity.ErrTelegramAccountNotLinked):
+				return nil, err
+			}
+		}
 	}
 
 	groups, err := s.audience.Groups(ctx, bot.ID)
@@ -218,6 +455,7 @@ func ignoreAbsent(err error) error {
 	switch {
 	case err == nil,
 		errors.Is(err, entity.ErrIssueQuestionNotFound),
+		errors.Is(err, entity.ErrExecutionNotFound),
 		errors.Is(err, entity.ErrAgentNotFound),
 		errors.Is(err, entity.ErrTelegramBotNotFound):
 		return nil

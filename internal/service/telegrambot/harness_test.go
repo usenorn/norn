@@ -11,10 +11,15 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
+	executionrepo "github.com/usenorn/norn/internal/repository/execution"
+	planrepo "github.com/usenorn/norn/internal/repository/executionplan"
+	reviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	jobrepo "github.com/usenorn/norn/internal/repository/jobqueue"
+	settingrepo "github.com/usenorn/norn/internal/repository/notificationsetting"
 	audiencerepo "github.com/usenorn/norn/internal/repository/telegramaudience"
 	botrepo "github.com/usenorn/norn/internal/repository/telegrambot"
 	conversationrepo "github.com/usenorn/norn/internal/repository/telegramconversation"
@@ -25,6 +30,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	hostedsvc "github.com/usenorn/norn/internal/service/hostedagent"
 	questionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	"github.com/usenorn/norn/internal/service/telegrambot"
@@ -47,12 +53,18 @@ type harness struct {
 	messenger    *messengerrepo.MockTelegramMessenger
 	agents       *agentrepo.MockAgent
 	questions    *questionrepo.MockIssueQuestion
+	executions   *executionrepo.MockExecution
+	plans        *planrepo.MockExecutionPlan
+	reviews      *reviewrepo.MockExecutionReview
+	changesets   *changesetrepo.MockChangeSet
 	issues       *issuerepo.MockIssue
 	delegations  *delegationrepo.MockIssueDelegation
+	settings     *settingrepo.MockNotificationSetting
 	workspaces   *workspacerepo.MockWorkspace
 	jobs         *jobrepo.MockJobProducer
 	transactor   *transactorrepo.MockTransactor
 	answers      *questionsvc.MockIssueQuestions
+	decisions    *executionsvc.MockExecutions
 	hosted       *hostedsvc.MockHostedAgents
 	audit        *auditsvc.MockAudit
 	authorizer   *authorizersvc.MockAuthorizer
@@ -90,12 +102,18 @@ func newHarness(t *testing.T) *harness {
 		messenger:    messengerrepo.NewMockTelegramMessenger(ctrl),
 		agents:       agentrepo.NewMockAgent(ctrl),
 		questions:    questionrepo.NewMockIssueQuestion(ctrl),
+		executions:   executionrepo.NewMockExecution(ctrl),
+		plans:        planrepo.NewMockExecutionPlan(ctrl),
+		reviews:      reviewrepo.NewMockExecutionReview(ctrl),
+		changesets:   changesetrepo.NewMockChangeSet(ctrl),
 		issues:       issuerepo.NewMockIssue(ctrl),
 		delegations:  delegationrepo.NewMockIssueDelegation(ctrl),
+		settings:     settingrepo.NewMockNotificationSetting(ctrl),
 		workspaces:   workspacerepo.NewMockWorkspace(ctrl),
 		jobs:         jobrepo.NewMockJobProducer(ctrl),
 		transactor:   transactorrepo.NewMockTransactor(ctrl),
 		answers:      questionsvc.NewMockIssueQuestions(ctrl),
+		decisions:    executionsvc.NewMockExecutions(ctrl),
 		hosted:       hostedsvc.NewMockHostedAgents(ctrl),
 		audit:        auditsvc.NewMockAudit(ctrl),
 		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
@@ -174,8 +192,9 @@ func (h *harness) botsService() service.TelegramBots {
 
 func (h *harness) updatesService() service.TelegramUpdates {
 	return telegrambot.NewUpdates(
-		h.bots, h.audience, h.conversation, h.received, h.messenger, h.agents, h.questions, h.issues,
-		h.delegations, h.workspaces, h.jobs, h.transactor, h.answers, h.hosted, h.audit, h.app, h.limits(),
+		h.bots, h.audience, h.conversation, h.received, h.messenger, h.agents, h.questions,
+		h.executions, h.plans, h.reviews, h.changesets, h.issues, h.delegations, h.settings, h.workspaces,
+		h.jobs, h.transactor, h.answers, h.decisions, h.hosted, h.audit, h.app, h.limits(),
 	)
 }
 

@@ -240,3 +240,20 @@ func TestAnyoneWhoManagesTheIssueMayStillCommentOnAReview(t *testing.T) {
 		t.Fatalf("comment on the review: %v", err)
 	}
 }
+
+func TestAFinalReviewIsSettledOnTelegramWhateverItsVerdict(t *testing.T) {
+	for _, verdict := range []entity.ExecutionReviewVerdict{entity.VerdictApprove, entity.VerdictRequestChanges} {
+		h := newHarness(t)
+		execution := h.underReview()
+
+		if _, err := h.service.SubmitReview(context.Background(), h.workspaceID, execution.ID,
+			service.ReviewSubmission{Verdict: verdict, Summary: "Rename the flag.", Heads: entity.ReviewHeads{"api": "head-1"}},
+		); err != nil {
+			t.Fatalf("submit %s: %v", verdict, err)
+		}
+
+		if len(h.settled) != 1 || h.settled[0].Kind != entity.TelegramDecisionReview {
+			t.Fatalf("after %s queued settlements %+v, want the review once", verdict, h.settled)
+		}
+	}
+}

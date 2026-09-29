@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
+	entity "github.com/usenorn/norn/internal/entity"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -70,31 +71,31 @@ func (mr *MockTelegramUpdatesMockRecorder) Apply(ctx, updateID any) *gomock.Call
 }
 
 // Relay mocks base method.
-func (m *MockTelegramUpdates) Relay(ctx context.Context, workspaceID, questionID uuid.UUID) error {
+func (m *MockTelegramUpdates) Relay(ctx context.Context, decision entity.TelegramDecision) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Relay", ctx, workspaceID, questionID)
+	ret := m.ctrl.Call(m, "Relay", ctx, decision)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Relay indicates an expected call of Relay.
-func (mr *MockTelegramUpdatesMockRecorder) Relay(ctx, workspaceID, questionID any) *gomock.Call {
+func (mr *MockTelegramUpdatesMockRecorder) Relay(ctx, decision any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Relay", reflect.TypeOf((*MockTelegramUpdates)(nil).Relay), ctx, workspaceID, questionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Relay", reflect.TypeOf((*MockTelegramUpdates)(nil).Relay), ctx, decision)
 }
 
 // Settle mocks base method.
-func (m *MockTelegramUpdates) Settle(ctx context.Context, workspaceID, questionID uuid.UUID) error {
+func (m *MockTelegramUpdates) Settle(ctx context.Context, decision entity.TelegramDecision) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Settle", ctx, workspaceID, questionID)
+	ret := m.ctrl.Call(m, "Settle", ctx, decision)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Settle indicates an expected call of Settle.
-func (mr *MockTelegramUpdatesMockRecorder) Settle(ctx, workspaceID, questionID any) *gomock.Call {
+func (mr *MockTelegramUpdatesMockRecorder) Settle(ctx, decision any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockTelegramUpdates)(nil).Settle), ctx, workspaceID, questionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Settle", reflect.TypeOf((*MockTelegramUpdates)(nil).Settle), ctx, decision)
 }
 
 // Sweep mocks base method.

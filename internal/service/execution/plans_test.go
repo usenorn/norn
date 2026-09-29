@@ -334,3 +334,53 @@ func TestOnlyTheAssigneeOrAnAdminDecidesAPlan(t *testing.T) {
 		})
 	}
 }
+
+func TestAPlanWaitingForApprovalIsSentToTelegram(t *testing.T) {
+	h := newHarness(t)
+
+	execution := h.execution(entity.ExecutionRunning)
+	execution.Stage = entity.StagePlanning
+	h.holding(execution)
+	h.moving()
+	h.planned("Split the handler in two.")
+
+	payload, _ := json.Marshal(channelv1.Report{State: string(entity.ExecutionAwaitingPlan)})
+
+	if err := h.service.Reported(context.Background(), h.runner, entity.ChannelMessage{
+		ID: uuid.NewString(), Type: entity.ChannelExecutionState, ExecutionID: execution.ID,
+		Payload: payload, IssuedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("park for approval: %v", err)
+	}
+
+	want := entity.TelegramPlanDecision(execution, 1)
+	if len(h.relayed) != 1 || h.relayed[0] != want {
+		t.Fatalf("queued for telegram %+v, want revision 1 of the plan once", h.relayed)
+	}
+}
+
+func TestADecidedPlanIsSettledOnTelegram(t *testing.T) {
+	for _, decide := range []func(h *harness, id string) error{
+		func(h *harness, id string) error {
+			_, err := h.service.ApprovePlan(context.Background(), h.workspaceID, id, 1)
+			return err
+		},
+		func(h *harness, id string) error {
+			_, err := h.service.RevisePlan(context.Background(), h.workspaceID, id, 1, "Smaller steps.")
+			return err
+		},
+	} {
+		h := newHarness(t)
+		execution := h.waitingOnPlan()
+		h.planned("Rename the table.")
+
+		if err := decide(h, execution.ID); err != nil {
+			t.Fatalf("decide the plan: %v", err)
+		}
+
+		if len(h.settled) != 1 || h.settled[0].Kind != entity.TelegramDecisionPlan ||
+			h.settled[0].ExecutionID != execution.ID {
+			t.Fatalf("queued settlements %+v; the telegram message would keep offering a decision already made", h.settled)
+		}
+	}
+}

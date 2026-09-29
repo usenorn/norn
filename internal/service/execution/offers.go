@@ -389,6 +389,10 @@ func (s *executionsService) advance(
 
 		postgres.AfterCommit(ctx, func(ctx context.Context) { s.broadcast(ctx, moved) })
 
+		if left, ok := entity.TelegramDecisionLeft(moved, execution.State, now); ok {
+			s.relay(ctx, left, s.jobs.EnqueueTelegramSettlement)
+		}
+
 		return nil
 	})
 	if err != nil {

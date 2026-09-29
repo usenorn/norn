@@ -29,7 +29,7 @@ var Set = wire.NewSet(
 	NewSCMDeliveryHandler,
 	NewIntakeDeliveryHandler,
 	NewTelegramUpdateHandler,
-	NewTelegramQuestionHandler,
+	NewTelegramDecisionHandler,
 	NewTelegramSettlementHandler,
 	NewTelegramSweepHandler,
 	NewSCMReconcileHandler,

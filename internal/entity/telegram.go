@@ -20,6 +20,8 @@ const (
 	TelegramTokenHintLen       = 4
 	TelegramMessageMaxLen      = 4096
 	TelegramCallbackAnswer     = "a:"
+	TelegramCallbackApprove    = "approve"
+	TelegramCallbackChanges    = "changes"
 	TelegramConnectionName     = "Telegram"
 	TelegramTypingAction       = "typing"
 	TelegramUpdateSweepBatch   = 500
@@ -44,6 +46,7 @@ var (
 	ErrTelegramLinkCodeInvalid      = errors.New("telegram link code is invalid or expired")
 	ErrTelegramAccountNotLinked     = errors.New("telegram account is not linked")
 	ErrTelegramGroupNotFound        = errors.New("telegram group not found")
+	ErrTelegramDecisionNotFound     = errors.New("telegram decision message not found")
 )
 
 type TelegramLinkPurpose string
@@ -256,6 +259,16 @@ func TelegramOptionData(index int) string {
 	return TelegramCallbackAnswer + strconv.Itoa(index)
 }
 
+func TelegramOptionButtons(options []string) []TelegramButton {
+	buttons := make([]TelegramButton, 0, len(options))
+
+	for index, option := range options {
+		buttons = append(buttons, TelegramButton{Label: option, Data: TelegramOptionData(index)})
+	}
+
+	return buttons
+}
+
 type TelegramMembership struct {
 	ChatID   int64
 	ChatType TelegramChatType
@@ -269,19 +282,118 @@ type TelegramIncoming struct {
 	Membership *TelegramMembership
 }
 
+type TelegramButton struct {
+	Label string
+	Data  string
+}
+
 type TelegramOutgoing struct {
 	ChatID  int64
 	Text    string
 	ReplyTo int64
-	Options []string
+	Buttons []TelegramButton
 }
 
-type TelegramQuestionMessage struct {
-	BotID      uuid.UUID
-	ChatID     int64
-	MessageID  int64
-	QuestionID uuid.UUID
-	Settled    bool
+type TelegramDecisionKind string
+
+const (
+	TelegramDecisionQuestion TelegramDecisionKind = "question"
+	TelegramDecisionPlan     TelegramDecisionKind = "plan"
+	TelegramDecisionReview   TelegramDecisionKind = "review"
+)
+
+func (k TelegramDecisionKind) Valid() bool {
+	switch k {
+	case TelegramDecisionQuestion, TelegramDecisionPlan, TelegramDecisionReview:
+		return true
+	default:
+		return false
+	}
+}
+
+type TelegramDecision struct {
+	WorkspaceID uuid.UUID
+	Kind        TelegramDecisionKind
+	QuestionID  uuid.UUID
+	ExecutionID string
+	Round       string
+}
+
+func TelegramQuestionDecision(question IssueQuestion) TelegramDecision {
+	return TelegramDecision{
+		WorkspaceID: question.WorkspaceID,
+		Kind:        TelegramDecisionQuestion,
+		QuestionID:  question.ID,
+	}
+}
+
+func TelegramPlanDecision(execution Execution, revision int) TelegramDecision {
+	return TelegramDecision{
+		WorkspaceID: execution.WorkspaceID,
+		Kind:        TelegramDecisionPlan,
+		ExecutionID: execution.ID,
+		Round:       strconv.Itoa(revision),
+	}
+}
+
+func TelegramReviewDecision(execution Execution, heads ReviewHeads) TelegramDecision {
+	return TelegramDecision{
+		WorkspaceID: execution.WorkspaceID,
+		Kind:        TelegramDecisionReview,
+		ExecutionID: execution.ID,
+		Round:       heads.Digest(),
+	}
+}
+
+func TelegramDecisionLeft(execution Execution, from ExecutionState, at time.Time) (TelegramDecision, bool) {
+	kind := TelegramDecisionPlan
+
+	switch from {
+	case ExecutionAwaitingPlan:
+	case ExecutionAwaitingReview:
+		kind = TelegramDecisionReview
+	default:
+		return TelegramDecision{}, false
+	}
+
+	return TelegramDecision{
+		WorkspaceID: execution.WorkspaceID,
+		Kind:        kind,
+		ExecutionID: execution.ID,
+		Round:       strconv.FormatInt(at.UnixNano(), 10),
+	}, true
+}
+
+func (d TelegramDecision) Subject() string {
+	if d.Kind == TelegramDecisionQuestion {
+		return d.QuestionID.String()
+	}
+
+	return d.ExecutionID
+}
+
+func (d TelegramDecision) Complete() bool {
+	if d.WorkspaceID == uuid.Nil || !d.Kind.Valid() {
+		return false
+	}
+
+	if d.Kind == TelegramDecisionQuestion {
+		return d.QuestionID != uuid.Nil
+	}
+
+	return d.ExecutionID != ""
+}
+
+type TelegramDecisionMessage struct {
+	BotID        uuid.UUID
+	ChatID       int64
+	MessageID    int64
+	Kind         TelegramDecisionKind
+	QuestionID   uuid.UUID
+	ExecutionID  string
+	PlanRevision int
+	ReviewHeads  ReviewHeads
+	Settled      bool
 }
 
 func TelegramTokenHint(token string) string {

@@ -2,6 +2,8 @@ package notificationsetting
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -93,6 +95,17 @@ WHERE workspace_id = $1 AND account_id = $2 AND team_id = $3`
 const clearGlobalQuery = `
 DELETE FROM workspace_notification_settings
 WHERE workspace_id = $1 AND account_id = $2`
+
+const decisionChannelQuery = `
+SELECT decision_channel FROM workspace_notification_settings
+WHERE workspace_id = $1 AND account_id = $2`
+
+const saveDecisionChannelQuery = `
+INSERT INTO workspace_notification_settings (workspace_id, account_id, decision_channel)
+VALUES ($1, $2, $3)
+ON CONFLICT (workspace_id, account_id) DO UPDATE SET
+    decision_channel = excluded.decision_channel,
+    updated_at = now()`
 
 type settingRepository struct {
 	db *postgres.Client
@@ -222,6 +235,40 @@ func (r *settingRepository) Clear(ctx context.Context, workspaceID, accountID, t
 
 	if _, err := r.db.Querier(ctx).ExecContext(ctx, query, args...); err != nil {
 		return fmt.Errorf("clear notification settings: %w", err)
+	}
+
+	return nil
+}
+
+func (r *settingRepository) DecisionChannel(
+	ctx context.Context,
+	workspaceID, accountID uuid.UUID,
+) (entity.DecisionChannel, error) {
+	var channel string
+
+	err := r.db.Querier(ctx).QueryRowContext(
+		ctx, decisionChannelQuery, workspaceID.String(), accountID.String(),
+	).Scan(&channel)
+	if errors.Is(err, sql.ErrNoRows) {
+		return entity.DecisionChannelNorn, nil
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("read decision channel: %w", err)
+	}
+
+	return entity.DecisionChannel(channel), nil
+}
+
+func (r *settingRepository) SaveDecisionChannel(
+	ctx context.Context,
+	workspaceID, accountID uuid.UUID,
+	channel entity.DecisionChannel,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(
+		ctx, saveDecisionChannelQuery, workspaceID.String(), accountID.String(), string(channel),
+	); err != nil {
+		return fmt.Errorf("save decision channel: %w", err)
 	}
 
 	return nil

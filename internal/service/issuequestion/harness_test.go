@@ -49,8 +49,8 @@ type harness struct {
 	recorded []entity.Activity
 	answered []entity.IssueQuestion
 	stranded []entity.IssueQuestion
-	relayed  []entity.TelegramQuestionPayload
-	settled  []entity.TelegramQuestionPayload
+	relayed  []entity.TelegramDecision
+	settled  []entity.TelegramDecision
 }
 
 func newHarness(t *testing.T) *harness {
@@ -130,8 +130,8 @@ func newHarness(t *testing.T) *harness {
 
 func (h *harness) expectRelays() {
 	h.jobs.EXPECT().
-		EnqueueTelegramQuestion(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, payload entity.TelegramQuestionPayload) error {
+		EnqueueTelegramDecision(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, payload entity.TelegramDecision) error {
 			h.relayed = append(h.relayed, payload)
 
 			return nil
@@ -140,7 +140,7 @@ func (h *harness) expectRelays() {
 
 	h.jobs.EXPECT().
 		EnqueueTelegramSettlement(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, payload entity.TelegramQuestionPayload) error {
+		DoAndReturn(func(_ context.Context, payload entity.TelegramDecision) error {
 			h.settled = append(h.settled, payload)
 
 			return nil

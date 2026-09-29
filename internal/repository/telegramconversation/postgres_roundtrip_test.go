@@ -43,6 +43,42 @@ func question(ctx context.Context, t *testing.T, db *postgres.Client, f fixture)
 	return uuid.MustParse(id)
 }
 
+const executionFixture = `
+WITH team AS (
+    INSERT INTO workspace_teams (workspace_id, key, name)
+    VALUES ($1, 'TX', 'Runs')
+    RETURNING id, workspace_id
+), state AS (
+    INSERT INTO workspace_workflow_states (workspace_id, team_id, name, category, position)
+    SELECT workspace_id, id, 'Todo', 'not_started', 1 FROM team
+    RETURNING id
+), issue AS (
+    INSERT INTO workspace_issues (workspace_id, team_id, number, title, state_id, reference_key, rank)
+    SELECT team.workspace_id, team.id, 1, 'Run it', state.id, 'TX', 'n'
+    FROM team, state
+    RETURNING id, workspace_id
+), delegation AS (
+    INSERT INTO workspace_issue_delegations (workspace_id, issue_id, agent_id)
+    SELECT workspace_id, id, $2 FROM issue
+    RETURNING id, workspace_id, issue_id
+)
+INSERT INTO workspace_executions (id, workspace_id, issue_id, delegation_id, agent_id, attempt)
+SELECT 'exec-' || $2::text, workspace_id, issue_id, id, $2, 1 FROM delegation
+RETURNING id`
+
+func execution(ctx context.Context, t *testing.T, db *postgres.Client, f fixture) string {
+	t.Helper()
+
+	var id string
+	if err := db.Querier(ctx).QueryRowContext(
+		ctx, executionFixture, f.workspaceID.String(), f.agentID.String(),
+	).Scan(&id); err != nil {
+		t.Fatalf("insert execution fixture: %v", err)
+	}
+
+	return id
+}
+
 func TestAQuestionMessageIsRememberedOncePerChatAndResolvesBack(t *testing.T) {
 	db := reach(t)
 	conversation := New(db)
@@ -50,17 +86,23 @@ func TestAQuestionMessageIsRememberedOncePerChatAndResolvesBack(t *testing.T) {
 	err := db.WithTx(context.Background(), func(ctx context.Context) error {
 		f := seed(ctx, t, db)
 		asked := question(ctx, t, db, f)
+		decision := entity.TelegramDecision{WorkspaceID: f.workspaceID, Kind: entity.TelegramDecisionQuestion, QuestionID: asked}
 
-		first := entity.TelegramQuestionMessage{BotID: f.botID, ChatID: 7, MessageID: 70, QuestionID: asked}
+		first := entity.TelegramDecisionMessage{
+			BotID: f.botID, ChatID: 7, MessageID: 70, Kind: entity.TelegramDecisionQuestion, QuestionID: asked,
+		}
 		if err := conversation.Remember(ctx, first); err != nil {
 			return err
 		}
 
-		if err := conversation.Remember(ctx, entity.TelegramQuestionMessage{BotID: f.botID, ChatID: 7, MessageID: 71, QuestionID: asked}); err != nil {
+		again := first
+		again.MessageID = 71
+
+		if err := conversation.Remember(ctx, again); err != nil {
 			return err
 		}
 
-		posted, err := conversation.Posted(ctx, asked)
+		posted, err := conversation.Posted(ctx, decision)
 		if err != nil {
 			return err
 		}
@@ -69,30 +111,83 @@ func TestAQuestionMessageIsRememberedOncePerChatAndResolvesBack(t *testing.T) {
 			t.Errorf("posted = %+v, want only the first message", posted)
 		}
 
-		resolved, err := conversation.QuestionAt(ctx, f.botID, 7, 70)
+		resolved, err := conversation.DecisionAt(ctx, f.botID, 7, 70)
 		if err != nil {
 			return err
 		}
 
-		if resolved != asked {
-			t.Errorf("resolved %s, want %s", resolved, asked)
+		if resolved.Kind != entity.TelegramDecisionQuestion || resolved.QuestionID != asked {
+			t.Errorf("resolved %+v, want question %s", resolved, asked)
 		}
 
-		if _, err := conversation.QuestionAt(ctx, f.botID, 8, 70); !errors.Is(err, entity.ErrIssueQuestionNotFound) {
-			t.Errorf("another chat: err = %v, want ErrIssueQuestionNotFound", err)
+		if _, err := conversation.DecisionAt(ctx, f.botID, 8, 70); !errors.Is(err, entity.ErrTelegramDecisionNotFound) {
+			t.Errorf("another chat: err = %v, want ErrTelegramDecisionNotFound", err)
 		}
 
 		if err := conversation.MarkSettled(ctx, first, time.Now().UTC()); err != nil {
 			return err
 		}
 
-		settled, err := conversation.Posted(ctx, asked)
+		settled, err := conversation.Posted(ctx, decision)
 		if err != nil {
 			return err
 		}
 
 		if !settled[0].Settled {
 			t.Error("the message was not marked settled")
+		}
+
+		return errRollback
+	})
+	if !errors.Is(err, errRollback) {
+		t.Fatalf("round trip: %v", err)
+	}
+}
+
+func TestPlanAndReviewMessagesKeepWhatTheyWereSentAbout(t *testing.T) {
+	db := reach(t)
+	conversation := New(db)
+
+	err := db.WithTx(context.Background(), func(ctx context.Context) error {
+		f := seed(ctx, t, db)
+		run := execution(ctx, t, db, f)
+		heads := entity.ReviewHeads{"api": "abc123", "web": "def456"}
+
+		for _, message := range []entity.TelegramDecisionMessage{
+			{BotID: f.botID, ChatID: 7, MessageID: 80, Kind: entity.TelegramDecisionPlan, ExecutionID: run, PlanRevision: 1},
+			{BotID: f.botID, ChatID: 7, MessageID: 81, Kind: entity.TelegramDecisionPlan, ExecutionID: run, PlanRevision: 2},
+			{BotID: f.botID, ChatID: 7, MessageID: 82, Kind: entity.TelegramDecisionReview, ExecutionID: run, ReviewHeads: heads},
+		} {
+			if err := conversation.Remember(ctx, message); err != nil {
+				return err
+			}
+		}
+
+		plans, err := conversation.Posted(ctx, entity.TelegramDecision{Kind: entity.TelegramDecisionPlan, ExecutionID: run})
+		if err != nil {
+			return err
+		}
+
+		if len(plans) != 2 {
+			t.Errorf("posted plans = %+v, want both revisions", plans)
+		}
+
+		review, err := conversation.DecisionAt(ctx, f.botID, 7, 82)
+		if err != nil {
+			return err
+		}
+
+		if review.Kind != entity.TelegramDecisionReview || !review.ReviewHeads.Matches(heads) {
+			t.Errorf("review message resolved to %+v, want the heads it was sent for", review)
+		}
+
+		plan, err := conversation.DecisionAt(ctx, f.botID, 7, 81)
+		if err != nil {
+			return err
+		}
+
+		if plan.PlanRevision != 2 || plan.ExecutionID != run {
+			t.Errorf("plan message resolved to %+v, want revision 2 of %s", plan, run)
 		}
 
 		return errRollback
