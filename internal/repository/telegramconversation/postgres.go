@@ -16,22 +16,22 @@ import (
 )
 
 const rememberQuery = `
-INSERT INTO workspace_telegram_question_messages (bot_id, chat_id, message_id, question_id, sent_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO workspace_telegram_decision_messages (bot_id, chat_id, message_id, kind, question_id, sent_at)
+VALUES ($1, $2, $3, 'question', $4, $5)
 ON CONFLICT DO NOTHING`
 
 const questionAtQuery = `
-SELECT question_id FROM workspace_telegram_question_messages
+SELECT question_id FROM workspace_telegram_decision_messages
 WHERE bot_id = $1 AND chat_id = $2 AND message_id = $3`
 
 const postedQuery = `
 SELECT bot_id, chat_id, message_id, question_id, settled_at IS NOT NULL
-FROM workspace_telegram_question_messages
+FROM workspace_telegram_decision_messages
 WHERE question_id = $1
 ORDER BY sent_at, chat_id`
 
 const markSettledQuery = `
-UPDATE workspace_telegram_question_messages
+UPDATE workspace_telegram_decision_messages
 SET settled_at = $4
 WHERE bot_id = $1 AND chat_id = $2 AND message_id = $3`
 

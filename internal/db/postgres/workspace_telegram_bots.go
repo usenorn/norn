@@ -133,9 +133,9 @@ var WorkspaceTelegramBotRels = struct {
 	ConnectedByAccount                   string
 	Workspace                            string
 	BotWorkspaceTelegramAccounts         string
+	BotWorkspaceTelegramDecisionMessages string
 	BotWorkspaceTelegramGroups           string
 	BotWorkspaceTelegramLinkCodes        string
-	BotWorkspaceTelegramQuestionMessages string
 	BotWorkspaceTelegramTurns            string
 	BotWorkspaceTelegramUpdates          string
 }{
@@ -143,9 +143,9 @@ var WorkspaceTelegramBotRels = struct {
 	ConnectedByAccount:                   "ConnectedByAccount",
 	Workspace:                            "Workspace",
 	BotWorkspaceTelegramAccounts:         "BotWorkspaceTelegramAccounts",
+	BotWorkspaceTelegramDecisionMessages: "BotWorkspaceTelegramDecisionMessages",
 	BotWorkspaceTelegramGroups:           "BotWorkspaceTelegramGroups",
 	BotWorkspaceTelegramLinkCodes:        "BotWorkspaceTelegramLinkCodes",
-	BotWorkspaceTelegramQuestionMessages: "BotWorkspaceTelegramQuestionMessages",
 	BotWorkspaceTelegramTurns:            "BotWorkspaceTelegramTurns",
 	BotWorkspaceTelegramUpdates:          "BotWorkspaceTelegramUpdates",
 }
@@ -156,9 +156,9 @@ type workspaceTelegramBotR struct {
 	ConnectedByAccount                   *Account                              `boil:"ConnectedByAccount" json:"ConnectedByAccount" toml:"ConnectedByAccount" yaml:"ConnectedByAccount"`
 	Workspace                            *Workspace                            `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 	BotWorkspaceTelegramAccounts         WorkspaceTelegramAccountSlice         `boil:"BotWorkspaceTelegramAccounts" json:"BotWorkspaceTelegramAccounts" toml:"BotWorkspaceTelegramAccounts" yaml:"BotWorkspaceTelegramAccounts"`
+	BotWorkspaceTelegramDecisionMessages WorkspaceTelegramDecisionMessageSlice `boil:"BotWorkspaceTelegramDecisionMessages" json:"BotWorkspaceTelegramDecisionMessages" toml:"BotWorkspaceTelegramDecisionMessages" yaml:"BotWorkspaceTelegramDecisionMessages"`
 	BotWorkspaceTelegramGroups           WorkspaceTelegramGroupSlice           `boil:"BotWorkspaceTelegramGroups" json:"BotWorkspaceTelegramGroups" toml:"BotWorkspaceTelegramGroups" yaml:"BotWorkspaceTelegramGroups"`
 	BotWorkspaceTelegramLinkCodes        WorkspaceTelegramLinkCodeSlice        `boil:"BotWorkspaceTelegramLinkCodes" json:"BotWorkspaceTelegramLinkCodes" toml:"BotWorkspaceTelegramLinkCodes" yaml:"BotWorkspaceTelegramLinkCodes"`
-	BotWorkspaceTelegramQuestionMessages WorkspaceTelegramQuestionMessageSlice `boil:"BotWorkspaceTelegramQuestionMessages" json:"BotWorkspaceTelegramQuestionMessages" toml:"BotWorkspaceTelegramQuestionMessages" yaml:"BotWorkspaceTelegramQuestionMessages"`
 	BotWorkspaceTelegramTurns            WorkspaceTelegramTurnSlice            `boil:"BotWorkspaceTelegramTurns" json:"BotWorkspaceTelegramTurns" toml:"BotWorkspaceTelegramTurns" yaml:"BotWorkspaceTelegramTurns"`
 	BotWorkspaceTelegramUpdates          WorkspaceTelegramUpdateSlice          `boil:"BotWorkspaceTelegramUpdates" json:"BotWorkspaceTelegramUpdates" toml:"BotWorkspaceTelegramUpdates" yaml:"BotWorkspaceTelegramUpdates"`
 }
@@ -232,6 +232,22 @@ func (r *workspaceTelegramBotR) GetBotWorkspaceTelegramAccounts() WorkspaceTeleg
 	return r.BotWorkspaceTelegramAccounts
 }
 
+func (o *WorkspaceTelegramBot) GetBotWorkspaceTelegramDecisionMessages() WorkspaceTelegramDecisionMessageSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetBotWorkspaceTelegramDecisionMessages()
+}
+
+func (r *workspaceTelegramBotR) GetBotWorkspaceTelegramDecisionMessages() WorkspaceTelegramDecisionMessageSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.BotWorkspaceTelegramDecisionMessages
+}
+
 func (o *WorkspaceTelegramBot) GetBotWorkspaceTelegramGroups() WorkspaceTelegramGroupSlice {
 	if o == nil {
 		return nil
@@ -262,22 +278,6 @@ func (r *workspaceTelegramBotR) GetBotWorkspaceTelegramLinkCodes() WorkspaceTele
 	}
 
 	return r.BotWorkspaceTelegramLinkCodes
-}
-
-func (o *WorkspaceTelegramBot) GetBotWorkspaceTelegramQuestionMessages() WorkspaceTelegramQuestionMessageSlice {
-	if o == nil {
-		return nil
-	}
-
-	return o.R.GetBotWorkspaceTelegramQuestionMessages()
-}
-
-func (r *workspaceTelegramBotR) GetBotWorkspaceTelegramQuestionMessages() WorkspaceTelegramQuestionMessageSlice {
-	if r == nil {
-		return nil
-	}
-
-	return r.BotWorkspaceTelegramQuestionMessages
 }
 
 func (o *WorkspaceTelegramBot) GetBotWorkspaceTelegramTurns() WorkspaceTelegramTurnSlice {
@@ -675,6 +675,20 @@ func (o *WorkspaceTelegramBot) BotWorkspaceTelegramAccounts(mods ...qm.QueryMod)
 	return WorkspaceTelegramAccounts(queryMods...)
 }
 
+// BotWorkspaceTelegramDecisionMessages retrieves all the workspace_telegram_decision_message's WorkspaceTelegramDecisionMessages with an executor via bot_id column.
+func (o *WorkspaceTelegramBot) BotWorkspaceTelegramDecisionMessages(mods ...qm.QueryMod) workspaceTelegramDecisionMessageQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_telegram_decision_messages\".\"bot_id\"=?", o.ID),
+	)
+
+	return WorkspaceTelegramDecisionMessages(queryMods...)
+}
+
 // BotWorkspaceTelegramGroups retrieves all the workspace_telegram_group's WorkspaceTelegramGroups with an executor via bot_id column.
 func (o *WorkspaceTelegramBot) BotWorkspaceTelegramGroups(mods ...qm.QueryMod) workspaceTelegramGroupQuery {
 	var queryMods []qm.QueryMod
@@ -701,20 +715,6 @@ func (o *WorkspaceTelegramBot) BotWorkspaceTelegramLinkCodes(mods ...qm.QueryMod
 	)
 
 	return WorkspaceTelegramLinkCodes(queryMods...)
-}
-
-// BotWorkspaceTelegramQuestionMessages retrieves all the workspace_telegram_question_message's WorkspaceTelegramQuestionMessages with an executor via bot_id column.
-func (o *WorkspaceTelegramBot) BotWorkspaceTelegramQuestionMessages(mods ...qm.QueryMod) workspaceTelegramQuestionMessageQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"workspace_telegram_question_messages\".\"bot_id\"=?", o.ID),
-	)
-
-	return WorkspaceTelegramQuestionMessages(queryMods...)
 }
 
 // BotWorkspaceTelegramTurns retrieves all the workspace_telegram_turn's WorkspaceTelegramTurns with an executor via bot_id column.
@@ -1222,6 +1222,119 @@ func (workspaceTelegramBotL) LoadBotWorkspaceTelegramAccounts(ctx context.Contex
 	return nil
 }
 
+// LoadBotWorkspaceTelegramDecisionMessages allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceTelegramBotL) LoadBotWorkspaceTelegramDecisionMessages(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceTelegramBot any, mods queries.Applicator) error {
+	var slice []*WorkspaceTelegramBot
+	var object *WorkspaceTelegramBot
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceTelegramBot.(*WorkspaceTelegramBot)
+		if !ok {
+			object = new(WorkspaceTelegramBot)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceTelegramBot)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceTelegramBot))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceTelegramBot.(*[]*WorkspaceTelegramBot)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceTelegramBot)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceTelegramBot))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceTelegramBotR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceTelegramBotR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_telegram_decision_messages`),
+		qm.WhereIn(`workspace_telegram_decision_messages.bot_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_telegram_decision_messages")
+	}
+
+	var resultSlice []*WorkspaceTelegramDecisionMessage
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_decision_messages")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_decision_messages")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_decision_messages")
+	}
+
+	if len(workspaceTelegramDecisionMessageAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.BotWorkspaceTelegramDecisionMessages = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceTelegramDecisionMessageR{}
+			}
+			foreign.R.Bot = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.BotID {
+				local.R.BotWorkspaceTelegramDecisionMessages = append(local.R.BotWorkspaceTelegramDecisionMessages, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceTelegramDecisionMessageR{}
+				}
+				foreign.R.Bot = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadBotWorkspaceTelegramGroups allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceTelegramBotL) LoadBotWorkspaceTelegramGroups(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceTelegramBot any, mods queries.Applicator) error {
@@ -1438,119 +1551,6 @@ func (workspaceTelegramBotL) LoadBotWorkspaceTelegramLinkCodes(ctx context.Conte
 				local.R.BotWorkspaceTelegramLinkCodes = append(local.R.BotWorkspaceTelegramLinkCodes, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceTelegramLinkCodeR{}
-				}
-				foreign.R.Bot = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadBotWorkspaceTelegramQuestionMessages allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (workspaceTelegramBotL) LoadBotWorkspaceTelegramQuestionMessages(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceTelegramBot any, mods queries.Applicator) error {
-	var slice []*WorkspaceTelegramBot
-	var object *WorkspaceTelegramBot
-
-	if singular {
-		var ok bool
-		object, ok = maybeWorkspaceTelegramBot.(*WorkspaceTelegramBot)
-		if !ok {
-			object = new(WorkspaceTelegramBot)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceTelegramBot)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceTelegramBot))
-			}
-		}
-	} else {
-		s, ok := maybeWorkspaceTelegramBot.(*[]*WorkspaceTelegramBot)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceTelegramBot)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceTelegramBot))
-			}
-		}
-	}
-
-	args := make(map[any]struct{})
-	if singular {
-		if object.R == nil {
-			object.R = &workspaceTelegramBotR{}
-		}
-		args[object.ID] = struct{}{}
-	} else {
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &workspaceTelegramBotR{}
-			}
-			args[obj.ID] = struct{}{}
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	argsSlice := make([]any, len(args))
-	i := 0
-	for arg := range args {
-		argsSlice[i] = arg
-		i++
-	}
-
-	query := NewQuery(
-		qm.From(`workspace_telegram_question_messages`),
-		qm.WhereIn(`workspace_telegram_question_messages.bot_id in ?`, argsSlice...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load workspace_telegram_question_messages")
-	}
-
-	var resultSlice []*WorkspaceTelegramQuestionMessage
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_question_messages")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_question_messages")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_question_messages")
-	}
-
-	if len(workspaceTelegramQuestionMessageAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.BotWorkspaceTelegramQuestionMessages = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &workspaceTelegramQuestionMessageR{}
-			}
-			foreign.R.Bot = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.BotID {
-				local.R.BotWorkspaceTelegramQuestionMessages = append(local.R.BotWorkspaceTelegramQuestionMessages, foreign)
-				if foreign.R == nil {
-					foreign.R = &workspaceTelegramQuestionMessageR{}
 				}
 				foreign.R.Bot = local
 				break
@@ -2014,6 +2014,59 @@ func (o *WorkspaceTelegramBot) AddBotWorkspaceTelegramAccounts(ctx context.Conte
 	return nil
 }
 
+// AddBotWorkspaceTelegramDecisionMessages adds the given related objects to the existing relationships
+// of the workspace_telegram_bot, optionally inserting them as new records.
+// Appends related to o.R.BotWorkspaceTelegramDecisionMessages.
+// Sets related.R.Bot appropriately.
+func (o *WorkspaceTelegramBot) AddBotWorkspaceTelegramDecisionMessages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramDecisionMessage) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.BotID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_telegram_decision_messages\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"bot_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramDecisionMessagePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.BotID, rel.ChatID, rel.MessageID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.BotID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceTelegramBotR{
+			BotWorkspaceTelegramDecisionMessages: related,
+		}
+	} else {
+		o.R.BotWorkspaceTelegramDecisionMessages = append(o.R.BotWorkspaceTelegramDecisionMessages, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceTelegramDecisionMessageR{
+				Bot: o,
+			}
+		} else {
+			rel.R.Bot = o
+		}
+	}
+	return nil
+}
+
 // AddBotWorkspaceTelegramGroups adds the given related objects to the existing relationships
 // of the workspace_telegram_bot, optionally inserting them as new records.
 // Appends related to o.R.BotWorkspaceTelegramGroups.
@@ -2111,59 +2164,6 @@ func (o *WorkspaceTelegramBot) AddBotWorkspaceTelegramLinkCodes(ctx context.Cont
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceTelegramLinkCodeR{
-				Bot: o,
-			}
-		} else {
-			rel.R.Bot = o
-		}
-	}
-	return nil
-}
-
-// AddBotWorkspaceTelegramQuestionMessages adds the given related objects to the existing relationships
-// of the workspace_telegram_bot, optionally inserting them as new records.
-// Appends related to o.R.BotWorkspaceTelegramQuestionMessages.
-// Sets related.R.Bot appropriately.
-func (o *WorkspaceTelegramBot) AddBotWorkspaceTelegramQuestionMessages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramQuestionMessage) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.BotID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"workspace_telegram_question_messages\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"bot_id"}),
-				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramQuestionMessagePrimaryKeyColumns),
-			)
-			values := []any{o.ID, rel.BotID, rel.ChatID, rel.MessageID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.BotID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &workspaceTelegramBotR{
-			BotWorkspaceTelegramQuestionMessages: related,
-		}
-	} else {
-		o.R.BotWorkspaceTelegramQuestionMessages = append(o.R.BotWorkspaceTelegramQuestionMessages, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &workspaceTelegramQuestionMessageR{
 				Bot: o,
 			}
 		} else {

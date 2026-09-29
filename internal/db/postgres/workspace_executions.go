@@ -186,68 +186,71 @@ var WorkspaceExecutionWhere = struct {
 
 // WorkspaceExecutionRels is where relationship names are stored.
 var WorkspaceExecutionRels = struct {
-	Agent                                     string
-	Codebase                                  string
-	Delegation                                string
-	DescriptionRevision                       string
-	Runner                                    string
-	Workspace                                 string
-	ExecutionWorkspaceExecutionResult         string
-	ExecutionWorkspaceExecutionArtifacts      string
-	ExecutionWorkspaceExecutionChanges        string
-	ExecutionWorkspaceExecutionChunks         string
-	ExecutionWorkspaceExecutionEvents         string
-	ExecutionWorkspaceExecutionPlans          string
-	ExecutionWorkspaceExecutionPreviewLinks   string
-	ExecutionWorkspaceExecutionPreviews       string
-	ExecutionWorkspaceExecutionReviewComments string
-	ExecutionWorkspaceExecutionReviews        string
-	ExecutionWorkspaceExecutionServices       string
-	ExecutionWorkspaceExecutionValidations    string
-	ExecutionWorkspaceIssueQuestions          string
+	Agent                                      string
+	Codebase                                   string
+	Delegation                                 string
+	DescriptionRevision                        string
+	Runner                                     string
+	Workspace                                  string
+	ExecutionWorkspaceExecutionResult          string
+	ExecutionWorkspaceExecutionArtifacts       string
+	ExecutionWorkspaceExecutionChanges         string
+	ExecutionWorkspaceExecutionChunks          string
+	ExecutionWorkspaceExecutionEvents          string
+	ExecutionWorkspaceExecutionPlans           string
+	ExecutionWorkspaceExecutionPreviewLinks    string
+	ExecutionWorkspaceExecutionPreviews        string
+	ExecutionWorkspaceExecutionReviewComments  string
+	ExecutionWorkspaceExecutionReviews         string
+	ExecutionWorkspaceExecutionServices        string
+	ExecutionWorkspaceExecutionValidations     string
+	ExecutionWorkspaceIssueQuestions           string
+	ExecutionWorkspaceTelegramDecisionMessages string
 }{
-	Agent:                                     "Agent",
-	Codebase:                                  "Codebase",
-	Delegation:                                "Delegation",
-	DescriptionRevision:                       "DescriptionRevision",
-	Runner:                                    "Runner",
-	Workspace:                                 "Workspace",
-	ExecutionWorkspaceExecutionResult:         "ExecutionWorkspaceExecutionResult",
-	ExecutionWorkspaceExecutionArtifacts:      "ExecutionWorkspaceExecutionArtifacts",
-	ExecutionWorkspaceExecutionChanges:        "ExecutionWorkspaceExecutionChanges",
-	ExecutionWorkspaceExecutionChunks:         "ExecutionWorkspaceExecutionChunks",
-	ExecutionWorkspaceExecutionEvents:         "ExecutionWorkspaceExecutionEvents",
-	ExecutionWorkspaceExecutionPlans:          "ExecutionWorkspaceExecutionPlans",
-	ExecutionWorkspaceExecutionPreviewLinks:   "ExecutionWorkspaceExecutionPreviewLinks",
-	ExecutionWorkspaceExecutionPreviews:       "ExecutionWorkspaceExecutionPreviews",
-	ExecutionWorkspaceExecutionReviewComments: "ExecutionWorkspaceExecutionReviewComments",
-	ExecutionWorkspaceExecutionReviews:        "ExecutionWorkspaceExecutionReviews",
-	ExecutionWorkspaceExecutionServices:       "ExecutionWorkspaceExecutionServices",
-	ExecutionWorkspaceExecutionValidations:    "ExecutionWorkspaceExecutionValidations",
-	ExecutionWorkspaceIssueQuestions:          "ExecutionWorkspaceIssueQuestions",
+	Agent:                                      "Agent",
+	Codebase:                                   "Codebase",
+	Delegation:                                 "Delegation",
+	DescriptionRevision:                        "DescriptionRevision",
+	Runner:                                     "Runner",
+	Workspace:                                  "Workspace",
+	ExecutionWorkspaceExecutionResult:          "ExecutionWorkspaceExecutionResult",
+	ExecutionWorkspaceExecutionArtifacts:       "ExecutionWorkspaceExecutionArtifacts",
+	ExecutionWorkspaceExecutionChanges:         "ExecutionWorkspaceExecutionChanges",
+	ExecutionWorkspaceExecutionChunks:          "ExecutionWorkspaceExecutionChunks",
+	ExecutionWorkspaceExecutionEvents:          "ExecutionWorkspaceExecutionEvents",
+	ExecutionWorkspaceExecutionPlans:           "ExecutionWorkspaceExecutionPlans",
+	ExecutionWorkspaceExecutionPreviewLinks:    "ExecutionWorkspaceExecutionPreviewLinks",
+	ExecutionWorkspaceExecutionPreviews:        "ExecutionWorkspaceExecutionPreviews",
+	ExecutionWorkspaceExecutionReviewComments:  "ExecutionWorkspaceExecutionReviewComments",
+	ExecutionWorkspaceExecutionReviews:         "ExecutionWorkspaceExecutionReviews",
+	ExecutionWorkspaceExecutionServices:        "ExecutionWorkspaceExecutionServices",
+	ExecutionWorkspaceExecutionValidations:     "ExecutionWorkspaceExecutionValidations",
+	ExecutionWorkspaceIssueQuestions:           "ExecutionWorkspaceIssueQuestions",
+	ExecutionWorkspaceTelegramDecisionMessages: "ExecutionWorkspaceTelegramDecisionMessages",
 }
 
 // workspaceExecutionR is where relationships are stored.
 type workspaceExecutionR struct {
-	Agent                                     *WorkspaceAgent                      `boil:"Agent" json:"Agent" toml:"Agent" yaml:"Agent"`
-	Codebase                                  *WorkspaceCodebasis                  `boil:"Codebase" json:"Codebase" toml:"Codebase" yaml:"Codebase"`
-	Delegation                                *WorkspaceIssueDelegation            `boil:"Delegation" json:"Delegation" toml:"Delegation" yaml:"Delegation"`
-	DescriptionRevision                       *WorkspaceIssueDescriptionRevision   `boil:"DescriptionRevision" json:"DescriptionRevision" toml:"DescriptionRevision" yaml:"DescriptionRevision"`
-	Runner                                    *WorkspaceRunner                     `boil:"Runner" json:"Runner" toml:"Runner" yaml:"Runner"`
-	Workspace                                 *Workspace                           `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	ExecutionWorkspaceExecutionResult         *WorkspaceExecutionResult            `boil:"ExecutionWorkspaceExecutionResult" json:"ExecutionWorkspaceExecutionResult" toml:"ExecutionWorkspaceExecutionResult" yaml:"ExecutionWorkspaceExecutionResult"`
-	ExecutionWorkspaceExecutionArtifacts      WorkspaceExecutionArtifactSlice      `boil:"ExecutionWorkspaceExecutionArtifacts" json:"ExecutionWorkspaceExecutionArtifacts" toml:"ExecutionWorkspaceExecutionArtifacts" yaml:"ExecutionWorkspaceExecutionArtifacts"`
-	ExecutionWorkspaceExecutionChanges        WorkspaceExecutionChangeSlice        `boil:"ExecutionWorkspaceExecutionChanges" json:"ExecutionWorkspaceExecutionChanges" toml:"ExecutionWorkspaceExecutionChanges" yaml:"ExecutionWorkspaceExecutionChanges"`
-	ExecutionWorkspaceExecutionChunks         WorkspaceExecutionChunkSlice         `boil:"ExecutionWorkspaceExecutionChunks" json:"ExecutionWorkspaceExecutionChunks" toml:"ExecutionWorkspaceExecutionChunks" yaml:"ExecutionWorkspaceExecutionChunks"`
-	ExecutionWorkspaceExecutionEvents         WorkspaceExecutionEventSlice         `boil:"ExecutionWorkspaceExecutionEvents" json:"ExecutionWorkspaceExecutionEvents" toml:"ExecutionWorkspaceExecutionEvents" yaml:"ExecutionWorkspaceExecutionEvents"`
-	ExecutionWorkspaceExecutionPlans          WorkspaceExecutionPlanSlice          `boil:"ExecutionWorkspaceExecutionPlans" json:"ExecutionWorkspaceExecutionPlans" toml:"ExecutionWorkspaceExecutionPlans" yaml:"ExecutionWorkspaceExecutionPlans"`
-	ExecutionWorkspaceExecutionPreviewLinks   WorkspaceExecutionPreviewLinkSlice   `boil:"ExecutionWorkspaceExecutionPreviewLinks" json:"ExecutionWorkspaceExecutionPreviewLinks" toml:"ExecutionWorkspaceExecutionPreviewLinks" yaml:"ExecutionWorkspaceExecutionPreviewLinks"`
-	ExecutionWorkspaceExecutionPreviews       WorkspaceExecutionPreviewSlice       `boil:"ExecutionWorkspaceExecutionPreviews" json:"ExecutionWorkspaceExecutionPreviews" toml:"ExecutionWorkspaceExecutionPreviews" yaml:"ExecutionWorkspaceExecutionPreviews"`
-	ExecutionWorkspaceExecutionReviewComments WorkspaceExecutionReviewCommentSlice `boil:"ExecutionWorkspaceExecutionReviewComments" json:"ExecutionWorkspaceExecutionReviewComments" toml:"ExecutionWorkspaceExecutionReviewComments" yaml:"ExecutionWorkspaceExecutionReviewComments"`
-	ExecutionWorkspaceExecutionReviews        WorkspaceExecutionReviewSlice        `boil:"ExecutionWorkspaceExecutionReviews" json:"ExecutionWorkspaceExecutionReviews" toml:"ExecutionWorkspaceExecutionReviews" yaml:"ExecutionWorkspaceExecutionReviews"`
-	ExecutionWorkspaceExecutionServices       WorkspaceExecutionServiceSlice       `boil:"ExecutionWorkspaceExecutionServices" json:"ExecutionWorkspaceExecutionServices" toml:"ExecutionWorkspaceExecutionServices" yaml:"ExecutionWorkspaceExecutionServices"`
-	ExecutionWorkspaceExecutionValidations    WorkspaceExecutionValidationSlice    `boil:"ExecutionWorkspaceExecutionValidations" json:"ExecutionWorkspaceExecutionValidations" toml:"ExecutionWorkspaceExecutionValidations" yaml:"ExecutionWorkspaceExecutionValidations"`
-	ExecutionWorkspaceIssueQuestions          WorkspaceIssueQuestionSlice          `boil:"ExecutionWorkspaceIssueQuestions" json:"ExecutionWorkspaceIssueQuestions" toml:"ExecutionWorkspaceIssueQuestions" yaml:"ExecutionWorkspaceIssueQuestions"`
+	Agent                                      *WorkspaceAgent                       `boil:"Agent" json:"Agent" toml:"Agent" yaml:"Agent"`
+	Codebase                                   *WorkspaceCodebasis                   `boil:"Codebase" json:"Codebase" toml:"Codebase" yaml:"Codebase"`
+	Delegation                                 *WorkspaceIssueDelegation             `boil:"Delegation" json:"Delegation" toml:"Delegation" yaml:"Delegation"`
+	DescriptionRevision                        *WorkspaceIssueDescriptionRevision    `boil:"DescriptionRevision" json:"DescriptionRevision" toml:"DescriptionRevision" yaml:"DescriptionRevision"`
+	Runner                                     *WorkspaceRunner                      `boil:"Runner" json:"Runner" toml:"Runner" yaml:"Runner"`
+	Workspace                                  *Workspace                            `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	ExecutionWorkspaceExecutionResult          *WorkspaceExecutionResult             `boil:"ExecutionWorkspaceExecutionResult" json:"ExecutionWorkspaceExecutionResult" toml:"ExecutionWorkspaceExecutionResult" yaml:"ExecutionWorkspaceExecutionResult"`
+	ExecutionWorkspaceExecutionArtifacts       WorkspaceExecutionArtifactSlice       `boil:"ExecutionWorkspaceExecutionArtifacts" json:"ExecutionWorkspaceExecutionArtifacts" toml:"ExecutionWorkspaceExecutionArtifacts" yaml:"ExecutionWorkspaceExecutionArtifacts"`
+	ExecutionWorkspaceExecutionChanges         WorkspaceExecutionChangeSlice         `boil:"ExecutionWorkspaceExecutionChanges" json:"ExecutionWorkspaceExecutionChanges" toml:"ExecutionWorkspaceExecutionChanges" yaml:"ExecutionWorkspaceExecutionChanges"`
+	ExecutionWorkspaceExecutionChunks          WorkspaceExecutionChunkSlice          `boil:"ExecutionWorkspaceExecutionChunks" json:"ExecutionWorkspaceExecutionChunks" toml:"ExecutionWorkspaceExecutionChunks" yaml:"ExecutionWorkspaceExecutionChunks"`
+	ExecutionWorkspaceExecutionEvents          WorkspaceExecutionEventSlice          `boil:"ExecutionWorkspaceExecutionEvents" json:"ExecutionWorkspaceExecutionEvents" toml:"ExecutionWorkspaceExecutionEvents" yaml:"ExecutionWorkspaceExecutionEvents"`
+	ExecutionWorkspaceExecutionPlans           WorkspaceExecutionPlanSlice           `boil:"ExecutionWorkspaceExecutionPlans" json:"ExecutionWorkspaceExecutionPlans" toml:"ExecutionWorkspaceExecutionPlans" yaml:"ExecutionWorkspaceExecutionPlans"`
+	ExecutionWorkspaceExecutionPreviewLinks    WorkspaceExecutionPreviewLinkSlice    `boil:"ExecutionWorkspaceExecutionPreviewLinks" json:"ExecutionWorkspaceExecutionPreviewLinks" toml:"ExecutionWorkspaceExecutionPreviewLinks" yaml:"ExecutionWorkspaceExecutionPreviewLinks"`
+	ExecutionWorkspaceExecutionPreviews        WorkspaceExecutionPreviewSlice        `boil:"ExecutionWorkspaceExecutionPreviews" json:"ExecutionWorkspaceExecutionPreviews" toml:"ExecutionWorkspaceExecutionPreviews" yaml:"ExecutionWorkspaceExecutionPreviews"`
+	ExecutionWorkspaceExecutionReviewComments  WorkspaceExecutionReviewCommentSlice  `boil:"ExecutionWorkspaceExecutionReviewComments" json:"ExecutionWorkspaceExecutionReviewComments" toml:"ExecutionWorkspaceExecutionReviewComments" yaml:"ExecutionWorkspaceExecutionReviewComments"`
+	ExecutionWorkspaceExecutionReviews         WorkspaceExecutionReviewSlice         `boil:"ExecutionWorkspaceExecutionReviews" json:"ExecutionWorkspaceExecutionReviews" toml:"ExecutionWorkspaceExecutionReviews" yaml:"ExecutionWorkspaceExecutionReviews"`
+	ExecutionWorkspaceExecutionServices        WorkspaceExecutionServiceSlice        `boil:"ExecutionWorkspaceExecutionServices" json:"ExecutionWorkspaceExecutionServices" toml:"ExecutionWorkspaceExecutionServices" yaml:"ExecutionWorkspaceExecutionServices"`
+	ExecutionWorkspaceExecutionValidations     WorkspaceExecutionValidationSlice     `boil:"ExecutionWorkspaceExecutionValidations" json:"ExecutionWorkspaceExecutionValidations" toml:"ExecutionWorkspaceExecutionValidations" yaml:"ExecutionWorkspaceExecutionValidations"`
+	ExecutionWorkspaceIssueQuestions           WorkspaceIssueQuestionSlice           `boil:"ExecutionWorkspaceIssueQuestions" json:"ExecutionWorkspaceIssueQuestions" toml:"ExecutionWorkspaceIssueQuestions" yaml:"ExecutionWorkspaceIssueQuestions"`
+	ExecutionWorkspaceTelegramDecisionMessages WorkspaceTelegramDecisionMessageSlice `boil:"ExecutionWorkspaceTelegramDecisionMessages" json:"ExecutionWorkspaceTelegramDecisionMessages" toml:"ExecutionWorkspaceTelegramDecisionMessages" yaml:"ExecutionWorkspaceTelegramDecisionMessages"`
 }
 
 // NewStruct creates a new relationship struct
@@ -557,6 +560,22 @@ func (r *workspaceExecutionR) GetExecutionWorkspaceIssueQuestions() WorkspaceIss
 	}
 
 	return r.ExecutionWorkspaceIssueQuestions
+}
+
+func (o *WorkspaceExecution) GetExecutionWorkspaceTelegramDecisionMessages() WorkspaceTelegramDecisionMessageSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetExecutionWorkspaceTelegramDecisionMessages()
+}
+
+func (r *workspaceExecutionR) GetExecutionWorkspaceTelegramDecisionMessages() WorkspaceTelegramDecisionMessageSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.ExecutionWorkspaceTelegramDecisionMessages
 }
 
 // workspaceExecutionL is where Load methods for each relationship are stored.
@@ -1118,6 +1137,20 @@ func (o *WorkspaceExecution) ExecutionWorkspaceIssueQuestions(mods ...qm.QueryMo
 	)
 
 	return WorkspaceIssueQuestions(queryMods...)
+}
+
+// ExecutionWorkspaceTelegramDecisionMessages retrieves all the workspace_telegram_decision_message's WorkspaceTelegramDecisionMessages with an executor via execution_id column.
+func (o *WorkspaceExecution) ExecutionWorkspaceTelegramDecisionMessages(mods ...qm.QueryMod) workspaceTelegramDecisionMessageQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_telegram_decision_messages\".\"execution_id\"=?", o.ID),
+	)
+
+	return WorkspaceTelegramDecisionMessages(queryMods...)
 }
 
 // LoadAgent allows an eager lookup of values, cached into the
@@ -3325,6 +3358,119 @@ func (workspaceExecutionL) LoadExecutionWorkspaceIssueQuestions(ctx context.Cont
 	return nil
 }
 
+// LoadExecutionWorkspaceTelegramDecisionMessages allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceExecutionL) LoadExecutionWorkspaceTelegramDecisionMessages(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceExecution any, mods queries.Applicator) error {
+	var slice []*WorkspaceExecution
+	var object *WorkspaceExecution
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceExecution.(*WorkspaceExecution)
+		if !ok {
+			object = new(WorkspaceExecution)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceExecution)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceExecution))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceExecution.(*[]*WorkspaceExecution)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceExecution)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceExecution))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceExecutionR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceExecutionR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_telegram_decision_messages`),
+		qm.WhereIn(`workspace_telegram_decision_messages.execution_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_telegram_decision_messages")
+	}
+
+	var resultSlice []*WorkspaceTelegramDecisionMessage
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_decision_messages")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_decision_messages")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_decision_messages")
+	}
+
+	if len(workspaceTelegramDecisionMessageAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ExecutionWorkspaceTelegramDecisionMessages = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceTelegramDecisionMessageR{}
+			}
+			foreign.R.Execution = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.ExecutionID) {
+				local.R.ExecutionWorkspaceTelegramDecisionMessages = append(local.R.ExecutionWorkspaceTelegramDecisionMessages, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceTelegramDecisionMessageR{}
+				}
+				foreign.R.Execution = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAgent of the workspaceExecution to the related item.
 // Sets o.R.Agent to related.
 // Adds o to related.R.AgentWorkspaceExecutions.
@@ -4459,6 +4605,133 @@ func (o *WorkspaceExecution) RemoveExecutionWorkspaceIssueQuestions(ctx context.
 				o.R.ExecutionWorkspaceIssueQuestions[i] = o.R.ExecutionWorkspaceIssueQuestions[ln-1]
 			}
 			o.R.ExecutionWorkspaceIssueQuestions = o.R.ExecutionWorkspaceIssueQuestions[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddExecutionWorkspaceTelegramDecisionMessages adds the given related objects to the existing relationships
+// of the workspace_execution, optionally inserting them as new records.
+// Appends related to o.R.ExecutionWorkspaceTelegramDecisionMessages.
+// Sets related.R.Execution appropriately.
+func (o *WorkspaceExecution) AddExecutionWorkspaceTelegramDecisionMessages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramDecisionMessage) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.ExecutionID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_telegram_decision_messages\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"execution_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramDecisionMessagePrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.BotID, rel.ChatID, rel.MessageID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.ExecutionID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceExecutionR{
+			ExecutionWorkspaceTelegramDecisionMessages: related,
+		}
+	} else {
+		o.R.ExecutionWorkspaceTelegramDecisionMessages = append(o.R.ExecutionWorkspaceTelegramDecisionMessages, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceTelegramDecisionMessageR{
+				Execution: o,
+			}
+		} else {
+			rel.R.Execution = o
+		}
+	}
+	return nil
+}
+
+// SetExecutionWorkspaceTelegramDecisionMessages removes all previously related items of the
+// workspace_execution replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Execution's ExecutionWorkspaceTelegramDecisionMessages accordingly.
+// Replaces o.R.ExecutionWorkspaceTelegramDecisionMessages with related.
+// Sets related.R.Execution's ExecutionWorkspaceTelegramDecisionMessages accordingly.
+func (o *WorkspaceExecution) SetExecutionWorkspaceTelegramDecisionMessages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramDecisionMessage) error {
+	query := "update \"workspace_telegram_decision_messages\" set \"execution_id\" = null where \"execution_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.ExecutionWorkspaceTelegramDecisionMessages {
+			queries.SetScanner(&rel.ExecutionID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Execution = nil
+		}
+		o.R.ExecutionWorkspaceTelegramDecisionMessages = nil
+	}
+
+	return o.AddExecutionWorkspaceTelegramDecisionMessages(ctx, exec, insert, related...)
+}
+
+// RemoveExecutionWorkspaceTelegramDecisionMessages relationships from objects passed in.
+// Removes related items from R.ExecutionWorkspaceTelegramDecisionMessages (uses pointer comparison, removal does not keep order)
+// Sets related.R.Execution.
+func (o *WorkspaceExecution) RemoveExecutionWorkspaceTelegramDecisionMessages(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceTelegramDecisionMessage) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ExecutionID, nil)
+		if rel.R != nil {
+			rel.R.Execution = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("execution_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.ExecutionWorkspaceTelegramDecisionMessages {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.ExecutionWorkspaceTelegramDecisionMessages)
+			if ln > 1 && i < ln-1 {
+				o.R.ExecutionWorkspaceTelegramDecisionMessages[i] = o.R.ExecutionWorkspaceTelegramDecisionMessages[ln-1]
+			}
+			o.R.ExecutionWorkspaceTelegramDecisionMessages = o.R.ExecutionWorkspaceTelegramDecisionMessages[:ln-1]
 			break
 		}
 	}
