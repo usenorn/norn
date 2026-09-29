@@ -133,6 +133,7 @@ type Question struct {
 type Answer struct {
 	QuestionID string    `json:"question_id"`
 	Ref        string    `json:"ref"`
+	Question   string    `json:"question,omitempty"`
 	Answer     string    `json:"answer"`
 	AnsweredBy string    `json:"answered_by"`
 	AnsweredAt time.Time `json:"ts"`

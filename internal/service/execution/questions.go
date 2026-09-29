@@ -140,6 +140,7 @@ func answerOf(question entity.IssueQuestion) channelv1.Answer {
 	answer := channelv1.Answer{
 		QuestionID: question.ID.String(),
 		Ref:        question.Ref,
+		Question:   question.Question,
 		Answer:     question.Answer,
 		AnsweredBy: question.AnsweredByName,
 	}
