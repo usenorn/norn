@@ -36,3 +36,13 @@ export function waitingOnLine(right: DecisionRight): string {
 		? `Waiting on ${right.decider}. Only they or a workspace admin can decide this.`
 		: "Only a workspace admin can decide this.";
 }
+
+const waitingSubjects = { plan: "The plan is", changes: "The changes are" } as const;
+
+export function waitingTitle(what: keyof typeof waitingSubjects, right: DecisionRight): string {
+	const subject = waitingSubjects[what];
+
+	if (right.canDecide) return `${subject} waiting on you`;
+
+	return `${subject} waiting on ${right.decider ?? "an admin"}`;
+}

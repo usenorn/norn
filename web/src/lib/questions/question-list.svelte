@@ -58,7 +58,7 @@
 								? 'text-amber-700 dark:text-amber-400'
 								: 'text-muted-foreground'}"
 						>
-							{statusLine(question)}
+							{statusLine(question, canAnswer)}
 						</span>
 					</div>
 

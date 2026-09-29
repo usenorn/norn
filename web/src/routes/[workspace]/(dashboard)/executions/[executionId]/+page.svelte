@@ -7,7 +7,7 @@
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import { waitingOnLine, type DecisionRight } from "$lib/executions/reviews";
+	import { waitingOnLine, waitingTitle, type DecisionRight } from "$lib/executions/reviews";
 	import QuestionList from "$lib/questions/question-list.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import AttentionPanel from "$lib/components/norn/attention-panel.svelte";
@@ -447,7 +447,7 @@
 						/>
 					</AttentionPanel>
 				{:else if execution.state === "awaiting_plan_approval"}
-					<AttentionPanel label="A plan is waiting" title="The plan is waiting on you">
+					<AttentionPanel label="A plan is waiting" title={waitingTitle("plan", right)}>
 						<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
 							Read the plan and approve it, or ask for changes. The coding agent builds nothing until
 							somebody approves it.
@@ -457,7 +457,7 @@
 						</div>
 					</AttentionPanel>
 				{:else if execution.state === "awaiting_review"}
-					<AttentionPanel label="Changes are waiting" title="The changes are waiting on you">
+					<AttentionPanel label="Changes are waiting" title={waitingTitle("changes", right)}>
 						<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
 							Review what the run changed, comment on any line, then approve it or send it back.
 							Nothing is pushed until somebody approves.

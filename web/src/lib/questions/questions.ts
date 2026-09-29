@@ -2,7 +2,7 @@ import type { components } from "$lib/api/dashboard.gen";
 
 export type IssueQuestion = components["schemas"]["IssueQuestion"];
 
-export function statusLine(question: IssueQuestion): string {
+export function statusLine(question: IssueQuestion, yours: boolean): string {
 	switch (question.state) {
 		case "answered":
 			return "Answered";
@@ -17,6 +17,8 @@ export function statusLine(question: IssueQuestion): string {
 	if (question.expired) {
 		return question.blocking ? "Out of time" : "Working on the default";
 	}
+
+	if (!yours) return question.blocking ? "The run is waiting" : "Waiting";
 
 	return question.blocking ? "The run is waiting on you" : "Waiting on you";
 }
