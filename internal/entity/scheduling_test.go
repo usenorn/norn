@@ -107,6 +107,7 @@ func TestCountingSlotsFollowsWhatTheMachineIsActuallyDoing(t *testing.T) {
 func TestOnlyARunWaitingOnAPersonOutlivesItsMachineGoingAway(t *testing.T) {
 	recoverable := map[entity.ExecutionState]bool{
 		entity.ExecutionWaitingForInput: true,
+		entity.ExecutionAwaitingPlan:    true,
 		entity.ExecutionQueuedForResume: true,
 		entity.ExecutionAwaitingReview:  true,
 	}

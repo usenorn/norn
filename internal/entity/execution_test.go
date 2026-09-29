@@ -20,8 +20,12 @@ func permittedExecutionMoves() map[entity.ExecutionState][]entity.ExecutionState
 			entity.ExecutionInterrupted,
 		},
 		entity.ExecutionRunning: {
-			entity.ExecutionFinalizing, entity.ExecutionWaitingForInput, entity.ExecutionFailed,
-			entity.ExecutionCancelled, entity.ExecutionInterrupted,
+			entity.ExecutionFinalizing, entity.ExecutionWaitingForInput, entity.ExecutionAwaitingPlan,
+			entity.ExecutionFailed, entity.ExecutionCancelled, entity.ExecutionInterrupted,
+		},
+		entity.ExecutionAwaitingPlan: {
+			entity.ExecutionQueuedForResume, entity.ExecutionFailed, entity.ExecutionCancelled,
+			entity.ExecutionInterrupted,
 		},
 		entity.ExecutionWaitingForInput: {
 			entity.ExecutionQueuedForResume, entity.ExecutionFailed, entity.ExecutionCancelled,
@@ -100,7 +104,7 @@ func TestAFailedFinalizeGoesBackToRunningSoUncommittedWorkIsNotLost(t *testing.T
 	}
 }
 
-func TestOnlyTheThirteenKnownExecutionStatesAreValid(t *testing.T) {
+func TestOnlyTheFourteenKnownExecutionStatesAreValid(t *testing.T) {
 	for _, state := range entity.ExecutionStates() {
 		if !state.Valid() {
 			t.Errorf("%q is listed as an execution state but does not validate", state)
@@ -130,7 +134,8 @@ func TestARunnerMayNotClaimAStateTheServerOwns(t *testing.T) {
 	}
 
 	for _, state := range []entity.ExecutionState{
-		entity.ExecutionPreparing, entity.ExecutionRunning, entity.ExecutionFinalizing,
+		entity.ExecutionPreparing, entity.ExecutionRunning, entity.ExecutionAwaitingPlan,
+		entity.ExecutionFinalizing,
 	} {
 		if !state.RunnerDriven() {
 			t.Errorf("a runner may not report %q, but it is the only party that knows", state)
@@ -140,7 +145,7 @@ func TestARunnerMayNotClaimAStateTheServerOwns(t *testing.T) {
 
 func TestAParkedExecutionKeepsItsLeaseWithoutOccupyingASlot(t *testing.T) {
 	for _, state := range []entity.ExecutionState{
-		entity.ExecutionWaitingForInput, entity.ExecutionAwaitingReview,
+		entity.ExecutionWaitingForInput, entity.ExecutionAwaitingPlan, entity.ExecutionAwaitingReview,
 	} {
 		if !state.Parked() {
 			t.Errorf("%q is not parked; its slot stays occupied while nobody is working", state)
@@ -232,6 +237,70 @@ func TestOnlyTheThreeStatesThatMoveAnIssueResolveATargetState(t *testing.T) {
 
 		if target.Name != wanted {
 			t.Errorf("a %s run puts its issue in %q, want %q", state, target.Name, wanted)
+		}
+	}
+}
+
+func TestTheStageFollowsTheRunThroughReviewAndPublication(t *testing.T) {
+	cases := map[string]struct {
+		from  entity.ExecutionState
+		stage entity.ExecutionStage
+		to    entity.ExecutionState
+		want  entity.ExecutionStage
+	}{
+		"planning keeps planning while it runs": {
+			entity.ExecutionPreparing, entity.StagePlanning, entity.ExecutionRunning,
+			entity.StagePlanning,
+		},
+		"a plan waiting on a person is still planning": {
+			entity.ExecutionRunning, entity.StagePlanning, entity.ExecutionAwaitingPlan,
+			entity.StagePlanning,
+		},
+		"a revision request resumes planning": {
+			entity.ExecutionAwaitingPlan, entity.StagePlanning, entity.ExecutionQueuedForResume,
+			entity.StagePlanning,
+		},
+		"finished work goes to review": {
+			entity.ExecutionFinalizing, entity.StageImplementation, entity.ExecutionAwaitingReview,
+			entity.StageReview,
+		},
+		"requested changes go back to implementation": {
+			entity.ExecutionAwaitingReview, entity.StageReview, entity.ExecutionQueuedForResume,
+			entity.StageImplementation,
+		},
+		"approved work is published": {
+			entity.ExecutionAwaitingReview, entity.StageReview, entity.ExecutionApproved,
+			entity.StagePublication,
+		},
+		"an answer during implementation stays in implementation": {
+			entity.ExecutionWaitingForInput, entity.StageImplementation,
+			entity.ExecutionQueuedForResume, entity.StageImplementation,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			if got := entity.StageAfter(tc.from, tc.stage, tc.to); got != tc.want {
+				t.Fatalf("%s -> %s in %s lands in %s, want %s", tc.from, tc.to, tc.stage, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestNoStateChangeAloneMovesARunOutOfPlanning(t *testing.T) {
+	for _, from := range entity.ExecutionStates() {
+		for _, to := range entity.ExecutionStates() {
+			if !from.CanTransitionTo(to) {
+				continue
+			}
+
+			if got := entity.StageAfter(from, entity.StagePlanning, to); got == entity.StageImplementation {
+				t.Errorf(
+					"%s -> %s moves a planning run into implementation; only approving the plan "+
+						"may do that",
+					from, to,
+				)
+			}
 		}
 	}
 }

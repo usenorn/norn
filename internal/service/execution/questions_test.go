@@ -95,11 +95,11 @@ func TestAnsweringAParkedRunResumesTheSameSessionWithTheAnswerAttached(t *testin
 		t.Fatalf("the resume said %q, want %q", payload.Reason, channelv1.ResumeAnswer)
 	case payload.Instruction != question.Answer:
 		t.Fatalf("the resume carried %q, want the answer verbatim", payload.Instruction)
-	case payload.QuestionID != question.ID.String():
+	case len(payload.Answers) != 1 || payload.Answers[0].QuestionID != question.ID.String():
 		t.Fatalf(
-			"the resume named question %q; without the id the agent cannot tell which of its "+
+			"the resume carried answers %+v; without the id the agent cannot tell which of its "+
 				"questions this answers",
-			payload.QuestionID,
+			payload.Answers,
 		)
 	}
 

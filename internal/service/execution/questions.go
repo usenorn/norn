@@ -62,7 +62,7 @@ func (s *executionsService) Answered(ctx context.Context, question entity.IssueQ
 	case entity.ExecutionRunning:
 		return s.tell(ctx, execution, entity.ChannelQuestionAnswered, answer)
 	case entity.ExecutionWaitingForInput:
-		return s.wake(ctx, execution, question)
+		return s.wake(ctx, execution, question, answer)
 	default:
 		return nil
 	}
@@ -80,6 +80,7 @@ func (s *executionsService) wake(
 	ctx context.Context,
 	execution entity.Execution,
 	question entity.IssueQuestion,
+	answer channelv1.Answer,
 ) error {
 	resumed, err := s.advance(ctx, execution, move{
 		to:     entity.ExecutionQueuedForResume,
@@ -92,9 +93,9 @@ func (s *executionsService) wake(
 
 	if err := s.tell(ctx, resumed, entity.ChannelExecutionResume, channelv1.Instruction{
 		Reason:      channelv1.ResumeAnswer,
+		Stage:       resumed.Stage,
 		Instruction: question.Answer,
-		QuestionID:  question.ID.String(),
-		QuestionRef: question.Ref,
+		Answers:     []channelv1.Answer{answer},
 	}); err != nil {
 		return err
 	}
