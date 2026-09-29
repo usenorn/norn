@@ -86,6 +86,7 @@ type Start struct {
 	ExecutionID    string     `json:"execution_id"`
 	LeaseExpiresAt *time.Time `json:"lease_expires_at"`
 	Params         Params     `json:"params"`
+	Instructions   string     `json:"instructions,omitempty"`
 	Toolkit        Toolkit    `json:"toolkit"`
 }
 

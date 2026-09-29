@@ -431,7 +431,7 @@ func TestAToolkitRefreshesATokenAboutToExpire(t *testing.T) {
 		tokens:     entity.AgentMCPTokens{AccessToken: "at-old", RefreshToken: "rt-1", ExpiresAt: &soon},
 	}
 
-	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID)
+	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID, uuid.Nil)
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
@@ -460,7 +460,7 @@ func TestARefusedRefreshLeavesTheServerOutAndSaysWhy(t *testing.T) {
 	}
 	h.refreshWith = entity.ErrAgentMCPOAuthRefused
 
-	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID)
+	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID, uuid.Nil)
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
@@ -469,9 +469,62 @@ func TestARefusedRefreshLeavesTheServerOutAndSaysWhy(t *testing.T) {
 		t.Errorf("servers = %+v, want none: a revoked token would only fail inside the run", toolkit.MCPServers)
 	}
 
+	if !slices.Equal(toolkit.Unavailable, []entity.AgentToolkitGap{{Server: server.Name, Reason: entity.AgentMCPSignInFailed}}) {
+		t.Errorf("unavailable = %+v, want the server named so the run fails before it starts", toolkit.Unavailable)
+	}
+
 	if connection := h.signIns[server.ID].connection; connection.Status != entity.AgentMCPFailed ||
 		connection.Failure != entity.AgentMCPFailureRefreshRejected {
 		t.Errorf("connection = %+v, want failed with refresh_rejected so the settings screen asks to reconnect", connection)
+	}
+}
+
+func TestAServerNeverSignedInIsReportedRatherThanDropped(t *testing.T) {
+	h := newHarness(t)
+	agentID := h.agent(h.caller)
+	server := h.server(&agentID, entity.AgentMCPAuthOAuth, entity.AgentMCPSecrets{})
+
+	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID, uuid.Nil)
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+
+	if len(toolkit.MCPServers) != 0 ||
+		!slices.Equal(toolkit.Unavailable, []entity.AgentToolkitGap{{Server: server.Name, Reason: entity.AgentMCPNotSignedIn}}) {
+		t.Errorf(
+			"servers %+v, unavailable %+v; a server left out without a word runs the agent without "+
+				"a tool it was told it has",
+			toolkit.MCPServers, toolkit.Unavailable,
+		)
+	}
+}
+
+func TestInstructionsComposeTheWorkspaceTheIssuesProjectAndTheAgent(t *testing.T) {
+	h := newHarness(t)
+	agentID := h.agent(h.caller)
+	agent := h.agentsByID[agentID]
+	agent.AgentInstructions = "Write no comments."
+	h.agentsByID[agentID] = agent
+	h.workspace = entity.Workspace{ID: h.workspaceID, AgentInstructions: "Commit small."}
+	projectID := uuid.New()
+	h.projectRows[projectID] = entity.Project{ID: projectID, AgentInstructions: "  Run make test.  "}
+
+	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID, projectID)
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+
+	if want := "Commit small.\n\nRun make test.\n\nWrite no comments."; toolkit.Instructions != want {
+		t.Errorf("instructions = %q, want %q", toolkit.Instructions, want)
+	}
+
+	withoutProject, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID, uuid.Nil)
+	if err != nil {
+		t.Fatalf("Resolve without a project: %v", err)
+	}
+
+	if want := "Commit small.\n\nWrite no comments."; withoutProject.Instructions != want {
+		t.Errorf("instructions for an issue in no project = %q, want %q", withoutProject.Instructions, want)
 	}
 }
 
@@ -493,7 +546,7 @@ func TestSecretsReachTheRunButNotTheScreen(t *testing.T) {
 		t.Errorf("listed servers = %+v", set.MCPServers)
 	}
 
-	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID)
+	toolkit, err := h.toolkits.Resolve(context.Background(), h.workspaceID, agentID, uuid.Nil)
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}

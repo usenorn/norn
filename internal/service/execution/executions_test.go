@@ -205,6 +205,74 @@ func TestAStartCarriesTheSkillsAndServersTheAgentWasGiven(t *testing.T) {
 	}
 }
 
+func TestAStartCarriesTheInstructionsComposedForTheIssuesProject(t *testing.T) {
+	h := newHarness(t)
+	h.toolkit = entity.AgentToolkit{Instructions: "Ship small commits.\n\nWrite no comments."}
+
+	execution := h.execution(entity.ExecutionQueued)
+	h.holding(execution)
+	h.moving()
+
+	if err := h.service.Accepted(context.Background(), h.runner, message(
+		"01INS", entity.ChannelExecutionAccepted, execution.ID, nil,
+	)); err != nil {
+		t.Fatalf("accept an offer: %v", err)
+	}
+
+	sent, ok := h.sent(entity.ChannelExecutionStart)
+	if !ok {
+		t.Fatal("the machine accepted an offer and was never told to start")
+	}
+
+	var start channelv1.Start
+	if err := json.Unmarshal(sent.Payload, &start); err != nil {
+		t.Fatalf("decode start: %v", err)
+	}
+
+	if start.Instructions != h.toolkit.Instructions {
+		t.Errorf(
+			"instructions = %q, want %q; the toolkit is resolved for the issue's project, and a "+
+				"run without them ignores what the workspace told every agent",
+			start.Instructions, h.toolkit.Instructions,
+		)
+	}
+}
+
+func TestARunWhoseServerIsNotSignedInFailsBeforeItStarts(t *testing.T) {
+	h := newHarness(t)
+	h.toolkit = entity.AgentToolkit{
+		Unavailable: []entity.AgentToolkitGap{{Server: "sentry", Reason: entity.AgentMCPSignInExpired}},
+	}
+
+	execution := h.execution(entity.ExecutionQueued)
+	h.holding(execution)
+	h.moving()
+
+	if err := h.service.Accepted(context.Background(), h.runner, message(
+		"01GAP", entity.ChannelExecutionAccepted, execution.ID, nil,
+	)); err != nil {
+		t.Fatalf("accept an offer: %v", err)
+	}
+
+	if _, started := h.sent(entity.ChannelExecutionStart); started {
+		t.Fatal("the run was started without a server it was configured to use")
+	}
+
+	sent, cancelled := h.sent(entity.ChannelExecutionCancel)
+	if !cancelled {
+		t.Fatal("the machine was never told to let go of a run that cannot start")
+	}
+
+	var cancellation channelv1.Cancellation
+	if err := json.Unmarshal(sent.Payload, &cancellation); err != nil {
+		t.Fatalf("decode cancellation: %v", err)
+	}
+
+	if !strings.Contains(cancellation.Reason, "sentry (its sign-in expired and could not be refreshed)") {
+		t.Errorf("reason = %q, want it to name the server and why it is not ready", cancellation.Reason)
+	}
+}
+
 func TestARunnerMayNotReportAStateOnlyTheServerDecides(t *testing.T) {
 	h := newHarness(t)
 

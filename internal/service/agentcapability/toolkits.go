@@ -17,6 +17,9 @@ import (
 const skillArchiveDisposition = "attachment"
 
 type toolkits struct {
+	workspaces  repository.Workspace
+	projects    repository.Project
+	agents      repository.Agent
 	skills      repository.AgentSkill
 	servers     repository.AgentMCPServer
 	connections repository.AgentMCPConnection
@@ -27,6 +30,9 @@ type toolkits struct {
 }
 
 func NewToolkits(
+	workspaces repository.Workspace,
+	projects repository.Project,
+	agents repository.Agent,
 	skills repository.AgentSkill,
 	servers repository.AgentMCPServer,
 	connections repository.AgentMCPConnection,
@@ -36,6 +42,9 @@ func NewToolkits(
 	tooling config.AgentTooling,
 ) service.AgentToolkits {
 	return &toolkits{
+		workspaces:  workspaces,
+		projects:    projects,
+		agents:      agents,
 		skills:      skills,
 		servers:     servers,
 		connections: connections,
@@ -46,7 +55,15 @@ func NewToolkits(
 	}
 }
 
-func (s *toolkits) Resolve(ctx context.Context, workspaceID, agentID uuid.UUID) (entity.AgentToolkit, error) {
+func (s *toolkits) Resolve(
+	ctx context.Context,
+	workspaceID, agentID, projectID uuid.UUID,
+) (entity.AgentToolkit, error) {
+	instructions, err := s.instructions(ctx, workspaceID, agentID, projectID)
+	if err != nil {
+		return entity.AgentToolkit{}, err
+	}
+
 	skills, err := s.skills.ListByAgent(ctx, workspaceID, agentID)
 	if err != nil {
 		return entity.AgentToolkit{}, err
@@ -58,8 +75,9 @@ func (s *toolkits) Resolve(ctx context.Context, workspaceID, agentID uuid.UUID) 
 	}
 
 	toolkit := entity.AgentToolkit{
-		Skills:     make([]entity.AgentToolkitSkill, 0, len(skills)),
-		MCPServers: make([]entity.AgentToolkitServer, 0, len(servers)),
+		Instructions: instructions,
+		Skills:       make([]entity.AgentToolkitSkill, 0, len(skills)),
+		MCPServers:   make([]entity.AgentToolkitServer, 0, len(servers)),
 	}
 
 	for _, skill := range skills {
@@ -80,26 +98,65 @@ func (s *toolkits) Resolve(ctx context.Context, workspaceID, agentID uuid.UUID) 
 	}
 
 	for _, server := range servers {
-		resolved, usable, err := s.server(ctx, server)
+		resolved, unavailable, err := s.server(ctx, server)
 		if err != nil {
 			return entity.AgentToolkit{}, err
 		}
 
-		if usable {
-			toolkit.MCPServers = append(toolkit.MCPServers, resolved)
+		if unavailable != "" {
+			toolkit.Unavailable = append(toolkit.Unavailable, entity.AgentToolkitGap{
+				Server: server.Name,
+				Reason: unavailable,
+			})
+
+			continue
 		}
+
+		toolkit.MCPServers = append(toolkit.MCPServers, resolved)
 	}
 
 	return toolkit, nil
 }
 
+func (s *toolkits) instructions(
+	ctx context.Context,
+	workspaceID, agentID, projectID uuid.UUID,
+) (string, error) {
+	workspace, err := s.workspaces.GetByID(ctx, workspaceID)
+	if err != nil {
+		return "", err
+	}
+
+	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
+	if err != nil {
+		return "", err
+	}
+
+	var projectInstructions string
+
+	if projectID != uuid.Nil {
+		project, err := s.projects.GetByID(ctx, workspaceID, projectID)
+		if err != nil {
+			return "", err
+		}
+
+		projectInstructions = project.AgentInstructions
+	}
+
+	return entity.ComposeAgentInstructions(
+		workspace.AgentInstructions,
+		projectInstructions,
+		agent.AgentInstructions,
+	), nil
+}
+
 func (s *toolkits) server(
 	ctx context.Context,
 	server entity.AgentMCPServer,
-) (entity.AgentToolkitServer, bool, error) {
+) (entity.AgentToolkitServer, entity.AgentMCPUnavailability, error) {
 	secrets, err := s.servers.Secrets(ctx, server.WorkspaceID, server.ID)
 	if err != nil {
-		return entity.AgentToolkitServer{}, false, err
+		return entity.AgentToolkitServer{}, "", err
 	}
 
 	resolved := entity.AgentToolkitServer{
@@ -113,12 +170,12 @@ func (s *toolkits) server(
 	}
 
 	if server.Auth != entity.AgentMCPAuthOAuth {
-		return resolved, true, nil
+		return resolved, "", nil
 	}
 
-	accessToken, usable, err := s.accessToken(ctx, server)
-	if err != nil || !usable {
-		return entity.AgentToolkitServer{}, false, err
+	accessToken, unavailable, err := s.accessToken(ctx, server)
+	if err != nil || unavailable != "" {
+		return entity.AgentToolkitServer{}, unavailable, err
 	}
 
 	if resolved.Headers == nil {
@@ -127,52 +184,55 @@ func (s *toolkits) server(
 
 	resolved.Headers[entity.AgentMCPAuthorizationHeader] = entity.AgentMCPBearer(accessToken)
 
-	return resolved, true, nil
+	return resolved, "", nil
 }
 
-func (s *toolkits) accessToken(ctx context.Context, server entity.AgentMCPServer) (string, bool, error) {
+func (s *toolkits) accessToken(
+	ctx context.Context,
+	server entity.AgentMCPServer,
+) (string, entity.AgentMCPUnavailability, error) {
 	connection, err := s.connections.Get(ctx, server.WorkspaceID, server.ID)
 	if err != nil {
 		if errors.Is(err, entity.ErrAgentMCPConnectionNotFound) {
-			return "", false, nil
+			return "", entity.AgentMCPNotSignedIn, nil
 		}
 
-		return "", false, err
+		return "", "", err
 	}
 
 	if connection.Status == entity.AgentMCPFailed {
-		return "", false, nil
+		return "", entity.AgentMCPSignInFailed, nil
 	}
 
 	tokens, err := s.connections.Tokens(ctx, server.WorkspaceID, server.ID)
 	if err != nil {
-		return "", false, err
+		return "", "", err
 	}
 
 	now := time.Now().UTC()
 
 	if !connection.DueForRefresh(now, s.tooling.RefreshLead) {
-		return tokens.AccessToken, true, nil
+		return tokens.AccessToken, "", nil
 	}
 
 	refreshed, err := s.oauth.Refresh(ctx, connection, tokens, s.instance.SelfHosted)
 	if err != nil {
 		if errors.Is(err, entity.ErrAgentMCPOAuthRefused) {
-			return "", false, s.connections.MarkFailed(
+			return "", entity.AgentMCPSignInFailed, s.connections.MarkFailed(
 				ctx, server.WorkspaceID, server.ID, entity.AgentMCPFailureRefreshRejected, now,
 			)
 		}
 
 		if connection.Current(now) == entity.AgentMCPConnected {
-			return tokens.AccessToken, true, nil
+			return tokens.AccessToken, "", nil
 		}
 
-		return "", false, nil
+		return "", entity.AgentMCPSignInExpired, nil
 	}
 
 	if _, err := s.connections.Save(ctx, connection, refreshed); err != nil {
-		return "", false, err
+		return "", "", err
 	}
 
-	return refreshed.AccessToken, true, nil
+	return refreshed.AccessToken, "", nil
 }

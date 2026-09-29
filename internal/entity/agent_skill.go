@@ -2,31 +2,30 @@ package entity
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"net/url"
 	"path"
 	"regexp"
-	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
+
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 const (
 	AgentCapabilityNameMaxLen     = 64
 	AgentSkillDescriptionMaxLen   = 1024
 	AgentSkillSourceMaxLen        = 512
-	AgentSkillBundleMaxBytes      = 5 << 20
-	AgentSkillBundleMaxFiles      = 200
+	AgentSkillBundleMaxBytes      = channelv1.SkillBundleMaxBytes
+	AgentSkillBundleMaxFiles      = channelv1.SkillBundleMaxFiles
 	AgentSkillFilePathMaxLen      = 256
 	AgentSkillsPerOwner           = 50
 	AgentSkillCandidatesMax       = 100
-	AgentSkillManifestFile        = "SKILL.md"
+	AgentSkillManifestFile        = channelv1.SkillManifestFile
 	AgentSkillBundleContentType   = "application/gzip"
 	agentSkillFrontmatterBoundary = "---"
 	githubHost                    = "github.com"
@@ -136,18 +135,12 @@ func (b AgentSkillBundle) Size() int64 {
 }
 
 func (b AgentSkillBundle) Hash() string {
-	files := slices.Clone(b.Files)
-	slices.SortFunc(files, func(a, c AgentSkillFile) int { return strings.Compare(a.Path, c.Path) })
-
-	digest := sha256.New()
-	for _, file := range files {
-		content := sha256.Sum256(file.Content)
-		digest.Write([]byte(file.Path))
-		digest.Write([]byte{0})
-		digest.Write(content[:])
+	files := make([]channelv1.SkillFile, 0, len(b.Files))
+	for _, file := range b.Files {
+		files = append(files, channelv1.SkillFile{Path: file.Path, Content: file.Content})
 	}
 
-	return hex.EncodeToString(digest.Sum(nil))
+	return channelv1.SkillHash(files)
 }
 
 func (b AgentSkillBundle) Validate() (AgentSkillManifest, error) {

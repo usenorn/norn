@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	MinimumRunner = "0.1.0"
+	MinimumRunner = "0.4.0"
 	InstallRunner = "curl -fsSL https://get.norn.so/runner | bash"
 )
 

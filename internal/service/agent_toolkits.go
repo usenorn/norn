@@ -11,5 +11,5 @@ import (
 //go:generate go tool mockgen -source=agent_toolkits.go -destination=agentcapability/mock_agent_toolkits.go -package=agentcapability -mock_names=AgentToolkits=MockAgentToolkits
 
 type AgentToolkits interface {
-	Resolve(ctx context.Context, workspaceID, agentID uuid.UUID) (entity.AgentToolkit, error)
+	Resolve(ctx context.Context, workspaceID, agentID, projectID uuid.UUID) (entity.AgentToolkit, error)
 }

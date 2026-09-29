@@ -20,8 +20,10 @@ import (
 	blobrepo "github.com/usenorn/norn/internal/repository/blob"
 	mcpauthorizerrepo "github.com/usenorn/norn/internal/repository/mcpauthorizer"
 	mcpregistryrepo "github.com/usenorn/norn/internal/repository/mcpregistry"
+	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	skillsourcerepo "github.com/usenorn/norn/internal/repository/skillsource"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
+	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/service"
 	agentcapabilitysvc "github.com/usenorn/norn/internal/service/agentcapability"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
@@ -36,6 +38,8 @@ type signIn struct {
 }
 
 type harness struct {
+	workspaces  *workspacerepo.MockWorkspace
+	projects    *projectrepo.MockProject
 	agents      *agentrepo.MockAgent
 	skills      *agentskillrepo.MockAgentSkill
 	servers     *agentmcpserverrepo.MockAgentMCPServer
@@ -55,6 +59,8 @@ type harness struct {
 	role        entity.MembershipRole
 	actorKind   entity.ActorKind
 	agentsByID  map[uuid.UUID]entity.Agent
+	workspace   entity.Workspace
+	projectRows map[uuid.UUID]entity.Project
 
 	skillRows   map[uuid.UUID]entity.AgentSkill
 	serverRows  map[uuid.UUID]entity.AgentMCPServer
@@ -74,6 +80,8 @@ func newHarness(t *testing.T) *harness {
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
+		workspaces:  workspacerepo.NewMockWorkspace(ctrl),
+		projects:    projectrepo.NewMockProject(ctrl),
 		agents:      agentrepo.NewMockAgent(ctrl),
 		skills:      agentskillrepo.NewMockAgentSkill(ctrl),
 		servers:     agentmcpserverrepo.NewMockAgentMCPServer(ctrl),
@@ -90,6 +98,7 @@ func newHarness(t *testing.T) *harness {
 		role:        entity.MembershipRoleMember,
 		actorKind:   entity.ActorKindUser,
 		agentsByID:  map[uuid.UUID]entity.Agent{},
+		projectRows: map[uuid.UUID]entity.Project{},
 		skillRows:   map[uuid.UUID]entity.AgentSkill{},
 		serverRows:  map[uuid.UUID]entity.AgentMCPServer{},
 		secrets:     map[uuid.UUID]entity.AgentMCPSecrets{},
@@ -115,7 +124,7 @@ func newHarness(t *testing.T) *harness {
 		h.blobs, h.authorizer, h.audit, transactor, config.Instance{},
 	)
 	h.toolkits = agentcapabilitysvc.NewToolkits(
-		h.skills, h.servers, h.connections, h.oauth, h.blobs, config.Instance{},
+		h.workspaces, h.projects, h.agents, h.skills, h.servers, h.connections, h.oauth, h.blobs, config.Instance{},
 		config.AgentTooling{RefreshLead: 5 * time.Minute, DownloadTTL: 15 * time.Minute},
 	)
 
@@ -146,6 +155,23 @@ func (h *harness) expectAccess() {
 			}
 
 			return agent, nil
+		}).
+		AnyTimes()
+
+	h.workspaces.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID).
+		DoAndReturn(func(context.Context, uuid.UUID) (entity.Workspace, error) { return h.workspace, nil }).
+		AnyTimes()
+
+	h.projects.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, projectID uuid.UUID) (entity.Project, error) {
+			project, ok := h.projectRows[projectID]
+			if !ok {
+				return entity.Project{}, entity.ErrProjectNotFound
+			}
+
+			return project, nil
 		}).
 		AnyTimes()
 
