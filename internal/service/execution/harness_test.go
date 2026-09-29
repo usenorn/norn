@@ -104,6 +104,7 @@ func newHarness(t *testing.T) *harness {
 			Number:       34,
 			Title:        "Execution lifecycle",
 			Version:      3,
+			ProjectID:    uuid.New(),
 		},
 		runner: entity.Runner{
 			ID:          uuid.New(),
@@ -204,9 +205,9 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.toolkits.EXPECT().
-		Resolve(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, workspaceID, agentID uuid.UUID) (entity.AgentToolkit, error) {
-			if workspaceID != h.workspaceID || agentID != h.runner.AgentID {
+		Resolve(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, workspaceID, agentID, projectID uuid.UUID) (entity.AgentToolkit, error) {
+			if workspaceID != h.workspaceID || agentID != h.runner.AgentID || projectID != h.issue.ProjectID {
 				return entity.AgentToolkit{}, nil
 			}
 

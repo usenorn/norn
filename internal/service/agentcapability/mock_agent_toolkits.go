@@ -43,16 +43,16 @@ func (m *MockAgentToolkits) EXPECT() *MockAgentToolkitsMockRecorder {
 }
 
 // Resolve mocks base method.
-func (m *MockAgentToolkits) Resolve(ctx context.Context, workspaceID, agentID uuid.UUID) (entity.AgentToolkit, error) {
+func (m *MockAgentToolkits) Resolve(ctx context.Context, workspaceID, agentID, projectID uuid.UUID) (entity.AgentToolkit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Resolve", ctx, workspaceID, agentID)
+	ret := m.ctrl.Call(m, "Resolve", ctx, workspaceID, agentID, projectID)
 	ret0, _ := ret[0].(entity.AgentToolkit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Resolve indicates an expected call of Resolve.
-func (mr *MockAgentToolkitsMockRecorder) Resolve(ctx, workspaceID, agentID any) *gomock.Call {
+func (mr *MockAgentToolkitsMockRecorder) Resolve(ctx, workspaceID, agentID, projectID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resolve", reflect.TypeOf((*MockAgentToolkits)(nil).Resolve), ctx, workspaceID, agentID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resolve", reflect.TypeOf((*MockAgentToolkits)(nil).Resolve), ctx, workspaceID, agentID, projectID)
 }

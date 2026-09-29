@@ -64,17 +64,52 @@ func (s *executionsService) Accepted(
 		return err
 	}
 
-	toolkit, err := s.toolkits.Resolve(ctx, leased.WorkspaceID, leased.AgentID)
+	issue, err := s.issues.GetVisible(ctx, leased.WorkspaceID, leased.IssueID, everyTeam(leased))
 	if err != nil {
 		return err
+	}
+
+	toolkit, err := s.toolkits.Resolve(ctx, leased.WorkspaceID, leased.AgentID, issue.ProjectID)
+	if err != nil {
+		return err
+	}
+
+	if shortfall := toolkit.Shortfall(); shortfall != "" {
+		return s.unequipped(ctx, leased, shortfall)
 	}
 
 	return s.tell(ctx, leased, entity.ChannelExecutionStart, channelv1.Start{
 		ExecutionID:    leased.ID,
 		LeaseExpiresAt: leased.LeaseExpiresAt,
 		Params:         paramsOf(leased.Params),
+		Instructions:   toolkit.Instructions,
 		Toolkit:        toolkitOf(toolkit),
 	})
+}
+
+func (s *executionsService) unequipped(
+	ctx context.Context,
+	execution entity.Execution,
+	shortfall string,
+) error {
+	failed, err := s.advance(ctx, execution, move{
+		to:     entity.ExecutionFailed,
+		reason: shortfall,
+		actor:  entity.SystemExecutionActor(),
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := s.tell(ctx, failed, entity.ChannelExecutionCancel, channelv1.Cancellation{
+		Reason: failed.Reason,
+	}); err != nil {
+		return err
+	}
+
+	s.record(ctx, entity.AuditExecutionStranded, failed)
+
+	return nil
 }
 
 func (s *executionsService) Declined(

@@ -417,9 +417,52 @@ type AgentToolkitServer struct {
 	Headers   map[string]string
 }
 
+type AgentMCPUnavailability string
+
+const (
+	AgentMCPNotSignedIn   AgentMCPUnavailability = "not_signed_in"
+	AgentMCPSignInFailed  AgentMCPUnavailability = "sign_in_failed"
+	AgentMCPSignInExpired AgentMCPUnavailability = "sign_in_expired"
+)
+
+func (u AgentMCPUnavailability) Explain() string {
+	switch u {
+	case AgentMCPNotSignedIn:
+		return "not signed in"
+	case AgentMCPSignInFailed:
+		return "its sign-in was refused and needs reconnecting"
+	case AgentMCPSignInExpired:
+		return "its sign-in expired and could not be refreshed"
+	default:
+		return string(u)
+	}
+}
+
+type AgentToolkitGap struct {
+	Server string
+	Reason AgentMCPUnavailability
+}
+
 type AgentToolkit struct {
-	Skills     []AgentToolkitSkill
-	MCPServers []AgentToolkitServer
+	Instructions string
+	Skills       []AgentToolkitSkill
+	MCPServers   []AgentToolkitServer
+	Unavailable  []AgentToolkitGap
+}
+
+func (t AgentToolkit) Shortfall() string {
+	if len(t.Unavailable) == 0 {
+		return ""
+	}
+
+	named := make([]string, 0, len(t.Unavailable))
+
+	for _, gap := range t.Unavailable {
+		named = append(named, gap.Server+" ("+gap.Reason.Explain()+")")
+	}
+
+	return "this run needs mcp servers that are not ready: " + strings.Join(named, ", ") +
+		". reconnect them in the agent's settings and delegate again"
 }
 
 func ValidAgentMCPReturnTo(target string) bool {
