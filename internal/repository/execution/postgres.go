@@ -144,7 +144,8 @@ LIMIT $2`
 const runnerHeldSlotsQuery = `
 SELECT count(*)
 FROM workspace_executions
-WHERE runner_id = $1 AND state IN ('preparing', 'running', 'finalizing')`
+WHERE runner_id = $1
+  AND state IN ('leased', 'preparing', 'running', 'queued_for_resume', 'finalizing')`
 
 const executionsSharingRepositoriesQuery = `
 SELECT` + executionColumns + executionJoins + `

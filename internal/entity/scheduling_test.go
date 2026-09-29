@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/usenorn/norn/internal/entity"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 func TestAMachineIsOnlyAvailableWhenEveryReasonToSkipItIsAbsent(t *testing.T) {
@@ -79,11 +80,11 @@ func TestAMachineReportingMoreInUseThanItHasIsSaidToHaveNoRoom(t *testing.T) {
 func TestCountingSlotsFollowsWhatTheMachineIsActuallyDoing(t *testing.T) {
 	holding := map[entity.ExecutionState]bool{
 		entity.ExecutionQueued:          false,
-		entity.ExecutionLeased:          false,
+		entity.ExecutionLeased:          true,
 		entity.ExecutionPreparing:       true,
 		entity.ExecutionRunning:         true,
 		entity.ExecutionWaitingForInput: false,
-		entity.ExecutionQueuedForResume: false,
+		entity.ExecutionQueuedForResume: true,
 		entity.ExecutionFinalizing:      true,
 		entity.ExecutionAwaitingReview:  false,
 		entity.ExecutionCompleted:       false,
@@ -94,8 +95,29 @@ func TestCountingSlotsFollowsWhatTheMachineIsActuallyDoing(t *testing.T) {
 			t.Fatalf(
 				"%s holds a slot=%v, want %v. A run parked on a question has no coding agent "+
 					"running, so counting it against the machine costs somebody a slot for as "+
-					"long as nobody answers",
+					"long as nobody answers; a run the machine accepted or is about to resume "+
+					"will have one any moment, so leaving it out offers the machine more than "+
+					"it can take",
 				state, got, occupies,
+			)
+		}
+	}
+}
+
+func TestOnlyARunWaitingOnAPersonOutlivesItsMachineGoingAway(t *testing.T) {
+	recoverable := map[entity.ExecutionState]bool{
+		entity.ExecutionWaitingForInput: true,
+		entity.ExecutionQueuedForResume: true,
+		entity.ExecutionAwaitingReview:  true,
+	}
+
+	for _, state := range channelv1.States() {
+		if got := state.Recoverable(); got != recoverable[state] {
+			t.Fatalf(
+				"%s recoverable=%v, want %v. A run waiting on a person has no process to "+
+					"lose, so a machine restarting under it must not end it; a run with an "+
+					"agent mid-flight cannot pick up where it was",
+				state, got, recoverable[state],
 			)
 		}
 	}
