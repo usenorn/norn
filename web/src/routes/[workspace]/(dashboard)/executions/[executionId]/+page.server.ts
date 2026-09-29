@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({
 	if (detail.error?.status === 404) return { run: { kind: "not_found" } };
 	if (!detail.data) return { run: { kind: "unavailable" } };
 
-	const [questions, transcript, logs, previews, links] = await Promise.all([
+	const [questions, transcript, logs, previews, links, plans] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/questions", {
 			params: { path },
 		}),
@@ -47,6 +47,9 @@ export const load: PageServerLoad = async ({
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/code-links", {
 			params: { path: { workspaceId: workspace.id, issueId: detail.data.execution.issueId } },
+		}),
+		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/plans", {
+			params: { path },
 		}),
 	]);
 
@@ -65,6 +68,7 @@ export const load: PageServerLoad = async ({
 			runner: detail.data.runner,
 			changeset: detail.data.changeset,
 			codeLinks: links.data ?? [],
+			plans: plans.data ?? [],
 			questions: questions.data?.questions ?? [],
 			transcript: transcriptChunks.flatMap((chunk) => chunk.entries),
 			logs: logChunks.flatMap((chunk) => chunk.entries),

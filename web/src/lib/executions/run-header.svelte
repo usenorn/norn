@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import StepList from "$lib/components/norn/step-list.svelte";
 	import RunState from "./run-state.svelte";
+	import { lifecycleSteps } from "./plans";
 	import { elapsed } from "$lib/time";
 	import {
 		elapsedLabel,
@@ -58,6 +60,10 @@
 	<p class="max-w-prose text-sm leading-normal break-words text-muted-foreground text-pretty">
 		{standingLine(execution)}
 	</p>
+
+	<nav aria-label="Where this run is">
+		<StepList steps={lifecycleSteps(execution)} orientation="horizontal" />
+	</nav>
 
 	{#if execution.requirementsMoved}
 		<p

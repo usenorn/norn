@@ -9,10 +9,12 @@
 	import { useRealtime } from "$lib/realtime/connection.svelte";
 	import QuestionList from "$lib/questions/question-list.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import AttentionPanel from "$lib/components/norn/attention-panel.svelte";
+	import { Button } from "$lib/components/ui/button/index.js";
 	import RunHeader from "$lib/executions/run-header.svelte";
 	import RunActions from "$lib/executions/run-actions.svelte";
 	import RunTimeline from "$lib/executions/run-timeline.svelte";
-	import ReviewActions from "$lib/executions/review-actions.svelte";
+	import PlanPanel from "$lib/executions/plan-panel.svelte";
 	import ChangesetPanel from "$lib/executions/changeset-panel.svelte";
 	import ServicesPanel from "$lib/executions/services-panel.svelte";
 	import PreviewsPanel from "$lib/executions/previews-panel.svelte";
@@ -20,16 +22,16 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import {
 		blockingQuestion,
+		changeStatLine,
+		changeTotals,
 		chunkPageSize,
 		isSettled,
 		mergeTimeline,
-		parseDiff,
 		readRunFailure,
 		retainLongerSeconds,
 		runFailureMessage,
 		timelinePageSize,
 		timelinePreviewSize,
-		type DiffView,
 		type Execution,
 		type ExecutionChangeSet,
 		type ExecutionEvent,
@@ -65,9 +67,7 @@
 		entries: [],
 	});
 	let pushedChangeset = $state.raw<{ source: unknown; changeset: ExecutionChangeSet } | null>(null);
-	let diffs = $state.raw<{ run: string; held: Record<string, DiffView> }>({ run: "", held: {} });
 	let minted = $state.raw<{ run: string; held: Record<string, string> }>({ run: "", held: {} });
-	let openedDiff = $state("");
 
 	let working = $state(false);
 	let failure = $state<string | null>(null);
@@ -97,7 +97,10 @@
 	const changeset = $derived(
 		ready && pushedChangeset?.source === ready ? pushedChangeset.changeset : ready?.changeset
 	);
-	const shownDiffs = $derived(diffs.run === execution?.id ? diffs.held : {});
+	const reviewHref = $derived(
+		execution ? workspacePath(workspace.slug, `/executions/${execution.id}/review`) : ""
+	);
+	const plans = $derived(ready?.plans ?? []);
 	const shownMinted = $derived(minted.run === execution?.id ? minted.held : {});
 
 	const questions = $derived(ready?.questions ?? []);
@@ -151,6 +154,16 @@
 				const held = pushedTimeline.source === source ? pushedTimeline.events : [];
 
 				pushedTimeline = { source, events: [...held, entry] };
+
+				return;
+			}
+
+			if (event.kind === "execution.plan") {
+				const planned = event.payload as Execution;
+
+				if (planned.id !== openRun) return;
+
+				realtime.refetch(keys.execution(openRun));
 
 				return;
 			}
@@ -220,24 +233,19 @@
 		);
 	}
 
-	function headsOf(current: ExecutionChangeSet | undefined) {
-		return (current?.repositories ?? []).map((repo) => ({ repository: repo.repository, headSha: repo.headSha ?? "" }));
-	}
-
-	function approve() {
+	function approvePlan(revision: number) {
 		void act(() =>
-			api.POST("/workspaces/{workspaceId}/executions/{executionId}/reviews", {
-				params: { path: pathOf(execution!.id) },
-				body: { verdict: "approve", heads: headsOf(changeset) },
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve", {
+				params: { path: { ...pathOf(execution!.id), revision } },
 			})
 		);
 	}
 
-	function requestChanges(feedback: string): Promise<boolean> {
+	function revisePlan(revision: number, feedback: string): Promise<boolean> {
 		return act(() =>
-			api.POST("/workspaces/{workspaceId}/executions/{executionId}/reviews", {
-				params: { path: pathOf(execution!.id) },
-				body: { verdict: "request_changes", summary: feedback, heads: headsOf(changeset) },
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise", {
+				params: { path: { ...pathOf(execution!.id), revision } },
+				body: { feedback },
 			})
 		);
 	}
@@ -285,52 +293,8 @@
 		);
 	}
 
-	function diffPath(artifactId: string) {
-		return workspacePath(workspace.slug, `/executions/${execution!.id}/diff/${artifactId}`);
-	}
-
 	function downloadOf(artifactId: string) {
 		return `/v1/workspaces/${workspace.id}/executions/${execution!.id}/artifacts/${artifactId}/content`;
-	}
-
-	async function readDiff(artifactId: string) {
-		if (!ready) return;
-
-		if (openedDiff === artifactId) {
-			openedDiff = "";
-
-			return;
-		}
-
-		openedDiff = artifactId;
-
-		if (shownDiffs[artifactId]?.kind === "ready") return;
-
-		const run = ready.execution.id;
-
-		diffs = { run, held: { ...shownDiffs, [artifactId]: { kind: "loading" } } };
-
-		let view: DiffView;
-
-		try {
-			const answered = await fetch(diffPath(artifactId));
-
-			if (!answered.ok) {
-				view = { kind: "failed", message: "" };
-			} else {
-				view = {
-					kind: "ready",
-					files: parseDiff(await answered.text()),
-					truncated: answered.headers.get("x-diff-truncated") === "true",
-				};
-			}
-		} catch {
-			view = { kind: "failed", message: "" };
-		}
-
-		const held = diffs.run === run ? diffs.held : {};
-
-		diffs = { run, held: { ...held, [artifactId]: view } };
 	}
 
 	async function restart() {
@@ -513,11 +477,7 @@
 				{/if}
 
 				{#if asking}
-					<section
-						class="flex min-w-0 flex-col gap-2 rounded-sm border border-amber-700/40 bg-amber-500/5 p-3 dark:border-amber-400/30"
-						aria-label="A question is waiting"
-					>
-						<Eyebrow class="text-amber-700 dark:text-amber-400">The run is waiting on you</Eyebrow>
+					<AttentionPanel label="A question is waiting" title="The run is waiting on you">
 						<QuestionList
 							questions={[asking]}
 							timezone={workspace.timezone}
@@ -526,15 +486,45 @@
 							onanswer={answer}
 							ondismiss={dismiss}
 						/>
-					</section>
+					</AttentionPanel>
+				{:else if execution.state === "awaiting_plan_approval"}
+					<AttentionPanel label="A plan is waiting" title="The plan is waiting on you">
+						<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
+							Read the plan and approve it, or ask for changes. The coding agent builds nothing until
+							somebody approves it.
+						</p>
+						<div>
+							<Button href="#plan" size="sm">Read the plan</Button>
+						</div>
+					</AttentionPanel>
+				{:else if execution.state === "awaiting_review"}
+					<AttentionPanel label="Changes are waiting" title="The changes are waiting on you">
+						<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
+							Review what the run changed, comment on any line, then approve it or send it back.
+							Nothing is pushed until somebody approves.
+						</p>
+						{#if changeset && changeset.repositories.length > 0}
+							<p class="font-mono text-xs text-muted-foreground">
+								{changeStatLine(changeTotals(changeset.repositories))}
+							</p>
+						{/if}
+						<div>
+							<Button href={reviewHref} size="sm">Review the changes</Button>
+						</div>
+					</AttentionPanel>
 				{/if}
 
-				<ReviewActions
-					{execution}
-					{working}
-					onapprove={approve}
-					onrequestchanges={requestChanges}
-				/>
+				{#if execution.stage === "planning" || plans.length > 0}
+					<PlanPanel
+						{execution}
+						{plans}
+						{questions}
+						timezone={workspace.timezone}
+						{working}
+						onapprove={approvePlan}
+						onrevise={revisePlan}
+					/>
+				{/if}
 
 				<RunActions
 					{execution}
@@ -550,10 +540,8 @@
 					{execution}
 					{changeset}
 					links={run.codeLinks}
-					diffs={shownDiffs}
-					opened={openedDiff}
+					review={reviewHref}
 					{downloadOf}
-					ondiff={readDiff}
 				/>
 
 				<RunTimeline
