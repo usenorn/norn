@@ -15081,7 +15081,7 @@ components:
 
     NotificationKind:
       type: string
-      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting]
+      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting, decision_waiting]
 
     NotificationReason:
       type: string

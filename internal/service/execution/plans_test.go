@@ -278,7 +278,7 @@ func TestAPlanWaitingForApprovalTellsWhoeverDecidesForTheIssue(t *testing.T) {
 			}
 
 			if len(h.notified) != 1 || h.notified[0].Target != tc.want(h) ||
-				h.notified[0].Kind != entity.NotificationKindApprovalWaiting {
+				h.notified[0].Kind != entity.NotificationKindDecisionWaiting {
 				t.Fatalf(
 					"notified %+v; nobody would know a plan is waiting, and the run sits idle until "+
 						"somebody happens to look",

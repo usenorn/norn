@@ -161,7 +161,7 @@ func (s *questionsService) ask(
 		if err := s.notify.Record(ctx, entity.NotificationEvent{
 			WorkspaceID: target.workspaceID,
 			Subject:     entity.NotifyIssue(target.issueID),
-			Kind:        entity.NotificationKindApprovalWaiting,
+			Kind:        entity.NotificationKindDecisionWaiting,
 			Actor:       attribution.AccountID,
 			ActorKind:   actorKind,
 			Target:      s.awaitedBy(ctx, target),

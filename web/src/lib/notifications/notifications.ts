@@ -96,6 +96,7 @@ const kindVerbs: Record<NotificationKind, string> = {
 	state_changed: "changed the state",
 	membership: "added you",
 	approval_waiting: "is waiting for you to approve what it proposed",
+	decision_waiting: "is waiting for your decision",
 };
 
 export function summary(notification: Notification): string {
@@ -113,6 +114,10 @@ export function summary(notification: Notification): string {
 export function subjectPath(workspace: string, notification: Notification): string | null {
 	if (notification.kind === "approval_waiting") {
 		return `/${workspace}/agents/approvals`;
+	}
+
+	if (notification.kind === "decision_waiting") {
+		return `/${workspace}/reviews`;
 	}
 
 	if (notification.subjectKind === "project") {

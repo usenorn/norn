@@ -284,7 +284,7 @@ func (s *executionsService) awaitDecision(ctx context.Context, execution entity.
 	return s.notify.Record(ctx, entity.NotificationEvent{
 		WorkspaceID: execution.WorkspaceID,
 		Subject:     entity.NotifyIssue(execution.IssueID),
-		Kind:        entity.NotificationKindApprovalWaiting,
+		Kind:        entity.NotificationKindDecisionWaiting,
 		Actor:       agentAccount,
 		ActorKind:   entity.ActorKindAgent,
 		Target:      maker,

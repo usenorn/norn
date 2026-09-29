@@ -3494,6 +3494,7 @@ const (
 	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
 	NotificationKindAssigned        NotificationKind = "assigned"
 	NotificationKindCommented       NotificationKind = "commented"
+	NotificationKindDecisionWaiting NotificationKind = "decision_waiting"
 	NotificationKindMembership      NotificationKind = "membership"
 	NotificationKindMentioned       NotificationKind = "mentioned"
 	NotificationKindStateChanged    NotificationKind = "state_changed"
@@ -3507,6 +3508,8 @@ func (e NotificationKind) Valid() bool {
 	case NotificationKindAssigned:
 		return true
 	case NotificationKindCommented:
+		return true
+	case NotificationKindDecisionWaiting:
 		return true
 	case NotificationKindMembership:
 		return true

@@ -199,7 +199,7 @@ func targetReason(kind entity.NotificationKind) entity.NotificationReason {
 	switch kind {
 	case entity.NotificationKindMembership:
 		return entity.NotificationReasonMembership
-	case entity.NotificationKindApprovalWaiting:
+	case entity.NotificationKindApprovalWaiting, entity.NotificationKindDecisionWaiting:
 		return entity.NotificationReasonApproval
 	default:
 		return entity.NotificationReasonAssigned
