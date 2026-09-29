@@ -236,6 +236,7 @@ func (h *harness) execution(state entity.ExecutionState) entity.Execution {
 		RunnerID:       h.runner.ID,
 		Attempt:        1,
 		State:          state,
+		Stage:          entity.StageAfter(state, entity.StagePlanning, state),
 		QueuedAt:       time.Now().UTC(),
 	}
 }
@@ -332,6 +333,7 @@ func (h *harness) moving() {
 		) (entity.Execution, error) {
 			moved := h.execution(move.To)
 			moved.ID = id
+			moved.Stage = move.Stage
 			moved.Reason = move.Reason
 			moved.LeaseExpiresAt = move.LeaseExpiresAt
 

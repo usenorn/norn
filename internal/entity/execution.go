@@ -46,6 +46,7 @@ var (
 	ErrExecutionPlanMissing     = errors.New("this execution has not proposed a plan to decide on")
 	ErrExecutionPlanStale       = errors.New("a newer revision of this plan has been proposed")
 	ErrExecutionQuestionsOpen   = errors.New("this execution still has questions waiting on an answer")
+	ErrExecutionPlanRecorded    = errors.New("this run has already proposed that plan")
 )
 
 type ExecutionState = channelv1.State

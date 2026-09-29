@@ -32,7 +32,8 @@ const queuedStates = `('queued', 'queued_for_resume')`
 
 const terminalStates = `('completed', 'failed', 'cancelled', 'interrupted')`
 
-const recoverableStates = `('waiting_for_input', 'queued_for_resume', 'awaiting_review')`
+const recoverableStates = `('waiting_for_input', 'awaiting_plan_approval', 'queued_for_resume',
+                            'awaiting_review')`
 
 const executionColumns = `
        e.id,
@@ -58,6 +59,7 @@ const executionColumns = `
        ),
        e.attempt,
        e.state,
+       e.stage,
        e.reason,
        e.queued_reason,
        e.params,
@@ -111,6 +113,7 @@ const moveExecutionQuery = `
 WITH updated AS (
     UPDATE workspace_executions
     SET state            = $3,
+        stage            = $8,
         reason           = $4,
         queued_reason    = CASE WHEN $3 IN ` + queuedStates + ` THEN queued_reason ELSE '' END,
         runner_id        = coalesce(nullif($5, '')::uuid, runner_id),
@@ -278,6 +281,7 @@ func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 		runnerID     string
 		codebaseID   string
 		state        string
+		stage        string
 		queuedReason string
 		revision     string
 		params       []byte
@@ -302,6 +306,7 @@ func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 		&execution.RequirementsMoved,
 		&execution.Attempt,
 		&state,
+		&stage,
 		&execution.Reason,
 		&queuedReason,
 		&params,
@@ -353,6 +358,7 @@ func scanExecution(row scanner, also ...any) (entity.Execution, error) {
 
 	execution.IssueReference = entity.Issue{ReferenceKey: referenceKey, Number: number}.Reference()
 	execution.State = entity.ExecutionState(state)
+	execution.Stage = entity.ExecutionStage(stage)
 	execution.QueuedReason = entity.ExecutionQueuedReason(queuedReason)
 
 	var stored storedParams
@@ -748,6 +754,7 @@ func (r *executionRepository) Move(
 		optionalID(move.RunnerID),
 		move.LeaseExpiresAt,
 		move.At,
+		string(move.Stage),
 	))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

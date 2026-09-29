@@ -37,6 +37,7 @@ type ExecutionBinding struct {
 type ExecutionMove struct {
 	From           entity.ExecutionState
 	To             entity.ExecutionState
+	Stage          entity.ExecutionStage
 	Reason         string
 	RunnerID       uuid.UUID
 	LeaseExpiresAt *time.Time
