@@ -151,11 +151,34 @@ func (s *executionsService) Declined(
 		return err
 	}
 
-	if !elsewhere.found() {
-		return s.park(ctx, execution, waitingAfter(declined, elsewhere.waiting))
+	if elsewhere.found() {
+		return s.hand(ctx, execution, elsewhere)
 	}
 
-	return s.hand(ctx, execution, elsewhere)
+	if declined.Code == channelv1.DeclineRuntimeUnavailable {
+		return s.unrunnable(ctx, execution, turnedDown(declined))
+	}
+
+	return s.park(ctx, execution, waitingAfter(declined, elsewhere.waiting))
+}
+
+func (s *executionsService) unrunnable(
+	ctx context.Context,
+	execution entity.Execution,
+	reason string,
+) error {
+	failed, err := s.advance(ctx, execution, move{
+		to:     entity.ExecutionFailed,
+		reason: reason,
+		actor:  entity.SystemExecutionActor(),
+	})
+	if err != nil {
+		return err
+	}
+
+	s.record(ctx, entity.AuditExecutionStranded, failed)
+
+	return nil
 }
 
 func turnedDown(declined channelv1.Decline) string {

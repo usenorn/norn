@@ -233,6 +233,78 @@ func TestAMachineThatTurnsWorkDownDoesNotGetItBackTheSameMoment(t *testing.T) {
 	}
 }
 
+func TestWorkNoMachineCanRunTheWayItAskedFailsWithTheMachinesReason(t *testing.T) {
+	h := newHarness(t)
+
+	offered := h.execution(entity.ExecutionQueued)
+	offered.RunnerID = h.runner.ID
+
+	h.holding(offered)
+	h.binding()
+	h.moving()
+
+	h.runners.EXPECT().
+		ListByAgentID(gomock.Any(), h.runner.AgentID).
+		Return([]entity.Runner{h.runner}, nil)
+
+	if err := h.service.Declined(context.Background(), h.runner, message(
+		"01DEC", entity.ChannelExecutionDeclined, offered.ID,
+		channelv1.Decline{
+			Code:   channelv1.DeclineRuntimeUnavailable,
+			Detail: "this machine runs work as host processes or in docker, not in kvm",
+		},
+	)); err != nil {
+		t.Fatalf("decline: %v", err)
+	}
+
+	moved, failed := h.moved(entity.ExecutionFailed)
+	if !failed {
+		t.Fatalf(
+			"a run no machine can run the way it asked went back on the queue: %+v. The next "+
+				"heartbeat hands it to the same machine, which turns it down again, for good",
+			h.bound,
+		)
+	}
+
+	want := "runtime_unavailable: this machine runs work as host processes or in docker, not in kvm"
+	if moved.Reason != want {
+		t.Fatalf("the run failed saying %q, want %q", moved.Reason, want)
+	}
+}
+
+func TestWorkOneMachineCannotRunTheWayItAskedGoesToAnother(t *testing.T) {
+	h := newHarness(t)
+
+	spare := h.machine("spare")
+
+	offered := h.execution(entity.ExecutionQueued)
+	offered.RunnerID = h.runner.ID
+
+	h.holding(offered)
+	h.binding()
+
+	h.runners.EXPECT().
+		ListByAgentID(gomock.Any(), h.runner.AgentID).
+		Return([]entity.Runner{h.runner, spare}, nil)
+
+	h.live(spare, 2, 0)
+
+	if err := h.service.Declined(context.Background(), h.runner, message(
+		"01DEC", entity.ChannelExecutionDeclined, offered.ID,
+		channelv1.Decline{Code: channelv1.DeclineRuntimeUnavailable, Detail: "docker is not running"},
+	)); err != nil {
+		t.Fatalf("decline: %v", err)
+	}
+
+	if _, failed := h.moved(entity.ExecutionFailed); failed {
+		t.Fatal("the run failed although another of the agent's machines was idle and connected")
+	}
+
+	if h.bound[len(h.bound)-1].RunnerID != spare.ID {
+		t.Fatalf("the work was not handed to the other machine: %+v", h.bound)
+	}
+}
+
 func TestWorkTurnedDownByOneMachineGoesToAnother(t *testing.T) {
 	h := newHarness(t)
 
