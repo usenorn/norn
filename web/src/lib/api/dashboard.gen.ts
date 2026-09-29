@@ -5275,50 +5275,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/runners/me/executions/{executionId}/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send a batch of this run's command output
-         * @description Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-         */
-        post: operations["uploadExecutionLogs"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/runners/me/executions/{executionId}/transcript": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send a chunk of the coding agent's normalised event stream
-         * @description Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-         */
-        post: operations["uploadExecutionTranscript"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/runners/me/executions/{executionId}/artifacts": {
         parameters: {
             query?: never;
@@ -5341,28 +5297,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/runners/me/executions/{executionId}/streams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        /**
-         * How far each of this run's streams got
-         * @description What a machine reads after a restart to know where to carry on from, so a reconnect resends nothing it does not have to.
-         */
-        get: operations["getExecutionStreams"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/workspaces/{workspaceId}/executions/{executionId}/questions": {
         parameters: {
             query?: never;
@@ -5375,49 +5309,6 @@ export interface paths {
         };
         /** What this run stopped to ask, and what came back */
         get: operations["listWorkspaceExecutionQuestions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/executions/{executionId}/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        /** What this run printed, oldest batch first */
-        get: operations["listWorkspaceExecutionLogs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/executions/{executionId}/transcript": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        /**
-         * What the coding agent did, oldest chunk first
-         * @description Empty once the retention window has passed, or where the workspace keeps summaries only. The timeline is kept either way.
-         */
-        get: operations["listWorkspaceExecutionTranscript"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5463,29 +5354,6 @@ export interface paths {
          */
         get: operations["downloadWorkspaceExecutionArtifact"];
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workspaces/{workspaceId}/execution-policy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
-            cookie?: never;
-        };
-        /** Read how much of a run this workspace keeps, and for how long */
-        get: operations["getWorkspaceExecutionPolicy"];
-        /**
-         * Set how much of a run this workspace keeps, and for how long
-         * @description On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-         */
-        put: operations["setWorkspaceExecutionPolicy"];
         post?: never;
         delete?: never;
         options?: never;
@@ -6375,8 +6243,6 @@ export interface components {
             pausedAt?: string;
             /** Format: date-time */
             revokedAt?: string;
-            /** @description How much of a run this machine's workspace keeps. On minimal the server declines full transcripts, so a machine reads this to send summaries instead of having them refused. */
-            telemetry?: components["schemas"]["TelemetryMode"];
             /** @description What this machine last said about itself. Absent shape until it is connected, because capacity is the machine's own count and nothing else knows it. */
             load?: components["schemas"]["RunnerLoad"];
         };
@@ -6898,96 +6764,6 @@ export interface components {
             /** @description The heads the reviewer read, exactly as the review state reported them */
             heads: components["schemas"]["ReviewHead"][];
         };
-        /** @enum {string} */
-        ExecutionStream: "logs" | "transcript";
-        /** @enum {string} */
-        TelemetryMode: "full" | "minimal";
-        ExecutionLogEntry: {
-            /**
-             * Format: date-time
-             * @description When the line was written. Defaults to when the server received the batch.
-             */
-            at?: string;
-            /** @description Which handle it came out of */
-            stream?: string;
-            /** @description The service or step that wrote it */
-            source?: string;
-            text: string;
-        };
-        ExecutionTranscriptEntry: {
-            /** Format: date-time */
-            at?: string;
-            /** @description The normalised event kind, such as message, tool_call, tool_result or usage */
-            type: string;
-            /** @description Whatever the driver put in the event */
-            payload?: {
-                [key: string]: unknown;
-            };
-        };
-        UploadExecutionLogsRequest: {
-            /**
-             * Format: int64
-             * @description Where this batch sits in the stream. A position may be filled once.
-             */
-            sequence: number;
-            entries: components["schemas"]["ExecutionLogEntry"][];
-        };
-        UploadExecutionTranscriptRequest: {
-            /**
-             * Format: int64
-             * @description Where this chunk sits in the stream. A position may be filled once.
-             */
-            sequence: number;
-            entries: components["schemas"]["ExecutionTranscriptEntry"][];
-        };
-        ExecutionChunkReceipt: {
-            stream: components["schemas"]["ExecutionStream"];
-            /** Format: int64 */
-            sequence: number;
-            /** @description The server's own digest of what it stored, and what makes a replay a no-op */
-            digest: string;
-            entryCount: number;
-            /**
-             * Format: int64
-             * @description What the batch takes in storage
-             */
-            bytes: number;
-            /** @description True when this batch was already held, so nothing was stored a second time */
-            duplicate: boolean;
-            /** Format: date-time */
-            receivedAt: string;
-        };
-        ExecutionStreamCursor: {
-            stream: components["schemas"]["ExecutionStream"];
-            /** Format: int64 */
-            lastSequence: number;
-            chunks: number;
-            /** Format: int64 */
-            entryCount: number;
-            /** Format: int64 */
-            bytes: number;
-        };
-        ExecutionChunk: {
-            stream: components["schemas"]["ExecutionStream"];
-            /** Format: int64 */
-            sequence: number;
-            digest: string;
-            entryCount: number;
-            /** Format: int64 */
-            bytes: number;
-            /** Format: date-time */
-            firstAt: string;
-            /** Format: date-time */
-            lastAt: string;
-            /** Format: date-time */
-            receivedAt: string;
-        };
-        ExecutionLogChunk: components["schemas"]["ExecutionChunk"] & {
-            entries: components["schemas"]["ExecutionLogEntry"][];
-        };
-        ExecutionTranscriptChunk: components["schemas"]["ExecutionChunk"] & {
-            entries: components["schemas"]["ExecutionTranscriptEntry"][];
-        };
         ExecutionArtifact: {
             /** Format: uuid */
             id: string;
@@ -7004,20 +6780,9 @@ export interface components {
             /** @description True when this file was already published, so the first id is returned */
             duplicate: boolean;
         };
-        WorkspaceExecutionPolicy: {
-            /** Format: uuid */
-            workspaceId: string;
-            telemetry: components["schemas"]["TelemetryMode"];
-            /** @description How long a run's output and transcript are kept. The timeline outlives them. */
-            uploadRetentionDays: number;
-        };
-        SetWorkspaceExecutionPolicyRequest: {
-            telemetry: components["schemas"]["TelemetryMode"];
-            uploadRetentionDays: number;
-        };
         ExecutionProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_chunk_conflict" | "execution_not_planning" | "execution_plan_missing" | "execution_plan_stale" | "execution_questions_open" | "decision_forbidden" | "review_closed" | "review_stale" | "review_empty" | "review_comment_not_yours" | "review_comment_reply" | "review_comment_anchor" | "review_comments_full";
+            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_not_planning" | "execution_plan_missing" | "execution_plan_stale" | "execution_questions_open" | "decision_forbidden" | "review_closed" | "review_stale" | "review_empty" | "review_comment_not_yours" | "review_comment_reply" | "review_comment_anchor" | "review_comments_full";
         };
         PreviewProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -20803,72 +20568,6 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    uploadExecutionLogs: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UploadExecutionLogsRequest"];
-            };
-        };
-        responses: {
-            /** @description What the server holds for this batch */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExecutionChunkReceipt"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["ExecutionConflict"];
-            413: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    uploadExecutionTranscript: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UploadExecutionTranscriptRequest"];
-            };
-        };
-        responses: {
-            /** @description What the server holds for this chunk */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExecutionChunkReceipt"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["ExecutionConflict"];
-            413: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
     uploadExecutionArtifact: {
         parameters: {
             query?: never;
@@ -20905,32 +20604,6 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    getExecutionStreams: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description One cursor per stream the server holds anything for */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExecutionStreamCursor"][];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
     listWorkspaceExecutionQuestions: {
         parameters: {
             query?: never;
@@ -20950,68 +20623,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IssueQuestionList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    listWorkspaceExecutionLogs: {
-        parameters: {
-            query?: {
-                /** @description The sequence of the last batch already held */
-                after?: number;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The next batches of output */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExecutionLogChunk"][];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    listWorkspaceExecutionTranscript: {
-        parameters: {
-            query?: {
-                /** @description The sequence of the last chunk already held */
-                after?: number;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-                executionId: components["parameters"]["ExecutionId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The next chunks of the transcript */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExecutionTranscriptChunk"][];
                 };
             };
             401: components["responses"]["Problem"];
@@ -21072,61 +20683,6 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    getWorkspaceExecutionPolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The workspace execution policy */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceExecutionPolicy"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["Problem"];
-        };
-    };
-    setWorkspaceExecutionPolicy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspaceId: components["parameters"]["WorkspaceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetWorkspaceExecutionPolicyRequest"];
-            };
-        };
-        responses: {
-            /** @description The policy as it now stands */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkspaceExecutionPolicy"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Forbidden"];
-            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

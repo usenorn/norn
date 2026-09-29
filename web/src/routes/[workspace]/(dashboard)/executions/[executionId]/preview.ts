@@ -40,8 +40,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -92,8 +90,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -155,8 +151,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -219,8 +213,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -294,8 +286,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -399,8 +389,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -594,56 +582,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [
-						{
-							at: "2026-08-23T09:04:02Z",
-							stream: "stdout",
-							source: "api",
-							text: "listening on http://127.0.0.1:4310",
-						},
-						{
-							at: "2026-08-23T09:04:03Z",
-							stream: "stdout",
-							source: "api",
-							text: "connected to postgres",
-						},
-						{
-							at: "2026-08-23T09:04:20Z",
-							stream: "stderr",
-							source: "worker",
-							text: "queue empty, sleeping",
-						},
-					],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -850,27 +788,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [
-						{
-							at: "2026-08-23T09:04:02Z",
-							stream: "stdout",
-							source: "api",
-							text: "listening on http://127.0.0.1:4310",
-						},
-						{
-							at: "2026-08-23T09:04:03Z",
-							stream: "stdout",
-							source: "api",
-							text: "connected to postgres",
-						},
-						{
-							at: "2026-08-23T09:04:20Z",
-							stream: "stderr",
-							source: "worker",
-							text: "queue empty, sleeping",
-						},
-					],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1054,8 +971,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1228,8 +1143,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1403,8 +1316,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1626,37 +1537,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							createdAt: "2026-08-23T09:20:00Z",
 						},
 					],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1853,37 +1733,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2105,37 +1954,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							createdAt: "2026-08-23T09:20:00Z",
 						},
 					],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2332,37 +2150,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2567,37 +2354,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2802,37 +2558,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3072,37 +2797,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							createdAt: "2026-08-23T09:20:00Z",
 						},
 					],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3307,37 +3001,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3568,8 +3231,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							answeredAt: "2026-08-23T09:24:00Z",
 						},
 					],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3767,8 +3428,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3998,37 +3657,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4289,8 +3917,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4566,37 +4192,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4764,8 +4359,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4940,8 +4533,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -5115,8 +4706,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14-r2",
@@ -5320,37 +4909,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -5574,37 +5132,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -5865,37 +5392,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -6104,37 +5600,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -6432,37 +5897,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -6747,8 +6181,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							answeredAt: "2026-08-23T09:24:00Z",
 						},
 					],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -7011,37 +6443,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",

@@ -38,7 +38,6 @@ const (
 	ExecutionDeclined    MessageType = "execution.declined"
 	ExecutionStateReport MessageType = "execution.state"
 	ExecutionEvent       MessageType = "execution.event"
-	TranscriptRef        MessageType = "agent.transcript_ref"
 	ServiceState         MessageType = "service.state"
 	PreviewState         MessageType = "preview.state"
 	QuestionAsked        MessageType = "question.asked"
@@ -58,7 +57,7 @@ func ServerMessages() []MessageType {
 func RunnerMessages() []MessageType {
 	return []MessageType{
 		RunnerHello, RunnerHeartbeat, ExecutionAccepted, ExecutionDeclined, ExecutionStateReport,
-		ExecutionEvent, TranscriptRef, ServiceState, PreviewState, QuestionAsked, PlanProposed,
+		ExecutionEvent, ServiceState, PreviewState, QuestionAsked, PlanProposed,
 		ChangeSetUpdated, ExecutionResult, ExecutionRetention,
 	}
 }

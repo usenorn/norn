@@ -36,7 +36,6 @@ const (
 	TaskTypeSCMBackfill             = "scm:backfill"
 	TaskTypeSCMResume               = "scm:resume"
 	TaskTypeExecutionLeaseSweep     = "execution:lease_sweep"
-	TaskTypeExecutionUploadSweep    = "execution:upload_sweep"
 	TaskTypeQuestionExpirySweep     = "question:expiry_sweep"
 	TaskTypeIntakeDelivery          = "intake:delivery"
 	TaskTypeTelegramUpdate          = "telegram:update"

@@ -71,7 +71,6 @@ import (
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	executionplanrepo "github.com/usenorn/norn/internal/repository/executionplan"
-	executionpolicyrepo "github.com/usenorn/norn/internal/repository/executionpolicy"
 	executionreviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
 	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
 	executionuploadrepo "github.com/usenorn/norn/internal/repository/executionupload"
@@ -252,7 +251,6 @@ var baseSet = wire.NewSet(
 	executionplanrepo.Set,
 	executionreviewrepo.Set,
 	executionservicerepo.Set,
-	executionpolicyrepo.Set,
 	executionuploadrepo.Set,
 	changesetrepo.Set,
 	previewrepo.Set,

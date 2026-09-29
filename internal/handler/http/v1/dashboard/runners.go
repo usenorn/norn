@@ -99,20 +99,7 @@ func (h *handler) GetCurrentRunner(
 		return nil, err
 	}
 
-	telemetry, err := h.executionUploads.Telemetry(ctx)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	dto := runnerDTO(runner)
-	mode := api.TelemetryMode(telemetry)
-	dto.Telemetry = &mode
-
-	return api.GetCurrentRunner200JSONResponse(dto), nil
+	return api.GetCurrentRunner200JSONResponse(runnerDTO(runner)), nil
 }
 
 func (h *handler) ListWorkspaceRunners(

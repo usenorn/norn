@@ -589,9 +589,6 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrExecutionNoRunner):
 		return executionConflictProblem(api.ExecutionNoRunner, err), true
 
-	case errors.Is(err, entity.ErrExecutionChunkConflict):
-		return executionConflictProblem(api.ExecutionChunkConflict, err), true
-
 	case errors.Is(err, entity.ErrPreviewNotFound),
 		errors.Is(err, entity.ErrPreviewShareNotFound),
 		errors.Is(err, entity.ErrPreviewGrantNotFound):
@@ -628,10 +625,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrExecutionUploadExhausted):
 		return newProblem(http.StatusRequestEntityTooLarge, err.Error()), true
 
-	case errors.Is(err, entity.ErrExecutionUploadEmpty),
-		errors.Is(err, entity.ErrExecutionUploadCrowded),
-		errors.Is(err, entity.ErrExecutionSequenceInvalid),
-		errors.Is(err, entity.ErrExecutionTelemetryMinimal):
+	case errors.Is(err, entity.ErrExecutionUploadEmpty):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
 
 	case errors.Is(err, entity.ErrIssueQuestionNotFound):
@@ -2943,27 +2937,7 @@ func (r problemResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.Resp
 	return r.write(w)
 }
 
-func (r problemResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
 func (r problemResponse) VisitUploadExecutionArtifactResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitGetExecutionStreamsResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
@@ -2972,14 +2946,6 @@ func (r problemResponse) VisitListWorkspaceExecutionArtifactsResponse(w http.Res
 }
 
 func (r problemResponse) VisitDownloadWorkspaceExecutionArtifactResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-	return r.write(w)
-}
-
-func (r problemResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

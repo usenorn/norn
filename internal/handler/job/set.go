@@ -36,6 +36,5 @@ var Set = wire.NewSet(
 	NewSCMBackfillHandler,
 	NewSCMResumeHandler,
 	NewExecutionLeaseSweepHandler,
-	NewExecutionUploadSweepHandler,
 	NewQuestionExpirySweepHandler,
 )

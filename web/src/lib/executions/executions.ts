@@ -11,8 +11,6 @@ export type ExecutionEventKind = components["schemas"]["ExecutionEventKind"];
 export type ExecutionService = components["schemas"]["ExecutionService"];
 export type ExecutionRunner = components["schemas"]["ExecutionRunner"];
 export type ExecutionPreview = components["schemas"]["ExecutionPreview"];
-export type ExecutionLogEntry = components["schemas"]["ExecutionLogEntry"];
-export type ExecutionTranscriptEntry = components["schemas"]["ExecutionTranscriptEntry"];
 export type IssueQuestion = components["schemas"]["IssueQuestion"];
 export type ExecutionChangeSet = components["schemas"]["ExecutionChangeSet"];
 export type ExecutionRepositoryChange = components["schemas"]["ExecutionRepositoryChange"];
@@ -36,17 +34,11 @@ export type RunView =
 			previews: ExecutionPreviewDetail[];
 			runner?: ExecutionRunner;
 			questions: IssueQuestion[];
-			transcript: ExecutionTranscriptEntry[];
-			logs: ExecutionLogEntry[];
-			transcriptCursor?: number;
-			logCursor?: number;
 			changeset?: ExecutionChangeSet;
 			codeLinks: CodeLink[];
 			plans: ExecutionPlan[];
 			right: DecisionRight;
 	  };
-
-export const chunkPageSize = 8;
 
 export const timelinePageSize = 100;
 
@@ -423,10 +415,6 @@ export function probeLine(probe: ExecutionService["probe"]): string {
 	}
 }
 
-export function logsFor(logs: ExecutionLogEntry[], service: string): ExecutionLogEntry[] {
-	return logs.filter((entry) => entry.source === service);
-}
-
 export function slotLine(runner: ExecutionRunner | undefined): string | undefined {
 	if (!runner) return undefined;
 	if (!runner.load.connected) return "offline";
@@ -498,33 +486,6 @@ export function mergeTimeline(held: ExecutionEvent[], arriving: ExecutionEvent[]
 	for (const event of arriving) merged.set(event.id, event);
 
 	return [...merged.values()].sort((left, right) => left.sequence - right.sequence);
-}
-
-export function transcriptSpeaker(entry: ExecutionTranscriptEntry): string {
-	switch (entry.type) {
-		case "message":
-			return "Said";
-		case "tool_call":
-			return "Used";
-		case "tool_result":
-			return "Answered";
-		case "usage":
-			return "Reported what the turn cost";
-		default:
-			return entry.type;
-	}
-}
-
-export function transcriptText(entry: ExecutionTranscriptEntry): string {
-	const payload = entry.payload ?? {};
-
-	for (const field of ["text", "content", "tool", "name"]) {
-		const held = payload[field];
-
-		if (typeof held === "string" && held !== "") return held;
-	}
-
-	return JSON.stringify(payload);
 }
 
 export type ChangeTotals = {

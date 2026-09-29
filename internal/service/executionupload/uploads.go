@@ -2,10 +2,7 @@ package executionupload
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
@@ -16,11 +13,8 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-const chunkContentType = "application/gzip"
-
 type executionUploadsService struct {
 	uploads     repository.ExecutionUpload
-	policies    repository.ExecutionPolicy
 	blobs       repository.Blob
 	runners     service.Runners
 	executions  service.Executions
@@ -31,7 +25,6 @@ type executionUploadsService struct {
 
 func New(
 	uploads repository.ExecutionUpload,
-	policies repository.ExecutionPolicy,
 	blobs repository.Blob,
 	runners service.Runners,
 	executions service.Executions,
@@ -41,7 +34,6 @@ func New(
 ) service.ExecutionUploads {
 	return &executionUploadsService{
 		uploads:     uploads,
-		policies:    policies,
 		blobs:       blobs,
 		runners:     runners,
 		executions:  executions,
@@ -93,69 +85,17 @@ func (s *executionUploadsService) affordable(
 	return nil
 }
 
-func (s *executionUploadsService) keeping(
+func (s *executionUploadsService) Artifacts(
 	ctx context.Context,
 	workspaceID uuid.UUID,
-	stream entity.ExecutionStream,
-) error {
-	policy, err := s.effective(ctx, workspaceID)
-	if err != nil {
-		return err
-	}
-
-	if !policy.Telemetry.Keeps(stream) {
-		return entity.ErrExecutionTelemetryMinimal
-	}
-
-	return nil
-}
-
-func (s *executionUploadsService) effective(
-	ctx context.Context,
-	workspaceID uuid.UUID,
-) (entity.WorkspaceExecutionPolicy, error) {
-	policy, err := s.policies.Policy(ctx, workspaceID)
-	if err != nil {
-		return entity.WorkspaceExecutionPolicy{}, err
-	}
-
-	return policy.Normalised(s.cfg.UploadRetention), nil
-}
-
-func (s *executionUploadsService) Cursors(
-	ctx context.Context,
 	executionID string,
-) ([]entity.ExecutionStreamCursor, error) {
-	if _, err := s.uploading(ctx, executionID); err != nil {
+) ([]entity.ExecutionArtifact, error) {
+	execution, err := s.executions.Visible(ctx, workspaceID, executionID)
+	if err != nil {
 		return nil, err
 	}
 
-	return s.uploads.Cursors(ctx, executionID)
-}
-
-// Telemetry answers the calling machine, and only about its own workspace, so a runner learns to
-// send summaries without holding any scope over the workspace it runs for.
-func (s *executionUploadsService) Telemetry(ctx context.Context) (entity.TelemetryMode, error) {
-	runner, err := s.runners.Self(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	policy, err := s.effective(ctx, runner.WorkspaceID)
-	if err != nil {
-		return "", err
-	}
-
-	return policy.Telemetry, nil
-}
-
-func canonical(entries any) ([]byte, error) {
-	encoded, err := json.Marshal(entries)
-	if err != nil {
-		return nil, errors.Join(entity.ErrExecutionUploadEmpty, err)
-	}
-
-	return encoded, nil
+	return s.uploads.ListArtifacts(ctx, execution.ID)
 }
 
 func text(value string, max int) string {
@@ -165,20 +105,4 @@ func text(value string, max int) string {
 	}
 
 	return string([]rune(trimmed)[:max])
-}
-
-func span(stamps []time.Time, fallback time.Time) (time.Time, time.Time) {
-	first, last := fallback, fallback
-
-	for index, stamp := range stamps {
-		if index == 0 || stamp.Before(first) {
-			first = stamp
-		}
-
-		if index == 0 || stamp.After(last) {
-			last = stamp
-		}
-	}
-
-	return first, last
 }

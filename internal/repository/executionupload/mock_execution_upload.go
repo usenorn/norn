@@ -12,7 +12,6 @@ package executionupload
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
@@ -41,21 +40,6 @@ func NewMockExecutionUpload(ctrl *gomock.Controller) *MockExecutionUpload {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockExecutionUpload) EXPECT() *MockExecutionUploadMockRecorder {
 	return m.recorder
-}
-
-// AppendChunk mocks base method.
-func (m *MockExecutionUpload) AppendChunk(ctx context.Context, chunk entity.ExecutionChunk) (entity.ExecutionChunk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AppendChunk", ctx, chunk)
-	ret0, _ := ret[0].(entity.ExecutionChunk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AppendChunk indicates an expected call of AppendChunk.
-func (mr *MockExecutionUploadMockRecorder) AppendChunk(ctx, chunk any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppendChunk", reflect.TypeOf((*MockExecutionUpload)(nil).AppendChunk), ctx, chunk)
 }
 
 // Artifact mocks base method.
@@ -88,65 +72,6 @@ func (mr *MockExecutionUploadMockRecorder) ArtifactByDigest(ctx, executionID, di
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ArtifactByDigest", reflect.TypeOf((*MockExecutionUpload)(nil).ArtifactByDigest), ctx, executionID, digest)
 }
 
-// Chunk mocks base method.
-func (m *MockExecutionUpload) Chunk(ctx context.Context, executionID string, stream entity.ExecutionStream, digest string) (entity.ExecutionChunk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Chunk", ctx, executionID, stream, digest)
-	ret0, _ := ret[0].(entity.ExecutionChunk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Chunk indicates an expected call of Chunk.
-func (mr *MockExecutionUploadMockRecorder) Chunk(ctx, executionID, stream, digest any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Chunk", reflect.TypeOf((*MockExecutionUpload)(nil).Chunk), ctx, executionID, stream, digest)
-}
-
-// Cursors mocks base method.
-func (m *MockExecutionUpload) Cursors(ctx context.Context, executionID string) ([]entity.ExecutionStreamCursor, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Cursors", ctx, executionID)
-	ret0, _ := ret[0].([]entity.ExecutionStreamCursor)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Cursors indicates an expected call of Cursors.
-func (mr *MockExecutionUploadMockRecorder) Cursors(ctx, executionID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cursors", reflect.TypeOf((*MockExecutionUpload)(nil).Cursors), ctx, executionID)
-}
-
-// DropChunk mocks base method.
-func (m *MockExecutionUpload) DropChunk(ctx context.Context, chunkID uuid.UUID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DropChunk", ctx, chunkID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DropChunk indicates an expected call of DropChunk.
-func (mr *MockExecutionUploadMockRecorder) DropChunk(ctx, chunkID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DropChunk", reflect.TypeOf((*MockExecutionUpload)(nil).DropChunk), ctx, chunkID)
-}
-
-// ExpiredChunks mocks base method.
-func (m *MockExecutionUpload) ExpiredChunks(ctx context.Context, now time.Time, fallbackDays, limit int) ([]entity.ExecutionChunk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExpiredChunks", ctx, now, fallbackDays, limit)
-	ret0, _ := ret[0].([]entity.ExecutionChunk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ExpiredChunks indicates an expected call of ExpiredChunks.
-func (mr *MockExecutionUploadMockRecorder) ExpiredChunks(ctx, now, fallbackDays, limit any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpiredChunks", reflect.TypeOf((*MockExecutionUpload)(nil).ExpiredChunks), ctx, now, fallbackDays, limit)
-}
-
 // ListArtifacts mocks base method.
 func (m *MockExecutionUpload) ListArtifacts(ctx context.Context, executionID string) ([]entity.ExecutionArtifact, error) {
 	m.ctrl.T.Helper()
@@ -160,21 +85,6 @@ func (m *MockExecutionUpload) ListArtifacts(ctx context.Context, executionID str
 func (mr *MockExecutionUploadMockRecorder) ListArtifacts(ctx, executionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListArtifacts", reflect.TypeOf((*MockExecutionUpload)(nil).ListArtifacts), ctx, executionID)
-}
-
-// ListChunks mocks base method.
-func (m *MockExecutionUpload) ListChunks(ctx context.Context, executionID string, stream entity.ExecutionStream, page entity.ExecutionChunkPage) ([]entity.ExecutionChunk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListChunks", ctx, executionID, stream, page)
-	ret0, _ := ret[0].([]entity.ExecutionChunk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListChunks indicates an expected call of ListChunks.
-func (mr *MockExecutionUploadMockRecorder) ListChunks(ctx, executionID, stream, page any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListChunks", reflect.TypeOf((*MockExecutionUpload)(nil).ListChunks), ctx, executionID, stream, page)
 }
 
 // SaveArtifact mocks base method.

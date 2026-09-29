@@ -19,13 +19,11 @@
 	import ChangesetPanel from "$lib/executions/changeset-panel.svelte";
 	import ServicesPanel from "$lib/executions/services-panel.svelte";
 	import PreviewsPanel from "$lib/executions/previews-panel.svelte";
-	import Transcript from "$lib/executions/transcript.svelte";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import {
 		blockingQuestion,
 		changeStatLine,
 		changeTotals,
-		chunkPageSize,
 		isSettled,
 		mergeTimeline,
 		readRunFailure,
@@ -63,10 +61,6 @@
 		events: [],
 		full: false,
 	});
-	let readTranscript = $state.raw<{ source: unknown; entries: unknown[]; cursor?: number }>({
-		source: null,
-		entries: [],
-	});
 	let pushedChangeset = $state.raw<{ source: unknown; changeset: ExecutionChangeSet } | null>(null);
 	let minted = $state.raw<{ run: string; held: Record<string, string> }>({ run: "", held: {} });
 
@@ -85,14 +79,6 @@
 		const read = readMore.source === ready ? readMore.events : [];
 
 		return mergeTimeline(ready.timeline, [...read, ...pushed]);
-	});
-
-	const transcript = $derived.by(() => {
-		if (!ready) return [];
-
-		const read = readTranscript.source === ready ? readTranscript.entries : [];
-
-		return [...ready.transcript, ...read] as typeof ready.transcript;
 	});
 
 	const changeset = $derived(
@@ -115,9 +101,6 @@
 
 		return ready.timeline.length >= timelinePreviewSize;
 	});
-	const moreTranscript = $derived(
-		(readTranscript.source === ready ? readTranscript.cursor : ready?.transcriptCursor) !== undefined
-	);
 
 	const realtime = useRealtime();
 
@@ -380,33 +363,6 @@
 		}
 	}
 
-	async function readOnTranscript() {
-		if (!ready || working) return;
-
-		working = true;
-
-		try {
-			const after =
-				readTranscript.source === ready ? readTranscript.cursor : ready.transcriptCursor;
-
-			const { data: next } = await api.GET(
-				"/workspaces/{workspaceId}/executions/{executionId}/transcript",
-				{ params: { path: pathOf(ready.execution.id), query: { after, limit: chunkPageSize } } }
-			);
-
-			if (!next) return;
-
-			const held = readTranscript.source === ready ? readTranscript.entries : [];
-
-			readTranscript = {
-				source: ready,
-				entries: [...held, ...next.flatMap((chunk) => chunk.entries)],
-				cursor: next.at(-1)?.sequence,
-			};
-		} finally {
-			working = false;
-		}
-	}
 </script>
 
 <svelte:head>
@@ -559,8 +515,6 @@
 				<ServicesPanel
 					{execution}
 					services={run.services}
-					logs={run.logs}
-					timezone={workspace.timezone}
 				/>
 
 				<PreviewsPanel
@@ -573,14 +527,6 @@
 					timezone={workspace.timezone}
 					onshare={share}
 					onrevoke={revoke}
-				/>
-
-				<Transcript
-					{transcript}
-					timezone={workspace.timezone}
-					more={moreTranscript}
-					{working}
-					onmore={readOnTranscript}
 				/>
 
 				{#if questions.length > (asking ? 1 : 0)}

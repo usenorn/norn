@@ -1,6 +1,6 @@
 import { keys } from "$lib/api/keys";
 import { readDecisionRight } from "$lib/executions/decision.server";
-import { chunkPageSize, type RunView } from "$lib/executions/executions";
+import type { RunView } from "$lib/executions/executions";
 import { runPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 
@@ -33,15 +33,9 @@ export const load: PageServerLoad = async ({
 	if (detail.error?.status === 404) return { run: { kind: "not_found" } };
 	if (!detail.data) return { run: { kind: "unavailable" } };
 
-	const [questions, transcript, logs, previews, links, plans, right] = await Promise.all([
+	const [questions, previews, links, plans, right] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/questions", {
 			params: { path },
-		}),
-		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/transcript", {
-			params: { path, query: { limit: chunkPageSize } },
-		}),
-		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/logs", {
-			params: { path, query: { limit: chunkPageSize } },
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/previews", {
 			params: { path },
@@ -54,9 +48,6 @@ export const load: PageServerLoad = async ({
 		}),
 		readDecisionRight(locals.api, workspace.id, detail.data.execution.issueId),
 	]);
-
-	const transcriptChunks = transcript.data ?? [];
-	const logChunks = logs.data ?? [];
 
 	return {
 		run: {
@@ -73,10 +64,6 @@ export const load: PageServerLoad = async ({
 			plans: plans.data ?? [],
 			right,
 			questions: questions.data?.questions ?? [],
-			transcript: transcriptChunks.flatMap((chunk) => chunk.entries),
-			logs: logChunks.flatMap((chunk) => chunk.entries),
-			transcriptCursor: transcriptChunks.at(-1)?.sequence,
-			logCursor: logChunks.at(-1)?.sequence,
 		},
 	};
 };
