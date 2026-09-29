@@ -216,6 +216,7 @@ export type RunFailure =
 	| { kind: "plan_missing" }
 	| { kind: "plan_stale" }
 	| { kind: "questions_open" }
+	| { kind: "decision_forbidden" }
 	| { kind: "review_closed" }
 	| { kind: "review_stale" }
 	| { kind: "review_empty" }
@@ -256,6 +257,8 @@ export function readRunFailure(error: unknown): RunFailure {
 			return { kind: "plan_stale" };
 		case "execution_questions_open":
 			return { kind: "questions_open" };
+		case "decision_forbidden":
+			return { kind: "decision_forbidden" };
 		case "review_closed":
 			return { kind: "review_closed" };
 		case "review_stale":
@@ -311,6 +314,8 @@ export function runFailureMessage(failure: RunFailure): string {
 			return "The coding agent has proposed a newer revision of the plan. Read that one before deciding.";
 		case "questions_open":
 			return "The run is still waiting on an answer. Answer every open question before deciding.";
+		case "decision_forbidden":
+			return "Only the assignee or a workspace admin can decide this.";
 		case "review_closed":
 			return "These changes are no longer waiting for review. Reload to see where the run got to.";
 		case "review_stale":

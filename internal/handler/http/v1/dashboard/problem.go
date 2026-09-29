@@ -583,6 +583,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrExecutionSelfApproval):
 		return executionProblem(http.StatusForbidden, api.ExecutionSelfApproval, err), true
 
+	case errors.Is(err, entity.ErrIssueDecisionForbidden):
+		return executionProblem(http.StatusForbidden, api.DecisionForbidden, err), true
+
 	case errors.Is(err, entity.ErrExecutionNoRunner):
 		return executionConflictProblem(api.ExecutionNoRunner, err), true
 

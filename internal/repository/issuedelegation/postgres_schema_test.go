@@ -155,5 +155,6 @@ func statements() map[string]string {
 		"delegationByIDQuery":     delegationByIDQuery,
 		"openDelegationQuery":     openDelegationQuery,
 		"recallDelegationQuery":   recallDelegationQuery,
+		"authorityQuery":          authorityQuery,
 	}
 }

@@ -262,13 +262,14 @@ func (s *executionsService) Reported(
 }
 
 func (s *executionsService) awaitDecision(ctx context.Context, execution entity.Execution) error {
-	delegation, err := s.delegates.Open(ctx, execution.WorkspaceID, execution.IssueID)
-	if errors.Is(err, entity.ErrIssueDelegationNotFound) {
-		return nil
-	}
-
+	authority, err := s.delegates.Authority(ctx, execution.WorkspaceID, execution.IssueID)
 	if err != nil {
 		return err
+	}
+
+	maker := authority.Maker()
+	if maker == uuid.Nil {
+		return nil
 	}
 
 	var agentAccount uuid.UUID
@@ -282,7 +283,7 @@ func (s *executionsService) awaitDecision(ctx context.Context, execution entity.
 		Kind:        entity.NotificationKindApprovalWaiting,
 		Actor:       agentAccount,
 		ActorKind:   entity.ActorKindAgent,
-		Target:      delegation.DelegatedByAccountID,
+		Target:      maker,
 	})
 }
 

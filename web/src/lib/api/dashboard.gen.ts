@@ -6928,7 +6928,7 @@ export interface components {
         };
         ExecutionProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_chunk_conflict" | "execution_not_planning" | "execution_plan_missing" | "execution_plan_stale" | "execution_questions_open" | "review_closed" | "review_stale" | "review_empty" | "review_comment_not_yours" | "review_comment_reply" | "review_comment_anchor" | "review_comments_full";
+            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_chunk_conflict" | "execution_not_planning" | "execution_plan_missing" | "execution_plan_stale" | "execution_questions_open" | "decision_forbidden" | "review_closed" | "review_stale" | "review_empty" | "review_comment_not_yours" | "review_comment_reply" | "review_comment_anchor" | "review_comments_full";
         };
         PreviewProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */

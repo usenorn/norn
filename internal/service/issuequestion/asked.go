@@ -48,6 +48,7 @@ func (s *questionsService) Asked(
 		workspaceID: execution.WorkspaceID,
 		issueID:     execution.IssueID,
 		teamID:      execution.TeamID,
+		stage:       entity.QuestionStageFor(execution.Stage),
 	}
 
 	_, err = s.ask(ctx, target, asker(ctx), entity.ActorKindAgent, service.AskQuestionInput{

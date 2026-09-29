@@ -81,6 +81,8 @@ type harness struct {
 	comments    []entity.ExecutionReviewComment
 	submitted   []entity.ExecutionReview
 	delegator   uuid.UUID
+	role        entity.MembershipRole
+	authority   entity.DecisionAuthority
 	notified    []entity.NotificationEvent
 }
 
@@ -120,6 +122,7 @@ func newHarness(t *testing.T) *harness {
 		audit:       auditsvc.NewMockAudit(ctrl),
 		workspaceID: workspaceID,
 		caller:      uuid.New(),
+		role:        entity.MembershipRoleMember,
 		issue: entity.Issue{
 			ID:           uuid.New(),
 			WorkspaceID:  workspaceID,
@@ -173,7 +176,7 @@ func newHarness(t *testing.T) *harness {
 
 			return entity.Decision{
 				Actor: entity.Actor{Kind: kind, AccountID: h.caller, AgentID: h.callerAgent},
-				Role:  entity.MembershipRoleAdmin,
+				Role:  h.role,
 				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
 			}, nil
 		}).
@@ -253,6 +256,19 @@ func newHarness(t *testing.T) *harness {
 		Open(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.IssueDelegation, error) {
 			return entity.IssueDelegation{DelegatedByAccountID: h.delegator}, nil
+		}).
+		AnyTimes()
+
+	h.authority = entity.DecisionAuthority{
+		AssigneeAccountID:  h.caller,
+		AssigneeKind:       entity.AccountKindPerson,
+		DelegatorAccountID: h.delegator,
+	}
+
+	h.delegates.EXPECT().
+		Authority(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.DecisionAuthority, error) {
+			return h.authority, nil
 		}).
 		AnyTimes()
 

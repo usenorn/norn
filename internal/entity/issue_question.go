@@ -69,6 +69,21 @@ func (s QuestionState) Settled() bool {
 	return s != QuestionAsked
 }
 
+type QuestionStage string
+
+const (
+	QuestionStagePlanning       QuestionStage = "planning"
+	QuestionStageImplementation QuestionStage = "implementation"
+)
+
+func QuestionStageFor(stage ExecutionStage) QuestionStage {
+	if stage == StagePlanning {
+		return QuestionStagePlanning
+	}
+
+	return QuestionStageImplementation
+}
+
 type QuestionContext struct {
 	Preview   string   `json:"preview,omitempty"`
 	Files     []string `json:"files,omitempty"`
@@ -80,6 +95,7 @@ type IssueQuestion struct {
 	WorkspaceID      uuid.UUID
 	IssueID          uuid.UUID
 	ExecutionID      string
+	Stage            QuestionStage
 	Ref              string
 	Kind             QuestionKind
 	Blocking         bool

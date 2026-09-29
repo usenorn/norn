@@ -10749,6 +10749,7 @@ components:
                 - execution_plan_missing
                 - execution_plan_stale
                 - execution_questions_open
+                - decision_forbidden
                 - review_closed
                 - review_stale
                 - review_empty

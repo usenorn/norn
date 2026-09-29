@@ -16,7 +16,7 @@ import (
 )
 
 const questionColumns = `
-    q.id, q.workspace_id, q.issue_id, coalesce(q.execution_id, ''), q.runner_ref, q.kind,
+    q.id, q.workspace_id, q.issue_id, coalesce(q.execution_id, ''), coalesce(q.stage, ''), q.runner_ref, q.kind,
     q.blocking, q.options, q.allow_free_text, q.context, q.state,
     q.question, q.default_answer, q.deadline, q.answer,
     coalesce(q.asked_by_account_id::text, ''), coalesce(asked.display_name, ''), q.actor_kind,
@@ -32,10 +32,10 @@ const insertQuestionQuery = `
 INSERT INTO workspace_issue_questions (
     id, workspace_id, issue_id, execution_id, runner_ref, kind, blocking, options,
     allow_free_text, context, question, default_answer, deadline,
-    asked_by_account_id, actor_kind, created_at
+    asked_by_account_id, actor_kind, created_at, stage
 )
 VALUES ($1, $2, $3, nullif($4, ''), $5, $6, $7, $8::jsonb, $9, $10::jsonb, $11, $12, $13,
-        nullif($14, '')::uuid, $15, $16)
+        nullif($14, '')::uuid, $15, $16, nullif($17, ''))
 ON CONFLICT (execution_id, runner_ref) WHERE runner_ref <> '' DO NOTHING
 RETURNING id`
 
@@ -90,6 +90,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		id          string
 		workspaceID string
 		issueID     string
+		stage       string
 		kind        string
 		state       string
 		options     []byte
@@ -107,6 +108,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		&workspaceID,
 		&issueID,
 		&question.ExecutionID,
+		&stage,
 		&question.Ref,
 		&kind,
 		&question.Blocking,
@@ -132,6 +134,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		return entity.IssueQuestion{}, err
 	}
 
+	question.Stage = entity.QuestionStage(stage)
 	question.Kind = entity.QuestionKind(kind)
 	question.State = entity.QuestionState(state)
 	question.ActorKind = entity.ActorKind(actorKind)
@@ -254,6 +257,7 @@ func (r *questionRepository) Ask(
 		idOrEmpty(question.AskedByAccountID),
 		string(question.ActorKind),
 		question.CreatedAt,
+		string(question.Stage),
 	).Scan(&recorded)
 
 	// A ref this run has already used is the question it already asked: the machine replayed the

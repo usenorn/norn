@@ -27,15 +27,29 @@ func (c DecisionChannel) Valid() bool {
 type DecisionAuthority struct {
 	AssigneeAccountID  uuid.UUID
 	AssigneeKind       AccountKind
+	AssigneeName       string
 	DelegatorAccountID uuid.UUID
+	DelegatorName      string
+}
+
+func (a DecisionAuthority) assigneeDecides() bool {
+	return a.AssigneeAccountID != uuid.Nil && a.AssigneeKind == AccountKindPerson
 }
 
 func (a DecisionAuthority) Maker() uuid.UUID {
-	if a.AssigneeAccountID != uuid.Nil && a.AssigneeKind == AccountKindPerson {
+	if a.assigneeDecides() {
 		return a.AssigneeAccountID
 	}
 
 	return a.DelegatorAccountID
+}
+
+func (a DecisionAuthority) MakerName() string {
+	if a.assigneeDecides() {
+		return a.AssigneeName
+	}
+
+	return a.DelegatorName
 }
 
 func (a DecisionAuthority) Permits(decision Decision) bool {

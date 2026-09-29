@@ -2030,6 +2030,7 @@ func (e ExecutionPreviewState) Valid() bool {
 
 // Defines values for ExecutionProblemCode.
 const (
+	DecisionForbidden      ExecutionProblemCode = "decision_forbidden"
 	ExecutionChunkConflict ExecutionProblemCode = "execution_chunk_conflict"
 	ExecutionFinished      ExecutionProblemCode = "execution_finished"
 	ExecutionNoRunner      ExecutionProblemCode = "execution_no_runner"
@@ -2053,6 +2054,8 @@ const (
 // Valid indicates whether the value is a known member of the ExecutionProblemCode enum.
 func (e ExecutionProblemCode) Valid() bool {
 	switch e {
+	case DecisionForbidden:
+		return true
 	case ExecutionChunkConflict:
 		return true
 	case ExecutionFinished:

@@ -42,6 +42,8 @@ type harness struct {
 	runner      entity.Runner
 	execution   entity.Execution
 	caller      uuid.UUID
+	role        entity.MembershipRole
+	authority   entity.DecisionAuthority
 
 	stored   []entity.IssueQuestion
 	recorded []entity.Activity
@@ -72,6 +74,7 @@ func newHarness(t *testing.T) *harness {
 		jobs:        jobrepo.NewMockJobProducer(ctrl),
 		workspaceID: workspaceID,
 		caller:      uuid.New(),
+		role:        entity.MembershipRoleMember,
 		issue: entity.Issue{
 			ID:           uuid.New(),
 			WorkspaceID:  workspaceID,
@@ -87,6 +90,12 @@ func newHarness(t *testing.T) *harness {
 			Name:        "vlad-mbp",
 			Status:      entity.RunnerStatusActive,
 		},
+	}
+
+	h.authority = entity.DecisionAuthority{
+		AssigneeAccountID: h.caller,
+		AssigneeKind:      entity.AccountKindPerson,
+		AssigneeName:      "Rae",
 	}
 
 	h.execution = entity.Execution{
@@ -259,8 +268,10 @@ func (h *harness) expectSurroundings() {
 	h.events.EXPECT().Publish(gomock.Any(), gomock.Any()).AnyTimes()
 
 	h.delegations.EXPECT().
-		Open(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(entity.IssueDelegation{DelegatedByAccountID: h.caller}, nil).
+		Authority(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.DecisionAuthority, error) {
+			return h.authority, nil
+		}).
 		AnyTimes()
 
 	h.issues.EXPECT().
@@ -275,7 +286,7 @@ func (h *harness) expectSurroundings() {
 		DoAndReturn(func(_ context.Context, request entity.AccessRequest) (entity.Decision, error) {
 			return entity.Decision{
 				Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: h.caller},
-				Role:  entity.MembershipRoleAdmin,
+				Role:  h.role,
 				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
 			}, nil
 		}).

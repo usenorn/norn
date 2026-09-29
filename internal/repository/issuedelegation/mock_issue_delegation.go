@@ -43,6 +43,21 @@ func (m *MockIssueDelegation) EXPECT() *MockIssueDelegationMockRecorder {
 	return m.recorder
 }
 
+// Authority mocks base method.
+func (m *MockIssueDelegation) Authority(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.DecisionAuthority, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Authority", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(entity.DecisionAuthority)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Authority indicates an expected call of Authority.
+func (mr *MockIssueDelegationMockRecorder) Authority(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authority", reflect.TypeOf((*MockIssueDelegation)(nil).Authority), ctx, workspaceID, issueID)
+}
+
 // Delegate mocks base method.
 func (m *MockIssueDelegation) Delegate(ctx context.Context, delegation entity.IssueDelegation) (entity.IssueDelegation, error) {
 	m.ctrl.T.Helper()

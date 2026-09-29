@@ -50,6 +50,21 @@ const delegationByIDQuery = `
 SELECT` + delegationColumns + delegationJoins + `
 WHERE d.workspace_id = $1 AND d.id = $2`
 
+const authorityQuery = `
+SELECT coalesce(i.assignee_account_id::text, ''), coalesce(assignee.kind, ''),
+       coalesce(assignee.display_name, ''),
+       coalesce(d.delegated_by_account_id::text, ''), coalesce(delegator.display_name, '')
+FROM workspace_issues i
+LEFT JOIN accounts assignee ON assignee.id = i.assignee_account_id
+LEFT JOIN LATERAL (
+    SELECT delegated_by_account_id FROM workspace_issue_delegations
+    WHERE workspace_id = i.workspace_id AND issue_id = i.id
+    ORDER BY recalled_at IS NULL DESC, delegated_at DESC, id DESC
+    LIMIT 1
+) d ON true
+LEFT JOIN accounts delegator ON delegator.id = d.delegated_by_account_id
+WHERE i.workspace_id = $1 AND i.id = $2`
+
 const recallDelegationQuery = `
 UPDATE workspace_issue_delegations
 SET recalled_at = $3, recalled_by_account_id = $4
@@ -171,6 +186,46 @@ func (r *delegationRepository) Open(
 	}
 
 	return delegation, nil
+}
+
+func (r *delegationRepository) Authority(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) (entity.DecisionAuthority, error) {
+	var (
+		authority entity.DecisionAuthority
+		assignee  string
+		kind      string
+		delegator string
+	)
+
+	if err := r.db.Querier(ctx).QueryRowContext(
+		ctx, authorityQuery, workspaceID.String(), issueID.String(),
+	).Scan(&assignee, &kind, &authority.AssigneeName, &delegator, &authority.DelegatorName); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.DecisionAuthority{}, entity.ErrIssueNotFound
+		}
+
+		return entity.DecisionAuthority{}, fmt.Errorf("find issue decision authority: %w", err)
+	}
+
+	authority.AssigneeKind = entity.AccountKind(kind)
+
+	var err error
+
+	if assignee != "" {
+		if authority.AssigneeAccountID, err = uuid.Parse(assignee); err != nil {
+			return entity.DecisionAuthority{}, fmt.Errorf("parse issue assignee id: %w", err)
+		}
+	}
+
+	if delegator != "" {
+		if authority.DelegatorAccountID, err = uuid.Parse(delegator); err != nil {
+			return entity.DecisionAuthority{}, fmt.Errorf("parse issue delegator id: %w", err)
+		}
+	}
+
+	return authority, nil
 }
 
 func (r *delegationRepository) ListByIssue(

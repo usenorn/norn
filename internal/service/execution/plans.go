@@ -264,6 +264,10 @@ func (s *executionsService) deciding(
 		return entity.ErrExecutionSelfApproval
 	}
 
+	if err := s.authorised(ctx, decision, execution); err != nil {
+		return err
+	}
+
 	return s.settled(ctx, execution)
 }
 

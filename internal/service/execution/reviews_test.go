@@ -209,3 +209,34 @@ func TestACommentIsPinnedToTheHeadItWasLeftOn(t *testing.T) {
 		t.Fatalf("a comment on a repository the run never touched got %v", err)
 	}
 }
+
+func TestOnlyTheAssigneeOrAnAdminApprovesOrRequestsChanges(t *testing.T) {
+	for _, verdict := range []entity.ExecutionReviewVerdict{entity.VerdictApprove, entity.VerdictRequestChanges} {
+		h := newHarness(t)
+		h.authority.AssigneeAccountID = uuid.New()
+		execution := h.underReview()
+
+		_, err := h.service.SubmitReview(context.Background(), h.workspaceID, execution.ID,
+			service.ReviewSubmission{Verdict: verdict, Summary: "Looks off.", Heads: entity.ReviewHeads{"api": "head-1"}},
+		)
+		if !errors.Is(err, entity.ErrIssueDecisionForbidden) {
+			t.Fatalf("a member who is not the assignee submitted %s and got %v", verdict, err)
+		}
+
+		if _, published := h.sent(entity.ChannelExecutionResume); published {
+			t.Fatalf("a refused %s still moved the run", verdict)
+		}
+	}
+}
+
+func TestAnyoneWhoManagesTheIssueMayStillCommentOnAReview(t *testing.T) {
+	h := newHarness(t)
+	h.authority.AssigneeAccountID = uuid.New()
+	execution := h.underReview()
+
+	if _, err := h.service.SubmitReview(context.Background(), h.workspaceID, execution.ID,
+		service.ReviewSubmission{Verdict: entity.VerdictComment, Summary: "Why two queries?", Heads: entity.ReviewHeads{"api": "head-1"}},
+	); err != nil {
+		t.Fatalf("comment on the review: %v", err)
+	}
+}

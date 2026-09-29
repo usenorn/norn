@@ -96,6 +96,7 @@ type asking struct {
 	workspaceID uuid.UUID
 	issueID     uuid.UUID
 	teamID      uuid.UUID
+	stage       entity.QuestionStage
 }
 
 func (s *questionsService) ask(
@@ -130,6 +131,7 @@ func (s *questionsService) ask(
 			WorkspaceID:      target.workspaceID,
 			IssueID:          target.issueID,
 			ExecutionID:      input.ExecutionID,
+			Stage:            target.stage,
 			Ref:              strings.TrimSpace(input.Ref),
 			Kind:             input.Kind,
 			Blocking:         input.Blocking,
@@ -263,6 +265,10 @@ func (s *questionsService) Answer(
 		return entity.IssueQuestion{}, entity.ErrIssueQuestionNotFound
 	}
 
+	if err := s.authorised(ctx, decision, issue); err != nil {
+		return entity.IssueQuestion{}, err
+	}
+
 	if !held.Acceptable(input.Answer) {
 		return entity.IssueQuestion{}, entity.ErrIssueQuestionUnanswerable
 	}
@@ -333,6 +339,10 @@ func (s *questionsService) Dismiss(
 		return entity.IssueQuestion{}, entity.ErrIssueQuestionNotFound
 	}
 
+	if err := s.authorised(ctx, decision, issue); err != nil {
+		return entity.IssueQuestion{}, err
+	}
+
 	dismissed, err := s.questions.Settle(ctx, workspaceID, repository.QuestionSettlement{
 		QuestionID: questionID,
 		State:      entity.QuestionDismissed,
@@ -356,12 +366,29 @@ func (s *questionsService) Dismiss(
 }
 
 func (s *questionsService) awaitedBy(ctx context.Context, target asking) uuid.UUID {
-	delegation, err := s.delegations.Open(ctx, target.workspaceID, target.issueID)
+	authority, err := s.delegations.Authority(ctx, target.workspaceID, target.issueID)
 	if err != nil {
 		return uuid.Nil
 	}
 
-	return delegation.DelegatedByAccountID
+	return authority.Maker()
+}
+
+func (s *questionsService) authorised(
+	ctx context.Context,
+	decision entity.Decision,
+	issue entity.Issue,
+) error {
+	authority, err := s.delegations.Authority(ctx, issue.WorkspaceID, issue.ID)
+	if err != nil {
+		return err
+	}
+
+	if !authority.Permits(decision) {
+		return entity.ErrIssueDecisionForbidden
+	}
+
+	return nil
 }
 
 func (s *questionsService) relay(ctx context.Context, question entity.IssueQuestion) {
