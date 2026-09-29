@@ -220,19 +220,24 @@
 		);
 	}
 
+	function headsOf(current: ExecutionChangeSet | undefined) {
+		return (current?.repositories ?? []).map((repo) => ({ repository: repo.repository, headSha: repo.headSha ?? "" }));
+	}
+
 	function approve() {
 		void act(() =>
-			api.POST("/workspaces/{workspaceId}/executions/{executionId}/approve", {
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/reviews", {
 				params: { path: pathOf(execution!.id) },
+				body: { verdict: "approve", heads: headsOf(changeset) },
 			})
 		);
 	}
 
 	function requestChanges(feedback: string): Promise<boolean> {
 		return act(() =>
-			api.POST("/workspaces/{workspaceId}/executions/{executionId}/resume", {
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/reviews", {
 				params: { path: pathOf(execution!.id) },
-				body: { feedback },
+				body: { verdict: "request_changes", summary: feedback, heads: headsOf(changeset) },
 			})
 		);
 	}

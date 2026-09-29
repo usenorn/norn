@@ -37,6 +37,25 @@ type ExecutionPlacement struct {
 	Sharing  []entity.Execution
 }
 
+type ExecutionReviewState struct {
+	Heads    entity.ReviewHeads
+	Comments []entity.ExecutionReviewComment
+	Reviews  []entity.ExecutionReview
+}
+
+type ReviewCommentDraft struct {
+	ParentID uuid.UUID
+	Anchor   entity.ReviewAnchor
+	Body     string
+	Publish  bool
+}
+
+type ReviewSubmission struct {
+	Verdict entity.ExecutionReviewVerdict
+	Summary string
+	Heads   entity.ReviewHeads
+}
+
 type Executions interface {
 	OnDelegated(ctx context.Context, issue entity.Issue, delegation entity.IssueDelegation) error
 	Placement(
@@ -63,8 +82,32 @@ type Executions interface {
 
 	Cancel(ctx context.Context, workspaceID uuid.UUID, executionID, reason string) (entity.Execution, error)
 	Restart(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
-	Resume(ctx context.Context, workspaceID uuid.UUID, executionID, feedback string) (entity.Execution, error)
-	Approve(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
+
+	Plans(ctx context.Context, workspaceID uuid.UUID, executionID string) ([]entity.ExecutionPlan, error)
+	ApprovePlan(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, revision int,
+	) (entity.Execution, error)
+	RevisePlan(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, revision int, feedback string,
+	) (entity.Execution, error)
+
+	Review(ctx context.Context, workspaceID uuid.UUID, executionID string) (ExecutionReviewState, error)
+	CommentOnReview(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, draft ReviewCommentDraft,
+	) (entity.ExecutionReviewComment, error)
+	EditReviewComment(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, commentID uuid.UUID, body string,
+	) (entity.ExecutionReviewComment, error)
+	DeleteReviewComment(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, commentID uuid.UUID,
+	) error
+	ResolveReviewComment(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, commentID uuid.UUID, resolved bool,
+	) (entity.ExecutionReviewComment, error)
+	SubmitReview(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, submission ReviewSubmission,
+	) (entity.ExecutionReview, error)
+
 	Retain(
 		ctx context.Context,
 		workspaceID uuid.UUID,
@@ -80,6 +123,7 @@ type Executions interface {
 	Accepted(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Declined(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Reported(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
+	PlanProposed(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Observed(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Kept(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Held(ctx context.Context, runner entity.Runner, executionID string) (entity.Execution, error)

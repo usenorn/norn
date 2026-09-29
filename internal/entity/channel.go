@@ -63,6 +63,7 @@ const (
 	ChannelServiceState      = channelv1.ServiceState
 	ChannelPreviewState      = channelv1.PreviewState
 	ChannelQuestionAsked     = channelv1.QuestionAsked
+	ChannelPlanProposed      = channelv1.PlanProposed
 	ChannelChangeSetUpdated  = channelv1.ChangeSetUpdated
 	ChannelExecutionResult   = channelv1.ExecutionResult
 	ChannelExecutionKept     = channelv1.ExecutionRetention

@@ -35,7 +35,6 @@ var (
 	ErrExecutionFinished        = errors.New("this execution has already finished")
 	ErrExecutionUnfinished      = errors.New("this execution has not finished yet")
 	ErrExecutionStateNotRunners = errors.New("a runner may not put an execution into that state")
-	ErrExecutionNotReviewable   = errors.New("this execution is not waiting to be reviewed")
 	ErrExecutionSelfApproval    = errors.New("an agent may not approve its own work")
 	ErrExecutionNoRunner        = errors.New("this agent has no runner to hand the work to")
 	ErrExecutionAlreadyLive     = errors.New("this delegation already has a run in flight")

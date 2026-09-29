@@ -2033,10 +2033,21 @@ const (
 	ExecutionChunkConflict ExecutionProblemCode = "execution_chunk_conflict"
 	ExecutionFinished      ExecutionProblemCode = "execution_finished"
 	ExecutionNoRunner      ExecutionProblemCode = "execution_no_runner"
+	ExecutionNotPlanning   ExecutionProblemCode = "execution_not_planning"
 	ExecutionNotReviewable ExecutionProblemCode = "execution_not_reviewable"
+	ExecutionPlanMissing   ExecutionProblemCode = "execution_plan_missing"
+	ExecutionPlanStale     ExecutionProblemCode = "execution_plan_stale"
+	ExecutionQuestionsOpen ExecutionProblemCode = "execution_questions_open"
 	ExecutionSelfApproval  ExecutionProblemCode = "execution_self_approval"
 	ExecutionTransition    ExecutionProblemCode = "execution_transition"
 	ExecutionUnfinished    ExecutionProblemCode = "execution_unfinished"
+	ReviewClosed           ExecutionProblemCode = "review_closed"
+	ReviewCommentAnchor    ExecutionProblemCode = "review_comment_anchor"
+	ReviewCommentNotYours  ExecutionProblemCode = "review_comment_not_yours"
+	ReviewCommentReply     ExecutionProblemCode = "review_comment_reply"
+	ReviewCommentsFull     ExecutionProblemCode = "review_comments_full"
+	ReviewEmpty            ExecutionProblemCode = "review_empty"
+	ReviewStale            ExecutionProblemCode = "review_stale"
 )
 
 // Valid indicates whether the value is a known member of the ExecutionProblemCode enum.
@@ -2048,13 +2059,35 @@ func (e ExecutionProblemCode) Valid() bool {
 		return true
 	case ExecutionNoRunner:
 		return true
+	case ExecutionNotPlanning:
+		return true
 	case ExecutionNotReviewable:
+		return true
+	case ExecutionPlanMissing:
+		return true
+	case ExecutionPlanStale:
+		return true
+	case ExecutionQuestionsOpen:
 		return true
 	case ExecutionSelfApproval:
 		return true
 	case ExecutionTransition:
 		return true
 	case ExecutionUnfinished:
+		return true
+	case ReviewClosed:
+		return true
+	case ReviewCommentAnchor:
+		return true
+	case ReviewCommentNotYours:
+		return true
+	case ReviewCommentReply:
+		return true
+	case ReviewCommentsFull:
+		return true
+	case ReviewEmpty:
+		return true
+	case ReviewStale:
 		return true
 	default:
 		return false
@@ -2079,6 +2112,27 @@ func (e ExecutionQueuedReason) Valid() bool {
 	case RunnersOffline:
 		return true
 	case RunnersPaused:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ExecutionReviewVerdict.
+const (
+	ExecutionReviewVerdictApprove        ExecutionReviewVerdict = "approve"
+	ExecutionReviewVerdictComment        ExecutionReviewVerdict = "comment"
+	ExecutionReviewVerdictRequestChanges ExecutionReviewVerdict = "request_changes"
+)
+
+// Valid indicates whether the value is a known member of the ExecutionReviewVerdict enum.
+func (e ExecutionReviewVerdict) Valid() bool {
+	switch e {
+	case ExecutionReviewVerdictApprove:
+		return true
+	case ExecutionReviewVerdictComment:
+		return true
+	case ExecutionReviewVerdictRequestChanges:
 		return true
 	default:
 		return false
@@ -2133,27 +2187,54 @@ func (e ExecutionServiceState) Valid() bool {
 	}
 }
 
+// Defines values for ExecutionStage.
+const (
+	Implementation ExecutionStage = "implementation"
+	Planning       ExecutionStage = "planning"
+	Publication    ExecutionStage = "publication"
+	Review         ExecutionStage = "review"
+)
+
+// Valid indicates whether the value is a known member of the ExecutionStage enum.
+func (e ExecutionStage) Valid() bool {
+	switch e {
+	case Implementation:
+		return true
+	case Planning:
+		return true
+	case Publication:
+		return true
+	case Review:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExecutionState.
 const (
-	ExecutionStateApproved        ExecutionState = "approved"
-	ExecutionStateAwaitingReview  ExecutionState = "awaiting_review"
-	ExecutionStateCancelled       ExecutionState = "cancelled"
-	ExecutionStateCompleted       ExecutionState = "completed"
-	ExecutionStateFailed          ExecutionState = "failed"
-	ExecutionStateFinalizing      ExecutionState = "finalizing"
-	ExecutionStateInterrupted     ExecutionState = "interrupted"
-	ExecutionStateLeased          ExecutionState = "leased"
-	ExecutionStatePreparing       ExecutionState = "preparing"
-	ExecutionStateQueued          ExecutionState = "queued"
-	ExecutionStateQueuedForResume ExecutionState = "queued_for_resume"
-	ExecutionStateRunning         ExecutionState = "running"
-	ExecutionStateWaitingForInput ExecutionState = "waiting_for_input"
+	ExecutionStateApproved             ExecutionState = "approved"
+	ExecutionStateAwaitingPlanApproval ExecutionState = "awaiting_plan_approval"
+	ExecutionStateAwaitingReview       ExecutionState = "awaiting_review"
+	ExecutionStateCancelled            ExecutionState = "cancelled"
+	ExecutionStateCompleted            ExecutionState = "completed"
+	ExecutionStateFailed               ExecutionState = "failed"
+	ExecutionStateFinalizing           ExecutionState = "finalizing"
+	ExecutionStateInterrupted          ExecutionState = "interrupted"
+	ExecutionStateLeased               ExecutionState = "leased"
+	ExecutionStatePreparing            ExecutionState = "preparing"
+	ExecutionStateQueued               ExecutionState = "queued"
+	ExecutionStateQueuedForResume      ExecutionState = "queued_for_resume"
+	ExecutionStateRunning              ExecutionState = "running"
+	ExecutionStateWaitingForInput      ExecutionState = "waiting_for_input"
 )
 
 // Valid indicates whether the value is a known member of the ExecutionState enum.
 func (e ExecutionState) Valid() bool {
 	switch e {
 	case ExecutionStateApproved:
+		return true
+	case ExecutionStateAwaitingPlanApproval:
 		return true
 	case ExecutionStateAwaitingReview:
 		return true
@@ -3636,6 +3717,24 @@ const (
 func (e ResetLinkUsedProblemCode) Valid() bool {
 	switch e {
 	case ResetLinkUsed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ReviewSide.
+const (
+	New ReviewSide = "new"
+	Old ReviewSide = "old"
+)
+
+// Valid indicates whether the value is a known member of the ReviewSide enum.
+func (e ReviewSide) Valid() bool {
+	switch e {
+	case New:
+		return true
+	case Old:
 		return true
 	default:
 		return false
@@ -6264,6 +6363,24 @@ type CreateProjectRequest struct {
 	TeamIds       *[]openapi_types.UUID `json:"teamIds,omitempty"`
 }
 
+// CreateReviewCommentRequest defines model for CreateReviewCommentRequest.
+type CreateReviewCommentRequest struct {
+	Body string  `json:"body"`
+	Hunk *string `json:"hunk,omitempty"`
+	Line *int    `json:"line,omitempty"`
+
+	// ParentId Reply to this thread; the anchor fields are then ignored
+	ParentId *openapi_types.UUID `json:"parentId,omitempty"`
+	Path     *string             `json:"path,omitempty"`
+
+	// Publish Publish at once rather than keeping it as a draft for your next review
+	Publish    *bool   `json:"publish,omitempty"`
+	Repository *string `json:"repository,omitempty"`
+
+	// Side Which side of the diff a line belongs to
+	Side *ReviewSide `json:"side,omitempty"`
+}
+
 // CreateSavedViewRequest defines model for CreateSavedViewRequest.
 type CreateSavedViewRequest struct {
 	// Filter A tree of conditions. A node is exactly one of all, any, not, or a leaf condition; a node that combines two forms is refused rather than guessed at.
@@ -6664,6 +6781,11 @@ type EditCommentRequest struct {
 	BodyDoc *Document `json:"bodyDoc,omitempty"`
 }
 
+// EditReviewCommentRequest defines model for EditReviewCommentRequest.
+type EditReviewCommentRequest struct {
+	Body string `json:"body"`
+}
+
 // EmailChange defines model for EmailChange.
 type EmailChange struct {
 	ExpiresAt   time.Time          `json:"expiresAt"`
@@ -6773,7 +6895,10 @@ type Execution struct {
 	RunnerId    *openapi_types.UUID `json:"runnerId,omitempty"`
 
 	// RunnerName The machine that took this run, named here so watching a run needs no right to list every machine in the workspace.
-	RunnerName  *string             `json:"runnerName,omitempty"`
+	RunnerName *string `json:"runnerName,omitempty"`
+
+	// Stage Where the run is in its lifecycle. A run plans first and implements only once a person approves the plan; its changes are reviewed in norn before anything is pushed, and only approved work is published.
+	Stage       ExecutionStage      `json:"stage"`
 	StartedAt   *time.Time          `json:"startedAt,omitempty"`
 	State       ExecutionState      `json:"state"`
 	TeamId      *openapi_types.UUID `json:"teamId,omitempty"`
@@ -6937,6 +7062,24 @@ type ExecutionParams struct {
 	Tool              *string            `json:"tool,omitempty"`
 }
 
+// ExecutionPlan defines model for ExecutionPlan.
+type ExecutionPlan struct {
+	ApprovedAt     *time.Time `json:"approvedAt,omitempty"`
+	ApprovedByName *string    `json:"approvedByName,omitempty"`
+
+	// Body The plan as the coding agent wrote it, in Markdown
+	Body        string             `json:"body"`
+	ExecutionId string             `json:"executionId"`
+	Id          openapi_types.UUID `json:"id"`
+	ProposedAt  time.Time          `json:"proposedAt"`
+	Revision    int                `json:"revision"`
+
+	// RevisionFeedback What somebody asked to change about this revision
+	RevisionFeedback        *string    `json:"revisionFeedback,omitempty"`
+	RevisionRequestedAt     *time.Time `json:"revisionRequestedAt,omitempty"`
+	RevisionRequestedByName *string    `json:"revisionRequestedByName,omitempty"`
+}
+
 // ExecutionPreview defines model for ExecutionPreview.
 type ExecutionPreview struct {
 	ClosedAt    *time.Time            `json:"closedAt,omitempty"`
@@ -7003,6 +7146,28 @@ type ExecutionRepositoryChange struct {
 	Repository     string              `json:"repository"`
 }
 
+// ExecutionReview defines model for ExecutionReview.
+type ExecutionReview struct {
+	AuthorName  *string                `json:"authorName,omitempty"`
+	ExecutionId string                 `json:"executionId"`
+	Id          openapi_types.UUID     `json:"id"`
+	SubmittedAt time.Time              `json:"submittedAt"`
+	Summary     string                 `json:"summary"`
+	Verdict     ExecutionReviewVerdict `json:"verdict"`
+}
+
+// ExecutionReviewState defines model for ExecutionReviewState.
+type ExecutionReviewState struct {
+	Comments []ReviewComment `json:"comments"`
+
+	// Heads The commit each repository's changes stand at. A review is submitted against these, so changes that moved on in the meantime are never approved unread.
+	Heads   []ReviewHead      `json:"heads"`
+	Reviews []ExecutionReview `json:"reviews"`
+}
+
+// ExecutionReviewVerdict defines model for ExecutionReviewVerdict.
+type ExecutionReviewVerdict string
+
 // ExecutionRunner defines model for ExecutionRunner.
 type ExecutionRunner struct {
 	Id openapi_types.UUID `json:"id"`
@@ -7038,6 +7203,9 @@ type ExecutionServiceProbe string
 
 // ExecutionServiceState A service with no probe is not healthy the moment it is spawned; it is healthy once it has stayed up long enough to be checked.
 type ExecutionServiceState string
+
+// ExecutionStage Where the run is in its lifecycle. A run plans first and implements only once a person approves the plan; its changes are reviewed in norn before anything is pushed, and only approved work is published.
+type ExecutionStage string
 
 // ExecutionState defines model for ExecutionState.
 type ExecutionState string
@@ -8634,15 +8802,14 @@ type ResetLinkUsedProblem struct {
 // ResetLinkUsedProblemCode defines model for ResetLinkUsedProblem.Code.
 type ResetLinkUsedProblemCode string
 
+// ResolveReviewCommentRequest defines model for ResolveReviewCommentRequest.
+type ResolveReviewCommentRequest struct {
+	Resolved bool `json:"resolved"`
+}
+
 // RestoreDescriptionRequest defines model for RestoreDescriptionRequest.
 type RestoreDescriptionRequest struct {
 	ExpectedVersion int32 `json:"expectedVersion"`
-}
-
-// ResumeExecutionRequest defines model for ResumeExecutionRequest.
-type ResumeExecutionRequest struct {
-	// Feedback Handed to the coding agent verbatim
-	Feedback string `json:"feedback"`
 }
 
 // RetainExecutionRequest defines model for RetainExecutionRequest.
@@ -8651,8 +8818,60 @@ type RetainExecutionRequest struct {
 	LongerSeconds int `json:"longerSeconds"`
 }
 
+// ReviewComment defines model for ReviewComment.
+type ReviewComment struct {
+	AuthorName  *string    `json:"authorName,omitempty"`
+	Body        string     `json:"body"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	EditedAt    *time.Time `json:"editedAt,omitempty"`
+	ExecutionId string     `json:"executionId"`
+
+	// HeadSha The commit the line was read at
+	HeadSha string `json:"headSha"`
+
+	// Hunk The lines of the diff the comment was left under, as they were then
+	Hunk *string            `json:"hunk,omitempty"`
+	Id   openapi_types.UUID `json:"id"`
+	Line int                `json:"line"`
+
+	// Mine Whether the caller wrote this, and so may change or remove it
+	Mine *bool `json:"mine,omitempty"`
+
+	// Outdated True once the run has moved the repository past the commit this was left on
+	Outdated bool `json:"outdated"`
+
+	// ParentId The thread this answers. Absent on the comment that started the thread.
+	ParentId *openapi_types.UUID `json:"parentId,omitempty"`
+	Path     string              `json:"path"`
+
+	// Pending A draft only its author can see until they submit a review
+	Pending        bool                `json:"pending"`
+	Repository     string              `json:"repository"`
+	ResolvedAt     *time.Time          `json:"resolvedAt,omitempty"`
+	ResolvedByName *string             `json:"resolvedByName,omitempty"`
+	ReviewId       *openapi_types.UUID `json:"reviewId,omitempty"`
+
+	// Side Which side of the diff a line belongs to
+	Side ReviewSide `json:"side"`
+}
+
+// ReviewHead defines model for ReviewHead.
+type ReviewHead struct {
+	HeadSha    string `json:"headSha"`
+	Repository string `json:"repository"`
+}
+
+// ReviewSide Which side of the diff a line belongs to
+type ReviewSide string
+
 // ReviewVerdict defines model for ReviewVerdict.
 type ReviewVerdict string
+
+// RevisePlanRequest defines model for RevisePlanRequest.
+type RevisePlanRequest struct {
+	// Feedback Handed to the coding agent verbatim
+	Feedback string `json:"feedback"`
+}
 
 // RewriteAgentSkillRequest defines model for RewriteAgentSkillRequest.
 type RewriteAgentSkillRequest struct {
@@ -9480,6 +9699,14 @@ type StorageRefusedProblem struct {
 // StorageRefusedProblemCode defines model for StorageRefusedProblem.Code.
 type StorageRefusedProblemCode string
 
+// SubmitReviewRequest defines model for SubmitReviewRequest.
+type SubmitReviewRequest struct {
+	// Heads The heads the reviewer read, exactly as the review state reported them
+	Heads   []ReviewHead           `json:"heads"`
+	Summary *string                `json:"summary,omitempty"`
+	Verdict ExecutionReviewVerdict `json:"verdict"`
+}
+
 // SuppressIssueAutomationRequest defines model for SuppressIssueAutomationRequest.
 type SuppressIssueAutomationRequest struct {
 	Suppressed bool `json:"suppressed"`
@@ -10209,6 +10436,9 @@ type MemberKindFilter = []AccountKind
 // NotificationSubjectId defines model for NotificationSubjectId.
 type NotificationSubjectId = openapi_types.UUID
 
+// PlanRevision defines model for PlanRevision.
+type PlanRevision = int
+
 // PreviewName defines model for PreviewName.
 type PreviewName = string
 
@@ -10223,6 +10453,9 @@ type QuestionId = openapi_types.UUID
 
 // Reaction defines model for Reaction.
 type Reaction = CommentReaction
+
+// ReviewCommentId defines model for ReviewCommentId.
+type ReviewCommentId = openapi_types.UUID
 
 // RevisionId defines model for RevisionId.
 type RevisionId = openapi_types.UUID
@@ -10892,14 +11125,26 @@ type SetWorkspaceExecutionPolicyJSONRequestBody = SetWorkspaceExecutionPolicyReq
 // CancelWorkspaceExecutionJSONRequestBody defines body for CancelWorkspaceExecution for application/json ContentType.
 type CancelWorkspaceExecutionJSONRequestBody = CancelExecutionRequest
 
+// ReviseWorkspaceExecutionPlanJSONRequestBody defines body for ReviseWorkspaceExecutionPlan for application/json ContentType.
+type ReviseWorkspaceExecutionPlanJSONRequestBody = RevisePlanRequest
+
 // SharePreviewJSONRequestBody defines body for SharePreview for application/json ContentType.
 type SharePreviewJSONRequestBody = SharePreviewRequest
 
-// ResumeWorkspaceExecutionJSONRequestBody defines body for ResumeWorkspaceExecution for application/json ContentType.
-type ResumeWorkspaceExecutionJSONRequestBody = ResumeExecutionRequest
-
 // RetainWorkspaceExecutionJSONRequestBody defines body for RetainWorkspaceExecution for application/json ContentType.
 type RetainWorkspaceExecutionJSONRequestBody = RetainExecutionRequest
+
+// CommentOnWorkspaceExecutionReviewJSONRequestBody defines body for CommentOnWorkspaceExecutionReview for application/json ContentType.
+type CommentOnWorkspaceExecutionReviewJSONRequestBody = CreateReviewCommentRequest
+
+// EditWorkspaceExecutionReviewCommentJSONRequestBody defines body for EditWorkspaceExecutionReviewComment for application/json ContentType.
+type EditWorkspaceExecutionReviewCommentJSONRequestBody = EditReviewCommentRequest
+
+// ResolveWorkspaceExecutionReviewCommentJSONRequestBody defines body for ResolveWorkspaceExecutionReviewComment for application/json ContentType.
+type ResolveWorkspaceExecutionReviewCommentJSONRequestBody = ResolveReviewCommentRequest
+
+// SubmitWorkspaceExecutionReviewJSONRequestBody defines body for SubmitWorkspaceExecutionReview for application/json ContentType.
+type SubmitWorkspaceExecutionReviewJSONRequestBody = SubmitReviewRequest
 
 // CreateWorkspaceImportJSONRequestBody defines body for CreateWorkspaceImport for application/json ContentType.
 type CreateWorkspaceImportJSONRequestBody = CreateImportRequest
@@ -12386,11 +12631,6 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId} (the `GetWorkspaceExecution` operationId).
 	GetWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApproveWorkspaceExecution Accept what this run produced
-	//
-	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/approve (the `ApproveWorkspaceExecution` operationId).
-	ApproveWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListWorkspaceExecutionArtifacts The files this run published, oldest first
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/artifacts (the `ListWorkspaceExecutionArtifacts` operationId).
@@ -12421,6 +12661,38 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
 	ListWorkspaceExecutionLogs(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
+	//
+	// A run plans before it writes anything. Each revision is kept with the decision somebody made about it, so the history reads as the conversation that led to the approved plan.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/plans (the `ListWorkspaceExecutionPlans` operationId).
+	ListWorkspaceExecutionPlans(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ApproveWorkspaceExecutionPlan Approve this revision of the plan and let the run implement it
+	//
+	// Only the newest revision can be approved, and only once every question the run is waiting on has been settled. Answering a question never approves a plan.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve (the `ApproveWorkspaceExecutionPlan` operationId).
+	ApproveWorkspaceExecutionPlan(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ReviseWorkspaceExecutionPlanWithBody Send this revision of the plan back with what should change
+	//
+	// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+	ReviseWorkspaceExecutionPlanWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ReviseWorkspaceExecutionPlan Send this revision of the plan back with what should change
+	//
+	// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+	ReviseWorkspaceExecutionPlan(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, body ReviseWorkspaceExecutionPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
 	//
@@ -12464,24 +12736,6 @@ type ClientInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/restart (the `RestartWorkspaceExecution` operationId).
 	RestartWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ResumeWorkspaceExecutionWithBody Send this run back to work with feedback
-	//
-	// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-	//
-	// Takes any type of body and a specified content type.
-	//
-	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-	ResumeWorkspaceExecutionWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ResumeWorkspaceExecution Send this run back to work with feedback
-	//
-	// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-	//
-	// Takes a body of the `application/json` content type.
-	//
-	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-	ResumeWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// RetainWorkspaceExecutionWithBody Keep this run's workspace and previews for longer
 	//
 	// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
@@ -12499,6 +12753,82 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
 	RetainWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceExecutionReview The comments and reviews left on this run's changes
+	//
+	// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
+	GetWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CommentOnWorkspaceExecutionReviewWithBody Comment on a line of this run's changes, or reply to a thread
+	//
+	// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+	CommentOnWorkspaceExecutionReviewWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CommentOnWorkspaceExecutionReview Comment on a line of this run's changes, or reply to a thread
+	//
+	// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+	CommentOnWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body CommentOnWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteWorkspaceExecutionReviewComment Remove a comment you left, and its replies
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `DeleteWorkspaceExecutionReviewComment` operationId).
+	DeleteWorkspaceExecutionReviewComment(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EditWorkspaceExecutionReviewCommentWithBody Rewrite a comment you left
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+	EditWorkspaceExecutionReviewCommentWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EditWorkspaceExecutionReviewComment Rewrite a comment you left
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+	EditWorkspaceExecutionReviewComment(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body EditWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResolveWorkspaceExecutionReviewCommentWithBody Mark a thread resolved, or open it again
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+	ResolveWorkspaceExecutionReviewCommentWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResolveWorkspaceExecutionReviewComment Mark a thread resolved, or open it again
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+	ResolveWorkspaceExecutionReviewComment(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body ResolveWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SubmitWorkspaceExecutionReviewWithBody Submit your review of this run's changes
+	//
+	// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+	SubmitWorkspaceExecutionReviewWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SubmitWorkspaceExecutionReview Submit your review of this run's changes
+	//
+	// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+	SubmitWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body SubmitWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
 	//
@@ -17188,21 +17518,6 @@ func (c *Client) GetWorkspaceExecution(ctx context.Context, workspaceId Workspac
 	return c.Client.Do(req)
 }
 
-// ApproveWorkspaceExecution Accept what this run produced
-//
-// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/approve (the `ApproveWorkspaceExecution` operationId).
-func (c *Client) ApproveWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApproveWorkspaceExecutionRequest(c.Server, workspaceId, executionId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 // ListWorkspaceExecutionArtifacts The files this run published, oldest first
 //
 // Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/artifacts (the `ListWorkspaceExecutionArtifacts` operationId).
@@ -17274,6 +17589,78 @@ func (c *Client) CancelWorkspaceExecution(ctx context.Context, workspaceId Works
 // Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
 func (c *Client) ListWorkspaceExecutionLogs(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListWorkspaceExecutionLogsRequest(c.Server, workspaceId, executionId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
+//
+// A run plans before it writes anything. Each revision is kept with the decision somebody made about it, so the history reads as the conversation that led to the approved plan.
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/plans (the `ListWorkspaceExecutionPlans` operationId).
+func (c *Client) ListWorkspaceExecutionPlans(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceExecutionPlansRequest(c.Server, workspaceId, executionId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ApproveWorkspaceExecutionPlan Approve this revision of the plan and let the run implement it
+//
+// Only the newest revision can be approved, and only once every question the run is waiting on has been settled. Answering a question never approves a plan.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve (the `ApproveWorkspaceExecutionPlan` operationId).
+func (c *Client) ApproveWorkspaceExecutionPlan(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewApproveWorkspaceExecutionPlanRequest(c.Server, workspaceId, executionId, revision)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ReviseWorkspaceExecutionPlanWithBody Send this revision of the plan back with what should change
+//
+// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+func (c *Client) ReviseWorkspaceExecutionPlanWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReviseWorkspaceExecutionPlanRequestWithBody(c.Server, workspaceId, executionId, revision, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ReviseWorkspaceExecutionPlan Send this revision of the plan back with what should change
+//
+// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+func (c *Client) ReviseWorkspaceExecutionPlan(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, body ReviseWorkspaceExecutionPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReviseWorkspaceExecutionPlanRequest(c.Server, workspaceId, executionId, revision, body)
 	if err != nil {
 		return nil, err
 	}
@@ -17386,44 +17773,6 @@ func (c *Client) RestartWorkspaceExecution(ctx context.Context, workspaceId Work
 	return c.Client.Do(req)
 }
 
-// ResumeWorkspaceExecutionWithBody Send this run back to work with feedback
-//
-// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-//
-// Takes any type of body and a specified content type.
-//
-// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-func (c *Client) ResumeWorkspaceExecutionWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewResumeWorkspaceExecutionRequestWithBody(c.Server, workspaceId, executionId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// ResumeWorkspaceExecution Send this run back to work with feedback
-//
-// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-//
-// Takes a body of the `application/json` content type.
-//
-// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-func (c *Client) ResumeWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewResumeWorkspaceExecutionRequest(c.Server, workspaceId, executionId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 // RetainWorkspaceExecutionWithBody Keep this run's workspace and previews for longer
 //
 // The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
@@ -17452,6 +17801,182 @@ func (c *Client) RetainWorkspaceExecutionWithBody(ctx context.Context, workspace
 // Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
 func (c *Client) RetainWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRetainWorkspaceExecutionRequest(c.Server, workspaceId, executionId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceExecutionReview The comments and reviews left on this run's changes
+//
+// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
+func (c *Client) GetWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceExecutionReviewRequest(c.Server, workspaceId, executionId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CommentOnWorkspaceExecutionReviewWithBody Comment on a line of this run's changes, or reply to a thread
+//
+// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+func (c *Client) CommentOnWorkspaceExecutionReviewWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCommentOnWorkspaceExecutionReviewRequestWithBody(c.Server, workspaceId, executionId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CommentOnWorkspaceExecutionReview Comment on a line of this run's changes, or reply to a thread
+//
+// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+func (c *Client) CommentOnWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body CommentOnWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCommentOnWorkspaceExecutionReviewRequest(c.Server, workspaceId, executionId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteWorkspaceExecutionReviewComment Remove a comment you left, and its replies
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `DeleteWorkspaceExecutionReviewComment` operationId).
+func (c *Client) DeleteWorkspaceExecutionReviewComment(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWorkspaceExecutionReviewCommentRequest(c.Server, workspaceId, executionId, reviewCommentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EditWorkspaceExecutionReviewCommentWithBody Rewrite a comment you left
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+func (c *Client) EditWorkspaceExecutionReviewCommentWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEditWorkspaceExecutionReviewCommentRequestWithBody(c.Server, workspaceId, executionId, reviewCommentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EditWorkspaceExecutionReviewComment Rewrite a comment you left
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+func (c *Client) EditWorkspaceExecutionReviewComment(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body EditWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEditWorkspaceExecutionReviewCommentRequest(c.Server, workspaceId, executionId, reviewCommentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ResolveWorkspaceExecutionReviewCommentWithBody Mark a thread resolved, or open it again
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+func (c *Client) ResolveWorkspaceExecutionReviewCommentWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResolveWorkspaceExecutionReviewCommentRequestWithBody(c.Server, workspaceId, executionId, reviewCommentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ResolveWorkspaceExecutionReviewComment Mark a thread resolved, or open it again
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+func (c *Client) ResolveWorkspaceExecutionReviewComment(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body ResolveWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResolveWorkspaceExecutionReviewCommentRequest(c.Server, workspaceId, executionId, reviewCommentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SubmitWorkspaceExecutionReviewWithBody Submit your review of this run's changes
+//
+// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+func (c *Client) SubmitWorkspaceExecutionReviewWithBody(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSubmitWorkspaceExecutionReviewRequestWithBody(c.Server, workspaceId, executionId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SubmitWorkspaceExecutionReview Submit your review of this run's changes
+//
+// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+func (c *Client) SubmitWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body SubmitWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSubmitWorkspaceExecutionReviewRequest(c.Server, workspaceId, executionId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -27698,47 +28223,6 @@ func NewGetWorkspaceExecutionRequest(server string, workspaceId WorkspaceId, exe
 	return req, nil
 }
 
-// NewApproveWorkspaceExecutionRequest constructs an http.Request for the ApproveWorkspaceExecution method
-func NewApproveWorkspaceExecutionRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/approve", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewListWorkspaceExecutionArtifactsRequest constructs an http.Request for the ListWorkspaceExecutionArtifacts method
 func NewListWorkspaceExecutionArtifactsRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
 	var err error
@@ -27958,6 +28442,156 @@ func NewListWorkspaceExecutionLogsRequest(server string, workspaceId WorkspaceId
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewListWorkspaceExecutionPlansRequest constructs an http.Request for the ListWorkspaceExecutionPlans method
+func NewListWorkspaceExecutionPlansRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/plans", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewApproveWorkspaceExecutionPlanRequest constructs an http.Request for the ApproveWorkspaceExecutionPlan method
+func NewApproveWorkspaceExecutionPlanRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "revision", revision, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/plans/%s/approve", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewReviseWorkspaceExecutionPlanRequest calls the generic ReviseWorkspaceExecutionPlan builder with application/json body
+func NewReviseWorkspaceExecutionPlanRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, body ReviseWorkspaceExecutionPlanJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewReviseWorkspaceExecutionPlanRequestWithBody(server, workspaceId, executionId, revision, "application/json", bodyReader)
+}
+
+// NewReviseWorkspaceExecutionPlanRequestWithBody constructs an http.Request for the ReviseWorkspaceExecutionPlan method, with any body, and a specified content type
+func NewReviseWorkspaceExecutionPlanRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "revision", revision, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/plans/%s/revise", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -28201,60 +28835,6 @@ func NewRestartWorkspaceExecutionRequest(server string, workspaceId WorkspaceId,
 	return req, nil
 }
 
-// NewResumeWorkspaceExecutionRequest calls the generic ResumeWorkspaceExecution builder with application/json body
-func NewResumeWorkspaceExecutionRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewResumeWorkspaceExecutionRequestWithBody(server, workspaceId, executionId, "application/json", bodyReader)
-}
-
-// NewResumeWorkspaceExecutionRequestWithBody constructs an http.Request for the ResumeWorkspaceExecution method, with any body, and a specified content type
-func NewResumeWorkspaceExecutionRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/resume", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewRetainWorkspaceExecutionRequest calls the generic RetainWorkspaceExecution builder with application/json body
 func NewRetainWorkspaceExecutionRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -28290,6 +28870,325 @@ func NewRetainWorkspaceExecutionRequestWithBody(server string, workspaceId Works
 	}
 
 	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/retain", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetWorkspaceExecutionReviewRequest constructs an http.Request for the GetWorkspaceExecutionReview method
+func NewGetWorkspaceExecutionReviewRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/review", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCommentOnWorkspaceExecutionReviewRequest calls the generic CommentOnWorkspaceExecutionReview builder with application/json body
+func NewCommentOnWorkspaceExecutionReviewRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, body CommentOnWorkspaceExecutionReviewJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCommentOnWorkspaceExecutionReviewRequestWithBody(server, workspaceId, executionId, "application/json", bodyReader)
+}
+
+// NewCommentOnWorkspaceExecutionReviewRequestWithBody constructs an http.Request for the CommentOnWorkspaceExecutionReview method, with any body, and a specified content type
+func NewCommentOnWorkspaceExecutionReviewRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/review/comments", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteWorkspaceExecutionReviewCommentRequest constructs an http.Request for the DeleteWorkspaceExecutionReviewComment method
+func NewDeleteWorkspaceExecutionReviewCommentRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "reviewCommentId", reviewCommentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/review/comments/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewEditWorkspaceExecutionReviewCommentRequest calls the generic EditWorkspaceExecutionReviewComment builder with application/json body
+func NewEditWorkspaceExecutionReviewCommentRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body EditWorkspaceExecutionReviewCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewEditWorkspaceExecutionReviewCommentRequestWithBody(server, workspaceId, executionId, reviewCommentId, "application/json", bodyReader)
+}
+
+// NewEditWorkspaceExecutionReviewCommentRequestWithBody constructs an http.Request for the EditWorkspaceExecutionReviewComment method, with any body, and a specified content type
+func NewEditWorkspaceExecutionReviewCommentRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "reviewCommentId", reviewCommentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/review/comments/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewResolveWorkspaceExecutionReviewCommentRequest calls the generic ResolveWorkspaceExecutionReviewComment builder with application/json body
+func NewResolveWorkspaceExecutionReviewCommentRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body ResolveWorkspaceExecutionReviewCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewResolveWorkspaceExecutionReviewCommentRequestWithBody(server, workspaceId, executionId, reviewCommentId, "application/json", bodyReader)
+}
+
+// NewResolveWorkspaceExecutionReviewCommentRequestWithBody constructs an http.Request for the ResolveWorkspaceExecutionReviewComment method, with any body, and a specified content type
+func NewResolveWorkspaceExecutionReviewCommentRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "reviewCommentId", reviewCommentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/review/comments/%s/resolve", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSubmitWorkspaceExecutionReviewRequest calls the generic SubmitWorkspaceExecutionReview builder with application/json body
+func NewSubmitWorkspaceExecutionReviewRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, body SubmitWorkspaceExecutionReviewJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSubmitWorkspaceExecutionReviewRequestWithBody(server, workspaceId, executionId, "application/json", bodyReader)
+}
+
+// NewSubmitWorkspaceExecutionReviewRequestWithBody constructs an http.Request for the SubmitWorkspaceExecutionReview method, with any body, and a specified content type
+func NewSubmitWorkspaceExecutionReviewRequestWithBody(server string, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/reviews", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -40810,13 +41709,6 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId} (the `GetWorkspaceExecution` operationId).
 	GetWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionResponse, error)
 
-	// ApproveWorkspaceExecutionWithResponse Accept what this run produced
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/approve (the `ApproveWorkspaceExecution` operationId).
-	ApproveWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ApproveWorkspaceExecutionResponse, error)
-
 	// ListWorkspaceExecutionArtifactsWithResponse The files this run published, oldest first
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -40853,6 +41745,42 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
 	ListWorkspaceExecutionLogsWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionLogsResponse, error)
+
+	// ListWorkspaceExecutionPlansWithResponse Every plan this run has proposed, oldest revision first
+	//
+	// A run plans before it writes anything. Each revision is kept with the decision somebody made about it, so the history reads as the conversation that led to the approved plan.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/plans (the `ListWorkspaceExecutionPlans` operationId).
+	ListWorkspaceExecutionPlansWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionPlansResponse, error)
+
+	// ApproveWorkspaceExecutionPlanWithResponse Approve this revision of the plan and let the run implement it
+	//
+	// Only the newest revision can be approved, and only once every question the run is waiting on has been settled. Answering a question never approves a plan.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve (the `ApproveWorkspaceExecutionPlan` operationId).
+	ApproveWorkspaceExecutionPlanWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, reqEditors ...RequestEditorFn) (*ApproveWorkspaceExecutionPlanResponse, error)
+
+	// ReviseWorkspaceExecutionPlanWithBodyWithResponse Send this revision of the plan back with what should change
+	//
+	// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+	ReviseWorkspaceExecutionPlanWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReviseWorkspaceExecutionPlanResponse, error)
+
+	// ReviseWorkspaceExecutionPlanWithResponse Send this revision of the plan back with what should change
+	//
+	// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+	ReviseWorkspaceExecutionPlanWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, body ReviseWorkspaceExecutionPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*ReviseWorkspaceExecutionPlanResponse, error)
 
 	// ListWorkspaceExecutionPreviewsWithResponse The previews this run has opened, and who they are shared with
 	//
@@ -40904,24 +41832,6 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/restart (the `RestartWorkspaceExecution` operationId).
 	RestartWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*RestartWorkspaceExecutionResponse, error)
 
-	// ResumeWorkspaceExecutionWithBodyWithResponse Send this run back to work with feedback
-	//
-	// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-	//
-	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-	ResumeWorkspaceExecutionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ResumeWorkspaceExecutionResponse, error)
-
-	// ResumeWorkspaceExecutionWithResponse Send this run back to work with feedback
-	//
-	// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-	//
-	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-	ResumeWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*ResumeWorkspaceExecutionResponse, error)
-
 	// RetainWorkspaceExecutionWithBodyWithResponse Keep this run's workspace and previews for longer
 	//
 	// The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
@@ -40939,6 +41849,86 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/retain (the `RetainWorkspaceExecution` operationId).
 	RetainWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body RetainWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*RetainWorkspaceExecutionResponse, error)
+
+	// GetWorkspaceExecutionReviewWithResponse The comments and reviews left on this run's changes
+	//
+	// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
+	GetWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionReviewResponse, error)
+
+	// CommentOnWorkspaceExecutionReviewWithBodyWithResponse Comment on a line of this run's changes, or reply to a thread
+	//
+	// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+	CommentOnWorkspaceExecutionReviewWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CommentOnWorkspaceExecutionReviewResponse, error)
+
+	// CommentOnWorkspaceExecutionReviewWithResponse Comment on a line of this run's changes, or reply to a thread
+	//
+	// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+	CommentOnWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body CommentOnWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*CommentOnWorkspaceExecutionReviewResponse, error)
+
+	// DeleteWorkspaceExecutionReviewCommentWithResponse Remove a comment you left, and its replies
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `DeleteWorkspaceExecutionReviewComment` operationId).
+	DeleteWorkspaceExecutionReviewCommentWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceExecutionReviewCommentResponse, error)
+
+	// EditWorkspaceExecutionReviewCommentWithBodyWithResponse Rewrite a comment you left
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+	EditWorkspaceExecutionReviewCommentWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EditWorkspaceExecutionReviewCommentResponse, error)
+
+	// EditWorkspaceExecutionReviewCommentWithResponse Rewrite a comment you left
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+	EditWorkspaceExecutionReviewCommentWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body EditWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*EditWorkspaceExecutionReviewCommentResponse, error)
+
+	// ResolveWorkspaceExecutionReviewCommentWithBodyWithResponse Mark a thread resolved, or open it again
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+	ResolveWorkspaceExecutionReviewCommentWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ResolveWorkspaceExecutionReviewCommentResponse, error)
+
+	// ResolveWorkspaceExecutionReviewCommentWithResponse Mark a thread resolved, or open it again
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+	ResolveWorkspaceExecutionReviewCommentWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body ResolveWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*ResolveWorkspaceExecutionReviewCommentResponse, error)
+
+	// SubmitWorkspaceExecutionReviewWithBodyWithResponse Submit your review of this run's changes
+	//
+	// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+	SubmitWorkspaceExecutionReviewWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitWorkspaceExecutionReviewResponse, error)
+
+	// SubmitWorkspaceExecutionReviewWithResponse Submit your review of this run's changes
+	//
+	// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+	SubmitWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body SubmitWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitWorkspaceExecutionReviewResponse, error)
 
 	// ListWorkspaceExecutionServicesWithResponse What this run is running, on which ports, and how it is
 	//
@@ -51877,82 +52867,6 @@ func (r GetWorkspaceExecutionResponse) ContentType() string {
 	return ""
 }
 
-type ApproveWorkspaceExecutionResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Execution
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
-	ApplicationproblemJSON404 *Problem
-	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
-	ApplicationproblemJSON409 *ExecutionConflict
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ApproveWorkspaceExecutionResponse) GetJSON200() *Execution {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r ApproveWorkspaceExecutionResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r ApproveWorkspaceExecutionResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
-func (r ApproveWorkspaceExecutionResponse) GetApplicationproblemJSON404() *Problem {
-	return r.ApplicationproblemJSON404
-}
-
-// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
-func (r ApproveWorkspaceExecutionResponse) GetApplicationproblemJSON409() *ExecutionConflict {
-	return r.ApplicationproblemJSON409
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r ApproveWorkspaceExecutionResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r ApproveWorkspaceExecutionResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r ApproveWorkspaceExecutionResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ApproveWorkspaceExecutionResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ApproveWorkspaceExecutionResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
 type ListWorkspaceExecutionArtifactsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -52238,6 +53152,234 @@ func (r ListWorkspaceExecutionLogsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListWorkspaceExecutionLogsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceExecutionPlansResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]ExecutionPlan
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceExecutionPlansResponse) GetJSON200() *[]ExecutionPlan {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceExecutionPlansResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceExecutionPlansResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceExecutionPlansResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceExecutionPlansResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceExecutionPlansResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceExecutionPlansResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceExecutionPlansResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceExecutionPlansResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ApproveWorkspaceExecutionPlanResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Execution
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ApproveWorkspaceExecutionPlanResponse) GetJSON200() *Execution {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ApproveWorkspaceExecutionPlanResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ApproveWorkspaceExecutionPlanResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ApproveWorkspaceExecutionPlanResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ApproveWorkspaceExecutionPlanResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ApproveWorkspaceExecutionPlanResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ApproveWorkspaceExecutionPlanResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ApproveWorkspaceExecutionPlanResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ApproveWorkspaceExecutionPlanResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ApproveWorkspaceExecutionPlanResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ReviseWorkspaceExecutionPlanResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Execution
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ReviseWorkspaceExecutionPlanResponse) GetJSON200() *Execution {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ReviseWorkspaceExecutionPlanResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ReviseWorkspaceExecutionPlanResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ReviseWorkspaceExecutionPlanResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ReviseWorkspaceExecutionPlanResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ReviseWorkspaceExecutionPlanResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ReviseWorkspaceExecutionPlanResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ReviseWorkspaceExecutionPlanResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ReviseWorkspaceExecutionPlanResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ReviseWorkspaceExecutionPlanResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ReviseWorkspaceExecutionPlanResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -52603,89 +53745,6 @@ func (r RestartWorkspaceExecutionResponse) ContentType() string {
 	return ""
 }
 
-type ResumeWorkspaceExecutionResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *Execution
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
-	ApplicationproblemJSON404 *Problem
-	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
-	ApplicationproblemJSON409 *ExecutionConflict
-	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
-	ApplicationproblemJSON422 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ResumeWorkspaceExecutionResponse) GetJSON200() *Execution {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r ResumeWorkspaceExecutionResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r ResumeWorkspaceExecutionResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
-func (r ResumeWorkspaceExecutionResponse) GetApplicationproblemJSON404() *Problem {
-	return r.ApplicationproblemJSON404
-}
-
-// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
-func (r ResumeWorkspaceExecutionResponse) GetApplicationproblemJSON409() *ExecutionConflict {
-	return r.ApplicationproblemJSON409
-}
-
-// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
-func (r ResumeWorkspaceExecutionResponse) GetApplicationproblemJSON422() *Problem {
-	return r.ApplicationproblemJSON422
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r ResumeWorkspaceExecutionResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r ResumeWorkspaceExecutionResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r ResumeWorkspaceExecutionResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ResumeWorkspaceExecutionResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ResumeWorkspaceExecutionResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
 type RetainWorkspaceExecutionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -52763,6 +53822,469 @@ func (r RetainWorkspaceExecutionResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RetainWorkspaceExecutionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceExecutionReviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ExecutionReviewState
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceExecutionReviewResponse) GetJSON200() *ExecutionReviewState {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceExecutionReviewResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceExecutionReviewResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceExecutionReviewResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceExecutionReviewResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceExecutionReviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceExecutionReviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceExecutionReviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceExecutionReviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CommentOnWorkspaceExecutionReviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *ReviewComment
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CommentOnWorkspaceExecutionReviewResponse) GetJSON201() *ReviewComment {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r CommentOnWorkspaceExecutionReviewResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r CommentOnWorkspaceExecutionReviewResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r CommentOnWorkspaceExecutionReviewResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r CommentOnWorkspaceExecutionReviewResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CommentOnWorkspaceExecutionReviewResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r CommentOnWorkspaceExecutionReviewResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r CommentOnWorkspaceExecutionReviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CommentOnWorkspaceExecutionReviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CommentOnWorkspaceExecutionReviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CommentOnWorkspaceExecutionReviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteWorkspaceExecutionReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r DeleteWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteWorkspaceExecutionReviewCommentResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteWorkspaceExecutionReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteWorkspaceExecutionReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteWorkspaceExecutionReviewCommentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type EditWorkspaceExecutionReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ReviewComment
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EditWorkspaceExecutionReviewCommentResponse) GetJSON200() *ReviewComment {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r EditWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r EditWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r EditWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r EditWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r EditWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r EditWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r EditWorkspaceExecutionReviewCommentResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EditWorkspaceExecutionReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EditWorkspaceExecutionReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EditWorkspaceExecutionReviewCommentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ResolveWorkspaceExecutionReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ReviewComment
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ResolveWorkspaceExecutionReviewCommentResponse) GetJSON200() *ReviewComment {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ResolveWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ResolveWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ResolveWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ResolveWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ResolveWorkspaceExecutionReviewCommentResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ResolveWorkspaceExecutionReviewCommentResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ResolveWorkspaceExecutionReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResolveWorkspaceExecutionReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResolveWorkspaceExecutionReviewCommentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SubmitWorkspaceExecutionReviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *ExecutionReview
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r SubmitWorkspaceExecutionReviewResponse) GetJSON201() *ExecutionReview {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SubmitWorkspaceExecutionReviewResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SubmitWorkspaceExecutionReviewResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SubmitWorkspaceExecutionReviewResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SubmitWorkspaceExecutionReviewResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SubmitWorkspaceExecutionReviewResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SubmitWorkspaceExecutionReviewResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SubmitWorkspaceExecutionReviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SubmitWorkspaceExecutionReviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SubmitWorkspaceExecutionReviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SubmitWorkspaceExecutionReviewResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -71837,19 +73359,6 @@ func (c *ClientWithResponses) GetWorkspaceExecutionWithResponse(ctx context.Cont
 	return ParseGetWorkspaceExecutionResponse(rsp)
 }
 
-// ApproveWorkspaceExecutionWithResponse Accept what this run produced
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/approve (the `ApproveWorkspaceExecution` operationId).
-func (c *ClientWithResponses) ApproveWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ApproveWorkspaceExecutionResponse, error) {
-	rsp, err := c.ApproveWorkspaceExecution(ctx, workspaceId, executionId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApproveWorkspaceExecutionResponse(rsp)
-}
-
 // ListWorkspaceExecutionArtifactsWithResponse The files this run published, oldest first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -71915,6 +73424,66 @@ func (c *ClientWithResponses) ListWorkspaceExecutionLogsWithResponse(ctx context
 		return nil, err
 	}
 	return ParseListWorkspaceExecutionLogsResponse(rsp)
+}
+
+// ListWorkspaceExecutionPlansWithResponse Every plan this run has proposed, oldest revision first
+//
+// A run plans before it writes anything. Each revision is kept with the decision somebody made about it, so the history reads as the conversation that led to the approved plan.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/plans (the `ListWorkspaceExecutionPlans` operationId).
+func (c *ClientWithResponses) ListWorkspaceExecutionPlansWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionPlansResponse, error) {
+	rsp, err := c.ListWorkspaceExecutionPlans(ctx, workspaceId, executionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceExecutionPlansResponse(rsp)
+}
+
+// ApproveWorkspaceExecutionPlanWithResponse Approve this revision of the plan and let the run implement it
+//
+// Only the newest revision can be approved, and only once every question the run is waiting on has been settled. Answering a question never approves a plan.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve (the `ApproveWorkspaceExecutionPlan` operationId).
+func (c *ClientWithResponses) ApproveWorkspaceExecutionPlanWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, reqEditors ...RequestEditorFn) (*ApproveWorkspaceExecutionPlanResponse, error) {
+	rsp, err := c.ApproveWorkspaceExecutionPlan(ctx, workspaceId, executionId, revision, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseApproveWorkspaceExecutionPlanResponse(rsp)
+}
+
+// ReviseWorkspaceExecutionPlanWithBodyWithResponse Send this revision of the plan back with what should change
+//
+// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+func (c *ClientWithResponses) ReviseWorkspaceExecutionPlanWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReviseWorkspaceExecutionPlanResponse, error) {
+	rsp, err := c.ReviseWorkspaceExecutionPlanWithBody(ctx, workspaceId, executionId, revision, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReviseWorkspaceExecutionPlanResponse(rsp)
+}
+
+// ReviseWorkspaceExecutionPlanWithResponse Send this revision of the plan back with what should change
+//
+// The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise (the `ReviseWorkspaceExecutionPlan` operationId).
+func (c *ClientWithResponses) ReviseWorkspaceExecutionPlanWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision, body ReviseWorkspaceExecutionPlanJSONRequestBody, reqEditors ...RequestEditorFn) (*ReviseWorkspaceExecutionPlanResponse, error) {
+	rsp, err := c.ReviseWorkspaceExecutionPlan(ctx, workspaceId, executionId, revision, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReviseWorkspaceExecutionPlanResponse(rsp)
 }
 
 // ListWorkspaceExecutionPreviewsWithResponse The previews this run has opened, and who they are shared with
@@ -72003,36 +73572,6 @@ func (c *ClientWithResponses) RestartWorkspaceExecutionWithResponse(ctx context.
 	return ParseRestartWorkspaceExecutionResponse(rsp)
 }
 
-// ResumeWorkspaceExecutionWithBodyWithResponse Send this run back to work with feedback
-//
-// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-//
-// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-func (c *ClientWithResponses) ResumeWorkspaceExecutionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ResumeWorkspaceExecutionResponse, error) {
-	rsp, err := c.ResumeWorkspaceExecutionWithBody(ctx, workspaceId, executionId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseResumeWorkspaceExecutionResponse(rsp)
-}
-
-// ResumeWorkspaceExecutionWithResponse Send this run back to work with feedback
-//
-// The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
-//
-// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/resume (the `ResumeWorkspaceExecution` operationId).
-func (c *ClientWithResponses) ResumeWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body ResumeWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*ResumeWorkspaceExecutionResponse, error) {
-	rsp, err := c.ResumeWorkspaceExecution(ctx, workspaceId, executionId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseResumeWorkspaceExecutionResponse(rsp)
-}
-
 // RetainWorkspaceExecutionWithBodyWithResponse Keep this run's workspace and previews for longer
 //
 // The machine owns the clock, so this asks it to hold what it is holding until later. It is offered while a run is waiting for review, which is when somebody is still looking.
@@ -72061,6 +73600,146 @@ func (c *ClientWithResponses) RetainWorkspaceExecutionWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseRetainWorkspaceExecutionResponse(rsp)
+}
+
+// GetWorkspaceExecutionReviewWithResponse The comments and reviews left on this run's changes
+//
+// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
+func (c *ClientWithResponses) GetWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionReviewResponse, error) {
+	rsp, err := c.GetWorkspaceExecutionReview(ctx, workspaceId, executionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceExecutionReviewResponse(rsp)
+}
+
+// CommentOnWorkspaceExecutionReviewWithBodyWithResponse Comment on a line of this run's changes, or reply to a thread
+//
+// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+func (c *ClientWithResponses) CommentOnWorkspaceExecutionReviewWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CommentOnWorkspaceExecutionReviewResponse, error) {
+	rsp, err := c.CommentOnWorkspaceExecutionReviewWithBody(ctx, workspaceId, executionId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCommentOnWorkspaceExecutionReviewResponse(rsp)
+}
+
+// CommentOnWorkspaceExecutionReviewWithResponse Comment on a line of this run's changes, or reply to a thread
+//
+// A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments (the `CommentOnWorkspaceExecutionReview` operationId).
+func (c *ClientWithResponses) CommentOnWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body CommentOnWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*CommentOnWorkspaceExecutionReviewResponse, error) {
+	rsp, err := c.CommentOnWorkspaceExecutionReview(ctx, workspaceId, executionId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCommentOnWorkspaceExecutionReviewResponse(rsp)
+}
+
+// DeleteWorkspaceExecutionReviewCommentWithResponse Remove a comment you left, and its replies
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `DeleteWorkspaceExecutionReviewComment` operationId).
+func (c *ClientWithResponses) DeleteWorkspaceExecutionReviewCommentWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceExecutionReviewCommentResponse, error) {
+	rsp, err := c.DeleteWorkspaceExecutionReviewComment(ctx, workspaceId, executionId, reviewCommentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteWorkspaceExecutionReviewCommentResponse(rsp)
+}
+
+// EditWorkspaceExecutionReviewCommentWithBodyWithResponse Rewrite a comment you left
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+func (c *ClientWithResponses) EditWorkspaceExecutionReviewCommentWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EditWorkspaceExecutionReviewCommentResponse, error) {
+	rsp, err := c.EditWorkspaceExecutionReviewCommentWithBody(ctx, workspaceId, executionId, reviewCommentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEditWorkspaceExecutionReviewCommentResponse(rsp)
+}
+
+// EditWorkspaceExecutionReviewCommentWithResponse Rewrite a comment you left
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId} (the `EditWorkspaceExecutionReviewComment` operationId).
+func (c *ClientWithResponses) EditWorkspaceExecutionReviewCommentWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body EditWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*EditWorkspaceExecutionReviewCommentResponse, error) {
+	rsp, err := c.EditWorkspaceExecutionReviewComment(ctx, workspaceId, executionId, reviewCommentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEditWorkspaceExecutionReviewCommentResponse(rsp)
+}
+
+// ResolveWorkspaceExecutionReviewCommentWithBodyWithResponse Mark a thread resolved, or open it again
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+func (c *ClientWithResponses) ResolveWorkspaceExecutionReviewCommentWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ResolveWorkspaceExecutionReviewCommentResponse, error) {
+	rsp, err := c.ResolveWorkspaceExecutionReviewCommentWithBody(ctx, workspaceId, executionId, reviewCommentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResolveWorkspaceExecutionReviewCommentResponse(rsp)
+}
+
+// ResolveWorkspaceExecutionReviewCommentWithResponse Mark a thread resolved, or open it again
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve (the `ResolveWorkspaceExecutionReviewComment` operationId).
+func (c *ClientWithResponses) ResolveWorkspaceExecutionReviewCommentWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId, body ResolveWorkspaceExecutionReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*ResolveWorkspaceExecutionReviewCommentResponse, error) {
+	rsp, err := c.ResolveWorkspaceExecutionReviewComment(ctx, workspaceId, executionId, reviewCommentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResolveWorkspaceExecutionReviewCommentResponse(rsp)
+}
+
+// SubmitWorkspaceExecutionReviewWithBodyWithResponse Submit your review of this run's changes
+//
+// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+func (c *ClientWithResponses) SubmitWorkspaceExecutionReviewWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SubmitWorkspaceExecutionReviewResponse, error) {
+	rsp, err := c.SubmitWorkspaceExecutionReviewWithBody(ctx, workspaceId, executionId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSubmitWorkspaceExecutionReviewResponse(rsp)
+}
+
+// SubmitWorkspaceExecutionReviewWithResponse Submit your review of this run's changes
+//
+// Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/reviews (the `SubmitWorkspaceExecutionReview` operationId).
+func (c *ClientWithResponses) SubmitWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body SubmitWorkspaceExecutionReviewJSONRequestBody, reqEditors ...RequestEditorFn) (*SubmitWorkspaceExecutionReviewResponse, error) {
+	rsp, err := c.SubmitWorkspaceExecutionReview(ctx, workspaceId, executionId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSubmitWorkspaceExecutionReviewResponse(rsp)
 }
 
 // ListWorkspaceExecutionServicesWithResponse What this run is running, on which ports, and how it is
@@ -83110,67 +84789,6 @@ func ParseGetWorkspaceExecutionResponse(rsp *http.Response) (*GetWorkspaceExecut
 	return response, nil
 }
 
-// ParseApproveWorkspaceExecutionResponse parses an HTTP response from a ApproveWorkspaceExecutionWithResponse call
-func ParseApproveWorkspaceExecutionResponse(rsp *http.Response) (*ApproveWorkspaceExecutionResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ApproveWorkspaceExecutionResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Execution
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest ExecutionConflict
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON409 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseListWorkspaceExecutionArtifactsResponse parses an HTTP response from a ListWorkspaceExecutionArtifactsWithResponse call
 func ParseListWorkspaceExecutionArtifactsResponse(rsp *http.Response) (*ListWorkspaceExecutionArtifactsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -83404,6 +85022,189 @@ func ParseListWorkspaceExecutionLogsResponse(rsp *http.Response) (*ListWorkspace
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceExecutionPlansResponse parses an HTTP response from a ListWorkspaceExecutionPlansWithResponse call
+func ParseListWorkspaceExecutionPlansResponse(rsp *http.Response) (*ListWorkspaceExecutionPlansResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceExecutionPlansResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExecutionPlan
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseApproveWorkspaceExecutionPlanResponse parses an HTTP response from a ApproveWorkspaceExecutionPlanWithResponse call
+func ParseApproveWorkspaceExecutionPlanResponse(rsp *http.Response) (*ApproveWorkspaceExecutionPlanResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ApproveWorkspaceExecutionPlanResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Execution
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseReviseWorkspaceExecutionPlanResponse parses an HTTP response from a ReviseWorkspaceExecutionPlanWithResponse call
+func ParseReviseWorkspaceExecutionPlanResponse(rsp *http.Response) (*ReviseWorkspaceExecutionPlanResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ReviseWorkspaceExecutionPlanResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Execution
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -83704,15 +85505,15 @@ func ParseRestartWorkspaceExecutionResponse(rsp *http.Response) (*RestartWorkspa
 	return response, nil
 }
 
-// ParseResumeWorkspaceExecutionResponse parses an HTTP response from a ResumeWorkspaceExecutionWithResponse call
-func ParseResumeWorkspaceExecutionResponse(rsp *http.Response) (*ResumeWorkspaceExecutionResponse, error) {
+// ParseRetainWorkspaceExecutionResponse parses an HTTP response from a RetainWorkspaceExecutionWithResponse call
+func ParseRetainWorkspaceExecutionResponse(rsp *http.Response) (*RetainWorkspaceExecutionResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ResumeWorkspaceExecutionResponse{
+	response := &RetainWorkspaceExecutionResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -83772,26 +85573,334 @@ func ParseResumeWorkspaceExecutionResponse(rsp *http.Response) (*ResumeWorkspace
 	return response, nil
 }
 
-// ParseRetainWorkspaceExecutionResponse parses an HTTP response from a RetainWorkspaceExecutionWithResponse call
-func ParseRetainWorkspaceExecutionResponse(rsp *http.Response) (*RetainWorkspaceExecutionResponse, error) {
+// ParseGetWorkspaceExecutionReviewResponse parses an HTTP response from a GetWorkspaceExecutionReviewWithResponse call
+func ParseGetWorkspaceExecutionReviewResponse(rsp *http.Response) (*GetWorkspaceExecutionReviewResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &RetainWorkspaceExecutionResponse{
+	response := &GetWorkspaceExecutionReviewResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Execution
+		var dest ExecutionReviewState
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCommentOnWorkspaceExecutionReviewResponse parses an HTTP response from a CommentOnWorkspaceExecutionReviewWithResponse call
+func ParseCommentOnWorkspaceExecutionReviewResponse(rsp *http.Response) (*CommentOnWorkspaceExecutionReviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CommentOnWorkspaceExecutionReviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteWorkspaceExecutionReviewCommentResponse parses an HTTP response from a DeleteWorkspaceExecutionReviewCommentWithResponse call
+func ParseDeleteWorkspaceExecutionReviewCommentResponse(rsp *http.Response) (*DeleteWorkspaceExecutionReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteWorkspaceExecutionReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseEditWorkspaceExecutionReviewCommentResponse parses an HTTP response from a EditWorkspaceExecutionReviewCommentWithResponse call
+func ParseEditWorkspaceExecutionReviewCommentResponse(rsp *http.Response) (*EditWorkspaceExecutionReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EditWorkspaceExecutionReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResolveWorkspaceExecutionReviewCommentResponse parses an HTTP response from a ResolveWorkspaceExecutionReviewCommentWithResponse call
+func ParseResolveWorkspaceExecutionReviewCommentResponse(rsp *http.Response) (*ResolveWorkspaceExecutionReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResolveWorkspaceExecutionReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSubmitWorkspaceExecutionReviewResponse parses an HTTP response from a SubmitWorkspaceExecutionReviewWithResponse call
+func ParseSubmitWorkspaceExecutionReviewResponse(rsp *http.Response) (*SubmitWorkspaceExecutionReviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SubmitWorkspaceExecutionReviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ExecutionReview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Problem
@@ -97673,9 +99782,6 @@ type ServerInterface interface {
 	// GetWorkspaceExecution One run, with the beginning of its timeline
 	// (GET /workspaces/{workspaceId}/executions/{executionId})
 	GetWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
-	// ApproveWorkspaceExecution Accept what this run produced
-	// (POST /workspaces/{workspaceId}/executions/{executionId}/approve)
-	ApproveWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
 	// ListWorkspaceExecutionArtifacts The files this run published, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/artifacts)
 	ListWorkspaceExecutionArtifacts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
@@ -97688,6 +99794,15 @@ type ServerInterface interface {
 	// ListWorkspaceExecutionLogs What this run printed, oldest batch first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
 	ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionLogsParams)
+	// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/plans)
+	ListWorkspaceExecutionPlans(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// ApproveWorkspaceExecutionPlan Approve this revision of the plan and let the run implement it
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve)
+	ApproveWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision)
+	// ReviseWorkspaceExecutionPlan Send this revision of the plan back with what should change
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise)
+	ReviseWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision)
 	// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/previews)
 	ListWorkspaceExecutionPreviews(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
@@ -97703,12 +99818,27 @@ type ServerInterface interface {
 	// RestartWorkspaceExecution Run this issue again, as a fresh attempt
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/restart)
 	RestartWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
-	// ResumeWorkspaceExecution Send this run back to work with feedback
-	// (POST /workspaces/{workspaceId}/executions/{executionId}/resume)
-	ResumeWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
 	// RetainWorkspaceExecution Keep this run's workspace and previews for longer
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
 	RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// GetWorkspaceExecutionReview The comments and reviews left on this run's changes
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/review)
+	GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// CommentOnWorkspaceExecutionReview Comment on a line of this run's changes, or reply to a thread
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/review/comments)
+	CommentOnWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// DeleteWorkspaceExecutionReviewComment Remove a comment you left, and its replies
+	// (DELETE /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId})
+	DeleteWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId)
+	// EditWorkspaceExecutionReviewComment Rewrite a comment you left
+	// (PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId})
+	EditWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId)
+	// ResolveWorkspaceExecutionReviewComment Mark a thread resolved, or open it again
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve)
+	ResolveWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId)
+	// SubmitWorkspaceExecutionReview Submit your review of this run's changes
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/reviews)
+	SubmitWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
 	// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/services)
 	ListWorkspaceExecutionServices(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
@@ -99155,12 +101285,6 @@ func (_ Unimplemented) GetWorkspaceExecution(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ApproveWorkspaceExecution Accept what this run produced
-// (POST /workspaces/{workspaceId}/executions/{executionId}/approve)
-func (_ Unimplemented) ApproveWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // ListWorkspaceExecutionArtifacts The files this run published, oldest first
 // (GET /workspaces/{workspaceId}/executions/{executionId}/artifacts)
 func (_ Unimplemented) ListWorkspaceExecutionArtifacts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
@@ -99182,6 +101306,24 @@ func (_ Unimplemented) CancelWorkspaceExecution(w http.ResponseWriter, r *http.R
 // ListWorkspaceExecutionLogs What this run printed, oldest batch first
 // (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
 func (_ Unimplemented) ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionLogsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
+// (GET /workspaces/{workspaceId}/executions/{executionId}/plans)
+func (_ Unimplemented) ListWorkspaceExecutionPlans(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ApproveWorkspaceExecutionPlan Approve this revision of the plan and let the run implement it
+// (POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve)
+func (_ Unimplemented) ApproveWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReviseWorkspaceExecutionPlan Send this revision of the plan back with what should change
+// (POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise)
+func (_ Unimplemented) ReviseWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -99215,15 +101357,45 @@ func (_ Unimplemented) RestartWorkspaceExecution(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ResumeWorkspaceExecution Send this run back to work with feedback
-// (POST /workspaces/{workspaceId}/executions/{executionId}/resume)
-func (_ Unimplemented) ResumeWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // RetainWorkspaceExecution Keep this run's workspace and previews for longer
 // (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
 func (_ Unimplemented) RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceExecutionReview The comments and reviews left on this run's changes
+// (GET /workspaces/{workspaceId}/executions/{executionId}/review)
+func (_ Unimplemented) GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CommentOnWorkspaceExecutionReview Comment on a line of this run's changes, or reply to a thread
+// (POST /workspaces/{workspaceId}/executions/{executionId}/review/comments)
+func (_ Unimplemented) CommentOnWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteWorkspaceExecutionReviewComment Remove a comment you left, and its replies
+// (DELETE /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId})
+func (_ Unimplemented) DeleteWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// EditWorkspaceExecutionReviewComment Rewrite a comment you left
+// (PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId})
+func (_ Unimplemented) EditWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ResolveWorkspaceExecutionReviewComment Mark a thread resolved, or open it again
+// (POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve)
+func (_ Unimplemented) ResolveWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SubmitWorkspaceExecutionReview Submit your review of this run's changes
+// (POST /workspaces/{workspaceId}/executions/{executionId}/reviews)
+func (_ Unimplemented) SubmitWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -104178,41 +106350,6 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceExecution(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
-// ApproveWorkspaceExecution operation middleware
-func (siw *ServerInterfaceWrapper) ApproveWorkspaceExecution(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "executionId" -------------
-	var executionId ExecutionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ApproveWorkspaceExecution(w, r, workspaceId, executionId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListWorkspaceExecutionArtifacts operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionArtifacts(w http.ResponseWriter, r *http.Request) {
 
@@ -104382,6 +106519,129 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionLogs(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceExecutionLogs(w, r, workspaceId, executionId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceExecutionPlans operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionPlans(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceExecutionPlans(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApproveWorkspaceExecutionPlan operation middleware
+func (siw *ServerInterfaceWrapper) ApproveWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "revision" -------------
+	var revision PlanRevision
+
+	err = runtime.BindStyledParameterWithOptions("simple", "revision", chi.URLParam(r, "revision"), &revision, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "revision", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApproveWorkspaceExecutionPlan(w, r, workspaceId, executionId, revision)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReviseWorkspaceExecutionPlan operation middleware
+func (siw *ServerInterfaceWrapper) ReviseWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "revision" -------------
+	var revision PlanRevision
+
+	err = runtime.BindStyledParameterWithOptions("simple", "revision", chi.URLParam(r, "revision"), &revision, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "revision", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReviseWorkspaceExecutionPlan(w, r, workspaceId, executionId, revision)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -104593,41 +106853,6 @@ func (siw *ServerInterfaceWrapper) RestartWorkspaceExecution(w http.ResponseWrit
 	handler.ServeHTTP(w, r)
 }
 
-// ResumeWorkspaceExecution operation middleware
-func (siw *ServerInterfaceWrapper) ResumeWorkspaceExecution(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "executionId" -------------
-	var executionId ExecutionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResumeWorkspaceExecution(w, r, workspaceId, executionId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // RetainWorkspaceExecution operation middleware
 func (siw *ServerInterfaceWrapper) RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request) {
 
@@ -104654,6 +106879,243 @@ func (siw *ServerInterfaceWrapper) RetainWorkspaceExecution(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RetainWorkspaceExecution(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceExecutionReview operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceExecutionReview(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CommentOnWorkspaceExecutionReview operation middleware
+func (siw *ServerInterfaceWrapper) CommentOnWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CommentOnWorkspaceExecutionReview(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceExecutionReviewComment operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "reviewCommentId" -------------
+	var reviewCommentId ReviewCommentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewCommentId", chi.URLParam(r, "reviewCommentId"), &reviewCommentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reviewCommentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceExecutionReviewComment(w, r, workspaceId, executionId, reviewCommentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EditWorkspaceExecutionReviewComment operation middleware
+func (siw *ServerInterfaceWrapper) EditWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "reviewCommentId" -------------
+	var reviewCommentId ReviewCommentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewCommentId", chi.URLParam(r, "reviewCommentId"), &reviewCommentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reviewCommentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EditWorkspaceExecutionReviewComment(w, r, workspaceId, executionId, reviewCommentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveWorkspaceExecutionReviewComment operation middleware
+func (siw *ServerInterfaceWrapper) ResolveWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "reviewCommentId" -------------
+	var reviewCommentId ReviewCommentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewCommentId", chi.URLParam(r, "reviewCommentId"), &reviewCommentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reviewCommentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveWorkspaceExecutionReviewComment(w, r, workspaceId, executionId, reviewCommentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SubmitWorkspaceExecutionReview operation middleware
+func (siw *ServerInterfaceWrapper) SubmitWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubmitWorkspaceExecutionReview(w, r, workspaceId, executionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -114324,10 +116786,31 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/restart", wrapper.RestartWorkspaceExecution)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/resume", wrapper.ResumeWorkspaceExecution)
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/plans", wrapper.ListWorkspaceExecutionPlans)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/approve", wrapper.ApproveWorkspaceExecution)
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve", wrapper.ApproveWorkspaceExecutionPlan)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise", wrapper.ReviseWorkspaceExecutionPlan)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/review", wrapper.GetWorkspaceExecutionReview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/review/comments", wrapper.CommentOnWorkspaceExecutionReview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}", wrapper.DeleteWorkspaceExecutionReviewComment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}", wrapper.EditWorkspaceExecutionReviewComment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve", wrapper.ResolveWorkspaceExecutionReviewComment)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/reviews", wrapper.SubmitWorkspaceExecutionReview)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/services", wrapper.ListWorkspaceExecutionServices)
@@ -125330,105 +127813,6 @@ func (response GetWorkspaceExecution500ApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
-type ApproveWorkspaceExecutionRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-	ExecutionId ExecutionId `json:"executionId"`
-}
-
-type ApproveWorkspaceExecutionResponseObject interface {
-	VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error
-}
-
-type ApproveWorkspaceExecution200JSONResponse Execution
-
-func (response ApproveWorkspaceExecution200JSONResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveWorkspaceExecution401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ApproveWorkspaceExecution401ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveWorkspaceExecution403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ApproveWorkspaceExecution403ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveWorkspaceExecution404ApplicationProblemPlusJSONResponse Problem
-
-func (response ApproveWorkspaceExecution404ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveWorkspaceExecution409ApplicationProblemPlusJSONResponse struct {
-	ExecutionConflictApplicationProblemPlusJSONResponse
-}
-
-func (response ApproveWorkspaceExecution409ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ApproveWorkspaceExecution500ApplicationProblemPlusJSONResponse Problem
-
-func (response ApproveWorkspaceExecution500ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type ListWorkspaceExecutionArtifactsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	ExecutionId ExecutionId `json:"executionId"`
@@ -125789,6 +128173,304 @@ func (response ListWorkspaceExecutionLogs404ApplicationProblemPlusJSONResponse) 
 type ListWorkspaceExecutionLogs500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceExecutionLogs500ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPlansRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+}
+
+type ListWorkspaceExecutionPlansResponseObject interface {
+	VisitListWorkspaceExecutionPlansResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceExecutionPlans200JSONResponse []ExecutionPlan
+
+func (response ListWorkspaceExecutionPlans200JSONResponse) VisitListWorkspaceExecutionPlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPlans401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceExecutionPlans401ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPlans403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceExecutionPlans403ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPlans404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceExecutionPlans404ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceExecutionPlans500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceExecutionPlans500ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionPlansResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveWorkspaceExecutionPlanRequestObject struct {
+	WorkspaceId WorkspaceId  `json:"workspaceId"`
+	ExecutionId ExecutionId  `json:"executionId"`
+	Revision    PlanRevision `json:"revision"`
+}
+
+type ApproveWorkspaceExecutionPlanResponseObject interface {
+	VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error
+}
+
+type ApproveWorkspaceExecutionPlan200JSONResponse Execution
+
+func (response ApproveWorkspaceExecutionPlan200JSONResponse) VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveWorkspaceExecutionPlan401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ApproveWorkspaceExecutionPlan401ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveWorkspaceExecutionPlan403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ApproveWorkspaceExecutionPlan403ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveWorkspaceExecutionPlan404ApplicationProblemPlusJSONResponse Problem
+
+func (response ApproveWorkspaceExecutionPlan404ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveWorkspaceExecutionPlan409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ApproveWorkspaceExecutionPlan409ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveWorkspaceExecutionPlan500ApplicationProblemPlusJSONResponse Problem
+
+func (response ApproveWorkspaceExecutionPlan500ApplicationProblemPlusJSONResponse) VisitApproveWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReviseWorkspaceExecutionPlanRequestObject struct {
+	WorkspaceId WorkspaceId  `json:"workspaceId"`
+	ExecutionId ExecutionId  `json:"executionId"`
+	Revision    PlanRevision `json:"revision"`
+	Body        *ReviseWorkspaceExecutionPlanJSONRequestBody
+}
+
+type ReviseWorkspaceExecutionPlanResponseObject interface {
+	VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error
+}
+
+type ReviseWorkspaceExecutionPlan200JSONResponse Execution
+
+func (response ReviseWorkspaceExecutionPlan200JSONResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReviseWorkspaceExecutionPlan401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReviseWorkspaceExecutionPlan401ApplicationProblemPlusJSONResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReviseWorkspaceExecutionPlan403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReviseWorkspaceExecutionPlan403ApplicationProblemPlusJSONResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReviseWorkspaceExecutionPlan404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReviseWorkspaceExecutionPlan404ApplicationProblemPlusJSONResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReviseWorkspaceExecutionPlan409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ReviseWorkspaceExecutionPlan409ApplicationProblemPlusJSONResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReviseWorkspaceExecutionPlan422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReviseWorkspaceExecutionPlan422ApplicationProblemPlusJSONResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReviseWorkspaceExecutionPlan500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReviseWorkspaceExecutionPlan500ApplicationProblemPlusJSONResponse) VisitReviseWorkspaceExecutionPlanResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -126259,120 +128941,6 @@ func (response RestartWorkspaceExecution500ApplicationProblemPlusJSONResponse) V
 	return err
 }
 
-type ResumeWorkspaceExecutionRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-	ExecutionId ExecutionId `json:"executionId"`
-	Body        *ResumeWorkspaceExecutionJSONRequestBody
-}
-
-type ResumeWorkspaceExecutionResponseObject interface {
-	VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error
-}
-
-type ResumeWorkspaceExecution200JSONResponse Execution
-
-func (response ResumeWorkspaceExecution200JSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResumeWorkspaceExecution401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ResumeWorkspaceExecution401ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResumeWorkspaceExecution403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ResumeWorkspaceExecution403ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResumeWorkspaceExecution404ApplicationProblemPlusJSONResponse Problem
-
-func (response ResumeWorkspaceExecution404ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResumeWorkspaceExecution409ApplicationProblemPlusJSONResponse struct {
-	ExecutionConflictApplicationProblemPlusJSONResponse
-}
-
-func (response ResumeWorkspaceExecution409ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResumeWorkspaceExecution422ApplicationProblemPlusJSONResponse Problem
-
-func (response ResumeWorkspaceExecution422ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ResumeWorkspaceExecution500ApplicationProblemPlusJSONResponse Problem
-
-func (response ResumeWorkspaceExecution500ApplicationProblemPlusJSONResponse) VisitResumeWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type RetainWorkspaceExecutionRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	ExecutionId ExecutionId `json:"executionId"`
@@ -126476,6 +129044,627 @@ func (response RetainWorkspaceExecution422ApplicationProblemPlusJSONResponse) Vi
 type RetainWorkspaceExecution500ApplicationProblemPlusJSONResponse Problem
 
 func (response RetainWorkspaceExecution500ApplicationProblemPlusJSONResponse) VisitRetainWorkspaceExecutionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceExecutionReviewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+}
+
+type GetWorkspaceExecutionReviewResponseObject interface {
+	VisitGetWorkspaceExecutionReviewResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceExecutionReview200JSONResponse ExecutionReviewState
+
+func (response GetWorkspaceExecutionReview200JSONResponse) VisitGetWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceExecutionReview401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceExecutionReview401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceExecutionReview403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceExecutionReview403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceExecutionReview404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceExecutionReview404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceExecutionReview500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceExecutionReview500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CommentOnWorkspaceExecutionReviewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+	Body        *CommentOnWorkspaceExecutionReviewJSONRequestBody
+}
+
+type CommentOnWorkspaceExecutionReviewResponseObject interface {
+	VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error
+}
+
+type CommentOnWorkspaceExecutionReview201JSONResponse ReviewComment
+
+func (response CommentOnWorkspaceExecutionReview201JSONResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CommentOnWorkspaceExecutionReview401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CommentOnWorkspaceExecutionReview401ApplicationProblemPlusJSONResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CommentOnWorkspaceExecutionReview403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CommentOnWorkspaceExecutionReview403ApplicationProblemPlusJSONResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CommentOnWorkspaceExecutionReview404ApplicationProblemPlusJSONResponse Problem
+
+func (response CommentOnWorkspaceExecutionReview404ApplicationProblemPlusJSONResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CommentOnWorkspaceExecutionReview409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response CommentOnWorkspaceExecutionReview409ApplicationProblemPlusJSONResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CommentOnWorkspaceExecutionReview422ApplicationProblemPlusJSONResponse Problem
+
+func (response CommentOnWorkspaceExecutionReview422ApplicationProblemPlusJSONResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CommentOnWorkspaceExecutionReview500ApplicationProblemPlusJSONResponse Problem
+
+func (response CommentOnWorkspaceExecutionReview500ApplicationProblemPlusJSONResponse) VisitCommentOnWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceExecutionReviewCommentRequestObject struct {
+	WorkspaceId     WorkspaceId     `json:"workspaceId"`
+	ExecutionId     ExecutionId     `json:"executionId"`
+	ReviewCommentId ReviewCommentId `json:"reviewCommentId"`
+}
+
+type DeleteWorkspaceExecutionReviewCommentResponseObject interface {
+	VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceExecutionReviewComment204Response struct {
+}
+
+func (response DeleteWorkspaceExecutionReviewComment204Response) VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkspaceExecutionReviewComment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceExecutionReviewComment401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceExecutionReviewComment403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceExecutionReviewComment403ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceExecutionReviewComment404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceExecutionReviewComment404ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceExecutionReviewComment409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceExecutionReviewComment409ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceExecutionReviewComment500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceExecutionReviewComment500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditWorkspaceExecutionReviewCommentRequestObject struct {
+	WorkspaceId     WorkspaceId     `json:"workspaceId"`
+	ExecutionId     ExecutionId     `json:"executionId"`
+	ReviewCommentId ReviewCommentId `json:"reviewCommentId"`
+	Body            *EditWorkspaceExecutionReviewCommentJSONRequestBody
+}
+
+type EditWorkspaceExecutionReviewCommentResponseObject interface {
+	VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error
+}
+
+type EditWorkspaceExecutionReviewComment200JSONResponse ReviewComment
+
+func (response EditWorkspaceExecutionReviewComment200JSONResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditWorkspaceExecutionReviewComment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response EditWorkspaceExecutionReviewComment401ApplicationProblemPlusJSONResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditWorkspaceExecutionReviewComment403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response EditWorkspaceExecutionReviewComment403ApplicationProblemPlusJSONResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditWorkspaceExecutionReviewComment404ApplicationProblemPlusJSONResponse Problem
+
+func (response EditWorkspaceExecutionReviewComment404ApplicationProblemPlusJSONResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditWorkspaceExecutionReviewComment409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response EditWorkspaceExecutionReviewComment409ApplicationProblemPlusJSONResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditWorkspaceExecutionReviewComment422ApplicationProblemPlusJSONResponse Problem
+
+func (response EditWorkspaceExecutionReviewComment422ApplicationProblemPlusJSONResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditWorkspaceExecutionReviewComment500ApplicationProblemPlusJSONResponse Problem
+
+func (response EditWorkspaceExecutionReviewComment500ApplicationProblemPlusJSONResponse) VisitEditWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceExecutionReviewCommentRequestObject struct {
+	WorkspaceId     WorkspaceId     `json:"workspaceId"`
+	ExecutionId     ExecutionId     `json:"executionId"`
+	ReviewCommentId ReviewCommentId `json:"reviewCommentId"`
+	Body            *ResolveWorkspaceExecutionReviewCommentJSONRequestBody
+}
+
+type ResolveWorkspaceExecutionReviewCommentResponseObject interface {
+	VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error
+}
+
+type ResolveWorkspaceExecutionReviewComment200JSONResponse ReviewComment
+
+func (response ResolveWorkspaceExecutionReviewComment200JSONResponse) VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceExecutionReviewComment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveWorkspaceExecutionReviewComment401ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceExecutionReviewComment403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveWorkspaceExecutionReviewComment403ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceExecutionReviewComment404ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveWorkspaceExecutionReviewComment404ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceExecutionReviewComment409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveWorkspaceExecutionReviewComment409ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveWorkspaceExecutionReviewComment500ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveWorkspaceExecutionReviewComment500ApplicationProblemPlusJSONResponse) VisitResolveWorkspaceExecutionReviewCommentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceExecutionReviewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+	Body        *SubmitWorkspaceExecutionReviewJSONRequestBody
+}
+
+type SubmitWorkspaceExecutionReviewResponseObject interface {
+	VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error
+}
+
+type SubmitWorkspaceExecutionReview201JSONResponse ExecutionReview
+
+func (response SubmitWorkspaceExecutionReview201JSONResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceExecutionReview401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SubmitWorkspaceExecutionReview401ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceExecutionReview403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SubmitWorkspaceExecutionReview403ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceExecutionReview404ApplicationProblemPlusJSONResponse Problem
+
+func (response SubmitWorkspaceExecutionReview404ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceExecutionReview409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response SubmitWorkspaceExecutionReview409ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceExecutionReview422ApplicationProblemPlusJSONResponse Problem
+
+func (response SubmitWorkspaceExecutionReview422ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitWorkspaceExecutionReview500ApplicationProblemPlusJSONResponse Problem
+
+func (response SubmitWorkspaceExecutionReview500ApplicationProblemPlusJSONResponse) VisitSubmitWorkspaceExecutionReviewResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -148304,9 +151493,6 @@ type StrictServerInterface interface {
 	// GetWorkspaceExecution One run, with the beginning of its timeline
 	// (GET /workspaces/{workspaceId}/executions/{executionId})
 	GetWorkspaceExecution(ctx context.Context, request GetWorkspaceExecutionRequestObject) (GetWorkspaceExecutionResponseObject, error)
-	// ApproveWorkspaceExecution Accept what this run produced
-	// (POST /workspaces/{workspaceId}/executions/{executionId}/approve)
-	ApproveWorkspaceExecution(ctx context.Context, request ApproveWorkspaceExecutionRequestObject) (ApproveWorkspaceExecutionResponseObject, error)
 	// ListWorkspaceExecutionArtifacts The files this run published, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/artifacts)
 	ListWorkspaceExecutionArtifacts(ctx context.Context, request ListWorkspaceExecutionArtifactsRequestObject) (ListWorkspaceExecutionArtifactsResponseObject, error)
@@ -148319,6 +151505,15 @@ type StrictServerInterface interface {
 	// ListWorkspaceExecutionLogs What this run printed, oldest batch first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
 	ListWorkspaceExecutionLogs(ctx context.Context, request ListWorkspaceExecutionLogsRequestObject) (ListWorkspaceExecutionLogsResponseObject, error)
+	// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/plans)
+	ListWorkspaceExecutionPlans(ctx context.Context, request ListWorkspaceExecutionPlansRequestObject) (ListWorkspaceExecutionPlansResponseObject, error)
+	// ApproveWorkspaceExecutionPlan Approve this revision of the plan and let the run implement it
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve)
+	ApproveWorkspaceExecutionPlan(ctx context.Context, request ApproveWorkspaceExecutionPlanRequestObject) (ApproveWorkspaceExecutionPlanResponseObject, error)
+	// ReviseWorkspaceExecutionPlan Send this revision of the plan back with what should change
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise)
+	ReviseWorkspaceExecutionPlan(ctx context.Context, request ReviseWorkspaceExecutionPlanRequestObject) (ReviseWorkspaceExecutionPlanResponseObject, error)
 	// ListWorkspaceExecutionPreviews The previews this run has opened, and who they are shared with
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/previews)
 	ListWorkspaceExecutionPreviews(ctx context.Context, request ListWorkspaceExecutionPreviewsRequestObject) (ListWorkspaceExecutionPreviewsResponseObject, error)
@@ -148334,12 +151529,27 @@ type StrictServerInterface interface {
 	// RestartWorkspaceExecution Run this issue again, as a fresh attempt
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/restart)
 	RestartWorkspaceExecution(ctx context.Context, request RestartWorkspaceExecutionRequestObject) (RestartWorkspaceExecutionResponseObject, error)
-	// ResumeWorkspaceExecution Send this run back to work with feedback
-	// (POST /workspaces/{workspaceId}/executions/{executionId}/resume)
-	ResumeWorkspaceExecution(ctx context.Context, request ResumeWorkspaceExecutionRequestObject) (ResumeWorkspaceExecutionResponseObject, error)
 	// RetainWorkspaceExecution Keep this run's workspace and previews for longer
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/retain)
 	RetainWorkspaceExecution(ctx context.Context, request RetainWorkspaceExecutionRequestObject) (RetainWorkspaceExecutionResponseObject, error)
+	// GetWorkspaceExecutionReview The comments and reviews left on this run's changes
+	// (GET /workspaces/{workspaceId}/executions/{executionId}/review)
+	GetWorkspaceExecutionReview(ctx context.Context, request GetWorkspaceExecutionReviewRequestObject) (GetWorkspaceExecutionReviewResponseObject, error)
+	// CommentOnWorkspaceExecutionReview Comment on a line of this run's changes, or reply to a thread
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/review/comments)
+	CommentOnWorkspaceExecutionReview(ctx context.Context, request CommentOnWorkspaceExecutionReviewRequestObject) (CommentOnWorkspaceExecutionReviewResponseObject, error)
+	// DeleteWorkspaceExecutionReviewComment Remove a comment you left, and its replies
+	// (DELETE /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId})
+	DeleteWorkspaceExecutionReviewComment(ctx context.Context, request DeleteWorkspaceExecutionReviewCommentRequestObject) (DeleteWorkspaceExecutionReviewCommentResponseObject, error)
+	// EditWorkspaceExecutionReviewComment Rewrite a comment you left
+	// (PATCH /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId})
+	EditWorkspaceExecutionReviewComment(ctx context.Context, request EditWorkspaceExecutionReviewCommentRequestObject) (EditWorkspaceExecutionReviewCommentResponseObject, error)
+	// ResolveWorkspaceExecutionReviewComment Mark a thread resolved, or open it again
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve)
+	ResolveWorkspaceExecutionReviewComment(ctx context.Context, request ResolveWorkspaceExecutionReviewCommentRequestObject) (ResolveWorkspaceExecutionReviewCommentResponseObject, error)
+	// SubmitWorkspaceExecutionReview Submit your review of this run's changes
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/reviews)
+	SubmitWorkspaceExecutionReview(ctx context.Context, request SubmitWorkspaceExecutionReviewRequestObject) (SubmitWorkspaceExecutionReviewResponseObject, error)
 	// ListWorkspaceExecutionServices What this run is running, on which ports, and how it is
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/services)
 	ListWorkspaceExecutionServices(ctx context.Context, request ListWorkspaceExecutionServicesRequestObject) (ListWorkspaceExecutionServicesResponseObject, error)
@@ -152628,33 +155838,6 @@ func (sh *strictHandler) GetWorkspaceExecution(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// ApproveWorkspaceExecution operation middleware
-func (sh *strictHandler) ApproveWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
-	var request ApproveWorkspaceExecutionRequestObject
-
-	request.WorkspaceId = workspaceId
-	request.ExecutionId = executionId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ApproveWorkspaceExecution(ctx, request.(ApproveWorkspaceExecutionRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ApproveWorkspaceExecution")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ApproveWorkspaceExecutionResponseObject); ok {
-		if err := validResponse.VisitApproveWorkspaceExecutionResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // ListWorkspaceExecutionArtifacts operation middleware
 func (sh *strictHandler) ListWorkspaceExecutionArtifacts(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
 	var request ListWorkspaceExecutionArtifactsRequestObject
@@ -152768,6 +155951,96 @@ func (sh *strictHandler) ListWorkspaceExecutionLogs(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceExecutionLogsResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceExecutionLogsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceExecutionPlans operation middleware
+func (sh *strictHandler) ListWorkspaceExecutionPlans(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request ListWorkspaceExecutionPlansRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceExecutionPlans(ctx, request.(ListWorkspaceExecutionPlansRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceExecutionPlans")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceExecutionPlansResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceExecutionPlansResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApproveWorkspaceExecutionPlan operation middleware
+func (sh *strictHandler) ApproveWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision) {
+	var request ApproveWorkspaceExecutionPlanRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+	request.Revision = revision
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApproveWorkspaceExecutionPlan(ctx, request.(ApproveWorkspaceExecutionPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApproveWorkspaceExecutionPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApproveWorkspaceExecutionPlanResponseObject); ok {
+		if err := validResponse.VisitApproveWorkspaceExecutionPlanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReviseWorkspaceExecutionPlan operation middleware
+func (sh *strictHandler) ReviseWorkspaceExecutionPlan(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, revision PlanRevision) {
+	var request ReviseWorkspaceExecutionPlanRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+	request.Revision = revision
+
+	var body ReviseWorkspaceExecutionPlanJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReviseWorkspaceExecutionPlan(ctx, request.(ReviseWorkspaceExecutionPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReviseWorkspaceExecutionPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReviseWorkspaceExecutionPlanResponseObject); ok {
+		if err := validResponse.VisitReviseWorkspaceExecutionPlanResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -152923,40 +156196,6 @@ func (sh *strictHandler) RestartWorkspaceExecution(w http.ResponseWriter, r *htt
 	}
 }
 
-// ResumeWorkspaceExecution operation middleware
-func (sh *strictHandler) ResumeWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
-	var request ResumeWorkspaceExecutionRequestObject
-
-	request.WorkspaceId = workspaceId
-	request.ExecutionId = executionId
-
-	var body ResumeWorkspaceExecutionJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ResumeWorkspaceExecution(ctx, request.(ResumeWorkspaceExecutionRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ResumeWorkspaceExecution")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ResumeWorkspaceExecutionResponseObject); ok {
-		if err := validResponse.VisitResumeWorkspaceExecutionResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // RetainWorkspaceExecution operation middleware
 func (sh *strictHandler) RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
 	var request RetainWorkspaceExecutionRequestObject
@@ -152984,6 +156223,199 @@ func (sh *strictHandler) RetainWorkspaceExecution(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RetainWorkspaceExecutionResponseObject); ok {
 		if err := validResponse.VisitRetainWorkspaceExecutionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceExecutionReview operation middleware
+func (sh *strictHandler) GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request GetWorkspaceExecutionReviewRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceExecutionReview(ctx, request.(GetWorkspaceExecutionReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceExecutionReview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceExecutionReviewResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceExecutionReviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CommentOnWorkspaceExecutionReview operation middleware
+func (sh *strictHandler) CommentOnWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request CommentOnWorkspaceExecutionReviewRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	var body CommentOnWorkspaceExecutionReviewJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CommentOnWorkspaceExecutionReview(ctx, request.(CommentOnWorkspaceExecutionReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CommentOnWorkspaceExecutionReview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CommentOnWorkspaceExecutionReviewResponseObject); ok {
+		if err := validResponse.VisitCommentOnWorkspaceExecutionReviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceExecutionReviewComment operation middleware
+func (sh *strictHandler) DeleteWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId) {
+	var request DeleteWorkspaceExecutionReviewCommentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+	request.ReviewCommentId = reviewCommentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceExecutionReviewComment(ctx, request.(DeleteWorkspaceExecutionReviewCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceExecutionReviewComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceExecutionReviewCommentResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceExecutionReviewCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EditWorkspaceExecutionReviewComment operation middleware
+func (sh *strictHandler) EditWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId) {
+	var request EditWorkspaceExecutionReviewCommentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+	request.ReviewCommentId = reviewCommentId
+
+	var body EditWorkspaceExecutionReviewCommentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EditWorkspaceExecutionReviewComment(ctx, request.(EditWorkspaceExecutionReviewCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EditWorkspaceExecutionReviewComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EditWorkspaceExecutionReviewCommentResponseObject); ok {
+		if err := validResponse.VisitEditWorkspaceExecutionReviewCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveWorkspaceExecutionReviewComment operation middleware
+func (sh *strictHandler) ResolveWorkspaceExecutionReviewComment(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, reviewCommentId ReviewCommentId) {
+	var request ResolveWorkspaceExecutionReviewCommentRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+	request.ReviewCommentId = reviewCommentId
+
+	var body ResolveWorkspaceExecutionReviewCommentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveWorkspaceExecutionReviewComment(ctx, request.(ResolveWorkspaceExecutionReviewCommentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveWorkspaceExecutionReviewComment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveWorkspaceExecutionReviewCommentResponseObject); ok {
+		if err := validResponse.VisitResolveWorkspaceExecutionReviewCommentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SubmitWorkspaceExecutionReview operation middleware
+func (sh *strictHandler) SubmitWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request SubmitWorkspaceExecutionReviewRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	var body SubmitWorkspaceExecutionReviewJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubmitWorkspaceExecutionReview(ctx, request.(SubmitWorkspaceExecutionReviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubmitWorkspaceExecutionReview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubmitWorkspaceExecutionReviewResponseObject); ok {
+		if err := validResponse.VisitSubmitWorkspaceExecutionReviewResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

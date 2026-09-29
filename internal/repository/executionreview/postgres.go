@@ -368,7 +368,7 @@ func (r *reviewRepository) ResolveComment(
 	)
 }
 
-func (r *reviewRepository) Submit(
+func (r *reviewRepository) CreateReview(
 	ctx context.Context,
 	review entity.ExecutionReview,
 ) (entity.ExecutionReview, error) {
@@ -377,7 +377,7 @@ func (r *reviewRepository) Submit(
 		return entity.ExecutionReview{}, fmt.Errorf("encode review heads: %w", err)
 	}
 
-	submitted, err := scanReview(r.db.Querier(ctx).QueryRowContext(
+	created, err := scanReview(r.db.Querier(ctx).QueryRowContext(
 		ctx,
 		insertReviewQuery,
 		review.ExecutionID,
@@ -389,20 +389,28 @@ func (r *reviewRepository) Submit(
 		review.SubmittedAt,
 	))
 	if err != nil {
-		return entity.ExecutionReview{}, fmt.Errorf("submit review: %w", err)
+		return entity.ExecutionReview{}, fmt.Errorf("create review: %w", err)
 	}
 
+	return created, nil
+}
+
+func (r *reviewRepository) AttachPending(
+	ctx context.Context,
+	executionID string,
+	authorID, reviewID uuid.UUID,
+) error {
 	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx,
 		attachPendingCommentsQuery,
-		review.ExecutionID,
-		review.AuthorAccountID.String(),
-		submitted.ID.String(),
+		executionID,
+		authorID.String(),
+		reviewID.String(),
 	); err != nil {
-		return entity.ExecutionReview{}, fmt.Errorf("attach pending review comments: %w", err)
+		return fmt.Errorf("attach pending review comments: %w", err)
 	}
 
-	return submitted, nil
+	return nil
 }
 
 func (r *reviewRepository) ListReviews(

@@ -72,6 +72,8 @@ export function stateLabel(state: ExecutionState): string {
 			return "Running";
 		case "waiting_for_input":
 			return "Waiting on you";
+		case "awaiting_plan_approval":
+			return "Plan waiting for approval";
 		case "queued_for_resume":
 			return "Waiting for a slot";
 		case "finalizing":
@@ -100,6 +102,7 @@ export function elapsedLabel(state: ExecutionState): string {
 		case "leased":
 		case "queued_for_resume":
 		case "waiting_for_input":
+		case "awaiting_plan_approval":
 			return "waiting for";
 		default:
 			return "open for";
@@ -119,6 +122,7 @@ export function stateTone(state: ExecutionState): StateTone {
 		case "finalizing":
 			return "working";
 		case "waiting_for_input":
+		case "awaiting_plan_approval":
 		case "awaiting_review":
 			return "attention";
 		case "approved":
@@ -143,14 +147,16 @@ export function standingLine(execution: Execution): string {
 			return "The coding agent is working.";
 		case "waiting_for_input":
 			return "The coding agent stopped to ask something and cannot go on until somebody answers.";
+		case "awaiting_plan_approval":
+			return "The coding agent has proposed a plan. Nothing is written until somebody approves it.";
 		case "queued_for_resume":
-			return "The answer is in. This run starts again as soon as the machine has a slot free.";
+			return "A decision is in. This run starts again as soon as the machine has a slot free.";
 		case "finalizing":
-			return "The coding agent has finished. The machine is pushing branches and collecting what changed.";
+			return "The coding agent has finished. The machine is collecting what changed for review.";
 		case "awaiting_review":
-			return "The work is done and waiting for somebody to accept or reject it.";
+			return "The changes are ready to review. Nothing has been pushed yet.";
 		case "approved":
-			return "Somebody accepted this work. The machine is giving the workspace back.";
+			return "Somebody approved the changes. The machine is pushing the branch and opening the pull request.";
 		case "completed":
 			return "This run is finished and the machine has given the workspace back.";
 		case "failed":

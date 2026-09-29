@@ -36,17 +36,6 @@ func (s *executionsService) Answered(ctx context.Context, question entity.IssueQ
 		return nil
 	}
 
-	answer := channelv1.Answer{
-		QuestionID: question.ID.String(),
-		Ref:        question.Ref,
-		Answer:     question.Answer,
-		AnsweredBy: question.AnsweredByName,
-	}
-
-	if question.AnsweredAt != nil {
-		answer.AnsweredAt = *question.AnsweredAt
-	}
-
 	if err := s.remember(ctx, execution, entity.ExecutionEvent{
 		ExecutionID: execution.ID,
 		Kind:        entity.ExecutionEventQuestion,
@@ -60,9 +49,9 @@ func (s *executionsService) Answered(ctx context.Context, question entity.IssueQ
 
 	switch execution.State {
 	case entity.ExecutionRunning:
-		return s.tell(ctx, execution, entity.ChannelQuestionAnswered, answer)
+		return s.tell(ctx, execution, entity.ChannelQuestionAnswered, answerOf(question))
 	case entity.ExecutionWaitingForInput:
-		return s.wake(ctx, execution, question, answer)
+		return s.wake(ctx, execution, question)
 	default:
 		return nil
 	}
@@ -80,8 +69,18 @@ func (s *executionsService) wake(
 	ctx context.Context,
 	execution entity.Execution,
 	question entity.IssueQuestion,
-	answer channelv1.Answer,
 ) error {
+	listed, err := s.questions.ListByExecution(ctx, execution.WorkspaceID, execution.ID)
+	if err != nil {
+		return err
+	}
+
+	questions := settledIn(listed, question)
+
+	if len(entity.BlockingQuestionsOpen(questions)) > 0 {
+		return nil
+	}
+
 	resumed, err := s.advance(ctx, execution, move{
 		to:     entity.ExecutionQueuedForResume,
 		reason: answeredNote(question),
@@ -92,10 +91,9 @@ func (s *executionsService) wake(
 	}
 
 	if err := s.tell(ctx, resumed, entity.ChannelExecutionResume, channelv1.Instruction{
-		Reason:      channelv1.ResumeAnswer,
-		Stage:       resumed.Stage,
-		Instruction: question.Answer,
-		Answers:     []channelv1.Answer{answer},
+		Reason:  channelv1.ResumeAnswer,
+		Stage:   resumed.Stage,
+		Answers: answersOf(questions),
 	}); err != nil {
 		return err
 	}
@@ -103,6 +101,54 @@ func (s *executionsService) wake(
 	s.record(ctx, entity.AuditExecutionResumed, resumed)
 
 	return nil
+}
+
+func settledIn(listed []entity.IssueQuestion, settled entity.IssueQuestion) []entity.IssueQuestion {
+	questions := make([]entity.IssueQuestion, 0, len(listed)+1)
+	found := false
+
+	for _, question := range listed {
+		if question.ID == settled.ID {
+			question, found = settled, true
+		}
+
+		questions = append(questions, question)
+	}
+
+	if !found {
+		questions = append(questions, settled)
+	}
+
+	return questions
+}
+
+func answersOf(questions []entity.IssueQuestion) []channelv1.Answer {
+	answers := make([]channelv1.Answer, 0, len(questions))
+
+	for _, question := range questions {
+		if !question.Answered() {
+			continue
+		}
+
+		answers = append(answers, answerOf(question))
+	}
+
+	return answers
+}
+
+func answerOf(question entity.IssueQuestion) channelv1.Answer {
+	answer := channelv1.Answer{
+		QuestionID: question.ID.String(),
+		Ref:        question.Ref,
+		Answer:     question.Answer,
+		AnsweredBy: question.AnsweredByName,
+	}
+
+	if question.AnsweredAt != nil {
+		answer.AnsweredAt = *question.AnsweredAt
+	}
+
+	return answer
 }
 
 func (s *executionsService) Unanswerable(

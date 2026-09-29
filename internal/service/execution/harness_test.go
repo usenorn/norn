@@ -14,8 +14,11 @@ import (
 	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
 	codebaserepo "github.com/usenorn/norn/internal/repository/codebase"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
+	executionplanrepo "github.com/usenorn/norn/internal/repository/executionplan"
+	executionreviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
 	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
 	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
@@ -30,11 +33,15 @@ import (
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 type harness struct {
 	executions  *executionrepo.MockExecution
 	changesets  *changesetrepo.MockChangeSet
+	plans       *executionplanrepo.MockExecutionPlan
+	reviews     *executionreviewrepo.MockExecutionReview
+	questions   *issuequestionrepo.MockIssueQuestion
 	previews    *previewrepo.MockPreview
 	services    *executionservicerepo.MockExecutionService
 	runners     *runnerrepo.MockRunner
@@ -64,6 +71,11 @@ type harness struct {
 	bound       []entity.Execution
 	recorded    []entity.ExecutionEvent
 	published   []entity.Event
+	proposed    []entity.ExecutionPlan
+	asked       []entity.IssueQuestion
+	changes     []entity.ExecutionChange
+	comments    []entity.ExecutionReviewComment
+	submitted   []entity.ExecutionReview
 }
 
 func newHarness(t *testing.T) *harness {
@@ -78,6 +90,9 @@ func newHarness(t *testing.T) *harness {
 	h := &harness{
 		executions:  executionrepo.NewMockExecution(ctrl),
 		changesets:  changesetrepo.NewMockChangeSet(ctrl),
+		plans:       executionplanrepo.NewMockExecutionPlan(ctrl),
+		reviews:     executionreviewrepo.NewMockExecutionReview(ctrl),
+		questions:   issuequestionrepo.NewMockIssueQuestion(ctrl),
 		previews:    previewrepo.NewMockPreview(ctrl),
 		services:    executionservicerepo.NewMockExecutionService(ctrl),
 		runners:     runnerrepo.NewMockRunner(ctrl),
@@ -215,8 +230,18 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.planning()
+	h.reviewing()
+
+	h.questions.EXPECT().
+		ListByExecution(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, _ string) ([]entity.IssueQuestion, error) {
+			return h.asked, nil
+		}).
+		AnyTimes()
+
 	h.service = executionsvc.New(
-		h.executions, h.changesets, h.previews, h.services, h.runners, h.codebases, h.issues,
+		h.executions, h.changesets, h.plans, h.reviews, h.questions, h.previews, h.services, h.runners, h.codebases, h.issues,
 		h.revisions, h.states,
 		h.channels, h.writer, h.source, h.events, h.toolkits, h.authorizer, h.audit, transactor,
 	)
@@ -404,4 +429,153 @@ func (h *harness) entry(kind entity.ExecutionEventKind) (entity.ExecutionEvent, 
 	}
 
 	return entity.ExecutionEvent{}, false
+}
+
+func (h *harness) planning() {
+	h.plans.EXPECT().
+		ListByExecution(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string) ([]entity.ExecutionPlan, error) {
+			return h.proposed, nil
+		}).
+		AnyTimes()
+
+	h.plans.EXPECT().
+		Propose(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, plan entity.ExecutionPlan) (entity.ExecutionPlan, error) {
+			for _, held := range h.proposed {
+				if held.Ref == plan.Ref {
+					return entity.ExecutionPlan{}, entity.ErrExecutionPlanRecorded
+				}
+			}
+
+			plan.ID = uuid.New()
+			plan.Revision = len(h.proposed) + 1
+			h.proposed = append(h.proposed, plan)
+
+			return plan, nil
+		}).
+		AnyTimes()
+
+	decide := func(approve bool) func(context.Context, repository.PlanDecision) (entity.ExecutionPlan, error) {
+		return func(_ context.Context, decision repository.PlanDecision) (entity.ExecutionPlan, error) {
+			latest, ok := entity.LatestPlan(h.proposed)
+			if !ok || latest.Revision != decision.Revision || !latest.Undecided() {
+				return entity.ExecutionPlan{}, entity.ErrExecutionPlanStale
+			}
+
+			at := decision.At
+			plan := &h.proposed[latest.Revision-1]
+
+			if approve {
+				plan.ApprovedAt = &at
+				plan.ApprovedByAccountID = decision.AccountID
+			} else {
+				plan.RevisionRequestedAt = &at
+				plan.RevisionFeedback = decision.Feedback
+			}
+
+			return *plan, nil
+		}
+	}
+
+	h.plans.EXPECT().Approve(gomock.Any(), gomock.Any()).DoAndReturn(decide(true)).AnyTimes()
+	h.plans.EXPECT().RequestRevision(gomock.Any(), gomock.Any()).DoAndReturn(decide(false)).AnyTimes()
+}
+
+func (h *harness) reviewing() {
+	h.changesets.EXPECT().
+		Get(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, executionID string) (entity.ExecutionChangeSet, error) {
+			return entity.ExecutionChangeSet{ExecutionID: executionID, Changes: h.changes}, nil
+		}).
+		AnyTimes()
+
+	h.reviews.EXPECT().
+		ListComments(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string) ([]entity.ExecutionReviewComment, error) {
+			return h.comments, nil
+		}).
+		AnyTimes()
+
+	h.reviews.EXPECT().
+		CountComments(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string) (int, error) { return len(h.comments), nil }).
+		AnyTimes()
+
+	h.reviews.EXPECT().
+		ListReviews(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string) ([]entity.ExecutionReview, error) {
+			return h.submitted, nil
+		}).
+		AnyTimes()
+
+	h.reviews.EXPECT().
+		AddComment(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, comment entity.ExecutionReviewComment,
+		) (entity.ExecutionReviewComment, error) {
+			comment.ID = uuid.New()
+			h.comments = append(h.comments, comment)
+
+			return comment, nil
+		}).
+		AnyTimes()
+
+	h.reviews.EXPECT().
+		GetComment(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ string, id uuid.UUID,
+		) (entity.ExecutionReviewComment, error) {
+			for _, comment := range h.comments {
+				if comment.ID == id {
+					return comment, nil
+				}
+			}
+
+			return entity.ExecutionReviewComment{}, entity.ErrReviewCommentNotFound
+		}).
+		AnyTimes()
+
+	h.reviews.EXPECT().
+		CreateReview(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, review entity.ExecutionReview) (entity.ExecutionReview, error) {
+			review.ID = uuid.New()
+			h.submitted = append(h.submitted, review)
+
+			return review, nil
+		}).
+		AnyTimes()
+
+	h.reviews.EXPECT().
+		AttachPending(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, author, review uuid.UUID) error {
+			for index := range h.comments {
+				if h.comments[index].Pending() && h.comments[index].AuthorAccountID == author {
+					h.comments[index].ReviewID = review
+				}
+			}
+
+			return nil
+		}).
+		AnyTimes()
+}
+
+func (h *harness) changed(repository, head string) {
+	h.changes = append(h.changes, entity.ExecutionChange{Repository: repository, HeadSHA: head})
+}
+
+func (h *harness) instruction(t *testing.T) channelv1.Instruction {
+	t.Helper()
+
+	sent, ok := h.sent(entity.ChannelExecutionResume)
+	if !ok {
+		t.Fatal("the machine was never told to carry on")
+	}
+
+	var instruction channelv1.Instruction
+	if err := json.Unmarshal(sent.Payload, &instruction); err != nil {
+		t.Fatalf("read the resume: %v", err)
+	}
+
+	return instruction
 }

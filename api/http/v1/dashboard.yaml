@@ -7277,22 +7277,71 @@ paths:
         '409': { $ref: '#/components/responses/ExecutionConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /workspaces/{workspaceId}/executions/{executionId}/resume:
+  /workspaces/{workspaceId}/executions/{executionId}/plans:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
       - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: listWorkspaceExecutionPlans
+      summary: Every plan this run has proposed, oldest revision first
+      description: >-
+        A run plans before it writes anything. Each revision is kept with the decision somebody
+        made about it, so the history reads as the conversation that led to the approved plan.
+      responses:
+        '200':
+          description: The plan revisions on record for this run
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExecutionPlan' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+      - $ref: '#/components/parameters/PlanRevision'
     post:
       tags: [executions]
-      operationId: resumeWorkspaceExecution
-      summary: Send this run back to work with feedback
+      operationId: approveWorkspaceExecutionPlan
+      summary: Approve this revision of the plan and let the run implement it
       description: >-
-        The same run continues in the same folder with the same branches and the same session, and
-        the feedback is handed to the coding agent verbatim.
+        Only the newest revision can be approved, and only once every question the run is
+        waiting on has been settled. Answering a question never approves a plan.
+      responses:
+        '200':
+          description: The execution as it now stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+      - $ref: '#/components/parameters/PlanRevision'
+    post:
+      tags: [executions]
+      operationId: reviseWorkspaceExecutionPlan
+      summary: Send this revision of the plan back with what should change
+      description: >-
+        The run keeps planning in the same session and proposes a new revision. Nothing is
+        implemented until a revision is approved.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ResumeExecutionRequest' }
+            schema: { $ref: '#/components/schemas/RevisePlanRequest' }
       responses:
         '200':
           description: The execution as it now stands
@@ -7306,24 +7355,150 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /workspaces/{workspaceId}/executions/{executionId}/approve:
+  /workspaces/{workspaceId}/executions/{executionId}/review:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    get:
+      tags: [executions]
+      operationId: getWorkspaceExecutionReview
+      summary: The comments and reviews left on this run's changes
+      description: >-
+        Nothing here has been pushed. Comments somebody has drafted but not yet submitted are
+        shown only to them.
+      responses:
+        '200':
+          description: The review of this run as it stands
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionReviewState' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/review/comments:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
       - $ref: '#/components/parameters/ExecutionId'
     post:
       tags: [executions]
-      operationId: approveWorkspaceExecution
-      summary: Accept what this run produced
+      operationId: commentOnWorkspaceExecutionReview
+      summary: Comment on a line of this run's changes, or reply to a thread
+      description: >-
+        A comment is a draft until its author submits a review, unless it is published straight
+        away. A reply takes the line of the thread it answers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateReviewCommentRequest' }
       responses:
-        '200':
-          description: The execution as it now stands
+        '201':
+          description: The comment
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Execution' }
+              schema: { $ref: '#/components/schemas/ReviewComment' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+      - $ref: '#/components/parameters/ReviewCommentId'
+    patch:
+      tags: [executions]
+      operationId: editWorkspaceExecutionReviewComment
+      summary: Rewrite a comment you left
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EditReviewCommentRequest' }
+      responses:
+        '200':
+          description: The comment
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewComment' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [executions]
+      operationId: deleteWorkspaceExecutionReviewComment
+      summary: Remove a comment you left, and its replies
+      responses:
+        '204':
+          description: The comment is gone
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+      - $ref: '#/components/parameters/ReviewCommentId'
+    post:
+      tags: [executions]
+      operationId: resolveWorkspaceExecutionReviewComment
+      summary: Mark a thread resolved, or open it again
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResolveReviewCommentRequest' }
+      responses:
+        '200':
+          description: The thread's first comment
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewComment' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: submitWorkspaceExecutionReview
+      summary: Submit your review of this run's changes
+      description: >-
+        Publishes your drafted comments. Approving lets the run push its branch and open the pull
+        request; requesting changes hands every comment to the coding agent anchored to its line.
+        Refused when the changes moved on since you started reading them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubmitReviewRequest' }
+      responses:
+        '201':
+          description: The review
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionReview' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/executions/{executionId}/services:
@@ -7836,6 +8011,18 @@ components:
       in: path
       required: true
       schema: { type: string, maxLength: 64 }
+
+    PlanRevision:
+      name: revision
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+
+    ReviewCommentId:
+      name: reviewCommentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
 
     PreviewName:
       name: previewName
@@ -9839,6 +10026,7 @@ components:
         - preparing
         - running
         - waiting_for_input
+        - awaiting_plan_approval
         - queued_for_resume
         - finalizing
         - awaiting_review
@@ -9851,6 +10039,14 @@ components:
     ExecutionEventKind:
       type: string
       enum: [transition, phase, command, tool, service, preview, question, note]
+
+    ExecutionStage:
+      type: string
+      description: >-
+        Where the run is in its lifecycle. A run plans first and implements only once a person
+        approves the plan; its changes are reviewed in norn before anything is pushed, and only
+        approved work is published.
+      enum: [planning, implementation, review, publication]
 
     ExecutionQueuedReason:
       type: string
@@ -9884,7 +10080,8 @@ components:
 
     Execution:
       type: object
-      required: [id, reference, workspaceId, issueId, issueReference, attempt, state, params, queuedAt]
+      required: [id, reference, workspaceId, issueId, issueReference, attempt, state, stage, params,
+                 queuedAt]
       properties:
         id: { type: string, maxLength: 64 }
         reference:
@@ -9925,6 +10122,7 @@ components:
             against text it never saw is judged against somebody's later mind.
         attempt: { type: integer, minimum: 1 }
         state: { $ref: '#/components/schemas/ExecutionState' }
+        stage: { $ref: '#/components/schemas/ExecutionStage' }
         reason: { type: string, maxLength: 4000 }
         queuedReason:
           allOf:
@@ -10217,7 +10415,7 @@ components:
       properties:
         reason: { type: string, maxLength: 2000 }
 
-    ResumeExecutionRequest:
+    RevisePlanRequest:
       type: object
       required: [feedback]
       properties:
@@ -10226,6 +10424,148 @@ components:
           minLength: 1
           maxLength: 4000
           description: Handed to the coding agent verbatim
+
+    ExecutionPlan:
+      type: object
+      required: [id, executionId, revision, body, proposedAt]
+      properties:
+        id: { type: string, format: uuid }
+        executionId: { type: string, maxLength: 64 }
+        revision: { type: integer, minimum: 1 }
+        body:
+          type: string
+          description: The plan as the coding agent wrote it, in Markdown
+        proposedAt: { type: string, format: date-time }
+        approvedByName: { type: string }
+        approvedAt: { type: string, format: date-time }
+        revisionFeedback:
+          type: string
+          description: What somebody asked to change about this revision
+        revisionRequestedByName: { type: string }
+        revisionRequestedAt: { type: string, format: date-time }
+
+    ReviewSide:
+      type: string
+      description: Which side of the diff a line belongs to
+      enum: [old, new]
+
+    ExecutionReviewVerdict:
+      type: string
+      enum: [comment, approve, request_changes]
+
+    ReviewComment:
+      type: object
+      required: [id, executionId, pending, repository, path, side, line, headSha, outdated, body,
+                 createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        executionId: { type: string, maxLength: 64 }
+        reviewId: { type: string, format: uuid }
+        parentId:
+          type: string
+          format: uuid
+          description: The thread this answers. Absent on the comment that started the thread.
+        pending:
+          type: boolean
+          description: A draft only its author can see until they submit a review
+        repository: { type: string }
+        path: { type: string, maxLength: 1024 }
+        side: { $ref: '#/components/schemas/ReviewSide' }
+        line: { type: integer, minimum: 1 }
+        headSha:
+          type: string
+          description: The commit the line was read at
+        outdated:
+          type: boolean
+          description: True once the run has moved the repository past the commit this was left on
+        hunk:
+          type: string
+          description: The lines of the diff the comment was left under, as they were then
+        body: { type: string, maxLength: 4000 }
+        authorName: { type: string }
+        mine:
+          type: boolean
+          description: Whether the caller wrote this, and so may change or remove it
+        createdAt: { type: string, format: date-time }
+        editedAt: { type: string, format: date-time }
+        resolvedAt: { type: string, format: date-time }
+        resolvedByName: { type: string }
+
+    ExecutionReview:
+      type: object
+      required: [id, executionId, verdict, summary, submittedAt]
+      properties:
+        id: { type: string, format: uuid }
+        executionId: { type: string, maxLength: 64 }
+        verdict: { $ref: '#/components/schemas/ExecutionReviewVerdict' }
+        summary: { type: string, maxLength: 4000 }
+        authorName: { type: string }
+        submittedAt: { type: string, format: date-time }
+
+    ReviewHead:
+      type: object
+      required: [repository, headSha]
+      properties:
+        repository: { type: string }
+        headSha: { type: string }
+
+    ExecutionReviewState:
+      type: object
+      required: [heads, comments, reviews]
+      properties:
+        heads:
+          type: array
+          description: >-
+            The commit each repository's changes stand at. A review is submitted against these, so
+            changes that moved on in the meantime are never approved unread.
+          items: { $ref: '#/components/schemas/ReviewHead' }
+        comments:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewComment' }
+        reviews:
+          type: array
+          items: { $ref: '#/components/schemas/ExecutionReview' }
+
+    CreateReviewCommentRequest:
+      type: object
+      required: [body]
+      properties:
+        parentId:
+          type: string
+          format: uuid
+          description: Reply to this thread; the anchor fields are then ignored
+        repository: { type: string }
+        path: { type: string, maxLength: 1024 }
+        side: { $ref: '#/components/schemas/ReviewSide' }
+        line: { type: integer, minimum: 1 }
+        hunk: { type: string, maxLength: 4000 }
+        body: { type: string, minLength: 1, maxLength: 4000 }
+        publish:
+          type: boolean
+          description: Publish at once rather than keeping it as a draft for your next review
+
+    EditReviewCommentRequest:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 4000 }
+
+    ResolveReviewCommentRequest:
+      type: object
+      required: [resolved]
+      properties:
+        resolved: { type: boolean }
+
+    SubmitReviewRequest:
+      type: object
+      required: [verdict, heads]
+      properties:
+        verdict: { $ref: '#/components/schemas/ExecutionReviewVerdict' }
+        summary: { type: string, maxLength: 4000 }
+        heads:
+          type: array
+          description: The heads the reviewer read, exactly as the review state reported them
+          items: { $ref: '#/components/schemas/ReviewHead' }
 
     ExecutionStream:
       type: string
@@ -10405,6 +10745,17 @@ components:
                 - execution_self_approval
                 - execution_no_runner
                 - execution_chunk_conflict
+                - execution_not_planning
+                - execution_plan_missing
+                - execution_plan_stale
+                - execution_questions_open
+                - review_closed
+                - review_stale
+                - review_empty
+                - review_comment_not_yours
+                - review_comment_reply
+                - review_comment_anchor
+                - review_comments_full
 
     PreviewProblem:
       allOf:

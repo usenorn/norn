@@ -242,7 +242,7 @@ func translate(event entity.Event) json.RawMessage {
 		}
 
 		return marshal(dashboard.CommentEvent(comment))
-	case entity.EventExecutionUpdated:
+	case entity.EventExecutionUpdated, entity.EventExecutionPlan, entity.EventExecutionReview:
 		var execution entity.Execution
 
 		if err := json.Unmarshal(event.Payload, &execution); err != nil {

@@ -82,6 +82,7 @@ func (s *executionsService) Accepted(
 		ExecutionID:    leased.ID,
 		LeaseExpiresAt: leased.LeaseExpiresAt,
 		Params:         paramsOf(leased.Params),
+		Stage:          leased.Stage,
 		Instructions:   toolkit.Instructions,
 		Toolkit:        toolkitOf(toolkit),
 	})
@@ -226,6 +227,12 @@ func (s *executionsService) Reported(
 
 	if !target.RunnerDriven() {
 		return entity.ErrExecutionStateNotRunners
+	}
+
+	if target == entity.ExecutionAwaitingPlan {
+		if err := s.planWaiting(ctx, execution); err != nil {
+			return err
+		}
 	}
 
 	occurred := reported.Occurred

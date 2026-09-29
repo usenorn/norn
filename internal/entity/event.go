@@ -38,6 +38,8 @@ const (
 	EventExecutionUpdated    EventKind = "execution.updated"
 	EventExecutionEvent      EventKind = "execution.event"
 	EventExecutionChangeSet  EventKind = "execution.changeset"
+	EventExecutionPlan       EventKind = "execution.plan"
+	EventExecutionReview     EventKind = "execution.review"
 	EventQuestionAsked       EventKind = "question.asked"
 	EventQuestionSettled     EventKind = "question.settled"
 )
@@ -55,6 +57,8 @@ func EventKinds() []EventKind {
 		EventExecutionUpdated,
 		EventExecutionEvent,
 		EventExecutionChangeSet,
+		EventExecutionPlan,
+		EventExecutionReview,
 		EventQuestionAsked,
 		EventQuestionSettled,
 	}

@@ -189,37 +189,3 @@ func (h *handler) RestartWorkspaceExecution(
 
 	return api.RestartWorkspaceExecution201JSONResponse(executionDTO(execution)), nil
 }
-
-func (h *handler) ResumeWorkspaceExecution(
-	ctx context.Context,
-	request api.ResumeWorkspaceExecutionRequestObject,
-) (api.ResumeWorkspaceExecutionResponseObject, error) {
-	execution, err := h.executions.Resume(
-		ctx, request.WorkspaceId, request.ExecutionId, request.Body.Feedback,
-	)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.ResumeWorkspaceExecution200JSONResponse(executionDTO(execution)), nil
-}
-
-func (h *handler) ApproveWorkspaceExecution(
-	ctx context.Context,
-	request api.ApproveWorkspaceExecutionRequestObject,
-) (api.ApproveWorkspaceExecutionResponseObject, error) {
-	execution, err := h.executions.Approve(ctx, request.WorkspaceId, request.ExecutionId)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.ApproveWorkspaceExecution200JSONResponse(executionDTO(execution)), nil
-}

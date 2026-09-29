@@ -40,6 +40,7 @@ type ExecutionReview interface {
 	ResolveComment(
 		ctx context.Context, resolution ReviewResolution,
 	) (entity.ExecutionReviewComment, error)
-	Submit(ctx context.Context, review entity.ExecutionReview) (entity.ExecutionReview, error)
+	CreateReview(ctx context.Context, review entity.ExecutionReview) (entity.ExecutionReview, error)
+	AttachPending(ctx context.Context, executionID string, authorID, reviewID uuid.UUID) error
 	ListReviews(ctx context.Context, executionID string) ([]entity.ExecutionReview, error)
 }

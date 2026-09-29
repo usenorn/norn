@@ -52,6 +52,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						agentName: "Rae's agent",
 						attempt: 1,
 						state: "queued",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -101,6 +102,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						agentName: "Rae's agent",
 						attempt: 1,
 						state: "queued",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -161,6 +163,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						agentName: "Rae's agent",
 						attempt: 1,
 						state: "queued",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -222,6 +225,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						agentName: "Rae's agent",
 						attempt: 1,
 						state: "queued",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -298,6 +302,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "leased",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -400,6 +405,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "preparing",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -640,6 +646,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "running",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -864,6 +871,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "running",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -1046,6 +1054,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "running",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -1217,6 +1226,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "running",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -1389,6 +1399,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "awaiting_review",
+						stage: "review",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -1636,6 +1647,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "waiting_for_input",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -1843,6 +1855,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "queued_for_resume",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -2039,6 +2052,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "finalizing",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -2295,6 +2309,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "awaiting_review",
+						stage: "review",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -2554,6 +2569,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "approved",
+						stage: "publication",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -2857,6 +2873,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "completed",
+						stage: "publication",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -3024,6 +3041,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "failed",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -3197,6 +3215,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "cancelled",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -3369,6 +3388,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 2,
 						state: "interrupted",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -3600,6 +3620,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "awaiting_review",
+						stage: "review",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -3850,6 +3871,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "awaiting_review",
+						stage: "review",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -4139,6 +4161,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "awaiting_review",
+						stage: "review",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -4374,6 +4397,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "awaiting_review",
+						stage: "review",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -4699,6 +4723,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "awaiting_review",
+						stage: "review",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -4980,6 +5005,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "queued_for_resume",
+						stage: "implementation",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",
@@ -5270,6 +5296,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						codebaseName: "northwind",
 						attempt: 1,
 						state: "completed",
+						stage: "publication",
 						params: {
 							tool: "claude-code",
 							model: "opus-5",

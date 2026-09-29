@@ -58,6 +58,20 @@ func (mr *MockExecutionReviewMockRecorder) AddComment(ctx, comment any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComment", reflect.TypeOf((*MockExecutionReview)(nil).AddComment), ctx, comment)
 }
 
+// AttachPending mocks base method.
+func (m *MockExecutionReview) AttachPending(ctx context.Context, executionID string, authorID, reviewID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AttachPending", ctx, executionID, authorID, reviewID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AttachPending indicates an expected call of AttachPending.
+func (mr *MockExecutionReviewMockRecorder) AttachPending(ctx, executionID, authorID, reviewID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttachPending", reflect.TypeOf((*MockExecutionReview)(nil).AttachPending), ctx, executionID, authorID, reviewID)
+}
+
 // CountComments mocks base method.
 func (m *MockExecutionReview) CountComments(ctx context.Context, executionID string) (int, error) {
 	m.ctrl.T.Helper()
@@ -71,6 +85,21 @@ func (m *MockExecutionReview) CountComments(ctx context.Context, executionID str
 func (mr *MockExecutionReviewMockRecorder) CountComments(ctx, executionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountComments", reflect.TypeOf((*MockExecutionReview)(nil).CountComments), ctx, executionID)
+}
+
+// CreateReview mocks base method.
+func (m *MockExecutionReview) CreateReview(ctx context.Context, review entity.ExecutionReview) (entity.ExecutionReview, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateReview", ctx, review)
+	ret0, _ := ret[0].(entity.ExecutionReview)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateReview indicates an expected call of CreateReview.
+func (mr *MockExecutionReviewMockRecorder) CreateReview(ctx, review any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateReview", reflect.TypeOf((*MockExecutionReview)(nil).CreateReview), ctx, review)
 }
 
 // DeleteComment mocks base method.
@@ -160,19 +189,4 @@ func (m *MockExecutionReview) ResolveComment(ctx context.Context, resolution rep
 func (mr *MockExecutionReviewMockRecorder) ResolveComment(ctx, resolution any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveComment", reflect.TypeOf((*MockExecutionReview)(nil).ResolveComment), ctx, resolution)
-}
-
-// Submit mocks base method.
-func (m *MockExecutionReview) Submit(ctx context.Context, review entity.ExecutionReview) (entity.ExecutionReview, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Submit", ctx, review)
-	ret0, _ := ret[0].(entity.ExecutionReview)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Submit indicates an expected call of Submit.
-func (mr *MockExecutionReviewMockRecorder) Submit(ctx, review any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Submit", reflect.TypeOf((*MockExecutionReview)(nil).Submit), ctx, review)
 }

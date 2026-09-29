@@ -93,9 +93,9 @@ func TestAnsweringAParkedRunResumesTheSameSessionWithTheAnswerAttached(t *testin
 	switch {
 	case payload.Reason != channelv1.ResumeAnswer:
 		t.Fatalf("the resume said %q, want %q", payload.Reason, channelv1.ResumeAnswer)
-	case payload.Instruction != question.Answer:
-		t.Fatalf("the resume carried %q, want the answer verbatim", payload.Instruction)
-	case len(payload.Answers) != 1 || payload.Answers[0].QuestionID != question.ID.String():
+	case len(payload.Answers) != 1 || payload.Answers[0].Answer != question.Answer:
+		t.Fatalf("the resume carried %+v, want the answer verbatim", payload.Answers)
+	case payload.Answers[0].QuestionID != question.ID.String():
 		t.Fatalf(
 			"the resume carried answers %+v; without the id the agent cannot tell which of its "+
 				"questions this answers",
@@ -202,5 +202,47 @@ func TestAQuestionARunAskedIsOnThatRunsOwnTimeline(t *testing.T) {
 
 	if entry.Reason != question.Question {
 		t.Fatalf("the timeline says %q, want the question as asked", entry.Reason)
+	}
+}
+
+func TestARunWaitingOnTwoQuestionsCarriesOnOnlyOnceBothAreSettled(t *testing.T) {
+	h := newHarness(t)
+	h.holding(h.execution(entity.ExecutionWaitingForInput))
+	h.moving()
+
+	first := answered("Keep the old endpoint?", "Remove it now")
+	first.Blocking = true
+	first.ExecutionID = "exec-01ABC"
+
+	second := entity.IssueQuestion{
+		ID: uuid.New(), ExecutionID: "exec-01ABC", Blocking: true, State: entity.QuestionAsked,
+		Question: "Which region?", Ref: "q-2",
+	}
+
+	h.asked = []entity.IssueQuestion{first, second}
+
+	if err := h.service.Answered(context.Background(), first); err != nil {
+		t.Fatalf("answer the first question: %v", err)
+	}
+
+	if _, resumed := h.sent(entity.ChannelExecutionResume); resumed {
+		t.Fatal("the run carried on with a blocking question still unanswered")
+	}
+
+	second = answered("Which region?", "eu-west")
+	second.ID, second.Ref, second.Blocking, second.ExecutionID = h.asked[1].ID, "q-2", true, "exec-01ABC"
+	h.asked[1] = second
+
+	if err := h.service.Answered(context.Background(), second); err != nil {
+		t.Fatalf("answer the second question: %v", err)
+	}
+
+	instruction := h.instruction(t)
+	if len(instruction.Answers) != 2 {
+		t.Fatalf(
+			"the resume carried %d answers; the agent asked two things and would carry on "+
+				"without one of them",
+			len(instruction.Answers),
+		)
 	}
 }

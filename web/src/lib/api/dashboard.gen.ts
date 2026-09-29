@@ -4895,7 +4895,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/workspaces/{workspaceId}/executions/{executionId}/resume": {
+    "/workspaces/{workspaceId}/executions/{executionId}/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Every plan this run has proposed, oldest revision first
+         * @description A run plans before it writes anything. Each revision is kept with the decision somebody made about it, so the history reads as the conversation that led to the approved plan.
+         */
+        get: operations["listWorkspaceExecutionPlans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                revision: components["parameters"]["PlanRevision"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve this revision of the plan and let the run implement it
+         * @description Only the newest revision can be approved, and only once every question the run is waiting on has been settled. Answering a question never approves a plan.
+         */
+        post: operations["approveWorkspaceExecutionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/plans/{revision}/revise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                revision: components["parameters"]["PlanRevision"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send this revision of the plan back with what should change
+         * @description The run keeps planning in the same session and proposes a new revision. Nothing is implemented until a revision is approved.
+         */
+        post: operations["reviseWorkspaceExecutionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The comments and reviews left on this run's changes
+         * @description Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+         */
+        get: operations["getWorkspaceExecutionReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/review/comments": {
         parameters: {
             query?: never;
             header?: never;
@@ -4908,17 +5002,60 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Send this run back to work with feedback
-         * @description The same run continues in the same folder with the same branches and the same session, and the feedback is handed to the coding agent verbatim.
+         * Comment on a line of this run's changes, or reply to a thread
+         * @description A comment is a draft until its author submits a review, unless it is published straight away. A reply takes the line of the thread it answers.
          */
-        post: operations["resumeWorkspaceExecution"];
+        post: operations["commentOnWorkspaceExecutionReview"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/workspaces/{workspaceId}/executions/{executionId}/approve": {
+    "/workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                reviewCommentId: components["parameters"]["ReviewCommentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a comment you left, and its replies */
+        delete: operations["deleteWorkspaceExecutionReviewComment"];
+        options?: never;
+        head?: never;
+        /** Rewrite a comment you left */
+        patch: operations["editWorkspaceExecutionReviewComment"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/review/comments/{reviewCommentId}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                reviewCommentId: components["parameters"]["ReviewCommentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a thread resolved, or open it again */
+        post: operations["resolveWorkspaceExecutionReviewComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/reviews": {
         parameters: {
             query?: never;
             header?: never;
@@ -4930,8 +5067,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Accept what this run produced */
-        post: operations["approveWorkspaceExecution"];
+        /**
+         * Submit your review of this run's changes
+         * @description Publishes your drafted comments. Approving lets the run push its branch and open the pull request; requesting changes hands every comment to the coding agent anchored to its line. Refused when the changes moved on since you started reading them.
+         */
+        post: operations["submitWorkspaceExecutionReview"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6275,9 +6415,14 @@ export interface components {
             previewGateway?: components["schemas"]["GatewayReach"];
         };
         /** @enum {string} */
-        ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "completed" | "failed" | "cancelled" | "interrupted";
+        ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "awaiting_plan_approval" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "completed" | "failed" | "cancelled" | "interrupted";
         /** @enum {string} */
         ExecutionEventKind: "transition" | "phase" | "command" | "tool" | "service" | "preview" | "question" | "note";
+        /**
+         * @description Where the run is in its lifecycle. A run plans first and implements only once a person approves the plan; its changes are reviewed in norn before anything is pushed, and only approved work is published.
+         * @enum {string}
+         */
+        ExecutionStage: "planning" | "implementation" | "review" | "publication";
         /**
          * @description Why a queued run has not started. The three the delegate dialog has to phrase differently are an agent with no machine at all, machines that are all offline, and machines that are all busy.
          * @enum {string}
@@ -6338,6 +6483,7 @@ export interface components {
             requirementsMoved?: boolean;
             attempt: number;
             state: components["schemas"]["ExecutionState"];
+            stage: components["schemas"]["ExecutionStage"];
             reason?: string;
             /** @description Why this run is still waiting. Absent once a machine has taken it. */
             queuedReason?: components["schemas"]["ExecutionQueuedReason"];
@@ -6552,9 +6698,116 @@ export interface components {
         CancelExecutionRequest: {
             reason?: string;
         };
-        ResumeExecutionRequest: {
+        RevisePlanRequest: {
             /** @description Handed to the coding agent verbatim */
             feedback: string;
+        };
+        ExecutionPlan: {
+            /** Format: uuid */
+            id: string;
+            executionId: string;
+            revision: number;
+            /** @description The plan as the coding agent wrote it, in Markdown */
+            body: string;
+            /** Format: date-time */
+            proposedAt: string;
+            approvedByName?: string;
+            /** Format: date-time */
+            approvedAt?: string;
+            /** @description What somebody asked to change about this revision */
+            revisionFeedback?: string;
+            revisionRequestedByName?: string;
+            /** Format: date-time */
+            revisionRequestedAt?: string;
+        };
+        /**
+         * @description Which side of the diff a line belongs to
+         * @enum {string}
+         */
+        ReviewSide: "old" | "new";
+        /** @enum {string} */
+        ExecutionReviewVerdict: "comment" | "approve" | "request_changes";
+        ReviewComment: {
+            /** Format: uuid */
+            id: string;
+            executionId: string;
+            /** Format: uuid */
+            reviewId?: string;
+            /**
+             * Format: uuid
+             * @description The thread this answers. Absent on the comment that started the thread.
+             */
+            parentId?: string;
+            /** @description A draft only its author can see until they submit a review */
+            pending: boolean;
+            repository: string;
+            path: string;
+            side: components["schemas"]["ReviewSide"];
+            line: number;
+            /** @description The commit the line was read at */
+            headSha: string;
+            /** @description True once the run has moved the repository past the commit this was left on */
+            outdated: boolean;
+            /** @description The lines of the diff the comment was left under, as they were then */
+            hunk?: string;
+            body: string;
+            authorName?: string;
+            /** @description Whether the caller wrote this, and so may change or remove it */
+            mine?: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            editedAt?: string;
+            /** Format: date-time */
+            resolvedAt?: string;
+            resolvedByName?: string;
+        };
+        ExecutionReview: {
+            /** Format: uuid */
+            id: string;
+            executionId: string;
+            verdict: components["schemas"]["ExecutionReviewVerdict"];
+            summary: string;
+            authorName?: string;
+            /** Format: date-time */
+            submittedAt: string;
+        };
+        ReviewHead: {
+            repository: string;
+            headSha: string;
+        };
+        ExecutionReviewState: {
+            /** @description The commit each repository's changes stand at. A review is submitted against these, so changes that moved on in the meantime are never approved unread. */
+            heads: components["schemas"]["ReviewHead"][];
+            comments: components["schemas"]["ReviewComment"][];
+            reviews: components["schemas"]["ExecutionReview"][];
+        };
+        CreateReviewCommentRequest: {
+            /**
+             * Format: uuid
+             * @description Reply to this thread; the anchor fields are then ignored
+             */
+            parentId?: string;
+            repository?: string;
+            path?: string;
+            side?: components["schemas"]["ReviewSide"];
+            line?: number;
+            hunk?: string;
+            body: string;
+            /** @description Publish at once rather than keeping it as a draft for your next review */
+            publish?: boolean;
+        };
+        EditReviewCommentRequest: {
+            body: string;
+        };
+        ResolveReviewCommentRequest: {
+            resolved: boolean;
+        };
+        SubmitReviewRequest: {
+            verdict: components["schemas"]["ExecutionReviewVerdict"];
+            summary?: string;
+            /** @description The heads the reviewer read, exactly as the review state reported them */
+            heads: components["schemas"]["ReviewHead"][];
         };
         /** @enum {string} */
         ExecutionStream: "logs" | "transcript";
@@ -6675,7 +6928,7 @@ export interface components {
         };
         ExecutionProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_chunk_conflict";
+            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_chunk_conflict" | "execution_not_planning" | "execution_plan_missing" | "execution_plan_stale" | "execution_questions_open" | "review_closed" | "review_stale" | "review_empty" | "review_comment_not_yours" | "review_comment_reply" | "review_comment_anchor" | "review_comments_full";
         };
         PreviewProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -9898,6 +10151,8 @@ export interface components {
         CodebaseId: string;
         ArtifactId: string;
         ExecutionId: string;
+        PlanRevision: number;
+        ReviewCommentId: string;
         PreviewName: string;
         ShareLinkId: string;
         RunnerId: string;
@@ -19889,7 +20144,7 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    resumeWorkspaceExecution: {
+    listWorkspaceExecutionPlans: {
         parameters: {
             query?: never;
             header?: never;
@@ -19899,9 +20154,66 @@ export interface operations {
             };
             cookie?: never;
         };
+        requestBody?: never;
+        responses: {
+            /** @description The plan revisions on record for this run */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionPlan"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    approveWorkspaceExecutionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                revision: components["parameters"]["PlanRevision"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The execution as it now stands */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    reviseWorkspaceExecutionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                revision: components["parameters"]["PlanRevision"];
+            };
+            cookie?: never;
+        };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ResumeExecutionRequest"];
+                "application/json": components["schemas"]["RevisePlanRequest"];
             };
         };
         responses: {
@@ -19922,7 +20234,7 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
-    approveWorkspaceExecution: {
+    getWorkspaceExecutionReview: {
         parameters: {
             query?: never;
             header?: never;
@@ -19934,19 +20246,178 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The execution as it now stands */
+            /** @description The review of this run as it stands */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Execution"];
+                    "application/json": components["schemas"]["ExecutionReviewState"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    commentOnWorkspaceExecutionReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description The comment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewComment"];
                 };
             };
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["ExecutionConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceExecutionReviewComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                reviewCommentId: components["parameters"]["ReviewCommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comment is gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    editWorkspaceExecutionReviewComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                reviewCommentId: components["parameters"]["ReviewCommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description The comment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewComment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    resolveWorkspaceExecutionReviewComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+                reviewCommentId: components["parameters"]["ReviewCommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description The thread's first comment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewComment"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    submitWorkspaceExecutionReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description The review */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecutionReview"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

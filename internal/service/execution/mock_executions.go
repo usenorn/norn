@@ -72,19 +72,19 @@ func (mr *MockExecutionsMockRecorder) Answered(ctx, question any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Answered", reflect.TypeOf((*MockExecutions)(nil).Answered), ctx, question)
 }
 
-// Approve mocks base method.
-func (m *MockExecutions) Approve(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error) {
+// ApprovePlan mocks base method.
+func (m *MockExecutions) ApprovePlan(ctx context.Context, workspaceID uuid.UUID, executionID string, revision int) (entity.Execution, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Approve", ctx, workspaceID, executionID)
+	ret := m.ctrl.Call(m, "ApprovePlan", ctx, workspaceID, executionID, revision)
 	ret0, _ := ret[0].(entity.Execution)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Approve indicates an expected call of Approve.
-func (mr *MockExecutionsMockRecorder) Approve(ctx, workspaceID, executionID any) *gomock.Call {
+// ApprovePlan indicates an expected call of ApprovePlan.
+func (mr *MockExecutionsMockRecorder) ApprovePlan(ctx, workspaceID, executionID, revision any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Approve", reflect.TypeOf((*MockExecutions)(nil).Approve), ctx, workspaceID, executionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApprovePlan", reflect.TypeOf((*MockExecutions)(nil).ApprovePlan), ctx, workspaceID, executionID, revision)
 }
 
 // Cancel mocks base method.
@@ -102,6 +102,21 @@ func (mr *MockExecutionsMockRecorder) Cancel(ctx, workspaceID, executionID, reas
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cancel", reflect.TypeOf((*MockExecutions)(nil).Cancel), ctx, workspaceID, executionID, reason)
 }
 
+// CommentOnReview mocks base method.
+func (m *MockExecutions) CommentOnReview(ctx context.Context, workspaceID uuid.UUID, executionID string, draft service.ReviewCommentDraft) (entity.ExecutionReviewComment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CommentOnReview", ctx, workspaceID, executionID, draft)
+	ret0, _ := ret[0].(entity.ExecutionReviewComment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CommentOnReview indicates an expected call of CommentOnReview.
+func (mr *MockExecutionsMockRecorder) CommentOnReview(ctx, workspaceID, executionID, draft any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommentOnReview", reflect.TypeOf((*MockExecutions)(nil).CommentOnReview), ctx, workspaceID, executionID, draft)
+}
+
 // Declined mocks base method.
 func (m *MockExecutions) Declined(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
 	m.ctrl.T.Helper()
@@ -114,6 +129,35 @@ func (m *MockExecutions) Declined(ctx context.Context, runner entity.Runner, mes
 func (mr *MockExecutionsMockRecorder) Declined(ctx, runner, message any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Declined", reflect.TypeOf((*MockExecutions)(nil).Declined), ctx, runner, message)
+}
+
+// DeleteReviewComment mocks base method.
+func (m *MockExecutions) DeleteReviewComment(ctx context.Context, workspaceID uuid.UUID, executionID string, commentID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteReviewComment", ctx, workspaceID, executionID, commentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteReviewComment indicates an expected call of DeleteReviewComment.
+func (mr *MockExecutionsMockRecorder) DeleteReviewComment(ctx, workspaceID, executionID, commentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReviewComment", reflect.TypeOf((*MockExecutions)(nil).DeleteReviewComment), ctx, workspaceID, executionID, commentID)
+}
+
+// EditReviewComment mocks base method.
+func (m *MockExecutions) EditReviewComment(ctx context.Context, workspaceID uuid.UUID, executionID string, commentID uuid.UUID, body string) (entity.ExecutionReviewComment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditReviewComment", ctx, workspaceID, executionID, commentID, body)
+	ret0, _ := ret[0].(entity.ExecutionReviewComment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EditReviewComment indicates an expected call of EditReviewComment.
+func (mr *MockExecutionsMockRecorder) EditReviewComment(ctx, workspaceID, executionID, commentID, body any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditReviewComment", reflect.TypeOf((*MockExecutions)(nil).EditReviewComment), ctx, workspaceID, executionID, commentID, body)
 }
 
 // Get mocks base method.
@@ -263,6 +307,35 @@ func (mr *MockExecutionsMockRecorder) Placement(ctx, issue, agentID any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Placement", reflect.TypeOf((*MockExecutions)(nil).Placement), ctx, issue, agentID)
 }
 
+// PlanProposed mocks base method.
+func (m *MockExecutions) PlanProposed(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PlanProposed", ctx, runner, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PlanProposed indicates an expected call of PlanProposed.
+func (mr *MockExecutionsMockRecorder) PlanProposed(ctx, runner, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PlanProposed", reflect.TypeOf((*MockExecutions)(nil).PlanProposed), ctx, runner, message)
+}
+
+// Plans mocks base method.
+func (m *MockExecutions) Plans(ctx context.Context, workspaceID uuid.UUID, executionID string) ([]entity.ExecutionPlan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Plans", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].([]entity.ExecutionPlan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Plans indicates an expected call of Plans.
+func (mr *MockExecutionsMockRecorder) Plans(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Plans", reflect.TypeOf((*MockExecutions)(nil).Plans), ctx, workspaceID, executionID)
+}
+
 // Questioned mocks base method.
 func (m *MockExecutions) Questioned(ctx context.Context, question entity.IssueQuestion) error {
 	m.ctrl.T.Helper()
@@ -319,6 +392,21 @@ func (mr *MockExecutionsMockRecorder) Reported(ctx, runner, message any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reported", reflect.TypeOf((*MockExecutions)(nil).Reported), ctx, runner, message)
 }
 
+// ResolveReviewComment mocks base method.
+func (m *MockExecutions) ResolveReviewComment(ctx context.Context, workspaceID uuid.UUID, executionID string, commentID uuid.UUID, resolved bool) (entity.ExecutionReviewComment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveReviewComment", ctx, workspaceID, executionID, commentID, resolved)
+	ret0, _ := ret[0].(entity.ExecutionReviewComment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ResolveReviewComment indicates an expected call of ResolveReviewComment.
+func (mr *MockExecutionsMockRecorder) ResolveReviewComment(ctx, workspaceID, executionID, commentID, resolved any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveReviewComment", reflect.TypeOf((*MockExecutions)(nil).ResolveReviewComment), ctx, workspaceID, executionID, commentID, resolved)
+}
+
 // Restart mocks base method.
 func (m *MockExecutions) Restart(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error) {
 	m.ctrl.T.Helper()
@@ -334,21 +422,6 @@ func (mr *MockExecutionsMockRecorder) Restart(ctx, workspaceID, executionID any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restart", reflect.TypeOf((*MockExecutions)(nil).Restart), ctx, workspaceID, executionID)
 }
 
-// Resume mocks base method.
-func (m *MockExecutions) Resume(ctx context.Context, workspaceID uuid.UUID, executionID, feedback string) (entity.Execution, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Resume", ctx, workspaceID, executionID, feedback)
-	ret0, _ := ret[0].(entity.Execution)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Resume indicates an expected call of Resume.
-func (mr *MockExecutionsMockRecorder) Resume(ctx, workspaceID, executionID, feedback any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resume", reflect.TypeOf((*MockExecutions)(nil).Resume), ctx, workspaceID, executionID, feedback)
-}
-
 // Retain mocks base method.
 func (m *MockExecutions) Retain(ctx context.Context, workspaceID uuid.UUID, executionID string, longer time.Duration) (entity.Execution, error) {
 	m.ctrl.T.Helper()
@@ -362,6 +435,51 @@ func (m *MockExecutions) Retain(ctx context.Context, workspaceID uuid.UUID, exec
 func (mr *MockExecutionsMockRecorder) Retain(ctx, workspaceID, executionID, longer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Retain", reflect.TypeOf((*MockExecutions)(nil).Retain), ctx, workspaceID, executionID, longer)
+}
+
+// Review mocks base method.
+func (m *MockExecutions) Review(ctx context.Context, workspaceID uuid.UUID, executionID string) (service.ExecutionReviewState, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Review", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].(service.ExecutionReviewState)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Review indicates an expected call of Review.
+func (mr *MockExecutionsMockRecorder) Review(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Review", reflect.TypeOf((*MockExecutions)(nil).Review), ctx, workspaceID, executionID)
+}
+
+// RevisePlan mocks base method.
+func (m *MockExecutions) RevisePlan(ctx context.Context, workspaceID uuid.UUID, executionID string, revision int, feedback string) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RevisePlan", ctx, workspaceID, executionID, revision, feedback)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RevisePlan indicates an expected call of RevisePlan.
+func (mr *MockExecutionsMockRecorder) RevisePlan(ctx, workspaceID, executionID, revision, feedback any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevisePlan", reflect.TypeOf((*MockExecutions)(nil).RevisePlan), ctx, workspaceID, executionID, revision, feedback)
+}
+
+// SubmitReview mocks base method.
+func (m *MockExecutions) SubmitReview(ctx context.Context, workspaceID uuid.UUID, executionID string, submission service.ReviewSubmission) (entity.ExecutionReview, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitReview", ctx, workspaceID, executionID, submission)
+	ret0, _ := ret[0].(entity.ExecutionReview)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitReview indicates an expected call of SubmitReview.
+func (mr *MockExecutionsMockRecorder) SubmitReview(ctx, workspaceID, executionID, submission any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReview", reflect.TypeOf((*MockExecutions)(nil).SubmitReview), ctx, workspaceID, executionID, submission)
 }
 
 // SweepLeases mocks base method.
