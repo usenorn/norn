@@ -17,6 +17,7 @@ const (
 	QuestionOptionMaxLen    = 200
 	QuestionOptionsMax      = 8
 	QuestionContextFilesMax = 20
+	QuestionWaitingMax      = 200
 	QuestionWaitMin         = time.Minute
 	QuestionWaitMax         = 7 * 24 * time.Hour
 	QuestionWaitDefault     = 24 * time.Hour
@@ -94,6 +95,9 @@ type IssueQuestion struct {
 	ID               uuid.UUID
 	WorkspaceID      uuid.UUID
 	IssueID          uuid.UUID
+	IssueReference   string
+	IssueTitle       string
+	TeamID           uuid.UUID
 	ExecutionID      string
 	Stage            QuestionStage
 	Ref              string

@@ -2912,6 +2912,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/issues/{issueId}/decision-right": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /** Whether the caller may answer this issue's questions and approve its runs */
+        get: operations["getWorkspaceIssueDecisionRight"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer": {
         parameters: {
             query?: never;
@@ -4809,6 +4829,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Every decision a person owes a run, oldest first
+         * @description Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+         */
+        get: operations["getWorkspaceReviewQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/executions/{executionId}": {
         parameters: {
             query?: never;
@@ -5628,8 +5670,11 @@ export interface components {
             id: string;
             /** Format: uuid */
             issueId: string;
+            issueReference: string;
+            issueTitle: string;
             /** @description The run that asked, when a run did. Absent when a person or a tool did. */
             executionId?: string;
+            stage?: components["schemas"]["IssueQuestionStage"];
             kind: components["schemas"]["IssueQuestionKind"];
             state: components["schemas"]["IssueQuestionState"];
             /** @description True when the run stopped for this and is waiting on an answer to go anywhere. */
@@ -5661,6 +5706,30 @@ export interface components {
             settledAt?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        /**
+         * @description Whether the run was still planning or already implementing when it asked.
+         * @enum {string}
+         */
+        IssueQuestionStage: "planning" | "implementation";
+        DecisionRight: {
+            /** @description True for the issue's assignee and for workspace admins. */
+            canDecide: boolean;
+            /** @description Who decides for this issue. Absent when only admins can. */
+            decider?: string;
+        };
+        ReviewQuestion: {
+            question: components["schemas"]["IssueQuestion"];
+            decision: components["schemas"]["DecisionRight"];
+        };
+        ReviewRun: {
+            run: components["schemas"]["ExecutionSummary"];
+            decision: components["schemas"]["DecisionRight"];
+        };
+        ReviewQueue: {
+            questions: components["schemas"]["ReviewQuestion"][];
+            plans: components["schemas"]["ReviewRun"][];
+            changes: components["schemas"]["ReviewRun"][];
         };
         AskIssueQuestionRequest: {
             question: string;
@@ -16290,6 +16359,33 @@ export interface operations {
             500: components["responses"]["Problem"];
         };
     };
+    getWorkspaceIssueDecisionRight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's right to decide, and who decides otherwise */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionRight"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
     answerWorkspaceIssueQuestion: {
         parameters: {
             query?: never;
@@ -20018,6 +20114,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExecutionSummary"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceReviewQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The decisions waiting on somebody */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewQueue"];
                 };
             };
             401: components["responses"]["Problem"];

@@ -22,8 +22,10 @@ const questionColumns = `
     coalesce(q.asked_by_account_id::text, ''), coalesce(asked.display_name, ''), q.actor_kind,
     coalesce(q.answered_by_account_id::text, ''), coalesce(answered.display_name, ''),
     coalesce(q.settled_by_account_id::text, ''), coalesce(settled.display_name, ''),
-    q.answered_at, q.settled_at, q.created_at
+    q.answered_at, q.settled_at, q.created_at,
+    i.reference_key || '-' || i.number, i.title, i.team_id
 FROM workspace_issue_questions q
+JOIN workspace_issues i ON i.id = q.issue_id
 LEFT JOIN accounts asked ON asked.id = q.asked_by_account_id
 LEFT JOIN accounts answered ON answered.id = q.answered_by_account_id
 LEFT JOIN accounts settled ON settled.id = q.settled_by_account_id`
@@ -52,6 +54,13 @@ const questionsByExecutionQuery = `
 SELECT` + questionColumns + `
 WHERE q.workspace_id = $1 AND q.execution_id = $2
 ORDER BY q.created_at, q.id`
+
+const waitingQuestionsQuery = `
+SELECT` + questionColumns + `
+WHERE q.workspace_id = $1 AND q.state = 'asked'
+  AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
+ORDER BY q.created_at, q.id
+LIMIT $4`
 
 const lapsedQuestionsQuery = `
 SELECT` + questionColumns + `
@@ -101,6 +110,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		settledBy   string
 		answeredAt  sql.NullTime
 		settledAt   sql.NullTime
+		teamID      string
 	)
 
 	if err := row.Scan(
@@ -130,6 +140,9 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		&answeredAt,
 		&settledAt,
 		&question.CreatedAt,
+		&question.IssueReference,
+		&question.IssueTitle,
+		&teamID,
 	); err != nil {
 		return entity.IssueQuestion{}, err
 	}
@@ -168,6 +181,10 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 
 	if question.IssueID, err = uuid.Parse(issueID); err != nil {
 		return entity.IssueQuestion{}, fmt.Errorf("parse question issue id: %w", err)
+	}
+
+	if question.TeamID, err = uuid.Parse(teamID); err != nil {
+		return entity.IssueQuestion{}, fmt.Errorf("parse question team id: %w", err)
 	}
 
 	if question.AskedByAccountID, err = optionalID(askedBy); err != nil {
@@ -305,6 +322,19 @@ func (r *questionRepository) ListByExecution(
 	executionID string,
 ) ([]entity.IssueQuestion, error) {
 	return r.list(ctx, questionsByExecutionQuery, workspaceID.String(), executionID)
+}
+
+func (r *questionRepository) ListWaiting(
+	ctx context.Context,
+	scope entity.TeamScope,
+	limit int,
+) ([]entity.IssueQuestion, error) {
+	teams := make([]string, 0, len(scope.TeamIDs))
+	for _, teamID := range scope.TeamIDs {
+		teams = append(teams, teamID.String())
+	}
+
+	return r.list(ctx, waitingQuestionsQuery, scope.WorkspaceID.String(), scope.AllTeams, teams, limit)
 }
 
 func (r *questionRepository) Lapsed(

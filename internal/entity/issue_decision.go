@@ -53,7 +53,7 @@ func (a DecisionAuthority) MakerName() string {
 }
 
 func (a DecisionAuthority) Permits(decision Decision) bool {
-	if decision.Actor.AgentID != nil {
+	if decision.Actor.AgentID != nil || decision.Role == MembershipRoleViewer {
 		return false
 	}
 

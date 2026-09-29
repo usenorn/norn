@@ -338,6 +338,8 @@ export const reviewPreviewStates: Record<string, ReviewPreview> = import.meta.en
 							id: "00000000-0000-4000-8000-000000001201",
 							issueId: "00000000-0000-4000-8000-000000000501",
 							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							issueReference: "DSG-14",
+							issueTitle: "Median helper for the ledger",
 							kind: "decision",
 							state: "asked",
 							blocking: true,

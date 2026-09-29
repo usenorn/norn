@@ -155,6 +155,7 @@ func statements() map[string]string {
 		"questionsByIssueQuery":     questionsByIssueQuery,
 		"questionsByExecutionQuery": questionsByExecutionQuery,
 		"lapsedQuestionsQuery":      lapsedQuestionsQuery,
+		"waitingQuestionsQuery":     waitingQuestionsQuery,
 		"answerQuestionQuery":       answerQuestionQuery,
 		"settleQuestionQuery":       settleQuestionQuery,
 	}

@@ -117,6 +117,21 @@ func (mr *MockExecutionsMockRecorder) CommentOnReview(ctx, workspaceID, executio
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommentOnReview", reflect.TypeOf((*MockExecutions)(nil).CommentOnReview), ctx, workspaceID, executionID, draft)
 }
 
+// DecisionRight mocks base method.
+func (m *MockExecutions) DecisionRight(ctx context.Context, workspaceID, issueID uuid.UUID) (service.DecisionRight, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecisionRight", ctx, workspaceID, issueID)
+	ret0, _ := ret[0].(service.DecisionRight)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DecisionRight indicates an expected call of DecisionRight.
+func (mr *MockExecutionsMockRecorder) DecisionRight(ctx, workspaceID, issueID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecisionRight", reflect.TypeOf((*MockExecutions)(nil).DecisionRight), ctx, workspaceID, issueID)
+}
+
 // Declined mocks base method.
 func (m *MockExecutions) Declined(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
 	m.ctrl.T.Helper()
@@ -348,6 +363,21 @@ func (m *MockExecutions) Questioned(ctx context.Context, question entity.IssueQu
 func (mr *MockExecutionsMockRecorder) Questioned(ctx, question any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Questioned", reflect.TypeOf((*MockExecutions)(nil).Questioned), ctx, question)
+}
+
+// Queue mocks base method.
+func (m *MockExecutions) Queue(ctx context.Context, workspaceID uuid.UUID) (service.ReviewQueue, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Queue", ctx, workspaceID)
+	ret0, _ := ret[0].(service.ReviewQueue)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Queue indicates an expected call of Queue.
+func (mr *MockExecutionsMockRecorder) Queue(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Queue", reflect.TypeOf((*MockExecutions)(nil).Queue), ctx, workspaceID)
 }
 
 // Ready mocks base method.

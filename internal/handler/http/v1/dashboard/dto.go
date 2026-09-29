@@ -1863,20 +1863,22 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 
 func issueQuestionDTO(question entity.IssueQuestion) api.IssueQuestion {
 	dto := api.IssueQuestion{
-		Id:            question.ID,
-		IssueId:       question.IssueID,
-		Kind:          api.IssueQuestionKind(question.Kind),
-		State:         api.IssueQuestionState(question.State),
-		Blocking:      question.Blocking,
-		AllowFreeText: question.AllowFreeText,
-		Question:      question.Question,
-		Default:       question.DefaultAnswer,
-		Deadline:      question.Deadline,
-		Answered:      question.Answered(),
-		Expired:       question.Expired(time.Now().UTC()),
-		Standing:      question.Standing(),
-		ActorKind:     api.NotificationActorKind(question.ActorKind),
-		CreatedAt:     question.CreatedAt,
+		Id:             question.ID,
+		IssueId:        question.IssueID,
+		IssueReference: question.IssueReference,
+		IssueTitle:     question.IssueTitle,
+		Kind:           api.IssueQuestionKind(question.Kind),
+		State:          api.IssueQuestionState(question.State),
+		Blocking:       question.Blocking,
+		AllowFreeText:  question.AllowFreeText,
+		Question:       question.Question,
+		Default:        question.DefaultAnswer,
+		Deadline:       question.Deadline,
+		Answered:       question.Answered(),
+		Expired:        question.Expired(time.Now().UTC()),
+		Standing:       question.Standing(),
+		ActorKind:      api.NotificationActorKind(question.ActorKind),
+		CreatedAt:      question.CreatedAt,
 	}
 
 	dto.Answer = nilIfEmpty(question.Answer)
@@ -1886,6 +1888,11 @@ func issueQuestionDTO(question entity.IssueQuestion) api.IssueQuestion {
 	dto.SettledByName = nilIfEmpty(question.SettledByName)
 	dto.SettledAt = question.SettledAt
 	dto.ExecutionId = nilIfEmpty(question.ExecutionID)
+
+	if question.Stage != "" {
+		stage := api.IssueQuestionStage(question.Stage)
+		dto.Stage = &stage
+	}
 
 	if len(question.Options) > 0 {
 		options := question.Options
@@ -2729,13 +2736,17 @@ func executionSummaryDTOs(listings []entity.ExecutionListing) []api.ExecutionSum
 	summaries := make([]api.ExecutionSummary, 0, len(listings))
 
 	for _, listing := range listings {
-		summaries = append(summaries, api.ExecutionSummary{
-			Execution: executionDTO(listing.Execution),
-			Change:    changeSummaryDTO(listing.Change),
-		})
+		summaries = append(summaries, executionSummaryDTO(listing))
 	}
 
 	return summaries
+}
+
+func executionSummaryDTO(listing entity.ExecutionListing) api.ExecutionSummary {
+	return api.ExecutionSummary{
+		Execution: executionDTO(listing.Execution),
+		Change:    changeSummaryDTO(listing.Change),
+	}
 }
 
 func changeSummaryDTO(summary entity.ExecutionChangeSummary) api.ExecutionChangeSummary {

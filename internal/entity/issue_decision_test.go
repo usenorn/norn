@@ -79,6 +79,11 @@ func TestOnlyTheDecisionMakerOrAnAdminMayDecide(t *testing.T) {
 			want:     false,
 		},
 		{
+			name:     "the assignee with only read access",
+			decision: entity.Decision{Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: assignee}, Role: entity.MembershipRoleViewer},
+			want:     false,
+		},
+		{
 			name:     "an agent, even an admin one",
 			decision: entity.Decision{Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New(), AgentID: &agent}, Role: entity.MembershipRoleAdmin},
 			want:     false,

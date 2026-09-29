@@ -43,6 +43,21 @@ func (m *MockIssueDelegation) EXPECT() *MockIssueDelegationMockRecorder {
 	return m.recorder
 }
 
+// Authorities mocks base method.
+func (m *MockIssueDelegation) Authorities(ctx context.Context, workspaceID uuid.UUID, issueIDs []uuid.UUID) (map[uuid.UUID]entity.DecisionAuthority, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Authorities", ctx, workspaceID, issueIDs)
+	ret0, _ := ret[0].(map[uuid.UUID]entity.DecisionAuthority)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Authorities indicates an expected call of Authorities.
+func (mr *MockIssueDelegationMockRecorder) Authorities(ctx, workspaceID, issueIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authorities", reflect.TypeOf((*MockIssueDelegation)(nil).Authorities), ctx, workspaceID, issueIDs)
+}
+
 // Authority mocks base method.
 func (m *MockIssueDelegation) Authority(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.DecisionAuthority, error) {
 	m.ctrl.T.Helper()

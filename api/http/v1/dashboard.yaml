@@ -4451,6 +4451,25 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/decision-right:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [questions]
+      operationId: getWorkspaceIssueDecisionRight
+      summary: Whether the caller may answer this issue's questions and approve its runs
+      responses:
+        '200':
+          description: The caller's right to decide, and who decides otherwise
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionRight' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7177,6 +7196,26 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [executions]
+      operationId: getWorkspaceReviewQueue
+      summary: Every decision a person owes a run, oldest first
+      description: >-
+        Open questions, plans waiting for approval, and changes waiting for review, on issues the
+        caller may read. Each carries whether the caller may decide it and who else can.
+      responses:
+        '200':
+          description: The decisions waiting on somebody
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewQueue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/executions/{executionId}:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -8908,15 +8947,18 @@ components:
 
     IssueQuestion:
       type: object
-      required: [id, issueId, kind, state, blocking, allowFreeText, question, default, deadline,
-                 answered, expired, standing, actorKind, createdAt]
+      required: [id, issueId, issueReference, issueTitle, kind, state, blocking, allowFreeText,
+                 question, default, deadline, answered, expired, standing, actorKind, createdAt]
       properties:
         id: { type: string, format: uuid }
         issueId: { type: string, format: uuid }
+        issueReference: { type: string }
+        issueTitle: { type: string }
         executionId:
           type: string
           maxLength: 64
           description: The run that asked, when a run did. Absent when a person or a tool did.
+        stage: { $ref: '#/components/schemas/IssueQuestionStage' }
         kind: { $ref: '#/components/schemas/IssueQuestionKind' }
         state: { $ref: '#/components/schemas/IssueQuestionState' }
         blocking:
@@ -8953,6 +8995,50 @@ components:
           description: Who decided this question, however they decided it.
         settledAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
+
+    IssueQuestionStage:
+      type: string
+      enum: [planning, implementation]
+      description: Whether the run was still planning or already implementing when it asked.
+
+    DecisionRight:
+      type: object
+      required: [canDecide]
+      properties:
+        canDecide:
+          type: boolean
+          description: True for the issue's assignee and for workspace admins.
+        decider:
+          type: string
+          description: Who decides for this issue. Absent when only admins can.
+
+    ReviewQuestion:
+      type: object
+      required: [question, decision]
+      properties:
+        question: { $ref: '#/components/schemas/IssueQuestion' }
+        decision: { $ref: '#/components/schemas/DecisionRight' }
+
+    ReviewRun:
+      type: object
+      required: [run, decision]
+      properties:
+        run: { $ref: '#/components/schemas/ExecutionSummary' }
+        decision: { $ref: '#/components/schemas/DecisionRight' }
+
+    ReviewQueue:
+      type: object
+      required: [questions, plans, changes]
+      properties:
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewQuestion' }
+        plans:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewRun' }
+        changes:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewRun' }
 
     AskIssueQuestionRequest:
       type: object

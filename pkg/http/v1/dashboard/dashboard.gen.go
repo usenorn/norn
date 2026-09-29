@@ -2192,22 +2192,22 @@ func (e ExecutionServiceState) Valid() bool {
 
 // Defines values for ExecutionStage.
 const (
-	Implementation ExecutionStage = "implementation"
-	Planning       ExecutionStage = "planning"
-	Publication    ExecutionStage = "publication"
-	Review         ExecutionStage = "review"
+	ExecutionStageImplementation ExecutionStage = "implementation"
+	ExecutionStagePlanning       ExecutionStage = "planning"
+	ExecutionStagePublication    ExecutionStage = "publication"
+	ExecutionStageReview         ExecutionStage = "review"
 )
 
 // Valid indicates whether the value is a known member of the ExecutionStage enum.
 func (e ExecutionStage) Valid() bool {
 	switch e {
-	case Implementation:
+	case ExecutionStageImplementation:
 		return true
-	case Planning:
+	case ExecutionStagePlanning:
 		return true
-	case Publication:
+	case ExecutionStagePublication:
 		return true
-	case Review:
+	case ExecutionStageReview:
 		return true
 	default:
 		return false
@@ -3147,6 +3147,24 @@ func (e IssueQuestionKind) Valid() bool {
 	case IssueQuestionKindClarification:
 		return true
 	case IssueQuestionKindDecision:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IssueQuestionStage.
+const (
+	IssueQuestionStageImplementation IssueQuestionStage = "implementation"
+	IssueQuestionStagePlanning       IssueQuestionStage = "planning"
+)
+
+// Valid indicates whether the value is a known member of the IssueQuestionStage enum.
+func (e IssueQuestionStage) Valid() bool {
+	switch e {
+	case IssueQuestionStageImplementation:
+		return true
+	case IssueQuestionStagePlanning:
 		return true
 	default:
 		return false
@@ -6592,6 +6610,15 @@ type DecideImportMappingsRequest struct {
 	Decisions []ImportMappingDecision `json:"decisions"`
 }
 
+// DecisionRight defines model for DecisionRight.
+type DecisionRight struct {
+	// CanDecide True for the issue's assignee and for workspace admins.
+	CanDecide bool `json:"canDecide"`
+
+	// Decider Who decides for this issue. Absent when only admins can.
+	Decider *string `json:"decider,omitempty"`
+}
+
 // DeclineTriageIssueRequest defines model for DeclineTriageIssueRequest.
 type DeclineTriageIssueRequest struct {
 	// Note Sent to whoever reported it, and kept in the issue's history
@@ -8007,10 +8034,12 @@ type IssueQuestion struct {
 	ExecutionId *string `json:"executionId,omitempty"`
 
 	// Expired True once the deadline passed with no answer, so the default is what stands.
-	Expired bool               `json:"expired"`
-	Id      openapi_types.UUID `json:"id"`
-	IssueId openapi_types.UUID `json:"issueId"`
-	Kind    IssueQuestionKind  `json:"kind"`
+	Expired        bool               `json:"expired"`
+	Id             openapi_types.UUID `json:"id"`
+	IssueId        openapi_types.UUID `json:"issueId"`
+	IssueReference string             `json:"issueReference"`
+	IssueTitle     string             `json:"issueTitle"`
+	Kind           IssueQuestionKind  `json:"kind"`
 
 	// Options The answers the agent offered. Empty when it asked an open question.
 	Options   *[]string  `json:"options,omitempty"`
@@ -8019,6 +8048,9 @@ type IssueQuestion struct {
 
 	// SettledByName Who decided this question, however they decided it.
 	SettledByName *string `json:"settledByName,omitempty"`
+
+	// Stage Whether the run was still planning or already implementing when it asked.
+	Stage *IssueQuestionStage `json:"stage,omitempty"`
 
 	// Standing The answer if there is one, otherwise the declared default.
 	Standing string             `json:"standing"`
@@ -8039,6 +8071,9 @@ type IssueQuestionKind string
 type IssueQuestionList struct {
 	Questions []IssueQuestion `json:"questions"`
 }
+
+// IssueQuestionStage Whether the run was still planning or already implementing when it asked.
+type IssueQuestionStage string
 
 // IssueQuestionState defines model for IssueQuestionState.
 type IssueQuestionState string
@@ -8862,6 +8897,25 @@ type ReviewComment struct {
 type ReviewHead struct {
 	HeadSha    string `json:"headSha"`
 	Repository string `json:"repository"`
+}
+
+// ReviewQuestion defines model for ReviewQuestion.
+type ReviewQuestion struct {
+	Decision DecisionRight `json:"decision"`
+	Question IssueQuestion `json:"question"`
+}
+
+// ReviewQueue defines model for ReviewQueue.
+type ReviewQueue struct {
+	Changes   []ReviewRun      `json:"changes"`
+	Plans     []ReviewRun      `json:"plans"`
+	Questions []ReviewQuestion `json:"questions"`
+}
+
+// ReviewRun defines model for ReviewRun.
+type ReviewRun struct {
+	Decision DecisionRight    `json:"decision"`
+	Run      ExecutionSummary `json:"run"`
 }
 
 // ReviewSide Which side of the diff a line belongs to
@@ -13286,6 +13340,11 @@ type ClientInterface interface {
 	// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
 	DeleteWorkspaceIssueEvidence(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+	GetWorkspaceIssueDecisionRight(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation (the `RecallWorkspaceIssue` operationId).
@@ -13881,6 +13940,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/restore (the `RestoreWorkspace` operationId).
 	RestoreWorkspace(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+	//
+	// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+	GetWorkspaceReviewQueue(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceRunners Every machine connected to this workspace, newest first
 	//
@@ -19173,6 +19239,21 @@ func (c *Client) DeleteWorkspaceIssueEvidence(ctx context.Context, workspaceId W
 	return c.Client.Do(req)
 }
 
+// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+func (c *Client) GetWorkspaceIssueDecisionRight(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceIssueDecisionRightRequest(c.Server, workspaceId, issueId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // RecallWorkspaceIssue Take this issue back from the agent holding it
 //
 // Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation (the `RecallWorkspaceIssue` operationId).
@@ -20719,6 +20800,23 @@ func (c *Client) UnarchiveWorkspaceProject(ctx context.Context, workspaceId Work
 // Corresponds with POST /workspaces/{workspaceId}/restore (the `RestoreWorkspace` operationId).
 func (c *Client) RestoreWorkspace(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRestoreWorkspaceRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+//
+// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+//
+// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+func (c *Client) GetWorkspaceReviewQueue(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceReviewQueueRequest(c.Server, workspaceId)
 	if err != nil {
 		return nil, err
 	}
@@ -32113,6 +32211,47 @@ func NewDeleteWorkspaceIssueEvidenceRequest(server string, workspaceId Workspace
 	return req, nil
 }
 
+// NewGetWorkspaceIssueDecisionRightRequest constructs an http.Request for the GetWorkspaceIssueDecisionRight method
+func NewGetWorkspaceIssueDecisionRightRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/decision-right", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewRecallWorkspaceIssueRequest constructs an http.Request for the RecallWorkspaceIssue method
 func NewRecallWorkspaceIssueRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
 	var err error
@@ -35615,6 +35754,40 @@ func NewRestoreWorkspaceRequest(server string, workspaceId WorkspaceId) (*http.R
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceReviewQueueRequest constructs an http.Request for the GetWorkspaceReviewQueue method
+func NewGetWorkspaceReviewQueueRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/reviews", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -42462,6 +42635,13 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
 	DeleteWorkspaceIssueEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueEvidenceResponse, error)
 
+	// GetWorkspaceIssueDecisionRightWithResponse Whether the caller may answer this issue's questions and approve its runs
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+	GetWorkspaceIssueDecisionRightWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueDecisionRightResponse, error)
+
 	// RecallWorkspaceIssueWithResponse Take this issue back from the agent holding it
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -43143,6 +43323,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/restore (the `RestoreWorkspace` operationId).
 	RestoreWorkspaceWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RestoreWorkspaceResponse, error)
+
+	// GetWorkspaceReviewQueueWithResponse Every decision a person owes a run, oldest first
+	//
+	// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+	GetWorkspaceReviewQueueWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceReviewQueueResponse, error)
 
 	// ListWorkspaceRunnersWithResponse Every machine connected to this workspace, newest first
 	//
@@ -58438,6 +58627,75 @@ func (r DeleteWorkspaceIssueEvidenceResponse) ContentType() string {
 	return ""
 }
 
+type GetWorkspaceIssueDecisionRightResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DecisionRight
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetJSON200() *DecisionRight {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceIssueDecisionRightResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceIssueDecisionRightResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceIssueDecisionRightResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceIssueDecisionRightResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type RecallWorkspaceIssueResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -63592,6 +63850,68 @@ func (r RestoreWorkspaceResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RestoreWorkspaceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceReviewQueueResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ReviewQueue
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceReviewQueueResponse) GetJSON200() *ReviewQueue {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceReviewQueueResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceReviewQueueResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceReviewQueueResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceReviewQueueResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceReviewQueueResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceReviewQueueResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceReviewQueueResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -74712,6 +75032,19 @@ func (c *ClientWithResponses) DeleteWorkspaceIssueEvidenceWithResponse(ctx conte
 	return ParseDeleteWorkspaceIssueEvidenceResponse(rsp)
 }
 
+// GetWorkspaceIssueDecisionRightWithResponse Whether the caller may answer this issue's questions and approve its runs
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+func (c *ClientWithResponses) GetWorkspaceIssueDecisionRightWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueDecisionRightResponse, error) {
+	rsp, err := c.GetWorkspaceIssueDecisionRight(ctx, workspaceId, issueId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceIssueDecisionRightResponse(rsp)
+}
+
 // RecallWorkspaceIssueWithResponse Take this issue back from the agent holding it
 //
 // Returns a wrapper object for the known response body format(s).
@@ -75968,6 +76301,21 @@ func (c *ClientWithResponses) RestoreWorkspaceWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseRestoreWorkspaceResponse(rsp)
+}
+
+// GetWorkspaceReviewQueueWithResponse Every decision a person owes a run, oldest first
+//
+// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+func (c *ClientWithResponses) GetWorkspaceReviewQueueWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceReviewQueueResponse, error) {
+	rsp, err := c.GetWorkspaceReviewQueue(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceReviewQueueResponse(rsp)
 }
 
 // ListWorkspaceRunnersWithResponse Every machine connected to this workspace, newest first
@@ -89286,6 +89634,60 @@ func ParseDeleteWorkspaceIssueEvidenceResponse(rsp *http.Response) (*DeleteWorks
 	return response, nil
 }
 
+// ParseGetWorkspaceIssueDecisionRightResponse parses an HTTP response from a GetWorkspaceIssueDecisionRightWithResponse call
+func ParseGetWorkspaceIssueDecisionRightResponse(rsp *http.Response) (*GetWorkspaceIssueDecisionRightResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceIssueDecisionRightResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecisionRight
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseRecallWorkspaceIssueResponse parses an HTTP response from a RecallWorkspaceIssueWithResponse call
 func ParseRecallWorkspaceIssueResponse(rsp *http.Response) (*RecallWorkspaceIssueResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -93431,6 +93833,53 @@ func ParseRestoreWorkspaceResponse(rsp *http.Response) (*RestoreWorkspaceRespons
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceReviewQueueResponse parses an HTTP response from a GetWorkspaceReviewQueueWithResponse call
+func ParseGetWorkspaceReviewQueueResponse(rsp *http.Response) (*GetWorkspaceReviewQueueResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceReviewQueueResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewQueue
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -100010,6 +100459,9 @@ type ServerInterface interface {
 	// DeleteWorkspaceIssueEvidence Take back a piece of evidence
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
 	DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId)
+	// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/decision-right)
+	GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -100220,6 +100672,9 @@ type ServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+	// (GET /workspaces/{workspaceId}/reviews)
+	GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceRunners Every machine connected to this workspace, newest first
 	// (GET /workspaces/{workspaceId}/runners)
 	ListWorkspaceRunners(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -101738,6 +102193,12 @@ func (_ Unimplemented) DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+// (GET /workspaces/{workspaceId}/issues/{issueId}/decision-right)
+func (_ Unimplemented) GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // RecallWorkspaceIssue Take this issue back from the agent holding it
 // (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
 func (_ Unimplemented) RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
@@ -102155,6 +102616,12 @@ func (_ Unimplemented) UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.
 // RestoreWorkspace Recover a workspace before its purge date passes
 // (POST /workspaces/{workspaceId}/restore)
 func (_ Unimplemented) RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+// (GET /workspaces/{workspaceId}/reviews)
+func (_ Unimplemented) GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -109378,6 +109845,41 @@ func (siw *ServerInterfaceWrapper) DeleteWorkspaceIssueEvidence(w http.ResponseW
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceIssueDecisionRight operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueDecisionRight(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RecallWorkspaceIssue operation middleware
 func (siw *ServerInterfaceWrapper) RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request) {
 
@@ -112021,6 +112523,32 @@ func (siw *ServerInterfaceWrapper) RestoreWorkspace(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RestoreWorkspace(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceReviewQueue operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceReviewQueue(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -116384,6 +116912,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/questions", wrapper.AskWorkspaceIssueQuestion)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/decision-right", wrapper.GetWorkspaceIssueDecisionRight)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer", wrapper.AnswerWorkspaceIssueQuestion)
 	})
 	r.Group(func(r chi.Router) {
@@ -116775,6 +117306,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions", wrapper.ListWorkspaceExecutions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/reviews", wrapper.GetWorkspaceReviewQueue)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}", wrapper.GetWorkspaceExecution)
@@ -135003,6 +135537,89 @@ func (response DeleteWorkspaceIssueEvidence500ApplicationProblemPlusJSONResponse
 	return err
 }
 
+type GetWorkspaceIssueDecisionRightRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type GetWorkspaceIssueDecisionRightResponseObject interface {
+	VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueDecisionRight200JSONResponse DecisionRight
+
+func (response GetWorkspaceIssueDecisionRight200JSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueDecisionRight401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueDecisionRight403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueDecisionRight404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueDecisionRight500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RecallWorkspaceIssueRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -141636,6 +142253,74 @@ func (response RestoreWorkspace409ApplicationProblemPlusJSONResponse) VisitResto
 type RestoreWorkspace500ApplicationProblemPlusJSONResponse Problem
 
 func (response RestoreWorkspace500ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceReviewQueueResponseObject interface {
+	VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceReviewQueue200JSONResponse ReviewQueue
+
+func (response GetWorkspaceReviewQueue200JSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceReviewQueue401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceReviewQueue403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueue500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceReviewQueue500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -151721,6 +152406,9 @@ type StrictServerInterface interface {
 	// DeleteWorkspaceIssueEvidence Take back a piece of evidence
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
 	DeleteWorkspaceIssueEvidence(ctx context.Context, request DeleteWorkspaceIssueEvidenceRequestObject) (DeleteWorkspaceIssueEvidenceResponseObject, error)
+	// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/decision-right)
+	GetWorkspaceIssueDecisionRight(ctx context.Context, request GetWorkspaceIssueDecisionRightRequestObject) (GetWorkspaceIssueDecisionRightResponseObject, error)
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	RecallWorkspaceIssue(ctx context.Context, request RecallWorkspaceIssueRequestObject) (RecallWorkspaceIssueResponseObject, error)
@@ -151931,6 +152619,9 @@ type StrictServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(ctx context.Context, request RestoreWorkspaceRequestObject) (RestoreWorkspaceResponseObject, error)
+	// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+	// (GET /workspaces/{workspaceId}/reviews)
+	GetWorkspaceReviewQueue(ctx context.Context, request GetWorkspaceReviewQueueRequestObject) (GetWorkspaceReviewQueueResponseObject, error)
 	// ListWorkspaceRunners Every machine connected to this workspace, newest first
 	// (GET /workspaces/{workspaceId}/runners)
 	ListWorkspaceRunners(ctx context.Context, request ListWorkspaceRunnersRequestObject) (ListWorkspaceRunnersResponseObject, error)
@@ -158069,6 +158760,33 @@ func (sh *strictHandler) DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *
 	}
 }
 
+// GetWorkspaceIssueDecisionRight operation middleware
+func (sh *strictHandler) GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request GetWorkspaceIssueDecisionRightRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueDecisionRight(ctx, request.(GetWorkspaceIssueDecisionRightRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueDecisionRight")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueDecisionRightResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueDecisionRightResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RecallWorkspaceIssue operation middleware
 func (sh *strictHandler) RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	var request RecallWorkspaceIssueRequestObject
@@ -160142,6 +160860,32 @@ func (sh *strictHandler) RestoreWorkspace(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RestoreWorkspaceResponseObject); ok {
 		if err := validResponse.VisitRestoreWorkspaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceReviewQueue operation middleware
+func (sh *strictHandler) GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceReviewQueueRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceReviewQueue(ctx, request.(GetWorkspaceReviewQueueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceReviewQueue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceReviewQueueResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceReviewQueueResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
