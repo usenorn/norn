@@ -403,3 +403,69 @@ VALUES ($1, $2, $3, $4, $5, 1, 'completed', now())`,
 		)
 	}
 }
+
+func TestALapsedLeaseEndsOnlyARunThatWasNotWaitingOnAPerson(t *testing.T) {
+	db := schemaDatabase(t)
+
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+
+	t.Cleanup(func() { _ = tx.Rollback() })
+
+	var delegationID, workspaceID, issueID, agentID string
+
+	if err := tx.QueryRow(delegationFixture).Scan(
+		&workspaceID, &issueID, &agentID, &delegationID,
+	); err != nil {
+		t.Fatalf("build a delegation to run against: %v", err)
+	}
+
+	lapsed := time.Now().UTC().Add(-time.Hour)
+
+	if _, err := tx.Exec(`
+INSERT INTO workspace_executions
+    (id, workspace_id, issue_id, delegation_id, agent_id, attempt, state, lease_expires_at)
+VALUES ($1, $2, $3, $4, $5, 1, 'running', $6)`,
+		"exec-lapsed", workspaceID, issueID, delegationID, agentID, lapsed,
+	); err != nil {
+		t.Fatalf("open a run with a lapsed lease: %v", err)
+	}
+
+	expired := map[string]bool{
+		"leased":            true,
+		"preparing":         true,
+		"running":           true,
+		"finalizing":        true,
+		"waiting_for_input": false,
+		"queued_for_resume": false,
+		"awaiting_review":   false,
+	}
+
+	for state, ends := range expired {
+		if _, err := tx.Exec(
+			`UPDATE workspace_executions SET state = $2 WHERE id = $1`, "exec-lapsed", state,
+		); err != nil {
+			t.Fatalf("move the run to %s: %v", state, err)
+		}
+
+		var found int
+
+		if err := tx.QueryRow(
+			`SELECT count(*) FROM (`+expiredExecutionLeasesQuery+`) swept WHERE swept.id = $3`,
+			time.Now().UTC(), 100, "exec-lapsed",
+		).Scan(&found); err != nil {
+			t.Fatalf("sweep with the run %s: %v", state, err)
+		}
+
+		if (found == 1) != ends {
+			t.Fatalf(
+				"a lapsed lease on a %s run was swept=%v, want %v. A run waiting on a "+
+					"person has no process to lose, so its machine being away for a minute "+
+					"must not end it; the machine picks it back up when it returns",
+				state, found == 1, ends,
+			)
+		}
+	}
+}
