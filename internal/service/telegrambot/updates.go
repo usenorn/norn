@@ -410,7 +410,8 @@ func (s *updates) redeem(
 	}
 
 	return s.say(ctx, target, message, plain(fmt.Sprintf(
-		"Linked. %s will send its questions for you here.", target.agent.Name,
+		"Linked. Choose Telegram for decision requests in Norn's notification settings, and %s "+
+			"will send you its questions, plans and changes here.", target.agent.Name,
 	)))
 }
 

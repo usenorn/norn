@@ -11,6 +11,8 @@
 	import { api } from "$lib/api";
 	import PreferenceGrid from "$lib/notifications/preference-grid.svelte";
 	import TelegramLinks from "$lib/agents/telegram-links.svelte";
+	import DecisionChannelForm from "$lib/notifications/decision-channel-form.svelte";
+	import { telegramLinked } from "$lib/notifications/decision-channel";
 	import { deploymentPreview } from "$lib/auth/preview";
 	import type { NotificationPreferences } from "$lib/notifications/notifications";
 	import { workspacePath } from "$lib/workspace/navigation";
@@ -131,6 +133,12 @@
 					>.
 				</p>
 			{/if}
+
+			<DecisionChannelForm
+				data={data.decisionForm}
+				workspaceId={data.workspace.id}
+				telegramReady={telegramLinked(telegram)}
+			/>
 
 			{#key preview?.telegramOutcome}
 				<TelegramLinks
