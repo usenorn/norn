@@ -47,10 +47,13 @@ var TableNames = struct {
 	WorkspaceExecutionChanges          string
 	WorkspaceExecutionChunks           string
 	WorkspaceExecutionEvents           string
+	WorkspaceExecutionPlans            string
 	WorkspaceExecutionPolicies         string
 	WorkspaceExecutionPreviewLinks     string
 	WorkspaceExecutionPreviews         string
 	WorkspaceExecutionResults          string
+	WorkspaceExecutionReviewComments   string
+	WorkspaceExecutionReviews          string
 	WorkspaceExecutionServices         string
 	WorkspaceExecutionValidations      string
 	WorkspaceExecutions                string
@@ -168,10 +171,13 @@ var TableNames = struct {
 	WorkspaceExecutionChanges:          "workspace_execution_changes",
 	WorkspaceExecutionChunks:           "workspace_execution_chunks",
 	WorkspaceExecutionEvents:           "workspace_execution_events",
+	WorkspaceExecutionPlans:            "workspace_execution_plans",
 	WorkspaceExecutionPolicies:         "workspace_execution_policies",
 	WorkspaceExecutionPreviewLinks:     "workspace_execution_preview_links",
 	WorkspaceExecutionPreviews:         "workspace_execution_previews",
 	WorkspaceExecutionResults:          "workspace_execution_results",
+	WorkspaceExecutionReviewComments:   "workspace_execution_review_comments",
+	WorkspaceExecutionReviews:          "workspace_execution_reviews",
 	WorkspaceExecutionServices:         "workspace_execution_services",
 	WorkspaceExecutionValidations:      "workspace_execution_validations",
 	WorkspaceExecutions:                "workspace_executions",
