@@ -235,3 +235,37 @@ func (h *handler) ClearWorkspaceTeamNotificationSettings(
 
 	return api.ClearWorkspaceTeamNotificationSettings200JSONResponse(notificationSettingsDTO(view)), nil
 }
+
+func (h *handler) GetWorkspaceDecisionChannel(
+	ctx context.Context,
+	request api.GetWorkspaceDecisionChannelRequestObject,
+) (api.GetWorkspaceDecisionChannelResponseObject, error) {
+	channel, err := h.notifications.DecisionChannel(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceDecisionChannel200JSONResponse{Channel: api.DecisionChannel(channel)}, nil
+}
+
+func (h *handler) SetWorkspaceDecisionChannel(
+	ctx context.Context,
+	request api.SetWorkspaceDecisionChannelRequestObject,
+) (api.SetWorkspaceDecisionChannelResponseObject, error) {
+	channel, err := h.notifications.SetDecisionChannel(
+		ctx, request.WorkspaceId, entity.DecisionChannel(request.Body.Channel),
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceDecisionChannel200JSONResponse{Channel: api.DecisionChannel(channel)}, nil
+}

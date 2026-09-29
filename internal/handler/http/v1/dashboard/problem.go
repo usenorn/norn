@@ -2875,6 +2875,14 @@ func (r problemResponse) VisitGetWorkspaceExecutionResponse(w http.ResponseWrite
 	return r.write(w)
 }
 
+func (r problemResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

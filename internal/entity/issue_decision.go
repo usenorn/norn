@@ -24,6 +24,14 @@ func (c DecisionChannel) Valid() bool {
 	return slices.Contains(DecisionChannels(), c)
 }
 
+func ValidateDecisionChannel(field string, channel DecisionChannel) FieldError {
+	if !channel.Valid() {
+		return FieldError{Field: field, Code: ValidationCodeUnsupportedValue}
+	}
+
+	return FieldError{}
+}
+
 type DecisionAuthority struct {
 	AssigneeAccountID  uuid.UUID
 	AssigneeKind       AccountKind

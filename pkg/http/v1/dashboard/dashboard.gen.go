@@ -1674,6 +1674,24 @@ func (e CycleScopeChangeKind) Valid() bool {
 	}
 }
 
+// Defines values for DecisionChannel.
+const (
+	DecisionChannelNorn     DecisionChannel = "norn"
+	DecisionChannelTelegram DecisionChannel = "telegram"
+)
+
+// Valid indicates whether the value is a known member of the DecisionChannel enum.
+func (e DecisionChannel) Valid() bool {
+	switch e {
+	case DecisionChannelNorn:
+		return true
+	case DecisionChannelTelegram:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DescriptionRevisionSource.
 const (
 	DescriptionRevisionSourceAgent   DescriptionRevisionSource = "agent"
@@ -6613,6 +6631,15 @@ type DecideImportMappingsRequest struct {
 	Decisions []ImportMappingDecision `json:"decisions"`
 }
 
+// DecisionChannel Norn keeps decision requests in Reviews only. Telegram also sends each one as a direct message from the agent's bot, once you have linked your Telegram to that bot.
+type DecisionChannel string
+
+// DecisionChannelSetting defines model for DecisionChannelSetting.
+type DecisionChannelSetting struct {
+	// Channel Norn keeps decision requests in Reviews only. Telegram also sends each one as a direct message from the agent's bot, once you have linked your Telegram to that bot.
+	Channel DecisionChannel `json:"channel"`
+}
+
 // DecisionRight defines model for DecisionRight.
 type DecisionRight struct {
 	// CanDecide True for the issue's assignee and for workspace admins.
@@ -11176,6 +11203,9 @@ type CloseWorkspaceCycleJSONRequestBody = CloseCycleRequest
 // SetWorkspaceCycleOwnerJSONRequestBody defines body for SetWorkspaceCycleOwner for application/json ContentType.
 type SetWorkspaceCycleOwnerJSONRequestBody = CycleOwnerRequest
 
+// SetWorkspaceDecisionChannelJSONRequestBody defines body for SetWorkspaceDecisionChannel for application/json ContentType.
+type SetWorkspaceDecisionChannelJSONRequestBody = DecisionChannelSetting
+
 // ConfigureWorkspaceDirectoryJSONRequestBody defines body for ConfigureWorkspaceDirectory for application/json ContentType.
 type ConfigureWorkspaceDirectoryJSONRequestBody = ConfigureDirectoryRequest
 
@@ -12604,6 +12634,25 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/scope (the `GetWorkspaceCycleScope` operationId).
 	GetWorkspaceCycleScope(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+	GetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceDecisionChannelWithBody Choose where your decision requests reach you besides Reviews
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannelWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 	//
@@ -17354,6 +17403,55 @@ func (c *Client) GetWorkspaceCycleReport(ctx context.Context, workspaceId Worksp
 // Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/scope (the `GetWorkspaceCycleScope` operationId).
 func (c *Client) GetWorkspaceCycleScope(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetWorkspaceCycleScopeRequest(c.Server, workspaceId, cycleId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+//
+// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+func (c *Client) GetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceDecisionChannelRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceDecisionChannelWithBody Choose where your decision requests reach you besides Reviews
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *Client) SetWorkspaceDecisionChannelWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceDecisionChannelRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *Client) SetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceDecisionChannelRequest(c.Server, workspaceId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -27797,6 +27895,87 @@ func NewGetWorkspaceCycleScopeRequest(server string, workspaceId WorkspaceId, cy
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceDecisionChannelRequest constructs an http.Request for the GetWorkspaceDecisionChannel method
+func NewGetWorkspaceDecisionChannelRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/decision-channel", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetWorkspaceDecisionChannelRequest calls the generic SetWorkspaceDecisionChannel builder with application/json body
+func NewSetWorkspaceDecisionChannelRequest(server string, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceDecisionChannelRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceDecisionChannelRequestWithBody constructs an http.Request for the SetWorkspaceDecisionChannel method, with any body, and a specified content type
+func NewSetWorkspaceDecisionChannelRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/decision-channel", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -41782,6 +41961,27 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/scope (the `GetWorkspaceCycleScope` operationId).
 	GetWorkspaceCycleScopeWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*GetWorkspaceCycleScopeResponse, error)
 
+	// GetWorkspaceDecisionChannelWithResponse Read where your decision requests reach you besides Reviews
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+	GetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceDecisionChannelResponse, error)
+
+	// SetWorkspaceDecisionChannelWithBodyWithResponse Choose where your decision requests reach you besides Reviews
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannelWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error)
+
+	// SetWorkspaceDecisionChannelWithResponse Choose where your decision requests reach you besides Reviews
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error)
+
 	// DisconnectWorkspaceDirectoryWithResponse Disconnect the directory, leaving every member as they are
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52235,6 +52435,137 @@ func (r GetWorkspaceCycleScopeResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetWorkspaceCycleScopeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceDecisionChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DecisionChannelSetting
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceDecisionChannelResponse) GetJSON200() *DecisionChannelSetting {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceDecisionChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceDecisionChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceDecisionChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceDecisionChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceDecisionChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DecisionChannelSetting
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceDecisionChannelResponse) GetJSON200() *DecisionChannelSetting {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceDecisionChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceDecisionChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceDecisionChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceDecisionChannelResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -73495,6 +73826,45 @@ func (c *ClientWithResponses) GetWorkspaceCycleScopeWithResponse(ctx context.Con
 	return ParseGetWorkspaceCycleScopeResponse(rsp)
 }
 
+// GetWorkspaceDecisionChannelWithResponse Read where your decision requests reach you besides Reviews
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+func (c *ClientWithResponses) GetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceDecisionChannelResponse, error) {
+	rsp, err := c.GetWorkspaceDecisionChannel(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceDecisionChannelResponse(rsp)
+}
+
+// SetWorkspaceDecisionChannelWithBodyWithResponse Choose where your decision requests reach you besides Reviews
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *ClientWithResponses) SetWorkspaceDecisionChannelWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error) {
+	rsp, err := c.SetWorkspaceDecisionChannelWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceDecisionChannelResponse(rsp)
+}
+
+// SetWorkspaceDecisionChannelWithResponse Choose where your decision requests reach you besides Reviews
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *ClientWithResponses) SetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error) {
+	rsp, err := c.SetWorkspaceDecisionChannel(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceDecisionChannelResponse(rsp)
+}
+
 // DisconnectWorkspaceDirectoryWithResponse Disconnect the directory, leaving every member as they are
 //
 // Returns a wrapper object for the known response body format(s).
@@ -84486,6 +84856,107 @@ func ParseGetWorkspaceCycleScopeResponse(rsp *http.Response) (*GetWorkspaceCycle
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceDecisionChannelResponse parses an HTTP response from a GetWorkspaceDecisionChannelWithResponse call
+func ParseGetWorkspaceDecisionChannelResponse(rsp *http.Response) (*GetWorkspaceDecisionChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceDecisionChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecisionChannelSetting
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceDecisionChannelResponse parses an HTTP response from a SetWorkspaceDecisionChannelWithResponse call
+func ParseSetWorkspaceDecisionChannelResponse(rsp *http.Response) (*SetWorkspaceDecisionChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceDecisionChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecisionChannelSetting
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -100201,6 +100672,12 @@ type ServerInterface interface {
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
+	// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+	// (GET /workspaces/{workspaceId}/decision-channel)
+	GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+	// (PUT /workspaces/{workspaceId}/decision-channel)
+	SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 	// (DELETE /workspaces/{workspaceId}/directory)
 	DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -101671,6 +102148,18 @@ func (_ Unimplemented) GetWorkspaceCycleReport(w http.ResponseWriter, r *http.Re
 // GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 // (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 func (_ Unimplemented) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+// (GET /workspaces/{workspaceId}/decision-channel)
+func (_ Unimplemented) GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+// (PUT /workspaces/{workspaceId}/decision-channel)
+func (_ Unimplemented) SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -106426,6 +106915,58 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceCycleScope(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkspaceCycleScope(w, r, workspaceId, cycleId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceDecisionChannel operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceDecisionChannel(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceDecisionChannel operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceDecisionChannel(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -117044,6 +117585,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/notification-settings", wrapper.SetWorkspaceNotificationSettings)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/decision-channel", wrapper.GetWorkspaceDecisionChannel)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/decision-channel", wrapper.SetWorkspaceDecisionChannel)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/notification-settings", wrapper.ClearWorkspaceTeamNotificationSettings)
 	})
 	r.Group(func(r chi.Router) {
@@ -127348,6 +127895,157 @@ func (response GetWorkspaceCycleScope404ApplicationProblemPlusJSONResponse) Visi
 type GetWorkspaceCycleScope500ApplicationProblemPlusJSONResponse Problem
 
 func (response GetWorkspaceCycleScope500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceCycleScopeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDecisionChannelRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceDecisionChannelResponseObject interface {
+	VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceDecisionChannel200JSONResponse DecisionChannelSetting
+
+func (response GetWorkspaceDecisionChannel200JSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannelRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SetWorkspaceDecisionChannelJSONRequestBody
+}
+
+type SetWorkspaceDecisionChannelResponseObject interface {
+	VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceDecisionChannel200JSONResponse DecisionChannelSetting
+
+func (response SetWorkspaceDecisionChannel200JSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceDecisionChannel422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -152148,6 +152846,12 @@ type StrictServerInterface interface {
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(ctx context.Context, request GetWorkspaceCycleScopeRequestObject) (GetWorkspaceCycleScopeResponseObject, error)
+	// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+	// (GET /workspaces/{workspaceId}/decision-channel)
+	GetWorkspaceDecisionChannel(ctx context.Context, request GetWorkspaceDecisionChannelRequestObject) (GetWorkspaceDecisionChannelResponseObject, error)
+	// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+	// (PUT /workspaces/{workspaceId}/decision-channel)
+	SetWorkspaceDecisionChannel(ctx context.Context, request SetWorkspaceDecisionChannelRequestObject) (SetWorkspaceDecisionChannelResponseObject, error)
 	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 	// (DELETE /workspaces/{workspaceId}/directory)
 	DisconnectWorkspaceDirectory(ctx context.Context, request DisconnectWorkspaceDirectoryRequestObject) (DisconnectWorkspaceDirectoryResponseObject, error)
@@ -156198,6 +156902,65 @@ func (sh *strictHandler) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceCycleScopeResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceCycleScopeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceDecisionChannel operation middleware
+func (sh *strictHandler) GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceDecisionChannelRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceDecisionChannel(ctx, request.(GetWorkspaceDecisionChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceDecisionChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceDecisionChannelResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceDecisionChannelResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceDecisionChannel operation middleware
+func (sh *strictHandler) SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SetWorkspaceDecisionChannelRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SetWorkspaceDecisionChannelJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceDecisionChannel(ctx, request.(SetWorkspaceDecisionChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceDecisionChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceDecisionChannelResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceDecisionChannelResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

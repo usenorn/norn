@@ -5363,6 +5363,42 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/decision-channel:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [notifications]
+      operationId: getWorkspaceDecisionChannel
+      summary: Read where your decision requests reach you besides Reviews
+      responses:
+        '200':
+          description: The channel your decision requests use
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionChannelSetting' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [notifications]
+      operationId: setWorkspaceDecisionChannel
+      summary: Choose where your decision requests reach you besides Reviews
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DecisionChannelSetting' }
+      responses:
+        '200':
+          description: The channel as stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionChannelSetting' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/teams/{teamId}/notification-settings:
     get:
       tags: [notifications]
@@ -15142,6 +15178,19 @@ components:
           $ref: '#/components/schemas/NotificationChannels'
           description: An agent is waiting for you to approve something before it can carry on.
         agents: { $ref: '#/components/schemas/NotificationChannels' }
+
+    DecisionChannel:
+      type: string
+      enum: [norn, telegram]
+      description: >-
+        Norn keeps decision requests in Reviews only. Telegram also sends each one as a direct
+        message from the agent's bot, once you have linked your Telegram to that bot.
+
+    DecisionChannelSetting:
+      type: object
+      required: [channel]
+      properties:
+        channel: { $ref: '#/components/schemas/DecisionChannel' }
 
     NotificationChannels:
       type: object

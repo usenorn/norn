@@ -3477,6 +3477,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/decision-channel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** Read where your decision requests reach you besides Reviews */
+        get: operations["getWorkspaceDecisionChannel"];
+        /** Choose where your decision requests reach you besides Reviews */
+        put: operations["setWorkspaceDecisionChannel"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/teams/{teamId}/notification-settings": {
         parameters: {
             query?: never;
@@ -9658,6 +9678,14 @@ export interface components {
             /** @description An agent is waiting for you to approve something before it can carry on. */
             approvals: components["schemas"]["NotificationChannels"];
             agents: components["schemas"]["NotificationChannels"];
+        };
+        /**
+         * @description Norn keeps decision requests in Reviews only. Telegram also sends each one as a direct message from the agent's bot, once you have linked your Telegram to that bot.
+         * @enum {string}
+         */
+        DecisionChannel: "norn" | "telegram";
+        DecisionChannelSetting: {
+            channel: components["schemas"]["DecisionChannel"];
         };
         NotificationChannels: {
             inbox: boolean;
@@ -17591,6 +17619,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceDecisionChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The channel your decision requests use */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionChannelSetting"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceDecisionChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionChannelSetting"];
+            };
+        };
+        responses: {
+            /** @description The channel as stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionChannelSetting"];
                 };
             };
             401: components["responses"]["Problem"];
