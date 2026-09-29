@@ -5,6 +5,7 @@
 	import { onDateAndTime } from "$lib/time";
 	import DecisionActions from "./decision-actions.svelte";
 	import type { Execution, IssueQuestion } from "./executions";
+	import type { DecisionRight } from "./reviews";
 	import {
 		latestPlan,
 		noPlanLine,
@@ -20,6 +21,7 @@
 		execution,
 		plans,
 		questions,
+		right,
 		timezone,
 		working,
 		onapprove,
@@ -28,6 +30,7 @@
 		execution: Execution;
 		plans: ExecutionPlan[];
 		questions: IssueQuestion[];
+		right: DecisionRight;
 		timezone: string;
 		working: boolean;
 		onapprove: (revision: number) => void;
@@ -74,7 +77,7 @@
 {#snippet revision(plan: ExecutionPlan)}
 	{@const standing = planStanding(plan, latest)}
 	{@const answering = feedbackOn(plan)}
-	{@const decision = planDecision(execution, plan, latest, questions)}
+	{@const decision = planDecision(execution, plan, latest, questions, right)}
 
 	<div class="flex min-w-0 flex-col gap-3">
 		<div class="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -112,7 +115,9 @@
 			</figure>
 		{/if}
 
-		{#if decision.kind !== "closed"}
+		{#if decision.kind === "not_yours"}
+			<p class="text-2xs text-muted-foreground">{decision.reason}</p>
+		{:else if decision.kind !== "closed"}
 			<DecisionActions
 				{working}
 				blocked={decision.kind === "blocked" ? decision.reason : undefined}

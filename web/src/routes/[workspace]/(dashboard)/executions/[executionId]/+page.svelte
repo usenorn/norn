@@ -7,6 +7,7 @@
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
+	import { waitingOnLine, type DecisionRight } from "$lib/executions/reviews";
 	import QuestionList from "$lib/questions/question-list.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import AttentionPanel from "$lib/components/norn/attention-panel.svelte";
@@ -104,6 +105,7 @@
 	const shownMinted = $derived(minted.run === execution?.id ? minted.held : {});
 
 	const questions = $derived(ready?.questions ?? []);
+	const right = $derived<DecisionRight>(ready?.right ?? { canDecide: false });
 	const asking = $derived(blockingQuestion(questions));
 	const now = $derived(ticked ?? data.now);
 	const live = $derived(Boolean(execution) && !isSettled(execution!.state));
@@ -481,7 +483,8 @@
 						<QuestionList
 							questions={[asking]}
 							timezone={workspace.timezone}
-							canAnswer={true}
+							canAnswer={right.canDecide}
+							refusal={waitingOnLine(right)}
 							{working}
 							onanswer={answer}
 							ondismiss={dismiss}
@@ -519,6 +522,7 @@
 						{execution}
 						{plans}
 						{questions}
+						{right}
 						timezone={workspace.timezone}
 						{working}
 						onapprove={approvePlan}
@@ -585,7 +589,8 @@
 						<QuestionList
 							questions={questions.filter((question) => question.id !== asking?.id)}
 							timezone={workspace.timezone}
-							canAnswer={true}
+							canAnswer={right.canDecide}
+							refusal={waitingOnLine(right)}
 							{working}
 							onanswer={answer}
 							ondismiss={dismiss}

@@ -1,6 +1,7 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { CodeLink } from "$lib/source-control/source-control";
 import type { ExecutionPlan } from "./plans";
+import type { DecisionRight } from "./reviews";
 
 export type Execution = components["schemas"]["Execution"];
 export type ExecutionState = components["schemas"]["ExecutionState"];
@@ -42,6 +43,7 @@ export type RunView =
 			changeset?: ExecutionChangeSet;
 			codeLinks: CodeLink[];
 			plans: ExecutionPlan[];
+			right: DecisionRight;
 	  };
 
 export const chunkPageSize = 8;
