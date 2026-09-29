@@ -32,6 +32,8 @@ const queuedStates = `('queued', 'queued_for_resume')`
 
 const terminalStates = `('completed', 'failed', 'cancelled', 'interrupted')`
 
+const recoverableStates = `('waiting_for_input', 'queued_for_resume', 'awaiting_review')`
+
 const executionColumns = `
        e.id,
        e.workspace_id,
@@ -144,7 +146,8 @@ LIMIT $2`
 const runnerHeldSlotsQuery = `
 SELECT count(*)
 FROM workspace_executions
-WHERE runner_id = $1 AND state IN ('preparing', 'running', 'finalizing')`
+WHERE runner_id = $1
+  AND state IN ('leased', 'preparing', 'running', 'queued_for_resume', 'finalizing')`
 
 const executionsSharingRepositoriesQuery = `
 SELECT` + executionColumns + executionJoins + `
@@ -168,6 +171,7 @@ SELECT` + executionColumns + executionJoins + `
 WHERE e.lease_expires_at IS NOT NULL
   AND e.lease_expires_at < $1
   AND e.state NOT IN ` + terminalStates + `
+  AND e.state NOT IN ` + recoverableStates + `
 ORDER BY e.lease_expires_at
 LIMIT $2`
 

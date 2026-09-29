@@ -18,9 +18,10 @@ const (
 )
 
 const (
-	DeclineAtCapacity   = "at_capacity"
-	DeclineDiskPressure = "disk_pressure"
-	DeclinePaused       = "paused"
+	DeclineAtCapacity         = "at_capacity"
+	DeclineDiskPressure       = "disk_pressure"
+	DeclinePaused             = "paused"
+	DeclineRuntimeUnavailable = "runtime_unavailable"
 )
 
 const (

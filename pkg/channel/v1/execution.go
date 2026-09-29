@@ -60,7 +60,12 @@ func (s State) HoldsLease() bool {
 }
 
 func (s State) HoldsSlot() bool {
-	return s == StatePreparing || s == StateRunning || s == StateFinalizing
+	return s == StateLeased || s == StatePreparing || s == StateRunning ||
+		s == StateQueuedForResume || s == StateFinalizing
+}
+
+func (s State) Recoverable() bool {
+	return s == StateWaitingForInput || s == StateQueuedForResume || s == StateAwaitingReview
 }
 
 func (s State) CanTransitionTo(target State) bool {
