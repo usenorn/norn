@@ -22,6 +22,8 @@ type executionsService struct {
 	plans      repository.ExecutionPlan
 	reviews    repository.ExecutionReview
 	questions  repository.IssueQuestion
+	delegates  repository.IssueDelegation
+	notify     repository.NotificationEvent
 	previews   repository.Preview
 	services   repository.ExecutionService
 	runners    repository.Runner
@@ -45,6 +47,8 @@ func New(
 	plans repository.ExecutionPlan,
 	reviews repository.ExecutionReview,
 	questions repository.IssueQuestion,
+	delegates repository.IssueDelegation,
+	notify repository.NotificationEvent,
 	previews repository.Preview,
 	services repository.ExecutionService,
 	runners repository.Runner,
@@ -67,6 +71,8 @@ func New(
 		plans:      plans,
 		reviews:    reviews,
 		questions:  questions,
+		delegates:  delegates,
+		notify:     notify,
 		previews:   previews,
 		services:   services,
 		runners:    runners,

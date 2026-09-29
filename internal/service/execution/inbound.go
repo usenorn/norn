@@ -11,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/pkg/identity"
 	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
@@ -240,15 +241,49 @@ func (s *executionsService) Reported(
 		occurred = occurredAt(message)
 	}
 
-	_, err = s.advance(ctx, execution, move{
-		to:         target,
-		reason:     firstOf(reported.Reason, reported.Detail),
-		actor:      runnerActor(runner),
-		sourceID:   message.ID,
-		occurredAt: occurred,
-	})
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		moved, err := s.advance(ctx, execution, move{
+			to:         target,
+			reason:     firstOf(reported.Reason, reported.Detail),
+			actor:      runnerActor(runner),
+			sourceID:   message.ID,
+			occurredAt: occurred,
+		})
+		if err != nil {
+			return err
+		}
 
-	return err
+		if target != entity.ExecutionAwaitingPlan && target != entity.ExecutionAwaitingReview {
+			return nil
+		}
+
+		return s.awaitDecision(ctx, moved)
+	})
+}
+
+func (s *executionsService) awaitDecision(ctx context.Context, execution entity.Execution) error {
+	delegation, err := s.delegates.Open(ctx, execution.WorkspaceID, execution.IssueID)
+	if errors.Is(err, entity.ErrIssueDelegationNotFound) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	var agentAccount uuid.UUID
+	if actor, ok := identity.Actor(ctx); ok {
+		agentAccount = actor.AccountID
+	}
+
+	return s.notify.Record(ctx, entity.NotificationEvent{
+		WorkspaceID: execution.WorkspaceID,
+		Subject:     entity.NotifyIssue(execution.IssueID),
+		Kind:        entity.NotificationKindApprovalWaiting,
+		Actor:       agentAccount,
+		ActorKind:   entity.ActorKindAgent,
+		Target:      delegation.DelegatedByAccountID,
+	})
 }
 
 func (s *executionsService) Observed(

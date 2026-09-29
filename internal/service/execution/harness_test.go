@@ -18,7 +18,9 @@ import (
 	executionreviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
 	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
 	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
@@ -42,6 +44,8 @@ type harness struct {
 	plans       *executionplanrepo.MockExecutionPlan
 	reviews     *executionreviewrepo.MockExecutionReview
 	questions   *issuequestionrepo.MockIssueQuestion
+	delegates   *issuedelegationrepo.MockIssueDelegation
+	notify      *notificationeventrepo.MockNotificationEvent
 	previews    *previewrepo.MockPreview
 	services    *executionservicerepo.MockExecutionService
 	runners     *runnerrepo.MockRunner
@@ -76,6 +80,8 @@ type harness struct {
 	changes     []entity.ExecutionChange
 	comments    []entity.ExecutionReviewComment
 	submitted   []entity.ExecutionReview
+	delegator   uuid.UUID
+	notified    []entity.NotificationEvent
 }
 
 func newHarness(t *testing.T) *harness {
@@ -93,6 +99,9 @@ func newHarness(t *testing.T) *harness {
 		plans:       executionplanrepo.NewMockExecutionPlan(ctrl),
 		reviews:     executionreviewrepo.NewMockExecutionReview(ctrl),
 		questions:   issuequestionrepo.NewMockIssueQuestion(ctrl),
+		delegates:   issuedelegationrepo.NewMockIssueDelegation(ctrl),
+		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
+		delegator:   uuid.New(),
 		previews:    previewrepo.NewMockPreview(ctrl),
 		services:    executionservicerepo.NewMockExecutionService(ctrl),
 		runners:     runnerrepo.NewMockRunner(ctrl),
@@ -240,8 +249,24 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.delegates.EXPECT().
+		Open(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.IssueDelegation, error) {
+			return entity.IssueDelegation{DelegatedByAccountID: h.delegator}, nil
+		}).
+		AnyTimes()
+
+	h.notify.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, event entity.NotificationEvent) error {
+			h.notified = append(h.notified, event)
+
+			return nil
+		}).
+		AnyTimes()
+
 	h.service = executionsvc.New(
-		h.executions, h.changesets, h.plans, h.reviews, h.questions, h.previews, h.services, h.runners, h.codebases, h.issues,
+		h.executions, h.changesets, h.plans, h.reviews, h.questions, h.delegates, h.notify, h.previews, h.services, h.runners, h.codebases, h.issues,
 		h.revisions, h.states,
 		h.channels, h.writer, h.source, h.events, h.toolkits, h.authorizer, h.audit, transactor,
 	)

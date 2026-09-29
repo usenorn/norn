@@ -248,3 +248,31 @@ func TestAnsweringAQuestionWhileAPlanWaitsApprovesNothing(t *testing.T) {
 		t.Fatal("answering \"approved\" to a question approved the plan")
 	}
 }
+
+func TestAPlanWaitingForApprovalTellsWhoeverDelegatedTheIssue(t *testing.T) {
+	h := newHarness(t)
+
+	execution := h.execution(entity.ExecutionRunning)
+	execution.Stage = entity.StagePlanning
+	h.holding(execution)
+	h.moving()
+	h.planned("Split the handler in two.")
+
+	payload, _ := json.Marshal(channelv1.Report{State: string(entity.ExecutionAwaitingPlan)})
+
+	if err := h.service.Reported(context.Background(), h.runner, entity.ChannelMessage{
+		ID: uuid.NewString(), Type: entity.ChannelExecutionState, ExecutionID: execution.ID,
+		Payload: payload, IssuedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("park for approval: %v", err)
+	}
+
+	if len(h.notified) != 1 || h.notified[0].Target != h.delegator ||
+		h.notified[0].Kind != entity.NotificationKindApprovalWaiting {
+		t.Fatalf(
+			"notified %+v; nobody would know a plan is waiting, and the run sits idle until "+
+				"somebody happens to look",
+			h.notified,
+		)
+	}
+}

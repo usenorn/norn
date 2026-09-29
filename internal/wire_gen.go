@@ -462,7 +462,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	}
 	mcpAuthorizer := mcpauthorizer.New(toolingclientClient)
 	agentToolkits := agentcapability.NewToolkits(repositoryWorkspace, repositoryProject, repositoryAgent, agentSkill, agentMCPServer, agentMCPConnection, mcpAuthorizer, repositoryBlob, instance, agentTooling)
-	executions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, postgresClient)
+	executions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, issueDelegation, notificationEvent, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, postgresClient)
 	delegations := delegation.New(issueDelegation, repositoryIssue, repositoryAgent, projectMember, repositoryActivity, webhookEmitter, executions, serviceAuthorizer, postgresClient)
 	issueQuestions := issuequestion2.New(issueQuestion, repositoryIssue, issueDelegation, repositoryActivity, notificationEvent, executions, serviceEvents, jobProducer, postgresClient, serviceAuthorizer)
 	codebases := codebase2.New(repositoryCodebase, repositoryRunner, repositoryAgent, serviceAuthorizer, serviceAudit, postgresClient)
@@ -976,7 +976,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	}
 	mcpAuthorizer := mcpauthorizer.New(toolingclientClient)
 	agentToolkits := agentcapability.NewToolkits(repositoryWorkspace, repositoryProject, repositoryAgent, agentSkill, agentMCPServer, agentMCPConnection, mcpAuthorizer, repositoryBlob, instance, agentTooling)
-	serviceExecutions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, client)
+	serviceExecutions := execution2.New(repositoryExecution, changeSet, executionPlan, executionReview, issueQuestion, issueDelegation, notificationEvent, repositoryPreview, executionService, repositoryRunner, repositoryCodebase, repositoryIssue, issueRevision, workflowState, runnerChannel, issues, serviceSourceControl, serviceEvents, agentToolkits, serviceAuthorizer, serviceAudit, client)
 	executionLeaseSweepHandler := job.NewExecutionLeaseSweepHandler(serviceExecutions)
 	executionUpload := executionupload.New(client)
 	executionPolicy := executionpolicy.New(client)
