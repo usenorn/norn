@@ -221,16 +221,16 @@ export function invalidatedBy(event: RealtimeEvent, workspaceId: string): string
 		case "membership.changed":
 			return [keys.members(workspaceId), keys.workspaceScope(workspaceId)];
 		case "execution.updated":
-			return [keys.issue(event.issueId), keys.issues(workspaceId)];
+			return [keys.issue(event.issueId), keys.issues(workspaceId), keys.reviews(workspaceId)];
 		case "execution.plan":
+		case "execution.review":
 			return [keys.reviews(workspaceId)];
 		case "execution.event":
 		case "execution.changeset":
-		case "execution.review":
 			return [];
 		case "question.asked":
 		case "question.settled":
-			return [keys.issue(event.issueId)];
+			return [keys.issue(event.issueId), keys.reviews(workspaceId)];
 	}
 }
 

@@ -1,21 +1,38 @@
-import type { ExecutionSummary } from "./executions";
+import type { components } from "$lib/api/dashboard.gen";
+
+export type DecisionRight = components["schemas"]["DecisionRight"];
+export type ReviewQuestion = components["schemas"]["ReviewQuestion"];
+export type ReviewRun = components["schemas"]["ReviewRun"];
+export type WaitingDecisions = components["schemas"]["ReviewQueue"];
 
 export type ReviewQueue =
 	| { kind: "loading" }
 	| { kind: "unavailable" }
-	| { kind: "ready"; runs: ExecutionSummary[] };
+	| { kind: "ready"; waiting: WaitingDecisions };
 
 export const noReviewsLine =
-	"Nothing is waiting. A run appears here when a coding agent has a plan for somebody to approve, or changes for somebody to review.";
+	"Nothing is waiting. A decision appears here when a coding agent asks a question, has a plan for somebody to approve, or has changes for somebody to review.";
 
-export function plansWaiting(runs: ExecutionSummary[]): ExecutionSummary[] {
-	return runs.filter((run) => run.execution.state === "awaiting_plan_approval");
+export function planningQuestions(waiting: WaitingDecisions): ReviewQuestion[] {
+	return waiting.questions.filter((item) => item.question.stage === "planning");
 }
 
-export function changesWaiting(runs: ExecutionSummary[]): ExecutionSummary[] {
-	return runs.filter((run) => run.execution.state === "awaiting_review");
+export function implementationQuestions(waiting: WaitingDecisions): ReviewQuestion[] {
+	return waiting.questions.filter((item) => item.question.stage !== "planning");
 }
 
-export function waitingCount(runs: ExecutionSummary[]): string {
-	return runs.length === 1 ? "1 run is waiting" : `${runs.length} runs are waiting`;
+export function waitingTotal(waiting: WaitingDecisions): number {
+	return waiting.questions.length + waiting.plans.length + waiting.changes.length;
+}
+
+export function waitingCount(waiting: WaitingDecisions): string {
+	const total = waitingTotal(waiting);
+
+	return total === 1 ? "1 decision is waiting" : `${total} decisions are waiting`;
+}
+
+export function waitingOnLine(right: DecisionRight): string {
+	return right.decider
+		? `Waiting on ${right.decider}. Only they or a workspace admin can decide this.`
+		: "Only a workspace admin can decide this.";
 }

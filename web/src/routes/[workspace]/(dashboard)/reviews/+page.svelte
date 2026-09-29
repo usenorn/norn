@@ -1,20 +1,28 @@
 <script lang="ts">
 	import { page } from "$app/state";
+	import { invalidate } from "$app/navigation";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import RunRow from "$lib/executions/run-row.svelte";
+	import Retry from "$lib/components/norn/retry.svelte";
+	import { api } from "$lib/api";
+	import { attempt } from "$lib/api/attempt";
+	import { keys } from "$lib/api/keys";
+	import ReviewQuestionRow from "$lib/executions/review-question.svelte";
+	import ReviewRunRow from "$lib/executions/review-run.svelte";
+	import { readRunFailure, runFailureMessage } from "$lib/executions/executions";
 	import {
-		changesWaiting,
+		implementationQuestions,
 		noReviewsLine,
-		plansWaiting,
+		planningQuestions,
 		waitingCount,
+		waitingTotal,
 		type ReviewQueue,
 	} from "$lib/executions/reviews";
+	import type { IssueQuestion } from "$lib/questions/questions";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { reviewPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import Retry from "$lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -24,6 +32,47 @@
 
 	const workspace = $derived(data.workspace);
 	const queue = $derived<ReviewQueue>(preview?.queue ?? data.queue);
+
+	let working = $state(false);
+	let failure = $state<string | null>(null);
+
+	function issueHref(reference: string): string {
+		return workspacePath(workspace.slug, `/issues/${reference}`);
+	}
+
+	async function settle(question: IssueQuestion, verb: "answer" | "dismiss", answer?: string) {
+		working = true;
+		failure = null;
+
+		const path = { workspaceId: workspace.id, issueId: question.issueId, questionId: question.id };
+		const outcome = await attempt({
+			run: () =>
+				verb === "answer"
+					? api.POST("/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer", {
+							params: { path },
+							body: { answer: answer ?? "" },
+						})
+					: api.POST("/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/dismiss", {
+							params: { path },
+						}),
+		});
+
+		working = false;
+
+		if (outcome.kind !== "done") {
+			failure =
+				outcome.kind === "refused"
+					? runFailureMessage(readRunFailure(outcome.problem))
+					: "Something went wrong and nothing changed. Wait a moment and try again.";
+
+			return;
+		}
+
+		await invalidate(keys.reviews(workspace.id));
+	}
+
+	const answer = (question: IssueQuestion, given: string) => void settle(question, "answer", given);
+	const dismiss = (question: IssueQuestion) => void settle(question, "dismiss");
 </script>
 
 <svelte:head>
@@ -34,8 +83,8 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<h1 class="text-sm text-ink-900">Reviews</h1>
-			{#if queue.kind === "ready" && queue.runs.length > 0}
-				<span class="text-xs text-muted-foreground">{waitingCount(queue.runs)}</span>
+			{#if queue.kind === "ready" && waitingTotal(queue.waiting) > 0}
+				<span class="text-xs text-muted-foreground">{waitingCount(queue.waiting)}</span>
 			{/if}
 		</div>
 	</div>
@@ -57,36 +106,73 @@
 					</Alert.Root>
 					<Retry />
 				</div>
-			{:else if queue.runs.length === 0}
+			{:else if waitingTotal(queue.waiting) === 0}
 				<p class="my-auto max-w-prose text-sm text-muted-foreground text-pretty">
 					{noReviewsLine}
 				</p>
 			{:else}
-				{@const plans = plansWaiting(queue.runs)}
-				{@const changes = changesWaiting(queue.runs)}
-				{#if plans.length > 0}
-					<section class="flex min-w-0 flex-col gap-2" aria-label="Plans waiting for approval">
-						<Eyebrow rule>Plans to approve</Eyebrow>
+				{@const planning = planningQuestions(queue.waiting)}
+				{@const implementing = implementationQuestions(queue.waiting)}
+
+				{#if failure}
+					<Alert.Root variant="destructive" aria-live="polite">
+						<CircleAlert aria-hidden="true" class="size-4" />
+						<Alert.Title>That did not work</Alert.Title>
+						<Alert.Description>{failure}</Alert.Description>
+					</Alert.Root>
+				{/if}
+
+				{#if planning.length > 0 || queue.waiting.plans.length > 0}
+					<section class="flex min-w-0 flex-col gap-2" aria-label="Planning">
+						<Eyebrow rule>Planning</Eyebrow>
 						<div class="flex min-w-0 flex-col">
-							{#each plans as waiting (waiting.execution.id)}
-								<RunRow
-									execution={waiting.execution}
-									href={workspacePath(workspace.slug, `/executions/${waiting.execution.id}#plan`)}
+							{#each planning as item (item.question.id)}
+								<ReviewQuestionRow
+									{item}
+									issueHref={issueHref(item.question.issueReference)}
+									timezone={workspace.timezone}
+									{working}
+									onanswer={answer}
+									ondismiss={dismiss}
+								/>
+							{/each}
+							{#each queue.waiting.plans as item (item.run.execution.id)}
+								<ReviewRunRow
+									{item}
+									href={workspacePath(workspace.slug, `/executions/${item.run.execution.id}#plan`)}
 									timezone={workspace.timezone}
 								/>
 							{/each}
 						</div>
 					</section>
 				{/if}
-				{#if changes.length > 0}
-					<section class="flex min-w-0 flex-col gap-2" aria-label="Changes waiting for review">
-						<Eyebrow rule>Changes to review</Eyebrow>
+
+				{#if implementing.length > 0}
+					<section class="flex min-w-0 flex-col gap-2" aria-label="Implementation">
+						<Eyebrow rule>Implementation</Eyebrow>
 						<div class="flex min-w-0 flex-col">
-							{#each changes as waiting (waiting.execution.id)}
-								<RunRow
-									execution={waiting.execution}
-									change={waiting.change}
-									href={workspacePath(workspace.slug, `/executions/${waiting.execution.id}/review`)}
+							{#each implementing as item (item.question.id)}
+								<ReviewQuestionRow
+									{item}
+									issueHref={issueHref(item.question.issueReference)}
+									timezone={workspace.timezone}
+									{working}
+									onanswer={answer}
+									ondismiss={dismiss}
+								/>
+							{/each}
+						</div>
+					</section>
+				{/if}
+
+				{#if queue.waiting.changes.length > 0}
+					<section class="flex min-w-0 flex-col gap-2" aria-label="Final review">
+						<Eyebrow rule>Final review</Eyebrow>
+						<div class="flex min-w-0 flex-col">
+							{#each queue.waiting.changes as item (item.run.execution.id)}
+								<ReviewRunRow
+									{item}
+									href={workspacePath(workspace.slug, `/executions/${item.run.execution.id}/review`)}
 									timezone={workspace.timezone}
 								/>
 							{/each}
