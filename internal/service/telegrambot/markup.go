@@ -55,6 +55,21 @@ func markup(markdown string, budget int) string {
 	return strings.ReplaceAll(strings.TrimSpace(built.String()), heldTag, "&lt;")
 }
 
+func quoted(markdown string, budget int) string {
+	body := markup(markdown, budget)
+	if body == "" {
+		return ""
+	}
+
+	body = strings.NewReplacer("<blockquote>", "<i>", "</blockquote>", "</i>").Replace(body)
+
+	return "<blockquote expandable>" + body + "</blockquote>"
+}
+
+func system(text string) string {
+	return "<i>" + text + "</i>"
+}
+
 func literalTags(markdown string) string {
 	var built strings.Builder
 

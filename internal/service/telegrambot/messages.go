@@ -66,12 +66,12 @@ func questionText(c decisionContext, question entity.IssueQuestion) string {
 	var built strings.Builder
 
 	built.WriteString(c.header(kindQuestion, true))
-	fmt.Fprintf(&built, "%s asks:\n\n", c.agent())
-	built.WriteString(markup(question.Question, questionBudget))
-	built.WriteString("\n\n")
+	fmt.Fprintf(&built, "%s asks:\n", c.agent())
+	built.WriteString(quoted(question.Question, questionBudget))
+	built.WriteString("\n")
 
 	if question.DefaultAnswer != "" {
-		fmt.Fprintf(&built, "If nobody answers by %s, it goes with: <i>%s</i>",
+		fmt.Fprintf(&built, "If nobody answers by %s, it goes with: <b>%s</b>",
 			question.Deadline.UTC().Format(deadlineLayout), escaped(question.DefaultAnswer, answerBudget))
 	} else {
 		built.WriteString("It waits for an answer.")
@@ -79,11 +79,11 @@ func questionText(c decisionContext, question entity.IssueQuestion) string {
 
 	switch {
 	case len(question.Options) > 0 && question.AllowFreeText:
-		built.WriteString("\n\nTap an option, or reply to this message with your own answer.")
+		built.WriteString("\n\n" + system("Tap an option, or reply to this message with your own answer."))
 	case len(question.Options) > 0:
-		built.WriteString("\n\nTap an option to answer.")
+		built.WriteString("\n\n" + system("Tap an option to answer."))
 	default:
-		built.WriteString("\n\nReply to this message to answer.")
+		built.WriteString("\n\n" + system("Reply to this message to answer."))
 	}
 
 	return built.String()
@@ -93,9 +93,9 @@ func settledText(c decisionContext, question entity.IssueQuestion) string {
 	var built strings.Builder
 
 	built.WriteString(c.header(kindQuestion, false))
-	fmt.Fprintf(&built, "%s asked:\n\n", c.agent())
-	built.WriteString(markup(question.Question, questionBudget))
-	built.WriteString("\n\n")
+	fmt.Fprintf(&built, "%s asked:\n", c.agent())
+	built.WriteString(quoted(question.Question, questionBudget))
+	built.WriteString("\n")
 
 	switch {
 	case question.Answered():
@@ -117,11 +117,11 @@ func planText(c decisionContext, plan entity.ExecutionPlan) string {
 	var built strings.Builder
 
 	built.WriteString(c.header(kindPlan, true))
-	fmt.Fprintf(&built, "%s proposes this plan. Nothing is built until it is approved.\n\n", c.agent())
-	built.WriteString(markup(plan.Body, planBudget))
-	built.WriteString("\n\n")
+	fmt.Fprintf(&built, "%s proposes this plan. Nothing is built until it is approved.\n", c.agent())
+	built.WriteString(quoted(plan.Body, planBudget))
+	built.WriteString("\n")
 	fmt.Fprintf(&built, "<a href=\"%s\">Read the whole plan in Norn</a>", html.EscapeString(c.runURL+planFragment))
-	built.WriteString("\n\nApprove the plan here, or reply to this message with what should change.")
+	built.WriteString("\n\n" + system("Approve the plan here, or reply to this message with what should change."))
 
 	return built.String()
 }
@@ -193,12 +193,13 @@ func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot, previews [
 	writeRepositories(&built, snapshot.Repositories)
 
 	if summary := strings.TrimSpace(snapshot.Summary); summary != "" {
-		built.WriteString(markup(summary, questionBudget))
-		built.WriteString("\n\n")
+		fmt.Fprintf(&built, "%s's summary:\n", c.agent())
+		built.WriteString(quoted(summary, questionBudget))
+		built.WriteString("\n")
 	}
 
 	fmt.Fprintf(&built, "<a href=\"%s\">Review the changes in Norn</a>", html.EscapeString(c.reviewURL))
-	built.WriteString("\n\nApprove and publish here, or reply to this message with what should change.")
+	built.WriteString("\n\n" + system("Approve and publish here, or reply to this message with what should change."))
 
 	return built.String()
 }

@@ -63,3 +63,23 @@ func TestEachDecisionSaysWhatKindItIsBeforeAnythingElse(t *testing.T) {
 		}
 	}
 }
+
+func TestWhatTheAgentWroteSitsInOneQuoteApartFromNornsOwnWords(t *testing.T) {
+	rendered := quoted("Plan:\n\n> keep the old API\n\n- ship it", 1500)
+
+	if !strings.HasPrefix(rendered, "<blockquote expandable>") || !strings.HasSuffix(rendered, "</blockquote>") {
+		t.Fatalf("the agent's words are not held in one quote:\n%s", rendered)
+	}
+
+	if strings.Count(rendered, "<blockquote") != 1 {
+		t.Fatalf("a quote the agent wrote was nested inside ours, which Telegram refuses:\n%s", rendered)
+	}
+
+	if !strings.Contains(rendered, "<i>keep the old API</i>") {
+		t.Errorf("the agent's own quote lost its emphasis:\n%s", rendered)
+	}
+
+	if quoted("   ", 1500) != "" {
+		t.Error("nothing written still produced an empty quote")
+	}
+}

@@ -119,7 +119,8 @@ func TestAQuestionGoesToTheAssigneeWhoPrefersTelegramAndEveryBoundGroupOnce(t *t
 		"Ship &lt;the&gt; release",
 		"Ship it on Friday?",
 		"30 Sep 2026, 12:00 UTC",
-		"<i>Monday</i>",
+		"<blockquote expandable>Ship it on Friday?</blockquote>",
+		"it goes with: <b>Monday</b>",
 	} {
 		if !strings.Contains(message.Text, want) {
 			t.Errorf("message lacks %q:\n%s", want, message.Text)
