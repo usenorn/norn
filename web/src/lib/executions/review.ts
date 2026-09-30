@@ -154,6 +154,32 @@ export function reviewPreviewLine(preview: ReviewPreview): string {
 	}
 }
 
+const previewFixReasonMax = 300;
+
+export function failedPreviews(review: ReviewState): ReviewPreview[] {
+	return review.previews.filter((preview) => preview.state === "failed");
+}
+
+export function previewFixRequest(failed: ReviewPreview[]): string {
+	const lines = failed.map((preview) => {
+		const reason = preview.reason?.trim() || "no reason was given";
+		const clipped =
+			[...reason].length > previewFixReasonMax ? [...reason].slice(0, previewFixReasonMax).join("") + "…" : reason;
+
+		return `- ${preview.name}: ${clipped}`;
+	});
+
+	const request =
+		"These previews did not start, so nobody could try the change:\n\n" +
+		lines.join("\n") +
+		"\n\nMake them start. If the fix is in the code, change it on this branch; " +
+		"if it is in how the codebase is run, say what has to change.";
+
+	return [...request].slice(0, reviewBodyMaxLength).join("");
+}
+
+export const previewFixLabel = "Ask the coding agent to fix it";
+
 export function previewStateLabel(preview: ReviewPreview): string {
 	switch (preview.state) {
 		case "ready":

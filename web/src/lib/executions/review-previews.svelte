@@ -1,11 +1,33 @@
 <script lang="ts">
 	import ExternalLink from "@lucide/svelte/icons/external-link";
+	import Wrench from "@lucide/svelte/icons/wrench";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { noPlanPreviewsLine, previewStateLabel, previewsView, reviewPreviewLine, type ReviewState } from "./review";
+	import { Button } from "$lib/components/ui/button/index.js";
+	import {
+		failedPreviews,
+		noPlanPreviewsLine,
+		previewFixLabel,
+		previewFixRequest,
+		previewStateLabel,
+		previewsView,
+		reviewPreviewLine,
+		type ReviewState,
+	} from "./review";
 
-	let { review }: { review: ReviewState } = $props();
+	let {
+		review,
+		deciding,
+		working = false,
+		onfix,
+	}: {
+		review: ReviewState;
+		deciding: boolean;
+		working?: boolean;
+		onfix: (request: string) => Promise<boolean>;
+	} = $props();
 
 	const view = $derived(previewsView(review));
+	const failed = $derived(failedPreviews(review));
 </script>
 
 <section class="flex min-w-0 flex-col gap-2" aria-label="Previews">
@@ -42,5 +64,14 @@
 				</li>
 			{/each}
 		</ul>
+
+		{#if deciding && failed.length > 0}
+			<div>
+				<Button variant="outline" size="sm" disabled={working} onclick={() => onfix(previewFixRequest(failed))}>
+					<Wrench aria-hidden="true" />
+					{previewFixLabel}
+				</Button>
+			</div>
+		{/if}
 	{/if}
 </section>

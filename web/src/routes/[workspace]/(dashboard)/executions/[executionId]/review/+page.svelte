@@ -424,7 +424,12 @@
 					{/if}
 
 					{#if ready.review.revision > 0}
-						<ReviewPreviews review={ready.review} />
+						<ReviewPreviews
+							review={ready.review}
+							deciding={open && locked === undefined}
+							{working}
+							onfix={(request) => submit("request_changes", request)}
+						/>
 					{/if}
 
 					{#if ready.review.reviews.length > 0}
