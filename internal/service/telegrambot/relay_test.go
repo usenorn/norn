@@ -308,6 +308,11 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 	h.previews.EXPECT().ByExecution(gomock.Any(), execution.ID).Return([]entity.PreviewSession{
 		{Name: "application", Host: "app-tg-1.preview.example", State: entity.PreviewOpen, Port: 43000},
 	}, nil)
+	h.snapshots.EXPECT().ByRevision(gomock.Any(), execution.ID, 1).Return(entity.ExecutionSnapshot{
+		ExecutionID:  execution.ID,
+		Revision:     1,
+		Repositories: []entity.SnapshotRepository{{Repository: "api", HeadSHA: "abc123"}},
+	}, nil)
 	h.conversation.EXPECT().Posted(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	remembered := h.remembering(t)
@@ -326,6 +331,7 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 		`<a href="https://norn.example/acme/executions/exec-01TG/review">`,
 		`<a href="https://app-tg-1.preview.example/totals">Application</a>`,
 		"Admin: <i>the admin service never became healthy</i>",
+		"<b>Nothing changed since revision 1.</b>",
 	} {
 		if !strings.Contains(h.sent[0].Text, want) {
 			t.Errorf("review message lacks %q:\n%s", want, h.sent[0].Text)

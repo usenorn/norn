@@ -154,6 +154,13 @@ export function reviewPreviewLine(preview: ReviewPreview): string {
 	}
 }
 
+export function unchangedTitle(review: ReviewState): string {
+	return `Nothing changed since revision ${review.revision - 1}`;
+}
+
+export const unchangedLine =
+	"These are the commits you already reviewed. What the coding agent said below explains why.";
+
 const previewFixReasonMax = 300;
 
 export function failedPreviews(review: ReviewState): ReviewPreview[] {

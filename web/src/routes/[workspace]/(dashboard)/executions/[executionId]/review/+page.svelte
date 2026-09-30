@@ -44,6 +44,8 @@
 		reviewOpen,
 		revisionLabel,
 		snapshotTotals,
+		unchangedLine,
+		unchangedTitle,
 		threadsOf,
 		threadsOn,
 		verdictLabel,
@@ -412,6 +414,14 @@
 							latest={ready.review.latestRevision}
 							timezone={workspace.timezone}
 						/>
+					{/if}
+
+					{#if ready.review.unchanged}
+						<Alert.Root variant="warning">
+							<CircleAlert aria-hidden="true" class="size-4" />
+							<Alert.Title>{unchangedTitle(ready.review)}</Alert.Title>
+							<Alert.Description>{unchangedLine}</Alert.Description>
+						</Alert.Root>
 					{/if}
 
 					{#if ready.review.summary}

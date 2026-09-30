@@ -92,6 +92,10 @@ func (s ExecutionSnapshot) Heads() ReviewHeads {
 	return heads
 }
 
+func (s ExecutionSnapshot) Repeats(previous ExecutionSnapshot) bool {
+	return previous.Revision > 0 && len(s.Repositories) > 0 && s.Heads().Matches(previous.Heads())
+}
+
 func (s ExecutionSnapshot) FailedPreviews() []SnapshotPreview {
 	failed := make([]SnapshotPreview, 0, len(s.Previews))
 

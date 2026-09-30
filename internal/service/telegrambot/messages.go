@@ -180,7 +180,12 @@ func writePreviews(built *strings.Builder, links []previewLink) {
 	built.WriteString("\n")
 }
 
-func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot, previews []previewLink) string {
+func reviewText(
+	c decisionContext,
+	snapshot entity.ExecutionSnapshot,
+	unchanged bool,
+	previews []previewLink,
+) string {
 	var built strings.Builder
 
 	built.WriteString(c.header(kindReview, true))
@@ -188,6 +193,14 @@ func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot, previews [
 		"%s finished. Approving pushes exactly these commits and opens their pull requests.\n\n",
 		c.agent(),
 	)
+
+	if unchanged {
+		fmt.Fprintf(&built,
+			"<b>Nothing changed since revision %d.</b> These are the commits you already reviewed; "+
+				"%s's summary says why.\n\n",
+			snapshot.Revision-1, c.agent(),
+		)
+	}
 
 	writePreviews(&built, previews)
 	writeRepositories(&built, snapshot.Repositories)

@@ -7214,6 +7214,9 @@ type ExecutionReviewState struct {
 
 	// Summary What the coding agent said about this pass
 	Summary string `json:"summary"`
+
+	// Unchanged True when this pass holds exactly the commits of the pass before it, so the coding agent came back without changing anything.
+	Unchanged bool `json:"unchanged"`
 }
 
 // ExecutionReviewVerdict defines model for ExecutionReviewVerdict.

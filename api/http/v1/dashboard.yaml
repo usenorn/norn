@@ -10587,8 +10587,8 @@ components:
 
     ExecutionReviewState:
       type: object
-      required: [revision, latestRevision, revisions, summary, repositories, previews, heads,
-                 comments, reviews]
+      required: [revision, latestRevision, unchanged, revisions, summary, repositories, previews,
+                 heads, comments, reviews]
       properties:
         revision:
           type: integer
@@ -10598,6 +10598,11 @@ components:
           type: integer
           minimum: 0
           description: Only the latest snapshot can be approved or asked to change.
+        unchanged:
+          type: boolean
+          description: >-
+            True when this pass holds exactly the commits of the pass before it, so the coding
+            agent came back without changing anything.
         revisions:
           type: array
           items: { $ref: '#/components/schemas/ReviewRevision' }

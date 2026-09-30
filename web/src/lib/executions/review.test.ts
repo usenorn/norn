@@ -7,6 +7,7 @@ import {
 	reviewBodyMaxLength,
 	reviewPreviewLine,
 	snapshotTotals,
+	unchangedTitle,
 	type ReviewState,
 } from "./review";
 
@@ -14,6 +15,7 @@ function state(overrides: Partial<ReviewState>): ReviewState {
 	return {
 		revision: 2,
 		latestRevision: 2,
+		unchanged: false,
 		revisions: [],
 		summary: "",
 		repositories: [],
@@ -110,5 +112,11 @@ describe("asking the agent to fix a preview", () => {
 
 		expect([...request].length).toBeLessThanOrEqual(reviewBodyMaxLength);
 		expect(request).not.toContain("x".repeat(301));
+	});
+});
+
+describe("a revision that changed nothing", () => {
+	it("names the revision it repeats", () => {
+		expect(unchangedTitle(state({ revision: 3 }))).toBe("Nothing changed since revision 2");
 	});
 });

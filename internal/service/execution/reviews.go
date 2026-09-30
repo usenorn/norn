@@ -43,6 +43,11 @@ func (s *executionsService) Review(
 		}
 	}
 
+	previous, err := s.previousOf(ctx, snapshot)
+	if err != nil {
+		return service.ExecutionReviewState{}, err
+	}
+
 	revisions, err := s.snapshots.Revisions(ctx, execution.ID)
 	if err != nil {
 		return service.ExecutionReviewState{}, err
@@ -74,11 +79,23 @@ func (s *executionsService) Review(
 	return service.ExecutionReviewState{
 		Snapshot:  snapshot,
 		Latest:    latest,
+		Unchanged: snapshot.Repeats(previous),
 		Revisions: revisions,
 		Sessions:  sessions,
 		Comments:  visible,
 		Reviews:   reviews,
 	}, nil
+}
+
+func (s *executionsService) previousOf(
+	ctx context.Context,
+	snapshot entity.ExecutionSnapshot,
+) (entity.ExecutionSnapshot, error) {
+	if snapshot.Revision <= 1 {
+		return entity.ExecutionSnapshot{}, nil
+	}
+
+	return s.snapshots.ByRevision(ctx, snapshot.ExecutionID, snapshot.Revision-1)
 }
 
 func (s *executionsService) latest(

@@ -112,6 +112,7 @@ func (h *handler) GetWorkspaceExecutionReview(
 	return api.GetWorkspaceExecutionReview200JSONResponse(api.ExecutionReviewState{
 		Revision:       state.Snapshot.Revision,
 		LatestRevision: state.Latest.Revision,
+		Unchanged:      state.Unchanged,
 		Revisions:      revisions,
 		Summary:        state.Snapshot.Summary,
 		Repositories:   reviewRepositoryDTOs(state.Snapshot.Repositories),

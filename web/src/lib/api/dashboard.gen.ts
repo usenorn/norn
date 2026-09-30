@@ -6841,6 +6841,8 @@ export interface components {
             revision: number;
             /** @description Only the latest snapshot can be approved or asked to change. */
             latestRevision: number;
+            /** @description True when this pass holds exactly the commits of the pass before it, so the coding agent came back without changing anything. */
+            unchanged: boolean;
             revisions: components["schemas"]["ReviewRevision"][];
             /** @description What the coding agent said about this pass */
             summary: string;

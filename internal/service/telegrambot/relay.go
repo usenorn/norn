@@ -193,6 +193,11 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 		return outbound{}, false, err
 	}
 
+	unchanged, err := s.unchanged(ctx, latest)
+	if err != nil {
+		return outbound{}, false, err
+	}
+
 	buttons := []entity.TelegramButton{
 		{Label: "Approve and publish", Data: entity.TelegramCallbackApprove},
 		{Label: "Request changes", Data: entity.TelegramCallbackChanges},
@@ -208,7 +213,7 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 	return outbound{
 		target:  target,
 		about:   about,
-		text:    reviewText(about, latest, previewLinks(latest.Previews, sessions, s.preview.Scheme)),
+		text:    reviewText(about, latest, unchanged, previewLinks(latest.Previews, sessions, s.preview.Scheme)),
 		buttons: buttons,
 		template: entity.TelegramDecisionMessage{
 			Kind:        entity.TelegramDecisionReview,
@@ -216,6 +221,19 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 			ReviewHeads: latest.Heads(),
 		},
 	}, true, nil
+}
+
+func (s *updates) unchanged(ctx context.Context, latest entity.ExecutionSnapshot) (bool, error) {
+	if latest.Revision <= 1 {
+		return false, nil
+	}
+
+	previous, err := s.snapshots.ByRevision(ctx, latest.ExecutionID, latest.Revision-1)
+	if err != nil {
+		return false, err
+	}
+
+	return latest.Repeats(previous), nil
 }
 
 func (s *updates) preparePublication(

@@ -40,6 +40,7 @@ type ExecutionPlacement struct {
 type ExecutionReviewState struct {
 	Snapshot  entity.ExecutionSnapshot
 	Latest    entity.ExecutionSnapshot
+	Unchanged bool
 	Revisions []entity.ExecutionRevision
 	Sessions  []entity.PreviewSession
 	Comments  []entity.ExecutionReviewComment
