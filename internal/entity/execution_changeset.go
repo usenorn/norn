@@ -27,6 +27,8 @@ var (
 	ErrExecutionResultNotFound = errors.New("this run has not reported what it changed")
 	ErrExecutionResultStale    = errors.New("a newer report is already on record for this run")
 	ErrExecutionChangeNotFound = errors.New("this run has not reported a change in that repository")
+	ErrPublicationStale        = errors.New("that publication belongs to a revision nobody approved last")
+	ErrPublicationUnapproved   = errors.New("that publication names commits other than the approved ones")
 )
 
 type PublicationState string

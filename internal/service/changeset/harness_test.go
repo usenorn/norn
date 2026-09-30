@@ -195,6 +195,39 @@ func (h *harness) expectStore() {
 		}).
 		AnyTimes()
 
+	h.snapshots.EXPECT().
+		Latest(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, string) (entity.ExecutionSnapshot, error) {
+			if len(h.recorded) == 0 {
+				return entity.ExecutionSnapshot{}, entity.ErrExecutionSnapshotNotFound
+			}
+
+			return h.recorded[len(h.recorded)-1], nil
+		}).
+		AnyTimes()
+
+	h.changesets.EXPECT().
+		SavePublication(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ string, published entity.RepositoryPublication,
+		) (entity.ExecutionChange, error) {
+			for index, held := range h.changes {
+				if held.Repository != published.Repository {
+					continue
+				}
+
+				h.changes[index].Publication = published.Publication
+				if published.PullRequestURL != "" {
+					h.changes[index].PullRequestURL = published.PullRequestURL
+				}
+
+				return h.changes[index], nil
+			}
+
+			return entity.ExecutionChange{}, entity.ErrExecutionChangeNotFound
+		}).
+		AnyTimes()
+
 	h.changesets.EXPECT().
 		LinkChange(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, changeID, linkID uuid.UUID) error {

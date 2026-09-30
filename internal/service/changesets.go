@@ -13,6 +13,7 @@ import (
 type ChangeSets interface {
 	Updated(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Resulted(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
+	Published(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 
 	ForIssue(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueChangeSet, error)
 }

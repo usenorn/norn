@@ -109,6 +109,8 @@ func (s *channelsService) Receive(
 		return s.changesets.Updated(ctx, session.Runner, message)
 	case entity.ChannelExecutionResult:
 		return s.changesets.Resulted(ctx, session.Runner, message)
+	case entity.ChannelPublication:
+		return s.changesets.Published(ctx, session.Runner, message)
 	case entity.ChannelReviewReplied:
 		return s.executions.ReviewReplied(ctx, session.Runner, message)
 	case entity.ChannelPreviewState:

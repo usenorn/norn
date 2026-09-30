@@ -57,6 +57,20 @@ func (mr *MockChangeSetsMockRecorder) ForIssue(ctx, workspaceID, issueID any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForIssue", reflect.TypeOf((*MockChangeSets)(nil).ForIssue), ctx, workspaceID, issueID)
 }
 
+// Published mocks base method.
+func (m *MockChangeSets) Published(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Published", ctx, runner, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Published indicates an expected call of Published.
+func (mr *MockChangeSetsMockRecorder) Published(ctx, runner, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Published", reflect.TypeOf((*MockChangeSets)(nil).Published), ctx, runner, message)
+}
+
 // Resulted mocks base method.
 func (m *MockChangeSets) Resulted(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
 	m.ctrl.T.Helper()
