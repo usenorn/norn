@@ -577,7 +577,8 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrReviewCommentsFull):
 		return executionConflictProblem(api.ReviewCommentsFull, err), true
 
-	case errors.Is(err, entity.ErrReviewCommentNotFound):
+	case errors.Is(err, entity.ErrReviewCommentNotFound),
+		errors.Is(err, entity.ErrExecutionSnapshotNotFound):
 		return newProblem(http.StatusNotFound, err.Error()), true
 
 	case errors.Is(err, entity.ErrExecutionSelfApproval):

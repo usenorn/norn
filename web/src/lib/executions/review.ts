@@ -1,6 +1,6 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { DiffAnchor, DiffFile } from "./diff";
-import type { Execution, ExecutionChangeSet, IssueQuestion } from "./executions";
+import type { ChangeTotals, Execution, IssueQuestion } from "./executions";
 import type { DecisionRight } from "./reviews";
 
 export type ReviewComment = components["schemas"]["ReviewComment"];
@@ -8,6 +8,10 @@ export type ExecutionReview = components["schemas"]["ExecutionReview"];
 export type ReviewState = components["schemas"]["ExecutionReviewState"];
 export type ReviewVerdict = components["schemas"]["ExecutionReviewVerdict"];
 export type ReviewHead = components["schemas"]["ReviewHead"];
+export type ReviewCommit = components["schemas"]["ReviewCommit"];
+export type ReviewPreview = components["schemas"]["ReviewPreview"];
+export type ReviewRevision = components["schemas"]["ReviewRevision"];
+export type ReviewRepository = components["schemas"]["ReviewRepository"];
 
 export type RepositoryDiff =
 	| { kind: "absent" }
@@ -17,7 +21,9 @@ export type RepositoryDiff =
 export type ReviewedRepository = {
 	repository: string;
 	branch?: string;
+	baseSha: string;
 	headSha: string;
+	commits: ReviewCommit[];
 	additions: number;
 	deletions: number;
 	artifactId?: string;
@@ -27,11 +33,11 @@ export type ReviewedRepository = {
 export type ReviewView =
 	| { kind: "loading" }
 	| { kind: "not_found" }
+	| { kind: "revision_not_found"; executionId: string }
 	| { kind: "unavailable" }
 	| {
 			kind: "ready";
 			execution: Execution;
-			changeset?: ExecutionChangeSet;
 			review: ReviewState;
 			repositories: ReviewedRepository[];
 			questions: IssueQuestion[];
@@ -104,6 +110,80 @@ export function fileId(repositoryIndex: number, fileIndex: number): string {
 
 export function reviewOpen(execution: Execution): boolean {
 	return execution.state === "awaiting_review";
+}
+
+export function readingLatest(review: ReviewState): boolean {
+	return review.revision === review.latestRevision;
+}
+
+export function revisionLabel(revision: number): string {
+	return `Revision ${revision}`;
+}
+
+export function olderRevisionLine(review: ReviewState): string {
+	return `You are reading revision ${review.revision} of ${review.latestRevision}. It is kept as it was; comments and decisions go on the latest.`;
+}
+
+export type PreviewsView =
+	| { kind: "none_configured" }
+	| { kind: "listed"; previews: ReviewPreview[] };
+
+export function previewsView(review: ReviewState): PreviewsView {
+	if (review.previews.length === 0) return { kind: "none_configured" };
+
+	return { kind: "listed", previews: review.previews };
+}
+
+export const noPlanPreviewsLine =
+	"This codebase's Run Plan declares no previews, so there is nothing running to open. Add services and previews to .norn/run-plan.yaml to get them on every review.";
+
+export function reviewPreviewLine(preview: ReviewPreview): string {
+	switch (preview.state) {
+		case "ready":
+			return preview.url
+				? `Running on ${preview.service} and healthy.`
+				: `Running on ${preview.service} and healthy, but this server serves no preview domain, so nothing reaches it.`;
+		case "failed":
+			return preview.reason
+				? `${preview.service} did not come up: ${preview.reason}`
+				: `${preview.service} did not come up.`;
+		case "unsupported":
+			return preview.reason
+				? `Not supported here: ${preview.reason}`
+				: "Not supported here.";
+	}
+}
+
+export function previewStateLabel(preview: ReviewPreview): string {
+	switch (preview.state) {
+		case "ready":
+			return "Ready";
+		case "failed":
+			return "Failed";
+		case "unsupported":
+			return "Unsupported";
+	}
+}
+
+export function snapshotTotals(repositories: ReviewRepository[]): ChangeTotals {
+	return repositories.reduce(
+		(running, held) => ({
+			repositories: running.repositories + 1,
+			commits: running.commits + held.commits.length,
+			additions: running.additions + held.additions,
+			deletions: running.deletions + held.deletions,
+			filesChanged: running.filesChanged + held.filesChanged,
+		}),
+		{ repositories: 0, commits: 0, additions: 0, deletions: 0, filesChanged: 0 }
+	);
+}
+
+export function shortSha(sha: string): string {
+	return sha.slice(0, 7);
+}
+
+export function commitsLine(commits: ReviewCommit[]): string {
+	return commits.length === 1 ? "1 commit" : `${commits.length} commits`;
 }
 
 export function reviewClosedLine(execution: Execution): string {

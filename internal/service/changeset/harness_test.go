@@ -11,6 +11,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
+	executionsnapshotrepo "github.com/usenorn/norn/internal/repository/executionsnapshot"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
@@ -24,6 +25,7 @@ import (
 
 type harness struct {
 	changesets *changesetrepo.MockChangeSet
+	snapshots  *executionsnapshotrepo.MockExecutionSnapshot
 	issues     *issuerepo.MockIssue
 	executions *executionsvc.MockExecutions
 	source     *scmsvc.MockSourceControl
@@ -39,6 +41,7 @@ type harness struct {
 	changes     []entity.ExecutionChange
 	validations []entity.ExecutionValidation
 	result      entity.ExecutionResult
+	recorded    []entity.ExecutionSnapshot
 	published   []entity.Event
 	linked      []service.LinkIssueCodeInput
 }
@@ -54,6 +57,7 @@ func newHarness(t *testing.T) *harness {
 
 	h := &harness{
 		changesets:  changesetrepo.NewMockChangeSet(ctrl),
+		snapshots:   executionsnapshotrepo.NewMockExecutionSnapshot(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		executions:  executionsvc.NewMockExecutions(ctrl),
 		source:      scmsvc.NewMockSourceControl(ctrl),
@@ -103,7 +107,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = changesetsvc.New(
-		h.changesets, h.issues, h.executions, h.source, h.events, h.authorizer, transactor,
+		h.changesets, h.snapshots, h.issues, h.executions, h.source, h.events, h.authorizer, transactor,
 	)
 
 	return h
@@ -177,6 +181,17 @@ func (h *harness) expectStore() {
 			h.result = result
 
 			return result, nil
+		}).
+		AnyTimes()
+
+	h.snapshots.EXPECT().
+		Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, snapshot entity.ExecutionSnapshot,
+		) (entity.ExecutionSnapshot, error) {
+			h.recorded = append(h.recorded, snapshot)
+
+			return snapshot, nil
 		}).
 		AnyTimes()
 

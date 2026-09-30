@@ -468,18 +468,32 @@ func (mr *MockExecutionsMockRecorder) Retain(ctx, workspaceID, executionID, long
 }
 
 // Review mocks base method.
-func (m *MockExecutions) Review(ctx context.Context, workspaceID uuid.UUID, executionID string) (service.ExecutionReviewState, error) {
+func (m *MockExecutions) Review(ctx context.Context, workspaceID uuid.UUID, executionID string, revision int) (service.ExecutionReviewState, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Review", ctx, workspaceID, executionID)
+	ret := m.ctrl.Call(m, "Review", ctx, workspaceID, executionID, revision)
 	ret0, _ := ret[0].(service.ExecutionReviewState)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Review indicates an expected call of Review.
-func (mr *MockExecutionsMockRecorder) Review(ctx, workspaceID, executionID any) *gomock.Call {
+func (mr *MockExecutionsMockRecorder) Review(ctx, workspaceID, executionID, revision any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Review", reflect.TypeOf((*MockExecutions)(nil).Review), ctx, workspaceID, executionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Review", reflect.TypeOf((*MockExecutions)(nil).Review), ctx, workspaceID, executionID, revision)
+}
+
+// ReviewReplied mocks base method.
+func (m *MockExecutions) ReviewReplied(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReviewReplied", ctx, runner, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReviewReplied indicates an expected call of ReviewReplied.
+func (mr *MockExecutionsMockRecorder) ReviewReplied(ctx, runner, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReviewReplied", reflect.TypeOf((*MockExecutions)(nil).ReviewReplied), ctx, runner, message)
 }
 
 // RevisePlan mocks base method.

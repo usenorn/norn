@@ -73,6 +73,7 @@ import (
 	executionplanrepo "github.com/usenorn/norn/internal/repository/executionplan"
 	executionreviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
 	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
+	executionsnapshotrepo "github.com/usenorn/norn/internal/repository/executionsnapshot"
 	executionuploadrepo "github.com/usenorn/norn/internal/repository/executionupload"
 	geolocationrepo "github.com/usenorn/norn/internal/repository/geolocation"
 	importsrepo "github.com/usenorn/norn/internal/repository/imports"
@@ -250,6 +251,7 @@ var baseSet = wire.NewSet(
 	executionrepo.Set,
 	executionplanrepo.Set,
 	executionreviewrepo.Set,
+	executionsnapshotrepo.Set,
 	executionservicerepo.Set,
 	executionuploadrepo.Set,
 	changesetrepo.Set,

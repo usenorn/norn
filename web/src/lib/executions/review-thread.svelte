@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Bot from "@lucide/svelte/icons/bot";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Markdown from "$lib/issues/markdown.svelte";
@@ -40,7 +41,12 @@
 {#snippet comment(held: ReviewComment)}
 	<article class="flex min-w-0 flex-col gap-1.5 px-3 py-2.5">
 		<header class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-			<span class="text-xs font-medium text-ink-900">{held.authorName || "Somebody"}</span>
+			<span class="flex items-center gap-1 text-xs font-medium text-ink-900">
+				{#if held.authorKind === "agent"}
+					<Bot class="size-3.5 text-muted-foreground" aria-label="An agent wrote this" />
+				{/if}
+				{held.authorName || "Somebody"}
+			</span>
 			<time class="font-mono text-2xs text-muted-foreground" datetime={held.createdAt}>
 				{onDateAndTime(held.createdAt, timezone)}
 			</time>

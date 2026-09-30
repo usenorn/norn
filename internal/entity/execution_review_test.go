@@ -85,7 +85,10 @@ func TestAnAnchorMustNameALineOnOneSideOfAFile(t *testing.T) {
 }
 
 func TestRequestedChangesReachTheAgentAnchoredToTheirLines(t *testing.T) {
+	thread := uuid.MustParse("5b0c7a3e-2d1f-4e7a-9c1b-0f6d2a8e4b11")
+
 	feedback := entity.ComposeReviewFeedback("Tighten the error handling.", []entity.ExecutionReviewComment{{
+		ID: thread,
 		Anchor: entity.ReviewAnchor{
 			Repository: "api", Path: "internal/run.go", Side: entity.ReviewSideNew, Line: 42,
 			HeadSHA: "0123456789abcdef", Hunk: "+\treturn nil",
@@ -95,13 +98,28 @@ func TestRequestedChangesReachTheAgentAnchoredToTheirLines(t *testing.T) {
 
 	for _, want := range []string{
 		"Tighten the error handling.",
-		"api:internal/run.go line 42 (new side, at 0123456)",
+		"api:internal/run.go line 42 (new side, at 0123456, thread " + thread.String() + ")",
 		"+\treturn nil",
 		"This swallows the error.",
+		"reply_to_review",
 	} {
 		if !strings.Contains(feedback, want) {
 			t.Errorf("the feedback does not carry %q:\n%s", want, feedback)
 		}
+	}
+}
+
+func TestAReplyIsAnsweredOnTheThreadItBelongsTo(t *testing.T) {
+	root := uuid.New()
+	reply := uuid.New()
+
+	threads := entity.ReviewThreads([]entity.ExecutionReviewComment{
+		{ID: root},
+		{ID: reply, ParentID: root},
+	})
+
+	if len(threads) != 1 || threads[0] != root.String() {
+		t.Fatalf("the threads read %v; a reply must point the agent at its thread, not itself", threads)
 	}
 }
 

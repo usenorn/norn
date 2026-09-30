@@ -2,9 +2,11 @@ package execution_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
@@ -173,14 +175,14 @@ func TestADraftCommentIsHiddenFromEveryoneButItsAuthor(t *testing.T) {
 
 	author := h.caller
 
-	state, err := h.service.Review(context.Background(), h.workspaceID, execution.ID)
+	state, err := h.service.Review(context.Background(), h.workspaceID, execution.ID, 0)
 	if err != nil || len(state.Comments) != 1 {
 		t.Fatalf("the author sees %d comments (%v), want their own draft", len(state.Comments), err)
 	}
 
 	h.caller = uuid.New()
 
-	state, err = h.service.Review(context.Background(), h.workspaceID, execution.ID)
+	state, err = h.service.Review(context.Background(), h.workspaceID, execution.ID, 0)
 	if err != nil {
 		t.Fatalf("read the review: %v", err)
 	}
@@ -255,5 +257,185 @@ func TestAFinalReviewIsSettledOnTelegramWhateverItsVerdict(t *testing.T) {
 		if len(h.settled) != 1 || h.settled[0].Kind != entity.TelegramDecisionReview {
 			t.Fatalf("after %s queued settlements %+v, want the review once", verdict, h.settled)
 		}
+	}
+}
+
+func (h *harness) reply(t *testing.T, commentID, body string) entity.ChannelMessage {
+	t.Helper()
+
+	payload, err := json.Marshal(channelv1.ReviewReply{CommentID: commentID, Body: body, Occurred: time.Now().UTC()})
+	if err != nil {
+		t.Fatalf("encode the reply: %v", err)
+	}
+
+	return entity.ChannelMessage{
+		ID:          uuid.NewString(),
+		Type:        entity.ChannelReviewReplied,
+		ExecutionID: "exec-01ABC",
+		Payload:     payload,
+		IssuedAt:    time.Now().UTC(),
+	}
+}
+
+func (h *harness) askedForChanges(t *testing.T) (entity.Execution, entity.ExecutionReviewComment) {
+	t.Helper()
+
+	execution := h.underReview()
+	h.drafted(t, execution, "This swallows the error.")
+
+	if _, err := h.service.SubmitReview(context.Background(), h.workspaceID, execution.ID,
+		service.ReviewSubmission{Verdict: entity.VerdictRequestChanges, Heads: entity.ReviewHeads{"api": "head-1"}},
+	); err != nil {
+		t.Fatalf("request changes: %v", err)
+	}
+
+	return execution, h.comments[0]
+}
+
+func TestACommentIsTiedToTheRevisionItWasLeftOnAndItsRepliesFollowIt(t *testing.T) {
+	h := newHarness(t)
+	execution := h.underReview()
+	h.revision = 2
+	h.drafted(t, execution, "Why here?")
+
+	if h.comments[0].Revision != 2 {
+		t.Fatalf("the comment was tied to revision %d, want the latest, 2", h.comments[0].Revision)
+	}
+
+	h.revision = 3
+
+	if _, err := h.service.CommentOnReview(context.Background(), h.workspaceID, execution.ID,
+		service.ReviewCommentDraft{ParentID: h.comments[0].ID, Body: "Still wondering."},
+	); err != nil {
+		t.Fatalf("reply: %v", err)
+	}
+
+	if h.comments[1].Revision != 2 {
+		t.Fatalf("the reply moved to revision %d; a thread stays on the revision it started on", h.comments[1].Revision)
+	}
+}
+
+func TestAnEarlierRevisionCanBeReadButOneThatNeverExistedCannot(t *testing.T) {
+	h := newHarness(t)
+	execution := h.underReview()
+	h.revision = 2
+
+	state, err := h.service.Review(context.Background(), h.workspaceID, execution.ID, 1)
+	if err != nil {
+		t.Fatalf("read revision 1: %v", err)
+	}
+
+	if state.Snapshot.Revision != 1 || state.Latest.Revision != 2 || len(state.Revisions) != 2 {
+		t.Fatalf("read revision %d of %d with %d listed", state.Snapshot.Revision, state.Latest.Revision, len(state.Revisions))
+	}
+
+	if _, err := h.service.Review(context.Background(), h.workspaceID, execution.ID, 7); !errors.Is(
+		err, entity.ErrExecutionSnapshotNotFound,
+	) {
+		t.Fatalf("revision 7 answered %v", err)
+	}
+}
+
+func TestTheReviewRecordsTheRevisionItDecided(t *testing.T) {
+	h := newHarness(t)
+	execution := h.underReview()
+	h.revision = 4
+
+	if _, err := h.service.SubmitReview(context.Background(), h.workspaceID, execution.ID,
+		service.ReviewSubmission{Verdict: entity.VerdictApprove, Heads: entity.ReviewHeads{"api": "head-1"}},
+	); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+
+	if h.submitted[0].Revision != 4 {
+		t.Fatalf("the review recorded revision %d, want 4", h.submitted[0].Revision)
+	}
+}
+
+func TestRequestingChangesNamesEachThreadTheAgentShouldAnswer(t *testing.T) {
+	h := newHarness(t)
+	_, thread := h.askedForChanges(t)
+
+	instruction := h.instruction(t)
+
+	if len(instruction.Threads) != 1 || instruction.Threads[0] != thread.ID.String() {
+		t.Fatalf("the machine was handed threads %v, want %s", instruction.Threads, thread.ID)
+	}
+}
+
+func TestTheAgentAnswersAThreadInItsOwnName(t *testing.T) {
+	h := newHarness(t)
+	_, thread := h.askedForChanges(t)
+	before := len(h.published)
+
+	if err := h.service.ReviewReplied(
+		context.Background(), h.runner, h.reply(t, thread.ID.String(), "Returned the error instead."),
+	); err != nil {
+		t.Fatalf("answer the thread: %v", err)
+	}
+
+	answer := h.comments[len(h.comments)-1]
+
+	if answer.ParentID != thread.ID || answer.AuthorAccountID != h.agentAccount {
+		t.Fatalf("the answer hangs off %s by %s, want the thread by the agent", answer.ParentID, answer.AuthorAccountID)
+	}
+
+	if answer.Pending() || answer.ReviewID != thread.ReviewID {
+		t.Fatal("the agent's answer is a draft nobody but the agent could see")
+	}
+
+	if answer.Anchor != thread.Anchor || answer.Revision != thread.Revision {
+		t.Fatal("the agent's answer left the line and revision its thread is on")
+	}
+
+	if len(h.published) == before {
+		t.Fatal("nobody watching the review was told the agent answered")
+	}
+}
+
+func TestAnAnswerTheReviewNoLongerTakesIsDroppedWithoutClosingTheChannel(t *testing.T) {
+	h := newHarness(t)
+	_, thread := h.askedForChanges(t)
+
+	if _, err := h.service.CommentOnReview(context.Background(), h.workspaceID, "exec-01ABC",
+		service.ReviewCommentDraft{ParentID: thread.ID, Body: "Any news?", Publish: true},
+	); err != nil {
+		t.Fatalf("reply as the reviewer: %v", err)
+	}
+
+	count := len(h.comments)
+	replyID := h.comments[count-1].ID.String()
+
+	for name, commentID := range map[string]string{
+		"unknown thread": uuid.NewString(),
+		"not an id":      "thread-1",
+		"a reply":        replyID,
+	} {
+		if err := h.service.ReviewReplied(context.Background(), h.runner, h.reply(t, commentID, "Done.")); err != nil {
+			t.Errorf("%s: answered %v; an error here would close the machine's channel and redeliver forever", name, err)
+		}
+	}
+
+	if len(h.comments) != count {
+		t.Fatalf("%d answers the review never asked for were stored", len(h.comments)-count)
+	}
+}
+
+func TestAFinishedRunsAgentCannotAnswerTheReview(t *testing.T) {
+	h := newHarness(t)
+	h.reviewing()
+
+	execution := h.execution(entity.ExecutionCompleted)
+	h.holding(execution)
+
+	thread := entity.ExecutionReviewComment{ID: uuid.New(), ReviewID: uuid.New(), ExecutionID: execution.ID}
+	h.comments = append(h.comments, thread)
+
+	if err := h.service.ReviewReplied(context.Background(), h.runner, h.reply(t, thread.ID.String(), "Late.")); err != nil {
+		t.Fatalf("a late answer answered %v", err)
+	}
+
+	if len(h.comments) != 1 {
+		t.Fatal("an answer from a finished run was stored")
 	}
 }

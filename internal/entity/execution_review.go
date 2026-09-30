@@ -34,6 +34,7 @@ var (
 	ErrReviewStale           = errors.New("the changes moved on since this review was started")
 	ErrReviewEmpty           = errors.New("asking for changes needs a summary or at least one comment")
 	ErrReviewClosed          = errors.New("this run's changes are no longer under review")
+	ErrReviewReplyFinished   = errors.New("this run has finished, so its agent can no longer answer the review")
 )
 
 type ReviewSide string
@@ -112,8 +113,10 @@ type ExecutionReviewComment struct {
 	ReviewID        uuid.UUID
 	ParentID        uuid.UUID
 	Anchor          ReviewAnchor
+	Revision        int
 	Body            string
 	AuthorAccountID uuid.UUID
+	AuthorKind      AccountKind
 	AuthorName      string
 	CreatedAt       time.Time
 	EditedAt        *time.Time
@@ -128,6 +131,14 @@ func (c ExecutionReviewComment) Pending() bool {
 
 func (c ExecutionReviewComment) Reply() bool {
 	return c.ParentID != uuid.Nil
+}
+
+func (c ExecutionReviewComment) Thread() uuid.UUID {
+	if c.Reply() {
+		return c.ParentID
+	}
+
+	return c.ID
 }
 
 func (c ExecutionReviewComment) Resolved() bool {
@@ -148,6 +159,7 @@ type ExecutionReview struct {
 	WorkspaceID     uuid.UUID
 	Verdict         ExecutionReviewVerdict
 	Summary         string
+	Revision        int
 	Heads           ReviewHeads
 	AuthorAccountID uuid.UUID
 	AuthorName      string
@@ -235,9 +247,9 @@ func ComposeReviewFeedback(summary string, comments []ExecutionReviewComment) st
 		anchor := comment.Anchor
 
 		fmt.Fprintf(
-			&feedback, "\n%d. %s:%s line %d (%s side, at %s)\n",
+			&feedback, "\n%d. %s:%s line %d (%s side, at %s, thread %s)\n",
 			index+1, anchor.Repository, anchor.Path, anchor.Line, anchor.Side,
-			shortSHA(anchor.HeadSHA),
+			shortSHA(anchor.HeadSHA), comment.Thread(),
 		)
 
 		if anchor.Hunk != "" {
@@ -250,12 +262,33 @@ func ComposeReviewFeedback(summary string, comments []ExecutionReviewComment) st
 		feedback.WriteString("\n")
 	}
 
+	if len(comments) > 0 {
+		feedback.WriteString(
+			"\nAnswer each thread with reply_to_review, naming its thread id: say what you " +
+				"changed, or why you left it as it is.",
+		)
+	}
+
 	feedback.WriteString(
 		"\nAddress every point, commit the changes, and finish again when the work is ready " +
 			"for another review.",
 	)
 
 	return feedback.String()
+}
+
+func ReviewThreads(comments []ExecutionReviewComment) []string {
+	threads := make([]string, 0, len(comments))
+
+	for _, comment := range comments {
+		thread := comment.Thread().String()
+
+		if !slices.Contains(threads, thread) {
+			threads = append(threads, thread)
+		}
+	}
+
+	return threads
 }
 
 func shortSHA(sha string) string {

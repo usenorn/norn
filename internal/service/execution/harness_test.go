@@ -11,12 +11,14 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
 	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
 	codebaserepo "github.com/usenorn/norn/internal/repository/codebase"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	executionplanrepo "github.com/usenorn/norn/internal/repository/executionplan"
 	executionreviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
 	executionservicerepo "github.com/usenorn/norn/internal/repository/executionservice"
+	executionsnapshotrepo "github.com/usenorn/norn/internal/repository/executionsnapshot"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
@@ -44,6 +46,8 @@ type harness struct {
 	changesets  *changesetrepo.MockChangeSet
 	plans       *executionplanrepo.MockExecutionPlan
 	reviews     *executionreviewrepo.MockExecutionReview
+	snapshots   *executionsnapshotrepo.MockExecutionSnapshot
+	agents      *agentrepo.MockAgent
 	questions   *issuequestionrepo.MockIssueQuestion
 	delegates   *issuedelegationrepo.MockIssueDelegation
 	notify      *notificationeventrepo.MockNotificationEvent
@@ -67,27 +71,29 @@ type harness struct {
 	audit       *auditsvc.MockAudit
 	service     service.Executions
 
-	workspaceID uuid.UUID
-	issue       entity.Issue
-	runner      entity.Runner
-	caller      uuid.UUID
-	callerAgent *uuid.UUID
-	codebase    uuid.UUID
-	spooled     []entity.ChannelMessage
-	bound       []entity.Execution
-	recorded    []entity.ExecutionEvent
-	published   []entity.Event
-	proposed    []entity.ExecutionPlan
-	asked       []entity.IssueQuestion
-	changes     []entity.ExecutionChange
-	comments    []entity.ExecutionReviewComment
-	submitted   []entity.ExecutionReview
-	delegator   uuid.UUID
-	role        entity.MembershipRole
-	authority   entity.DecisionAuthority
-	notified    []entity.NotificationEvent
-	relayed     []entity.TelegramDecision
-	settled     []entity.TelegramDecision
+	workspaceID  uuid.UUID
+	issue        entity.Issue
+	runner       entity.Runner
+	caller       uuid.UUID
+	callerAgent  *uuid.UUID
+	agentAccount uuid.UUID
+	codebase     uuid.UUID
+	spooled      []entity.ChannelMessage
+	bound        []entity.Execution
+	recorded     []entity.ExecutionEvent
+	published    []entity.Event
+	proposed     []entity.ExecutionPlan
+	asked        []entity.IssueQuestion
+	changes      []entity.ExecutionChange
+	revision     int
+	comments     []entity.ExecutionReviewComment
+	submitted    []entity.ExecutionReview
+	delegator    uuid.UUID
+	role         entity.MembershipRole
+	authority    entity.DecisionAuthority
+	notified     []entity.NotificationEvent
+	relayed      []entity.TelegramDecision
+	settled      []entity.TelegramDecision
 }
 
 func newHarness(t *testing.T) *harness {
@@ -100,34 +106,37 @@ func newHarness(t *testing.T) *harness {
 	agentID := uuid.New()
 
 	h := &harness{
-		executions:  executionrepo.NewMockExecution(ctrl),
-		changesets:  changesetrepo.NewMockChangeSet(ctrl),
-		plans:       executionplanrepo.NewMockExecutionPlan(ctrl),
-		reviews:     executionreviewrepo.NewMockExecutionReview(ctrl),
-		questions:   issuequestionrepo.NewMockIssueQuestion(ctrl),
-		delegates:   issuedelegationrepo.NewMockIssueDelegation(ctrl),
-		notify:      notificationeventrepo.NewMockNotificationEvent(ctrl),
-		delegator:   uuid.New(),
-		previews:    previewrepo.NewMockPreview(ctrl),
-		services:    executionservicerepo.NewMockExecutionService(ctrl),
-		runners:     runnerrepo.NewMockRunner(ctrl),
-		codebases:   codebaserepo.NewMockCodebase(ctrl),
-		codebase:    uuid.New(),
-		issues:      issuerepo.NewMockIssue(ctrl),
-		revisions:   issuerevisionrepo.NewMockIssueRevision(ctrl),
-		states:      statesrepo.NewMockWorkflowState(ctrl),
-		channels:    channelrepo.NewMockRunnerChannel(ctrl),
-		jobs:        jobrepo.NewMockJobProducer(ctrl),
-		writer:      issuesvc.NewMockIssues(ctrl),
-		source:      scmsvc.NewMockSourceControl(ctrl),
-		branch:      "rae/norn-1-a-run",
-		events:      eventsvc.NewMockEvents(ctrl),
-		toolkits:    agentcapabilitysvc.NewMockAgentToolkits(ctrl),
-		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
-		audit:       auditsvc.NewMockAudit(ctrl),
-		workspaceID: workspaceID,
-		caller:      uuid.New(),
-		role:        entity.MembershipRoleMember,
+		executions:   executionrepo.NewMockExecution(ctrl),
+		changesets:   changesetrepo.NewMockChangeSet(ctrl),
+		plans:        executionplanrepo.NewMockExecutionPlan(ctrl),
+		reviews:      executionreviewrepo.NewMockExecutionReview(ctrl),
+		snapshots:    executionsnapshotrepo.NewMockExecutionSnapshot(ctrl),
+		agents:       agentrepo.NewMockAgent(ctrl),
+		questions:    issuequestionrepo.NewMockIssueQuestion(ctrl),
+		delegates:    issuedelegationrepo.NewMockIssueDelegation(ctrl),
+		notify:       notificationeventrepo.NewMockNotificationEvent(ctrl),
+		delegator:    uuid.New(),
+		previews:     previewrepo.NewMockPreview(ctrl),
+		services:     executionservicerepo.NewMockExecutionService(ctrl),
+		runners:      runnerrepo.NewMockRunner(ctrl),
+		codebases:    codebaserepo.NewMockCodebase(ctrl),
+		codebase:     uuid.New(),
+		agentAccount: uuid.New(),
+		issues:       issuerepo.NewMockIssue(ctrl),
+		revisions:    issuerevisionrepo.NewMockIssueRevision(ctrl),
+		states:       statesrepo.NewMockWorkflowState(ctrl),
+		channels:     channelrepo.NewMockRunnerChannel(ctrl),
+		jobs:         jobrepo.NewMockJobProducer(ctrl),
+		writer:       issuesvc.NewMockIssues(ctrl),
+		source:       scmsvc.NewMockSourceControl(ctrl),
+		branch:       "rae/norn-1-a-run",
+		events:       eventsvc.NewMockEvents(ctrl),
+		toolkits:     agentcapabilitysvc.NewMockAgentToolkits(ctrl),
+		authorizer:   authorizersvc.NewMockAuthorizer(ctrl),
+		audit:        auditsvc.NewMockAudit(ctrl),
+		workspaceID:  workspaceID,
+		caller:       uuid.New(),
+		role:         entity.MembershipRoleMember,
 		issue: entity.Issue{
 			ID:           uuid.New(),
 			WorkspaceID:  workspaceID,
@@ -305,7 +314,7 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = executionsvc.New(
-		h.executions, h.changesets, h.plans, h.reviews, h.questions, h.delegates, h.notify, h.previews, h.services, h.runners, h.codebases, h.issues,
+		h.executions, h.changesets, h.plans, h.reviews, h.snapshots, h.agents, h.questions, h.delegates, h.notify, h.previews, h.services, h.runners, h.codebases, h.issues,
 		h.revisions, h.states,
 		h.channels, h.jobs, h.writer, h.source, h.events, h.toolkits, h.authorizer, h.audit, transactor,
 	)
@@ -546,7 +555,66 @@ func (h *harness) planning() {
 	h.plans.EXPECT().RequestRevision(gomock.Any(), gomock.Any()).DoAndReturn(decide(false)).AnyTimes()
 }
 
+func (h *harness) snapshot() entity.ExecutionSnapshot {
+	snapshot := entity.ExecutionSnapshot{ExecutionID: "exec-01ABC", Revision: h.revision}
+
+	for _, change := range h.changes {
+		snapshot.Repositories = append(snapshot.Repositories, entity.SnapshotRepository{
+			Repository: change.Repository,
+			HeadSHA:    change.HeadSHA,
+		})
+	}
+
+	return snapshot
+}
+
 func (h *harness) reviewing() {
+	h.snapshots.EXPECT().
+		Latest(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string) (entity.ExecutionSnapshot, error) {
+			if h.revision == 0 {
+				return entity.ExecutionSnapshot{}, entity.ErrExecutionSnapshotNotFound
+			}
+
+			return h.snapshot(), nil
+		}).
+		AnyTimes()
+
+	h.snapshots.EXPECT().
+		ByRevision(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, revision int) (entity.ExecutionSnapshot, error) {
+			if revision < 1 || revision > h.revision {
+				return entity.ExecutionSnapshot{}, entity.ErrExecutionSnapshotNotFound
+			}
+
+			snapshot := h.snapshot()
+			snapshot.Revision = revision
+
+			return snapshot, nil
+		}).
+		AnyTimes()
+
+	h.snapshots.EXPECT().
+		Revisions(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string) ([]entity.ExecutionRevision, error) {
+			revisions := make([]entity.ExecutionRevision, 0, h.revision)
+			for revision := 1; revision <= h.revision; revision++ {
+				revisions = append(revisions, entity.ExecutionRevision{Revision: revision})
+			}
+
+			return revisions, nil
+		}).
+		AnyTimes()
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, workspaceID, agentID uuid.UUID) (entity.Agent, error) {
+			return entity.Agent{
+				ID: agentID, WorkspaceID: workspaceID, AccountID: h.agentAccount, Name: "Builder",
+			}, nil
+		}).
+		AnyTimes()
+
 	h.changesets.EXPECT().
 		Get(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, executionID string) (entity.ExecutionChangeSet, error) {
@@ -626,6 +694,7 @@ func (h *harness) reviewing() {
 
 func (h *harness) changed(repository, head string) {
 	h.changes = append(h.changes, entity.ExecutionChange{Repository: repository, HeadSHA: head})
+	h.revision = max(h.revision, 1)
 }
 
 func (h *harness) instruction(t *testing.T) channelv1.Instruction {

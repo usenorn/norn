@@ -38,9 +38,12 @@ type ExecutionPlacement struct {
 }
 
 type ExecutionReviewState struct {
-	Heads    entity.ReviewHeads
-	Comments []entity.ExecutionReviewComment
-	Reviews  []entity.ExecutionReview
+	Snapshot  entity.ExecutionSnapshot
+	Latest    entity.ExecutionSnapshot
+	Revisions []entity.ExecutionRevision
+	Sessions  []entity.PreviewSession
+	Comments  []entity.ExecutionReviewComment
+	Reviews   []entity.ExecutionReview
 }
 
 type ReviewCommentDraft struct {
@@ -114,7 +117,9 @@ type Executions interface {
 		ctx context.Context, workspaceID uuid.UUID, executionID string, revision int, feedback string,
 	) (entity.Execution, error)
 
-	Review(ctx context.Context, workspaceID uuid.UUID, executionID string) (ExecutionReviewState, error)
+	Review(
+		ctx context.Context, workspaceID uuid.UUID, executionID string, revision int,
+	) (ExecutionReviewState, error)
 	CommentOnReview(
 		ctx context.Context, workspaceID uuid.UUID, executionID string, draft ReviewCommentDraft,
 	) (entity.ExecutionReviewComment, error)
@@ -150,6 +155,7 @@ type Executions interface {
 	Observed(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Kept(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Held(ctx context.Context, runner entity.Runner, executionID string) (entity.Execution, error)
+	ReviewReplied(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error
 	Renew(ctx context.Context, runner entity.Runner) error
 	Leased(ctx context.Context, runnerID uuid.UUID) ([]string, error)
 	SweepLeases(ctx context.Context) error

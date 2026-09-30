@@ -103,6 +103,7 @@ type Instruction struct {
 	Stage       Stage    `json:"stage"`
 	Instruction string   `json:"instruction,omitempty"`
 	Answers     []Answer `json:"answers,omitempty"`
+	Threads     []string `json:"review_threads,omitempty"`
 }
 
 type Plan struct {
@@ -235,17 +236,25 @@ const (
 	ValidationSkipped = "skipped"
 )
 
+const CommitsReported = 100
+
+type Commit struct {
+	SHA     string `json:"sha"`
+	Subject string `json:"subject"`
+}
+
 type RepoChange struct {
-	Repository  string `json:"repo"`
-	Branch      string `json:"branch,omitempty"`
-	BaseSHA     string `json:"base_sha,omitempty"`
-	HeadSHA     string `json:"head_sha,omitempty"`
-	Commits     int    `json:"commits,omitempty"`
-	Additions   int    `json:"additions,omitempty"`
-	Deletions   int    `json:"deletions,omitempty"`
-	Files       int    `json:"files_changed,omitempty"`
-	Diff        string `json:"diff_artifact_id,omitempty"`
-	PullRequest string `json:"pull_request_url,omitempty"`
+	Repository  string   `json:"repo"`
+	Branch      string   `json:"branch,omitempty"`
+	BaseSHA     string   `json:"base_sha,omitempty"`
+	HeadSHA     string   `json:"head_sha,omitempty"`
+	Commits     int      `json:"commits,omitempty"`
+	Additions   int      `json:"additions,omitempty"`
+	Deletions   int      `json:"deletions,omitempty"`
+	Files       int      `json:"files_changed,omitempty"`
+	Diff        string   `json:"diff_artifact_id,omitempty"`
+	PullRequest string   `json:"pull_request_url,omitempty"`
+	History     []Commit `json:"commit_list,omitempty"`
 }
 
 type Validation struct {
@@ -260,8 +269,31 @@ type ChangeSet struct {
 	Validation []Validation `json:"validation,omitempty"`
 }
 
+const (
+	PreviewReady       = "ready"
+	PreviewFailed      = "failed"
+	PreviewUnsupported = "unsupported"
+)
+
+type PreviewOutcome struct {
+	Name    string `json:"name"`
+	Service string `json:"service"`
+	Path    string `json:"path,omitempty"`
+	State   string `json:"state"`
+	Reason  string `json:"reason,omitempty"`
+	Port    int    `json:"port,omitempty"`
+}
+
 type Result struct {
-	Summary   string    `json:"summary,omitempty"`
-	ChangeSet ChangeSet `json:"changeset"`
-	Reported  time.Time `json:"ts"`
+	Summary   string           `json:"summary,omitempty"`
+	Revision  int              `json:"revision"`
+	ChangeSet ChangeSet        `json:"changeset"`
+	Previews  []PreviewOutcome `json:"previews,omitempty"`
+	Reported  time.Time        `json:"ts"`
+}
+
+type ReviewReply struct {
+	CommentID string    `json:"comment_id"`
+	Body      string    `json:"body"`
+	Occurred  time.Time `json:"ts"`
 }

@@ -41,6 +41,7 @@ type WorkspaceExecutionReviewComment struct {
 	EditedAt        null.Time   `boil:"edited_at" json:"edited_at,omitempty" toml:"edited_at" yaml:"edited_at,omitempty"`
 	ResolvedAt      null.Time   `boil:"resolved_at" json:"resolved_at,omitempty" toml:"resolved_at" yaml:"resolved_at,omitempty"`
 	ResolvedBy      null.String `boil:"resolved_by" json:"resolved_by,omitempty" toml:"resolved_by" yaml:"resolved_by,omitempty"`
+	Revision        int         `boil:"revision" json:"revision" toml:"revision" yaml:"revision"`
 
 	R *workspaceExecutionReviewCommentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceExecutionReviewCommentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -64,6 +65,7 @@ var WorkspaceExecutionReviewCommentColumns = struct {
 	EditedAt        string
 	ResolvedAt      string
 	ResolvedBy      string
+	Revision        string
 }{
 	ID:              "id",
 	ExecutionID:     "execution_id",
@@ -82,6 +84,7 @@ var WorkspaceExecutionReviewCommentColumns = struct {
 	EditedAt:        "edited_at",
 	ResolvedAt:      "resolved_at",
 	ResolvedBy:      "resolved_by",
+	Revision:        "revision",
 }
 
 var WorkspaceExecutionReviewCommentTableColumns = struct {
@@ -102,6 +105,7 @@ var WorkspaceExecutionReviewCommentTableColumns = struct {
 	EditedAt        string
 	ResolvedAt      string
 	ResolvedBy      string
+	Revision        string
 }{
 	ID:              "workspace_execution_review_comments.id",
 	ExecutionID:     "workspace_execution_review_comments.execution_id",
@@ -120,6 +124,7 @@ var WorkspaceExecutionReviewCommentTableColumns = struct {
 	EditedAt:        "workspace_execution_review_comments.edited_at",
 	ResolvedAt:      "workspace_execution_review_comments.resolved_at",
 	ResolvedBy:      "workspace_execution_review_comments.resolved_by",
+	Revision:        "workspace_execution_review_comments.revision",
 }
 
 // Generated where
@@ -142,6 +147,7 @@ var WorkspaceExecutionReviewCommentWhere = struct {
 	EditedAt        whereHelpernull_Time
 	ResolvedAt      whereHelpernull_Time
 	ResolvedBy      whereHelpernull_String
+	Revision        whereHelperint
 }{
 	ID:              whereHelperstring{field: "\"workspace_execution_review_comments\".\"id\""},
 	ExecutionID:     whereHelperstring{field: "\"workspace_execution_review_comments\".\"execution_id\""},
@@ -160,6 +166,7 @@ var WorkspaceExecutionReviewCommentWhere = struct {
 	EditedAt:        whereHelpernull_Time{field: "\"workspace_execution_review_comments\".\"edited_at\""},
 	ResolvedAt:      whereHelpernull_Time{field: "\"workspace_execution_review_comments\".\"resolved_at\""},
 	ResolvedBy:      whereHelpernull_String{field: "\"workspace_execution_review_comments\".\"resolved_by\""},
+	Revision:        whereHelperint{field: "\"workspace_execution_review_comments\".\"revision\""},
 }
 
 // WorkspaceExecutionReviewCommentRels is where relationship names are stored.
@@ -313,8 +320,8 @@ func (r *workspaceExecutionReviewCommentR) GetParentWorkspaceExecutionReviewComm
 type workspaceExecutionReviewCommentL struct{}
 
 var (
-	workspaceExecutionReviewCommentAllColumns            = []string{"id", "execution_id", "workspace_id", "review_id", "parent_id", "repository", "path", "side", "line", "head_sha", "hunk", "body", "author_account_id", "created_at", "edited_at", "resolved_at", "resolved_by"}
-	workspaceExecutionReviewCommentColumnsWithoutDefault = []string{"execution_id", "workspace_id", "repository", "path", "side", "line", "head_sha", "body"}
+	workspaceExecutionReviewCommentAllColumns            = []string{"id", "execution_id", "workspace_id", "review_id", "parent_id", "repository", "path", "side", "line", "head_sha", "hunk", "body", "author_account_id", "created_at", "edited_at", "resolved_at", "resolved_by", "revision"}
+	workspaceExecutionReviewCommentColumnsWithoutDefault = []string{"execution_id", "workspace_id", "repository", "path", "side", "line", "head_sha", "body", "revision"}
 	workspaceExecutionReviewCommentColumnsWithDefault    = []string{"id", "review_id", "parent_id", "hunk", "author_account_id", "created_at", "edited_at", "resolved_at", "resolved_by"}
 	workspaceExecutionReviewCommentPrimaryKeyColumns     = []string{"id"}
 	workspaceExecutionReviewCommentGeneratedColumns      = []string{}

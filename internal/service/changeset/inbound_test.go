@@ -153,7 +153,8 @@ func TestTheResultSettlesTheSummaryAndTheChangesTogether(t *testing.T) {
 	h.holding()
 
 	message := h.message(entity.ChannelExecutionResult, channelv1.Result{
-		Summary: "added the changeset ingest",
+		Summary:  "added the changeset ingest",
+		Revision: 1,
 		ChangeSet: channelv1.ChangeSet{
 			Repos:      []channelv1.RepoChange{repoChange("backend", "norn/NORN-38/backend")},
 			Validation: []channelv1.Validation{{Check: "go test", Status: channelv1.ValidationPassed}},
@@ -174,6 +175,82 @@ func TestTheResultSettlesTheSummaryAndTheChangesTogether(t *testing.T) {
 
 	if _, ok := h.validation("go test"); !ok {
 		t.Fatal("the result carried a validation result that was not recorded")
+	}
+}
+
+func TestEveryPassIsKeptAsAReviewSnapshotWithItsCommitsAndPreviews(t *testing.T) {
+	h := newHarness(t)
+	h.holding()
+
+	backend := repoChange("backend", "norn/NORN-230/backend")
+	backend.HeadSHA = "b2"
+	backend.History = []channelv1.Commit{{SHA: "b2", Subject: "answer the review"}}
+
+	message := h.message(entity.ChannelExecutionResult, channelv1.Result{
+		Summary:   "second pass",
+		Revision:  2,
+		ChangeSet: channelv1.ChangeSet{Repos: []channelv1.RepoChange{backend}},
+		Previews: []channelv1.PreviewOutcome{
+			{Name: "Application", Service: "web", State: channelv1.PreviewReady, Port: 41000},
+			{Name: "API", Service: "api", State: channelv1.PreviewFailed, Reason: "api never became healthy"},
+			{Name: "Database", Service: "postgres", State: channelv1.PreviewUnsupported, Reason: "compose"},
+		},
+	})
+
+	if err := h.service.Resulted(context.Background(), h.runner, message); err != nil {
+		t.Fatalf("record a run's result: %v", err)
+	}
+
+	if len(h.recorded) != 1 {
+		t.Fatalf("%d snapshots were recorded, want 1", len(h.recorded))
+	}
+
+	snapshot := h.recorded[0]
+
+	if snapshot.Revision != 2 || snapshot.Summary != "second pass" {
+		t.Fatalf("the snapshot is revision %d with summary %q", snapshot.Revision, snapshot.Summary)
+	}
+
+	if got := snapshot.Repositories[0].Commits; len(got) != 1 || got[0].Subject != "answer the review" {
+		t.Fatalf("the snapshot's commits read %+v", got)
+	}
+
+	if len(snapshot.Previews) != 3 || snapshot.Previews[1].State != entity.SnapshotPreviewFailed ||
+		snapshot.Previews[1].Reason != "api never became healthy" {
+		t.Fatalf("the previews were recorded as %+v; a failed one must keep its reason", snapshot.Previews)
+	}
+}
+
+func TestAResultWithoutARevisionIsRefusedBecauseNothingCouldBeReviewedAgainstIt(t *testing.T) {
+	h := newHarness(t)
+	h.holding()
+
+	message := h.message(entity.ChannelExecutionResult, channelv1.Result{Summary: "no revision"})
+
+	var invalid entity.ValidationError
+
+	if err := h.service.Resulted(context.Background(), h.runner, message); !errors.As(err, &invalid) {
+		t.Fatalf("a result without a revision answered %v", err)
+	}
+
+	if len(h.recorded) != 0 || h.result.ExecutionID != "" {
+		t.Fatal("a refused result still left a record behind")
+	}
+}
+
+func TestAPreviewInAStateNobodyDefinedIsRefused(t *testing.T) {
+	h := newHarness(t)
+	h.holding()
+
+	message := h.message(entity.ChannelExecutionResult, channelv1.Result{
+		Revision: 1,
+		Previews: []channelv1.PreviewOutcome{{Name: "Application", Service: "web", State: "open"}},
+	})
+
+	var invalid entity.ValidationError
+
+	if err := h.service.Resulted(context.Background(), h.runner, message); !errors.As(err, &invalid) {
+		t.Fatalf("an undefined preview state answered %v", err)
 	}
 }
 

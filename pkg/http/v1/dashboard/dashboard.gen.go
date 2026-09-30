@@ -3744,6 +3744,27 @@ func (e ResetLinkUsedProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for ReviewPreviewState.
+const (
+	ReviewPreviewStateFailed      ReviewPreviewState = "failed"
+	ReviewPreviewStateReady       ReviewPreviewState = "ready"
+	ReviewPreviewStateUnsupported ReviewPreviewState = "unsupported"
+)
+
+// Valid indicates whether the value is a known member of the ReviewPreviewState enum.
+func (e ReviewPreviewState) Valid() bool {
+	switch e {
+	case ReviewPreviewStateFailed:
+		return true
+	case ReviewPreviewStateReady:
+		return true
+	case ReviewPreviewStateUnsupported:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ReviewSide.
 const (
 	New ReviewSide = "new"
@@ -7118,6 +7139,7 @@ type ExecutionReview struct {
 	AuthorName  *string                `json:"authorName,omitempty"`
 	ExecutionId string                 `json:"executionId"`
 	Id          openapi_types.UUID     `json:"id"`
+	Revision    int                    `json:"revision"`
 	SubmittedAt time.Time              `json:"submittedAt"`
 	Summary     string                 `json:"summary"`
 	Verdict     ExecutionReviewVerdict `json:"verdict"`
@@ -7127,9 +7149,23 @@ type ExecutionReview struct {
 type ExecutionReviewState struct {
 	Comments []ReviewComment `json:"comments"`
 
-	// Heads The commit each repository's changes stand at. A review is submitted against these, so changes that moved on in the meantime are never approved unread.
-	Heads   []ReviewHead      `json:"heads"`
-	Reviews []ExecutionReview `json:"reviews"`
+	// Heads The commit each repository's changes stand at in the latest snapshot. A review is submitted against these, so changes that moved on in the meantime are never approved unread.
+	Heads []ReviewHead `json:"heads"`
+
+	// LatestRevision Only the latest snapshot can be approved or asked to change.
+	LatestRevision int `json:"latestRevision"`
+
+	// Previews Every preview the Run Plan declares, as it stood when this pass was prepared. Empty when the codebase declares none.
+	Previews     []ReviewPreview    `json:"previews"`
+	Repositories []ReviewRepository `json:"repositories"`
+	Reviews      []ExecutionReview  `json:"reviews"`
+
+	// Revision The snapshot shown. Zero while the run has not finished a pass.
+	Revision  int              `json:"revision"`
+	Revisions []ReviewRevision `json:"revisions"`
+
+	// Summary What the coding agent said about this pass
+	Summary string `json:"summary"`
 }
 
 // ExecutionReviewVerdict defines model for ExecutionReviewVerdict.
@@ -8759,11 +8795,12 @@ type RetainExecutionRequest struct {
 
 // ReviewComment defines model for ReviewComment.
 type ReviewComment struct {
-	AuthorName  *string    `json:"authorName,omitempty"`
-	Body        string     `json:"body"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	EditedAt    *time.Time `json:"editedAt,omitempty"`
-	ExecutionId string     `json:"executionId"`
+	AuthorKind  CommentAuthorKind `json:"authorKind"`
+	AuthorName  *string           `json:"authorName,omitempty"`
+	Body        string            `json:"body"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	EditedAt    *time.Time        `json:"editedAt,omitempty"`
+	ExecutionId string            `json:"executionId"`
 
 	// HeadSha The commit the line was read at
 	HeadSha string `json:"headSha"`
@@ -8790,8 +8827,17 @@ type ReviewComment struct {
 	ResolvedByName *string             `json:"resolvedByName,omitempty"`
 	ReviewId       *openapi_types.UUID `json:"reviewId,omitempty"`
 
+	// Revision The review snapshot the thread was started on; a reply carries its thread's
+	Revision int `json:"revision"`
+
 	// Side Which side of the diff a line belongs to
 	Side ReviewSide `json:"side"`
+}
+
+// ReviewCommit defines model for ReviewCommit.
+type ReviewCommit struct {
+	Sha     string `json:"sha"`
+	Subject string `json:"subject"`
 }
 
 // ReviewHead defines model for ReviewHead.
@@ -8799,6 +8845,23 @@ type ReviewHead struct {
 	HeadSha    string `json:"headSha"`
 	Repository string `json:"repository"`
 }
+
+// ReviewPreview defines model for ReviewPreview.
+type ReviewPreview struct {
+	Name    string  `json:"name"`
+	Path    *string `json:"path,omitempty"`
+	Reason  *string `json:"reason,omitempty"`
+	Service string  `json:"service"`
+
+	// State `ready` is healthy and exposed; `failed` was started but never became healthy or could not be exposed; `unsupported` is declared in the Run Plan but cannot run or be proxied here.
+	State ReviewPreviewState `json:"state"`
+
+	// Url The gateway address, present only while the preview is open and this server serves a preview domain.
+	Url *string `json:"url,omitempty"`
+}
+
+// ReviewPreviewState `ready` is healthy and exposed; `failed` was started but never became healthy or could not be exposed; `unsupported` is declared in the Run Plan but cannot run or be proxied here.
+type ReviewPreviewState string
 
 // ReviewQuestion defines model for ReviewQuestion.
 type ReviewQuestion struct {
@@ -8811,6 +8874,31 @@ type ReviewQueue struct {
 	Changes   []ReviewRun      `json:"changes"`
 	Plans     []ReviewRun      `json:"plans"`
 	Questions []ReviewQuestion `json:"questions"`
+}
+
+// ReviewRepository defines model for ReviewRepository.
+type ReviewRepository struct {
+	Additions int    `json:"additions"`
+	BaseSha   string `json:"baseSha"`
+	Branch    string `json:"branch"`
+
+	// Commits Newest first, as the run committed them on its branch
+	Commits   []ReviewCommit `json:"commits"`
+	Deletions int            `json:"deletions"`
+
+	// DiffArtifactId Absent when the machine could not keep this repository's diff
+	DiffArtifactId *openapi_types.UUID `json:"diffArtifactId,omitempty"`
+	FilesChanged   int                 `json:"filesChanged"`
+	HeadSha        string              `json:"headSha"`
+	Repository     string              `json:"repository"`
+}
+
+// ReviewRevision defines model for ReviewRevision.
+type ReviewRevision struct {
+	Additions  int       `json:"additions"`
+	Deletions  int       `json:"deletions"`
+	ReportedAt time.Time `json:"reportedAt"`
+	Revision   int       `json:"revision"`
 }
 
 // ReviewRun defines model for ReviewRun.
@@ -10677,6 +10765,11 @@ type ListWorkspaceExecutionsParams struct {
 	// State Repeat it to ask for more than one state. Left out, every state is answered.
 	State *[]ExecutionState `form:"state,omitempty" json:"state,omitempty"`
 	Limit *int              `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetWorkspaceExecutionReviewParams defines parameters for GetWorkspaceExecutionReview.
+type GetWorkspaceExecutionReviewParams struct {
+	Revision *int `form:"revision,omitempty" json:"revision,omitempty"`
 }
 
 // ListWorkspaceExecutionTimelineParams defines parameters for ListWorkspaceExecutionTimeline.
@@ -12605,10 +12698,10 @@ type ClientInterface interface {
 
 	// GetWorkspaceExecutionReview The comments and reviews left on this run's changes
 	//
-	// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+	// Nothing here has been pushed. Every pass the run finishes is kept as a numbered review snapshot; the latest one is shown unless `revision` names an earlier one. Comments somebody has drafted but not yet submitted are shown only to them.
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
-	GetWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *GetWorkspaceExecutionReviewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CommentOnWorkspaceExecutionReviewWithBody Comment on a line of this run's changes, or reply to a thread
 	//
@@ -17555,11 +17648,11 @@ func (c *Client) RetainWorkspaceExecution(ctx context.Context, workspaceId Works
 
 // GetWorkspaceExecutionReview The comments and reviews left on this run's changes
 //
-// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+// Nothing here has been pushed. Every pass the run finishes is kept as a numbered review snapshot; the latest one is shown unless `revision` names an earlier one. Comments somebody has drafted but not yet submitted are shown only to them.
 //
 // Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
-func (c *Client) GetWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetWorkspaceExecutionReviewRequest(c.Server, workspaceId, executionId)
+func (c *Client) GetWorkspaceExecutionReview(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *GetWorkspaceExecutionReviewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceExecutionReviewRequest(c.Server, workspaceId, executionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -28439,7 +28532,7 @@ func NewRetainWorkspaceExecutionRequestWithBody(server string, workspaceId Works
 }
 
 // NewGetWorkspaceExecutionReviewRequest constructs an http.Request for the GetWorkspaceExecutionReview method
-func NewGetWorkspaceExecutionReviewRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
+func NewGetWorkspaceExecutionReviewRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, params *GetWorkspaceExecutionReviewParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -28469,6 +28562,33 @@ func NewGetWorkspaceExecutionReviewRequest(server string, workspaceId WorkspaceI
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Revision != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "revision", *params.Revision, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -41340,12 +41460,12 @@ type ClientWithResponsesInterface interface {
 
 	// GetWorkspaceExecutionReviewWithResponse The comments and reviews left on this run's changes
 	//
-	// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+	// Nothing here has been pushed. Every pass the run finishes is kept as a numbered review snapshot; the latest one is shown unless `revision` names an earlier one. Comments somebody has drafted but not yet submitted are shown only to them.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
-	GetWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionReviewResponse, error)
+	GetWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *GetWorkspaceExecutionReviewParams, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionReviewResponse, error)
 
 	// CommentOnWorkspaceExecutionReviewWithBodyWithResponse Comment on a line of this run's changes, or reply to a thread
 	//
@@ -72751,13 +72871,13 @@ func (c *ClientWithResponses) RetainWorkspaceExecutionWithResponse(ctx context.C
 
 // GetWorkspaceExecutionReviewWithResponse The comments and reviews left on this run's changes
 //
-// Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+// Nothing here has been pushed. Every pass the run finishes is kept as a numbered review snapshot; the latest one is shown unless `revision` names an earlier one. Comments somebody has drafted but not yet submitted are shown only to them.
 //
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/review (the `GetWorkspaceExecutionReview` operationId).
-func (c *ClientWithResponses) GetWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionReviewResponse, error) {
-	rsp, err := c.GetWorkspaceExecutionReview(ctx, workspaceId, executionId, reqEditors...)
+func (c *ClientWithResponses) GetWorkspaceExecutionReviewWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *GetWorkspaceExecutionReviewParams, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionReviewResponse, error) {
+	rsp, err := c.GetWorkspaceExecutionReview(ctx, workspaceId, executionId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -98760,7 +98880,7 @@ type ServerInterface interface {
 	RetainWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
 	// GetWorkspaceExecutionReview The comments and reviews left on this run's changes
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/review)
-	GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params GetWorkspaceExecutionReviewParams)
 	// CommentOnWorkspaceExecutionReview Comment on a line of this run's changes, or reply to a thread
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/review/comments)
 	CommentOnWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
@@ -100281,7 +100401,7 @@ func (_ Unimplemented) RetainWorkspaceExecution(w http.ResponseWriter, r *http.R
 
 // GetWorkspaceExecutionReview The comments and reviews left on this run's changes
 // (GET /workspaces/{workspaceId}/executions/{executionId}/review)
-func (_ Unimplemented) GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+func (_ Unimplemented) GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params GetWorkspaceExecutionReviewParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -105692,8 +105812,24 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceExecutionReview(w http.ResponseWr
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetWorkspaceExecutionReviewParams
+
+	// ------------- Optional query parameter "revision" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "revision", r.URL.Query(), &params.Revision, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "revision"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "revision", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWorkspaceExecutionReview(w, r, workspaceId, executionId)
+		siw.Handler.GetWorkspaceExecutionReview(w, r, workspaceId, executionId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -127406,6 +127542,7 @@ func (response RetainWorkspaceExecution500ApplicationProblemPlusJSONResponse) Vi
 type GetWorkspaceExecutionReviewRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	ExecutionId ExecutionId `json:"executionId"`
+	Params      GetWorkspaceExecutionReviewParams
 }
 
 type GetWorkspaceExecutionReviewResponseObject interface {
@@ -154517,11 +154654,12 @@ func (sh *strictHandler) RetainWorkspaceExecution(w http.ResponseWriter, r *http
 }
 
 // GetWorkspaceExecutionReview operation middleware
-func (sh *strictHandler) GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+func (sh *strictHandler) GetWorkspaceExecutionReview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params GetWorkspaceExecutionReviewParams) {
 	var request GetWorkspaceExecutionReviewRequestObject
 
 	request.WorkspaceId = workspaceId
 	request.ExecutionId = executionId
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetWorkspaceExecutionReview(ctx, request.(GetWorkspaceExecutionReviewRequestObject))

@@ -34,7 +34,7 @@ func (s *changeSetsService) Updated(
 		return err
 	}
 
-	return s.record(ctx, execution, incoming, entity.ExecutionResult{}, false, reportedAt(message))
+	return s.record(ctx, execution, incoming, settlement{}, reportedAt(message))
 }
 
 func (s *changeSetsService) Resulted(
@@ -53,8 +53,14 @@ func (s *changeSetsService) Resulted(
 		return err
 	}
 
+	revision := entity.FieldError{}
+	if incoming.Revision < 1 {
+		revision = entity.FieldError{Field: "revision", Code: entity.ValidationCodeOutOfRange}
+	}
+
 	if err := entity.NewValidationError(
 		entity.ValidateExecutionSummary("summary", incoming.Summary),
+		revision,
 	); err != nil {
 		return err
 	}
@@ -64,22 +70,36 @@ func (s *changeSetsService) Resulted(
 		reported = incoming.Reported.UTC()
 	}
 
-	result := entity.ExecutionResult{
-		ExecutionID: execution.ID,
-		WorkspaceID: execution.WorkspaceID,
-		Summary:     incoming.Summary,
-		ReportedAt:  reported,
+	snapshot, err := snapshotOf(execution, incoming, reported)
+	if err != nil {
+		return err
 	}
 
-	return s.record(ctx, execution, incoming.ChangeSet, result, true, reported)
+	settled := settlement{
+		final: true,
+		result: entity.ExecutionResult{
+			ExecutionID: execution.ID,
+			WorkspaceID: execution.WorkspaceID,
+			Summary:     incoming.Summary,
+			ReportedAt:  reported,
+		},
+		snapshot: snapshot,
+	}
+
+	return s.record(ctx, execution, incoming.ChangeSet, settled, reported)
+}
+
+type settlement struct {
+	final    bool
+	result   entity.ExecutionResult
+	snapshot entity.ExecutionSnapshot
 }
 
 func (s *changeSetsService) record(
 	ctx context.Context,
 	execution entity.Execution,
 	incoming channelv1.ChangeSet,
-	result entity.ExecutionResult,
-	final bool,
+	settled settlement,
 	reported time.Time,
 ) error {
 	changes, validations, err := convert(execution, incoming, reported)
@@ -90,8 +110,12 @@ func (s *changeSetsService) record(
 	var saved []entity.ExecutionChange
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		if final {
-			if _, err := s.changesets.SaveResult(ctx, result); err != nil {
+		if settled.final {
+			if _, err := s.changesets.SaveResult(ctx, settled.result); err != nil {
+				return err
+			}
+
+			if _, err := s.snapshots.Record(ctx, settled.snapshot); err != nil {
 				return err
 			}
 		}
@@ -200,6 +224,80 @@ func convert(
 	}
 
 	return changes, stamp(validations, reported), nil
+}
+
+func snapshotOf(
+	execution entity.Execution,
+	incoming channelv1.Result,
+	reported time.Time,
+) (entity.ExecutionSnapshot, error) {
+	if len(incoming.Previews) > entity.ExecutionSnapshotPreviewsMax ||
+		len(incoming.ChangeSet.Repos) > entity.ExecutionChangesMax {
+		return entity.ExecutionSnapshot{}, entity.ErrChannelEnvelopeInvalid
+	}
+
+	snapshot := entity.ExecutionSnapshot{
+		ExecutionID:  execution.ID,
+		WorkspaceID:  execution.WorkspaceID,
+		Revision:     incoming.Revision,
+		Summary:      incoming.Summary,
+		ReportedAt:   reported,
+		Repositories: make([]entity.SnapshotRepository, 0, len(incoming.ChangeSet.Repos)),
+		Previews:     make([]entity.SnapshotPreview, 0, len(incoming.Previews)),
+	}
+
+	for index, repo := range incoming.ChangeSet.Repos {
+		artifactID, err := uuid.Parse(repo.Diff)
+		if repo.Diff != "" && err != nil {
+			return entity.ExecutionSnapshot{}, entity.NewValidationError(entity.FieldError{
+				Field: field("repos", index, "diffArtifactId"),
+				Code:  entity.ValidationCodeMalformed,
+			})
+		}
+
+		commits := make([]entity.SnapshotCommit, 0, len(repo.History))
+
+		for _, commit := range repo.History {
+			commits = append(commits, entity.SnapshotCommit{SHA: commit.SHA, Subject: commit.Subject})
+		}
+
+		held := entity.SnapshotRepository{
+			Repository:     repo.Repository,
+			Branch:         repo.Branch,
+			BaseSHA:        repo.BaseSHA,
+			HeadSHA:        repo.HeadSHA,
+			Commits:        commits,
+			Additions:      repo.Additions,
+			Deletions:      repo.Deletions,
+			FilesChanged:   repo.Files,
+			DiffArtifactID: artifactID,
+		}
+
+		if err := entity.ValidateSnapshotRepository(indexed("repos", index), held); err != nil {
+			return entity.ExecutionSnapshot{}, err
+		}
+
+		snapshot.Repositories = append(snapshot.Repositories, held)
+	}
+
+	for index, outcome := range incoming.Previews {
+		preview := entity.SnapshotPreview{
+			Name:    outcome.Name,
+			Service: outcome.Service,
+			Path:    outcome.Path,
+			State:   entity.SnapshotPreviewState(outcome.State),
+			Reason:  outcome.Reason,
+			Port:    outcome.Port,
+		}
+
+		if err := entity.ValidateSnapshotPreview(indexed("previews", index), preview); err != nil {
+			return entity.ExecutionSnapshot{}, err
+		}
+
+		snapshot.Previews = append(snapshot.Previews, preview)
+	}
+
+	return snapshot, nil
 }
 
 func stamp(

@@ -2,12 +2,16 @@ package execution
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/pkg/postgres"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -18,13 +22,33 @@ func (s *executionsService) Review(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	executionID string,
+	revision int,
 ) (service.ExecutionReviewState, error) {
 	decision, execution, err := s.visible(ctx, workspaceID, executionID, entity.ActionRead)
 	if err != nil {
 		return service.ExecutionReviewState{}, err
 	}
 
-	heads, err := s.heads(ctx, execution)
+	latest, err := s.latest(ctx, execution)
+	if err != nil {
+		return service.ExecutionReviewState{}, err
+	}
+
+	snapshot := latest
+
+	if revision != 0 && revision != latest.Revision {
+		snapshot, err = s.snapshots.ByRevision(ctx, execution.ID, revision)
+		if err != nil {
+			return service.ExecutionReviewState{}, err
+		}
+	}
+
+	revisions, err := s.snapshots.Revisions(ctx, execution.ID)
+	if err != nil {
+		return service.ExecutionReviewState{}, err
+	}
+
+	sessions, err := s.previews.ByExecution(ctx, execution.ID)
 	if err != nil {
 		return service.ExecutionReviewState{}, err
 	}
@@ -47,19 +71,26 @@ func (s *executionsService) Review(
 		}
 	}
 
-	return service.ExecutionReviewState{Heads: heads, Comments: visible, Reviews: reviews}, nil
+	return service.ExecutionReviewState{
+		Snapshot:  snapshot,
+		Latest:    latest,
+		Revisions: revisions,
+		Sessions:  sessions,
+		Comments:  visible,
+		Reviews:   reviews,
+	}, nil
 }
 
-func (s *executionsService) heads(
+func (s *executionsService) latest(
 	ctx context.Context,
 	execution entity.Execution,
-) (entity.ReviewHeads, error) {
-	changeset, err := s.changesets.Get(ctx, execution.ID)
-	if err != nil {
-		return nil, err
+) (entity.ExecutionSnapshot, error) {
+	snapshot, err := s.snapshots.Latest(ctx, execution.ID)
+	if errors.Is(err, entity.ErrExecutionSnapshotNotFound) {
+		return entity.ExecutionSnapshot{ExecutionID: execution.ID, WorkspaceID: execution.WorkspaceID}, nil
 	}
 
-	return entity.HeadsOf(changeset.Changes), nil
+	return snapshot, err
 }
 
 func (s *executionsService) reviewing(
@@ -100,7 +131,7 @@ func (s *executionsService) CommentOnReview(
 		return entity.ExecutionReviewComment{}, err
 	}
 
-	anchor, err := s.anchor(ctx, execution, draft)
+	anchor, revision, err := s.anchor(ctx, execution, draft)
 	if err != nil {
 		return entity.ExecutionReviewComment{}, err
 	}
@@ -124,6 +155,7 @@ func (s *executionsService) CommentOnReview(
 			WorkspaceID:     execution.WorkspaceID,
 			ParentID:        draft.ParentID,
 			Anchor:          anchor,
+			Revision:        revision,
 			Body:            strings.TrimSpace(draft.Body),
 			AuthorAccountID: decision.Actor.AccountID,
 			CreatedAt:       now,
@@ -134,6 +166,7 @@ func (s *executionsService) CommentOnReview(
 				ExecutionID:     execution.ID,
 				WorkspaceID:     execution.WorkspaceID,
 				Verdict:         entity.VerdictComment,
+				Revision:        revision,
 				Heads:           entity.ReviewHeads{anchor.Repository: anchor.HeadSHA},
 				AuthorAccountID: decision.Actor.AccountID,
 				SubmittedAt:     now,
@@ -169,40 +202,40 @@ func (s *executionsService) anchor(
 	ctx context.Context,
 	execution entity.Execution,
 	draft service.ReviewCommentDraft,
-) (entity.ReviewAnchor, error) {
+) (entity.ReviewAnchor, int, error) {
 	if draft.ParentID != uuid.Nil {
 		parent, err := s.reviews.GetComment(ctx, execution.ID, draft.ParentID)
 		if err != nil {
-			return entity.ReviewAnchor{}, err
+			return entity.ReviewAnchor{}, 0, err
 		}
 
 		if parent.Reply() {
-			return entity.ReviewAnchor{}, entity.ErrReviewCommentReply
+			return entity.ReviewAnchor{}, 0, entity.ErrReviewCommentReply
 		}
 
-		return parent.Anchor, nil
+		return parent.Anchor, parent.Revision, nil
 	}
 
 	anchor := draft.Anchor
 	anchor.Hunk = entity.TrimReviewHunk(anchor.Hunk)
 
 	if err := entity.ValidateReviewAnchor(anchor); err != nil {
-		return entity.ReviewAnchor{}, err
+		return entity.ReviewAnchor{}, 0, err
 	}
 
-	heads, err := s.heads(ctx, execution)
+	latest, err := s.latest(ctx, execution)
 	if err != nil {
-		return entity.ReviewAnchor{}, err
+		return entity.ReviewAnchor{}, 0, err
 	}
 
-	head, ok := heads[anchor.Repository]
+	head, ok := latest.Heads()[anchor.Repository]
 	if !ok {
-		return entity.ReviewAnchor{}, entity.ErrReviewCommentAnchor
+		return entity.ReviewAnchor{}, 0, entity.ErrReviewCommentAnchor
 	}
 
 	anchor.HeadSHA = head
 
-	return anchor, nil
+	return anchor, latest.Revision, nil
 }
 
 func (s *executionsService) own(
@@ -353,10 +386,12 @@ func (s *executionsService) SubmitReview(
 		return entity.ExecutionReview{}, entity.ErrExecutionSelfApproval
 	}
 
-	heads, err := s.heads(ctx, execution)
+	latest, err := s.latest(ctx, execution)
 	if err != nil {
 		return entity.ExecutionReview{}, err
 	}
+
+	heads := latest.Heads()
 
 	if !heads.Matches(submission.Heads) {
 		return entity.ExecutionReview{}, entity.ErrReviewStale
@@ -406,6 +441,7 @@ func (s *executionsService) SubmitReview(
 			WorkspaceID:     execution.WorkspaceID,
 			Verdict:         submission.Verdict,
 			Summary:         summary,
+			Revision:        latest.Revision,
 			Heads:           heads,
 			AuthorAccountID: decision.Actor.AccountID,
 			SubmittedAt:     time.Now().UTC(),
@@ -484,6 +520,7 @@ func (s *executionsService) handBack(
 		if verdict == entity.VerdictRequestChanges {
 			instruction.Reason = channelv1.ResumeFeedback
 			instruction.Instruction = entity.ComposeReviewFeedback(summary, comments)
+			instruction.Threads = entity.ReviewThreads(comments)
 		}
 
 		if err := s.tell(ctx, execution, entity.ChannelExecutionResume, instruction); err != nil {
@@ -498,4 +535,118 @@ func (s *executionsService) handBack(
 	}
 
 	return nil
+}
+
+func (s *executionsService) ReviewReplied(
+	ctx context.Context,
+	runner entity.Runner,
+	message entity.ChannelMessage,
+) error {
+	execution, err := s.held(ctx, runner, message.ExecutionID)
+	if err != nil {
+		return err
+	}
+
+	var reply channelv1.ReviewReply
+
+	if err := json.Unmarshal(message.Payload, &reply); err != nil {
+		return entity.ErrChannelEnvelopeInvalid
+	}
+
+	err = s.answer(ctx, execution, reply, message.IssuedAt)
+	if refusedReply(err) {
+		logging.From(ctx).InfoContext(
+			ctx,
+			"a run's agent answered a review thread that no longer takes an answer",
+			slog.String("execution_id", execution.ID),
+			slog.String("comment_id", reply.CommentID),
+			slog.String("reason", err.Error()),
+		)
+
+		return nil
+	}
+
+	return err
+}
+
+func (s *executionsService) answer(
+	ctx context.Context,
+	execution entity.Execution,
+	reply channelv1.ReviewReply,
+	issuedAt time.Time,
+) error {
+	if execution.State.Terminal() {
+		return entity.ErrReviewReplyFinished
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateReviewCommentBody("body", reply.Body),
+	); err != nil {
+		return err
+	}
+
+	threadID, err := uuid.Parse(reply.CommentID)
+	if err != nil {
+		return entity.ErrReviewCommentNotFound
+	}
+
+	thread, err := s.reviews.GetComment(ctx, execution.ID, threadID)
+	if err != nil {
+		return err
+	}
+
+	if thread.Pending() {
+		return entity.ErrReviewCommentNotFound
+	}
+
+	if thread.Reply() {
+		return entity.ErrReviewCommentReply
+	}
+
+	count, err := s.reviews.CountComments(ctx, execution.ID)
+	if err != nil {
+		return err
+	}
+
+	if count >= entity.ReviewCommentsPerRunMax {
+		return entity.ErrReviewCommentsFull
+	}
+
+	agent, err := s.agents.GetByID(ctx, execution.WorkspaceID, execution.AgentID)
+	if err != nil {
+		return err
+	}
+
+	createdAt := issuedAt.UTC()
+	if issuedAt.IsZero() {
+		createdAt = time.Now().UTC()
+	}
+
+	if _, err := s.reviews.AddComment(ctx, entity.ExecutionReviewComment{
+		ExecutionID:     execution.ID,
+		WorkspaceID:     execution.WorkspaceID,
+		ReviewID:        thread.ReviewID,
+		ParentID:        thread.ID,
+		Anchor:          thread.Anchor,
+		Revision:        thread.Revision,
+		Body:            strings.TrimSpace(reply.Body),
+		AuthorAccountID: agent.AccountID,
+		CreatedAt:       createdAt,
+	}); err != nil {
+		return err
+	}
+
+	s.publish(ctx, entity.EventExecutionReview, execution)
+
+	return nil
+}
+
+func refusedReply(err error) bool {
+	var invalid entity.ValidationError
+
+	return errors.As(err, &invalid) ||
+		errors.Is(err, entity.ErrReviewCommentNotFound) ||
+		errors.Is(err, entity.ErrReviewCommentReply) ||
+		errors.Is(err, entity.ErrReviewCommentsFull) ||
+		errors.Is(err, entity.ErrReviewReplyFinished)
 }

@@ -13,6 +13,7 @@ import (
 
 type changeSetsService struct {
 	changesets repository.ChangeSet
+	snapshots  repository.ExecutionSnapshot
 	issues     repository.Issue
 	executions service.Executions
 	source     service.SourceControl
@@ -23,6 +24,7 @@ type changeSetsService struct {
 
 func New(
 	changesets repository.ChangeSet,
+	snapshots repository.ExecutionSnapshot,
 	issues repository.Issue,
 	executions service.Executions,
 	source service.SourceControl,
@@ -32,6 +34,7 @@ func New(
 ) service.ChangeSets {
 	return &changeSetsService{
 		changesets: changesets,
+		snapshots:  snapshots,
 		issues:     issues,
 		executions: executions,
 		source:     source,

@@ -5040,7 +5040,7 @@ export interface paths {
         };
         /**
          * The comments and reviews left on this run's changes
-         * @description Nothing here has been pushed. Comments somebody has drafted but not yet submitted are shown only to them.
+         * @description Nothing here has been pushed. Every pass the run finishes is kept as a numbered review snapshot; the latest one is shown unless `revision` names an earlier one. Comments somebody has drafted but not yet submitted are shown only to them.
          */
         get: operations["getWorkspaceExecutionReview"];
         put?: never;
@@ -6705,8 +6705,11 @@ export interface components {
             outdated: boolean;
             /** @description The lines of the diff the comment was left under, as they were then */
             hunk?: string;
+            /** @description The review snapshot the thread was started on; a reply carries its thread's */
+            revision: number;
             body: string;
             authorName?: string;
+            authorKind: components["schemas"]["CommentAuthorKind"];
             /** @description Whether the caller wrote this, and so may change or remove it */
             mine?: boolean;
             /** Format: date-time */
@@ -6723,6 +6726,7 @@ export interface components {
             executionId: string;
             verdict: components["schemas"]["ExecutionReviewVerdict"];
             summary: string;
+            revision: number;
             authorName?: string;
             /** Format: date-time */
             submittedAt: string;
@@ -6731,8 +6735,59 @@ export interface components {
             repository: string;
             headSha: string;
         };
+        ReviewCommit: {
+            sha: string;
+            subject: string;
+        };
+        ReviewRepository: {
+            repository: string;
+            branch: string;
+            baseSha: string;
+            headSha: string;
+            /** @description Newest first, as the run committed them on its branch */
+            commits: components["schemas"]["ReviewCommit"][];
+            additions: number;
+            deletions: number;
+            filesChanged: number;
+            /**
+             * Format: uuid
+             * @description Absent when the machine could not keep this repository's diff
+             */
+            diffArtifactId?: string;
+        };
+        /**
+         * @description `ready` is healthy and exposed; `failed` was started but never became healthy or could not be exposed; `unsupported` is declared in the Run Plan but cannot run or be proxied here.
+         * @enum {string}
+         */
+        ReviewPreviewState: "ready" | "failed" | "unsupported";
+        ReviewPreview: {
+            name: string;
+            service: string;
+            path?: string;
+            state: components["schemas"]["ReviewPreviewState"];
+            reason?: string;
+            /** @description The gateway address, present only while the preview is open and this server serves a preview domain. */
+            url?: string;
+        };
+        ReviewRevision: {
+            revision: number;
+            additions: number;
+            deletions: number;
+            /** Format: date-time */
+            reportedAt: string;
+        };
         ExecutionReviewState: {
-            /** @description The commit each repository's changes stand at. A review is submitted against these, so changes that moved on in the meantime are never approved unread. */
+            /** @description The snapshot shown. Zero while the run has not finished a pass. */
+            revision: number;
+            /** @description Only the latest snapshot can be approved or asked to change. */
+            latestRevision: number;
+            revisions: components["schemas"]["ReviewRevision"][];
+            /** @description What the coding agent said about this pass */
+            summary: string;
+            repositories: components["schemas"]["ReviewRepository"][];
+            /** @description Every preview the Run Plan declares, as it stood when this pass was prepared. Empty when the codebase declares none. */
+            previews: components["schemas"]["ReviewPreview"][];
+            /** @description The commit each repository's changes stand at in the latest snapshot. A review is submitted against these, so changes that moved on in the meantime are never approved unread. */
             heads: components["schemas"]["ReviewHead"][];
             comments: components["schemas"]["ReviewComment"][];
             reviews: components["schemas"]["ExecutionReview"][];
@@ -20205,7 +20260,9 @@ export interface operations {
     };
     getWorkspaceExecutionReview: {
         parameters: {
-            query?: never;
+            query?: {
+                revision?: number;
+            };
             header?: never;
             path: {
                 workspaceId: components["parameters"]["WorkspaceId"];
