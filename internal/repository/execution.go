@@ -47,6 +47,7 @@ type ExecutionMove struct {
 type Execution interface {
 	Create(ctx context.Context, execution NewExecution) (entity.Execution, error)
 	GetByID(ctx context.Context, executionID string) (entity.Execution, error)
+	LockByID(ctx context.Context, executionID string) (entity.Execution, error)
 	ListByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Execution, error)
 	ListVisible(
 		ctx context.Context, scope entity.TeamScope, page entity.ExecutionPage,

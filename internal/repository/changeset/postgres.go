@@ -55,6 +55,12 @@ const changeColumns = `
        coalesce(diff_artifact_id::text, ''),
        pull_request_url,
        coalesce(code_link_id::text, ''),
+       publication_state,
+       publication_step,
+       publication_error,
+       published_sha,
+       publication_revision,
+       published_at,
        reported_at,
        created_at,
        updated_at`
@@ -86,6 +92,23 @@ WITH upserted AS (
 SELECT` + changeColumns + `
 FROM upserted`
 
+const savePublicationQuery = `
+WITH updated AS (
+    UPDATE workspace_execution_changes
+    SET publication_state    = $3,
+        publication_step     = $4,
+        publication_error    = $5,
+        published_sha        = $6,
+        publication_revision = $7,
+        published_at         = $8,
+        pull_request_url     = CASE WHEN $9 <> '' THEN $9 ELSE pull_request_url END,
+        updated_at           = now()
+    WHERE execution_id = $1 AND repository = $2 AND publication_revision <= $7
+    RETURNING *
+)
+SELECT` + changeColumns + `
+FROM updated`
+
 const joinedChangeColumns = `
        c.id,
        c.execution_id,
@@ -101,6 +124,12 @@ const joinedChangeColumns = `
        coalesce(c.diff_artifact_id::text, ''),
        c.pull_request_url,
        coalesce(c.code_link_id::text, ''),
+       c.publication_state,
+       c.publication_step,
+       c.publication_error,
+       c.published_sha,
+       c.publication_revision,
+       c.published_at,
        c.reported_at,
        c.created_at,
        c.updated_at`
@@ -207,9 +236,17 @@ func changeOf(model *dbpostgres.WorkspaceExecutionChange) (entity.ExecutionChang
 		DiffArtifactID: diffArtifactID,
 		PullRequestURL: model.PullRequestURL,
 		CodeLinkID:     codeLinkID,
-		ReportedAt:     model.ReportedAt,
-		CreatedAt:      model.CreatedAt,
-		UpdatedAt:      model.UpdatedAt,
+		Publication: entity.ExecutionPublication{
+			State:       entity.PublicationState(model.PublicationState),
+			Step:        entity.PublicationStep(model.PublicationStep),
+			Error:       model.PublicationError,
+			SHA:         model.PublishedSha,
+			Revision:    model.PublicationRevision,
+			PublishedAt: model.PublishedAt.Ptr(),
+		},
+		ReportedAt: model.ReportedAt,
+		CreatedAt:  model.CreatedAt,
+		UpdatedAt:  model.UpdatedAt,
 	}, nil
 }
 
@@ -355,6 +392,41 @@ func (r *changeSetRepository) SaveChange(
 
 	if err != nil {
 		return entity.ExecutionChange{}, fmt.Errorf("save execution change: %w", err)
+	}
+
+	return saved, nil
+}
+
+func (r *changeSetRepository) SavePublication(
+	ctx context.Context,
+	executionID string,
+	published entity.RepositoryPublication,
+) (entity.ExecutionChange, error) {
+	saved, err := scanChange(r.db.Querier(ctx).QueryRowContext(
+		ctx,
+		savePublicationQuery,
+		executionID,
+		published.Repository,
+		string(published.Publication.State),
+		string(published.Publication.Step),
+		published.Publication.Error,
+		published.Publication.SHA,
+		published.Publication.Revision,
+		published.Publication.PublishedAt,
+		published.PullRequestURL,
+	))
+
+	if errors.Is(err, sql.ErrNoRows) {
+		current, err := r.change(ctx, executionID, published.Repository)
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.ExecutionChange{}, entity.ErrExecutionChangeNotFound
+		}
+
+		return current, err
+	}
+
+	if err != nil {
+		return entity.ExecutionChange{}, fmt.Errorf("save a repository publication: %w", err)
 	}
 
 	return saved, nil
@@ -577,6 +649,9 @@ func readChange(row scanner, withAttempt bool) (entity.ExecutionChange, int, err
 		artifactID  string
 		codeLinkID  string
 		attempt     int
+
+		publicationState string
+		publicationStep  string
 	)
 
 	targets := []any{
@@ -594,6 +669,12 @@ func readChange(row scanner, withAttempt bool) (entity.ExecutionChange, int, err
 		&artifactID,
 		&change.PullRequestURL,
 		&codeLinkID,
+		&publicationState,
+		&publicationStep,
+		&change.Publication.Error,
+		&change.Publication.SHA,
+		&change.Publication.Revision,
+		&change.Publication.PublishedAt,
 		&change.ReportedAt,
 		&change.CreatedAt,
 		&change.UpdatedAt,
@@ -631,6 +712,8 @@ func readChange(row scanner, withAttempt bool) (entity.ExecutionChange, int, err
 	change.WorkspaceID = parsedWorkspace
 	change.DiffArtifactID = parsedArtifact
 	change.CodeLinkID = parsedLink
+	change.Publication.State = entity.PublicationState(publicationState)
+	change.Publication.Step = entity.PublicationStep(publicationStep)
 
 	return change, attempt, nil
 }

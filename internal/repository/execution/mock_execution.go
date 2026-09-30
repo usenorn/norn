@@ -239,6 +239,21 @@ func (mr *MockExecutionMockRecorder) ListVisible(ctx, scope, page any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVisible", reflect.TypeOf((*MockExecution)(nil).ListVisible), ctx, scope, page)
 }
 
+// LockByID mocks base method.
+func (m *MockExecution) LockByID(ctx context.Context, executionID string) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LockByID", ctx, executionID)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LockByID indicates an expected call of LockByID.
+func (mr *MockExecutionMockRecorder) LockByID(ctx, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockExecution)(nil).LockByID), ctx, executionID)
+}
+
 // Move mocks base method.
 func (m *MockExecution) Move(ctx context.Context, executionID string, move repository.ExecutionMove) (entity.Execution, error) {
 	m.ctrl.T.Helper()

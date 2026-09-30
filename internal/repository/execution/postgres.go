@@ -96,6 +96,11 @@ const executionByIDQuery = `
 SELECT` + executionColumns + executionJoins + `
 WHERE e.id = $1`
 
+const lockExecutionQuery = `
+SELECT` + executionColumns + executionJoins + `
+WHERE e.id = $1
+FOR UPDATE OF e`
+
 const executionsByIssueQuery = `
 SELECT` + executionColumns + executionJoins + `
 WHERE e.workspace_id = $1 AND e.issue_id = $2
@@ -639,6 +644,13 @@ func (r *executionRepository) GetByID(
 	executionID string,
 ) (entity.Execution, error) {
 	return r.find(ctx, executionByIDQuery, executionID)
+}
+
+func (r *executionRepository) LockByID(
+	ctx context.Context,
+	executionID string,
+) (entity.Execution, error) {
+	return r.find(ctx, lockExecutionQuery, executionID)
 }
 
 func (r *executionRepository) ListByIssue(

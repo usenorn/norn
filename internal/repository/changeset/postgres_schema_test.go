@@ -150,9 +150,10 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"saveResultQuery":     saveResultQuery,
-		"saveChangeQuery":     saveChangeQuery,
-		"issueChangesQuery":   issueChangesQuery,
-		"saveValidationQuery": saveValidationQuery,
+		"saveResultQuery":      saveResultQuery,
+		"saveChangeQuery":      saveChangeQuery,
+		"savePublicationQuery": savePublicationQuery,
+		"issueChangesQuery":    issueChangesQuery,
+		"saveValidationQuery":  saveValidationQuery,
 	}
 }

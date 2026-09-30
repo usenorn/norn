@@ -161,6 +161,7 @@ func statements() map[string]string {
 	return map[string]string{
 		"insertExecutionQuery":               insertExecutionQuery,
 		"executionByIDQuery":                 executionByIDQuery,
+		"lockExecutionQuery":                 lockExecutionQuery,
 		"executionsByIssueQuery":             executionsByIssueQuery,
 		"visibleExecutionsQuery":             visibleExecutionsQuery,
 		"keepExecutionQuery":                 keepExecutionQuery,
