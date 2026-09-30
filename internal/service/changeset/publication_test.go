@@ -59,6 +59,13 @@ func TestEachRepositoryKeepsItsOwnPublicationOutcome(t *testing.T) {
 		t.Fatalf("the published repository came back as %+v", backend)
 	}
 
+	if len(h.relayed) != 1 || h.relayed[0].Kind != entity.TelegramDecisionPublication {
+		t.Fatalf(
+			"an incomplete publication relayed %+v; whoever decides on Telegram never hears it stalled",
+			h.relayed,
+		)
+	}
+
 	if backend.CodeLinkID == uuid.Nil {
 		t.Fatal("the pull request publication opened was never linked to the issue")
 	}
@@ -109,5 +116,27 @@ func TestAPublicationOfCommitsNobodyApprovedIsNeverRecorded(t *testing.T) {
 				t.Fatalf("%s was recorded as %+v", name, backend.Publication)
 			}
 		})
+	}
+}
+
+func TestARetryUnderwayClosesTheStalledPublicationMessage(t *testing.T) {
+	h := newHarness(t)
+	h.holding()
+	h.approved(2, map[string]string{"backend": "b2"})
+
+	message := h.message(entity.ChannelPublication, channelv1.Publication{
+		Revision: 2,
+		Attempt:  2,
+		Repos: []channelv1.RepoPublication{{
+			Repository: "backend", SHA: "b2", State: channelv1.PublicationPending,
+		}},
+	})
+
+	if err := h.service.Published(context.Background(), h.runner, message); err != nil {
+		t.Fatalf("record the retry: %v", err)
+	}
+
+	if len(h.relayed) != 0 || len(h.settled) != 1 {
+		t.Fatalf("a retry underway relayed %+v and settled %+v", h.relayed, h.settled)
 	}
 }

@@ -77,6 +77,33 @@ func (p ExecutionPublication) Failed() bool {
 	return p.State == PublicationFailed
 }
 
+type PublicationOutcome int
+
+const (
+	PublicationOutcomeUnderway PublicationOutcome = iota
+	PublicationOutcomeIncomplete
+	PublicationOutcomeComplete
+)
+
+func PublicationOutcomeOf(published []RepositoryPublication) PublicationOutcome {
+	failed := false
+
+	for _, repository := range published {
+		switch repository.Publication.State {
+		case PublicationPending, PublicationNone:
+			return PublicationOutcomeUnderway
+		case PublicationFailed:
+			failed = true
+		}
+	}
+
+	if failed {
+		return PublicationOutcomeIncomplete
+	}
+
+	return PublicationOutcomeComplete
+}
+
 type RepositoryPublication struct {
 	Repository     string
 	PullRequestURL string

@@ -69,7 +69,10 @@ func (s *changeSetsService) Published(
 			saved = append(saved, stored)
 		}
 
-		postgres.AfterCommit(ctx, func(ctx context.Context) { s.announce(ctx, execution) })
+		postgres.AfterCommit(ctx, func(ctx context.Context) {
+			s.announce(ctx, execution)
+			s.relay(ctx, execution, incoming, published)
+		})
 
 		return nil
 	})
@@ -80,6 +83,33 @@ func (s *changeSetsService) Published(
 	s.link(ctx, execution, saved)
 
 	return nil
+}
+
+func (s *changeSetsService) relay(
+	ctx context.Context,
+	execution entity.Execution,
+	incoming channelv1.Publication,
+	published []entity.RepositoryPublication,
+) {
+	decision := entity.TelegramPublicationDecision(execution, incoming.Revision, incoming.Attempt)
+
+	var err error
+
+	switch entity.PublicationOutcomeOf(published) {
+	case entity.PublicationOutcomeIncomplete:
+		err = s.jobs.EnqueueTelegramDecision(ctx, decision)
+	case entity.PublicationOutcomeUnderway:
+		err = s.jobs.EnqueueTelegramSettlement(ctx, decision)
+	default:
+		return
+	}
+
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx, "queueing a publication decision for telegram failed",
+			slog.String("execution_id", execution.ID), slog.String("error", err.Error()),
+		)
+	}
 }
 
 func publicationsOf(

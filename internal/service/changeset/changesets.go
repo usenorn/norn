@@ -20,6 +20,7 @@ type changeSetsService struct {
 	events     service.Events
 	authorizer service.Authorizer
 	transactor repository.Transactor
+	jobs       repository.JobProducer
 }
 
 func New(
@@ -31,6 +32,7 @@ func New(
 	events service.Events,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
+	jobs repository.JobProducer,
 ) service.ChangeSets {
 	return &changeSetsService{
 		changesets: changesets,
@@ -41,6 +43,7 @@ func New(
 		events:     events,
 		authorizer: authorizer,
 		transactor: transactor,
+		jobs:       jobs,
 	}
 }
 

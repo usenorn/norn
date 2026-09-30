@@ -471,7 +471,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	executionUpload := executionupload.New(postgresClient)
 	configExecutions := config.NewExecutions(configConfig)
 	executionUploads := executionupload2.New(executionUpload, repositoryBlob, runners, executions, serviceAuthorizer, configExecutions, attachments)
-	changeSets := changeset2.New(changeSet, executionSnapshot, repositoryIssue, executions, serviceSourceControl, serviceEvents, serviceAuthorizer, postgresClient)
+	changeSets := changeset2.New(changeSet, executionSnapshot, repositoryIssue, executions, serviceSourceControl, serviceEvents, serviceAuthorizer, postgresClient, jobProducer)
 	previewShare := previewshare.New(postgresClient)
 	previewGrant := previewgrant.New(client)
 	servicePreviews := preview2.New(repositoryPreview, previewShare, previewGrant, repositoryExecution, executions, serviceEvents, serviceAuthorizer, serviceAudit, postgresClient, app, previews)
