@@ -15,6 +15,7 @@ import (
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
 	planrepo "github.com/usenorn/norn/internal/repository/executionplan"
 	reviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
+	snapshotrepo "github.com/usenorn/norn/internal/repository/executionsnapshot"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
@@ -56,6 +57,7 @@ type harness struct {
 	executions   *executionrepo.MockExecution
 	plans        *planrepo.MockExecutionPlan
 	reviews      *reviewrepo.MockExecutionReview
+	snapshots    *snapshotrepo.MockExecutionSnapshot
 	changesets   *changesetrepo.MockChangeSet
 	issues       *issuerepo.MockIssue
 	delegations  *delegationrepo.MockIssueDelegation
@@ -105,6 +107,7 @@ func newHarness(t *testing.T) *harness {
 		executions:   executionrepo.NewMockExecution(ctrl),
 		plans:        planrepo.NewMockExecutionPlan(ctrl),
 		reviews:      reviewrepo.NewMockExecutionReview(ctrl),
+		snapshots:    snapshotrepo.NewMockExecutionSnapshot(ctrl),
 		changesets:   changesetrepo.NewMockChangeSet(ctrl),
 		issues:       issuerepo.NewMockIssue(ctrl),
 		delegations:  delegationrepo.NewMockIssueDelegation(ctrl),
@@ -193,7 +196,7 @@ func (h *harness) botsService() service.TelegramBots {
 func (h *harness) updatesService() service.TelegramUpdates {
 	return telegrambot.NewUpdates(
 		h.bots, h.audience, h.conversation, h.received, h.messenger, h.agents, h.questions,
-		h.executions, h.plans, h.reviews, h.changesets, h.issues, h.delegations, h.settings, h.workspaces,
+		h.executions, h.plans, h.reviews, h.snapshots, h.changesets, h.issues, h.delegations, h.settings, h.workspaces,
 		h.jobs, h.transactor, h.answers, h.decisions, h.hosted, h.audit, h.app, h.limits(),
 	)
 }

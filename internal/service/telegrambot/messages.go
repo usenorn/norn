@@ -104,13 +104,13 @@ func planText(c decisionContext, plan entity.ExecutionPlan) string {
 	return built.String()
 }
 
-func reviewText(c decisionContext, changeset entity.ExecutionChangeSet) string {
+func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot) string {
 	var built strings.Builder
 
 	built.WriteString(c.heading("finished its changes"))
 	built.WriteString("\n\n")
 
-	if summary := strings.TrimSpace(changeset.Result.Summary); summary != "" {
+	if summary := strings.TrimSpace(snapshot.Summary); summary != "" {
 		built.WriteString(escaped(summary, questionBudget))
 		built.WriteString("\n\n")
 	}
@@ -200,6 +200,73 @@ func reviewSettled(
 	built.WriteString("These changes are no longer waiting for review.")
 
 	return built.String(), true
+}
+
+func publicationText(c decisionContext, changeset entity.ExecutionChangeSet) string {
+	var built strings.Builder
+
+	built.WriteString(c.heading("could not publish all of its approved changes"))
+	built.WriteString("\n\n")
+	writePublication(&built, changeset)
+	built.WriteString("\n\nRetry publishes only what is left. Give up leaves the run failed.")
+
+	return built.String()
+}
+
+func publicationSettled(
+	c decisionContext,
+	execution entity.Execution,
+	changeset entity.ExecutionChangeSet,
+) (string, bool) {
+	var built strings.Builder
+
+	built.WriteString(c.heading("published its approved changes"))
+	built.WriteString("\n\n")
+
+	switch {
+	case execution.State == entity.ExecutionCompleted:
+		writePublication(&built, changeset)
+	case execution.State == entity.ExecutionFailed:
+		built.WriteString("Publication was abandoned.")
+	case execution.State != entity.ExecutionApproved:
+		built.WriteString("These changes are no longer waiting to be published.")
+	case !changeset.PublicationFailed():
+		built.WriteString("Retrying publication.")
+	default:
+		return "", false
+	}
+
+	return built.String(), true
+}
+
+func writePublication(built *strings.Builder, changeset entity.ExecutionChangeSet) {
+	for index, change := range changeset.Changes {
+		if index > 0 {
+			built.WriteString("\n")
+		}
+
+		fmt.Fprintf(built, "<b>%s</b>: ", escaped(change.Repository, titleBudget))
+
+		switch change.Publication.State {
+		case entity.PublicationPublished:
+			fmt.Fprintf(built, "<a href=\"%s\">pull request</a>", html.EscapeString(change.PullRequestURL))
+		case entity.PublicationPushed:
+			built.WriteString("pushed")
+		case entity.PublicationFailed:
+			fmt.Fprintf(built, "%s failed: <i>%s</i>",
+				publicationStep(change.Publication.Step), escaped(change.Publication.Error, answerBudget))
+		default:
+			built.WriteString("not published yet")
+		}
+	}
+}
+
+func publicationStep(step entity.PublicationStep) string {
+	if step == entity.PublicationStepPullRequest {
+		return "opening the pull request"
+	}
+
+	return "pushing"
 }
 
 func replyText(text string) string {

@@ -37,6 +37,7 @@ type updates struct {
 	executions   repository.Execution
 	plans        repository.ExecutionPlan
 	reviews      repository.ExecutionReview
+	snapshots    repository.ExecutionSnapshot
 	changesets   repository.ChangeSet
 	issues       repository.Issue
 	delegations  repository.IssueDelegation
@@ -63,6 +64,7 @@ func NewUpdates(
 	executions repository.Execution,
 	plans repository.ExecutionPlan,
 	reviews repository.ExecutionReview,
+	snapshots repository.ExecutionSnapshot,
 	changesets repository.ChangeSet,
 	issues repository.Issue,
 	delegations repository.IssueDelegation,
@@ -88,6 +90,7 @@ func NewUpdates(
 		executions:   executions,
 		plans:        plans,
 		reviews:      reviews,
+		snapshots:    snapshots,
 		changesets:   changesets,
 		issues:       issues,
 		delegations:  delegations,

@@ -20,6 +20,10 @@ func (s *updates) pressed(
 	decision entity.TelegramDecisionMessage,
 	data string,
 ) (string, error) {
+	if decision.Kind == entity.TelegramDecisionPublication {
+		return s.publishing(ctx, account, decision, data)
+	}
+
 	switch data {
 	case entity.TelegramCallbackChanges:
 		return replyForChanges, nil
@@ -57,6 +61,36 @@ func (s *updates) pressed(
 	return s.outcome(ctx, execution.WorkspaceID, execution.IssueID, err, "Changes approved.")
 }
 
+func (s *updates) publishing(
+	ctx context.Context,
+	account entity.TelegramAccount,
+	decision entity.TelegramDecisionMessage,
+	data string,
+) (string, error) {
+	hand, done := s.decisions.RetryPublication, "Retrying publication."
+
+	switch data {
+	case entity.TelegramCallbackRetry:
+	case entity.TelegramCallbackAbandon:
+		hand, done = s.decisions.AbandonPublication, "Publication abandoned."
+	default:
+		return "That option is not available.", nil
+	}
+
+	execution, err := s.executions.GetByID(ctx, decision.ExecutionID)
+	if err != nil {
+		return "", err
+	}
+
+	err = s.transactor.WithSavepoint(ctx, func(ctx context.Context) error {
+		_, err := hand(identity.WithActor(ctx, account.Actor()), execution.WorkspaceID, execution.ID)
+
+		return err
+	})
+
+	return s.outcome(ctx, execution.WorkspaceID, execution.IssueID, err, done)
+}
+
 func (s *updates) feedback(
 	ctx context.Context,
 	account entity.TelegramAccount,
@@ -65,6 +99,10 @@ func (s *updates) feedback(
 ) (string, error) {
 	if decision.Settled {
 		return "This was already decided.", nil
+	}
+
+	if decision.Kind == entity.TelegramDecisionPublication {
+		return "Tap Retry publication or Give up.", nil
 	}
 
 	execution, err := s.executions.GetByID(ctx, decision.ExecutionID)
@@ -121,7 +159,8 @@ func (s *updates) outcome(
 		return "This is out of date. Open it in Norn to see the latest.", nil
 	case errors.Is(err, entity.ErrIssueQuestionAnswered), errors.Is(err, entity.ErrIssueQuestionSettled),
 		errors.Is(err, entity.ErrExecutionNotPlanning), errors.Is(err, entity.ErrExecutionPlanMissing),
-		errors.Is(err, entity.ErrReviewClosed), errors.Is(err, entity.ErrExecutionTransition):
+		errors.Is(err, entity.ErrReviewClosed), errors.Is(err, entity.ErrExecutionTransition),
+		errors.Is(err, entity.ErrPublicationNotPending):
 		return "This was already decided.", nil
 	case errors.Is(err, entity.ErrExecutionQuestionsOpen):
 		return "The run is still waiting on an answer. Answer its open questions first.", nil

@@ -294,16 +294,16 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 	h.decidedBy(execution.IssueID, uuid.New(), entity.DecisionChannelNorn)
 	h.audience.EXPECT().Groups(gomock.Any(), h.bot.ID).Return([]entity.TelegramGroup{{ChatID: groupChat}}, nil)
 
-	changes := []entity.ExecutionChange{{Repository: "api", HeadSHA: "abc123"}}
-	h.changesets.EXPECT().Get(gomock.Any(), execution.ID).Return(entity.ExecutionChangeSet{
-		ExecutionID: execution.ID,
-		Result:      entity.ExecutionResult{ExecutionID: execution.ID, Summary: "Split the handler."},
-		Changes:     changes,
+	h.snapshots.EXPECT().Latest(gomock.Any(), execution.ID).Return(entity.ExecutionSnapshot{
+		ExecutionID:  execution.ID,
+		Revision:     2,
+		Summary:      "Split the handler.",
+		Repositories: []entity.SnapshotRepository{{Repository: "api", HeadSHA: "abc123"}},
 	}, nil)
 	h.conversation.EXPECT().Posted(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	remembered := h.remembering(t)
-	heads := entity.HeadsOf(changes)
+	heads := entity.ReviewHeads{"api": "abc123"}
 
 	if err := h.updatesService().Relay(context.Background(), entity.TelegramReviewDecision(execution, heads)); err != nil {
 		t.Fatalf("Relay: %v", err)
@@ -361,7 +361,7 @@ func TestAnApprovedReviewIsEditedToSayWhoApproved(t *testing.T) {
 		{Verdict: entity.VerdictComment, Heads: heads, AuthorName: "Sam"},
 		{Verdict: entity.VerdictApprove, Heads: heads, AuthorName: "Rae"},
 	}, nil)
-	h.changesets.EXPECT().Get(gomock.Any(), execution.ID).Return(entity.ExecutionChangeSet{}, nil)
+	h.snapshots.EXPECT().Latest(gomock.Any(), execution.ID).Return(entity.ExecutionSnapshot{}, nil)
 
 	posted := []entity.TelegramDecisionMessage{{
 		BotID: h.bot.ID, ChatID: 900, MessageID: 4, Kind: entity.TelegramDecisionReview, ExecutionID: execution.ID, ReviewHeads: heads,
@@ -381,5 +381,54 @@ func TestAnApprovedReviewIsEditedToSayWhoApproved(t *testing.T) {
 
 	if err := h.updatesService().Settle(context.Background(), decision); err != nil {
 		t.Fatalf("Settle: %v", err)
+	}
+}
+
+func TestAStalledPublicationAsksWhetherToRetryAndSaysWhatFailed(t *testing.T) {
+	h := newHarness(t)
+	execution := h.running(entity.ExecutionApproved)
+	h.decidedBy(execution.IssueID, uuid.New(), entity.DecisionChannelNorn)
+	h.audience.EXPECT().Groups(gomock.Any(), h.bot.ID).Return([]entity.TelegramGroup{{ChatID: groupChat}}, nil)
+
+	h.changesets.EXPECT().Get(gomock.Any(), execution.ID).Return(entity.ExecutionChangeSet{
+		ExecutionID: execution.ID,
+		Changes: []entity.ExecutionChange{
+			{
+				Repository: "api", PullRequestURL: "https://github.com/acme/api/pull/7",
+				Publication: entity.ExecutionPublication{State: entity.PublicationPublished},
+			},
+			{
+				Repository: "web",
+				Publication: entity.ExecutionPublication{
+					State: entity.PublicationFailed, Step: entity.PublicationStepPush, Error: "protected branch",
+				},
+			},
+		},
+	}, nil)
+	h.conversation.EXPECT().Posted(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+	remembered := h.remembering(t)
+	decision := entity.TelegramPublicationDecision(execution, 2, 1)
+
+	if err := h.updatesService().Relay(context.Background(), decision); err != nil {
+		t.Fatalf("Relay: %v", err)
+	}
+
+	if len(*remembered) != 1 || (*remembered)[0].Round != decision.Round {
+		t.Fatalf("remembered %+v, want the attempt that stalled", *remembered)
+	}
+
+	for _, want := range []string{
+		`<b>api</b>: <a href="https://github.com/acme/api/pull/7">pull request</a>`,
+		"<b>web</b>: pushing failed: <i>protected branch</i>",
+	} {
+		if !strings.Contains(h.sent[0].Text, want) {
+			t.Errorf("publication message lacks %q:\n%s", want, h.sent[0].Text)
+		}
+	}
+
+	if len(h.sent[0].Buttons) != 2 || h.sent[0].Buttons[0].Data != entity.TelegramCallbackRetry ||
+		h.sent[0].Buttons[1].Data != entity.TelegramCallbackAbandon {
+		t.Fatalf("publication message offers %+v, want retry and give up", h.sent[0].Buttons)
 	}
 }

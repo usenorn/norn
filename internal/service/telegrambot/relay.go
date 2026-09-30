@@ -93,6 +93,8 @@ func sameRound(posted, template entity.TelegramDecisionMessage) bool {
 		return posted.PlanRevision == template.PlanRevision
 	case entity.TelegramDecisionReview:
 		return posted.ReviewHeads.Matches(template.ReviewHeads)
+	case entity.TelegramDecisionPublication:
+		return posted.Round == template.Round
 	default:
 		return true
 	}
@@ -106,6 +108,8 @@ func (s *updates) prepare(ctx context.Context, decision entity.TelegramDecision)
 		return s.preparePlan(ctx, decision)
 	case entity.TelegramDecisionReview:
 		return s.prepareReview(ctx, decision)
+	case entity.TelegramDecisionPublication:
+		return s.preparePublication(ctx, decision)
 	default:
 		return outbound{}, false, nil
 	}
@@ -174,7 +178,7 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 		return outbound{}, false, err
 	}
 
-	changeset, err := s.changesets.Get(ctx, execution.ID)
+	latest, err := s.snapshots.Latest(ctx, execution.ID)
 	if err != nil {
 		return outbound{}, false, err
 	}
@@ -187,7 +191,7 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 	return outbound{
 		target: target,
 		about:  about,
-		text:   reviewText(about, changeset),
+		text:   reviewText(about, latest),
 		buttons: []entity.TelegramButton{
 			{Label: "Approve changes", Data: entity.TelegramCallbackApprove},
 			{Label: "Request changes", Data: entity.TelegramCallbackChanges},
@@ -195,7 +199,42 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 		template: entity.TelegramDecisionMessage{
 			Kind:        entity.TelegramDecisionReview,
 			ExecutionID: execution.ID,
-			ReviewHeads: entity.HeadsOf(changeset.Changes),
+			ReviewHeads: latest.Heads(),
+		},
+	}, true, nil
+}
+
+func (s *updates) preparePublication(
+	ctx context.Context,
+	decision entity.TelegramDecision,
+) (outbound, bool, error) {
+	execution, target, err := s.executed(ctx, decision)
+	if err != nil || execution.State != entity.ExecutionApproved {
+		return outbound{}, false, err
+	}
+
+	changeset, err := s.changesets.Get(ctx, execution.ID)
+	if err != nil || !changeset.PublicationFailed() {
+		return outbound{}, false, err
+	}
+
+	about, err := s.contextOf(ctx, target, execution.WorkspaceID, execution.IssueID, execution.ID)
+	if err != nil {
+		return outbound{}, false, err
+	}
+
+	return outbound{
+		target: target,
+		about:  about,
+		text:   publicationText(about, changeset),
+		buttons: []entity.TelegramButton{
+			{Label: "Retry publication", Data: entity.TelegramCallbackRetry},
+			{Label: "Give up", Data: entity.TelegramCallbackAbandon},
+		},
+		template: entity.TelegramDecisionMessage{
+			Kind:        entity.TelegramDecisionPublication,
+			ExecutionID: execution.ID,
+			Round:       decision.Round,
 		},
 	}, true, nil
 }
@@ -277,17 +316,28 @@ func (s *updates) settlement(ctx context.Context, decision entity.TelegramDecisi
 		}}, nil
 	}
 
+	if decision.Kind == entity.TelegramDecisionPublication {
+		changeset, err := s.changesets.Get(ctx, execution.ID)
+		if err != nil {
+			return settlement{}, err
+		}
+
+		return settlement{target: target, text: func(entity.TelegramDecisionMessage) (string, bool) {
+			return publicationSettled(about, execution, changeset)
+		}}, nil
+	}
+
 	reviews, err := s.reviews.ListReviews(ctx, execution.ID)
 	if err != nil {
 		return settlement{}, err
 	}
 
-	changeset, err := s.changesets.Get(ctx, execution.ID)
+	latest, err := s.snapshots.Latest(ctx, execution.ID)
 	if err != nil {
 		return settlement{}, err
 	}
 
-	current := entity.HeadsOf(changeset.Changes)
+	current := latest.Heads()
 
 	return settlement{target: target, text: func(message entity.TelegramDecisionMessage) (string, bool) {
 		return reviewSettled(about, execution, reviews, current, message.ReviewHeads)
