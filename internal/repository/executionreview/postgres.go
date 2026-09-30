@@ -17,7 +17,8 @@ import (
 const commentColumns = `
     c.id, c.execution_id, c.workspace_id, coalesce(c.review_id::text, ''),
     coalesce(c.parent_id::text, ''), c.repository, c.path, c.side, c.line, c.head_sha, c.hunk,
-    c.body, coalesce(c.author_account_id::text, ''), coalesce(author.display_name, ''),
+    c.revision, c.body, coalesce(c.author_account_id::text, ''), coalesce(author.kind, ''),
+    coalesce(author.display_name, ''),
     c.created_at, c.edited_at, c.resolved_at, coalesce(c.resolved_by::text, ''),
     coalesce(resolver.display_name, '')`
 
@@ -29,9 +30,9 @@ const insertCommentQuery = `
 WITH inserted AS (
     INSERT INTO workspace_execution_review_comments
         (execution_id, workspace_id, review_id, parent_id, repository, path, side, line,
-         head_sha, hunk, body, author_account_id, created_at)
+         head_sha, hunk, revision, body, author_account_id, created_at)
     VALUES ($1, $2, nullif($3, '')::uuid, nullif($4, '')::uuid, $5, $6, $7, $8, $9, $10, $11,
-            nullif($12, '')::uuid, $13)
+            $12, nullif($13, '')::uuid, $14)
     RETURNING *
 )
 SELECT` + commentColumns + `
@@ -78,11 +79,12 @@ FROM resolved c` + commentNames
 const insertReviewQuery = `
 WITH inserted AS (
     INSERT INTO workspace_execution_reviews
-        (execution_id, workspace_id, verdict, summary, heads, author_account_id, submitted_at)
-    VALUES ($1, $2, $3, $4, $5::jsonb, nullif($6, '')::uuid, $7)
+        (execution_id, workspace_id, verdict, summary, revision, heads, author_account_id,
+         submitted_at)
+    VALUES ($1, $2, $3, $4, $5, $6::jsonb, nullif($7, '')::uuid, $8)
     RETURNING *
 )
-SELECT r.id, r.execution_id, r.workspace_id, r.verdict, r.summary, r.heads,
+SELECT r.id, r.execution_id, r.workspace_id, r.verdict, r.summary, r.revision, r.heads,
        coalesce(r.author_account_id::text, ''), coalesce(author.display_name, ''), r.submitted_at
 FROM inserted r
 LEFT JOIN accounts author ON author.id = r.author_account_id`
@@ -93,7 +95,7 @@ SET review_id = $3
 WHERE execution_id = $1 AND author_account_id = $2 AND review_id IS NULL`
 
 const reviewsByExecutionQuery = `
-SELECT r.id, r.execution_id, r.workspace_id, r.verdict, r.summary, r.heads,
+SELECT r.id, r.execution_id, r.workspace_id, r.verdict, r.summary, r.revision, r.heads,
        coalesce(r.author_account_id::text, ''), coalesce(author.display_name, ''), r.submitted_at
 FROM workspace_execution_reviews r
 LEFT JOIN accounts author ON author.id = r.author_account_id
@@ -121,6 +123,7 @@ func scanComment(row scanner) (entity.ExecutionReviewComment, error) {
 		parentID    string
 		side        string
 		authorID    string
+		authorKind  string
 		resolvedBy  string
 		editedAt    sql.NullTime
 		resolvedAt  sql.NullTime
@@ -138,8 +141,10 @@ func scanComment(row scanner) (entity.ExecutionReviewComment, error) {
 		&comment.Anchor.Line,
 		&comment.Anchor.HeadSHA,
 		&comment.Anchor.Hunk,
+		&comment.Revision,
 		&comment.Body,
 		&authorID,
+		&authorKind,
 		&comment.AuthorName,
 		&comment.CreatedAt,
 		&editedAt,
@@ -151,6 +156,7 @@ func scanComment(row scanner) (entity.ExecutionReviewComment, error) {
 	}
 
 	comment.Anchor.Side = entity.ReviewSide(side)
+	comment.AuthorKind = entity.AccountKind(authorKind)
 
 	if editedAt.Valid {
 		comment.EditedAt = &editedAt.Time
@@ -205,6 +211,7 @@ func scanReview(row scanner) (entity.ExecutionReview, error) {
 		&workspaceID,
 		&verdict,
 		&review.Summary,
+		&review.Revision,
 		&heads,
 		&authorID,
 		&review.AuthorName,
@@ -269,6 +276,7 @@ func (r *reviewRepository) AddComment(
 		comment.Anchor.Line,
 		comment.Anchor.HeadSHA,
 		comment.Anchor.Hunk,
+		comment.Revision,
 		comment.Body,
 		idOrEmpty(comment.AuthorAccountID),
 		comment.CreatedAt,
@@ -384,6 +392,7 @@ func (r *reviewRepository) CreateReview(
 		review.WorkspaceID.String(),
 		string(review.Verdict),
 		review.Summary,
+		review.Revision,
 		heads,
 		idOrEmpty(review.AuthorAccountID),
 		review.SubmittedAt,

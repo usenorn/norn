@@ -225,7 +225,7 @@ VALUES ('active', 'person', $1 || '@review-check.test', $1, 'UTC') RETURNING id`
 		t.Helper()
 
 		comment, err := scanComment(tx.QueryRow(insertCommentQuery,
-			"exec-reviewed", workspaceID, "", "", "api", "main.go", "new", 3, "abc", "", "why", author,
+			"exec-reviewed", workspaceID, "", "", "api", "main.go", "new", 3, "abc", "", 2, "why", author,
 			time.Now().UTC(),
 		))
 		if err != nil {
@@ -238,7 +238,7 @@ VALUES ('active', 'person', $1 || '@review-check.test', $1, 'UTC') RETURNING id`
 	mine, theirs := draft(reviewer), draft(colleague)
 
 	review, err := scanReview(tx.QueryRow(insertReviewQuery,
-		"exec-reviewed", workspaceID, "comment", "", []byte(`{"api":"abc"}`), reviewer, time.Now().UTC(),
+		"exec-reviewed", workspaceID, "comment", "", 2, []byte(`{"api":"abc"}`), reviewer, time.Now().UTC(),
 	))
 	if err != nil {
 		t.Fatalf("submit the review: %v", err)
@@ -267,8 +267,8 @@ VALUES ('active', 'person', $1 || '@review-check.test', $1, 'UTC') RETURNING id`
 		t.Fatal("somebody else's unfinished draft was published by another person's review")
 	}
 
-	if review.Heads["api"] != "abc" {
-		t.Fatalf("the review remembered heads %v", review.Heads)
+	if review.Heads["api"] != "abc" || review.Revision != 2 {
+		t.Fatalf("the review remembered revision %d and heads %v", review.Revision, review.Heads)
 	}
 }
 

@@ -103,6 +103,7 @@ type Instruction struct {
 	Stage       Stage    `json:"stage"`
 	Instruction string   `json:"instruction,omitempty"`
 	Answers     []Answer `json:"answers,omitempty"`
+	Threads     []string `json:"review_threads,omitempty"`
 }
 
 type Plan struct {

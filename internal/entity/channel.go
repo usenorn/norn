@@ -66,6 +66,7 @@ const (
 	ChannelChangeSetUpdated  = channelv1.ChangeSetUpdated
 	ChannelExecutionResult   = channelv1.ExecutionResult
 	ChannelExecutionKept     = channelv1.ExecutionRetention
+	ChannelReviewReplied     = channelv1.ReviewReplied
 )
 
 func ChannelServerMessages() []ChannelMessageType {

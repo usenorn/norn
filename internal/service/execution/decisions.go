@@ -55,12 +55,12 @@ func (s *executionsService) relayWaiting(ctx context.Context, execution entity.E
 		return nil
 	}
 
-	heads, err := s.heads(ctx, execution)
+	latest, err := s.latest(ctx, execution)
 	if err != nil {
 		return err
 	}
 
-	s.relay(ctx, entity.TelegramReviewDecision(execution, heads), s.jobs.EnqueueTelegramDecision)
+	s.relay(ctx, entity.TelegramReviewDecision(execution, latest.Heads()), s.jobs.EnqueueTelegramDecision)
 
 	return nil
 }

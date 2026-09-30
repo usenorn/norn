@@ -7439,8 +7439,14 @@ paths:
       operationId: getWorkspaceExecutionReview
       summary: The comments and reviews left on this run's changes
       description: >-
-        Nothing here has been pushed. Comments somebody has drafted but not yet submitted are
-        shown only to them.
+        Nothing here has been pushed. Every pass the run finishes is kept as a numbered review
+        snapshot; the latest one is shown unless `revision` names an earlier one. Comments somebody
+        has drafted but not yet submitted are shown only to them.
+      parameters:
+        - name: revision
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1 }
       responses:
         '200':
           description: The review of this run as it stands
@@ -10388,8 +10394,8 @@ components:
 
     ReviewComment:
       type: object
-      required: [id, executionId, pending, repository, path, side, line, headSha, outdated, body,
-                 createdAt]
+      required: [id, executionId, pending, repository, path, side, line, headSha, outdated, revision,
+                 body, authorKind, createdAt]
       properties:
         id: { type: string, format: uuid }
         executionId: { type: string, maxLength: 64 }
@@ -10414,8 +10420,13 @@ components:
         hunk:
           type: string
           description: The lines of the diff the comment was left under, as they were then
+        revision:
+          type: integer
+          minimum: 1
+          description: The review snapshot the thread was started on; a reply carries its thread's
         body: { type: string, maxLength: 4000 }
         authorName: { type: string }
+        authorKind: { $ref: '#/components/schemas/CommentAuthorKind' }
         mine:
           type: boolean
           description: Whether the caller wrote this, and so may change or remove it
@@ -10426,12 +10437,13 @@ components:
 
     ExecutionReview:
       type: object
-      required: [id, executionId, verdict, summary, submittedAt]
+      required: [id, executionId, verdict, summary, revision, submittedAt]
       properties:
         id: { type: string, format: uuid }
         executionId: { type: string, maxLength: 64 }
         verdict: { $ref: '#/components/schemas/ExecutionReviewVerdict' }
         summary: { type: string, maxLength: 4000 }
+        revision: { type: integer, minimum: 1 }
         authorName: { type: string }
         submittedAt: { type: string, format: date-time }
 
@@ -10442,15 +10454,98 @@ components:
         repository: { type: string }
         headSha: { type: string }
 
+    ReviewCommit:
+      type: object
+      required: [sha, subject]
+      properties:
+        sha: { type: string }
+        subject: { type: string }
+
+    ReviewRepository:
+      type: object
+      required: [repository, branch, baseSha, headSha, commits, additions, deletions, filesChanged]
+      properties:
+        repository: { type: string }
+        branch: { type: string }
+        baseSha: { type: string }
+        headSha: { type: string }
+        commits:
+          type: array
+          description: Newest first, as the run committed them on its branch
+          items: { $ref: '#/components/schemas/ReviewCommit' }
+        additions: { type: integer, minimum: 0 }
+        deletions: { type: integer, minimum: 0 }
+        filesChanged: { type: integer, minimum: 0 }
+        diffArtifactId:
+          type: string
+          format: uuid
+          description: Absent when the machine could not keep this repository's diff
+
+    ReviewPreviewState:
+      type: string
+      description: >-
+        `ready` is healthy and exposed; `failed` was started but never became healthy or could not
+        be exposed; `unsupported` is declared in the Run Plan but cannot run or be proxied here.
+      enum: [ready, failed, unsupported]
+
+    ReviewPreview:
+      type: object
+      required: [name, service, state]
+      properties:
+        name: { type: string }
+        service: { type: string }
+        path: { type: string }
+        state: { $ref: '#/components/schemas/ReviewPreviewState' }
+        reason: { type: string }
+        url:
+          type: string
+          description: >-
+            The gateway address, present only while the preview is open and this server serves a
+            preview domain.
+
+    ReviewRevision:
+      type: object
+      required: [revision, additions, deletions, reportedAt]
+      properties:
+        revision: { type: integer, minimum: 1 }
+        additions: { type: integer, minimum: 0 }
+        deletions: { type: integer, minimum: 0 }
+        reportedAt: { type: string, format: date-time }
+
     ExecutionReviewState:
       type: object
-      required: [heads, comments, reviews]
+      required: [revision, latestRevision, revisions, summary, repositories, previews, heads,
+                 comments, reviews]
       properties:
+        revision:
+          type: integer
+          minimum: 0
+          description: The snapshot shown. Zero while the run has not finished a pass.
+        latestRevision:
+          type: integer
+          minimum: 0
+          description: Only the latest snapshot can be approved or asked to change.
+        revisions:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewRevision' }
+        summary:
+          type: string
+          description: What the coding agent said about this pass
+        repositories:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewRepository' }
+        previews:
+          type: array
+          description: >-
+            Every preview the Run Plan declares, as it stood when this pass was prepared. Empty
+            when the codebase declares none.
+          items: { $ref: '#/components/schemas/ReviewPreview' }
         heads:
           type: array
           description: >-
-            The commit each repository's changes stand at. A review is submitted against these, so
-            changes that moved on in the meantime are never approved unread.
+            The commit each repository's changes stand at in the latest snapshot. A review is
+            submitted against these, so changes that moved on in the meantime are never approved
+            unread.
           items: { $ref: '#/components/schemas/ReviewHead' }
         comments:
           type: array

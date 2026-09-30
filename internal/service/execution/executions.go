@@ -21,6 +21,8 @@ type executionsService struct {
 	changesets repository.ChangeSet
 	plans      repository.ExecutionPlan
 	reviews    repository.ExecutionReview
+	snapshots  repository.ExecutionSnapshot
+	agents     repository.Agent
 	questions  repository.IssueQuestion
 	delegates  repository.IssueDelegation
 	notify     repository.NotificationEvent
@@ -47,6 +49,8 @@ func New(
 	changesets repository.ChangeSet,
 	plans repository.ExecutionPlan,
 	reviews repository.ExecutionReview,
+	snapshots repository.ExecutionSnapshot,
+	agents repository.Agent,
 	questions repository.IssueQuestion,
 	delegates repository.IssueDelegation,
 	notify repository.NotificationEvent,
@@ -72,6 +76,8 @@ func New(
 		changesets: changesets,
 		plans:      plans,
 		reviews:    reviews,
+		snapshots:  snapshots,
+		agents:     agents,
 		questions:  questions,
 		delegates:  delegates,
 		notify:     notify,

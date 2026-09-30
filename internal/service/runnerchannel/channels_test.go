@@ -198,6 +198,9 @@ func TestWhatARunnerReportsAboutAnExecutionReachesTheExecution(t *testing.T) {
 		entity.ChannelExecutionResult: func(h *harness) *gomock.Call {
 			return h.changesets.EXPECT().Resulted(gomock.Any(), h.runner, gomock.Any())
 		},
+		entity.ChannelReviewReplied: func(h *harness) *gomock.Call {
+			return h.executions.EXPECT().ReviewReplied(gomock.Any(), h.runner, gomock.Any())
+		},
 	}
 
 	for kind, expect := range cases {
