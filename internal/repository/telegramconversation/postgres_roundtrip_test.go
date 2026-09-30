@@ -144,7 +144,7 @@ func TestAQuestionMessageIsRememberedOncePerChatAndResolvesBack(t *testing.T) {
 	}
 }
 
-func TestPlanAndReviewMessagesKeepWhatTheyWereSentAbout(t *testing.T) {
+func TestPlanReviewAndPublicationMessagesKeepWhatTheyWereSentAbout(t *testing.T) {
 	db := reach(t)
 	conversation := New(db)
 
@@ -157,6 +157,7 @@ func TestPlanAndReviewMessagesKeepWhatTheyWereSentAbout(t *testing.T) {
 			{BotID: f.botID, ChatID: 7, MessageID: 80, Kind: entity.TelegramDecisionPlan, ExecutionID: run, PlanRevision: 1},
 			{BotID: f.botID, ChatID: 7, MessageID: 81, Kind: entity.TelegramDecisionPlan, ExecutionID: run, PlanRevision: 2},
 			{BotID: f.botID, ChatID: 7, MessageID: 82, Kind: entity.TelegramDecisionReview, ExecutionID: run, ReviewHeads: heads},
+			{BotID: f.botID, ChatID: 7, MessageID: 83, Kind: entity.TelegramDecisionPublication, ExecutionID: run, Round: "2.1"},
 		} {
 			if err := conversation.Remember(ctx, message); err != nil {
 				return err
@@ -188,6 +189,15 @@ func TestPlanAndReviewMessagesKeepWhatTheyWereSentAbout(t *testing.T) {
 
 		if plan.PlanRevision != 2 || plan.ExecutionID != run {
 			t.Errorf("plan message resolved to %+v, want revision 2 of %s", plan, run)
+		}
+
+		publication, err := conversation.DecisionAt(ctx, f.botID, 7, 83)
+		if err != nil {
+			return err
+		}
+
+		if publication.Kind != entity.TelegramDecisionPublication || publication.Round != "2.1" {
+			t.Errorf("publication message resolved to %+v, want the attempt it reported", publication)
 		}
 
 		return errRollback

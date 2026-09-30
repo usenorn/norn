@@ -24,93 +24,100 @@ import (
 
 // WorkspaceTelegramDecisionMessage is an object representing the database table.
 type WorkspaceTelegramDecisionMessage struct {
-	BotID        string      `boil:"bot_id" json:"bot_id" toml:"bot_id" yaml:"bot_id"`
-	ChatID       int64       `boil:"chat_id" json:"chat_id" toml:"chat_id" yaml:"chat_id"`
-	MessageID    int64       `boil:"message_id" json:"message_id" toml:"message_id" yaml:"message_id"`
-	QuestionID   null.String `boil:"question_id" json:"question_id,omitempty" toml:"question_id" yaml:"question_id,omitempty"`
-	SentAt       time.Time   `boil:"sent_at" json:"sent_at" toml:"sent_at" yaml:"sent_at"`
-	SettledAt    null.Time   `boil:"settled_at" json:"settled_at,omitempty" toml:"settled_at" yaml:"settled_at,omitempty"`
-	Kind         string      `boil:"kind" json:"kind" toml:"kind" yaml:"kind"`
-	ExecutionID  null.String `boil:"execution_id" json:"execution_id,omitempty" toml:"execution_id" yaml:"execution_id,omitempty"`
-	PlanRevision null.Int    `boil:"plan_revision" json:"plan_revision,omitempty" toml:"plan_revision" yaml:"plan_revision,omitempty"`
-	ReviewHeads  null.JSON   `boil:"review_heads" json:"review_heads,omitempty" toml:"review_heads" yaml:"review_heads,omitempty"`
+	BotID            string      `boil:"bot_id" json:"bot_id" toml:"bot_id" yaml:"bot_id"`
+	ChatID           int64       `boil:"chat_id" json:"chat_id" toml:"chat_id" yaml:"chat_id"`
+	MessageID        int64       `boil:"message_id" json:"message_id" toml:"message_id" yaml:"message_id"`
+	QuestionID       null.String `boil:"question_id" json:"question_id,omitempty" toml:"question_id" yaml:"question_id,omitempty"`
+	SentAt           time.Time   `boil:"sent_at" json:"sent_at" toml:"sent_at" yaml:"sent_at"`
+	SettledAt        null.Time   `boil:"settled_at" json:"settled_at,omitempty" toml:"settled_at" yaml:"settled_at,omitempty"`
+	Kind             string      `boil:"kind" json:"kind" toml:"kind" yaml:"kind"`
+	ExecutionID      null.String `boil:"execution_id" json:"execution_id,omitempty" toml:"execution_id" yaml:"execution_id,omitempty"`
+	PlanRevision     null.Int    `boil:"plan_revision" json:"plan_revision,omitempty" toml:"plan_revision" yaml:"plan_revision,omitempty"`
+	ReviewHeads      null.JSON   `boil:"review_heads" json:"review_heads,omitempty" toml:"review_heads" yaml:"review_heads,omitempty"`
+	PublicationRound null.String `boil:"publication_round" json:"publication_round,omitempty" toml:"publication_round" yaml:"publication_round,omitempty"`
 
 	R *workspaceTelegramDecisionMessageR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceTelegramDecisionMessageL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceTelegramDecisionMessageColumns = struct {
-	BotID        string
-	ChatID       string
-	MessageID    string
-	QuestionID   string
-	SentAt       string
-	SettledAt    string
-	Kind         string
-	ExecutionID  string
-	PlanRevision string
-	ReviewHeads  string
+	BotID            string
+	ChatID           string
+	MessageID        string
+	QuestionID       string
+	SentAt           string
+	SettledAt        string
+	Kind             string
+	ExecutionID      string
+	PlanRevision     string
+	ReviewHeads      string
+	PublicationRound string
 }{
-	BotID:        "bot_id",
-	ChatID:       "chat_id",
-	MessageID:    "message_id",
-	QuestionID:   "question_id",
-	SentAt:       "sent_at",
-	SettledAt:    "settled_at",
-	Kind:         "kind",
-	ExecutionID:  "execution_id",
-	PlanRevision: "plan_revision",
-	ReviewHeads:  "review_heads",
+	BotID:            "bot_id",
+	ChatID:           "chat_id",
+	MessageID:        "message_id",
+	QuestionID:       "question_id",
+	SentAt:           "sent_at",
+	SettledAt:        "settled_at",
+	Kind:             "kind",
+	ExecutionID:      "execution_id",
+	PlanRevision:     "plan_revision",
+	ReviewHeads:      "review_heads",
+	PublicationRound: "publication_round",
 }
 
 var WorkspaceTelegramDecisionMessageTableColumns = struct {
-	BotID        string
-	ChatID       string
-	MessageID    string
-	QuestionID   string
-	SentAt       string
-	SettledAt    string
-	Kind         string
-	ExecutionID  string
-	PlanRevision string
-	ReviewHeads  string
+	BotID            string
+	ChatID           string
+	MessageID        string
+	QuestionID       string
+	SentAt           string
+	SettledAt        string
+	Kind             string
+	ExecutionID      string
+	PlanRevision     string
+	ReviewHeads      string
+	PublicationRound string
 }{
-	BotID:        "workspace_telegram_decision_messages.bot_id",
-	ChatID:       "workspace_telegram_decision_messages.chat_id",
-	MessageID:    "workspace_telegram_decision_messages.message_id",
-	QuestionID:   "workspace_telegram_decision_messages.question_id",
-	SentAt:       "workspace_telegram_decision_messages.sent_at",
-	SettledAt:    "workspace_telegram_decision_messages.settled_at",
-	Kind:         "workspace_telegram_decision_messages.kind",
-	ExecutionID:  "workspace_telegram_decision_messages.execution_id",
-	PlanRevision: "workspace_telegram_decision_messages.plan_revision",
-	ReviewHeads:  "workspace_telegram_decision_messages.review_heads",
+	BotID:            "workspace_telegram_decision_messages.bot_id",
+	ChatID:           "workspace_telegram_decision_messages.chat_id",
+	MessageID:        "workspace_telegram_decision_messages.message_id",
+	QuestionID:       "workspace_telegram_decision_messages.question_id",
+	SentAt:           "workspace_telegram_decision_messages.sent_at",
+	SettledAt:        "workspace_telegram_decision_messages.settled_at",
+	Kind:             "workspace_telegram_decision_messages.kind",
+	ExecutionID:      "workspace_telegram_decision_messages.execution_id",
+	PlanRevision:     "workspace_telegram_decision_messages.plan_revision",
+	ReviewHeads:      "workspace_telegram_decision_messages.review_heads",
+	PublicationRound: "workspace_telegram_decision_messages.publication_round",
 }
 
 // Generated where
 
 var WorkspaceTelegramDecisionMessageWhere = struct {
-	BotID        whereHelperstring
-	ChatID       whereHelperint64
-	MessageID    whereHelperint64
-	QuestionID   whereHelpernull_String
-	SentAt       whereHelpertime_Time
-	SettledAt    whereHelpernull_Time
-	Kind         whereHelperstring
-	ExecutionID  whereHelpernull_String
-	PlanRevision whereHelpernull_Int
-	ReviewHeads  whereHelpernull_JSON
+	BotID            whereHelperstring
+	ChatID           whereHelperint64
+	MessageID        whereHelperint64
+	QuestionID       whereHelpernull_String
+	SentAt           whereHelpertime_Time
+	SettledAt        whereHelpernull_Time
+	Kind             whereHelperstring
+	ExecutionID      whereHelpernull_String
+	PlanRevision     whereHelpernull_Int
+	ReviewHeads      whereHelpernull_JSON
+	PublicationRound whereHelpernull_String
 }{
-	BotID:        whereHelperstring{field: "\"workspace_telegram_decision_messages\".\"bot_id\""},
-	ChatID:       whereHelperint64{field: "\"workspace_telegram_decision_messages\".\"chat_id\""},
-	MessageID:    whereHelperint64{field: "\"workspace_telegram_decision_messages\".\"message_id\""},
-	QuestionID:   whereHelpernull_String{field: "\"workspace_telegram_decision_messages\".\"question_id\""},
-	SentAt:       whereHelpertime_Time{field: "\"workspace_telegram_decision_messages\".\"sent_at\""},
-	SettledAt:    whereHelpernull_Time{field: "\"workspace_telegram_decision_messages\".\"settled_at\""},
-	Kind:         whereHelperstring{field: "\"workspace_telegram_decision_messages\".\"kind\""},
-	ExecutionID:  whereHelpernull_String{field: "\"workspace_telegram_decision_messages\".\"execution_id\""},
-	PlanRevision: whereHelpernull_Int{field: "\"workspace_telegram_decision_messages\".\"plan_revision\""},
-	ReviewHeads:  whereHelpernull_JSON{field: "\"workspace_telegram_decision_messages\".\"review_heads\""},
+	BotID:            whereHelperstring{field: "\"workspace_telegram_decision_messages\".\"bot_id\""},
+	ChatID:           whereHelperint64{field: "\"workspace_telegram_decision_messages\".\"chat_id\""},
+	MessageID:        whereHelperint64{field: "\"workspace_telegram_decision_messages\".\"message_id\""},
+	QuestionID:       whereHelpernull_String{field: "\"workspace_telegram_decision_messages\".\"question_id\""},
+	SentAt:           whereHelpertime_Time{field: "\"workspace_telegram_decision_messages\".\"sent_at\""},
+	SettledAt:        whereHelpernull_Time{field: "\"workspace_telegram_decision_messages\".\"settled_at\""},
+	Kind:             whereHelperstring{field: "\"workspace_telegram_decision_messages\".\"kind\""},
+	ExecutionID:      whereHelpernull_String{field: "\"workspace_telegram_decision_messages\".\"execution_id\""},
+	PlanRevision:     whereHelpernull_Int{field: "\"workspace_telegram_decision_messages\".\"plan_revision\""},
+	ReviewHeads:      whereHelpernull_JSON{field: "\"workspace_telegram_decision_messages\".\"review_heads\""},
+	PublicationRound: whereHelpernull_String{field: "\"workspace_telegram_decision_messages\".\"publication_round\""},
 }
 
 // WorkspaceTelegramDecisionMessageRels is where relationship names are stored.
@@ -188,9 +195,9 @@ func (r *workspaceTelegramDecisionMessageR) GetQuestion() *WorkspaceIssueQuestio
 type workspaceTelegramDecisionMessageL struct{}
 
 var (
-	workspaceTelegramDecisionMessageAllColumns            = []string{"bot_id", "chat_id", "message_id", "question_id", "sent_at", "settled_at", "kind", "execution_id", "plan_revision", "review_heads"}
+	workspaceTelegramDecisionMessageAllColumns            = []string{"bot_id", "chat_id", "message_id", "question_id", "sent_at", "settled_at", "kind", "execution_id", "plan_revision", "review_heads", "publication_round"}
 	workspaceTelegramDecisionMessageColumnsWithoutDefault = []string{"bot_id", "chat_id", "message_id", "kind"}
-	workspaceTelegramDecisionMessageColumnsWithDefault    = []string{"question_id", "sent_at", "settled_at", "execution_id", "plan_revision", "review_heads"}
+	workspaceTelegramDecisionMessageColumnsWithDefault    = []string{"question_id", "sent_at", "settled_at", "execution_id", "plan_revision", "review_heads", "publication_round"}
 	workspaceTelegramDecisionMessagePrimaryKeyColumns     = []string{"bot_id", "chat_id", "message_id"}
 	workspaceTelegramDecisionMessageGeneratedColumns      = []string{}
 )

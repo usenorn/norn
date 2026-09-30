@@ -18,14 +18,16 @@ import (
 
 const rememberQuery = `
 INSERT INTO workspace_telegram_decision_messages (
-    bot_id, chat_id, message_id, kind, question_id, execution_id, plan_revision, review_heads, sent_at
+    bot_id, chat_id, message_id, kind, question_id, execution_id, plan_revision, review_heads,
+    publication_round, sent_at
 )
-VALUES ($1, $2, $3, $4, nullif($5, '')::uuid, nullif($6, ''), nullif($7, 0), $8::jsonb, $9)
+VALUES ($1, $2, $3, $4, nullif($5, '')::uuid, nullif($6, ''), nullif($7, 0), $8::jsonb, nullif($10, ''), $9)
 ON CONFLICT DO NOTHING`
 
 const decisionColumns = `
 SELECT bot_id, chat_id, message_id, kind, coalesce(question_id::text, ''), coalesce(execution_id, ''),
-       coalesce(plan_revision, 0), review_heads, settled_at IS NOT NULL
+       coalesce(plan_revision, 0), review_heads, coalesce(publication_round, ''),
+       settled_at IS NOT NULL
 FROM workspace_telegram_decision_messages`
 
 const decisionAtQuery = decisionColumns + `
@@ -87,6 +89,7 @@ func (r *telegramConversationRepository) Remember(ctx context.Context, message e
 		ctx, rememberQuery,
 		message.BotID.String(), message.ChatID, message.MessageID, string(message.Kind),
 		idOrEmpty(message.QuestionID), message.ExecutionID, message.PlanRevision, heads, time.Now().UTC(),
+		message.Round,
 	); err != nil {
 		return fmt.Errorf("remember telegram decision message: %w", err)
 	}
@@ -162,7 +165,7 @@ func scanDecision(row scanner) (entity.TelegramDecisionMessage, error) {
 
 	if err := row.Scan(
 		&bot, &message.ChatID, &message.MessageID, &kind, &question, &message.ExecutionID,
-		&message.PlanRevision, &heads, &message.Settled,
+		&message.PlanRevision, &heads, &message.Round, &message.Settled,
 	); err != nil {
 		return entity.TelegramDecisionMessage{}, err
 	}
