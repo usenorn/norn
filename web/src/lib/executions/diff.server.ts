@@ -2,6 +2,7 @@ import type { Client } from "openapi-fetch";
 import type { paths } from "$lib/api/dashboard.gen";
 import { internalOrigin } from "$lib/api/server";
 import { parseDiff } from "./diff";
+import { highlighted } from "./highlight.server";
 import type { RepositoryDiff } from "./review";
 
 export const diffMaxBytes = 512 * 1024;
@@ -47,7 +48,9 @@ export async function readDiff(
 		const patch = await unpack(stored);
 		const truncated = patch.length > diffMaxBytes;
 
-		return { kind: "ready", files: parseDiff(truncated ? cut(patch) : patch), truncated };
+		const files = await highlighted(parseDiff(truncated ? cut(patch) : patch));
+
+		return { kind: "ready", files, truncated };
 	} catch {
 		return { kind: "failed" };
 	}

@@ -68,6 +68,7 @@
 		"marked": "^18.0.7",
 		"openapi-fetch": "^0.17.0",
 		"set-cookie-parser": "^3.1.2",
+		"shiki": "^4.4.3",
 		"turndown": "^7.2.4",
 		"turndown-plugin-gfm": "^1.0.2"
 	}

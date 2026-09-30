@@ -2,12 +2,60 @@ export type DiffLineKind = "add" | "remove" | "context";
 
 export type DiffSide = "old" | "new";
 
+export type DiffToken = { text: string; tone: string };
+
 export type DiffLine = {
 	kind: DiffLineKind;
 	text: string;
 	oldLine?: number;
 	newLine?: number;
+	tokens?: DiffToken[];
 };
+
+const languagesByExtension: Record<string, string> = {
+	go: "go",
+	ts: "typescript",
+	mts: "typescript",
+	cts: "typescript",
+	tsx: "tsx",
+	js: "javascript",
+	mjs: "javascript",
+	cjs: "javascript",
+	jsx: "jsx",
+	svelte: "svelte",
+	py: "python",
+	rb: "ruby",
+	rs: "rust",
+	java: "java",
+	kt: "kotlin",
+	sql: "sql",
+	json: "json",
+	yaml: "yaml",
+	yml: "yaml",
+	toml: "toml",
+	md: "markdown",
+	sh: "shellscript",
+	bash: "shellscript",
+	css: "css",
+	html: "html",
+	c: "c",
+	h: "c",
+	cc: "cpp",
+	cpp: "cpp",
+	hpp: "cpp",
+	swift: "swift",
+	php: "php",
+};
+
+export function languageOf(path: string): string | undefined {
+	const name = path.split("/").at(-1) ?? "";
+
+	if (name === "Dockerfile") return "dockerfile";
+
+	const dot = name.lastIndexOf(".");
+
+	return dot > 0 ? languagesByExtension[name.slice(dot + 1).toLowerCase()] : undefined;
+}
 
 export type DiffHunk = { header: string; lines: DiffLine[] };
 
