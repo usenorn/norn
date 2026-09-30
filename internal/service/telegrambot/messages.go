@@ -126,7 +126,61 @@ func planText(c decisionContext, plan entity.ExecutionPlan) string {
 	return built.String()
 }
 
-func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot) string {
+type previewLink struct {
+	name   string
+	url    string
+	reason string
+}
+
+func previewLinks(
+	outcomes []entity.SnapshotPreview,
+	sessions []entity.PreviewSession,
+	scheme string,
+) []previewLink {
+	links := make([]previewLink, 0, len(outcomes))
+
+	for _, outcome := range outcomes {
+		link := previewLink{name: outcome.Name, reason: outcome.Reason}
+
+		for _, session := range sessions {
+			if outcome.State == entity.SnapshotPreviewReady && session.Open() && session.Name == outcome.Name {
+				link.url = session.URL(scheme) + outcome.Path
+			}
+		}
+
+		if link.url == "" && link.reason == "" {
+			link.reason = "not running"
+		}
+
+		links = append(links, link)
+	}
+
+	return links
+}
+
+func writePreviews(built *strings.Builder, links []previewLink) {
+	if len(links) == 0 {
+		return
+	}
+
+	built.WriteString("<b>Previews</b>\n")
+
+	for _, link := range links {
+		if link.url != "" {
+			fmt.Fprintf(built, "%s <a href=\"%s\">%s</a>\n",
+				bullet, html.EscapeString(link.url), escaped(link.name, titleBudget))
+
+			continue
+		}
+
+		fmt.Fprintf(built, "%s %s: <i>%s</i>\n",
+			bullet, escaped(link.name, titleBudget), escaped(link.reason, answerBudget))
+	}
+
+	built.WriteString("\n")
+}
+
+func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot, previews []previewLink) string {
 	var built strings.Builder
 
 	built.WriteString(c.header(kindReview, true))
@@ -136,6 +190,7 @@ func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot) string {
 	)
 
 	writeRepositories(&built, snapshot.Repositories)
+	writePreviews(&built, previews)
 
 	if summary := strings.TrimSpace(snapshot.Summary); summary != "" {
 		built.WriteString(markup(summary, questionBudget))

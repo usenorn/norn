@@ -38,6 +38,7 @@ type updates struct {
 	plans        repository.ExecutionPlan
 	reviews      repository.ExecutionReview
 	snapshots    repository.ExecutionSnapshot
+	previews     repository.Preview
 	changesets   repository.ChangeSet
 	issues       repository.Issue
 	delegations  repository.IssueDelegation
@@ -50,6 +51,7 @@ type updates struct {
 	hosted       service.HostedAgents
 	audit        service.Audit
 	app          config.App
+	preview      config.Previews
 	limits       config.Telegram
 }
 
@@ -65,6 +67,7 @@ func NewUpdates(
 	plans repository.ExecutionPlan,
 	reviews repository.ExecutionReview,
 	snapshots repository.ExecutionSnapshot,
+	previews repository.Preview,
 	changesets repository.ChangeSet,
 	issues repository.Issue,
 	delegations repository.IssueDelegation,
@@ -77,6 +80,7 @@ func NewUpdates(
 	hosted service.HostedAgents,
 	audit service.Audit,
 	app config.App,
+	preview config.Previews,
 	limits config.Telegram,
 ) service.TelegramUpdates {
 	return &updates{
@@ -91,6 +95,7 @@ func NewUpdates(
 		plans:        plans,
 		reviews:      reviews,
 		snapshots:    snapshots,
+		previews:     previews,
 		changesets:   changesets,
 		issues:       issues,
 		delegations:  delegations,
@@ -103,6 +108,7 @@ func NewUpdates(
 		hosted:       hosted,
 		audit:        audit,
 		app:          app,
+		preview:      preview,
 		limits:       limits,
 	}
 }

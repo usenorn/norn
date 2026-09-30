@@ -16,6 +16,7 @@ import (
 	planrepo "github.com/usenorn/norn/internal/repository/executionplan"
 	reviewrepo "github.com/usenorn/norn/internal/repository/executionreview"
 	snapshotrepo "github.com/usenorn/norn/internal/repository/executionsnapshot"
+	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	delegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
@@ -58,6 +59,7 @@ type harness struct {
 	plans        *planrepo.MockExecutionPlan
 	reviews      *reviewrepo.MockExecutionReview
 	snapshots    *snapshotrepo.MockExecutionSnapshot
+	previews     *previewrepo.MockPreview
 	changesets   *changesetrepo.MockChangeSet
 	issues       *issuerepo.MockIssue
 	delegations  *delegationrepo.MockIssueDelegation
@@ -108,6 +110,7 @@ func newHarness(t *testing.T) *harness {
 		plans:        planrepo.NewMockExecutionPlan(ctrl),
 		reviews:      reviewrepo.NewMockExecutionReview(ctrl),
 		snapshots:    snapshotrepo.NewMockExecutionSnapshot(ctrl),
+		previews:     previewrepo.NewMockPreview(ctrl),
 		changesets:   changesetrepo.NewMockChangeSet(ctrl),
 		issues:       issuerepo.NewMockIssue(ctrl),
 		delegations:  delegationrepo.NewMockIssueDelegation(ctrl),
@@ -196,8 +199,9 @@ func (h *harness) botsService() service.TelegramBots {
 func (h *harness) updatesService() service.TelegramUpdates {
 	return telegrambot.NewUpdates(
 		h.bots, h.audience, h.conversation, h.received, h.messenger, h.agents, h.questions,
-		h.executions, h.plans, h.reviews, h.snapshots, h.changesets, h.issues, h.delegations, h.settings, h.workspaces,
-		h.jobs, h.transactor, h.answers, h.decisions, h.hosted, h.audit, h.app, h.limits(),
+		h.executions, h.plans, h.reviews, h.snapshots, h.previews, h.changesets, h.issues, h.delegations, h.settings, h.workspaces,
+		h.jobs, h.transactor, h.answers, h.decisions, h.hosted, h.audit, h.app,
+		config.Previews{Scheme: "https"}, h.limits(),
 	)
 }
 

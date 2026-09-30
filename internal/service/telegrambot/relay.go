@@ -188,10 +188,15 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 		return outbound{}, false, err
 	}
 
+	sessions, err := s.previews.ByExecution(ctx, execution.ID)
+	if err != nil {
+		return outbound{}, false, err
+	}
+
 	return outbound{
 		target: target,
 		about:  about,
-		text:   reviewText(about, latest),
+		text:   reviewText(about, latest, previewLinks(latest.Previews, sessions, s.preview.Scheme)),
 		buttons: []entity.TelegramButton{
 			{Label: "Approve and publish", Data: entity.TelegramCallbackApprove},
 			{Label: "Request changes", Data: entity.TelegramCallbackChanges},

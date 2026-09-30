@@ -299,6 +299,13 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 		Revision:     2,
 		Summary:      "Split the handler.",
 		Repositories: []entity.SnapshotRepository{{Repository: "api", HeadSHA: "abc123"}},
+		Previews: []entity.SnapshotPreview{
+			{Name: "Application", State: entity.SnapshotPreviewReady, Path: "/totals"},
+			{Name: "Admin", State: entity.SnapshotPreviewFailed, Reason: "the admin service never became healthy"},
+		},
+	}, nil)
+	h.previews.EXPECT().ByExecution(gomock.Any(), execution.ID).Return([]entity.PreviewSession{
+		{Name: "Application", Host: "app-tg-1.preview.example", State: entity.PreviewOpen},
 	}, nil)
 	h.conversation.EXPECT().Posted(gomock.Any(), gomock.Any()).Return(nil, nil)
 
@@ -313,7 +320,12 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 		t.Fatalf("remembered %+v, want the heads the reviewer is shown", *remembered)
 	}
 
-	for _, want := range []string{"Split the handler.", `<a href="https://norn.example/acme/executions/exec-01TG/review">`} {
+	for _, want := range []string{
+		"Split the handler.",
+		`<a href="https://norn.example/acme/executions/exec-01TG/review">`,
+		`<a href="https://app-tg-1.preview.example/totals">Application</a>`,
+		"Admin: <i>the admin service never became healthy</i>",
+	} {
 		if !strings.Contains(h.sent[0].Text, want) {
 			t.Errorf("review message lacks %q:\n%s", want, h.sent[0].Text)
 		}
