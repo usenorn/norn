@@ -436,6 +436,7 @@
 					{#if ready.review.revision > 0}
 						<ReviewPreviews
 							review={ready.review}
+							agentName={execution?.agentName}
 							deciding={open && locked === undefined}
 							{working}
 							onfix={(request) => submit("request_changes", request)}

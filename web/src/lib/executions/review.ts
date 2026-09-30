@@ -185,7 +185,9 @@ export function previewFixRequest(failed: ReviewPreview[]): string {
 	return [...request].slice(0, reviewBodyMaxLength).join("");
 }
 
-export const previewFixLabel = "Ask the coding agent to fix it";
+export function previewFixLabel(agentName: string | undefined): string {
+	return `Ask ${agentName || "the coding agent"} to fix the preview`;
+}
 
 export function previewStateLabel(preview: ReviewPreview): string {
 	switch (preview.state) {

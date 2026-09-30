@@ -16,11 +16,13 @@
 
 	let {
 		review,
+		agentName,
 		deciding,
 		working = false,
 		onfix,
 	}: {
 		review: ReviewState;
+		agentName: string | undefined;
 		deciding: boolean;
 		working?: boolean;
 		onfix: (request: string) => Promise<boolean>;
@@ -69,7 +71,7 @@
 			<div>
 				<Button variant="outline" size="sm" disabled={working} onclick={() => onfix(previewFixRequest(failed))}>
 					<Wrench aria-hidden="true" />
-					{previewFixLabel}
+					{previewFixLabel(agentName)}
 				</Button>
 			</div>
 		{/if}

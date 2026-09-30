@@ -1,3 +1,5 @@
+import type { BundledLanguage } from "shiki";
+
 export type DiffLineKind = "add" | "remove" | "context";
 
 export type DiffSide = "old" | "new";
@@ -12,7 +14,7 @@ export type DiffLine = {
 	tokens?: DiffToken[];
 };
 
-const languagesByExtension: Record<string, string> = {
+const languagesByExtension: Record<string, BundledLanguage> = {
 	go: "go",
 	ts: "typescript",
 	mts: "typescript",
@@ -47,10 +49,16 @@ const languagesByExtension: Record<string, string> = {
 	php: "php",
 };
 
-export function languageOf(path: string): string | undefined {
+const languageOfName: Record<string, BundledLanguage> = { Dockerfile: "dockerfile" };
+
+export const highlightedLanguages: BundledLanguage[] = [
+	...new Set([...Object.values(languagesByExtension), ...Object.values(languageOfName)]),
+];
+
+export function languageOf(path: string): BundledLanguage | undefined {
 	const name = path.split("/").at(-1) ?? "";
 
-	if (name === "Dockerfile") return "dockerfile";
+	if (name in languageOfName) return languageOfName[name];
 
 	const dot = name.lastIndexOf(".");
 

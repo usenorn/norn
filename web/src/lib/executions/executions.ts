@@ -624,7 +624,9 @@ export function publicationIncomplete(
 
 	const states = changeset.repositories.map((change) => change.publication?.state);
 
-	return states.includes("failed") && !states.includes("pending");
+	if (states.length === 0 || states.some((state) => !state || state === "pending")) return false;
+
+	return states.includes("failed");
 }
 
 export type DiffReach = { kind: "available"; artifactId: string } | { kind: "absent" };
