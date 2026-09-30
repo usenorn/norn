@@ -246,7 +246,7 @@ func (s *updates) preparePublication(
 	}
 
 	changeset, err := s.changesets.Get(ctx, execution.ID)
-	if err != nil || !changeset.PublicationFailed() {
+	if err != nil || changeset.PublicationOutcome() != entity.PublicationOutcomeIncomplete {
 		return outbound{}, false, err
 	}
 

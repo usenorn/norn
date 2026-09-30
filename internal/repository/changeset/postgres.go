@@ -60,6 +60,7 @@ const changeColumns = `
        publication_error,
        published_sha,
        publication_revision,
+       publication_attempt,
        published_at,
        reported_at,
        created_at,
@@ -100,10 +101,12 @@ WITH updated AS (
         publication_error    = $5,
         published_sha        = $6,
         publication_revision = $7,
+        publication_attempt  = $10,
         published_at         = $8,
         pull_request_url     = CASE WHEN $9 <> '' THEN $9 ELSE pull_request_url END,
         updated_at           = now()
-    WHERE execution_id = $1 AND repository = $2 AND publication_revision <= $7
+    WHERE execution_id = $1 AND repository = $2
+      AND (publication_revision, publication_attempt) <= ($7, $10)
     RETURNING *
 )
 SELECT` + changeColumns + `
@@ -129,6 +132,7 @@ const joinedChangeColumns = `
        c.publication_error,
        c.published_sha,
        c.publication_revision,
+       c.publication_attempt,
        c.published_at,
        c.reported_at,
        c.created_at,
@@ -242,6 +246,7 @@ func changeOf(model *dbpostgres.WorkspaceExecutionChange) (entity.ExecutionChang
 			Error:       model.PublicationError,
 			SHA:         model.PublishedSha,
 			Revision:    model.PublicationRevision,
+			Attempt:     model.PublicationAttempt,
 			PublishedAt: model.PublishedAt.Ptr(),
 		},
 		ReportedAt: model.ReportedAt,
@@ -414,6 +419,7 @@ func (r *changeSetRepository) SavePublication(
 		published.Publication.Revision,
 		published.Publication.PublishedAt,
 		published.PullRequestURL,
+		published.Publication.Attempt,
 	))
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -674,6 +680,7 @@ func readChange(row scanner, withAttempt bool) (entity.ExecutionChange, int, err
 		&change.Publication.Error,
 		&change.Publication.SHA,
 		&change.Publication.Revision,
+		&change.Publication.Attempt,
 		&change.Publication.PublishedAt,
 		&change.ReportedAt,
 		&change.CreatedAt,

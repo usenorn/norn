@@ -69,9 +69,14 @@ func (s *changeSetsService) Published(
 			saved = append(saved, stored)
 		}
 
+		current := entity.ExecutionChangeSet{Changes: saved}
+
 		postgres.AfterCommit(ctx, func(ctx context.Context) {
 			s.announce(ctx, execution)
-			s.relay(ctx, execution, incoming, published)
+
+			if current.Holds(incoming.Revision, incoming.Attempt) {
+				s.relay(ctx, execution, incoming, current.PublicationOutcome())
+			}
 		})
 
 		return nil
@@ -89,13 +94,13 @@ func (s *changeSetsService) relay(
 	ctx context.Context,
 	execution entity.Execution,
 	incoming channelv1.Publication,
-	published []entity.RepositoryPublication,
+	outcome entity.PublicationOutcome,
 ) {
 	decision := entity.TelegramPublicationDecision(execution, incoming.Revision, incoming.Attempt)
 
 	var err error
 
-	switch entity.PublicationOutcomeOf(published) {
+	switch outcome {
 	case entity.PublicationOutcomeIncomplete:
 		err = s.jobs.EnqueueTelegramDecision(ctx, decision)
 	case entity.PublicationOutcomeUnderway:
@@ -134,6 +139,7 @@ func publicationsOf(
 				Error:    repo.Failure,
 				SHA:      repo.SHA,
 				Revision: incoming.Revision,
+				Attempt:  incoming.Attempt,
 			},
 		}
 

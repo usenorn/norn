@@ -217,6 +217,9 @@ func TestAskingToFixAPreviewOnAnOutdatedReviewDecidesNothing(t *testing.T) {
 		Repositories: []entity.SnapshotRepository{{Repository: "api", HeadSHA: "def456"}},
 		Previews:     []entity.SnapshotPreview{{Name: "Greeting page", State: entity.SnapshotPreviewFailed}},
 	}, nil)
+	h.decisions.EXPECT().
+		SubmitReview(gomock.Any(), h.workspaceID, execution.ID, gomock.Any()).
+		Return(entity.ExecutionReview{}, entity.ErrReviewStale)
 
 	h.noticed(t, id, "This is out of date. Open it in Norn to see the latest.")
 }

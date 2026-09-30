@@ -12,7 +12,11 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-const replyForChanges = "Reply to this message with what should change."
+const (
+	replyForChanges     = "Reply to this message with what should change."
+	retryingPublication = "Retrying publication."
+	optionUnavailable   = "That option is not available."
+)
 
 func (s *updates) pressed(
 	ctx context.Context,
@@ -31,7 +35,7 @@ func (s *updates) pressed(
 		return s.fixPreview(ctx, account, decision)
 	case entity.TelegramCallbackApprove:
 	default:
-		return "That option is not available.", nil
+		return optionUnavailable, nil
 	}
 
 	execution, err := s.executions.GetByID(ctx, decision.ExecutionID)
@@ -69,7 +73,7 @@ func (s *updates) fixPreview(
 	decision entity.TelegramDecisionMessage,
 ) (string, error) {
 	if decision.Kind != entity.TelegramDecisionReview {
-		return "That option is not available.", nil
+		return optionUnavailable, nil
 	}
 
 	execution, err := s.executions.GetByID(ctx, decision.ExecutionID)
@@ -80,10 +84,6 @@ func (s *updates) fixPreview(
 	latest, err := s.snapshots.Latest(ctx, execution.ID)
 	if err != nil {
 		return "", err
-	}
-
-	if !latest.Heads().Matches(decision.ReviewHeads) {
-		return s.outcome(ctx, execution.WorkspaceID, execution.IssueID, entity.ErrReviewStale, "")
 	}
 
 	failed := latest.FailedPreviews()
@@ -113,14 +113,14 @@ func (s *updates) publishing(
 	decision entity.TelegramDecisionMessage,
 	data string,
 ) (string, error) {
-	hand, done := s.decisions.RetryPublication, "Retrying publication."
+	hand, done := s.decisions.RetryPublication, retryingPublication
 
 	switch data {
 	case entity.TelegramCallbackRetry:
 	case entity.TelegramCallbackAbandon:
 		hand, done = s.decisions.AbandonPublication, "Publication abandoned."
 	default:
-		return "That option is not available.", nil
+		return optionUnavailable, nil
 	}
 
 	execution, err := s.executions.GetByID(ctx, decision.ExecutionID)

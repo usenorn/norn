@@ -350,8 +350,8 @@ func publicationSettled(
 		built.WriteString("Publication was abandoned.")
 	case execution.State != entity.ExecutionApproved:
 		built.WriteString("These changes are no longer waiting to be published.")
-	case !changeset.PublicationFailed():
-		built.WriteString("Retrying publication.")
+	case changeset.PublicationOutcome() != entity.PublicationOutcomeIncomplete:
+		built.WriteString(retryingPublication)
 	default:
 		return "", false
 	}

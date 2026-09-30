@@ -403,10 +403,6 @@ func (s *executionsService) SubmitReview(
 		return entity.ExecutionReview{}, entity.ErrExecutionSelfApproval
 	}
 
-	if _, err := s.reviewed(ctx, execution, submission.Heads); err != nil {
-		return entity.ExecutionReview{}, err
-	}
-
 	comments, err := s.reviews.ListComments(ctx, execution.ID)
 	if err != nil {
 		return entity.ExecutionReview{}, err

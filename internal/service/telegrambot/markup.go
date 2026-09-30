@@ -25,7 +25,7 @@ func markup(markdown string, budget int) string {
 		spent int
 	)
 
-	for index, block := range document.Content {
+	for _, block := range document.Content {
 		rendered := renderBlock(block, "")
 		if rendered == "" {
 			continue
@@ -38,7 +38,7 @@ func markup(markdown string, budget int) string {
 			break
 		}
 
-		if index > 0 && built.Len() > 0 {
+		if built.Len() > 0 {
 			built.WriteString("\n\n")
 		}
 

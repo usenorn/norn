@@ -138,3 +138,24 @@ func TestAPublicationIsOnlyCompleteWhenNoRepositoryIsStillGoingOrFailed(t *testi
 		}
 	}
 }
+
+func TestAPublicationReportIsCurrentOnlyWhenEveryRepositoryHoldsItsRevisionAndAttempt(t *testing.T) {
+	held := func(revision, attempt int) entity.ExecutionChange {
+		return entity.ExecutionChange{Publication: entity.ExecutionPublication{Revision: revision, Attempt: attempt}}
+	}
+
+	for name, tc := range map[string]struct {
+		changes []entity.ExecutionChange
+		want    bool
+	}{
+		"every repository took it":            {[]entity.ExecutionChange{held(2, 2), held(2, 2)}, true},
+		"a newer attempt kept one repository": {[]entity.ExecutionChange{held(2, 2), held(2, 3)}, false},
+		"nothing was stored":                  {nil, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := (entity.ExecutionChangeSet{Changes: tc.changes}).Holds(2, 2); got != tc.want {
+				t.Fatalf("Holds = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

@@ -47,6 +47,7 @@ type WorkspaceExecutionChange struct {
 	PublishedSha        string      `boil:"published_sha" json:"published_sha" toml:"published_sha" yaml:"published_sha"`
 	PublicationRevision int         `boil:"publication_revision" json:"publication_revision" toml:"publication_revision" yaml:"publication_revision"`
 	PublishedAt         null.Time   `boil:"published_at" json:"published_at,omitempty" toml:"published_at" yaml:"published_at,omitempty"`
+	PublicationAttempt  int         `boil:"publication_attempt" json:"publication_attempt" toml:"publication_attempt" yaml:"publication_attempt"`
 
 	R *workspaceExecutionChangeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceExecutionChangeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -76,6 +77,7 @@ var WorkspaceExecutionChangeColumns = struct {
 	PublishedSha        string
 	PublicationRevision string
 	PublishedAt         string
+	PublicationAttempt  string
 }{
 	ID:                  "id",
 	ExecutionID:         "execution_id",
@@ -100,6 +102,7 @@ var WorkspaceExecutionChangeColumns = struct {
 	PublishedSha:        "published_sha",
 	PublicationRevision: "publication_revision",
 	PublishedAt:         "published_at",
+	PublicationAttempt:  "publication_attempt",
 }
 
 var WorkspaceExecutionChangeTableColumns = struct {
@@ -126,6 +129,7 @@ var WorkspaceExecutionChangeTableColumns = struct {
 	PublishedSha        string
 	PublicationRevision string
 	PublishedAt         string
+	PublicationAttempt  string
 }{
 	ID:                  "workspace_execution_changes.id",
 	ExecutionID:         "workspace_execution_changes.execution_id",
@@ -150,6 +154,7 @@ var WorkspaceExecutionChangeTableColumns = struct {
 	PublishedSha:        "workspace_execution_changes.published_sha",
 	PublicationRevision: "workspace_execution_changes.publication_revision",
 	PublishedAt:         "workspace_execution_changes.published_at",
+	PublicationAttempt:  "workspace_execution_changes.publication_attempt",
 }
 
 // Generated where
@@ -178,6 +183,7 @@ var WorkspaceExecutionChangeWhere = struct {
 	PublishedSha        whereHelperstring
 	PublicationRevision whereHelperint
 	PublishedAt         whereHelpernull_Time
+	PublicationAttempt  whereHelperint
 }{
 	ID:                  whereHelperstring{field: "\"workspace_execution_changes\".\"id\""},
 	ExecutionID:         whereHelperstring{field: "\"workspace_execution_changes\".\"execution_id\""},
@@ -202,6 +208,7 @@ var WorkspaceExecutionChangeWhere = struct {
 	PublishedSha:        whereHelperstring{field: "\"workspace_execution_changes\".\"published_sha\""},
 	PublicationRevision: whereHelperint{field: "\"workspace_execution_changes\".\"publication_revision\""},
 	PublishedAt:         whereHelpernull_Time{field: "\"workspace_execution_changes\".\"published_at\""},
+	PublicationAttempt:  whereHelperint{field: "\"workspace_execution_changes\".\"publication_attempt\""},
 }
 
 // WorkspaceExecutionChangeRels is where relationship names are stored.
@@ -298,9 +305,9 @@ func (r *workspaceExecutionChangeR) GetWorkspace() *Workspace {
 type workspaceExecutionChangeL struct{}
 
 var (
-	workspaceExecutionChangeAllColumns            = []string{"id", "execution_id", "workspace_id", "repository", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "reported_at", "created_at", "updated_at", "publication_state", "publication_step", "publication_error", "published_sha", "publication_revision", "published_at"}
+	workspaceExecutionChangeAllColumns            = []string{"id", "execution_id", "workspace_id", "repository", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "reported_at", "created_at", "updated_at", "publication_state", "publication_step", "publication_error", "published_sha", "publication_revision", "published_at", "publication_attempt"}
 	workspaceExecutionChangeColumnsWithoutDefault = []string{"execution_id", "workspace_id", "repository", "reported_at"}
-	workspaceExecutionChangeColumnsWithDefault    = []string{"id", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "created_at", "updated_at", "publication_state", "publication_step", "publication_error", "published_sha", "publication_revision", "published_at"}
+	workspaceExecutionChangeColumnsWithDefault    = []string{"id", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "created_at", "updated_at", "publication_state", "publication_step", "publication_error", "published_sha", "publication_revision", "published_at", "publication_attempt"}
 	workspaceExecutionChangePrimaryKeyColumns     = []string{"id"}
 	workspaceExecutionChangeGeneratedColumns      = []string{}
 )

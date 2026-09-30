@@ -70,6 +70,7 @@ type ExecutionPublication struct {
 	Error       string
 	SHA         string
 	Revision    int
+	Attempt     int
 	PublishedAt *time.Time
 }
 
@@ -176,10 +177,24 @@ type ExecutionChangeSet struct {
 	Validations []ExecutionValidation
 }
 
-func (c ExecutionChangeSet) PublicationFailed() bool {
-	return slices.ContainsFunc(c.Changes, func(change ExecutionChange) bool {
-		return change.Publication.Failed()
+func (c ExecutionChangeSet) Holds(revision, attempt int) bool {
+	return len(c.Changes) > 0 && !slices.ContainsFunc(c.Changes, func(change ExecutionChange) bool {
+		return change.Publication.Revision != revision || change.Publication.Attempt != attempt
 	})
+}
+
+func (c ExecutionChangeSet) PublicationOutcome() PublicationOutcome {
+	published := make([]RepositoryPublication, 0, len(c.Changes))
+
+	for _, change := range c.Changes {
+		published = append(published, RepositoryPublication{
+			Repository:     change.Repository,
+			PullRequestURL: change.PullRequestURL,
+			Publication:    change.Publication,
+		})
+	}
+
+	return PublicationOutcomeOf(published)
 }
 
 func (c ExecutionChangeSet) Empty() bool {

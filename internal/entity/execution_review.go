@@ -70,15 +70,6 @@ func (v ExecutionReviewVerdict) Valid() bool {
 
 type ReviewHeads map[string]string
 
-func HeadsOf(changes []ExecutionChange) ReviewHeads {
-	heads := make(ReviewHeads, len(changes))
-
-	for _, change := range changes {
-		heads[change.Repository] = change.HeadSHA
-	}
-
-	return heads
-}
 
 func (h ReviewHeads) Matches(other ReviewHeads) bool {
 	return maps.Equal(h, other)

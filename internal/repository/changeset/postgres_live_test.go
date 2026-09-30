@@ -357,3 +357,47 @@ func TestAPublicationFromAnEarlierRevisionNeverOverwritesTheApprovedOne(t *testi
 		return nil
 	})
 }
+
+func TestALateReportFromAnEarlierAttemptNeverOverwritesTheRetryThatFollowed(t *testing.T) {
+	client, changesets := live(t)
+	executionID, workspaceID := heldRun(t, client)
+
+	rolledBack(t, client, func(ctx context.Context) error {
+		if _, err := changesets.SaveChange(ctx, entity.ExecutionChange{
+			ExecutionID: executionID,
+			WorkspaceID: workspaceID,
+			Repository:  "backend",
+			HeadSHA:     "b2",
+			ReportedAt:  at(reportedEarly),
+		}); err != nil {
+			return fmt.Errorf("record the reviewed change: %w", err)
+		}
+
+		if _, err := changesets.SavePublication(ctx, executionID, entity.RepositoryPublication{
+			Repository: "backend",
+			Publication: entity.ExecutionPublication{
+				State: entity.PublicationPublished, Step: entity.PublicationStepPullRequest,
+				SHA: "b2", Revision: 2, Attempt: 2,
+			},
+		}); err != nil {
+			return fmt.Errorf("record the retry as published: %w", err)
+		}
+
+		late, err := changesets.SavePublication(ctx, executionID, entity.RepositoryPublication{
+			Repository: "backend",
+			Publication: entity.ExecutionPublication{
+				State: entity.PublicationFailed, Step: entity.PublicationStepPush,
+				Error: "HTTP 502", SHA: "b2", Revision: 2, Attempt: 1,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("record the late first attempt: %w", err)
+		}
+
+		if late.Publication.State != entity.PublicationPublished || late.Publication.Attempt != 2 {
+			return fmt.Errorf("a late report from the first attempt overwrote the retry: %+v", late.Publication)
+		}
+
+		return nil
+	})
+}
