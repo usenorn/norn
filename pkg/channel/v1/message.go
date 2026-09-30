@@ -45,6 +45,7 @@ const (
 	ChangeSetUpdated     MessageType = "changeset.updated"
 	ExecutionRetention   MessageType = "execution.retention"
 	ExecutionResult      MessageType = "execution.result"
+	ReviewReplied        MessageType = "review.reply"
 )
 
 func ServerMessages() []MessageType {
@@ -58,7 +59,7 @@ func RunnerMessages() []MessageType {
 	return []MessageType{
 		RunnerHello, RunnerHeartbeat, ExecutionAccepted, ExecutionDeclined, ExecutionStateReport,
 		ExecutionEvent, ServiceState, PreviewState, QuestionAsked, PlanProposed,
-		ChangeSetUpdated, ExecutionResult, ExecutionRetention,
+		ChangeSetUpdated, ExecutionResult, ExecutionRetention, ReviewReplied,
 	}
 }
 
