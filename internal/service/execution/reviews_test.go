@@ -121,6 +121,56 @@ func TestApprovingTheReviewIsWhatLetsTheMachinePublish(t *testing.T) {
 	}
 }
 
+func TestTheApprovalNamesTheExactRevisionAndHeadsTheMachineMayPublish(t *testing.T) {
+	h := newHarness(t)
+	execution := h.underReview()
+	h.changed("web", "web-1")
+
+	if _, err := h.service.SubmitReview(context.Background(), h.workspaceID, execution.ID,
+		service.ReviewSubmission{
+			Verdict: entity.VerdictApprove,
+			Heads:   entity.ReviewHeads{"api": "head-1", "web": "web-1"},
+		},
+	); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+
+	instruction := h.instruction(t)
+
+	if instruction.Revision != 1 ||
+		!entity.ReviewHeads(instruction.Heads).Matches(entity.ReviewHeads{"api": "head-1", "web": "web-1"}) {
+		t.Fatalf(
+			"the approval carried revision %d and heads %v; without them the machine publishes "+
+				"whatever its branches hold when the message lands",
+			instruction.Revision, instruction.Heads,
+		)
+	}
+}
+
+func TestARevisionThatLandsWhileTheApprovalIsBeingRecordedWinsOverIt(t *testing.T) {
+	h := newHarness(t)
+	execution := h.underReview()
+	h.lockedAfter = func() {
+		h.changes = []entity.ExecutionChange{{Repository: "api", HeadSHA: "head-2"}}
+		h.revision = 2
+	}
+
+	_, err := h.service.SubmitReview(context.Background(), h.workspaceID, execution.ID,
+		service.ReviewSubmission{Verdict: entity.VerdictApprove, Heads: entity.ReviewHeads{"api": "head-1"}},
+	)
+	if !errors.Is(err, entity.ErrReviewStale) {
+		t.Fatalf(
+			"an approval of revision one was recorded after revision two landed and got %v; "+
+				"it authorises commits nobody read",
+			err,
+		)
+	}
+
+	if _, published := h.sent(entity.ChannelExecutionResume); published {
+		t.Fatal("an approval that lost the race still told the machine to publish")
+	}
+}
+
 func TestRequestingChangesHandsEveryCommentToTheAgentOnItsLine(t *testing.T) {
 	h := newHarness(t)
 	execution := h.underReview()

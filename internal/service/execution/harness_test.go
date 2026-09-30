@@ -86,6 +86,7 @@ type harness struct {
 	asked        []entity.IssueQuestion
 	changes      []entity.ExecutionChange
 	revision     int
+	lockedAfter  func()
 	comments     []entity.ExecutionReviewComment
 	submitted    []entity.ExecutionReview
 	delegator    uuid.UUID
@@ -421,6 +422,16 @@ func (h *harness) opening(attempt int) *repository.NewExecution {
 
 func (h *harness) holding(execution entity.Execution) {
 	h.executions.EXPECT().GetByID(gomock.Any(), execution.ID).Return(execution, nil).AnyTimes()
+	h.executions.EXPECT().
+		LockByID(gomock.Any(), execution.ID).
+		DoAndReturn(func(context.Context, string) (entity.Execution, error) {
+			if h.lockedAfter != nil {
+				h.lockedAfter()
+			}
+
+			return execution, nil
+		}).
+		AnyTimes()
 }
 
 func (h *harness) moving() {
