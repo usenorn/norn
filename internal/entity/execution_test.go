@@ -44,7 +44,7 @@ func permittedExecutionMoves() map[entity.ExecutionState][]entity.ExecutionState
 			entity.ExecutionFailed,
 		},
 		entity.ExecutionApproved: {
-			entity.ExecutionCompleted, entity.ExecutionFailed,
+			entity.ExecutionCompleted, entity.ExecutionFailed, entity.ExecutionAwaitingReview,
 		},
 	}
 }

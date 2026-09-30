@@ -11,6 +11,8 @@ const (
 	ResumeAnswer       = "answer"
 	ResumePlanApproved = "plan_approved"
 	ResumePlanRevision = "plan_revision"
+	ResumePublish      = "publish"
+	ResumeAbandon      = "abandon"
 )
 
 const (
@@ -99,11 +101,13 @@ type Cancellation struct {
 }
 
 type Instruction struct {
-	Reason      string   `json:"reason"`
-	Stage       Stage    `json:"stage"`
-	Instruction string   `json:"instruction,omitempty"`
-	Answers     []Answer `json:"answers,omitempty"`
-	Threads     []string `json:"review_threads,omitempty"`
+	Reason      string            `json:"reason"`
+	Stage       Stage             `json:"stage"`
+	Instruction string            `json:"instruction,omitempty"`
+	Answers     []Answer          `json:"answers,omitempty"`
+	Threads     []string          `json:"review_threads,omitempty"`
+	Revision    int               `json:"revision,omitempty"`
+	Heads       map[string]string `json:"heads,omitempty"`
 }
 
 type Plan struct {
@@ -290,6 +294,35 @@ type Result struct {
 	ChangeSet ChangeSet        `json:"changeset"`
 	Previews  []PreviewOutcome `json:"previews,omitempty"`
 	Reported  time.Time        `json:"ts"`
+}
+
+const (
+	PublicationPending   = "pending"
+	PublicationPushed    = "pushed"
+	PublicationPublished = "published"
+	PublicationFailed    = "failed"
+)
+
+const (
+	PublicationStepPush        = "push"
+	PublicationStepPullRequest = "pull_request"
+)
+
+type RepoPublication struct {
+	Repository  string `json:"repo"`
+	Branch      string `json:"branch"`
+	SHA         string `json:"sha"`
+	State       string `json:"state"`
+	Step        string `json:"step,omitempty"`
+	Failure     string `json:"failure,omitempty"`
+	PullRequest string `json:"pull_request_url,omitempty"`
+}
+
+type Publication struct {
+	Revision int               `json:"revision"`
+	Attempt  int               `json:"attempt"`
+	Repos    []RepoPublication `json:"repos"`
+	Reported time.Time         `json:"ts"`
 }
 
 type ReviewReply struct {
