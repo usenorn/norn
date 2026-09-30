@@ -2059,6 +2059,7 @@ const (
 	ExecutionSelfApproval  ExecutionProblemCode = "execution_self_approval"
 	ExecutionTransition    ExecutionProblemCode = "execution_transition"
 	ExecutionUnfinished    ExecutionProblemCode = "execution_unfinished"
+	PublicationNotPending  ExecutionProblemCode = "publication_not_pending"
 	ReviewClosed           ExecutionProblemCode = "review_closed"
 	ReviewCommentAnchor    ExecutionProblemCode = "review_comment_anchor"
 	ReviewCommentNotYours  ExecutionProblemCode = "review_comment_not_yours"
@@ -2092,6 +2093,8 @@ func (e ExecutionProblemCode) Valid() bool {
 	case ExecutionTransition:
 		return true
 	case ExecutionUnfinished:
+		return true
+	case PublicationNotPending:
 		return true
 	case ReviewClosed:
 		return true
@@ -3693,6 +3696,48 @@ func (e ProjectState) Valid() bool {
 	case ProjectStatePaused:
 		return true
 	case ProjectStatePlanned:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublicationState.
+const (
+	PublicationStateFailed    PublicationState = "failed"
+	PublicationStatePending   PublicationState = "pending"
+	PublicationStatePublished PublicationState = "published"
+	PublicationStatePushed    PublicationState = "pushed"
+)
+
+// Valid indicates whether the value is a known member of the PublicationState enum.
+func (e PublicationState) Valid() bool {
+	switch e {
+	case PublicationStateFailed:
+		return true
+	case PublicationStatePending:
+		return true
+	case PublicationStatePublished:
+		return true
+	case PublicationStatePushed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PublicationStep.
+const (
+	PublicationStepPullRequest PublicationStep = "pull_request"
+	PublicationStepPush        PublicationStep = "push"
+)
+
+// Valid indicates whether the value is a known member of the PublicationStep enum.
+func (e PublicationStep) Valid() bool {
+	switch e {
+	case PublicationStepPullRequest:
+		return true
+	case PublicationStepPush:
 		return true
 	default:
 		return false
@@ -7129,9 +7174,12 @@ type ExecutionRepositoryChange struct {
 	DiffArtifactId *openapi_types.UUID `json:"diffArtifactId,omitempty"`
 	FilesChanged   int                 `json:"filesChanged"`
 	HeadSha        *string             `json:"headSha,omitempty"`
-	PullRequestUrl *string             `json:"pullRequestUrl,omitempty"`
-	ReportedAt     time.Time           `json:"reportedAt"`
-	Repository     string              `json:"repository"`
+
+	// Publication What happened when the machine published the approved revision of this repository. Absent until somebody approves; each repository carries its own outcome while the run keeps one decision.
+	Publication    *RepositoryPublication `json:"publication,omitempty"`
+	PullRequestUrl *string                `json:"pullRequestUrl,omitempty"`
+	ReportedAt     time.Time              `json:"reportedAt"`
+	Repository     string                 `json:"repository"`
 }
 
 // ExecutionReview defines model for ExecutionReview.
@@ -8059,9 +8107,12 @@ type IssueRepositoryChange struct {
 	ExecutionId    string              `json:"executionId"`
 	FilesChanged   int                 `json:"filesChanged"`
 	HeadSha        *string             `json:"headSha,omitempty"`
-	PullRequestUrl *string             `json:"pullRequestUrl,omitempty"`
-	ReportedAt     time.Time           `json:"reportedAt"`
-	Repository     string              `json:"repository"`
+
+	// Publication What happened when the machine published the approved revision of this repository. Absent until somebody approves; each repository carries its own outcome while the run keeps one decision.
+	Publication    *RepositoryPublication `json:"publication,omitempty"`
+	PullRequestUrl *string                `json:"pullRequestUrl,omitempty"`
+	ReportedAt     time.Time              `json:"reportedAt"`
+	Repository     string                 `json:"repository"`
 }
 
 // IssueShipping Where this issue's work has reached. Reflection only: Norn reads what the platform says and never triggers a deployment or owns a release process.
@@ -8634,6 +8685,12 @@ type ProjectStatusUpdate struct {
 	ProjectId       openapi_types.UUID  `json:"projectId"`
 }
 
+// PublicationState defines model for PublicationState.
+type PublicationState string
+
+// PublicationStep defines model for PublicationStep.
+type PublicationStep string
+
 // RateLimitedProblem defines model for RateLimitedProblem.
 type RateLimitedProblem struct {
 	Code     RateLimitedProblemCode `json:"code"`
@@ -8722,6 +8779,19 @@ type ReorderWorkflowStatesRequest struct {
 // ReplaceSourceControlTokenRequest defines model for ReplaceSourceControlTokenRequest.
 type ReplaceSourceControlTokenRequest struct {
 	Token *string `json:"token,omitempty"`
+}
+
+// RepositoryPublication What happened when the machine published the approved revision of this repository. Absent until somebody approves; each repository carries its own outcome while the run keeps one decision.
+type RepositoryPublication struct {
+	// Error Why the step failed, as the machine reported it
+	Error       *string    `json:"error,omitempty"`
+	PublishedAt *time.Time `json:"publishedAt,omitempty"`
+	Revision    int        `json:"revision"`
+
+	// Sha The approved commit the machine published or tried to
+	Sha   string           `json:"sha"`
+	State PublicationState `json:"state"`
+	Step  *PublicationStep `json:"step,omitempty"`
 }
 
 // RequestEmailChangeRequest defines model for RequestEmailChangeRequest.
@@ -12665,6 +12735,18 @@ type ClientInterface interface {
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId} (the `RevokePreviewShareLink` operationId).
 	RevokePreviewShareLink(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AbandonWorkspaceExecutionPublication Stop publishing the approved revision and fail the run
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/abandon (the `AbandonWorkspaceExecutionPublication` operationId).
+	AbandonWorkspaceExecutionPublication(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RetryWorkspaceExecutionPublication Publish what is left of the approved revision again
+	//
+	// The machine pushes and opens pull requests only for the repositories whose publication did not finish, and only the commits somebody approved.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/retry (the `RetryWorkspaceExecutionPublication` operationId).
+	RetryWorkspaceExecutionPublication(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 	//
@@ -17566,6 +17648,38 @@ func (c *Client) SharePreview(ctx context.Context, workspaceId WorkspaceId, exec
 // Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId} (the `RevokePreviewShareLink` operationId).
 func (c *Client) RevokePreviewShareLink(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRevokePreviewShareLinkRequest(c.Server, workspaceId, executionId, previewName, shareLinkId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AbandonWorkspaceExecutionPublication Stop publishing the approved revision and fail the run
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/abandon (the `AbandonWorkspaceExecutionPublication` operationId).
+func (c *Client) AbandonWorkspaceExecutionPublication(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAbandonWorkspaceExecutionPublicationRequest(c.Server, workspaceId, executionId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RetryWorkspaceExecutionPublication Publish what is left of the approved revision again
+//
+// The machine pushes and opens pull requests only for the repositories whose publication did not finish, and only the commits somebody approved.
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/retry (the `RetryWorkspaceExecutionPublication` operationId).
+func (c *Client) RetryWorkspaceExecutionPublication(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRetryWorkspaceExecutionPublicationRequest(c.Server, workspaceId, executionId)
 	if err != nil {
 		return nil, err
 	}
@@ -28388,6 +28502,88 @@ func NewRevokePreviewShareLinkRequest(server string, workspaceId WorkspaceId, ex
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAbandonWorkspaceExecutionPublicationRequest constructs an http.Request for the AbandonWorkspaceExecutionPublication method
+func NewAbandonWorkspaceExecutionPublicationRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/publication/abandon", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRetryWorkspaceExecutionPublicationRequest constructs an http.Request for the RetryWorkspaceExecutionPublication method
+func NewRetryWorkspaceExecutionPublicationRequest(server string, workspaceId WorkspaceId, executionId ExecutionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/publication/retry", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -41424,6 +41620,22 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId} (the `RevokePreviewShareLink` operationId).
 	RevokePreviewShareLinkWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId, reqEditors ...RequestEditorFn) (*RevokePreviewShareLinkResponse, error)
 
+	// AbandonWorkspaceExecutionPublicationWithResponse Stop publishing the approved revision and fail the run
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/abandon (the `AbandonWorkspaceExecutionPublication` operationId).
+	AbandonWorkspaceExecutionPublicationWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*AbandonWorkspaceExecutionPublicationResponse, error)
+
+	// RetryWorkspaceExecutionPublicationWithResponse Publish what is left of the approved revision again
+	//
+	// The machine pushes and opens pull requests only for the repositories whose publication did not finish, and only the commits somebody approved.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/retry (the `RetryWorkspaceExecutionPublication` operationId).
+	RetryWorkspaceExecutionPublicationWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*RetryWorkspaceExecutionPublicationResponse, error)
+
 	// ListWorkspaceExecutionQuestionsWithResponse What this run stopped to ask, and what came back
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -52891,6 +53103,158 @@ func (r RevokePreviewShareLinkResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RevokePreviewShareLinkResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AbandonWorkspaceExecutionPublicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Execution
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AbandonWorkspaceExecutionPublicationResponse) GetJSON200() *Execution {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AbandonWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AbandonWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r AbandonWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AbandonWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AbandonWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r AbandonWorkspaceExecutionPublicationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AbandonWorkspaceExecutionPublicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AbandonWorkspaceExecutionPublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AbandonWorkspaceExecutionPublicationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RetryWorkspaceExecutionPublicationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Execution
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *ExecutionConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RetryWorkspaceExecutionPublicationResponse) GetJSON200() *Execution {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RetryWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RetryWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RetryWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r RetryWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON409() *ExecutionConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RetryWorkspaceExecutionPublicationResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RetryWorkspaceExecutionPublicationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RetryWorkspaceExecutionPublicationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RetryWorkspaceExecutionPublicationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RetryWorkspaceExecutionPublicationResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -72811,6 +73175,34 @@ func (c *ClientWithResponses) RevokePreviewShareLinkWithResponse(ctx context.Con
 	return ParseRevokePreviewShareLinkResponse(rsp)
 }
 
+// AbandonWorkspaceExecutionPublicationWithResponse Stop publishing the approved revision and fail the run
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/abandon (the `AbandonWorkspaceExecutionPublication` operationId).
+func (c *ClientWithResponses) AbandonWorkspaceExecutionPublicationWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*AbandonWorkspaceExecutionPublicationResponse, error) {
+	rsp, err := c.AbandonWorkspaceExecutionPublication(ctx, workspaceId, executionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAbandonWorkspaceExecutionPublicationResponse(rsp)
+}
+
+// RetryWorkspaceExecutionPublicationWithResponse Publish what is left of the approved revision again
+//
+// The machine pushes and opens pull requests only for the repositories whose publication did not finish, and only the commits somebody approved.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/publication/retry (the `RetryWorkspaceExecutionPublication` operationId).
+func (c *ClientWithResponses) RetryWorkspaceExecutionPublicationWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, reqEditors ...RequestEditorFn) (*RetryWorkspaceExecutionPublicationResponse, error) {
+	rsp, err := c.RetryWorkspaceExecutionPublication(ctx, workspaceId, executionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRetryWorkspaceExecutionPublicationResponse(rsp)
+}
+
 // ListWorkspaceExecutionQuestionsWithResponse What this run stopped to ask, and what came back
 //
 // Returns a wrapper object for the known response body format(s).
@@ -84399,6 +84791,128 @@ func ParseRevokePreviewShareLinkResponse(rsp *http.Response) (*RevokePreviewShar
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAbandonWorkspaceExecutionPublicationResponse parses an HTTP response from a AbandonWorkspaceExecutionPublicationWithResponse call
+func ParseAbandonWorkspaceExecutionPublicationResponse(rsp *http.Response) (*AbandonWorkspaceExecutionPublicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AbandonWorkspaceExecutionPublicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Execution
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRetryWorkspaceExecutionPublicationResponse parses an HTTP response from a RetryWorkspaceExecutionPublicationWithResponse call
+func ParseRetryWorkspaceExecutionPublicationResponse(rsp *http.Response) (*RetryWorkspaceExecutionPublicationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RetryWorkspaceExecutionPublicationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Execution
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest ExecutionConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -98869,6 +99383,12 @@ type ServerInterface interface {
 	// RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
 	// (DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId})
 	RevokePreviewShareLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId)
+	// AbandonWorkspaceExecutionPublication Stop publishing the approved revision and fail the run
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/publication/abandon)
+	AbandonWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
+	// RetryWorkspaceExecutionPublication Publish what is left of the approved revision again
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/publication/retry)
+	RetryWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
 	// ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/questions)
 	ListWorkspaceExecutionQuestions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
@@ -100378,6 +100898,18 @@ func (_ Unimplemented) SharePreview(w http.ResponseWriter, r *http.Request, work
 // RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
 // (DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId})
 func (_ Unimplemented) RevokePreviewShareLink(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, previewName PreviewName, shareLinkId ShareLinkId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AbandonWorkspaceExecutionPublication Stop publishing the approved revision and fail the run
+// (POST /workspaces/{workspaceId}/executions/{executionId}/publication/abandon)
+func (_ Unimplemented) AbandonWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RetryWorkspaceExecutionPublication Publish what is left of the approved revision again
+// (POST /workspaces/{workspaceId}/executions/{executionId}/publication/retry)
+func (_ Unimplemented) RetryWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -105674,6 +106206,76 @@ func (siw *ServerInterfaceWrapper) RevokePreviewShareLink(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RevokePreviewShareLink(w, r, workspaceId, executionId, previewName, shareLinkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AbandonWorkspaceExecutionPublication operation middleware
+func (siw *ServerInterfaceWrapper) AbandonWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AbandonWorkspaceExecutionPublication(w, r, workspaceId, executionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RetryWorkspaceExecutionPublication operation middleware
+func (siw *ServerInterfaceWrapper) RetryWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "executionId" -------------
+	var executionId ExecutionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RetryWorkspaceExecutionPublication(w, r, workspaceId, executionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -115709,6 +116311,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/restart", wrapper.RestartWorkspaceExecution)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/publication/retry", wrapper.RetryWorkspaceExecutionPublication)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/publication/abandon", wrapper.AbandonWorkspaceExecutionPublication)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/plans", wrapper.ListWorkspaceExecutionPlans)
@@ -127232,6 +127840,204 @@ func (response RevokePreviewShareLink404ApplicationProblemPlusJSONResponse) Visi
 type RevokePreviewShareLink500ApplicationProblemPlusJSONResponse Problem
 
 func (response RevokePreviewShareLink500ApplicationProblemPlusJSONResponse) VisitRevokePreviewShareLinkResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AbandonWorkspaceExecutionPublicationRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+}
+
+type AbandonWorkspaceExecutionPublicationResponseObject interface {
+	VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error
+}
+
+type AbandonWorkspaceExecutionPublication200JSONResponse Execution
+
+func (response AbandonWorkspaceExecutionPublication200JSONResponse) VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AbandonWorkspaceExecutionPublication401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AbandonWorkspaceExecutionPublication401ApplicationProblemPlusJSONResponse) VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AbandonWorkspaceExecutionPublication403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AbandonWorkspaceExecutionPublication403ApplicationProblemPlusJSONResponse) VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AbandonWorkspaceExecutionPublication404ApplicationProblemPlusJSONResponse Problem
+
+func (response AbandonWorkspaceExecutionPublication404ApplicationProblemPlusJSONResponse) VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AbandonWorkspaceExecutionPublication409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response AbandonWorkspaceExecutionPublication409ApplicationProblemPlusJSONResponse) VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AbandonWorkspaceExecutionPublication500ApplicationProblemPlusJSONResponse Problem
+
+func (response AbandonWorkspaceExecutionPublication500ApplicationProblemPlusJSONResponse) VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetryWorkspaceExecutionPublicationRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ExecutionId ExecutionId `json:"executionId"`
+}
+
+type RetryWorkspaceExecutionPublicationResponseObject interface {
+	VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error
+}
+
+type RetryWorkspaceExecutionPublication200JSONResponse Execution
+
+func (response RetryWorkspaceExecutionPublication200JSONResponse) VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetryWorkspaceExecutionPublication401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RetryWorkspaceExecutionPublication401ApplicationProblemPlusJSONResponse) VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetryWorkspaceExecutionPublication403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RetryWorkspaceExecutionPublication403ApplicationProblemPlusJSONResponse) VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetryWorkspaceExecutionPublication404ApplicationProblemPlusJSONResponse Problem
+
+func (response RetryWorkspaceExecutionPublication404ApplicationProblemPlusJSONResponse) VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetryWorkspaceExecutionPublication409ApplicationProblemPlusJSONResponse struct {
+	ExecutionConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RetryWorkspaceExecutionPublication409ApplicationProblemPlusJSONResponse) VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetryWorkspaceExecutionPublication500ApplicationProblemPlusJSONResponse Problem
+
+func (response RetryWorkspaceExecutionPublication500ApplicationProblemPlusJSONResponse) VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -150063,6 +150869,12 @@ type StrictServerInterface interface {
 	// RevokePreviewShareLink Withdraw a share link, and everyone it has already let in
 	// (DELETE /workspaces/{workspaceId}/executions/{executionId}/previews/{previewName}/share/{shareLinkId})
 	RevokePreviewShareLink(ctx context.Context, request RevokePreviewShareLinkRequestObject) (RevokePreviewShareLinkResponseObject, error)
+	// AbandonWorkspaceExecutionPublication Stop publishing the approved revision and fail the run
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/publication/abandon)
+	AbandonWorkspaceExecutionPublication(ctx context.Context, request AbandonWorkspaceExecutionPublicationRequestObject) (AbandonWorkspaceExecutionPublicationResponseObject, error)
+	// RetryWorkspaceExecutionPublication Publish what is left of the approved revision again
+	// (POST /workspaces/{workspaceId}/executions/{executionId}/publication/retry)
+	RetryWorkspaceExecutionPublication(ctx context.Context, request RetryWorkspaceExecutionPublicationRequestObject) (RetryWorkspaceExecutionPublicationResponseObject, error)
 	// ListWorkspaceExecutionQuestions What this run stopped to ask, and what came back
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/questions)
 	ListWorkspaceExecutionQuestions(ctx context.Context, request ListWorkspaceExecutionQuestionsRequestObject) (ListWorkspaceExecutionQuestionsResponseObject, error)
@@ -154558,6 +155370,60 @@ func (sh *strictHandler) RevokePreviewShareLink(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RevokePreviewShareLinkResponseObject); ok {
 		if err := validResponse.VisitRevokePreviewShareLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AbandonWorkspaceExecutionPublication operation middleware
+func (sh *strictHandler) AbandonWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request AbandonWorkspaceExecutionPublicationRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AbandonWorkspaceExecutionPublication(ctx, request.(AbandonWorkspaceExecutionPublicationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AbandonWorkspaceExecutionPublication")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AbandonWorkspaceExecutionPublicationResponseObject); ok {
+		if err := validResponse.VisitAbandonWorkspaceExecutionPublicationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RetryWorkspaceExecutionPublication operation middleware
+func (sh *strictHandler) RetryWorkspaceExecutionPublication(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
+	var request RetryWorkspaceExecutionPublicationRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ExecutionId = executionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RetryWorkspaceExecutionPublication(ctx, request.(RetryWorkspaceExecutionPublicationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RetryWorkspaceExecutionPublication")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RetryWorkspaceExecutionPublicationResponseObject); ok {
+		if err := validResponse.VisitRetryWorkspaceExecutionPublicationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -562,6 +562,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrReviewStale):
 		return executionConflictProblem(api.ReviewStale, err), true
 
+	case errors.Is(err, entity.ErrPublicationNotPending):
+		return executionConflictProblem(api.PublicationNotPending, err), true
+
 	case errors.Is(err, entity.ErrReviewEmpty):
 		return executionProblem(http.StatusUnprocessableEntity, api.ReviewEmpty, err), true
 
@@ -2899,6 +2902,14 @@ func (r problemResponse) VisitCancelWorkspaceExecutionResponse(w http.ResponseWr
 }
 
 func (r problemResponse) VisitRestartWorkspaceExecutionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRetryWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAbandonWorkspaceExecutionPublicationResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 
