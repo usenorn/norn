@@ -37,7 +37,11 @@ export function waitingOnLine(right: DecisionRight): string {
 		: "Only a workspace admin can decide this.";
 }
 
-const waitingSubjects = { plan: "The plan is", changes: "The changes are" } as const;
+const waitingSubjects = {
+	plan: "The plan is",
+	changes: "The changes are",
+	publication: "The publication is",
+} as const;
 
 export function waitingTitle(what: keyof typeof waitingSubjects, right: DecisionRight): string {
 	const subject = waitingSubjects[what];
