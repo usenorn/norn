@@ -20,7 +20,7 @@
 				destructive:
 					"keycap bg-destructive text-primary-foreground [--keycap-lip:var(--danger-active)] hover:bg-danger-hover active:shadow-none",
 				link: "text-link underline-offset-2 hover:text-link-hover hover:underline",
-				chip: "border-line-default bg-paper-2 font-mono text-ink-600 hover:bg-accent hover:text-ink-900",
+				chip: "border-line-default bg-paper-2 font-mono text-ink-600 hover:bg-accent hover:text-ink-900 aria-[current=page]:border-line-strong aria-[current=page]:bg-card aria-[current=page]:text-ink-900",
 			},
 			size: {
 				default: "h-control-md px-3 text-md",

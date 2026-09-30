@@ -22,10 +22,12 @@
 	import ReviewFiles from "$lib/executions/review-files.svelte";
 	import { waitingOnLine } from "$lib/executions/reviews";
 	import ReviewSubmit from "$lib/executions/review-submit.svelte";
+	import ReviewCommits from "$lib/executions/review-commits.svelte";
+	import ReviewPreviews from "$lib/executions/review-previews.svelte";
+	import ReviewRevisions from "$lib/executions/review-revisions.svelte";
 	import {
 		blockingQuestion,
 		changeStatLine,
-		changeTotals,
 		readRunFailure,
 		runFailureMessage,
 		type Execution,
@@ -34,10 +36,14 @@
 	import {
 		draftCount,
 		fileId,
+		olderRevisionLine,
 		questionsOpenLine,
+		readingLatest,
 		repositoryNote,
 		reviewClosedLine,
 		reviewOpen,
+		revisionLabel,
+		snapshotTotals,
 		threadsOf,
 		threadsOn,
 		verdictLabel,
@@ -70,7 +76,8 @@
 	let failure = $state<string | null>(null);
 	let filesOpen = $state(false);
 
-	const open = $derived(Boolean(execution) && reviewOpen(execution!));
+	const latest = $derived(ready ? readingLatest(ready.review) : true);
+	const open = $derived(Boolean(execution) && reviewOpen(execution!) && latest);
 	const threads = $derived(threadsOf(ready?.review.comments ?? []));
 	const drafts = $derived(draftCount(ready?.review.comments ?? []));
 	const locked = $derived(
@@ -85,7 +92,7 @@
 	const runHref = $derived(
 		execution ? workspacePath(workspace.slug, `/executions/${execution.id}`) : ""
 	);
-	const totals = $derived(changeTotals(ready?.changeset?.repositories ?? []));
+	const totals = $derived(snapshotTotals(ready?.review.repositories ?? []));
 
 	const listed = $derived<ListedRepository[]>(
 		(ready?.repositories ?? []).map((repository, repositoryIndex) => ({
@@ -296,6 +303,19 @@
 					Back to reviews
 				</a>
 			</div>
+		{:else if view.kind === "revision_not_found"}
+			<div class="mx-auto my-10 flex w-full max-w-180 flex-col gap-2 px-4">
+				<h1 class="text-lg text-ink-900">No such revision</h1>
+				<p class="text-sm text-muted-foreground">
+					This run never finished a pass with that number.
+				</p>
+				<a
+					href={workspacePath(workspace.slug, `/executions/${view.executionId}/review`)}
+					class="text-sm text-ink-900 underline underline-offset-2"
+				>
+					Read the latest revision
+				</a>
+			</div>
 		{:else if view.kind === "unavailable"}
 			<div class="mx-auto my-10 w-full max-w-180 px-4">
 				<Alert.Root variant="destructive">
@@ -311,6 +331,11 @@
 				<div class="flex min-w-0 flex-1 items-baseline gap-x-3 overflow-hidden">
 					<h1 class="shrink-0 font-mono text-sm text-ink-900">{execution.reference}</h1>
 					<RunState state={execution.state} />
+					{#if ready.review.revision > 0}
+						<span class="shrink-0 font-mono text-2xs text-muted-foreground">
+							{revisionLabel(ready.review.revision)}
+						</span>
+					{/if}
 					<span class="hidden truncate font-mono text-2xs text-muted-foreground sm:inline">
 						{changeStatLine(totals)}
 					</span>
@@ -363,7 +388,12 @@
 						</Alert.Root>
 					{/if}
 
-					{#if !open}
+					{#if !latest}
+						<p class="rounded-sm border border-line-default bg-paper-1 px-3 py-2 text-sm text-ink-900 text-pretty">
+							{olderRevisionLine(ready.review)}
+							<a href="?" class="underline underline-offset-2">Read the latest</a>
+						</p>
+					{:else if !open}
 						<p class="rounded-sm border border-line-default bg-paper-1 px-3 py-2 text-sm text-ink-900 text-pretty">
 							{reviewClosedLine(execution)}
 							<a href={runHref} class="underline underline-offset-2">Follow the run</a>
@@ -375,13 +405,26 @@
 						</p>
 					{/if}
 
-					{#if ready.changeset?.summary}
+					{#if ready.review.revisions.length > 1}
+						<ReviewRevisions
+							revisions={ready.review.revisions}
+							current={ready.review.revision}
+							latest={ready.review.latestRevision}
+							timezone={workspace.timezone}
+						/>
+					{/if}
+
+					{#if ready.review.summary}
 						<section class="flex min-w-0 flex-col gap-1.5" aria-label="What the coding agent said">
 							<Eyebrow rule>What the coding agent said</Eyebrow>
 							<p class="max-w-prose text-sm leading-normal break-words text-ink-900 text-pretty">
-								{ready.changeset.summary}
+								{ready.review.summary}
 							</p>
 						</section>
+					{/if}
+
+					{#if ready.review.revision > 0}
+						<ReviewPreviews review={ready.review} />
 					{/if}
 
 					{#if ready.review.reviews.length > 0}
@@ -397,6 +440,7 @@
 											>
 												{verdictLabel(held.verdict)}
 											</Eyebrow>
+											<span class="font-mono text-2xs text-muted-foreground">{revisionLabel(held.revision)}</span>
 											<time class="font-mono text-2xs text-muted-foreground" datetime={held.submittedAt}>
 												{onDateAndTime(held.submittedAt, workspace.timezone)}
 											</time>
@@ -431,6 +475,10 @@
 									<span class="text-destructive">−{repository.deletions}</span>
 								</span>
 							</div>
+
+							{#if repository.commits.length > 0}
+								<ReviewCommits {repository} />
+							{/if}
 
 							{#if repositoryNote(repository)}
 								<p class="text-xs text-muted-foreground">

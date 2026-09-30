@@ -26,11 +26,13 @@ export const load: PageServerLoad = async ({
 	depends(keys.execution(params.executionId), keys.executionReview(params.executionId));
 
 	const path = { workspaceId: workspace.id, executionId: params.executionId };
+	const requested = Number(url.searchParams.get("revision"));
+	const revision = Number.isInteger(requested) && requested >= 1 ? requested : undefined;
 
 	const [detail, review, questions] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/review", {
-			params: { path },
+			params: { path, query: { revision } },
 		}),
 		locals.api.GET("/workspaces/{workspaceId}/executions/{executionId}/questions", {
 			params: { path },
@@ -38,14 +40,17 @@ export const load: PageServerLoad = async ({
 	]);
 
 	if (detail.error?.status === 404) return { review: { kind: "not_found" } };
+	if (revision && review.error?.status === 404) {
+		return { review: { kind: "revision_not_found", executionId: params.executionId } };
+	}
 	if (!detail.data || !review.data) return { review: { kind: "unavailable" } };
 
-	const changes = detail.data.changeset?.repositories ?? [];
+	const repositories = review.data.repositories;
 
 	const [right, ...diffs] = await Promise.all([
 		readDecisionRight(locals.api, workspace.id, detail.data.execution.issueId),
-		...changes.map((change) =>
-			readDiff(locals.api, workspace.id, params.executionId, change.diffArtifactId)
+		...repositories.map((held) =>
+			readDiff(locals.api, workspace.id, params.executionId, held.diffArtifactId)
 		),
 	]);
 
@@ -53,17 +58,18 @@ export const load: PageServerLoad = async ({
 		review: {
 			kind: "ready",
 			execution: detail.data.execution,
-			changeset: detail.data.changeset,
 			review: review.data,
 			questions: questions.data?.questions ?? [],
 			right,
-			repositories: changes.map((change, index) => ({
-				repository: change.repository,
-				branch: change.branch,
-				headSha: change.headSha ?? "",
-				additions: change.additions,
-				deletions: change.deletions,
-				artifactId: change.diffArtifactId,
+			repositories: repositories.map((held, index) => ({
+				repository: held.repository,
+				branch: held.branch || undefined,
+				baseSha: held.baseSha,
+				headSha: held.headSha,
+				commits: held.commits,
+				additions: held.additions,
+				deletions: held.deletions,
+				artifactId: held.diffArtifactId,
 				diff: diffs[index],
 			})),
 		},
