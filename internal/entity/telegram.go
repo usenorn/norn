@@ -24,6 +24,7 @@ const (
 	TelegramCallbackChanges    = "changes"
 	TelegramCallbackRetry      = "retry"
 	TelegramCallbackAbandon    = "abandon"
+	TelegramCallbackFixPreview = "fixpreview"
 	TelegramConnectionName     = "Telegram"
 	TelegramTypingAction       = "typing"
 	TelegramUpdateSweepBatch   = 500

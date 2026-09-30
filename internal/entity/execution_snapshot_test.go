@@ -2,7 +2,9 @@ package entity_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/usenorn/norn/internal/entity"
 )
@@ -60,5 +62,27 @@ func TestASnapshotsHeadsAreItsRepositoriesHeads(t *testing.T) {
 
 	if !heads.Matches(entity.ReviewHeads{"backend": "b1", "frontend": "f1"}) {
 		t.Fatalf("the heads read %v", heads)
+	}
+}
+
+func TestAPreviewFixRequestNamesEachFailedPreviewAndWhyAndStaysWithinAReview(t *testing.T) {
+	request := entity.PreviewFixRequest([]entity.SnapshotPreview{
+		{Name: "Greeting page", Reason: "directory not found"},
+		{Name: "Admin", Reason: strings.Repeat("x", 5000)},
+		{Name: "Docs"},
+	})
+
+	for _, want := range []string{"- Greeting page: directory not found", "- Docs: no reason was given", "Make them start."} {
+		if !strings.Contains(request, want) {
+			t.Errorf("the request lacks %q:\n%s", want, request)
+		}
+	}
+
+	if utf8.RuneCountInString(request) > entity.ReviewSummaryMaxLen {
+		t.Errorf("the request is %d runes, longer than a review summary may be", utf8.RuneCountInString(request))
+	}
+
+	if strings.Contains(request, strings.Repeat("x", entity.PreviewFixReasonMax+1)) {
+		t.Error("one long reason was not clipped, so it could crowd the others out")
 	}
 }

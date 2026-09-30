@@ -337,6 +337,12 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 		preview > strings.Index(text, "Split the handler.") {
 		t.Errorf("the preview link is not ahead of the repositories and the summary:\n%s", text)
 	}
+
+	if !slices.ContainsFunc(h.sent[0].Buttons, func(button entity.TelegramButton) bool {
+		return button.Data == entity.TelegramCallbackFixPreview
+	}) {
+		t.Errorf("a review with a failed preview offers no way to have it fixed: %+v", h.sent[0].Buttons)
+	}
 }
 
 func TestADecidedPlanIsEditedAndTheOpenRevisionIsLeftAlone(t *testing.T) {

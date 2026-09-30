@@ -193,14 +193,23 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 		return outbound{}, false, err
 	}
 
+	buttons := []entity.TelegramButton{
+		{Label: "Approve and publish", Data: entity.TelegramCallbackApprove},
+		{Label: "Request changes", Data: entity.TelegramCallbackChanges},
+	}
+
+	if len(latest.FailedPreviews()) > 0 {
+		buttons = append(buttons, entity.TelegramButton{
+			Label: "Ask " + about.agentName + " to fix the preview",
+			Data:  entity.TelegramCallbackFixPreview,
+		})
+	}
+
 	return outbound{
-		target: target,
-		about:  about,
-		text:   reviewText(about, latest, previewLinks(latest.Previews, sessions, s.preview.Scheme)),
-		buttons: []entity.TelegramButton{
-			{Label: "Approve and publish", Data: entity.TelegramCallbackApprove},
-			{Label: "Request changes", Data: entity.TelegramCallbackChanges},
-		},
+		target:  target,
+		about:   about,
+		text:    reviewText(about, latest, previewLinks(latest.Previews, sessions, s.preview.Scheme)),
+		buttons: buttons,
 		template: entity.TelegramDecisionMessage{
 			Kind:        entity.TelegramDecisionReview,
 			ExecutionID: execution.ID,

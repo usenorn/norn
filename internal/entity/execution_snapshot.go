@@ -2,7 +2,9 @@ package entity
 
 import (
 	"errors"
+	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +20,8 @@ const (
 	ExecutionSnapshotPreviewPathMax   = 500
 	ExecutionSnapshotPreviewReasonMax = 2000
 	ExecutionSnapshotPortMax          = 65535
+
+	PreviewFixReasonMax = 300
 )
 
 var ErrExecutionSnapshotNotFound = errors.New("this run has no review snapshot at that revision")
@@ -86,6 +90,47 @@ func (s ExecutionSnapshot) Heads() ReviewHeads {
 	}
 
 	return heads
+}
+
+func (s ExecutionSnapshot) FailedPreviews() []SnapshotPreview {
+	failed := make([]SnapshotPreview, 0, len(s.Previews))
+
+	for _, preview := range s.Previews {
+		if preview.State == SnapshotPreviewFailed {
+			failed = append(failed, preview)
+		}
+	}
+
+	return failed
+}
+
+func PreviewFixRequest(failed []SnapshotPreview) string {
+	var built strings.Builder
+
+	built.WriteString("These previews did not start, so nobody could try the change:\n\n")
+
+	for _, preview := range failed {
+		reason := strings.TrimSpace(preview.Reason)
+		if reason == "" {
+			reason = "no reason was given"
+		}
+
+		if runes := []rune(reason); len(runes) > PreviewFixReasonMax {
+			reason = string(runes[:PreviewFixReasonMax]) + "…"
+		}
+
+		fmt.Fprintf(&built, "- %s: %s\n", preview.Name, reason)
+	}
+
+	built.WriteString("\nMake them start. If the fix is in the code, change it on this branch; " +
+		"if it is in how the codebase is run, say what has to change.")
+
+	request := built.String()
+	if runes := []rune(request); len(runes) > ReviewSummaryMaxLen {
+		request = string(runes[:ReviewSummaryMaxLen])
+	}
+
+	return request
 }
 
 type ExecutionRevision struct {

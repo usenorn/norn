@@ -27,6 +27,8 @@ func (s *updates) pressed(
 	switch data {
 	case entity.TelegramCallbackChanges:
 		return replyForChanges, nil
+	case entity.TelegramCallbackFixPreview:
+		return s.fixPreview(ctx, account, decision)
 	case entity.TelegramCallbackApprove:
 	default:
 		return "That option is not available.", nil
@@ -59,6 +61,50 @@ func (s *updates) pressed(
 	})
 
 	return s.outcome(ctx, execution.WorkspaceID, execution.IssueID, err, "Changes approved.")
+}
+
+func (s *updates) fixPreview(
+	ctx context.Context,
+	account entity.TelegramAccount,
+	decision entity.TelegramDecisionMessage,
+) (string, error) {
+	if decision.Kind != entity.TelegramDecisionReview {
+		return "That option is not available.", nil
+	}
+
+	execution, err := s.executions.GetByID(ctx, decision.ExecutionID)
+	if err != nil {
+		return "", err
+	}
+
+	latest, err := s.snapshots.Latest(ctx, execution.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if !latest.Heads().Matches(decision.ReviewHeads) {
+		return s.outcome(ctx, execution.WorkspaceID, execution.IssueID, entity.ErrReviewStale, "")
+	}
+
+	failed := latest.FailedPreviews()
+	if len(failed) == 0 {
+		return "Every preview on this revision started.", nil
+	}
+
+	err = s.transactor.WithSavepoint(ctx, func(ctx context.Context) error {
+		_, err := s.decisions.SubmitReview(
+			identity.WithActor(ctx, account.Actor()), execution.WorkspaceID, execution.ID,
+			service.ReviewSubmission{
+				Verdict: entity.VerdictRequestChanges,
+				Summary: entity.PreviewFixRequest(failed),
+				Heads:   decision.ReviewHeads,
+			},
+		)
+
+		return err
+	})
+
+	return s.outcome(ctx, execution.WorkspaceID, execution.IssueID, err, "Sent back to fix the preview.")
 }
 
 func (s *updates) publishing(
