@@ -24,142 +24,184 @@ import (
 
 // WorkspaceExecutionChange is an object representing the database table.
 type WorkspaceExecutionChange struct {
-	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ExecutionID    string      `boil:"execution_id" json:"execution_id" toml:"execution_id" yaml:"execution_id"`
-	WorkspaceID    string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	Repository     string      `boil:"repository" json:"repository" toml:"repository" yaml:"repository"`
-	Branch         string      `boil:"branch" json:"branch" toml:"branch" yaml:"branch"`
-	BaseSha        string      `boil:"base_sha" json:"base_sha" toml:"base_sha" yaml:"base_sha"`
-	HeadSha        string      `boil:"head_sha" json:"head_sha" toml:"head_sha" yaml:"head_sha"`
-	Commits        int         `boil:"commits" json:"commits" toml:"commits" yaml:"commits"`
-	Additions      int         `boil:"additions" json:"additions" toml:"additions" yaml:"additions"`
-	Deletions      int         `boil:"deletions" json:"deletions" toml:"deletions" yaml:"deletions"`
-	FilesChanged   int         `boil:"files_changed" json:"files_changed" toml:"files_changed" yaml:"files_changed"`
-	DiffArtifactID null.String `boil:"diff_artifact_id" json:"diff_artifact_id,omitempty" toml:"diff_artifact_id" yaml:"diff_artifact_id,omitempty"`
-	PullRequestURL string      `boil:"pull_request_url" json:"pull_request_url" toml:"pull_request_url" yaml:"pull_request_url"`
-	CodeLinkID     null.String `boil:"code_link_id" json:"code_link_id,omitempty" toml:"code_link_id" yaml:"code_link_id,omitempty"`
-	ReportedAt     time.Time   `boil:"reported_at" json:"reported_at" toml:"reported_at" yaml:"reported_at"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID                  string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ExecutionID         string      `boil:"execution_id" json:"execution_id" toml:"execution_id" yaml:"execution_id"`
+	WorkspaceID         string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	Repository          string      `boil:"repository" json:"repository" toml:"repository" yaml:"repository"`
+	Branch              string      `boil:"branch" json:"branch" toml:"branch" yaml:"branch"`
+	BaseSha             string      `boil:"base_sha" json:"base_sha" toml:"base_sha" yaml:"base_sha"`
+	HeadSha             string      `boil:"head_sha" json:"head_sha" toml:"head_sha" yaml:"head_sha"`
+	Commits             int         `boil:"commits" json:"commits" toml:"commits" yaml:"commits"`
+	Additions           int         `boil:"additions" json:"additions" toml:"additions" yaml:"additions"`
+	Deletions           int         `boil:"deletions" json:"deletions" toml:"deletions" yaml:"deletions"`
+	FilesChanged        int         `boil:"files_changed" json:"files_changed" toml:"files_changed" yaml:"files_changed"`
+	DiffArtifactID      null.String `boil:"diff_artifact_id" json:"diff_artifact_id,omitempty" toml:"diff_artifact_id" yaml:"diff_artifact_id,omitempty"`
+	PullRequestURL      string      `boil:"pull_request_url" json:"pull_request_url" toml:"pull_request_url" yaml:"pull_request_url"`
+	CodeLinkID          null.String `boil:"code_link_id" json:"code_link_id,omitempty" toml:"code_link_id" yaml:"code_link_id,omitempty"`
+	ReportedAt          time.Time   `boil:"reported_at" json:"reported_at" toml:"reported_at" yaml:"reported_at"`
+	CreatedAt           time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt           time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	PublicationState    string      `boil:"publication_state" json:"publication_state" toml:"publication_state" yaml:"publication_state"`
+	PublicationStep     string      `boil:"publication_step" json:"publication_step" toml:"publication_step" yaml:"publication_step"`
+	PublicationError    string      `boil:"publication_error" json:"publication_error" toml:"publication_error" yaml:"publication_error"`
+	PublishedSha        string      `boil:"published_sha" json:"published_sha" toml:"published_sha" yaml:"published_sha"`
+	PublicationRevision int         `boil:"publication_revision" json:"publication_revision" toml:"publication_revision" yaml:"publication_revision"`
+	PublishedAt         null.Time   `boil:"published_at" json:"published_at,omitempty" toml:"published_at" yaml:"published_at,omitempty"`
 
 	R *workspaceExecutionChangeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceExecutionChangeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceExecutionChangeColumns = struct {
-	ID             string
-	ExecutionID    string
-	WorkspaceID    string
-	Repository     string
-	Branch         string
-	BaseSha        string
-	HeadSha        string
-	Commits        string
-	Additions      string
-	Deletions      string
-	FilesChanged   string
-	DiffArtifactID string
-	PullRequestURL string
-	CodeLinkID     string
-	ReportedAt     string
-	CreatedAt      string
-	UpdatedAt      string
+	ID                  string
+	ExecutionID         string
+	WorkspaceID         string
+	Repository          string
+	Branch              string
+	BaseSha             string
+	HeadSha             string
+	Commits             string
+	Additions           string
+	Deletions           string
+	FilesChanged        string
+	DiffArtifactID      string
+	PullRequestURL      string
+	CodeLinkID          string
+	ReportedAt          string
+	CreatedAt           string
+	UpdatedAt           string
+	PublicationState    string
+	PublicationStep     string
+	PublicationError    string
+	PublishedSha        string
+	PublicationRevision string
+	PublishedAt         string
 }{
-	ID:             "id",
-	ExecutionID:    "execution_id",
-	WorkspaceID:    "workspace_id",
-	Repository:     "repository",
-	Branch:         "branch",
-	BaseSha:        "base_sha",
-	HeadSha:        "head_sha",
-	Commits:        "commits",
-	Additions:      "additions",
-	Deletions:      "deletions",
-	FilesChanged:   "files_changed",
-	DiffArtifactID: "diff_artifact_id",
-	PullRequestURL: "pull_request_url",
-	CodeLinkID:     "code_link_id",
-	ReportedAt:     "reported_at",
-	CreatedAt:      "created_at",
-	UpdatedAt:      "updated_at",
+	ID:                  "id",
+	ExecutionID:         "execution_id",
+	WorkspaceID:         "workspace_id",
+	Repository:          "repository",
+	Branch:              "branch",
+	BaseSha:             "base_sha",
+	HeadSha:             "head_sha",
+	Commits:             "commits",
+	Additions:           "additions",
+	Deletions:           "deletions",
+	FilesChanged:        "files_changed",
+	DiffArtifactID:      "diff_artifact_id",
+	PullRequestURL:      "pull_request_url",
+	CodeLinkID:          "code_link_id",
+	ReportedAt:          "reported_at",
+	CreatedAt:           "created_at",
+	UpdatedAt:           "updated_at",
+	PublicationState:    "publication_state",
+	PublicationStep:     "publication_step",
+	PublicationError:    "publication_error",
+	PublishedSha:        "published_sha",
+	PublicationRevision: "publication_revision",
+	PublishedAt:         "published_at",
 }
 
 var WorkspaceExecutionChangeTableColumns = struct {
-	ID             string
-	ExecutionID    string
-	WorkspaceID    string
-	Repository     string
-	Branch         string
-	BaseSha        string
-	HeadSha        string
-	Commits        string
-	Additions      string
-	Deletions      string
-	FilesChanged   string
-	DiffArtifactID string
-	PullRequestURL string
-	CodeLinkID     string
-	ReportedAt     string
-	CreatedAt      string
-	UpdatedAt      string
+	ID                  string
+	ExecutionID         string
+	WorkspaceID         string
+	Repository          string
+	Branch              string
+	BaseSha             string
+	HeadSha             string
+	Commits             string
+	Additions           string
+	Deletions           string
+	FilesChanged        string
+	DiffArtifactID      string
+	PullRequestURL      string
+	CodeLinkID          string
+	ReportedAt          string
+	CreatedAt           string
+	UpdatedAt           string
+	PublicationState    string
+	PublicationStep     string
+	PublicationError    string
+	PublishedSha        string
+	PublicationRevision string
+	PublishedAt         string
 }{
-	ID:             "workspace_execution_changes.id",
-	ExecutionID:    "workspace_execution_changes.execution_id",
-	WorkspaceID:    "workspace_execution_changes.workspace_id",
-	Repository:     "workspace_execution_changes.repository",
-	Branch:         "workspace_execution_changes.branch",
-	BaseSha:        "workspace_execution_changes.base_sha",
-	HeadSha:        "workspace_execution_changes.head_sha",
-	Commits:        "workspace_execution_changes.commits",
-	Additions:      "workspace_execution_changes.additions",
-	Deletions:      "workspace_execution_changes.deletions",
-	FilesChanged:   "workspace_execution_changes.files_changed",
-	DiffArtifactID: "workspace_execution_changes.diff_artifact_id",
-	PullRequestURL: "workspace_execution_changes.pull_request_url",
-	CodeLinkID:     "workspace_execution_changes.code_link_id",
-	ReportedAt:     "workspace_execution_changes.reported_at",
-	CreatedAt:      "workspace_execution_changes.created_at",
-	UpdatedAt:      "workspace_execution_changes.updated_at",
+	ID:                  "workspace_execution_changes.id",
+	ExecutionID:         "workspace_execution_changes.execution_id",
+	WorkspaceID:         "workspace_execution_changes.workspace_id",
+	Repository:          "workspace_execution_changes.repository",
+	Branch:              "workspace_execution_changes.branch",
+	BaseSha:             "workspace_execution_changes.base_sha",
+	HeadSha:             "workspace_execution_changes.head_sha",
+	Commits:             "workspace_execution_changes.commits",
+	Additions:           "workspace_execution_changes.additions",
+	Deletions:           "workspace_execution_changes.deletions",
+	FilesChanged:        "workspace_execution_changes.files_changed",
+	DiffArtifactID:      "workspace_execution_changes.diff_artifact_id",
+	PullRequestURL:      "workspace_execution_changes.pull_request_url",
+	CodeLinkID:          "workspace_execution_changes.code_link_id",
+	ReportedAt:          "workspace_execution_changes.reported_at",
+	CreatedAt:           "workspace_execution_changes.created_at",
+	UpdatedAt:           "workspace_execution_changes.updated_at",
+	PublicationState:    "workspace_execution_changes.publication_state",
+	PublicationStep:     "workspace_execution_changes.publication_step",
+	PublicationError:    "workspace_execution_changes.publication_error",
+	PublishedSha:        "workspace_execution_changes.published_sha",
+	PublicationRevision: "workspace_execution_changes.publication_revision",
+	PublishedAt:         "workspace_execution_changes.published_at",
 }
 
 // Generated where
 
 var WorkspaceExecutionChangeWhere = struct {
-	ID             whereHelperstring
-	ExecutionID    whereHelperstring
-	WorkspaceID    whereHelperstring
-	Repository     whereHelperstring
-	Branch         whereHelperstring
-	BaseSha        whereHelperstring
-	HeadSha        whereHelperstring
-	Commits        whereHelperint
-	Additions      whereHelperint
-	Deletions      whereHelperint
-	FilesChanged   whereHelperint
-	DiffArtifactID whereHelpernull_String
-	PullRequestURL whereHelperstring
-	CodeLinkID     whereHelpernull_String
-	ReportedAt     whereHelpertime_Time
-	CreatedAt      whereHelpertime_Time
-	UpdatedAt      whereHelpertime_Time
+	ID                  whereHelperstring
+	ExecutionID         whereHelperstring
+	WorkspaceID         whereHelperstring
+	Repository          whereHelperstring
+	Branch              whereHelperstring
+	BaseSha             whereHelperstring
+	HeadSha             whereHelperstring
+	Commits             whereHelperint
+	Additions           whereHelperint
+	Deletions           whereHelperint
+	FilesChanged        whereHelperint
+	DiffArtifactID      whereHelpernull_String
+	PullRequestURL      whereHelperstring
+	CodeLinkID          whereHelpernull_String
+	ReportedAt          whereHelpertime_Time
+	CreatedAt           whereHelpertime_Time
+	UpdatedAt           whereHelpertime_Time
+	PublicationState    whereHelperstring
+	PublicationStep     whereHelperstring
+	PublicationError    whereHelperstring
+	PublishedSha        whereHelperstring
+	PublicationRevision whereHelperint
+	PublishedAt         whereHelpernull_Time
 }{
-	ID:             whereHelperstring{field: "\"workspace_execution_changes\".\"id\""},
-	ExecutionID:    whereHelperstring{field: "\"workspace_execution_changes\".\"execution_id\""},
-	WorkspaceID:    whereHelperstring{field: "\"workspace_execution_changes\".\"workspace_id\""},
-	Repository:     whereHelperstring{field: "\"workspace_execution_changes\".\"repository\""},
-	Branch:         whereHelperstring{field: "\"workspace_execution_changes\".\"branch\""},
-	BaseSha:        whereHelperstring{field: "\"workspace_execution_changes\".\"base_sha\""},
-	HeadSha:        whereHelperstring{field: "\"workspace_execution_changes\".\"head_sha\""},
-	Commits:        whereHelperint{field: "\"workspace_execution_changes\".\"commits\""},
-	Additions:      whereHelperint{field: "\"workspace_execution_changes\".\"additions\""},
-	Deletions:      whereHelperint{field: "\"workspace_execution_changes\".\"deletions\""},
-	FilesChanged:   whereHelperint{field: "\"workspace_execution_changes\".\"files_changed\""},
-	DiffArtifactID: whereHelpernull_String{field: "\"workspace_execution_changes\".\"diff_artifact_id\""},
-	PullRequestURL: whereHelperstring{field: "\"workspace_execution_changes\".\"pull_request_url\""},
-	CodeLinkID:     whereHelpernull_String{field: "\"workspace_execution_changes\".\"code_link_id\""},
-	ReportedAt:     whereHelpertime_Time{field: "\"workspace_execution_changes\".\"reported_at\""},
-	CreatedAt:      whereHelpertime_Time{field: "\"workspace_execution_changes\".\"created_at\""},
-	UpdatedAt:      whereHelpertime_Time{field: "\"workspace_execution_changes\".\"updated_at\""},
+	ID:                  whereHelperstring{field: "\"workspace_execution_changes\".\"id\""},
+	ExecutionID:         whereHelperstring{field: "\"workspace_execution_changes\".\"execution_id\""},
+	WorkspaceID:         whereHelperstring{field: "\"workspace_execution_changes\".\"workspace_id\""},
+	Repository:          whereHelperstring{field: "\"workspace_execution_changes\".\"repository\""},
+	Branch:              whereHelperstring{field: "\"workspace_execution_changes\".\"branch\""},
+	BaseSha:             whereHelperstring{field: "\"workspace_execution_changes\".\"base_sha\""},
+	HeadSha:             whereHelperstring{field: "\"workspace_execution_changes\".\"head_sha\""},
+	Commits:             whereHelperint{field: "\"workspace_execution_changes\".\"commits\""},
+	Additions:           whereHelperint{field: "\"workspace_execution_changes\".\"additions\""},
+	Deletions:           whereHelperint{field: "\"workspace_execution_changes\".\"deletions\""},
+	FilesChanged:        whereHelperint{field: "\"workspace_execution_changes\".\"files_changed\""},
+	DiffArtifactID:      whereHelpernull_String{field: "\"workspace_execution_changes\".\"diff_artifact_id\""},
+	PullRequestURL:      whereHelperstring{field: "\"workspace_execution_changes\".\"pull_request_url\""},
+	CodeLinkID:          whereHelpernull_String{field: "\"workspace_execution_changes\".\"code_link_id\""},
+	ReportedAt:          whereHelpertime_Time{field: "\"workspace_execution_changes\".\"reported_at\""},
+	CreatedAt:           whereHelpertime_Time{field: "\"workspace_execution_changes\".\"created_at\""},
+	UpdatedAt:           whereHelpertime_Time{field: "\"workspace_execution_changes\".\"updated_at\""},
+	PublicationState:    whereHelperstring{field: "\"workspace_execution_changes\".\"publication_state\""},
+	PublicationStep:     whereHelperstring{field: "\"workspace_execution_changes\".\"publication_step\""},
+	PublicationError:    whereHelperstring{field: "\"workspace_execution_changes\".\"publication_error\""},
+	PublishedSha:        whereHelperstring{field: "\"workspace_execution_changes\".\"published_sha\""},
+	PublicationRevision: whereHelperint{field: "\"workspace_execution_changes\".\"publication_revision\""},
+	PublishedAt:         whereHelpernull_Time{field: "\"workspace_execution_changes\".\"published_at\""},
 }
 
 // WorkspaceExecutionChangeRels is where relationship names are stored.
@@ -256,9 +298,9 @@ func (r *workspaceExecutionChangeR) GetWorkspace() *Workspace {
 type workspaceExecutionChangeL struct{}
 
 var (
-	workspaceExecutionChangeAllColumns            = []string{"id", "execution_id", "workspace_id", "repository", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "reported_at", "created_at", "updated_at"}
+	workspaceExecutionChangeAllColumns            = []string{"id", "execution_id", "workspace_id", "repository", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "reported_at", "created_at", "updated_at", "publication_state", "publication_step", "publication_error", "published_sha", "publication_revision", "published_at"}
 	workspaceExecutionChangeColumnsWithoutDefault = []string{"execution_id", "workspace_id", "repository", "reported_at"}
-	workspaceExecutionChangeColumnsWithDefault    = []string{"id", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "created_at", "updated_at"}
+	workspaceExecutionChangeColumnsWithDefault    = []string{"id", "branch", "base_sha", "head_sha", "commits", "additions", "deletions", "files_changed", "diff_artifact_id", "pull_request_url", "code_link_id", "created_at", "updated_at", "publication_state", "publication_step", "publication_error", "published_sha", "publication_revision", "published_at"}
 	workspaceExecutionChangePrimaryKeyColumns     = []string{"id"}
 	workspaceExecutionChangeGeneratedColumns      = []string{}
 )
