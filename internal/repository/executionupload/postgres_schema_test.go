@@ -150,8 +150,6 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"chunkCursorsQuery":  chunkCursorsQuery,
 		"uploadedBytesQuery": uploadedBytesQuery,
-		"expiredChunksQuery": expiredChunksQuery,
 	}
 }

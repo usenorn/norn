@@ -4451,6 +4451,25 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/issues/{issueId}/decision-right:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [questions]
+      operationId: getWorkspaceIssueDecisionRight
+      summary: Whether the caller may answer this issue's questions and approve its runs
+      responses:
+        '200':
+          description: The caller's right to decide, and who decides otherwise
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionRight' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -5339,6 +5358,42 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/NotificationSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/decision-channel:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [notifications]
+      operationId: getWorkspaceDecisionChannel
+      summary: Read where your decision requests reach you besides Reviews
+      responses:
+        '200':
+          description: The channel your decision requests use
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionChannelSetting' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [notifications]
+      operationId: setWorkspaceDecisionChannel
+      summary: Choose where your decision requests reach you besides Reviews
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DecisionChannelSetting' }
+      responses:
+        '200':
+          description: The channel as stored
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionChannelSetting' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -7177,6 +7232,26 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [executions]
+      operationId: getWorkspaceReviewQueue
+      summary: Every decision a person owes a run, oldest first
+      description: >-
+        Open questions, plans waiting for approval, and changes waiting for review, on issues the
+        caller may read. Each carries whether the caller may decide it and who else can.
+      responses:
+        '200':
+          description: The decisions waiting on somebody
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReviewQueue' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/executions/{executionId}:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7659,66 +7734,6 @@ paths:
         '409': { $ref: '#/components/responses/PreviewConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /runners/me/executions/{executionId}/logs:
-    parameters:
-      - $ref: '#/components/parameters/ExecutionId'
-    post:
-      tags: [executions]
-      operationId: uploadExecutionLogs
-      summary: Send a batch of this run's command output
-      description: >-
-        Command output is too voluminous for the channel, so it travels here instead. A batch is
-        stored whole and identified by the digest of what it carries, so a machine that replays
-        one after a reconnect is answered with the receipt it already had rather than storing it
-        twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/UploadExecutionLogsRequest' }
-      responses:
-        '202':
-          description: What the server holds for this batch
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ExecutionChunkReceipt' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/ExecutionConflict' }
-        '413': { $ref: '#/components/responses/Problem' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /runners/me/executions/{executionId}/transcript:
-    parameters:
-      - $ref: '#/components/parameters/ExecutionId'
-    post:
-      tags: [executions]
-      operationId: uploadExecutionTranscript
-      summary: Send a chunk of the coding agent's normalised event stream
-      description: >-
-        Ordered by sequence and resumable: ask the streams path what the server already holds and
-        carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/UploadExecutionTranscriptRequest' }
-      responses:
-        '202':
-          description: What the server holds for this chunk
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ExecutionChunkReceipt' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '409': { $ref: '#/components/responses/ExecutionConflict' }
-        '413': { $ref: '#/components/responses/Problem' }
-        '422': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
   /runners/me/executions/{executionId}/artifacts:
     parameters:
       - $ref: '#/components/parameters/ExecutionId'
@@ -7754,29 +7769,6 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
-  /runners/me/executions/{executionId}/streams:
-    parameters:
-      - $ref: '#/components/parameters/ExecutionId'
-    get:
-      tags: [executions]
-      operationId: getExecutionStreams
-      summary: How far each of this run's streams got
-      description: >-
-        What a machine reads after a restart to know where to carry on from, so a reconnect
-        resends nothing it does not have to.
-      responses:
-        '200':
-          description: One cursor per stream the server holds anything for
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/ExecutionStreamCursor' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
   /workspaces/{workspaceId}/executions/{executionId}/questions:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -7791,67 +7783,6 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/IssueQuestionList' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/executions/{executionId}/logs:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/ExecutionId'
-    get:
-      tags: [executions]
-      operationId: listWorkspaceExecutionLogs
-      summary: What this run printed, oldest batch first
-      parameters:
-        - name: after
-          in: query
-          description: The sequence of the last batch already held
-          schema: { type: integer, format: int64, minimum: 0 }
-        - name: limit
-          in: query
-          schema: { type: integer, minimum: 1, maximum: 50 }
-      responses:
-        '200':
-          description: The next batches of output
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/ExecutionLogChunk' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/executions/{executionId}/transcript:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-      - $ref: '#/components/parameters/ExecutionId'
-    get:
-      tags: [executions]
-      operationId: listWorkspaceExecutionTranscript
-      summary: What the coding agent did, oldest chunk first
-      description: >-
-        Empty once the retention window has passed, or where the workspace keeps summaries only.
-        The timeline is kept either way.
-      parameters:
-        - name: after
-          in: query
-          description: The sequence of the last chunk already held
-          schema: { type: integer, format: int64, minimum: 0 }
-        - name: limit
-          in: query
-          schema: { type: integer, minimum: 1, maximum: 50 }
-      responses:
-        '200':
-          description: The next chunks of the transcript
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/ExecutionTranscriptChunk' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -7899,45 +7830,6 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
-        '500': { $ref: '#/components/responses/Problem' }
-
-  /workspaces/{workspaceId}/execution-policy:
-    parameters:
-      - $ref: '#/components/parameters/WorkspaceId'
-    get:
-      tags: [executions]
-      operationId: getWorkspaceExecutionPolicy
-      summary: Read how much of a run this workspace keeps, and for how long
-      responses:
-        '200':
-          description: The workspace execution policy
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/WorkspaceExecutionPolicy' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '500': { $ref: '#/components/responses/Problem' }
-    put:
-      tags: [executions]
-      operationId: setWorkspaceExecutionPolicy
-      summary: Set how much of a run this workspace keeps, and for how long
-      description: >-
-        On minimal the server stops accepting full transcripts, so the setting holds even against
-        a machine that has not noticed it changed.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/SetWorkspaceExecutionPolicyRequest' }
-      responses:
-        '200':
-          description: The policy as it now stands
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/WorkspaceExecutionPolicy' }
-        '401': { $ref: '#/components/responses/Problem' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
 components:
@@ -8908,15 +8800,18 @@ components:
 
     IssueQuestion:
       type: object
-      required: [id, issueId, kind, state, blocking, allowFreeText, question, default, deadline,
-                 answered, expired, standing, actorKind, createdAt]
+      required: [id, issueId, issueReference, issueTitle, kind, state, blocking, allowFreeText,
+                 question, default, deadline, answered, expired, standing, actorKind, createdAt]
       properties:
         id: { type: string, format: uuid }
         issueId: { type: string, format: uuid }
+        issueReference: { type: string }
+        issueTitle: { type: string }
         executionId:
           type: string
           maxLength: 64
           description: The run that asked, when a run did. Absent when a person or a tool did.
+        stage: { $ref: '#/components/schemas/IssueQuestionStage' }
         kind: { $ref: '#/components/schemas/IssueQuestionKind' }
         state: { $ref: '#/components/schemas/IssueQuestionState' }
         blocking:
@@ -8953,6 +8848,50 @@ components:
           description: Who decided this question, however they decided it.
         settledAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
+
+    IssueQuestionStage:
+      type: string
+      enum: [planning, implementation]
+      description: Whether the run was still planning or already implementing when it asked.
+
+    DecisionRight:
+      type: object
+      required: [canDecide]
+      properties:
+        canDecide:
+          type: boolean
+          description: True for the issue's assignee and for workspace admins.
+        decider:
+          type: string
+          description: Who decides for this issue. Absent when only admins can.
+
+    ReviewQuestion:
+      type: object
+      required: [question, decision]
+      properties:
+        question: { $ref: '#/components/schemas/IssueQuestion' }
+        decision: { $ref: '#/components/schemas/DecisionRight' }
+
+    ReviewRun:
+      type: object
+      required: [run, decision]
+      properties:
+        run: { $ref: '#/components/schemas/ExecutionSummary' }
+        decision: { $ref: '#/components/schemas/DecisionRight' }
+
+    ReviewQueue:
+      type: object
+      required: [questions, plans, changes]
+      properties:
+        questions:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewQuestion' }
+        plans:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewRun' }
+        changes:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewRun' }
 
     AskIssueQuestionRequest:
       type: object
@@ -9815,12 +9754,6 @@ components:
           format: date-time
           description: Set while an administrator has stopped this machine being offered work
         revokedAt: { type: string, format: date-time }
-        telemetry:
-          allOf:
-            - $ref: '#/components/schemas/TelemetryMode'
-          description: >-
-            How much of a run this machine's workspace keeps. On minimal the server declines full
-            transcripts, so a machine reads this to send summaries instead of having them refused.
         load:
           allOf:
             - $ref: '#/components/schemas/RunnerLoad'
@@ -10567,129 +10500,6 @@ components:
           description: The heads the reviewer read, exactly as the review state reported them
           items: { $ref: '#/components/schemas/ReviewHead' }
 
-    ExecutionStream:
-      type: string
-      enum: [logs, transcript]
-
-    TelemetryMode:
-      type: string
-      enum: [full, minimal]
-
-    ExecutionLogEntry:
-      type: object
-      required: [text]
-      properties:
-        at:
-          type: string
-          format: date-time
-          description: When the line was written. Defaults to when the server received the batch.
-        stream: { type: string, maxLength: 64, description: Which handle it came out of }
-        source: { type: string, maxLength: 128, description: The service or step that wrote it }
-        text: { type: string }
-
-    ExecutionTranscriptEntry:
-      type: object
-      required: [type]
-      properties:
-        at: { type: string, format: date-time }
-        type:
-          type: string
-          maxLength: 64
-          description: The normalised event kind, such as message, tool_call, tool_result or usage
-        payload:
-          type: object
-          additionalProperties: true
-          description: Whatever the driver put in the event
-
-    UploadExecutionLogsRequest:
-      type: object
-      required: [sequence, entries]
-      properties:
-        sequence:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Where this batch sits in the stream. A position may be filled once.
-        entries:
-          type: array
-          minItems: 1
-          maxItems: 5000
-          items: { $ref: '#/components/schemas/ExecutionLogEntry' }
-
-    UploadExecutionTranscriptRequest:
-      type: object
-      required: [sequence, entries]
-      properties:
-        sequence:
-          type: integer
-          format: int64
-          minimum: 1
-          description: Where this chunk sits in the stream. A position may be filled once.
-        entries:
-          type: array
-          minItems: 1
-          maxItems: 5000
-          items: { $ref: '#/components/schemas/ExecutionTranscriptEntry' }
-
-    ExecutionChunkReceipt:
-      type: object
-      required: [stream, sequence, digest, entryCount, bytes, duplicate, receivedAt]
-      properties:
-        stream: { $ref: '#/components/schemas/ExecutionStream' }
-        sequence: { type: integer, format: int64 }
-        digest:
-          type: string
-          description: The server's own digest of what it stored, and what makes a replay a no-op
-        entryCount: { type: integer }
-        bytes: { type: integer, format: int64, description: What the batch takes in storage }
-        duplicate:
-          type: boolean
-          description: True when this batch was already held, so nothing was stored a second time
-        receivedAt: { type: string, format: date-time }
-
-    ExecutionStreamCursor:
-      type: object
-      required: [stream, lastSequence, chunks, entryCount, bytes]
-      properties:
-        stream: { $ref: '#/components/schemas/ExecutionStream' }
-        lastSequence: { type: integer, format: int64 }
-        chunks: { type: integer }
-        entryCount: { type: integer, format: int64 }
-        bytes: { type: integer, format: int64 }
-
-    ExecutionChunk:
-      type: object
-      required: [stream, sequence, digest, entryCount, bytes, firstAt, lastAt, receivedAt]
-      properties:
-        stream: { $ref: '#/components/schemas/ExecutionStream' }
-        sequence: { type: integer, format: int64 }
-        digest: { type: string }
-        entryCount: { type: integer }
-        bytes: { type: integer, format: int64 }
-        firstAt: { type: string, format: date-time }
-        lastAt: { type: string, format: date-time }
-        receivedAt: { type: string, format: date-time }
-
-    ExecutionLogChunk:
-      allOf:
-        - $ref: '#/components/schemas/ExecutionChunk'
-        - type: object
-          required: [entries]
-          properties:
-            entries:
-              type: array
-              items: { $ref: '#/components/schemas/ExecutionLogEntry' }
-
-    ExecutionTranscriptChunk:
-      allOf:
-        - $ref: '#/components/schemas/ExecutionChunk'
-        - type: object
-          required: [entries]
-          properties:
-            entries:
-              type: array
-              items: { $ref: '#/components/schemas/ExecutionTranscriptEntry' }
-
     ExecutionArtifact:
       type: object
       required: [id, executionId, name, contentType, bytes, digest, createdAt]
@@ -10712,23 +10522,6 @@ components:
               type: boolean
               description: True when this file was already published, so the first id is returned
 
-    WorkspaceExecutionPolicy:
-      type: object
-      required: [workspaceId, telemetry, uploadRetentionDays]
-      properties:
-        workspaceId: { type: string, format: uuid }
-        telemetry: { $ref: '#/components/schemas/TelemetryMode' }
-        uploadRetentionDays:
-          type: integer
-          description: How long a run's output and transcript are kept. The timeline outlives them.
-
-    SetWorkspaceExecutionPolicyRequest:
-      type: object
-      required: [telemetry, uploadRetentionDays]
-      properties:
-        telemetry: { $ref: '#/components/schemas/TelemetryMode' }
-        uploadRetentionDays: { type: integer, minimum: 1, maximum: 3650 }
-
     ExecutionProblem:
       allOf:
         - $ref: '#/components/schemas/Problem'
@@ -10744,11 +10537,11 @@ components:
                 - execution_not_reviewable
                 - execution_self_approval
                 - execution_no_runner
-                - execution_chunk_conflict
                 - execution_not_planning
                 - execution_plan_missing
                 - execution_plan_stale
                 - execution_questions_open
+                - decision_forbidden
                 - review_closed
                 - review_stale
                 - review_empty
@@ -14994,7 +14787,7 @@ components:
 
     NotificationKind:
       type: string
-      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting]
+      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting, decision_waiting]
 
     NotificationReason:
       type: string
@@ -15055,6 +14848,19 @@ components:
           $ref: '#/components/schemas/NotificationChannels'
           description: An agent is waiting for you to approve something before it can carry on.
         agents: { $ref: '#/components/schemas/NotificationChannels' }
+
+    DecisionChannel:
+      type: string
+      enum: [norn, telegram]
+      description: >-
+        Norn keeps decision requests in Reviews only. Telegram also sends each one as a direct
+        message from the agent's bot, once you have linked your Telegram to that bot.
+
+    DecisionChannelSetting:
+      type: object
+      required: [channel]
+      properties:
+        channel: { $ref: '#/components/schemas/DecisionChannel' }
 
     NotificationChannels:
       type: object

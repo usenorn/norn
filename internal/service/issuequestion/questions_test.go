@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/service"
@@ -390,7 +392,7 @@ func TestEveryQuestionIsQueuedForTelegramWhenAskedAndAgainWhenSettled(t *testing
 			}
 
 			asked := h.only(t)
-			want := entity.TelegramQuestionPayload{WorkspaceID: h.workspaceID, QuestionID: asked.ID}
+			want := entity.TelegramDecision{WorkspaceID: h.workspaceID, Kind: entity.TelegramDecisionQuestion, QuestionID: asked.ID}
 
 			if len(h.relayed) != 1 || h.relayed[0] != want {
 				t.Fatalf("queued for telegram %+v, want the asked question once", h.relayed)
@@ -402,5 +404,77 @@ func TestEveryQuestionIsQueuedForTelegramWhenAskedAndAgainWhenSettled(t *testing
 				t.Fatalf("queued settlements %+v, want the question once", h.settled)
 			}
 		})
+	}
+}
+
+func TestOnlyTheAssigneeOrAnAdminAnswersAQuestion(t *testing.T) {
+	cases := []struct {
+		name      string
+		assignee  bool
+		role      entity.MembershipRole
+		forbidden bool
+	}{
+		{name: "the assignee", assignee: true, role: entity.MembershipRoleMember},
+		{name: "a workspace admin", role: entity.MembershipRoleAdmin},
+		{name: "another member who manages the issue", role: entity.MembershipRoleMember, forbidden: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t)
+			h.role = tc.role
+
+			if !tc.assignee {
+				h.authority.AssigneeAccountID = uuid.New()
+			}
+
+			if err := h.service.Asked(h.asRunner(context.Background()), h.runner, h.asking("01REF", true)); err != nil {
+				t.Fatalf("record what a run asked: %v", err)
+			}
+
+			_, answerErr := h.service.Answer(
+				context.Background(), h.workspaceID, h.issue.ID, h.only(t).ID,
+				service.AnswerQuestionInput{Answer: "Remove now"},
+			)
+			_, dismissErr := h.service.Dismiss(context.Background(), h.workspaceID, h.issue.ID, h.only(t).ID)
+
+			if tc.forbidden {
+				if !errors.Is(answerErr, entity.ErrIssueDecisionForbidden) ||
+					!errors.Is(dismissErr, entity.ErrIssueDecisionForbidden) {
+					t.Fatalf("answer %v, dismiss %v; want both refused as not theirs to decide", answerErr, dismissErr)
+				}
+
+				if h.only(t).Settled() {
+					t.Fatal("a refused decision still settled the question")
+				}
+
+				return
+			}
+
+			if answerErr != nil {
+				t.Fatalf("answer the question: %v", answerErr)
+			}
+		})
+	}
+}
+
+func TestAQuestionRemembersWhichStageOfTheRunAskedIt(t *testing.T) {
+	for _, tc := range []struct {
+		stage entity.ExecutionStage
+		want  entity.QuestionStage
+	}{
+		{stage: entity.StagePlanning, want: entity.QuestionStagePlanning},
+		{stage: entity.StageImplementation, want: entity.QuestionStageImplementation},
+	} {
+		h := newHarness(t)
+		h.execution.Stage = tc.stage
+
+		if err := h.service.Asked(h.asRunner(context.Background()), h.runner, h.asking("01REF", true)); err != nil {
+			t.Fatalf("record what a run asked: %v", err)
+		}
+
+		if got := h.only(t).Stage; got != tc.want {
+			t.Errorf("a question asked while %s is filed under %q, want %q", tc.stage, got, tc.want)
+		}
 	}
 }

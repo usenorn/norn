@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"maps"
@@ -79,6 +81,19 @@ func HeadsOf(changes []ExecutionChange) ReviewHeads {
 
 func (h ReviewHeads) Matches(other ReviewHeads) bool {
 	return maps.Equal(h, other)
+}
+
+func (h ReviewHeads) Digest() string {
+	digest := sha256.New()
+
+	for _, repository := range slices.Sorted(maps.Keys(h)) {
+		digest.Write([]byte(repository))
+		digest.Write([]byte{0})
+		digest.Write([]byte(h[repository]))
+		digest.Write([]byte{0})
+	}
+
+	return hex.EncodeToString(digest.Sum(nil))
 }
 
 type ReviewAnchor struct {

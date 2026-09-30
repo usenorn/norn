@@ -21,6 +21,7 @@ import (
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
+	jobrepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	previewrepo "github.com/usenorn/norn/internal/repository/preview"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
@@ -54,6 +55,7 @@ type harness struct {
 	revisions   *issuerevisionrepo.MockIssueRevision
 	states      *statesrepo.MockWorkflowState
 	channels    *channelrepo.MockRunnerChannel
+	jobs        *jobrepo.MockJobProducer
 	writer      *issuesvc.MockIssues
 	source      *scmsvc.MockSourceControl
 	branch      string
@@ -81,7 +83,11 @@ type harness struct {
 	comments    []entity.ExecutionReviewComment
 	submitted   []entity.ExecutionReview
 	delegator   uuid.UUID
+	role        entity.MembershipRole
+	authority   entity.DecisionAuthority
 	notified    []entity.NotificationEvent
+	relayed     []entity.TelegramDecision
+	settled     []entity.TelegramDecision
 }
 
 func newHarness(t *testing.T) *harness {
@@ -111,6 +117,7 @@ func newHarness(t *testing.T) *harness {
 		revisions:   issuerevisionrepo.NewMockIssueRevision(ctrl),
 		states:      statesrepo.NewMockWorkflowState(ctrl),
 		channels:    channelrepo.NewMockRunnerChannel(ctrl),
+		jobs:        jobrepo.NewMockJobProducer(ctrl),
 		writer:      issuesvc.NewMockIssues(ctrl),
 		source:      scmsvc.NewMockSourceControl(ctrl),
 		branch:      "rae/norn-1-a-run",
@@ -120,6 +127,7 @@ func newHarness(t *testing.T) *harness {
 		audit:       auditsvc.NewMockAudit(ctrl),
 		workspaceID: workspaceID,
 		caller:      uuid.New(),
+		role:        entity.MembershipRoleMember,
 		issue: entity.Issue{
 			ID:           uuid.New(),
 			WorkspaceID:  workspaceID,
@@ -173,7 +181,7 @@ func newHarness(t *testing.T) *harness {
 
 			return entity.Decision{
 				Actor: entity.Actor{Kind: kind, AccountID: h.caller, AgentID: h.callerAgent},
-				Role:  entity.MembershipRoleAdmin,
+				Role:  h.role,
 				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
 			}, nil
 		}).
@@ -256,6 +264,19 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.authority = entity.DecisionAuthority{
+		AssigneeAccountID:  h.caller,
+		AssigneeKind:       entity.AccountKindPerson,
+		DelegatorAccountID: h.delegator,
+	}
+
+	h.delegates.EXPECT().
+		Authority(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, _ uuid.UUID) (entity.DecisionAuthority, error) {
+			return h.authority, nil
+		}).
+		AnyTimes()
+
 	h.notify.EXPECT().
 		Record(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, event entity.NotificationEvent) error {
@@ -265,10 +286,28 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	h.jobs.EXPECT().
+		EnqueueTelegramDecision(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, decision entity.TelegramDecision) error {
+			h.relayed = append(h.relayed, decision)
+
+			return nil
+		}).
+		AnyTimes()
+
+	h.jobs.EXPECT().
+		EnqueueTelegramSettlement(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, decision entity.TelegramDecision) error {
+			h.settled = append(h.settled, decision)
+
+			return nil
+		}).
+		AnyTimes()
+
 	h.service = executionsvc.New(
 		h.executions, h.changesets, h.plans, h.reviews, h.questions, h.delegates, h.notify, h.previews, h.services, h.runners, h.codebases, h.issues,
 		h.revisions, h.states,
-		h.channels, h.writer, h.source, h.events, h.toolkits, h.authorizer, h.audit, transactor,
+		h.channels, h.jobs, h.writer, h.source, h.events, h.toolkits, h.authorizer, h.audit, transactor,
 	)
 
 	return h

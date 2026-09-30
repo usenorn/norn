@@ -386,6 +386,10 @@ func (s *executionsService) SubmitReview(
 	}
 
 	if submission.Verdict != entity.VerdictComment {
+		if err := s.authorised(ctx, decision, execution); err != nil {
+			return entity.ExecutionReview{}, err
+		}
+
 		if err := s.settled(ctx, execution); err != nil {
 			return entity.ExecutionReview{}, err
 		}

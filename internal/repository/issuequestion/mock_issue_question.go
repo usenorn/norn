@@ -134,6 +134,21 @@ func (mr *MockIssueQuestionMockRecorder) ListByIssue(ctx, workspaceID, issueID a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByIssue", reflect.TypeOf((*MockIssueQuestion)(nil).ListByIssue), ctx, workspaceID, issueID)
 }
 
+// ListWaiting mocks base method.
+func (m *MockIssueQuestion) ListWaiting(ctx context.Context, scope entity.TeamScope, limit int) ([]entity.IssueQuestion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListWaiting", ctx, scope, limit)
+	ret0, _ := ret[0].([]entity.IssueQuestion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListWaiting indicates an expected call of ListWaiting.
+func (mr *MockIssueQuestionMockRecorder) ListWaiting(ctx, scope, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWaiting", reflect.TypeOf((*MockIssueQuestion)(nil).ListWaiting), ctx, scope, limit)
+}
+
 // Settle mocks base method.
 func (m *MockIssueQuestion) Settle(ctx context.Context, workspaceID uuid.UUID, settlement repository.QuestionSettlement) (entity.IssueQuestion, error) {
 	m.ctrl.T.Helper()

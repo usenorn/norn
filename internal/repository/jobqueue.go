@@ -29,8 +29,8 @@ type JobProducer interface {
 	EnqueueSCMDelivery(ctx context.Context, payload entity.SCMDeliveryPayload) error
 	EnqueueIntakeDelivery(ctx context.Context, payload entity.IntakeDeliveryPayload) error
 	EnqueueTelegramUpdate(ctx context.Context, payload entity.TelegramUpdatePayload) error
-	EnqueueTelegramQuestion(ctx context.Context, payload entity.TelegramQuestionPayload) error
-	EnqueueTelegramSettlement(ctx context.Context, payload entity.TelegramQuestionPayload) error
+	EnqueueTelegramDecision(ctx context.Context, decision entity.TelegramDecision) error
+	EnqueueTelegramSettlement(ctx context.Context, decision entity.TelegramDecision) error
 	EnqueueSCMReconcile(ctx context.Context) error
 	EnqueueSCMBackfill(ctx context.Context, payload entity.SCMBackfillPayload) error
 	EnqueueSCMResume(ctx context.Context, payload entity.SCMResumePayload) error

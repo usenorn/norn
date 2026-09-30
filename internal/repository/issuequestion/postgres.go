@@ -16,14 +16,16 @@ import (
 )
 
 const questionColumns = `
-    q.id, q.workspace_id, q.issue_id, coalesce(q.execution_id, ''), q.runner_ref, q.kind,
+    q.id, q.workspace_id, q.issue_id, coalesce(q.execution_id, ''), coalesce(q.stage, ''), q.runner_ref, q.kind,
     q.blocking, q.options, q.allow_free_text, q.context, q.state,
     q.question, q.default_answer, q.deadline, q.answer,
     coalesce(q.asked_by_account_id::text, ''), coalesce(asked.display_name, ''), q.actor_kind,
     coalesce(q.answered_by_account_id::text, ''), coalesce(answered.display_name, ''),
     coalesce(q.settled_by_account_id::text, ''), coalesce(settled.display_name, ''),
-    q.answered_at, q.settled_at, q.created_at
+    q.answered_at, q.settled_at, q.created_at,
+    i.reference_key || '-' || i.number, i.title, i.team_id
 FROM workspace_issue_questions q
+JOIN workspace_issues i ON i.id = q.issue_id
 LEFT JOIN accounts asked ON asked.id = q.asked_by_account_id
 LEFT JOIN accounts answered ON answered.id = q.answered_by_account_id
 LEFT JOIN accounts settled ON settled.id = q.settled_by_account_id`
@@ -32,10 +34,10 @@ const insertQuestionQuery = `
 INSERT INTO workspace_issue_questions (
     id, workspace_id, issue_id, execution_id, runner_ref, kind, blocking, options,
     allow_free_text, context, question, default_answer, deadline,
-    asked_by_account_id, actor_kind, created_at
+    asked_by_account_id, actor_kind, created_at, stage
 )
 VALUES ($1, $2, $3, nullif($4, ''), $5, $6, $7, $8::jsonb, $9, $10::jsonb, $11, $12, $13,
-        nullif($14, '')::uuid, $15, $16)
+        nullif($14, '')::uuid, $15, $16, nullif($17, ''))
 ON CONFLICT (execution_id, runner_ref) WHERE runner_ref <> '' DO NOTHING
 RETURNING id`
 
@@ -52,6 +54,13 @@ const questionsByExecutionQuery = `
 SELECT` + questionColumns + `
 WHERE q.workspace_id = $1 AND q.execution_id = $2
 ORDER BY q.created_at, q.id`
+
+const waitingQuestionsQuery = `
+SELECT` + questionColumns + `
+WHERE q.workspace_id = $1 AND q.state = 'asked'
+  AND ($2::boolean IS TRUE OR i.team_id = ANY($3::uuid[]))
+ORDER BY q.created_at, q.id
+LIMIT $4`
 
 const lapsedQuestionsQuery = `
 SELECT` + questionColumns + `
@@ -90,6 +99,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		id          string
 		workspaceID string
 		issueID     string
+		stage       string
 		kind        string
 		state       string
 		options     []byte
@@ -100,6 +110,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		settledBy   string
 		answeredAt  sql.NullTime
 		settledAt   sql.NullTime
+		teamID      string
 	)
 
 	if err := row.Scan(
@@ -107,6 +118,7 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		&workspaceID,
 		&issueID,
 		&question.ExecutionID,
+		&stage,
 		&question.Ref,
 		&kind,
 		&question.Blocking,
@@ -128,10 +140,14 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 		&answeredAt,
 		&settledAt,
 		&question.CreatedAt,
+		&question.IssueReference,
+		&question.IssueTitle,
+		&teamID,
 	); err != nil {
 		return entity.IssueQuestion{}, err
 	}
 
+	question.Stage = entity.QuestionStage(stage)
 	question.Kind = entity.QuestionKind(kind)
 	question.State = entity.QuestionState(state)
 	question.ActorKind = entity.ActorKind(actorKind)
@@ -165,6 +181,10 @@ func scanQuestion(row scanner) (entity.IssueQuestion, error) {
 
 	if question.IssueID, err = uuid.Parse(issueID); err != nil {
 		return entity.IssueQuestion{}, fmt.Errorf("parse question issue id: %w", err)
+	}
+
+	if question.TeamID, err = uuid.Parse(teamID); err != nil {
+		return entity.IssueQuestion{}, fmt.Errorf("parse question team id: %w", err)
 	}
 
 	if question.AskedByAccountID, err = optionalID(askedBy); err != nil {
@@ -254,6 +274,7 @@ func (r *questionRepository) Ask(
 		idOrEmpty(question.AskedByAccountID),
 		string(question.ActorKind),
 		question.CreatedAt,
+		string(question.Stage),
 	).Scan(&recorded)
 
 	// A ref this run has already used is the question it already asked: the machine replayed the
@@ -301,6 +322,19 @@ func (r *questionRepository) ListByExecution(
 	executionID string,
 ) ([]entity.IssueQuestion, error) {
 	return r.list(ctx, questionsByExecutionQuery, workspaceID.String(), executionID)
+}
+
+func (r *questionRepository) ListWaiting(
+	ctx context.Context,
+	scope entity.TeamScope,
+	limit int,
+) ([]entity.IssueQuestion, error) {
+	teams := make([]string, 0, len(scope.TeamIDs))
+	for _, teamID := range scope.TeamIDs {
+		teams = append(teams, teamID.String())
+	}
+
+	return r.list(ctx, waitingQuestionsQuery, scope.WorkspaceID.String(), scope.AllTeams, teams, limit)
 }
 
 func (r *questionRepository) Lapsed(

@@ -47,6 +47,7 @@ type WorkspaceIssueQuestion struct {
 	State               string      `boil:"state" json:"state" toml:"state" yaml:"state"`
 	SettledAt           null.Time   `boil:"settled_at" json:"settled_at,omitempty" toml:"settled_at" yaml:"settled_at,omitempty"`
 	SettledByAccountID  null.String `boil:"settled_by_account_id" json:"settled_by_account_id,omitempty" toml:"settled_by_account_id" yaml:"settled_by_account_id,omitempty"`
+	Stage               null.String `boil:"stage" json:"stage,omitempty" toml:"stage" yaml:"stage,omitempty"`
 
 	R *workspaceIssueQuestionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceIssueQuestionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -75,6 +76,7 @@ var WorkspaceIssueQuestionColumns = struct {
 	State               string
 	SettledAt           string
 	SettledByAccountID  string
+	Stage               string
 }{
 	ID:                  "id",
 	WorkspaceID:         "workspace_id",
@@ -98,6 +100,7 @@ var WorkspaceIssueQuestionColumns = struct {
 	State:               "state",
 	SettledAt:           "settled_at",
 	SettledByAccountID:  "settled_by_account_id",
+	Stage:               "stage",
 }
 
 var WorkspaceIssueQuestionTableColumns = struct {
@@ -123,6 +126,7 @@ var WorkspaceIssueQuestionTableColumns = struct {
 	State               string
 	SettledAt           string
 	SettledByAccountID  string
+	Stage               string
 }{
 	ID:                  "workspace_issue_questions.id",
 	WorkspaceID:         "workspace_issue_questions.workspace_id",
@@ -146,6 +150,7 @@ var WorkspaceIssueQuestionTableColumns = struct {
 	State:               "workspace_issue_questions.state",
 	SettledAt:           "workspace_issue_questions.settled_at",
 	SettledByAccountID:  "workspace_issue_questions.settled_by_account_id",
+	Stage:               "workspace_issue_questions.stage",
 }
 
 // Generated where
@@ -173,6 +178,7 @@ var WorkspaceIssueQuestionWhere = struct {
 	State               whereHelperstring
 	SettledAt           whereHelpernull_Time
 	SettledByAccountID  whereHelpernull_String
+	Stage               whereHelpernull_String
 }{
 	ID:                  whereHelperstring{field: "\"workspace_issue_questions\".\"id\""},
 	WorkspaceID:         whereHelperstring{field: "\"workspace_issue_questions\".\"workspace_id\""},
@@ -196,6 +202,7 @@ var WorkspaceIssueQuestionWhere = struct {
 	State:               whereHelperstring{field: "\"workspace_issue_questions\".\"state\""},
 	SettledAt:           whereHelpernull_Time{field: "\"workspace_issue_questions\".\"settled_at\""},
 	SettledByAccountID:  whereHelpernull_String{field: "\"workspace_issue_questions\".\"settled_by_account_id\""},
+	Stage:               whereHelpernull_String{field: "\"workspace_issue_questions\".\"stage\""},
 }
 
 // WorkspaceIssueQuestionRels is where relationship names are stored.
@@ -205,14 +212,14 @@ var WorkspaceIssueQuestionRels = struct {
 	Execution                                 string
 	SettledByAccount                          string
 	Workspace                                 string
-	QuestionWorkspaceTelegramQuestionMessages string
+	QuestionWorkspaceTelegramDecisionMessages string
 }{
 	AnsweredByAccount: "AnsweredByAccount",
 	AskedByAccount:    "AskedByAccount",
 	Execution:         "Execution",
 	SettledByAccount:  "SettledByAccount",
 	Workspace:         "Workspace",
-	QuestionWorkspaceTelegramQuestionMessages: "QuestionWorkspaceTelegramQuestionMessages",
+	QuestionWorkspaceTelegramDecisionMessages: "QuestionWorkspaceTelegramDecisionMessages",
 }
 
 // workspaceIssueQuestionR is where relationships are stored.
@@ -222,7 +229,7 @@ type workspaceIssueQuestionR struct {
 	Execution                                 *WorkspaceExecution                   `boil:"Execution" json:"Execution" toml:"Execution" yaml:"Execution"`
 	SettledByAccount                          *Account                              `boil:"SettledByAccount" json:"SettledByAccount" toml:"SettledByAccount" yaml:"SettledByAccount"`
 	Workspace                                 *Workspace                            `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	QuestionWorkspaceTelegramQuestionMessages WorkspaceTelegramQuestionMessageSlice `boil:"QuestionWorkspaceTelegramQuestionMessages" json:"QuestionWorkspaceTelegramQuestionMessages" toml:"QuestionWorkspaceTelegramQuestionMessages" yaml:"QuestionWorkspaceTelegramQuestionMessages"`
+	QuestionWorkspaceTelegramDecisionMessages WorkspaceTelegramDecisionMessageSlice `boil:"QuestionWorkspaceTelegramDecisionMessages" json:"QuestionWorkspaceTelegramDecisionMessages" toml:"QuestionWorkspaceTelegramDecisionMessages" yaml:"QuestionWorkspaceTelegramDecisionMessages"`
 }
 
 // NewStruct creates a new relationship struct
@@ -310,29 +317,29 @@ func (r *workspaceIssueQuestionR) GetWorkspace() *Workspace {
 	return r.Workspace
 }
 
-func (o *WorkspaceIssueQuestion) GetQuestionWorkspaceTelegramQuestionMessages() WorkspaceTelegramQuestionMessageSlice {
+func (o *WorkspaceIssueQuestion) GetQuestionWorkspaceTelegramDecisionMessages() WorkspaceTelegramDecisionMessageSlice {
 	if o == nil {
 		return nil
 	}
 
-	return o.R.GetQuestionWorkspaceTelegramQuestionMessages()
+	return o.R.GetQuestionWorkspaceTelegramDecisionMessages()
 }
 
-func (r *workspaceIssueQuestionR) GetQuestionWorkspaceTelegramQuestionMessages() WorkspaceTelegramQuestionMessageSlice {
+func (r *workspaceIssueQuestionR) GetQuestionWorkspaceTelegramDecisionMessages() WorkspaceTelegramDecisionMessageSlice {
 	if r == nil {
 		return nil
 	}
 
-	return r.QuestionWorkspaceTelegramQuestionMessages
+	return r.QuestionWorkspaceTelegramDecisionMessages
 }
 
 // workspaceIssueQuestionL is where Load methods for each relationship are stored.
 type workspaceIssueQuestionL struct{}
 
 var (
-	workspaceIssueQuestionAllColumns            = []string{"id", "workspace_id", "issue_id", "question", "default_answer", "deadline", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "execution_id", "runner_ref", "kind", "blocking", "options", "allow_free_text", "context", "state", "settled_at", "settled_by_account_id"}
+	workspaceIssueQuestionAllColumns            = []string{"id", "workspace_id", "issue_id", "question", "default_answer", "deadline", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "execution_id", "runner_ref", "kind", "blocking", "options", "allow_free_text", "context", "state", "settled_at", "settled_by_account_id", "stage"}
 	workspaceIssueQuestionColumnsWithoutDefault = []string{"workspace_id", "issue_id", "question", "default_answer", "deadline"}
-	workspaceIssueQuestionColumnsWithDefault    = []string{"id", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "execution_id", "runner_ref", "kind", "blocking", "options", "allow_free_text", "context", "state", "settled_at", "settled_by_account_id"}
+	workspaceIssueQuestionColumnsWithDefault    = []string{"id", "answer", "asked_by_account_id", "actor_kind", "answered_by_account_id", "answered_at", "created_at", "execution_id", "runner_ref", "kind", "blocking", "options", "allow_free_text", "context", "state", "settled_at", "settled_by_account_id", "stage"}
 	workspaceIssueQuestionPrimaryKeyColumns     = []string{"id"}
 	workspaceIssueQuestionGeneratedColumns      = []string{}
 )
@@ -697,18 +704,18 @@ func (o *WorkspaceIssueQuestion) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	return Workspaces(queryMods...)
 }
 
-// QuestionWorkspaceTelegramQuestionMessages retrieves all the workspace_telegram_question_message's WorkspaceTelegramQuestionMessages with an executor via question_id column.
-func (o *WorkspaceIssueQuestion) QuestionWorkspaceTelegramQuestionMessages(mods ...qm.QueryMod) workspaceTelegramQuestionMessageQuery {
+// QuestionWorkspaceTelegramDecisionMessages retrieves all the workspace_telegram_decision_message's WorkspaceTelegramDecisionMessages with an executor via question_id column.
+func (o *WorkspaceIssueQuestion) QuestionWorkspaceTelegramDecisionMessages(mods ...qm.QueryMod) workspaceTelegramDecisionMessageQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"workspace_telegram_question_messages\".\"question_id\"=?", o.ID),
+		qm.Where("\"workspace_telegram_decision_messages\".\"question_id\"=?", o.ID),
 	)
 
-	return WorkspaceTelegramQuestionMessages(queryMods...)
+	return WorkspaceTelegramDecisionMessages(queryMods...)
 }
 
 // LoadAnsweredByAccount allows an eager lookup of values, cached into the
@@ -1327,9 +1334,9 @@ func (workspaceIssueQuestionL) LoadWorkspace(ctx context.Context, e boil.Context
 	return nil
 }
 
-// LoadQuestionWorkspaceTelegramQuestionMessages allows an eager lookup of values, cached into the
+// LoadQuestionWorkspaceTelegramDecisionMessages allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (workspaceIssueQuestionL) LoadQuestionWorkspaceTelegramQuestionMessages(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueQuestion any, mods queries.Applicator) error {
+func (workspaceIssueQuestionL) LoadQuestionWorkspaceTelegramDecisionMessages(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceIssueQuestion any, mods queries.Applicator) error {
 	var slice []*WorkspaceIssueQuestion
 	var object *WorkspaceIssueQuestion
 
@@ -1382,8 +1389,8 @@ func (workspaceIssueQuestionL) LoadQuestionWorkspaceTelegramQuestionMessages(ctx
 	}
 
 	query := NewQuery(
-		qm.From(`workspace_telegram_question_messages`),
-		qm.WhereIn(`workspace_telegram_question_messages.question_id in ?`, argsSlice...),
+		qm.From(`workspace_telegram_decision_messages`),
+		qm.WhereIn(`workspace_telegram_decision_messages.question_id in ?`, argsSlice...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1391,22 +1398,22 @@ func (workspaceIssueQuestionL) LoadQuestionWorkspaceTelegramQuestionMessages(ctx
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load workspace_telegram_question_messages")
+		return errors.Wrap(err, "failed to eager load workspace_telegram_decision_messages")
 	}
 
-	var resultSlice []*WorkspaceTelegramQuestionMessage
+	var resultSlice []*WorkspaceTelegramDecisionMessage
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_question_messages")
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_telegram_decision_messages")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_question_messages")
+		return errors.Wrap(err, "failed to close results in eager load on workspace_telegram_decision_messages")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_question_messages")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_telegram_decision_messages")
 	}
 
-	if len(workspaceTelegramQuestionMessageAfterSelectHooks) != 0 {
+	if len(workspaceTelegramDecisionMessageAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1414,10 +1421,10 @@ func (workspaceIssueQuestionL) LoadQuestionWorkspaceTelegramQuestionMessages(ctx
 		}
 	}
 	if singular {
-		object.R.QuestionWorkspaceTelegramQuestionMessages = resultSlice
+		object.R.QuestionWorkspaceTelegramDecisionMessages = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &workspaceTelegramQuestionMessageR{}
+				foreign.R = &workspaceTelegramDecisionMessageR{}
 			}
 			foreign.R.Question = object
 		}
@@ -1426,10 +1433,10 @@ func (workspaceIssueQuestionL) LoadQuestionWorkspaceTelegramQuestionMessages(ctx
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.QuestionID {
-				local.R.QuestionWorkspaceTelegramQuestionMessages = append(local.R.QuestionWorkspaceTelegramQuestionMessages, foreign)
+			if queries.Equal(local.ID, foreign.QuestionID) {
+				local.R.QuestionWorkspaceTelegramDecisionMessages = append(local.R.QuestionWorkspaceTelegramDecisionMessages, foreign)
 				if foreign.R == nil {
-					foreign.R = &workspaceTelegramQuestionMessageR{}
+					foreign.R = &workspaceTelegramDecisionMessageR{}
 				}
 				foreign.R.Question = local
 				break
@@ -1807,23 +1814,23 @@ func (o *WorkspaceIssueQuestion) SetWorkspace(ctx context.Context, exec boil.Con
 	return nil
 }
 
-// AddQuestionWorkspaceTelegramQuestionMessages adds the given related objects to the existing relationships
+// AddQuestionWorkspaceTelegramDecisionMessages adds the given related objects to the existing relationships
 // of the workspace_issue_question, optionally inserting them as new records.
-// Appends related to o.R.QuestionWorkspaceTelegramQuestionMessages.
+// Appends related to o.R.QuestionWorkspaceTelegramDecisionMessages.
 // Sets related.R.Question appropriately.
-func (o *WorkspaceIssueQuestion) AddQuestionWorkspaceTelegramQuestionMessages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramQuestionMessage) error {
+func (o *WorkspaceIssueQuestion) AddQuestionWorkspaceTelegramDecisionMessages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramDecisionMessage) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.QuestionID = o.ID
+			queries.Assign(&rel.QuestionID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"workspace_telegram_question_messages\" SET %s WHERE %s",
+				"UPDATE \"workspace_telegram_decision_messages\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"question_id"}),
-				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramQuestionMessagePrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, workspaceTelegramDecisionMessagePrimaryKeyColumns),
 			)
 			values := []any{o.ID, rel.BotID, rel.ChatID, rel.MessageID}
 
@@ -1836,27 +1843,101 @@ func (o *WorkspaceIssueQuestion) AddQuestionWorkspaceTelegramQuestionMessages(ct
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.QuestionID = o.ID
+			queries.Assign(&rel.QuestionID, o.ID)
 		}
 	}
 
 	if o.R == nil {
 		o.R = &workspaceIssueQuestionR{
-			QuestionWorkspaceTelegramQuestionMessages: related,
+			QuestionWorkspaceTelegramDecisionMessages: related,
 		}
 	} else {
-		o.R.QuestionWorkspaceTelegramQuestionMessages = append(o.R.QuestionWorkspaceTelegramQuestionMessages, related...)
+		o.R.QuestionWorkspaceTelegramDecisionMessages = append(o.R.QuestionWorkspaceTelegramDecisionMessages, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &workspaceTelegramQuestionMessageR{
+			rel.R = &workspaceTelegramDecisionMessageR{
 				Question: o,
 			}
 		} else {
 			rel.R.Question = o
 		}
 	}
+	return nil
+}
+
+// SetQuestionWorkspaceTelegramDecisionMessages removes all previously related items of the
+// workspace_issue_question replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Question's QuestionWorkspaceTelegramDecisionMessages accordingly.
+// Replaces o.R.QuestionWorkspaceTelegramDecisionMessages with related.
+// Sets related.R.Question's QuestionWorkspaceTelegramDecisionMessages accordingly.
+func (o *WorkspaceIssueQuestion) SetQuestionWorkspaceTelegramDecisionMessages(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceTelegramDecisionMessage) error {
+	query := "update \"workspace_telegram_decision_messages\" set \"question_id\" = null where \"question_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.QuestionWorkspaceTelegramDecisionMessages {
+			queries.SetScanner(&rel.QuestionID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Question = nil
+		}
+		o.R.QuestionWorkspaceTelegramDecisionMessages = nil
+	}
+
+	return o.AddQuestionWorkspaceTelegramDecisionMessages(ctx, exec, insert, related...)
+}
+
+// RemoveQuestionWorkspaceTelegramDecisionMessages relationships from objects passed in.
+// Removes related items from R.QuestionWorkspaceTelegramDecisionMessages (uses pointer comparison, removal does not keep order)
+// Sets related.R.Question.
+func (o *WorkspaceIssueQuestion) RemoveQuestionWorkspaceTelegramDecisionMessages(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceTelegramDecisionMessage) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.QuestionID, nil)
+		if rel.R != nil {
+			rel.R.Question = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("question_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.QuestionWorkspaceTelegramDecisionMessages {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.QuestionWorkspaceTelegramDecisionMessages)
+			if ln > 1 && i < ln-1 {
+				o.R.QuestionWorkspaceTelegramDecisionMessages[i] = o.R.QuestionWorkspaceTelegramDecisionMessages[ln-1]
+			}
+			o.R.QuestionWorkspaceTelegramDecisionMessages = o.R.QuestionWorkspaceTelegramDecisionMessages[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

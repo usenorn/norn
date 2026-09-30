@@ -32,6 +32,7 @@ type executionsService struct {
 	revisions  repository.IssueRevision
 	states     repository.WorkflowState
 	channels   repository.RunnerChannel
+	jobs       repository.JobProducer
 	writer     service.Issues
 	source     service.SourceControl
 	events     service.Events
@@ -57,6 +58,7 @@ func New(
 	revisions repository.IssueRevision,
 	states repository.WorkflowState,
 	channels repository.RunnerChannel,
+	jobs repository.JobProducer,
 	writer service.Issues,
 	source service.SourceControl,
 	events service.Events,
@@ -81,6 +83,7 @@ func New(
 		revisions:  revisions,
 		states:     states,
 		channels:   channels,
+		jobs:       jobs,
 		writer:     writer,
 		source:     source,
 		events:     events,

@@ -57,6 +57,21 @@ func (mr *MockTelegramConversationMockRecorder) Append(ctx, botID, chatID, turn 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Append", reflect.TypeOf((*MockTelegramConversation)(nil).Append), ctx, botID, chatID, turn)
 }
 
+// DecisionAt mocks base method.
+func (m *MockTelegramConversation) DecisionAt(ctx context.Context, botID uuid.UUID, chatID, messageID int64) (entity.TelegramDecisionMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecisionAt", ctx, botID, chatID, messageID)
+	ret0, _ := ret[0].(entity.TelegramDecisionMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DecisionAt indicates an expected call of DecisionAt.
+func (mr *MockTelegramConversationMockRecorder) DecisionAt(ctx, botID, chatID, messageID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecisionAt", reflect.TypeOf((*MockTelegramConversation)(nil).DecisionAt), ctx, botID, chatID, messageID)
+}
+
 // History mocks base method.
 func (m *MockTelegramConversation) History(ctx context.Context, botID uuid.UUID, chatID int64, limit int) ([]entity.AgentTurn, error) {
 	m.ctrl.T.Helper()
@@ -73,7 +88,7 @@ func (mr *MockTelegramConversationMockRecorder) History(ctx, botID, chatID, limi
 }
 
 // MarkSettled mocks base method.
-func (m *MockTelegramConversation) MarkSettled(ctx context.Context, message entity.TelegramQuestionMessage, at time.Time) error {
+func (m *MockTelegramConversation) MarkSettled(ctx context.Context, message entity.TelegramDecisionMessage, at time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkSettled", ctx, message, at)
 	ret0, _ := ret[0].(error)
@@ -87,18 +102,18 @@ func (mr *MockTelegramConversationMockRecorder) MarkSettled(ctx, message, at any
 }
 
 // Posted mocks base method.
-func (m *MockTelegramConversation) Posted(ctx context.Context, questionID uuid.UUID) ([]entity.TelegramQuestionMessage, error) {
+func (m *MockTelegramConversation) Posted(ctx context.Context, decision entity.TelegramDecision) ([]entity.TelegramDecisionMessage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Posted", ctx, questionID)
-	ret0, _ := ret[0].([]entity.TelegramQuestionMessage)
+	ret := m.ctrl.Call(m, "Posted", ctx, decision)
+	ret0, _ := ret[0].([]entity.TelegramDecisionMessage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Posted indicates an expected call of Posted.
-func (mr *MockTelegramConversationMockRecorder) Posted(ctx, questionID any) *gomock.Call {
+func (mr *MockTelegramConversationMockRecorder) Posted(ctx, decision any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Posted", reflect.TypeOf((*MockTelegramConversation)(nil).Posted), ctx, questionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Posted", reflect.TypeOf((*MockTelegramConversation)(nil).Posted), ctx, decision)
 }
 
 // Prune mocks base method.
@@ -115,23 +130,8 @@ func (mr *MockTelegramConversationMockRecorder) Prune(ctx, botID, chatID, keep a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockTelegramConversation)(nil).Prune), ctx, botID, chatID, keep)
 }
 
-// QuestionAt mocks base method.
-func (m *MockTelegramConversation) QuestionAt(ctx context.Context, botID uuid.UUID, chatID, messageID int64) (uuid.UUID, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QuestionAt", ctx, botID, chatID, messageID)
-	ret0, _ := ret[0].(uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// QuestionAt indicates an expected call of QuestionAt.
-func (mr *MockTelegramConversationMockRecorder) QuestionAt(ctx, botID, chatID, messageID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QuestionAt", reflect.TypeOf((*MockTelegramConversation)(nil).QuestionAt), ctx, botID, chatID, messageID)
-}
-
 // Remember mocks base method.
-func (m *MockTelegramConversation) Remember(ctx context.Context, message entity.TelegramQuestionMessage) error {
+func (m *MockTelegramConversation) Remember(ctx context.Context, message entity.TelegramDecisionMessage) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Remember", ctx, message)
 	ret0, _ := ret[0].(error)

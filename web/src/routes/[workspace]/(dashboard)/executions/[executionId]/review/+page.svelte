@@ -20,6 +20,7 @@
 	import RunState from "$lib/executions/run-state.svelte";
 	import ReviewFile from "$lib/executions/review-file.svelte";
 	import ReviewFiles from "$lib/executions/review-files.svelte";
+	import { waitingOnLine } from "$lib/executions/reviews";
 	import ReviewSubmit from "$lib/executions/review-submit.svelte";
 	import {
 		blockingQuestion,
@@ -33,6 +34,7 @@
 	import {
 		draftCount,
 		fileId,
+		questionsOpenLine,
 		repositoryNote,
 		reviewClosedLine,
 		reviewOpen,
@@ -71,7 +73,15 @@
 	const open = $derived(Boolean(execution) && reviewOpen(execution!));
 	const threads = $derived(threadsOf(ready?.review.comments ?? []));
 	const drafts = $derived(draftCount(ready?.review.comments ?? []));
-	const canDecide = $derived(!blockingQuestion(ready?.questions ?? []));
+	const locked = $derived(
+		!ready
+			? undefined
+			: !ready.right.canDecide
+				? waitingOnLine(ready.right)
+				: blockingQuestion(ready.questions)
+					? questionsOpenLine
+					: undefined
+	);
 	const runHref = $derived(
 		execution ? workspacePath(workspace.slug, `/executions/${execution.id}`) : ""
 	);
@@ -331,7 +341,7 @@
 				</ToggleGroup.Root>
 
 				{#if open}
-					<ReviewSubmit {drafts} {working} {canDecide} onsubmit={submit} />
+					<ReviewSubmit {drafts} {working} {locked} onsubmit={submit} />
 				{/if}
 			</div>
 

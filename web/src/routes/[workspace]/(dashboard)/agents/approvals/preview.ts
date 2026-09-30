@@ -85,6 +85,8 @@ export const approvalsPreviewStates: Record<string, ApprovalsPreview> = import.m
 								{
 									id: "00000000-0000-4000-8000-000000000d01",
 									issueId: "00000000-0000-4000-8000-0000000009f9",
+									issueReference: "ENG-42",
+									issueTitle: "Payment retries drop the idempotency key",
 									kind: "clarification" as const,
 									state: "expired" as const,
 									blocking: false,

@@ -63,14 +63,13 @@ func TestAServerDefaultsToAMinimumRunnerVersionItCanCompare(t *testing.T) {
 	}
 }
 
-func executionLimits(t *testing.T, chunk, artifact string) error {
+func executionLimits(t *testing.T, artifact string) error {
 	t.Helper()
 
 	t.Setenv("NORN_SECURITY_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef")
 	t.Setenv("NORN_SMTP_HOST", "smtp.test")
 	t.Setenv("NORN_SMTP_FROM_ADDRESS", "no-reply@norn.test")
 	t.Setenv("NORN_HTTP_MAX_REQUEST_BYTES", "4194304")
-	t.Setenv("NORN_EXECUTIONS_MAX_CHUNK_BYTES", chunk)
 	t.Setenv("NORN_EXECUTIONS_MAX_ARTIFACT_BYTES", artifact)
 
 	_, err := config.New("")
@@ -79,7 +78,7 @@ func executionLimits(t *testing.T, chunk, artifact string) error {
 }
 
 func TestAnArtifactLimitAtTheRequestCapIsRefusedBecauseTheEnvelopeNeedsRoom(t *testing.T) {
-	err := executionLimits(t, "1048576", "4194304")
+	err := executionLimits(t, "4194304")
 	if err == nil {
 		t.Fatal(
 			"an artifact limit equal to the request cap started. The multipart envelope sits " +
@@ -93,15 +92,8 @@ func TestAnArtifactLimitAtTheRequestCapIsRefusedBecauseTheEnvelopeNeedsRoom(t *t
 	}
 }
 
-func TestABatchLimitAboveTheRequestCapIsRefused(t *testing.T) {
-	err := executionLimits(t, "8388608", "1048576")
-	if err == nil || !strings.Contains(err.Error(), "executions.max_chunk_bytes") {
-		t.Fatalf("a batch limit above the request cap answered %v", err)
-	}
-}
-
 func TestLimitsThatLeaveRoomAreAccepted(t *testing.T) {
-	if err := executionLimits(t, "1048576", "3145728"); err != nil {
+	if err := executionLimits(t, "3145728"); err != nil {
 		t.Fatalf("config.New() = %v, want limits that leave room to be accepted", err)
 	}
 }

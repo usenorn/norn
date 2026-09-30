@@ -45,10 +45,8 @@ var TableNames = struct {
 	WorkspaceDirectoryConnections      string
 	WorkspaceExecutionArtifacts        string
 	WorkspaceExecutionChanges          string
-	WorkspaceExecutionChunks           string
 	WorkspaceExecutionEvents           string
 	WorkspaceExecutionPlans            string
-	WorkspaceExecutionPolicies         string
 	WorkspaceExecutionPreviewLinks     string
 	WorkspaceExecutionPreviews         string
 	WorkspaceExecutionResults          string
@@ -120,9 +118,9 @@ var TableNames = struct {
 	WorkspaceTeams                     string
 	WorkspaceTelegramAccounts          string
 	WorkspaceTelegramBots              string
+	WorkspaceTelegramDecisionMessages  string
 	WorkspaceTelegramGroups            string
 	WorkspaceTelegramLinkCodes         string
-	WorkspaceTelegramQuestionMessages  string
 	WorkspaceTelegramTurns             string
 	WorkspaceTelegramUpdates           string
 	WorkspaceWorkflowStates            string
@@ -169,10 +167,8 @@ var TableNames = struct {
 	WorkspaceDirectoryConnections:      "workspace_directory_connections",
 	WorkspaceExecutionArtifacts:        "workspace_execution_artifacts",
 	WorkspaceExecutionChanges:          "workspace_execution_changes",
-	WorkspaceExecutionChunks:           "workspace_execution_chunks",
 	WorkspaceExecutionEvents:           "workspace_execution_events",
 	WorkspaceExecutionPlans:            "workspace_execution_plans",
-	WorkspaceExecutionPolicies:         "workspace_execution_policies",
 	WorkspaceExecutionPreviewLinks:     "workspace_execution_preview_links",
 	WorkspaceExecutionPreviews:         "workspace_execution_previews",
 	WorkspaceExecutionResults:          "workspace_execution_results",
@@ -244,9 +240,9 @@ var TableNames = struct {
 	WorkspaceTeams:                     "workspace_teams",
 	WorkspaceTelegramAccounts:          "workspace_telegram_accounts",
 	WorkspaceTelegramBots:              "workspace_telegram_bots",
+	WorkspaceTelegramDecisionMessages:  "workspace_telegram_decision_messages",
 	WorkspaceTelegramGroups:            "workspace_telegram_groups",
 	WorkspaceTelegramLinkCodes:         "workspace_telegram_link_codes",
-	WorkspaceTelegramQuestionMessages:  "workspace_telegram_question_messages",
 	WorkspaceTelegramTurns:             "workspace_telegram_turns",
 	WorkspaceTelegramUpdates:           "workspace_telegram_updates",
 	WorkspaceWorkflowStates:            "workspace_workflow_states",

@@ -178,22 +178,6 @@ func TestAHelloThatNamesTheVersionAlreadyOnRecordChangesNothing(t *testing.T) {
 	}
 }
 
-func TestAMessageForSomethingTheServerCannotDoYetIsStillAccepted(t *testing.T) {
-	h := newHarness(t)
-
-	message := h.freshMessage("01DEF", entity.ChannelTranscriptRef)
-
-	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
-
-	if err := h.service.Receive(context.Background(), h.session(), message); err != nil {
-		t.Fatalf(
-			"a message whose feature has not been built refused the whole connection: %v; the "+
-				"runner would reconnect forever",
-			err,
-		)
-	}
-}
-
 func TestWhatARunnerReportsAboutAnExecutionReachesTheExecution(t *testing.T) {
 	cases := map[entity.ChannelMessageType]func(*harness) *gomock.Call{
 		entity.ChannelExecutionAccepted: func(h *harness) *gomock.Call {

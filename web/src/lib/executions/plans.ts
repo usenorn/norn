@@ -1,6 +1,7 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { Step } from "$lib/components/norn/step-list.svelte";
 import { isSettled, type Execution, type IssueQuestion } from "./executions";
+import { waitingOnLine, type DecisionRight } from "./reviews";
 
 export type ExecutionPlan = components["schemas"]["ExecutionPlan"];
 export type ExecutionStage = components["schemas"]["ExecutionStage"];
@@ -40,17 +41,20 @@ export function planStanding(plan: ExecutionPlan, latest: ExecutionPlan | undefi
 export type PlanDecision =
 	| { kind: "open" }
 	| { kind: "blocked"; reason: string }
+	| { kind: "not_yours"; reason: string }
 	| { kind: "closed" };
 
 export function planDecision(
 	execution: Execution,
 	plan: ExecutionPlan,
 	latest: ExecutionPlan | undefined,
-	questions: IssueQuestion[]
+	questions: IssueQuestion[],
+	right: DecisionRight
 ): PlanDecision {
 	if (execution.state !== "awaiting_plan_approval") return { kind: "closed" };
 	if (!latest || plan.revision !== latest.revision) return { kind: "closed" };
 	if (planStanding(plan, latest).kind !== "waiting") return { kind: "closed" };
+	if (!right.canDecide) return { kind: "not_yours", reason: waitingOnLine(right) };
 
 	const open = questions.filter(
 		(question) => question.blocking && question.state === "asked" && !question.expired

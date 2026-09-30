@@ -50,6 +50,21 @@ const delegationByIDQuery = `
 SELECT` + delegationColumns + delegationJoins + `
 WHERE d.workspace_id = $1 AND d.id = $2`
 
+const authorityQuery = `
+SELECT i.id, coalesce(i.assignee_account_id::text, ''), coalesce(assignee.kind, ''),
+       coalesce(assignee.display_name, ''),
+       coalesce(d.delegated_by_account_id::text, ''), coalesce(delegator.display_name, '')
+FROM workspace_issues i
+LEFT JOIN accounts assignee ON assignee.id = i.assignee_account_id
+LEFT JOIN LATERAL (
+    SELECT delegated_by_account_id FROM workspace_issue_delegations
+    WHERE workspace_id = i.workspace_id AND issue_id = i.id
+    ORDER BY recalled_at IS NULL DESC, delegated_at DESC, id DESC
+    LIMIT 1
+) d ON true
+LEFT JOIN accounts delegator ON delegator.id = d.delegated_by_account_id
+WHERE i.workspace_id = $1 AND i.id = ANY($2::uuid[])`
+
 const recallDelegationQuery = `
 UPDATE workspace_issue_delegations
 SET recalled_at = $3, recalled_by_account_id = $4
@@ -171,6 +186,95 @@ func (r *delegationRepository) Open(
 	}
 
 	return delegation, nil
+}
+
+func (r *delegationRepository) Authority(
+	ctx context.Context,
+	workspaceID, issueID uuid.UUID,
+) (entity.DecisionAuthority, error) {
+	authorities, err := r.Authorities(ctx, workspaceID, []uuid.UUID{issueID})
+	if err != nil {
+		return entity.DecisionAuthority{}, err
+	}
+
+	authority, ok := authorities[issueID]
+	if !ok {
+		return entity.DecisionAuthority{}, entity.ErrIssueNotFound
+	}
+
+	return authority, nil
+}
+
+func (r *delegationRepository) Authorities(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	issueIDs []uuid.UUID,
+) (map[uuid.UUID]entity.DecisionAuthority, error) {
+	ids := make([]string, 0, len(issueIDs))
+	for _, issueID := range issueIDs {
+		ids = append(ids, issueID.String())
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, authorityQuery, workspaceID.String(), ids)
+	if err != nil {
+		return nil, fmt.Errorf("find issue decision authority: %w", err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	authorities := make(map[uuid.UUID]entity.DecisionAuthority, len(issueIDs))
+
+	for rows.Next() {
+		issueID, authority, err := scanAuthority(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		authorities[issueID] = authority
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("find issue decision authority: %w", err)
+	}
+
+	return authorities, nil
+}
+
+func scanAuthority(row scanner) (uuid.UUID, entity.DecisionAuthority, error) {
+	var (
+		authority entity.DecisionAuthority
+		issue     string
+		assignee  string
+		kind      string
+		delegator string
+	)
+
+	if err := row.Scan(
+		&issue, &assignee, &kind, &authority.AssigneeName, &delegator, &authority.DelegatorName,
+	); err != nil {
+		return uuid.Nil, entity.DecisionAuthority{}, fmt.Errorf("scan issue decision authority: %w", err)
+	}
+
+	authority.AssigneeKind = entity.AccountKind(kind)
+
+	issueID, err := uuid.Parse(issue)
+	if err != nil {
+		return uuid.Nil, entity.DecisionAuthority{}, fmt.Errorf("parse issue id: %w", err)
+	}
+
+	if assignee != "" {
+		if authority.AssigneeAccountID, err = uuid.Parse(assignee); err != nil {
+			return uuid.Nil, entity.DecisionAuthority{}, fmt.Errorf("parse issue assignee id: %w", err)
+		}
+	}
+
+	if delegator != "" {
+		if authority.DelegatorAccountID, err = uuid.Parse(delegator); err != nil {
+			return uuid.Nil, entity.DecisionAuthority{}, fmt.Errorf("parse issue delegator id: %w", err)
+		}
+	}
+
+	return issueID, authority, nil
 }
 
 func (r *delegationRepository) ListByIssue(

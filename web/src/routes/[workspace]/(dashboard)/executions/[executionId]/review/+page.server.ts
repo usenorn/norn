@@ -1,4 +1,5 @@
 import { keys } from "$lib/api/keys";
+import { readDecisionRight } from "$lib/executions/decision.server";
 import { readDiff } from "$lib/executions/diff.server";
 import type { ReviewView } from "$lib/executions/review";
 import { reviewPreviewStates } from "./preview";
@@ -41,11 +42,12 @@ export const load: PageServerLoad = async ({
 
 	const changes = detail.data.changeset?.repositories ?? [];
 
-	const diffs = await Promise.all(
-		changes.map((change) =>
+	const [right, ...diffs] = await Promise.all([
+		readDecisionRight(locals.api, workspace.id, detail.data.execution.issueId),
+		...changes.map((change) =>
 			readDiff(locals.api, workspace.id, params.executionId, change.diffArtifactId)
-		)
-	);
+		),
+	]);
 
 	return {
 		review: {
@@ -54,6 +56,7 @@ export const load: PageServerLoad = async ({
 			changeset: detail.data.changeset,
 			review: review.data,
 			questions: questions.data?.questions ?? [],
+			right,
 			repositories: changes.map((change, index) => ({
 				repository: change.repository,
 				branch: change.branch,

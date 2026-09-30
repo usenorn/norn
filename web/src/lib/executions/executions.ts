@@ -1,6 +1,7 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { CodeLink } from "$lib/source-control/source-control";
 import type { ExecutionPlan } from "./plans";
+import type { DecisionRight } from "./reviews";
 
 export type Execution = components["schemas"]["Execution"];
 export type ExecutionState = components["schemas"]["ExecutionState"];
@@ -10,8 +11,6 @@ export type ExecutionEventKind = components["schemas"]["ExecutionEventKind"];
 export type ExecutionService = components["schemas"]["ExecutionService"];
 export type ExecutionRunner = components["schemas"]["ExecutionRunner"];
 export type ExecutionPreview = components["schemas"]["ExecutionPreview"];
-export type ExecutionLogEntry = components["schemas"]["ExecutionLogEntry"];
-export type ExecutionTranscriptEntry = components["schemas"]["ExecutionTranscriptEntry"];
 export type IssueQuestion = components["schemas"]["IssueQuestion"];
 export type ExecutionChangeSet = components["schemas"]["ExecutionChangeSet"];
 export type ExecutionRepositoryChange = components["schemas"]["ExecutionRepositoryChange"];
@@ -35,16 +34,11 @@ export type RunView =
 			previews: ExecutionPreviewDetail[];
 			runner?: ExecutionRunner;
 			questions: IssueQuestion[];
-			transcript: ExecutionTranscriptEntry[];
-			logs: ExecutionLogEntry[];
-			transcriptCursor?: number;
-			logCursor?: number;
 			changeset?: ExecutionChangeSet;
 			codeLinks: CodeLink[];
 			plans: ExecutionPlan[];
+			right: DecisionRight;
 	  };
-
-export const chunkPageSize = 8;
 
 export const timelinePageSize = 100;
 
@@ -216,6 +210,7 @@ export type RunFailure =
 	| { kind: "plan_missing" }
 	| { kind: "plan_stale" }
 	| { kind: "questions_open" }
+	| { kind: "decision_forbidden" }
 	| { kind: "review_closed" }
 	| { kind: "review_stale" }
 	| { kind: "review_empty" }
@@ -256,6 +251,8 @@ export function readRunFailure(error: unknown): RunFailure {
 			return { kind: "plan_stale" };
 		case "execution_questions_open":
 			return { kind: "questions_open" };
+		case "decision_forbidden":
+			return { kind: "decision_forbidden" };
 		case "review_closed":
 			return { kind: "review_closed" };
 		case "review_stale":
@@ -311,6 +308,8 @@ export function runFailureMessage(failure: RunFailure): string {
 			return "The coding agent has proposed a newer revision of the plan. Read that one before deciding.";
 		case "questions_open":
 			return "The run is still waiting on an answer. Answer every open question before deciding.";
+		case "decision_forbidden":
+			return "Only the assignee or a workspace admin can decide this.";
 		case "review_closed":
 			return "These changes are no longer waiting for review. Reload to see where the run got to.";
 		case "review_stale":
@@ -416,10 +415,6 @@ export function probeLine(probe: ExecutionService["probe"]): string {
 	}
 }
 
-export function logsFor(logs: ExecutionLogEntry[], service: string): ExecutionLogEntry[] {
-	return logs.filter((entry) => entry.source === service);
-}
-
 export function slotLine(runner: ExecutionRunner | undefined): string | undefined {
 	if (!runner) return undefined;
 	if (!runner.load.connected) return "offline";
@@ -491,33 +486,6 @@ export function mergeTimeline(held: ExecutionEvent[], arriving: ExecutionEvent[]
 	for (const event of arriving) merged.set(event.id, event);
 
 	return [...merged.values()].sort((left, right) => left.sequence - right.sequence);
-}
-
-export function transcriptSpeaker(entry: ExecutionTranscriptEntry): string {
-	switch (entry.type) {
-		case "message":
-			return "Said";
-		case "tool_call":
-			return "Used";
-		case "tool_result":
-			return "Answered";
-		case "usage":
-			return "Reported what the turn cost";
-		default:
-			return entry.type;
-	}
-}
-
-export function transcriptText(entry: ExecutionTranscriptEntry): string {
-	const payload = entry.payload ?? {};
-
-	for (const field of ["text", "content", "tool", "name"]) {
-		const held = payload[field];
-
-		if (typeof held === "string" && held !== "") return held;
-	}
-
-	return JSON.stringify(payload);
 }
 
 export type ChangeTotals = {

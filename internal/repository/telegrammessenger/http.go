@@ -55,7 +55,7 @@ func (r *httpMessenger) Send(ctx context.Context, token string, message entity.T
 		ChatID:   message.ChatID,
 		Text:     message.Text,
 		ReplyTo:  message.ReplyTo,
-		Keyboard: keyboard(message.Options),
+		Keyboard: keyboard(message.Buttons),
 	})
 	if err != nil {
 		return 0, translateChat(err)
@@ -182,15 +182,15 @@ func mentions(text string, entities []telegram.Entity) []string {
 	return found
 }
 
-func keyboard(options []string) [][]telegram.Button {
-	if len(options) == 0 {
+func keyboard(buttons []entity.TelegramButton) [][]telegram.Button {
+	if len(buttons) == 0 {
 		return nil
 	}
 
-	rows := make([][]telegram.Button, 0, len(options))
+	rows := make([][]telegram.Button, 0, len(buttons))
 
-	for index, option := range options {
-		rows = append(rows, []telegram.Button{{Text: option, CallbackData: entity.TelegramOptionData(index)}})
+	for _, button := range buttons {
+		rows = append(rows, []telegram.Button{{Text: button.Label, CallbackData: button.Data}})
 	}
 
 	return rows

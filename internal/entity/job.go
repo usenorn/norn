@@ -36,11 +36,10 @@ const (
 	TaskTypeSCMBackfill             = "scm:backfill"
 	TaskTypeSCMResume               = "scm:resume"
 	TaskTypeExecutionLeaseSweep     = "execution:lease_sweep"
-	TaskTypeExecutionUploadSweep    = "execution:upload_sweep"
 	TaskTypeQuestionExpirySweep     = "question:expiry_sweep"
 	TaskTypeIntakeDelivery          = "intake:delivery"
 	TaskTypeTelegramUpdate          = "telegram:update"
-	TaskTypeTelegramQuestion        = "telegram:question"
+	TaskTypeTelegramDecision        = "telegram:decision"
 	TaskTypeTelegramSettlement      = "telegram:settlement"
 	TaskTypeTelegramSweep           = "telegram:retention_sweep"
 
@@ -126,11 +125,6 @@ type IntakeDeliveryPayload struct {
 
 type TelegramUpdatePayload struct {
 	UpdateID uuid.UUID
-}
-
-type TelegramQuestionPayload struct {
-	WorkspaceID uuid.UUID
-	QuestionID  uuid.UUID
 }
 
 type SCMBackfillPayload struct {

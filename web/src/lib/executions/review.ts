@@ -1,6 +1,7 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { DiffAnchor, DiffFile } from "./diff";
 import type { Execution, ExecutionChangeSet, IssueQuestion } from "./executions";
+import type { DecisionRight } from "./reviews";
 
 export type ReviewComment = components["schemas"]["ReviewComment"];
 export type ExecutionReview = components["schemas"]["ExecutionReview"];
@@ -34,6 +35,7 @@ export type ReviewView =
 			review: ReviewState;
 			repositories: ReviewedRepository[];
 			questions: IssueQuestion[];
+			right: DecisionRight;
 	  };
 
 export type ReviewLayout = "unified" | "split";
@@ -186,3 +188,6 @@ export function viewedKey(executionId: string, repository: ReviewedRepository, p
 }
 
 export const reviewBodyMaxLength = 4000;
+
+export const questionsOpenLine =
+	"Answer every open question on this run before approving or sending it back.";

@@ -36,21 +36,21 @@ func (h *TelegramUpdateHandler) ProcessTask(ctx context.Context, task *asynq.Tas
 	return h.updates.Apply(ctx, payload.UpdateID)
 }
 
-type TelegramQuestionHandler struct {
+type TelegramDecisionHandler struct {
 	updates service.TelegramUpdates
 }
 
-func NewTelegramQuestionHandler(updates service.TelegramUpdates) *TelegramQuestionHandler {
-	return &TelegramQuestionHandler{updates: updates}
+func NewTelegramDecisionHandler(updates service.TelegramUpdates) *TelegramDecisionHandler {
+	return &TelegramDecisionHandler{updates: updates}
 }
 
-func (h *TelegramQuestionHandler) ProcessTask(ctx context.Context, task *asynq.Task) error {
-	payload, err := telegramQuestion(task)
+func (h *TelegramDecisionHandler) ProcessTask(ctx context.Context, task *asynq.Task) error {
+	decision, err := telegramDecision(task)
 	if err != nil {
 		return err
 	}
 
-	return h.updates.Relay(ctx, payload.WorkspaceID, payload.QuestionID)
+	return h.updates.Relay(ctx, decision)
 }
 
 type TelegramSettlementHandler struct {
@@ -62,12 +62,12 @@ func NewTelegramSettlementHandler(updates service.TelegramUpdates) *TelegramSett
 }
 
 func (h *TelegramSettlementHandler) ProcessTask(ctx context.Context, task *asynq.Task) error {
-	payload, err := telegramQuestion(task)
+	decision, err := telegramDecision(task)
 	if err != nil {
 		return err
 	}
 
-	return h.updates.Settle(ctx, payload.WorkspaceID, payload.QuestionID)
+	return h.updates.Settle(ctx, decision)
 }
 
 type TelegramSweepHandler struct {
@@ -89,16 +89,16 @@ func (h *TelegramSweepHandler) ProcessTask(ctx context.Context, _ *asynq.Task) e
 	return nil
 }
 
-func telegramQuestion(task *asynq.Task) (entity.TelegramQuestionPayload, error) {
-	var payload entity.TelegramQuestionPayload
+func telegramDecision(task *asynq.Task) (entity.TelegramDecision, error) {
+	var decision entity.TelegramDecision
 
-	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
-		return payload, errors.Join(fmt.Errorf("decode telegram question payload: %w", err), asynq.SkipRetry)
+	if err := json.Unmarshal(task.Payload(), &decision); err != nil {
+		return decision, errors.Join(fmt.Errorf("decode telegram decision payload: %w", err), asynq.SkipRetry)
 	}
 
-	if payload.WorkspaceID == uuid.Nil || payload.QuestionID == uuid.Nil {
-		return payload, errors.Join(errors.New("telegram question payload is incomplete"), asynq.SkipRetry)
+	if !decision.Complete() {
+		return decision, errors.Join(errors.New("telegram decision payload is incomplete"), asynq.SkipRetry)
 	}
 
-	return payload, nil
+	return decision, nil
 }

@@ -7,6 +7,7 @@
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
+	import { waitingOnLine, waitingTitle, type DecisionRight } from "$lib/executions/reviews";
 	import QuestionList from "$lib/questions/question-list.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import AttentionPanel from "$lib/components/norn/attention-panel.svelte";
@@ -18,13 +19,11 @@
 	import ChangesetPanel from "$lib/executions/changeset-panel.svelte";
 	import ServicesPanel from "$lib/executions/services-panel.svelte";
 	import PreviewsPanel from "$lib/executions/previews-panel.svelte";
-	import Transcript from "$lib/executions/transcript.svelte";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import {
 		blockingQuestion,
 		changeStatLine,
 		changeTotals,
-		chunkPageSize,
 		isSettled,
 		mergeTimeline,
 		readRunFailure,
@@ -62,10 +61,6 @@
 		events: [],
 		full: false,
 	});
-	let readTranscript = $state.raw<{ source: unknown; entries: unknown[]; cursor?: number }>({
-		source: null,
-		entries: [],
-	});
 	let pushedChangeset = $state.raw<{ source: unknown; changeset: ExecutionChangeSet } | null>(null);
 	let minted = $state.raw<{ run: string; held: Record<string, string> }>({ run: "", held: {} });
 
@@ -86,14 +81,6 @@
 		return mergeTimeline(ready.timeline, [...read, ...pushed]);
 	});
 
-	const transcript = $derived.by(() => {
-		if (!ready) return [];
-
-		const read = readTranscript.source === ready ? readTranscript.entries : [];
-
-		return [...ready.transcript, ...read] as typeof ready.transcript;
-	});
-
 	const changeset = $derived(
 		ready && pushedChangeset?.source === ready ? pushedChangeset.changeset : ready?.changeset
 	);
@@ -104,6 +91,7 @@
 	const shownMinted = $derived(minted.run === execution?.id ? minted.held : {});
 
 	const questions = $derived(ready?.questions ?? []);
+	const right = $derived<DecisionRight>(ready?.right ?? { canDecide: false });
 	const asking = $derived(blockingQuestion(questions));
 	const now = $derived(ticked ?? data.now);
 	const live = $derived(Boolean(execution) && !isSettled(execution!.state));
@@ -113,9 +101,6 @@
 
 		return ready.timeline.length >= timelinePreviewSize;
 	});
-	const moreTranscript = $derived(
-		(readTranscript.source === ready ? readTranscript.cursor : ready?.transcriptCursor) !== undefined
-	);
 
 	const realtime = useRealtime();
 
@@ -378,33 +363,6 @@
 		}
 	}
 
-	async function readOnTranscript() {
-		if (!ready || working) return;
-
-		working = true;
-
-		try {
-			const after =
-				readTranscript.source === ready ? readTranscript.cursor : ready.transcriptCursor;
-
-			const { data: next } = await api.GET(
-				"/workspaces/{workspaceId}/executions/{executionId}/transcript",
-				{ params: { path: pathOf(ready.execution.id), query: { after, limit: chunkPageSize } } }
-			);
-
-			if (!next) return;
-
-			const held = readTranscript.source === ready ? readTranscript.entries : [];
-
-			readTranscript = {
-				source: ready,
-				entries: [...held, ...next.flatMap((chunk) => chunk.entries)],
-				cursor: next.at(-1)?.sequence,
-			};
-		} finally {
-			working = false;
-		}
-	}
 </script>
 
 <svelte:head>
@@ -481,14 +439,15 @@
 						<QuestionList
 							questions={[asking]}
 							timezone={workspace.timezone}
-							canAnswer={true}
+							canAnswer={right.canDecide}
+							refusal={waitingOnLine(right)}
 							{working}
 							onanswer={answer}
 							ondismiss={dismiss}
 						/>
 					</AttentionPanel>
 				{:else if execution.state === "awaiting_plan_approval"}
-					<AttentionPanel label="A plan is waiting" title="The plan is waiting on you">
+					<AttentionPanel label="A plan is waiting" title={waitingTitle("plan", right)}>
 						<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
 							Read the plan and approve it, or ask for changes. The coding agent builds nothing until
 							somebody approves it.
@@ -498,7 +457,7 @@
 						</div>
 					</AttentionPanel>
 				{:else if execution.state === "awaiting_review"}
-					<AttentionPanel label="Changes are waiting" title="The changes are waiting on you">
+					<AttentionPanel label="Changes are waiting" title={waitingTitle("changes", right)}>
 						<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
 							Review what the run changed, comment on any line, then approve it or send it back.
 							Nothing is pushed until somebody approves.
@@ -519,6 +478,7 @@
 						{execution}
 						{plans}
 						{questions}
+						{right}
 						timezone={workspace.timezone}
 						{working}
 						onapprove={approvePlan}
@@ -555,8 +515,6 @@
 				<ServicesPanel
 					{execution}
 					services={run.services}
-					logs={run.logs}
-					timezone={workspace.timezone}
 				/>
 
 				<PreviewsPanel
@@ -571,21 +529,14 @@
 					onrevoke={revoke}
 				/>
 
-				<Transcript
-					{transcript}
-					timezone={workspace.timezone}
-					more={moreTranscript}
-					{working}
-					onmore={readOnTranscript}
-				/>
-
 				{#if questions.length > (asking ? 1 : 0)}
 					<section class="flex min-w-0 flex-col gap-2" aria-label="Questions">
 						<Eyebrow rule>Questions</Eyebrow>
 						<QuestionList
 							questions={questions.filter((question) => question.id !== asking?.id)}
 							timezone={workspace.timezone}
-							canAnswer={true}
+							canAnswer={right.canDecide}
+							refusal={waitingOnLine(right)}
 							{working}
 							onanswer={answer}
 							ondismiss={dismiss}

@@ -10,6 +10,7 @@
 		questions,
 		timezone,
 		canAnswer,
+		refusal,
 		working,
 		onanswer,
 		ondismiss,
@@ -17,6 +18,7 @@
 		questions: IssueQuestion[];
 		timezone: string;
 		canAnswer: boolean;
+		refusal?: string;
 		working: boolean;
 		onanswer: (question: IssueQuestion, answer: string) => void;
 		ondismiss: (question: IssueQuestion) => void;
@@ -56,7 +58,7 @@
 								? 'text-amber-700 dark:text-amber-400'
 								: 'text-muted-foreground'}"
 						>
-							{statusLine(question)}
+							{statusLine(question, canAnswer)}
 						</span>
 					</div>
 
@@ -77,6 +79,10 @@
 								: onDateAndTime(question.deadline, timezone)}
 						</span>
 					</div>
+
+					{#if !canAnswer && open_ && refusal}
+						<p class="text-xs text-muted-foreground text-pretty">{refusal}</p>
+					{/if}
 
 					{#if canAnswer && open_}
 						{#if question.options && question.options.length > 0}

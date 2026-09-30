@@ -150,11 +150,13 @@ func contains(values []string, wanted string) bool {
 
 func statements() map[string]string {
 	return map[string]string{
-		"listQuery":        listQuery,
-		"listForQuery":     listForQuery,
-		"saveGlobalQuery":  saveGlobalQuery,
-		"saveTeamQuery":    saveTeamQuery,
-		"clearTeamQuery":   clearTeamQuery,
-		"clearGlobalQuery": clearGlobalQuery,
+		"listQuery":                listQuery,
+		"listForQuery":             listForQuery,
+		"saveGlobalQuery":          saveGlobalQuery,
+		"saveTeamQuery":            saveTeamQuery,
+		"clearTeamQuery":           clearTeamQuery,
+		"clearGlobalQuery":         clearGlobalQuery,
+		"decisionChannelQuery":     decisionChannelQuery,
+		"saveDecisionChannelQuery": saveDecisionChannelQuery,
 	}
 }

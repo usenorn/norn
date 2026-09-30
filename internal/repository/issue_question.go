@@ -36,5 +36,6 @@ type IssueQuestion interface {
 	Settle(
 		ctx context.Context, workspaceID uuid.UUID, settlement QuestionSettlement,
 	) (entity.IssueQuestion, error)
+	ListWaiting(ctx context.Context, scope entity.TeamScope, limit int) ([]entity.IssueQuestion, error)
 	Lapsed(ctx context.Context, now time.Time, limit int) ([]entity.IssueQuestion, error)
 }

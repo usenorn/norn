@@ -54,6 +54,10 @@ type Notifications interface {
 		preferences entity.NotificationPreferences,
 	) (NotificationSettingsView, error)
 	ClearSettings(ctx context.Context, workspaceID, teamID uuid.UUID) (NotificationSettingsView, error)
+	DecisionChannel(ctx context.Context, workspaceID uuid.UUID) (entity.DecisionChannel, error)
+	SetDecisionChannel(
+		ctx context.Context, workspaceID uuid.UUID, channel entity.DecisionChannel,
+	) (entity.DecisionChannel, error)
 	FanOut(ctx context.Context) (int, error)
 	Digest(ctx context.Context, now time.Time) error
 }

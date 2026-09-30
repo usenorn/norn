@@ -59,6 +59,21 @@ func (mr *MockNotificationsMockRecorder) ClearSettings(ctx, workspaceID, teamID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearSettings", reflect.TypeOf((*MockNotifications)(nil).ClearSettings), ctx, workspaceID, teamID)
 }
 
+// DecisionChannel mocks base method.
+func (m *MockNotifications) DecisionChannel(ctx context.Context, workspaceID uuid.UUID) (entity.DecisionChannel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecisionChannel", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.DecisionChannel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DecisionChannel indicates an expected call of DecisionChannel.
+func (mr *MockNotificationsMockRecorder) DecisionChannel(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecisionChannel", reflect.TypeOf((*MockNotifications)(nil).DecisionChannel), ctx, workspaceID)
+}
+
 // Digest mocks base method.
 func (m *MockNotifications) Digest(ctx context.Context, now time.Time) error {
 	m.ctrl.T.Helper()
@@ -174,6 +189,21 @@ func (m *MockNotifications) SaveSettings(ctx context.Context, workspaceID, teamI
 func (mr *MockNotificationsMockRecorder) SaveSettings(ctx, workspaceID, teamID, preferences any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSettings", reflect.TypeOf((*MockNotifications)(nil).SaveSettings), ctx, workspaceID, teamID, preferences)
+}
+
+// SetDecisionChannel mocks base method.
+func (m *MockNotifications) SetDecisionChannel(ctx context.Context, workspaceID uuid.UUID, channel entity.DecisionChannel) (entity.DecisionChannel, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDecisionChannel", ctx, workspaceID, channel)
+	ret0, _ := ret[0].(entity.DecisionChannel)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetDecisionChannel indicates an expected call of SetDecisionChannel.
+func (mr *MockNotificationsMockRecorder) SetDecisionChannel(ctx, workspaceID, channel any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDecisionChannel", reflect.TypeOf((*MockNotifications)(nil).SetDecisionChannel), ctx, workspaceID, channel)
 }
 
 // SetFollowing mocks base method.

@@ -59,7 +59,6 @@ const (
 	ChannelExecutionDeclined = channelv1.ExecutionDeclined
 	ChannelExecutionState    = channelv1.ExecutionStateReport
 	ChannelExecutionEvent    = channelv1.ExecutionEvent
-	ChannelTranscriptRef     = channelv1.TranscriptRef
 	ChannelServiceState      = channelv1.ServiceState
 	ChannelPreviewState      = channelv1.PreviewState
 	ChannelQuestionAsked     = channelv1.QuestionAsked

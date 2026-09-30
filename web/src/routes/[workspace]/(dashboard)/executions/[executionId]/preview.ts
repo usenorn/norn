@@ -22,6 +22,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			queued_no_runner: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -39,8 +40,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -73,6 +72,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			queued_runners_offline: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -90,8 +90,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -135,6 +133,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			queued_runners_paused: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -152,8 +151,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -198,6 +195,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			queued_runners_busy: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -215,8 +213,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -260,6 +256,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			leased: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -289,8 +286,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -337,6 +332,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			preparing: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -393,8 +389,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -442,6 +436,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			running: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -587,56 +582,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [
-						{
-							at: "2026-08-23T09:04:02Z",
-							stream: "stdout",
-							source: "api",
-							text: "listening on http://127.0.0.1:4310",
-						},
-						{
-							at: "2026-08-23T09:04:03Z",
-							stream: "stdout",
-							source: "api",
-							text: "connected to postgres",
-						},
-						{
-							at: "2026-08-23T09:04:20Z",
-							stream: "stderr",
-							source: "worker",
-							text: "queue empty, sleeping",
-						},
-					],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -684,6 +629,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			services_unhealthy: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -842,27 +788,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [
-						{
-							at: "2026-08-23T09:04:02Z",
-							stream: "stdout",
-							source: "api",
-							text: "listening on http://127.0.0.1:4310",
-						},
-						{
-							at: "2026-08-23T09:04:03Z",
-							stream: "stdout",
-							source: "api",
-							text: "connected to postgres",
-						},
-						{
-							at: "2026-08-23T09:04:20Z",
-							stream: "stderr",
-							source: "worker",
-							text: "queue empty, sleeping",
-						},
-					],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -910,6 +835,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			machine_offline: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -1045,8 +971,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1094,6 +1018,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			preview_not_routable: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -1218,8 +1143,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1267,6 +1190,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			preview_closed: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -1392,8 +1316,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1441,6 +1363,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			waiting_for_input: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -1593,6 +1516,8 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							id: "00000000-0000-4000-8000-000000001201",
 							issueId: "00000000-0000-4000-8000-000000000501",
 							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							issueReference: "DSG-14",
+							issueTitle: "Median helper for the ledger",
 							kind: "decision",
 							state: "asked",
 							blocking: true,
@@ -1612,37 +1537,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							createdAt: "2026-08-23T09:20:00Z",
 						},
 					],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1690,6 +1584,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			planning: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -1838,37 +1733,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -1916,6 +1780,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			planning_question: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -2068,6 +1933,8 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							id: "00000000-0000-4000-8000-000000001201",
 							issueId: "00000000-0000-4000-8000-000000000501",
 							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							issueReference: "DSG-14",
+							issueTitle: "Median helper for the ledger",
 							kind: "decision",
 							state: "asked",
 							blocking: true,
@@ -2087,37 +1954,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							createdAt: "2026-08-23T09:20:00Z",
 						},
 					],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2165,6 +2001,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			awaiting_plan_approval: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -2313,37 +2150,210 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
+					execution: {
+						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+						reference: "DSG-14",
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						issueId: "00000000-0000-4000-8000-000000000501",
+						issueReference: "DSG-14",
+						teamId: "00000000-0000-4000-8000-000000000102",
+						agentId: "00000000-0000-4000-8000-000000000601",
+						agentName: "Rae's agent",
+						runnerId: "00000000-0000-4000-8000-000000000701",
+						runnerName: "rae-mbp",
+						codebaseId: "00000000-0000-4000-8000-000000000801",
+						codebaseName: "northwind",
+						attempt: 1,
+						state: "awaiting_plan_approval",
+						stage: "planning",
+						params: {
+							tool: "claude-code",
+							model: "opus-5",
+							runtime: "process",
+							baseRef: "origin/default",
+							includeDirty: false,
+							permissionProfile: "standard",
+							brief: "Keep the ledger rows aligned on the totals column.",
 						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
+						queuedAt: "2026-08-23T09:00:00Z",
+						startedAt: "2026-08-23T09:01:30Z",
+						issueTitle: "Median helper for the ledger",
+					},
+					runner: {
+						id: "00000000-0000-4000-8000-000000000701",
+						name: "rae-mbp",
+						load: {
+							connected: true,
+							capacity: 2,
+							used: 0,
+							free: 2,
+							diskPressure: false,
 						},
+					},
+					codeLinks: [],
+					plans: [
 						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
+							id: "00000000-0000-4000-8000-000000001301",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							revision: 1,
+							body: "## What I will change\n\n1. Add a `median` helper beside `mean` in `src/lib/ledger/stats.ts`, sorting a copy so the rows keep their order.\n2. Show the median under the totals column in `ledger-table.svelte`, right-aligned with the header.\n3. Keep the old `/ledger/totals` endpoint until the migration finishes.\n\n## How I will check it\n\n- Unit tests for an empty ledger, an odd count and an even count.\n- Open the preview and compare the median with a hand count on the seeded ledger.\n\n## What I am unsure of\n\n- Whether refunds count towards the median. I assumed they do not.",
+							proposedAt: "2026-08-23T09:12:00Z",
 						},
 					],
-					logs: [],
+				},
+			},
+			plan_not_yours: {
+				run: {
+					kind: "ready",
+					right: { canDecide: false, decider: "Sam Iwu" },
+					timeline: [
+						{
+							id: "00000000-0000-4000-8000-000000000901",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 1,
+							kind: "transition",
+							actor: {
+								kind: "system",
+							},
+							reason: "no_runner",
+							occurredAt: "2026-08-23T09:00:00Z",
+							toState: "queued",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000902",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 2,
+							kind: "transition",
+							actor: {
+								kind: "system",
+							},
+							occurredAt: "2026-08-23T09:01:00Z",
+							fromState: "queued",
+							toState: "leased",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000903",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 3,
+							kind: "transition",
+							actor: {
+								kind: "agent",
+								agentId: "00000000-0000-4000-8000-000000000601",
+								runnerId: "00000000-0000-4000-8000-000000000701",
+							},
+							occurredAt: "2026-08-23T09:01:30Z",
+							fromState: "leased",
+							toState: "preparing",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000904",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 4,
+							kind: "phase",
+							actor: {
+								kind: "agent",
+								agentId: "00000000-0000-4000-8000-000000000601",
+								runnerId: "00000000-0000-4000-8000-000000000701",
+							},
+							reason: "taking a snapshot of northwind",
+							occurredAt: "2026-08-23T09:01:40Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000905",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 5,
+							kind: "transition",
+							actor: {
+								kind: "agent",
+								agentId: "00000000-0000-4000-8000-000000000601",
+								runnerId: "00000000-0000-4000-8000-000000000701",
+							},
+							occurredAt: "2026-08-23T09:03:00Z",
+							fromState: "preparing",
+							toState: "running",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000906",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 6,
+							kind: "tool",
+							actor: {
+								kind: "agent",
+								agentId: "00000000-0000-4000-8000-000000000601",
+								runnerId: "00000000-0000-4000-8000-000000000701",
+							},
+							reason: "used read_file on ledger-table.svelte",
+							occurredAt: "2026-08-23T09:03:40Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000907",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 7,
+							kind: "service",
+							actor: {
+								kind: "agent",
+								agentId: "00000000-0000-4000-8000-000000000601",
+								runnerId: "00000000-0000-4000-8000-000000000701",
+							},
+							reason: "api is healthy on port 4310: it wrote a line matching listening on",
+							occurredAt: "2026-08-23T09:04:02Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000908",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 8,
+							kind: "preview",
+							actor: {
+								kind: "agent",
+								agentId: "00000000-0000-4000-8000-000000000601",
+								runnerId: "00000000-0000-4000-8000-000000000701",
+							},
+							reason: "web is open at https://web-exec-01m0rcn1m3cgmbd9zc12s4s5gf.norn.ink, on the service api",
+							occurredAt: "2026-08-23T09:05:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000909",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							sequence: 9,
+							kind: "question",
+							actor: {
+								kind: "agent",
+								agentId: "00000000-0000-4000-8000-000000000601",
+								runnerId: "00000000-0000-4000-8000-000000000701",
+							},
+							reason: "Keep the old ledger endpoint while the migration runs?",
+							occurredAt: "2026-08-23T09:20:00Z",
+						},
+					],
+					services: [
+						{
+							id: "00000000-0000-4000-8000-000000001028",
+							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							name: "api",
+							state: "healthy",
+							probe: "log",
+							port: 4310,
+							reason: "it wrote a line matching listening on",
+							reportedAt: "2026-08-23T09:04:00Z",
+						},
+					],
+					previews: [
+						{
+							preview: {
+								id: "00000000-0000-4000-8000-000000001101",
+								executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+								name: "web",
+								service: "api",
+								mode: "subdomain",
+								host: "web-exec-01m0rcn1m3cgmbd9zc12s4s5gf.norn.ink",
+								url: "https://web-exec-01m0rcn1m3cgmbd9zc12s4s5gf.norn.ink",
+								state: "open",
+								openedAt: "2026-08-23T09:05:00Z",
+							},
+							shareLinks: [],
+						},
+					],
+					questions: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2399,6 +2409,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			plan_revised: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -2547,37 +2558,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2643,6 +2623,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			plan_blocked: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -2795,6 +2776,8 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							id: "00000000-0000-4000-8000-000000001201",
 							issueId: "00000000-0000-4000-8000-000000000501",
 							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							issueReference: "DSG-14",
+							issueTitle: "Median helper for the ledger",
 							kind: "decision",
 							state: "asked",
 							blocking: true,
@@ -2814,37 +2797,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							createdAt: "2026-08-23T09:20:00Z",
 						},
 					],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -2900,6 +2852,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			implementing: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -3048,37 +3001,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3146,6 +3068,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			queued_for_resume: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -3284,6 +3207,8 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							id: "00000000-0000-4000-8000-000000001201",
 							issueId: "00000000-0000-4000-8000-000000000501",
 							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							issueReference: "DSG-14",
+							issueTitle: "Median helper for the ledger",
 							kind: "decision",
 							state: "answered",
 							blocking: true,
@@ -3306,8 +3231,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							answeredAt: "2026-08-23T09:24:00Z",
 						},
 					],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3355,6 +3278,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			finalizing: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -3504,8 +3428,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3581,6 +3503,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			awaiting_review: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -3734,37 +3657,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -3872,6 +3764,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			approved: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -4024,8 +3917,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4134,6 +4025,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			completed: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -4300,37 +4192,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4441,6 +4302,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			failed: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -4497,8 +4359,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4549,6 +4409,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			cancelled: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -4672,8 +4533,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -4724,6 +4583,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			interrupted: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -4846,8 +4706,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 					services: [],
 					previews: [],
 					questions: [],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14-r2",
@@ -4898,6 +4756,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			awaiting_review_one_repository: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -5050,37 +4909,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -5150,6 +4978,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			awaiting_review_no_diff: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -5303,37 +5132,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -5441,6 +5239,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			awaiting_review_nothing_changed: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					timeline: [
 						{
 							id: "00000000-0000-4000-8000-000000000901",
@@ -5593,37 +5392,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -5678,6 +5446,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			awaiting_review_checks: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -5831,37 +5600,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -5986,6 +5724,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			awaiting_review_shared: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -6158,37 +5897,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -6296,6 +6004,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			changes_requested: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -6448,6 +6157,8 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							id: "00000000-0000-4000-8000-000000001201",
 							issueId: "00000000-0000-4000-8000-000000000501",
 							executionId: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
+							issueReference: "DSG-14",
+							issueTitle: "Median helper for the ledger",
 							kind: "decision",
 							state: "answered",
 							blocking: true,
@@ -6470,8 +6181,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 							answeredAt: "2026-08-23T09:24:00Z",
 						},
 					],
-					transcript: [],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",
@@ -6579,6 +6288,7 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 			workspace_given_back: {
 				run: {
 					kind: "ready",
+					right: { canDecide: true, decider: "Rae Okafor" },
 					plans: [],
 					timeline: [
 						{
@@ -6733,37 +6443,6 @@ export const runPreviewStates: Record<string, RunPreview> = import.meta.env.DEV
 						},
 					],
 					questions: [],
-					transcript: [
-						{
-							at: "2026-08-23T09:03:10Z",
-							type: "message",
-							payload: {
-								text: "Reading the ledger table component and the totals it renders.",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:40Z",
-							type: "tool_call",
-							payload: {
-								tool: "read_file",
-							},
-						},
-						{
-							at: "2026-08-23T09:03:41Z",
-							type: "tool_result",
-							payload: {
-								text: "ledger-table.svelte, 214 lines",
-							},
-						},
-						{
-							at: "2026-08-23T09:05:02Z",
-							type: "message",
-							payload: {
-								text: "The totals column is right-aligned but the header is not. Fixing the header.",
-							},
-						},
-					],
-					logs: [],
 					execution: {
 						id: "exec-01M0RCN1M3CGMBD9ZC12S4S5GF",
 						reference: "DSG-14",

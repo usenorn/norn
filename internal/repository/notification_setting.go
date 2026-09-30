@@ -19,4 +19,6 @@ type NotificationSetting interface {
 	) ([]entity.NotificationSettings, error)
 	Save(ctx context.Context, settings entity.NotificationSettings) error
 	Clear(ctx context.Context, workspaceID, accountID, teamID uuid.UUID) error
+	DecisionChannel(ctx context.Context, workspaceID, accountID uuid.UUID) (entity.DecisionChannel, error)
+	SaveDecisionChannel(ctx context.Context, workspaceID, accountID uuid.UUID, channel entity.DecisionChannel) error
 }

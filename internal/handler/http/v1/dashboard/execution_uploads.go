@@ -4,52 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
 
 const artifactFileFormField = "file"
-
-func (h *handler) UploadExecutionLogs(
-	ctx context.Context,
-	request api.UploadExecutionLogsRequestObject,
-) (api.UploadExecutionLogsResponseObject, error) {
-	receipt, err := h.executionUploads.AppendLogs(ctx, request.ExecutionId, service.LogBatch{
-		Sequence: request.Body.Sequence,
-		Entries:  logEntriesOf(request.Body.Entries),
-	})
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.UploadExecutionLogs202JSONResponse(chunkReceiptDTO(receipt)), nil
-}
-
-func (h *handler) UploadExecutionTranscript(
-	ctx context.Context,
-	request api.UploadExecutionTranscriptRequestObject,
-) (api.UploadExecutionTranscriptResponseObject, error) {
-	receipt, err := h.executionUploads.AppendTranscript(
-		ctx, request.ExecutionId, service.TranscriptBatch{
-			Sequence: request.Body.Sequence,
-			Entries:  transcriptEntriesOf(request.Body.Entries),
-		},
-	)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.UploadExecutionTranscript202JSONResponse(chunkReceiptDTO(receipt)), nil
-}
 
 func (h *handler) UploadExecutionArtifact(
 	ctx context.Context,
@@ -86,60 +45,6 @@ func (h *handler) UploadExecutionArtifact(
 	}
 
 	return api.UploadExecutionArtifact201JSONResponse(artifactReceiptDTO(receipt)), nil
-}
-
-func (h *handler) GetExecutionStreams(
-	ctx context.Context,
-	request api.GetExecutionStreamsRequestObject,
-) (api.GetExecutionStreamsResponseObject, error) {
-	cursors, err := h.executionUploads.Cursors(ctx, request.ExecutionId)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.GetExecutionStreams200JSONResponse(streamCursorDTOs(cursors)), nil
-}
-
-func (h *handler) ListWorkspaceExecutionLogs(
-	ctx context.Context,
-	request api.ListWorkspaceExecutionLogsRequestObject,
-) (api.ListWorkspaceExecutionLogsResponseObject, error) {
-	chunks, err := h.executionUploads.Logs(
-		ctx, request.WorkspaceId, request.ExecutionId,
-		chunkPageOf(request.Params.After, request.Params.Limit),
-	)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.ListWorkspaceExecutionLogs200JSONResponse(logChunkDTOs(chunks)), nil
-}
-
-func (h *handler) ListWorkspaceExecutionTranscript(
-	ctx context.Context,
-	request api.ListWorkspaceExecutionTranscriptRequestObject,
-) (api.ListWorkspaceExecutionTranscriptResponseObject, error) {
-	chunks, err := h.executionUploads.Transcript(
-		ctx, request.WorkspaceId, request.ExecutionId,
-		chunkPageOf(request.Params.After, request.Params.Limit),
-	)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.ListWorkspaceExecutionTranscript200JSONResponse(transcriptChunkDTOs(chunks)), nil
 }
 
 func (h *handler) ListWorkspaceExecutionArtifacts(
@@ -179,40 +84,4 @@ func (h *handler) DownloadWorkspaceExecutionArtifact(
 			CacheControl: &noStore,
 		},
 	}, nil
-}
-
-func (h *handler) GetWorkspaceExecutionPolicy(
-	ctx context.Context,
-	request api.GetWorkspaceExecutionPolicyRequestObject,
-) (api.GetWorkspaceExecutionPolicyResponseObject, error) {
-	policy, err := h.executionUploads.Policy(ctx, request.WorkspaceId)
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.GetWorkspaceExecutionPolicy200JSONResponse(executionPolicyDTO(policy)), nil
-}
-
-func (h *handler) SetWorkspaceExecutionPolicy(
-	ctx context.Context,
-	request api.SetWorkspaceExecutionPolicyRequestObject,
-) (api.SetWorkspaceExecutionPolicyResponseObject, error) {
-	policy, err := h.executionUploads.SetPolicy(ctx, entity.WorkspaceExecutionPolicy{
-		WorkspaceID:         request.WorkspaceId,
-		Telemetry:           entity.TelemetryMode(request.Body.Telemetry),
-		UploadRetentionDays: request.Body.UploadRetentionDays,
-	})
-	if err != nil {
-		if problem, ok := problemFor(err); ok {
-			return problem, nil
-		}
-
-		return nil, err
-	}
-
-	return api.SetWorkspaceExecutionPolicy200JSONResponse(executionPolicyDTO(policy)), nil
 }

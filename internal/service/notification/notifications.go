@@ -323,6 +323,39 @@ func (s *notificationsService) ClearSettings(
 	return s.view(ctx, workspaceID, decision.Actor.AccountID, teamID)
 }
 
+func (s *notificationsService) DecisionChannel(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) (entity.DecisionChannel, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
+	if err != nil {
+		return "", err
+	}
+
+	return s.settings.DecisionChannel(ctx, workspaceID, decision.Actor.AccountID)
+}
+
+func (s *notificationsService) SetDecisionChannel(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	channel entity.DecisionChannel,
+) (entity.DecisionChannel, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
+	if err != nil {
+		return "", err
+	}
+
+	if err := entity.NewValidationError(entity.ValidateDecisionChannel("channel", channel)); err != nil {
+		return "", err
+	}
+
+	if err := s.settings.SaveDecisionChannel(ctx, workspaceID, decision.Actor.AccountID, channel); err != nil {
+		return "", err
+	}
+
+	return channel, nil
+}
+
 func (s *notificationsService) view(
 	ctx context.Context,
 	workspaceID, accountID, teamID uuid.UUID,

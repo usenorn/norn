@@ -11,6 +11,8 @@ import type { Agent } from "$lib/agents/agents";
 import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
 import type { Execution, IssueChangeSet } from "$lib/executions/executions";
 import type { IssueQuestion } from "$lib/questions/questions";
+import { readDecisionRight } from "$lib/executions/decision.server";
+import type { DecisionRight } from "$lib/executions/reviews";
 import type { AttachmentPanel } from "$lib/attachments/attachments";
 import type {
 	CodeLink,
@@ -55,6 +57,7 @@ export type IssueDetail =
 			runs: Execution[];
 			changeset?: IssueChangeSet;
 			questions: IssueQuestion[];
+			right: DecisionRight;
 			mirrorConflicts: MirrorConflict[];
 			shipping: IssueShipping;
 	  }
@@ -118,6 +121,7 @@ export const load: PageServerLoad = async ({
 		questions,
 		runs,
 		changeset,
+		right,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -163,6 +167,7 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/questions", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/executions", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/changeset", { params: { path } }),
+		readDecisionRight(locals.api, workspace.id, path.issueId),
 	]);
 
 	if (
@@ -204,6 +209,7 @@ export const load: PageServerLoad = async ({
 			runs: runs.data ?? [],
 			changeset: changeset.data,
 			questions: questions.data?.questions ?? [],
+			right,
 			mirrorConflicts: mirrorConflicts.data ?? [],
 			shipping: shipping.data ?? { releases: [], deployments: [] },
 		},

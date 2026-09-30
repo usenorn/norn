@@ -16,12 +16,12 @@
 	let {
 		drafts,
 		working,
-		canDecide,
+		locked,
 		onsubmit,
 	}: {
 		drafts: number;
 		working: boolean;
-		canDecide: boolean;
+		locked?: string;
 		onsubmit: (verdict: ReviewVerdict, summary: string) => Promise<boolean>;
 	} = $props();
 
@@ -66,9 +66,13 @@
 
 		<RadioGroup.Root bind:value={verdict} disabled={working} aria-label="What you decide">
 			{#each verdicts as choice (choice)}
-				{@const locked = choice !== "comment" && !canDecide}
 				<div class="flex items-start gap-2">
-					<RadioGroup.Item id={`verdict-${choice}`} value={choice} class="mt-0.5" disabled={locked} />
+					<RadioGroup.Item
+						id={`verdict-${choice}`}
+						value={choice}
+						class="mt-0.5"
+						disabled={choice !== "comment" && locked !== undefined}
+					/>
 					<label for={`verdict-${choice}`} class="flex flex-col gap-0.5">
 						<span class="text-sm leading-normal text-ink-900">{verdictChoice(choice)}</span>
 						<span class="text-xs leading-normal text-muted-foreground">{verdictLine(choice)}</span>
@@ -77,10 +81,8 @@
 			{/each}
 		</RadioGroup.Root>
 
-		{#if !canDecide}
-			<p class="text-2xs text-muted-foreground">
-				Answer every open question on this run before approving or sending it back.
-			</p>
+		{#if locked}
+			<p class="text-2xs text-muted-foreground">{locked}</p>
 		{/if}
 
 		<div class="flex flex-wrap items-center justify-between gap-2">

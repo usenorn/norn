@@ -1674,6 +1674,24 @@ func (e CycleScopeChangeKind) Valid() bool {
 	}
 }
 
+// Defines values for DecisionChannel.
+const (
+	DecisionChannelNorn     DecisionChannel = "norn"
+	DecisionChannelTelegram DecisionChannel = "telegram"
+)
+
+// Valid indicates whether the value is a known member of the DecisionChannel enum.
+func (e DecisionChannel) Valid() bool {
+	switch e {
+	case DecisionChannelNorn:
+		return true
+	case DecisionChannelTelegram:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DescriptionRevisionSource.
 const (
 	DescriptionRevisionSourceAgent   DescriptionRevisionSource = "agent"
@@ -2030,7 +2048,7 @@ func (e ExecutionPreviewState) Valid() bool {
 
 // Defines values for ExecutionProblemCode.
 const (
-	ExecutionChunkConflict ExecutionProblemCode = "execution_chunk_conflict"
+	DecisionForbidden      ExecutionProblemCode = "decision_forbidden"
 	ExecutionFinished      ExecutionProblemCode = "execution_finished"
 	ExecutionNoRunner      ExecutionProblemCode = "execution_no_runner"
 	ExecutionNotPlanning   ExecutionProblemCode = "execution_not_planning"
@@ -2053,7 +2071,7 @@ const (
 // Valid indicates whether the value is a known member of the ExecutionProblemCode enum.
 func (e ExecutionProblemCode) Valid() bool {
 	switch e {
-	case ExecutionChunkConflict:
+	case DecisionForbidden:
 		return true
 	case ExecutionFinished:
 		return true
@@ -2189,22 +2207,22 @@ func (e ExecutionServiceState) Valid() bool {
 
 // Defines values for ExecutionStage.
 const (
-	Implementation ExecutionStage = "implementation"
-	Planning       ExecutionStage = "planning"
-	Publication    ExecutionStage = "publication"
-	Review         ExecutionStage = "review"
+	ExecutionStageImplementation ExecutionStage = "implementation"
+	ExecutionStagePlanning       ExecutionStage = "planning"
+	ExecutionStagePublication    ExecutionStage = "publication"
+	ExecutionStageReview         ExecutionStage = "review"
 )
 
 // Valid indicates whether the value is a known member of the ExecutionStage enum.
 func (e ExecutionStage) Valid() bool {
 	switch e {
-	case Implementation:
+	case ExecutionStageImplementation:
 		return true
-	case Planning:
+	case ExecutionStagePlanning:
 		return true
-	case Publication:
+	case ExecutionStagePublication:
 		return true
-	case Review:
+	case ExecutionStageReview:
 		return true
 	default:
 		return false
@@ -2259,24 +2277,6 @@ func (e ExecutionState) Valid() bool {
 	case ExecutionStateRunning:
 		return true
 	case ExecutionStateWaitingForInput:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ExecutionStream.
-const (
-	Logs       ExecutionStream = "logs"
-	Transcript ExecutionStream = "transcript"
-)
-
-// Valid indicates whether the value is a known member of the ExecutionStream enum.
-func (e ExecutionStream) Valid() bool {
-	switch e {
-	case Logs:
-		return true
-	case Transcript:
 		return true
 	default:
 		return false
@@ -3150,6 +3150,24 @@ func (e IssueQuestionKind) Valid() bool {
 	}
 }
 
+// Defines values for IssueQuestionStage.
+const (
+	IssueQuestionStageImplementation IssueQuestionStage = "implementation"
+	IssueQuestionStagePlanning       IssueQuestionStage = "planning"
+)
+
+// Valid indicates whether the value is a known member of the IssueQuestionStage enum.
+func (e IssueQuestionStage) Valid() bool {
+	switch e {
+	case IssueQuestionStageImplementation:
+		return true
+	case IssueQuestionStagePlanning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for IssueQuestionState.
 const (
 	IssueQuestionStateAnswered  IssueQuestionState = "answered"
@@ -3473,6 +3491,7 @@ const (
 	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
 	NotificationKindAssigned        NotificationKind = "assigned"
 	NotificationKindCommented       NotificationKind = "commented"
+	NotificationKindDecisionWaiting NotificationKind = "decision_waiting"
 	NotificationKindMembership      NotificationKind = "membership"
 	NotificationKindMentioned       NotificationKind = "mentioned"
 	NotificationKindStateChanged    NotificationKind = "state_changed"
@@ -3486,6 +3505,8 @@ func (e NotificationKind) Valid() bool {
 	case NotificationKindAssigned:
 		return true
 	case NotificationKindCommented:
+		return true
+	case NotificationKindDecisionWaiting:
 		return true
 	case NotificationKindMembership:
 		return true
@@ -4572,24 +4593,6 @@ const (
 func (e TelegramSealingUnavailableProblemCode) Valid() bool {
 	switch e {
 	case TelegramSealingUnavailableProblemCodeTelegramSealingUnavailable:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for TelemetryMode.
-const (
-	Full    TelemetryMode = "full"
-	Minimal TelemetryMode = "minimal"
-)
-
-// Valid indicates whether the value is a known member of the TelemetryMode enum.
-func (e TelemetryMode) Valid() bool {
-	switch e {
-	case Full:
-		return true
-	case Minimal:
 		return true
 	default:
 		return false
@@ -6589,6 +6592,24 @@ type DecideImportMappingsRequest struct {
 	Decisions []ImportMappingDecision `json:"decisions"`
 }
 
+// DecisionChannel Norn keeps decision requests in Reviews only. Telegram also sends each one as a direct message from the agent's bot, once you have linked your Telegram to that bot.
+type DecisionChannel string
+
+// DecisionChannelSetting defines model for DecisionChannelSetting.
+type DecisionChannelSetting struct {
+	// Channel Norn keeps decision requests in Reviews only. Telegram also sends each one as a direct message from the agent's bot, once you have linked your Telegram to that bot.
+	Channel DecisionChannel `json:"channel"`
+}
+
+// DecisionRight defines model for DecisionRight.
+type DecisionRight struct {
+	// CanDecide True for the issue's assignee and for workspace admins.
+	CanDecide bool `json:"canDecide"`
+
+	// Decider Who decides for this issue. Absent when only admins can.
+	Decider *string `json:"decider,omitempty"`
+}
+
 // DeclineTriageIssueRequest defines model for DeclineTriageIssueRequest.
 type DeclineTriageIssueRequest struct {
 	// Note Sent to whoever reported it, and kept in the issue's history
@@ -6961,34 +6982,6 @@ type ExecutionChangeSummary struct {
 	Repositories int `json:"repositories"`
 }
 
-// ExecutionChunk defines model for ExecutionChunk.
-type ExecutionChunk struct {
-	Bytes      int64           `json:"bytes"`
-	Digest     string          `json:"digest"`
-	EntryCount int             `json:"entryCount"`
-	FirstAt    time.Time       `json:"firstAt"`
-	LastAt     time.Time       `json:"lastAt"`
-	ReceivedAt time.Time       `json:"receivedAt"`
-	Sequence   int64           `json:"sequence"`
-	Stream     ExecutionStream `json:"stream"`
-}
-
-// ExecutionChunkReceipt defines model for ExecutionChunkReceipt.
-type ExecutionChunkReceipt struct {
-	// Bytes What the batch takes in storage
-	Bytes int64 `json:"bytes"`
-
-	// Digest The server's own digest of what it stored, and what makes a replay a no-op
-	Digest string `json:"digest"`
-
-	// Duplicate True when this batch was already held, so nothing was stored a second time
-	Duplicate  bool            `json:"duplicate"`
-	EntryCount int             `json:"entryCount"`
-	ReceivedAt time.Time       `json:"receivedAt"`
-	Sequence   int64           `json:"sequence"`
-	Stream     ExecutionStream `json:"stream"`
-}
-
 // ExecutionDetail defines model for ExecutionDetail.
 type ExecutionDetail struct {
 	// Changeset What this run changed. Absent until the machine has reported anything.
@@ -7024,32 +7017,6 @@ type ExecutionEvent struct {
 
 // ExecutionEventKind defines model for ExecutionEventKind.
 type ExecutionEventKind string
-
-// ExecutionLogChunk defines model for ExecutionLogChunk.
-type ExecutionLogChunk struct {
-	Bytes      int64               `json:"bytes"`
-	Digest     string              `json:"digest"`
-	Entries    []ExecutionLogEntry `json:"entries"`
-	EntryCount int                 `json:"entryCount"`
-	FirstAt    time.Time           `json:"firstAt"`
-	LastAt     time.Time           `json:"lastAt"`
-	ReceivedAt time.Time           `json:"receivedAt"`
-	Sequence   int64               `json:"sequence"`
-	Stream     ExecutionStream     `json:"stream"`
-}
-
-// ExecutionLogEntry defines model for ExecutionLogEntry.
-type ExecutionLogEntry struct {
-	// At When the line was written. Defaults to when the server received the batch.
-	At *time.Time `json:"at,omitempty"`
-
-	// Source The service or step that wrote it
-	Source *string `json:"source,omitempty"`
-
-	// Stream Which handle it came out of
-	Stream *string `json:"stream,omitempty"`
-	Text   string  `json:"text"`
-}
 
 // ExecutionParams How this run was asked for. What is not set is the machine's own default.
 type ExecutionParams struct {
@@ -7210,47 +7177,11 @@ type ExecutionStage string
 // ExecutionState defines model for ExecutionState.
 type ExecutionState string
 
-// ExecutionStream defines model for ExecutionStream.
-type ExecutionStream string
-
-// ExecutionStreamCursor defines model for ExecutionStreamCursor.
-type ExecutionStreamCursor struct {
-	Bytes        int64           `json:"bytes"`
-	Chunks       int             `json:"chunks"`
-	EntryCount   int64           `json:"entryCount"`
-	LastSequence int64           `json:"lastSequence"`
-	Stream       ExecutionStream `json:"stream"`
-}
-
 // ExecutionSummary defines model for ExecutionSummary.
 type ExecutionSummary struct {
 	// Change What one run changed, totalled across every repository it touched.
 	Change    ExecutionChangeSummary `json:"change"`
 	Execution Execution              `json:"execution"`
-}
-
-// ExecutionTranscriptChunk defines model for ExecutionTranscriptChunk.
-type ExecutionTranscriptChunk struct {
-	Bytes      int64                      `json:"bytes"`
-	Digest     string                     `json:"digest"`
-	Entries    []ExecutionTranscriptEntry `json:"entries"`
-	EntryCount int                        `json:"entryCount"`
-	FirstAt    time.Time                  `json:"firstAt"`
-	LastAt     time.Time                  `json:"lastAt"`
-	ReceivedAt time.Time                  `json:"receivedAt"`
-	Sequence   int64                      `json:"sequence"`
-	Stream     ExecutionStream            `json:"stream"`
-}
-
-// ExecutionTranscriptEntry defines model for ExecutionTranscriptEntry.
-type ExecutionTranscriptEntry struct {
-	At *time.Time `json:"at,omitempty"`
-
-	// Payload Whatever the driver put in the event
-	Payload *map[string]interface{} `json:"payload,omitempty"`
-
-	// Type The normalised event kind, such as message, tool_call, tool_result or usage
-	Type string `json:"type"`
 }
 
 // ExecutionValidation defines model for ExecutionValidation.
@@ -8004,10 +7935,12 @@ type IssueQuestion struct {
 	ExecutionId *string `json:"executionId,omitempty"`
 
 	// Expired True once the deadline passed with no answer, so the default is what stands.
-	Expired bool               `json:"expired"`
-	Id      openapi_types.UUID `json:"id"`
-	IssueId openapi_types.UUID `json:"issueId"`
-	Kind    IssueQuestionKind  `json:"kind"`
+	Expired        bool               `json:"expired"`
+	Id             openapi_types.UUID `json:"id"`
+	IssueId        openapi_types.UUID `json:"issueId"`
+	IssueReference string             `json:"issueReference"`
+	IssueTitle     string             `json:"issueTitle"`
+	Kind           IssueQuestionKind  `json:"kind"`
 
 	// Options The answers the agent offered. Empty when it asked an open question.
 	Options   *[]string  `json:"options,omitempty"`
@@ -8016,6 +7949,9 @@ type IssueQuestion struct {
 
 	// SettledByName Who decided this question, however they decided it.
 	SettledByName *string `json:"settledByName,omitempty"`
+
+	// Stage Whether the run was still planning or already implementing when it asked.
+	Stage *IssueQuestionStage `json:"stage,omitempty"`
 
 	// Standing The answer if there is one, otherwise the declared default.
 	Standing string             `json:"standing"`
@@ -8036,6 +7972,9 @@ type IssueQuestionKind string
 type IssueQuestionList struct {
 	Questions []IssueQuestion `json:"questions"`
 }
+
+// IssueQuestionStage Whether the run was still planning or already implementing when it asked.
+type IssueQuestionStage string
 
 // IssueQuestionState defines model for IssueQuestionState.
 type IssueQuestionState string
@@ -8861,6 +8800,25 @@ type ReviewHead struct {
 	Repository string `json:"repository"`
 }
 
+// ReviewQuestion defines model for ReviewQuestion.
+type ReviewQuestion struct {
+	Decision DecisionRight `json:"decision"`
+	Question IssueQuestion `json:"question"`
+}
+
+// ReviewQueue defines model for ReviewQueue.
+type ReviewQueue struct {
+	Changes   []ReviewRun      `json:"changes"`
+	Plans     []ReviewRun      `json:"plans"`
+	Questions []ReviewQuestion `json:"questions"`
+}
+
+// ReviewRun defines model for ReviewRun.
+type ReviewRun struct {
+	Decision DecisionRight    `json:"decision"`
+	Run      ExecutionSummary `json:"run"`
+}
+
 // ReviewSide Which side of the diff a line belongs to
 type ReviewSide string
 
@@ -8895,12 +8853,9 @@ type Runner struct {
 	Name string      `json:"name"`
 
 	// PausedAt Set while an administrator has stopped this machine being offered work
-	PausedAt  *time.Time   `json:"pausedAt,omitempty"`
-	RevokedAt *time.Time   `json:"revokedAt,omitempty"`
-	Status    RunnerStatus `json:"status"`
-
-	// Telemetry How much of a run this machine's workspace keeps. On minimal the server declines full transcripts, so a machine reads this to send summaries instead of having them refused.
-	Telemetry   *TelemetryMode     `json:"telemetry,omitempty"`
+	PausedAt    *time.Time         `json:"pausedAt,omitempty"`
+	RevokedAt   *time.Time         `json:"revokedAt,omitempty"`
+	Status      RunnerStatus       `json:"status"`
 	WorkspaceId openapi_types.UUID `json:"workspaceId"`
 }
 
@@ -9279,12 +9234,6 @@ type SetWorkspaceAiProviderRequest struct {
 // SetWorkspaceAuthPolicyRequest defines model for SetWorkspaceAuthPolicyRequest.
 type SetWorkspaceAuthPolicyRequest struct {
 	Enforcement AuthEnforcement `json:"enforcement"`
-}
-
-// SetWorkspaceExecutionPolicyRequest defines model for SetWorkspaceExecutionPolicyRequest.
-type SetWorkspaceExecutionPolicyRequest struct {
-	Telemetry           TelemetryMode `json:"telemetry"`
-	UploadRetentionDays int           `json:"uploadRetentionDays"`
 }
 
 // SetWorkspaceOidcConnectionRequest defines model for SetWorkspaceOidcConnectionRequest.
@@ -9847,9 +9796,6 @@ type TelegramSealingUnavailableProblem struct {
 // TelegramSealingUnavailableProblemCode defines model for TelegramSealingUnavailableProblem.Code.
 type TelegramSealingUnavailableProblemCode string
 
-// TelemetryMode defines model for TelemetryMode.
-type TelemetryMode string
-
 // TemplateField A property a template insists on before an issue may be raised from it.
 type TemplateField string
 
@@ -10013,22 +9959,6 @@ type UpdateWorkspaceRequest struct {
 	Slug              *string             `json:"slug,omitempty"`
 	Timezone          *string             `json:"timezone,omitempty"`
 	WeekStartsOn      *WeekDay            `json:"weekStartsOn,omitempty"`
-}
-
-// UploadExecutionLogsRequest defines model for UploadExecutionLogsRequest.
-type UploadExecutionLogsRequest struct {
-	Entries []ExecutionLogEntry `json:"entries"`
-
-	// Sequence Where this batch sits in the stream. A position may be filled once.
-	Sequence int64 `json:"sequence"`
-}
-
-// UploadExecutionTranscriptRequest defines model for UploadExecutionTranscriptRequest.
-type UploadExecutionTranscriptRequest struct {
-	Entries []ExecutionTranscriptEntry `json:"entries"`
-
-	// Sequence Where this chunk sits in the stream. A position may be filled once.
-	Sequence int64 `json:"sequence"`
 }
 
 // ValidationStatus defines model for ValidationStatus.
@@ -10244,15 +10174,6 @@ type WorkspaceDeletedProblem struct {
 
 // WorkspaceDeletedProblemCode defines model for WorkspaceDeletedProblem.Code.
 type WorkspaceDeletedProblemCode string
-
-// WorkspaceExecutionPolicy defines model for WorkspaceExecutionPolicy.
-type WorkspaceExecutionPolicy struct {
-	Telemetry TelemetryMode `json:"telemetry"`
-
-	// UploadRetentionDays How long a run's output and transcript are kept. The timeline outlives them.
-	UploadRetentionDays int                `json:"uploadRetentionDays"`
-	WorkspaceId         openapi_types.UUID `json:"workspaceId"`
-}
 
 // WorkspaceOidcConnection defines model for WorkspaceOidcConnection.
 type WorkspaceOidcConnection struct {
@@ -10758,23 +10679,9 @@ type ListWorkspaceExecutionsParams struct {
 	Limit *int              `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
-// ListWorkspaceExecutionLogsParams defines parameters for ListWorkspaceExecutionLogs.
-type ListWorkspaceExecutionLogsParams struct {
-	// After The sequence of the last batch already held
-	After *int64 `form:"after,omitempty" json:"after,omitempty"`
-	Limit *int   `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
 // ListWorkspaceExecutionTimelineParams defines parameters for ListWorkspaceExecutionTimeline.
 type ListWorkspaceExecutionTimelineParams struct {
 	// After The sequence of the last entry already held
-	After *int64 `form:"after,omitempty" json:"after,omitempty"`
-	Limit *int   `form:"limit,omitempty" json:"limit,omitempty"`
-}
-
-// ListWorkspaceExecutionTranscriptParams defines parameters for ListWorkspaceExecutionTranscript.
-type ListWorkspaceExecutionTranscriptParams struct {
-	// After The sequence of the last chunk already held
 	After *int64 `form:"after,omitempty" json:"after,omitempty"`
 	Limit *int   `form:"limit,omitempty" json:"limit,omitempty"`
 }
@@ -11032,12 +10939,6 @@ type ConnectCodebaseJSONRequestBody = ConnectCodebaseRequest
 // UploadExecutionArtifactMultipartRequestBody defines body for UploadExecutionArtifact for multipart/form-data ContentType.
 type UploadExecutionArtifactMultipartRequestBody UploadExecutionArtifactMultipartBody
 
-// UploadExecutionLogsJSONRequestBody defines body for UploadExecutionLogs for application/json ContentType.
-type UploadExecutionLogsJSONRequestBody = UploadExecutionLogsRequest
-
-// UploadExecutionTranscriptJSONRequestBody defines body for UploadExecutionTranscript for application/json ContentType.
-type UploadExecutionTranscriptJSONRequestBody = UploadExecutionTranscriptRequest
-
 // ExchangeRunnerTokenJSONRequestBody defines body for ExchangeRunnerToken for application/json ContentType.
 type ExchangeRunnerTokenJSONRequestBody = ExchangeRunnerTokenRequest
 
@@ -11116,11 +11017,11 @@ type CloseWorkspaceCycleJSONRequestBody = CloseCycleRequest
 // SetWorkspaceCycleOwnerJSONRequestBody defines body for SetWorkspaceCycleOwner for application/json ContentType.
 type SetWorkspaceCycleOwnerJSONRequestBody = CycleOwnerRequest
 
+// SetWorkspaceDecisionChannelJSONRequestBody defines body for SetWorkspaceDecisionChannel for application/json ContentType.
+type SetWorkspaceDecisionChannelJSONRequestBody = DecisionChannelSetting
+
 // ConfigureWorkspaceDirectoryJSONRequestBody defines body for ConfigureWorkspaceDirectory for application/json ContentType.
 type ConfigureWorkspaceDirectoryJSONRequestBody = ConfigureDirectoryRequest
-
-// SetWorkspaceExecutionPolicyJSONRequestBody defines body for SetWorkspaceExecutionPolicy for application/json ContentType.
-type SetWorkspaceExecutionPolicyJSONRequestBody = SetWorkspaceExecutionPolicyRequest
 
 // CancelWorkspaceExecutionJSONRequestBody defines body for CancelWorkspaceExecution for application/json ContentType.
 type CancelWorkspaceExecutionJSONRequestBody = CancelExecutionRequest
@@ -11843,49 +11744,6 @@ type ClientInterface interface {
 	// Corresponds with POST /runners/me/executions/{executionId}/artifacts (the `UploadExecutionArtifact` operationId).
 	UploadExecutionArtifactWithBody(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UploadExecutionLogsWithBody Send a batch of this run's command output
-	//
-	// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-	//
-	// Takes any type of body and a specified content type.
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-	UploadExecutionLogsWithBody(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UploadExecutionLogs Send a batch of this run's command output
-	//
-	// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-	//
-	// Takes a body of the `application/json` content type.
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-	UploadExecutionLogs(ctx context.Context, executionId ExecutionId, body UploadExecutionLogsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetExecutionStreams How far each of this run's streams got
-	//
-	// What a machine reads after a restart to know where to carry on from, so a reconnect resends nothing it does not have to.
-	//
-	// Corresponds with GET /runners/me/executions/{executionId}/streams (the `GetExecutionStreams` operationId).
-	GetExecutionStreams(ctx context.Context, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UploadExecutionTranscriptWithBody Send a chunk of the coding agent's normalised event stream
-	//
-	// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-	//
-	// Takes any type of body and a specified content type.
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-	UploadExecutionTranscriptWithBody(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// UploadExecutionTranscript Send a chunk of the coding agent's normalised event stream
-	//
-	// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-	//
-	// Takes a body of the `application/json` content type.
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-	UploadExecutionTranscript(ctx context.Context, executionId ExecutionId, body UploadExecutionTranscriptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ExchangeRunnerTokenWithBody Trade a signed assertion for a short-lived access token and a channel ticket
 	//
 	// Authenticated by the refresh secret and an Ed25519 signature over the assertion, both carried in the body, so this endpoint takes no session and no bearer token. The signature covers the version, the runner id, the nonce, the timestamp and the audience, joined by newlines. A nonce is accepted once.
@@ -12545,6 +12403,25 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/scope (the `GetWorkspaceCycleScope` operationId).
 	GetWorkspaceCycleScope(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+	GetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceDecisionChannelWithBody Choose where your decision requests reach you besides Reviews
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannelWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/directory (the `DisconnectWorkspaceDirectory` operationId).
@@ -12594,29 +12471,6 @@ type ClientInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/directory/token (the `RotateWorkspaceDirectoryToken` operationId).
 	RotateWorkspaceDirectoryToken(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetWorkspaceExecutionPolicy Read how much of a run this workspace keeps, and for how long
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/execution-policy (the `GetWorkspaceExecutionPolicy` operationId).
-	GetWorkspaceExecutionPolicy(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SetWorkspaceExecutionPolicyWithBody Set how much of a run this workspace keeps, and for how long
-	//
-	// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-	//
-	// Takes any type of body and a specified content type.
-	//
-	// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-	SetWorkspaceExecutionPolicyWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SetWorkspaceExecutionPolicy Set how much of a run this workspace keeps, and for how long
-	//
-	// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-	//
-	// Takes a body of the `application/json` content type.
-	//
-	// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-	SetWorkspaceExecutionPolicy(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceExecutionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// ListWorkspaceExecutions The runs in this workspace, most recently finished first
 	//
 	// Only runs on issues the caller may read. Pass state to narrow it, which is how the review queue asks for the runs waiting for somebody.
@@ -12656,11 +12510,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/cancel (the `CancelWorkspaceExecution` operationId).
 	CancelWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body CancelWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListWorkspaceExecutionLogs What this run printed, oldest batch first
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
-	ListWorkspaceExecutionLogs(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
 	//
@@ -12841,13 +12690,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/timeline (the `ListWorkspaceExecutionTimeline` operationId).
 	ListWorkspaceExecutionTimeline(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListWorkspaceExecutionTranscript What the coding agent did, oldest chunk first
-	//
-	// Empty once the retention window has passed, or where the workspace keeps summaries only. The timeline is kept either way.
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/transcript (the `ListWorkspaceExecutionTranscript` operationId).
-	ListWorkspaceExecutionTranscript(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTranscriptParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceImports List what this workspace has imported, newest first
 	//
@@ -13282,6 +13124,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
 	DeleteWorkspaceIssueEvidence(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+	GetWorkspaceIssueDecisionRight(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	//
@@ -13878,6 +13725,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/restore (the `RestoreWorkspace` operationId).
 	RestoreWorkspace(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+	//
+	// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+	GetWorkspaceReviewQueue(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceRunners Every machine connected to this workspace, newest first
 	//
@@ -15520,99 +15374,6 @@ func (c *Client) ConfirmCodebase(ctx context.Context, codebaseId CodebaseId, req
 // Corresponds with POST /runners/me/executions/{executionId}/artifacts (the `UploadExecutionArtifact` operationId).
 func (c *Client) UploadExecutionArtifactWithBody(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUploadExecutionArtifactRequestWithBody(c.Server, executionId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UploadExecutionLogsWithBody Send a batch of this run's command output
-//
-// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-//
-// Takes any type of body and a specified content type.
-//
-// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-func (c *Client) UploadExecutionLogsWithBody(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadExecutionLogsRequestWithBody(c.Server, executionId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UploadExecutionLogs Send a batch of this run's command output
-//
-// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-//
-// Takes a body of the `application/json` content type.
-//
-// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-func (c *Client) UploadExecutionLogs(ctx context.Context, executionId ExecutionId, body UploadExecutionLogsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadExecutionLogsRequest(c.Server, executionId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// GetExecutionStreams How far each of this run's streams got
-//
-// What a machine reads after a restart to know where to carry on from, so a reconnect resends nothing it does not have to.
-//
-// Corresponds with GET /runners/me/executions/{executionId}/streams (the `GetExecutionStreams` operationId).
-func (c *Client) GetExecutionStreams(ctx context.Context, executionId ExecutionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetExecutionStreamsRequest(c.Server, executionId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UploadExecutionTranscriptWithBody Send a chunk of the coding agent's normalised event stream
-//
-// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-//
-// Takes any type of body and a specified content type.
-//
-// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-func (c *Client) UploadExecutionTranscriptWithBody(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadExecutionTranscriptRequestWithBody(c.Server, executionId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// UploadExecutionTranscript Send a chunk of the coding agent's normalised event stream
-//
-// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-//
-// Takes a body of the `application/json` content type.
-//
-// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-func (c *Client) UploadExecutionTranscript(ctx context.Context, executionId ExecutionId, body UploadExecutionTranscriptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadExecutionTranscriptRequest(c.Server, executionId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -17292,6 +17053,55 @@ func (c *Client) GetWorkspaceCycleScope(ctx context.Context, workspaceId Workspa
 	return c.Client.Do(req)
 }
 
+// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+//
+// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+func (c *Client) GetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceDecisionChannelRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceDecisionChannelWithBody Choose where your decision requests reach you besides Reviews
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *Client) SetWorkspaceDecisionChannelWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceDecisionChannelRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *Client) SetWorkspaceDecisionChannel(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceDecisionChannelRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 //
 // Corresponds with DELETE /workspaces/{workspaceId}/directory (the `DisconnectWorkspaceDirectory` operationId).
@@ -17431,59 +17241,6 @@ func (c *Client) RotateWorkspaceDirectoryToken(ctx context.Context, workspaceId 
 	return c.Client.Do(req)
 }
 
-// GetWorkspaceExecutionPolicy Read how much of a run this workspace keeps, and for how long
-//
-// Corresponds with GET /workspaces/{workspaceId}/execution-policy (the `GetWorkspaceExecutionPolicy` operationId).
-func (c *Client) GetWorkspaceExecutionPolicy(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetWorkspaceExecutionPolicyRequest(c.Server, workspaceId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// SetWorkspaceExecutionPolicyWithBody Set how much of a run this workspace keeps, and for how long
-//
-// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-//
-// Takes any type of body and a specified content type.
-//
-// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-func (c *Client) SetWorkspaceExecutionPolicyWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetWorkspaceExecutionPolicyRequestWithBody(c.Server, workspaceId, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// SetWorkspaceExecutionPolicy Set how much of a run this workspace keeps, and for how long
-//
-// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-//
-// Takes a body of the `application/json` content type.
-//
-// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-func (c *Client) SetWorkspaceExecutionPolicy(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceExecutionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetWorkspaceExecutionPolicyRequest(c.Server, workspaceId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 // ListWorkspaceExecutions The runs in this workspace, most recently finished first
 //
 // Only runs on issues the caller may read. Pass state to narrow it, which is how the review queue asks for the runs waiting for somebody.
@@ -17574,21 +17331,6 @@ func (c *Client) CancelWorkspaceExecutionWithBody(ctx context.Context, workspace
 // Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/cancel (the `CancelWorkspaceExecution` operationId).
 func (c *Client) CancelWorkspaceExecution(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body CancelWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCancelWorkspaceExecutionRequest(c.Server, workspaceId, executionId, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// ListWorkspaceExecutionLogs What this run printed, oldest batch first
-//
-// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
-func (c *Client) ListWorkspaceExecutionLogs(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListWorkspaceExecutionLogsRequest(c.Server, workspaceId, executionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -18009,23 +17751,6 @@ func (c *Client) ListWorkspaceExecutionServices(ctx context.Context, workspaceId
 // Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/timeline (the `ListWorkspaceExecutionTimeline` operationId).
 func (c *Client) ListWorkspaceExecutionTimeline(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListWorkspaceExecutionTimelineRequest(c.Server, workspaceId, executionId, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// ListWorkspaceExecutionTranscript What the coding agent did, oldest chunk first
-//
-// Empty once the retention window has passed, or where the workspace keeps summaries only. The timeline is kept either way.
-//
-// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/transcript (the `ListWorkspaceExecutionTranscript` operationId).
-func (c *Client) ListWorkspaceExecutionTranscript(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTranscriptParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListWorkspaceExecutionTranscriptRequest(c.Server, workspaceId, executionId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -19160,6 +18885,21 @@ func (c *Client) RecordWorkspaceIssueEvidence(ctx context.Context, workspaceId W
 // Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
 func (c *Client) DeleteWorkspaceIssueEvidence(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteWorkspaceIssueEvidenceRequest(c.Server, workspaceId, issueId, evidenceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+func (c *Client) GetWorkspaceIssueDecisionRight(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceIssueDecisionRightRequest(c.Server, workspaceId, issueId)
 	if err != nil {
 		return nil, err
 	}
@@ -20716,6 +20456,23 @@ func (c *Client) UnarchiveWorkspaceProject(ctx context.Context, workspaceId Work
 // Corresponds with POST /workspaces/{workspaceId}/restore (the `RestoreWorkspace` operationId).
 func (c *Client) RestoreWorkspace(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRestoreWorkspaceRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+//
+// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+//
+// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+func (c *Client) GetWorkspaceReviewQueue(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceReviewQueueRequest(c.Server, workspaceId)
 	if err != nil {
 		return nil, err
 	}
@@ -24224,134 +23981,6 @@ func NewUploadExecutionArtifactRequestWithBody(server string, executionId Execut
 	return req, nil
 }
 
-// NewUploadExecutionLogsRequest calls the generic UploadExecutionLogs builder with application/json body
-func NewUploadExecutionLogsRequest(server string, executionId ExecutionId, body UploadExecutionLogsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUploadExecutionLogsRequestWithBody(server, executionId, "application/json", bodyReader)
-}
-
-// NewUploadExecutionLogsRequestWithBody constructs an http.Request for the UploadExecutionLogs method, with any body, and a specified content type
-func NewUploadExecutionLogsRequestWithBody(server string, executionId ExecutionId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/runners/me/executions/%s/logs", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewGetExecutionStreamsRequest constructs an http.Request for the GetExecutionStreams method
-func NewGetExecutionStreamsRequest(server string, executionId ExecutionId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/runners/me/executions/%s/streams", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewUploadExecutionTranscriptRequest calls the generic UploadExecutionTranscript builder with application/json body
-func NewUploadExecutionTranscriptRequest(server string, executionId ExecutionId, body UploadExecutionTranscriptJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewUploadExecutionTranscriptRequestWithBody(server, executionId, "application/json", bodyReader)
-}
-
-// NewUploadExecutionTranscriptRequestWithBody constructs an http.Request for the UploadExecutionTranscript method, with any body, and a specified content type
-func NewUploadExecutionTranscriptRequestWithBody(server string, executionId ExecutionId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/runners/me/executions/%s/transcript", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewExchangeRunnerTokenRequest calls the generic ExchangeRunnerToken builder with application/json body
 func NewExchangeRunnerTokenRequest(server string, body ExchangeRunnerTokenJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -27697,6 +27326,87 @@ func NewGetWorkspaceCycleScopeRequest(server string, workspaceId WorkspaceId, cy
 	return req, nil
 }
 
+// NewGetWorkspaceDecisionChannelRequest constructs an http.Request for the GetWorkspaceDecisionChannel method
+func NewGetWorkspaceDecisionChannelRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/decision-channel", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetWorkspaceDecisionChannelRequest calls the generic SetWorkspaceDecisionChannel builder with application/json body
+func NewSetWorkspaceDecisionChannelRequest(server string, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceDecisionChannelRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceDecisionChannelRequestWithBody constructs an http.Request for the SetWorkspaceDecisionChannel method, with any body, and a specified content type
+func NewSetWorkspaceDecisionChannelRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/decision-channel", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewDisconnectWorkspaceDirectoryRequest constructs an http.Request for the DisconnectWorkspaceDirectory method
 func NewDisconnectWorkspaceDirectoryRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
 	var err error
@@ -28028,87 +27738,6 @@ func NewRotateWorkspaceDirectoryTokenRequest(server string, workspaceId Workspac
 	return req, nil
 }
 
-// NewGetWorkspaceExecutionPolicyRequest constructs an http.Request for the GetWorkspaceExecutionPolicy method
-func NewGetWorkspaceExecutionPolicyRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/workspaces/%s/execution-policy", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewSetWorkspaceExecutionPolicyRequest calls the generic SetWorkspaceExecutionPolicy builder with application/json body
-func NewSetWorkspaceExecutionPolicyRequest(server string, workspaceId WorkspaceId, body SetWorkspaceExecutionPolicyJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewSetWorkspaceExecutionPolicyRequestWithBody(server, workspaceId, "application/json", bodyReader)
-}
-
-// NewSetWorkspaceExecutionPolicyRequestWithBody constructs an http.Request for the SetWorkspaceExecutionPolicy method, with any body, and a specified content type
-func NewSetWorkspaceExecutionPolicyRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/workspaces/%s/execution-policy", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewListWorkspaceExecutionsRequest constructs an http.Request for the ListWorkspaceExecutions method
 func NewListWorkspaceExecutionsRequest(server string, workspaceId WorkspaceId, params *ListWorkspaceExecutionsParams) (*http.Request, error) {
 	var err error
@@ -28362,86 +27991,6 @@ func NewCancelWorkspaceExecutionRequestWithBody(server string, workspaceId Works
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewListWorkspaceExecutionLogsRequest constructs an http.Request for the ListWorkspaceExecutionLogs method
-func NewListWorkspaceExecutionLogsRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/logs", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		// queryValues collects non-styled parameters (passthrough, JSON)
-		// that are safe to round-trip through url.Values.Encode().
-		queryValues := queryURL.Query()
-		// rawQueryFragments collects pre-encoded query fragments from
-		// styled parameters, preserving literal commas as delimiters
-		// per the OpenAPI spec (e.g. "color=blue,black,brown").
-		var rawQueryFragments []string
-
-		if params.After != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int64"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if encoded := queryValues.Encode(); encoded != "" {
-			rawQueryFragments = append(rawQueryFragments, encoded)
-		}
-		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -29273,86 +28822,6 @@ func NewListWorkspaceExecutionTimelineRequest(server string, workspaceId Workspa
 	}
 
 	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/timeline", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		// queryValues collects non-styled parameters (passthrough, JSON)
-		// that are safe to round-trip through url.Values.Encode().
-		queryValues := queryURL.Query()
-		// rawQueryFragments collects pre-encoded query fragments from
-		// styled parameters, preserving literal commas as delimiters
-		// per the OpenAPI spec (e.g. "color=blue,black,brown").
-		var rawQueryFragments []string
-
-		if params.After != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "after", *params.After, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int64"}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if params.Limit != nil {
-
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			} else {
-				for _, qp := range strings.Split(queryFrag, "&") {
-					rawQueryFragments = append(rawQueryFragments, qp)
-				}
-			}
-
-		}
-
-		if encoded := queryValues.Encode(); encoded != "" {
-			rawQueryFragments = append(rawQueryFragments, encoded)
-		}
-		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
-	}
-
-	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewListWorkspaceExecutionTranscriptRequest constructs an http.Request for the ListWorkspaceExecutionTranscript method
-func NewListWorkspaceExecutionTranscriptRequest(server string, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTranscriptParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "executionId", executionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/workspaces/%s/executions/%s/transcript", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -32103,6 +31572,47 @@ func NewDeleteWorkspaceIssueEvidenceRequest(server string, workspaceId Workspace
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceIssueDecisionRightRequest constructs an http.Request for the GetWorkspaceIssueDecisionRight method
+func NewGetWorkspaceIssueDecisionRightRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/decision-right", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -35612,6 +35122,40 @@ func NewRestoreWorkspaceRequest(server string, workspaceId WorkspaceId) (*http.R
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceReviewQueueRequest constructs an http.Request for the GetWorkspaceReviewQueue method
+func NewGetWorkspaceReviewQueueRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/reviews", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -40801,51 +40345,6 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /runners/me/executions/{executionId}/artifacts (the `UploadExecutionArtifact` operationId).
 	UploadExecutionArtifactWithBodyWithResponse(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExecutionArtifactResponse, error)
 
-	// UploadExecutionLogsWithBodyWithResponse Send a batch of this run's command output
-	//
-	// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-	//
-	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-	UploadExecutionLogsWithBodyWithResponse(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExecutionLogsResponse, error)
-
-	// UploadExecutionLogsWithResponse Send a batch of this run's command output
-	//
-	// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-	//
-	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-	UploadExecutionLogsWithResponse(ctx context.Context, executionId ExecutionId, body UploadExecutionLogsJSONRequestBody, reqEditors ...RequestEditorFn) (*UploadExecutionLogsResponse, error)
-
-	// GetExecutionStreamsWithResponse How far each of this run's streams got
-	//
-	// What a machine reads after a restart to know where to carry on from, so a reconnect resends nothing it does not have to.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with GET /runners/me/executions/{executionId}/streams (the `GetExecutionStreams` operationId).
-	GetExecutionStreamsWithResponse(ctx context.Context, executionId ExecutionId, reqEditors ...RequestEditorFn) (*GetExecutionStreamsResponse, error)
-
-	// UploadExecutionTranscriptWithBodyWithResponse Send a chunk of the coding agent's normalised event stream
-	//
-	// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-	//
-	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-	UploadExecutionTranscriptWithBodyWithResponse(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExecutionTranscriptResponse, error)
-
-	// UploadExecutionTranscriptWithResponse Send a chunk of the coding agent's normalised event stream
-	//
-	// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-	//
-	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-	UploadExecutionTranscriptWithResponse(ctx context.Context, executionId ExecutionId, body UploadExecutionTranscriptJSONRequestBody, reqEditors ...RequestEditorFn) (*UploadExecutionTranscriptResponse, error)
-
 	// ExchangeRunnerTokenWithBodyWithResponse Trade a signed assertion for a short-lived access token and a channel ticket
 	//
 	// Authenticated by the refresh secret and an Ed25519 signature over the assertion, both carried in the body, so this endpoint takes no session and no bearer token. The signature covers the version, the runner id, the nonce, the timestamp and the audience, joined by newlines. A nonce is accepted once.
@@ -41603,6 +41102,27 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/cycles/{cycleId}/scope (the `GetWorkspaceCycleScope` operationId).
 	GetWorkspaceCycleScopeWithResponse(ctx context.Context, workspaceId WorkspaceId, cycleId CycleId, reqEditors ...RequestEditorFn) (*GetWorkspaceCycleScopeResponse, error)
 
+	// GetWorkspaceDecisionChannelWithResponse Read where your decision requests reach you besides Reviews
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+	GetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceDecisionChannelResponse, error)
+
+	// SetWorkspaceDecisionChannelWithBodyWithResponse Choose where your decision requests reach you besides Reviews
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannelWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error)
+
+	// SetWorkspaceDecisionChannelWithResponse Choose where your decision requests reach you besides Reviews
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+	SetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error)
+
 	// DisconnectWorkspaceDirectoryWithResponse Disconnect the directory, leaving every member as they are
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -41666,31 +41186,6 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/directory/token (the `RotateWorkspaceDirectoryToken` operationId).
 	RotateWorkspaceDirectoryTokenWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RotateWorkspaceDirectoryTokenResponse, error)
 
-	// GetWorkspaceExecutionPolicyWithResponse Read how much of a run this workspace keeps, and for how long
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/execution-policy (the `GetWorkspaceExecutionPolicy` operationId).
-	GetWorkspaceExecutionPolicyWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionPolicyResponse, error)
-
-	// SetWorkspaceExecutionPolicyWithBodyWithResponse Set how much of a run this workspace keeps, and for how long
-	//
-	// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-	//
-	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-	SetWorkspaceExecutionPolicyWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceExecutionPolicyResponse, error)
-
-	// SetWorkspaceExecutionPolicyWithResponse Set how much of a run this workspace keeps, and for how long
-	//
-	// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-	//
-	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-	SetWorkspaceExecutionPolicyWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceExecutionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceExecutionPolicyResponse, error)
-
 	// ListWorkspaceExecutionsWithResponse The runs in this workspace, most recently finished first
 	//
 	// Only runs on issues the caller may read. Pass state to narrow it, which is how the review queue asks for the runs waiting for somebody.
@@ -41738,13 +41233,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/executions/{executionId}/cancel (the `CancelWorkspaceExecution` operationId).
 	CancelWorkspaceExecutionWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, body CancelWorkspaceExecutionJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelWorkspaceExecutionResponse, error)
-
-	// ListWorkspaceExecutionLogsWithResponse What this run printed, oldest batch first
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
-	ListWorkspaceExecutionLogsWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionLogsResponse, error)
 
 	// ListWorkspaceExecutionPlansWithResponse Every plan this run has proposed, oldest revision first
 	//
@@ -41945,15 +41433,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/timeline (the `ListWorkspaceExecutionTimeline` operationId).
 	ListWorkspaceExecutionTimelineWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTimelineParams, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionTimelineResponse, error)
-
-	// ListWorkspaceExecutionTranscriptWithResponse What the coding agent did, oldest chunk first
-	//
-	// Empty once the retention window has passed, or where the workspace keeps summaries only. The timeline is kept either way.
-	//
-	// Returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/transcript (the `ListWorkspaceExecutionTranscript` operationId).
-	ListWorkspaceExecutionTranscriptWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTranscriptParams, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionTranscriptResponse, error)
 
 	// ListWorkspaceImportsWithResponse List what this workspace has imported, newest first
 	//
@@ -42458,6 +41937,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId} (the `DeleteWorkspaceIssueEvidence` operationId).
 	DeleteWorkspaceIssueEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId, reqEditors ...RequestEditorFn) (*DeleteWorkspaceIssueEvidenceResponse, error)
+
+	// GetWorkspaceIssueDecisionRightWithResponse Whether the caller may answer this issue's questions and approve its runs
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+	GetWorkspaceIssueDecisionRightWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueDecisionRightResponse, error)
 
 	// RecallWorkspaceIssueWithResponse Take this issue back from the agent holding it
 	//
@@ -43140,6 +42626,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/restore (the `RestoreWorkspace` operationId).
 	RestoreWorkspaceWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RestoreWorkspaceResponse, error)
+
+	// GetWorkspaceReviewQueueWithResponse Every decision a person owes a run, oldest first
+	//
+	// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+	GetWorkspaceReviewQueueWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceReviewQueueResponse, error)
 
 	// ListWorkspaceRunnersWithResponse Every machine connected to this workspace, newest first
 	//
@@ -46454,255 +45949,6 @@ func (r UploadExecutionArtifactResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UploadExecutionArtifactResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type UploadExecutionLogsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON202 the response for an HTTP 202 `application/json` response
-	JSON202 *ExecutionChunkReceipt
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
-	ApplicationproblemJSON404 *Problem
-	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
-	ApplicationproblemJSON409 *ExecutionConflict
-	// ApplicationproblemJSON413 the response for an HTTP 413 `application/problem+json` response
-	ApplicationproblemJSON413 *Problem
-	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
-	ApplicationproblemJSON422 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON202 returns the response for an HTTP 202 `application/json` response
-func (r UploadExecutionLogsResponse) GetJSON202() *ExecutionChunkReceipt {
-	return r.JSON202
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r UploadExecutionLogsResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r UploadExecutionLogsResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
-func (r UploadExecutionLogsResponse) GetApplicationproblemJSON404() *Problem {
-	return r.ApplicationproblemJSON404
-}
-
-// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
-func (r UploadExecutionLogsResponse) GetApplicationproblemJSON409() *ExecutionConflict {
-	return r.ApplicationproblemJSON409
-}
-
-// GetApplicationproblemJSON413 returns the response for an HTTP 413 `application/problem+json` response
-func (r UploadExecutionLogsResponse) GetApplicationproblemJSON413() *Problem {
-	return r.ApplicationproblemJSON413
-}
-
-// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
-func (r UploadExecutionLogsResponse) GetApplicationproblemJSON422() *Problem {
-	return r.ApplicationproblemJSON422
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r UploadExecutionLogsResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r UploadExecutionLogsResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r UploadExecutionLogsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UploadExecutionLogsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r UploadExecutionLogsResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type GetExecutionStreamsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]ExecutionStreamCursor
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
-	ApplicationproblemJSON404 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r GetExecutionStreamsResponse) GetJSON200() *[]ExecutionStreamCursor {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r GetExecutionStreamsResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r GetExecutionStreamsResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
-func (r GetExecutionStreamsResponse) GetApplicationproblemJSON404() *Problem {
-	return r.ApplicationproblemJSON404
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r GetExecutionStreamsResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r GetExecutionStreamsResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r GetExecutionStreamsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetExecutionStreamsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r GetExecutionStreamsResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type UploadExecutionTranscriptResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON202 the response for an HTTP 202 `application/json` response
-	JSON202 *ExecutionChunkReceipt
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
-	ApplicationproblemJSON404 *Problem
-	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
-	ApplicationproblemJSON409 *ExecutionConflict
-	// ApplicationproblemJSON413 the response for an HTTP 413 `application/problem+json` response
-	ApplicationproblemJSON413 *Problem
-	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
-	ApplicationproblemJSON422 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON202 returns the response for an HTTP 202 `application/json` response
-func (r UploadExecutionTranscriptResponse) GetJSON202() *ExecutionChunkReceipt {
-	return r.JSON202
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r UploadExecutionTranscriptResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r UploadExecutionTranscriptResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
-func (r UploadExecutionTranscriptResponse) GetApplicationproblemJSON404() *Problem {
-	return r.ApplicationproblemJSON404
-}
-
-// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
-func (r UploadExecutionTranscriptResponse) GetApplicationproblemJSON409() *ExecutionConflict {
-	return r.ApplicationproblemJSON409
-}
-
-// GetApplicationproblemJSON413 returns the response for an HTTP 413 `application/problem+json` response
-func (r UploadExecutionTranscriptResponse) GetApplicationproblemJSON413() *Problem {
-	return r.ApplicationproblemJSON413
-}
-
-// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
-func (r UploadExecutionTranscriptResponse) GetApplicationproblemJSON422() *Problem {
-	return r.ApplicationproblemJSON422
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r UploadExecutionTranscriptResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r UploadExecutionTranscriptResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r UploadExecutionTranscriptResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r UploadExecutionTranscriptResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r UploadExecutionTranscriptResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -52046,6 +51292,137 @@ func (r GetWorkspaceCycleScopeResponse) ContentType() string {
 	return ""
 }
 
+type GetWorkspaceDecisionChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DecisionChannelSetting
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceDecisionChannelResponse) GetJSON200() *DecisionChannelSetting {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceDecisionChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceDecisionChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceDecisionChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceDecisionChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceDecisionChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DecisionChannelSetting
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceDecisionChannelResponse) GetJSON200() *DecisionChannelSetting {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceDecisionChannelResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceDecisionChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceDecisionChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceDecisionChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceDecisionChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type DisconnectWorkspaceDirectoryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -52605,137 +51982,6 @@ func (r RotateWorkspaceDirectoryTokenResponse) ContentType() string {
 	return ""
 }
 
-type GetWorkspaceExecutionPolicyResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *WorkspaceExecutionPolicy
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r GetWorkspaceExecutionPolicyResponse) GetJSON200() *WorkspaceExecutionPolicy {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r GetWorkspaceExecutionPolicyResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r GetWorkspaceExecutionPolicyResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r GetWorkspaceExecutionPolicyResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r GetWorkspaceExecutionPolicyResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r GetWorkspaceExecutionPolicyResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetWorkspaceExecutionPolicyResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r GetWorkspaceExecutionPolicyResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type SetWorkspaceExecutionPolicyResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *WorkspaceExecutionPolicy
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
-	ApplicationproblemJSON422 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SetWorkspaceExecutionPolicyResponse) GetJSON200() *WorkspaceExecutionPolicy {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r SetWorkspaceExecutionPolicyResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r SetWorkspaceExecutionPolicyResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
-func (r SetWorkspaceExecutionPolicyResponse) GetApplicationproblemJSON422() *Problem {
-	return r.ApplicationproblemJSON422
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r SetWorkspaceExecutionPolicyResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r SetWorkspaceExecutionPolicyResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r SetWorkspaceExecutionPolicyResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r SetWorkspaceExecutionPolicyResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r SetWorkspaceExecutionPolicyResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
 type ListWorkspaceExecutionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -53083,75 +52329,6 @@ func (r CancelWorkspaceExecutionResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CancelWorkspaceExecutionResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type ListWorkspaceExecutionLogsResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]ExecutionLogChunk
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
-	ApplicationproblemJSON404 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListWorkspaceExecutionLogsResponse) GetJSON200() *[]ExecutionLogChunk {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r ListWorkspaceExecutionLogsResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r ListWorkspaceExecutionLogsResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
-func (r ListWorkspaceExecutionLogsResponse) GetApplicationproblemJSON404() *Problem {
-	return r.ApplicationproblemJSON404
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r ListWorkspaceExecutionLogsResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r ListWorkspaceExecutionLogsResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r ListWorkspaceExecutionLogsResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListWorkspaceExecutionLogsResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ListWorkspaceExecutionLogsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -54423,75 +53600,6 @@ func (r ListWorkspaceExecutionTimelineResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListWorkspaceExecutionTimelineResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-type ListWorkspaceExecutionTranscriptResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *[]ExecutionTranscriptChunk
-	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
-	ApplicationproblemJSON401 *Problem
-	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
-	ApplicationproblemJSON403 *Forbidden
-	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
-	ApplicationproblemJSON404 *Problem
-	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
-	ApplicationproblemJSON500 *Problem
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r ListWorkspaceExecutionTranscriptResponse) GetJSON200() *[]ExecutionTranscriptChunk {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
-func (r ListWorkspaceExecutionTranscriptResponse) GetApplicationproblemJSON401() *Problem {
-	return r.ApplicationproblemJSON401
-}
-
-// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
-func (r ListWorkspaceExecutionTranscriptResponse) GetApplicationproblemJSON403() *Forbidden {
-	return r.ApplicationproblemJSON403
-}
-
-// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
-func (r ListWorkspaceExecutionTranscriptResponse) GetApplicationproblemJSON404() *Problem {
-	return r.ApplicationproblemJSON404
-}
-
-// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
-func (r ListWorkspaceExecutionTranscriptResponse) GetApplicationproblemJSON500() *Problem {
-	return r.ApplicationproblemJSON500
-}
-
-// GetBody returns the raw response body bytes
-func (r ListWorkspaceExecutionTranscriptResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r ListWorkspaceExecutionTranscriptResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListWorkspaceExecutionTranscriptResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r ListWorkspaceExecutionTranscriptResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58429,6 +57537,75 @@ func (r DeleteWorkspaceIssueEvidenceResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r DeleteWorkspaceIssueEvidenceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceIssueDecisionRightResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DecisionRight
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetJSON200() *DecisionRight {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceIssueDecisionRightResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceIssueDecisionRightResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceIssueDecisionRightResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceIssueDecisionRightResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceIssueDecisionRightResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -63589,6 +62766,68 @@ func (r RestoreWorkspaceResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RestoreWorkspaceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceReviewQueueResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ReviewQueue
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceReviewQueueResponse) GetJSON200() *ReviewQueue {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceReviewQueueResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceReviewQueueResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceReviewQueueResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceReviewQueueResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceReviewQueueResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceReviewQueueResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceReviewQueueResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -71731,81 +70970,6 @@ func (c *ClientWithResponses) UploadExecutionArtifactWithBodyWithResponse(ctx co
 	return ParseUploadExecutionArtifactResponse(rsp)
 }
 
-// UploadExecutionLogsWithBodyWithResponse Send a batch of this run's command output
-//
-// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-//
-// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-func (c *ClientWithResponses) UploadExecutionLogsWithBodyWithResponse(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExecutionLogsResponse, error) {
-	rsp, err := c.UploadExecutionLogsWithBody(ctx, executionId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUploadExecutionLogsResponse(rsp)
-}
-
-// UploadExecutionLogsWithResponse Send a batch of this run's command output
-//
-// Command output is too voluminous for the channel, so it travels here instead. A batch is stored whole and identified by the digest of what it carries, so a machine that replays one after a reconnect is answered with the receipt it already had rather than storing it twice. Send the body gzipped with Content-Encoding when it is worth compressing.
-//
-// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /runners/me/executions/{executionId}/logs (the `UploadExecutionLogs` operationId).
-func (c *ClientWithResponses) UploadExecutionLogsWithResponse(ctx context.Context, executionId ExecutionId, body UploadExecutionLogsJSONRequestBody, reqEditors ...RequestEditorFn) (*UploadExecutionLogsResponse, error) {
-	rsp, err := c.UploadExecutionLogs(ctx, executionId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUploadExecutionLogsResponse(rsp)
-}
-
-// GetExecutionStreamsWithResponse How far each of this run's streams got
-//
-// What a machine reads after a restart to know where to carry on from, so a reconnect resends nothing it does not have to.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with GET /runners/me/executions/{executionId}/streams (the `GetExecutionStreams` operationId).
-func (c *ClientWithResponses) GetExecutionStreamsWithResponse(ctx context.Context, executionId ExecutionId, reqEditors ...RequestEditorFn) (*GetExecutionStreamsResponse, error) {
-	rsp, err := c.GetExecutionStreams(ctx, executionId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetExecutionStreamsResponse(rsp)
-}
-
-// UploadExecutionTranscriptWithBodyWithResponse Send a chunk of the coding agent's normalised event stream
-//
-// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-//
-// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-func (c *ClientWithResponses) UploadExecutionTranscriptWithBodyWithResponse(ctx context.Context, executionId ExecutionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadExecutionTranscriptResponse, error) {
-	rsp, err := c.UploadExecutionTranscriptWithBody(ctx, executionId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUploadExecutionTranscriptResponse(rsp)
-}
-
-// UploadExecutionTranscriptWithResponse Send a chunk of the coding agent's normalised event stream
-//
-// Ordered by sequence and resumable: ask the streams path what the server already holds and carry on from there. A workspace whose telemetry is minimal refuses these and says so.
-//
-// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with POST /runners/me/executions/{executionId}/transcript (the `UploadExecutionTranscript` operationId).
-func (c *ClientWithResponses) UploadExecutionTranscriptWithResponse(ctx context.Context, executionId ExecutionId, body UploadExecutionTranscriptJSONRequestBody, reqEditors ...RequestEditorFn) (*UploadExecutionTranscriptResponse, error) {
-	rsp, err := c.UploadExecutionTranscript(ctx, executionId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseUploadExecutionTranscriptResponse(rsp)
-}
-
 // ExchangeRunnerTokenWithBodyWithResponse Trade a signed assertion for a short-lived access token and a channel ticket
 //
 // Authenticated by the refresh secret and an Ed25519 signature over the assertion, both carried in the body, so this endpoint takes no session and no bearer token. The signature covers the version, the runner id, the nonce, the timestamp and the audience, joined by newlines. A nonce is accepted once.
@@ -73169,6 +72333,45 @@ func (c *ClientWithResponses) GetWorkspaceCycleScopeWithResponse(ctx context.Con
 	return ParseGetWorkspaceCycleScopeResponse(rsp)
 }
 
+// GetWorkspaceDecisionChannelWithResponse Read where your decision requests reach you besides Reviews
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/decision-channel (the `GetWorkspaceDecisionChannel` operationId).
+func (c *ClientWithResponses) GetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceDecisionChannelResponse, error) {
+	rsp, err := c.GetWorkspaceDecisionChannel(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceDecisionChannelResponse(rsp)
+}
+
+// SetWorkspaceDecisionChannelWithBodyWithResponse Choose where your decision requests reach you besides Reviews
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *ClientWithResponses) SetWorkspaceDecisionChannelWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error) {
+	rsp, err := c.SetWorkspaceDecisionChannelWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceDecisionChannelResponse(rsp)
+}
+
+// SetWorkspaceDecisionChannelWithResponse Choose where your decision requests reach you besides Reviews
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/decision-channel (the `SetWorkspaceDecisionChannel` operationId).
+func (c *ClientWithResponses) SetWorkspaceDecisionChannelWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceDecisionChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceDecisionChannelResponse, error) {
+	rsp, err := c.SetWorkspaceDecisionChannel(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceDecisionChannelResponse(rsp)
+}
+
 // DisconnectWorkspaceDirectoryWithResponse Disconnect the directory, leaving every member as they are
 //
 // Returns a wrapper object for the known response body format(s).
@@ -73286,49 +72489,6 @@ func (c *ClientWithResponses) RotateWorkspaceDirectoryTokenWithResponse(ctx cont
 	return ParseRotateWorkspaceDirectoryTokenResponse(rsp)
 }
 
-// GetWorkspaceExecutionPolicyWithResponse Read how much of a run this workspace keeps, and for how long
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with GET /workspaces/{workspaceId}/execution-policy (the `GetWorkspaceExecutionPolicy` operationId).
-func (c *ClientWithResponses) GetWorkspaceExecutionPolicyWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceExecutionPolicyResponse, error) {
-	rsp, err := c.GetWorkspaceExecutionPolicy(ctx, workspaceId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetWorkspaceExecutionPolicyResponse(rsp)
-}
-
-// SetWorkspaceExecutionPolicyWithBodyWithResponse Set how much of a run this workspace keeps, and for how long
-//
-// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-//
-// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-func (c *ClientWithResponses) SetWorkspaceExecutionPolicyWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceExecutionPolicyResponse, error) {
-	rsp, err := c.SetWorkspaceExecutionPolicyWithBody(ctx, workspaceId, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetWorkspaceExecutionPolicyResponse(rsp)
-}
-
-// SetWorkspaceExecutionPolicyWithResponse Set how much of a run this workspace keeps, and for how long
-//
-// On minimal the server stops accepting full transcripts, so the setting holds even against a machine that has not noticed it changed.
-//
-// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with PUT /workspaces/{workspaceId}/execution-policy (the `SetWorkspaceExecutionPolicy` operationId).
-func (c *ClientWithResponses) SetWorkspaceExecutionPolicyWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceExecutionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceExecutionPolicyResponse, error) {
-	rsp, err := c.SetWorkspaceExecutionPolicy(ctx, workspaceId, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetWorkspaceExecutionPolicyResponse(rsp)
-}
-
 // ListWorkspaceExecutionsWithResponse The runs in this workspace, most recently finished first
 //
 // Only runs on issues the caller may read. Pass state to narrow it, which is how the review queue asks for the runs waiting for somebody.
@@ -73411,19 +72571,6 @@ func (c *ClientWithResponses) CancelWorkspaceExecutionWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseCancelWorkspaceExecutionResponse(rsp)
-}
-
-// ListWorkspaceExecutionLogsWithResponse What this run printed, oldest batch first
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/logs (the `ListWorkspaceExecutionLogs` operationId).
-func (c *ClientWithResponses) ListWorkspaceExecutionLogsWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionLogsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionLogsResponse, error) {
-	rsp, err := c.ListWorkspaceExecutionLogs(ctx, workspaceId, executionId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListWorkspaceExecutionLogsResponse(rsp)
 }
 
 // ListWorkspaceExecutionPlansWithResponse Every plan this run has proposed, oldest revision first
@@ -73768,21 +72915,6 @@ func (c *ClientWithResponses) ListWorkspaceExecutionTimelineWithResponse(ctx con
 		return nil, err
 	}
 	return ParseListWorkspaceExecutionTimelineResponse(rsp)
-}
-
-// ListWorkspaceExecutionTranscriptWithResponse What the coding agent did, oldest chunk first
-//
-// Empty once the retention window has passed, or where the workspace keeps summaries only. The timeline is kept either way.
-//
-// Returns a wrapper object for the known response body format(s).
-//
-// Corresponds with GET /workspaces/{workspaceId}/executions/{executionId}/transcript (the `ListWorkspaceExecutionTranscript` operationId).
-func (c *ClientWithResponses) ListWorkspaceExecutionTranscriptWithResponse(ctx context.Context, workspaceId WorkspaceId, executionId ExecutionId, params *ListWorkspaceExecutionTranscriptParams, reqEditors ...RequestEditorFn) (*ListWorkspaceExecutionTranscriptResponse, error) {
-	rsp, err := c.ListWorkspaceExecutionTranscript(ctx, workspaceId, executionId, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListWorkspaceExecutionTranscriptResponse(rsp)
 }
 
 // ListWorkspaceImportsWithResponse List what this workspace has imported, newest first
@@ -74707,6 +73839,19 @@ func (c *ClientWithResponses) DeleteWorkspaceIssueEvidenceWithResponse(ctx conte
 		return nil, err
 	}
 	return ParseDeleteWorkspaceIssueEvidenceResponse(rsp)
+}
+
+// GetWorkspaceIssueDecisionRightWithResponse Whether the caller may answer this issue's questions and approve its runs
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/decision-right (the `GetWorkspaceIssueDecisionRight` operationId).
+func (c *ClientWithResponses) GetWorkspaceIssueDecisionRightWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*GetWorkspaceIssueDecisionRightResponse, error) {
+	rsp, err := c.GetWorkspaceIssueDecisionRight(ctx, workspaceId, issueId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceIssueDecisionRightResponse(rsp)
 }
 
 // RecallWorkspaceIssueWithResponse Take this issue back from the agent holding it
@@ -75965,6 +75110,21 @@ func (c *ClientWithResponses) RestoreWorkspaceWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseRestoreWorkspaceResponse(rsp)
+}
+
+// GetWorkspaceReviewQueueWithResponse Every decision a person owes a run, oldest first
+//
+// Open questions, plans waiting for approval, and changes waiting for review, on issues the caller may read. Each carries whether the caller may decide it and who else can.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/reviews (the `GetWorkspaceReviewQueue` operationId).
+func (c *ClientWithResponses) GetWorkspaceReviewQueueWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceReviewQueueResponse, error) {
+	rsp, err := c.GetWorkspaceReviewQueue(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceReviewQueueResponse(rsp)
 }
 
 // ListWorkspaceRunnersWithResponse Every machine connected to this workspace, newest first
@@ -79605,210 +78765,6 @@ func ParseUploadExecutionArtifactResponse(rsp *http.Response) (*UploadExecutionA
 			return nil, err
 		}
 		response.JSON201 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest ExecutionConflict
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON409 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON413 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUploadExecutionLogsResponse parses an HTTP response from a UploadExecutionLogsWithResponse call
-func ParseUploadExecutionLogsResponse(rsp *http.Response) (*UploadExecutionLogsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UploadExecutionLogsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
-		var dest ExecutionChunkReceipt
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON202 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest ExecutionConflict
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON409 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON413 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseGetExecutionStreamsResponse parses an HTTP response from a GetExecutionStreamsWithResponse call
-func ParseGetExecutionStreamsResponse(rsp *http.Response) (*GetExecutionStreamsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetExecutionStreamsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []ExecutionStreamCursor
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseUploadExecutionTranscriptResponse parses an HTTP response from a UploadExecutionTranscriptWithResponse call
-func ParseUploadExecutionTranscriptResponse(rsp *http.Response) (*UploadExecutionTranscriptResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &UploadExecutionTranscriptResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
-		var dest ExecutionChunkReceipt
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON202 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Problem
@@ -84145,6 +83101,107 @@ func ParseGetWorkspaceCycleScopeResponse(rsp *http.Response) (*GetWorkspaceCycle
 	return response, nil
 }
 
+// ParseGetWorkspaceDecisionChannelResponse parses an HTTP response from a GetWorkspaceDecisionChannelWithResponse call
+func ParseGetWorkspaceDecisionChannelResponse(rsp *http.Response) (*GetWorkspaceDecisionChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceDecisionChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecisionChannelSetting
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceDecisionChannelResponse parses an HTTP response from a SetWorkspaceDecisionChannelWithResponse call
+func ParseSetWorkspaceDecisionChannelResponse(rsp *http.Response) (*SetWorkspaceDecisionChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceDecisionChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecisionChannelSetting
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDisconnectWorkspaceDirectoryResponse parses an HTTP response from a DisconnectWorkspaceDirectoryWithResponse call
 func ParseDisconnectWorkspaceDirectoryResponse(rsp *http.Response) (*DisconnectWorkspaceDirectoryResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -84587,107 +83644,6 @@ func ParseRotateWorkspaceDirectoryTokenResponse(rsp *http.Response) (*RotateWork
 	return response, nil
 }
 
-// ParseGetWorkspaceExecutionPolicyResponse parses an HTTP response from a GetWorkspaceExecutionPolicyWithResponse call
-func ParseGetWorkspaceExecutionPolicyResponse(rsp *http.Response) (*GetWorkspaceExecutionPolicyResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetWorkspaceExecutionPolicyResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest WorkspaceExecutionPolicy
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseSetWorkspaceExecutionPolicyResponse parses an HTTP response from a SetWorkspaceExecutionPolicyWithResponse call
-func ParseSetWorkspaceExecutionPolicyResponse(rsp *http.Response) (*SetWorkspaceExecutionPolicyResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &SetWorkspaceExecutionPolicyResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest WorkspaceExecutionPolicy
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseListWorkspaceExecutionsResponse parses an HTTP response from a ListWorkspaceExecutionsWithResponse call
 func ParseListWorkspaceExecutionsResponse(rsp *http.Response) (*ListWorkspaceExecutionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -84968,60 +83924,6 @@ func ParseCancelWorkspaceExecutionResponse(rsp *http.Response) (*CancelWorkspace
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListWorkspaceExecutionLogsResponse parses an HTTP response from a ListWorkspaceExecutionLogsWithResponse call
-func ParseListWorkspaceExecutionLogsResponse(rsp *http.Response) (*ListWorkspaceExecutionLogsResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListWorkspaceExecutionLogsResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []ExecutionLogChunk
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -86019,60 +84921,6 @@ func ParseListWorkspaceExecutionTimelineResponse(rsp *http.Response) (*ListWorks
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []ExecutionEvent
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListWorkspaceExecutionTranscriptResponse parses an HTTP response from a ListWorkspaceExecutionTranscriptWithResponse call
-func ParseListWorkspaceExecutionTranscriptResponse(rsp *http.Response) (*ListWorkspaceExecutionTranscriptResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListWorkspaceExecutionTranscriptResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []ExecutionTranscriptChunk
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -89249,6 +88097,60 @@ func ParseDeleteWorkspaceIssueEvidenceResponse(rsp *http.Response) (*DeleteWorks
 	switch {
 	case rsp.StatusCode == 204:
 		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceIssueDecisionRightResponse parses an HTTP response from a GetWorkspaceIssueDecisionRightWithResponse call
+func ParseGetWorkspaceIssueDecisionRightResponse(rsp *http.Response) (*GetWorkspaceIssueDecisionRightResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceIssueDecisionRightResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DecisionRight
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Problem
@@ -93428,6 +92330,53 @@ func ParseRestoreWorkspaceResponse(rsp *http.Response) (*RestoreWorkspaceRespons
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceReviewQueueResponse parses an HTTP response from a GetWorkspaceReviewQueueWithResponse call
+func ParseGetWorkspaceReviewQueueResponse(rsp *http.Response) (*GetWorkspaceReviewQueueResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceReviewQueueResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewQueue
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -99512,15 +98461,6 @@ type ServerInterface interface {
 	// UploadExecutionArtifact Publish a file this run produced
 	// (POST /runners/me/executions/{executionId}/artifacts)
 	UploadExecutionArtifact(w http.ResponseWriter, r *http.Request, executionId ExecutionId)
-	// UploadExecutionLogs Send a batch of this run's command output
-	// (POST /runners/me/executions/{executionId}/logs)
-	UploadExecutionLogs(w http.ResponseWriter, r *http.Request, executionId ExecutionId)
-	// GetExecutionStreams How far each of this run's streams got
-	// (GET /runners/me/executions/{executionId}/streams)
-	GetExecutionStreams(w http.ResponseWriter, r *http.Request, executionId ExecutionId)
-	// UploadExecutionTranscript Send a chunk of the coding agent's normalised event stream
-	// (POST /runners/me/executions/{executionId}/transcript)
-	UploadExecutionTranscript(w http.ResponseWriter, r *http.Request, executionId ExecutionId)
 	// ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
 	// (POST /runners/token)
 	ExchangeRunnerToken(w http.ResponseWriter, r *http.Request)
@@ -99746,6 +98686,12 @@ type ServerInterface interface {
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, cycleId CycleId)
+	// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+	// (GET /workspaces/{workspaceId}/decision-channel)
+	GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+	// (PUT /workspaces/{workspaceId}/decision-channel)
+	SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 	// (DELETE /workspaces/{workspaceId}/directory)
 	DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -99770,12 +98716,6 @@ type ServerInterface interface {
 	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 	// (POST /workspaces/{workspaceId}/directory/token)
 	RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// GetWorkspaceExecutionPolicy Read how much of a run this workspace keeps, and for how long
-	// (GET /workspaces/{workspaceId}/execution-policy)
-	GetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// SetWorkspaceExecutionPolicy Set how much of a run this workspace keeps, and for how long
-	// (PUT /workspaces/{workspaceId}/execution-policy)
-	SetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceExecutions The runs in this workspace, most recently finished first
 	// (GET /workspaces/{workspaceId}/executions)
 	ListWorkspaceExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceExecutionsParams)
@@ -99791,9 +98731,6 @@ type ServerInterface interface {
 	// CancelWorkspaceExecution Stop this run and tell the machine to tear it down
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/cancel)
 	CancelWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
-	// ListWorkspaceExecutionLogs What this run printed, oldest batch first
-	// (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
-	ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionLogsParams)
 	// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/plans)
 	ListWorkspaceExecutionPlans(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId)
@@ -99845,9 +98782,6 @@ type ServerInterface interface {
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/timeline)
 	ListWorkspaceExecutionTimeline(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionTimelineParams)
-	// ListWorkspaceExecutionTranscript What the coding agent did, oldest chunk first
-	// (GET /workspaces/{workspaceId}/executions/{executionId}/transcript)
-	ListWorkspaceExecutionTranscript(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionTranscriptParams)
 	// ListWorkspaceImports List what this workspace has imported, newest first
 	// (GET /workspaces/{workspaceId}/imports)
 	ListWorkspaceImports(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceImportsParams)
@@ -100007,6 +98941,9 @@ type ServerInterface interface {
 	// DeleteWorkspaceIssueEvidence Take back a piece of evidence
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
 	DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId)
+	// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/decision-right)
+	GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	RecallWorkspaceIssue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -100217,6 +99154,9 @@ type ServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+	// (GET /workspaces/{workspaceId}/reviews)
+	GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// ListWorkspaceRunners Every machine connected to this workspace, newest first
 	// (GET /workspaces/{workspaceId}/runners)
 	ListWorkspaceRunners(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -100745,24 +99685,6 @@ func (_ Unimplemented) UploadExecutionArtifact(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// UploadExecutionLogs Send a batch of this run's command output
-// (POST /runners/me/executions/{executionId}/logs)
-func (_ Unimplemented) UploadExecutionLogs(w http.ResponseWriter, r *http.Request, executionId ExecutionId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// GetExecutionStreams How far each of this run's streams got
-// (GET /runners/me/executions/{executionId}/streams)
-func (_ Unimplemented) GetExecutionStreams(w http.ResponseWriter, r *http.Request, executionId ExecutionId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// UploadExecutionTranscript Send a chunk of the coding agent's normalised event stream
-// (POST /runners/me/executions/{executionId}/transcript)
-func (_ Unimplemented) UploadExecutionTranscript(w http.ResponseWriter, r *http.Request, executionId ExecutionId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
 // (POST /runners/token)
 func (_ Unimplemented) ExchangeRunnerToken(w http.ResponseWriter, r *http.Request) {
@@ -101213,6 +100135,18 @@ func (_ Unimplemented) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+// (GET /workspaces/{workspaceId}/decision-channel)
+func (_ Unimplemented) GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+// (PUT /workspaces/{workspaceId}/decision-channel)
+func (_ Unimplemented) SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 // (DELETE /workspaces/{workspaceId}/directory)
 func (_ Unimplemented) DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
@@ -101261,18 +100195,6 @@ func (_ Unimplemented) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *h
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// GetWorkspaceExecutionPolicy Read how much of a run this workspace keeps, and for how long
-// (GET /workspaces/{workspaceId}/execution-policy)
-func (_ Unimplemented) GetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// SetWorkspaceExecutionPolicy Set how much of a run this workspace keeps, and for how long
-// (PUT /workspaces/{workspaceId}/execution-policy)
-func (_ Unimplemented) SetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // ListWorkspaceExecutions The runs in this workspace, most recently finished first
 // (GET /workspaces/{workspaceId}/executions)
 func (_ Unimplemented) ListWorkspaceExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceExecutionsParams) {
@@ -101300,12 +100222,6 @@ func (_ Unimplemented) DownloadWorkspaceExecutionArtifact(w http.ResponseWriter,
 // CancelWorkspaceExecution Stop this run and tell the machine to tear it down
 // (POST /workspaces/{workspaceId}/executions/{executionId}/cancel)
 func (_ Unimplemented) CancelWorkspaceExecution(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListWorkspaceExecutionLogs What this run printed, oldest batch first
-// (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
-func (_ Unimplemented) ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionLogsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -101408,12 +100324,6 @@ func (_ Unimplemented) ListWorkspaceExecutionServices(w http.ResponseWriter, r *
 // ListWorkspaceExecutionTimeline What happened during this run, oldest first
 // (GET /workspaces/{workspaceId}/executions/{executionId}/timeline)
 func (_ Unimplemented) ListWorkspaceExecutionTimeline(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionTimelineParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// ListWorkspaceExecutionTranscript What the coding agent did, oldest chunk first
-// (GET /workspaces/{workspaceId}/executions/{executionId}/transcript)
-func (_ Unimplemented) ListWorkspaceExecutionTranscript(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionTranscriptParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -101732,6 +100642,12 @@ func (_ Unimplemented) RecordWorkspaceIssueEvidence(w http.ResponseWriter, r *ht
 // DeleteWorkspaceIssueEvidence Take back a piece of evidence
 // (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
 func (_ Unimplemented) DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, evidenceId EvidenceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+// (GET /workspaces/{workspaceId}/issues/{issueId}/decision-right)
+func (_ Unimplemented) GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -102152,6 +101068,12 @@ func (_ Unimplemented) UnarchiveWorkspaceProject(w http.ResponseWriter, r *http.
 // RestoreWorkspace Recover a workspace before its purge date passes
 // (POST /workspaces/{workspaceId}/restore)
 func (_ Unimplemented) RestoreWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+// (GET /workspaces/{workspaceId}/reviews)
+func (_ Unimplemented) GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -103459,84 +102381,6 @@ func (siw *ServerInterfaceWrapper) UploadExecutionArtifact(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UploadExecutionArtifact(w, r, executionId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UploadExecutionLogs operation middleware
-func (siw *ServerInterfaceWrapper) UploadExecutionLogs(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "executionId" -------------
-	var executionId ExecutionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UploadExecutionLogs(w, r, executionId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// GetExecutionStreams operation middleware
-func (siw *ServerInterfaceWrapper) GetExecutionStreams(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "executionId" -------------
-	var executionId ExecutionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetExecutionStreams(w, r, executionId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// UploadExecutionTranscript operation middleware
-func (siw *ServerInterfaceWrapper) UploadExecutionTranscript(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "executionId" -------------
-	var executionId ExecutionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UploadExecutionTranscript(w, r, executionId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -105962,6 +104806,58 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceCycleScope(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceDecisionChannel operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceDecisionChannel(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceDecisionChannel operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceDecisionChannel(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DisconnectWorkspaceDirectory operation middleware
 func (siw *ServerInterfaceWrapper) DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request) {
 
@@ -106208,58 +105104,6 @@ func (siw *ServerInterfaceWrapper) RotateWorkspaceDirectoryToken(w http.Response
 	handler.ServeHTTP(w, r)
 }
 
-// GetWorkspaceExecutionPolicy operation middleware
-func (siw *ServerInterfaceWrapper) GetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWorkspaceExecutionPolicy(w, r, workspaceId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// SetWorkspaceExecutionPolicy operation middleware
-func (siw *ServerInterfaceWrapper) SetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetWorkspaceExecutionPolicy(w, r, workspaceId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListWorkspaceExecutions operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceExecutions(w http.ResponseWriter, r *http.Request) {
 
@@ -106455,70 +105299,6 @@ func (siw *ServerInterfaceWrapper) CancelWorkspaceExecution(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CancelWorkspaceExecution(w, r, workspaceId, executionId)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListWorkspaceExecutionLogs operation middleware
-func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "executionId" -------------
-	var executionId ExecutionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
-		return
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListWorkspaceExecutionLogsParams
-
-	// ------------- Optional query parameter "after" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "after", r.URL.Query(), &params.After, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "after"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListWorkspaceExecutionLogs(w, r, workspaceId, executionId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -107215,70 +105995,6 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionTimeline(w http.Respons
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceExecutionTimeline(w, r, workspaceId, executionId, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListWorkspaceExecutionTranscript operation middleware
-func (siw *ServerInterfaceWrapper) ListWorkspaceExecutionTranscript(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "workspaceId" -------------
-	var workspaceId WorkspaceId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "executionId" -------------
-	var executionId ExecutionId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "executionId", chi.URLParam(r, "executionId"), &executionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "executionId", Err: err})
-		return
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListWorkspaceExecutionTranscriptParams
-
-	// ------------- Optional query parameter "after" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "after", r.URL.Query(), &params.After, runtime.BindQueryParameterOptions{Type: "integer", Format: "int64"})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "after"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
-		}
-		return
-	}
-
-	// ------------- Optional query parameter "limit" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		var requiredError *runtime.RequiredParameterError
-		if errors.As(err, &requiredError) {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
-		} else {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
-		}
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListWorkspaceExecutionTranscript(w, r, workspaceId, executionId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -109366,6 +108082,41 @@ func (siw *ServerInterfaceWrapper) DeleteWorkspaceIssueEvidence(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteWorkspaceIssueEvidence(w, r, workspaceId, issueId, evidenceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceIssueDecisionRight operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceIssueDecisionRight(w, r, workspaceId, issueId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -112018,6 +110769,32 @@ func (siw *ServerInterfaceWrapper) RestoreWorkspace(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RestoreWorkspace(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceReviewQueue operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceReviewQueue(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -116381,6 +115158,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/questions", wrapper.AskWorkspaceIssueQuestion)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/decision-right", wrapper.GetWorkspaceIssueDecisionRight)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/questions/{questionId}/answer", wrapper.AnswerWorkspaceIssueQuestion)
 	})
 	r.Group(func(r chi.Router) {
@@ -116505,6 +115285,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/notification-settings", wrapper.SetWorkspaceNotificationSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/decision-channel", wrapper.GetWorkspaceDecisionChannel)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/decision-channel", wrapper.SetWorkspaceDecisionChannel)
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/notification-settings", wrapper.ClearWorkspaceTeamNotificationSettings)
@@ -116774,6 +115560,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions", wrapper.ListWorkspaceExecutions)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/reviews", wrapper.GetWorkspaceReviewQueue)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}", wrapper.GetWorkspaceExecution)
 	})
 	r.Group(func(r chi.Router) {
@@ -116831,37 +115620,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/previews/authorize", wrapper.AuthorizePreview)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/runners/me/executions/{executionId}/logs", wrapper.UploadExecutionLogs)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/runners/me/executions/{executionId}/transcript", wrapper.UploadExecutionTranscript)
-	})
-	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/runners/me/executions/{executionId}/artifacts", wrapper.UploadExecutionArtifact)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/runners/me/executions/{executionId}/streams", wrapper.GetExecutionStreams)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/questions", wrapper.ListWorkspaceExecutionQuestions)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/logs", wrapper.ListWorkspaceExecutionLogs)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/transcript", wrapper.ListWorkspaceExecutionTranscript)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/artifacts", wrapper.ListWorkspaceExecutionArtifacts)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/executions/{executionId}/artifacts/{artifactId}/content", wrapper.DownloadWorkspaceExecutionArtifact)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/workspaces/{workspaceId}/execution-policy", wrapper.GetWorkspaceExecutionPolicy)
-	})
-	r.Group(func(r chi.Router) {
-		r.Put(options.BaseURL+"/workspaces/{workspaceId}/execution-policy", wrapper.SetWorkspaceExecutionPolicy)
 	})
 
 	return r
@@ -119730,342 +118498,6 @@ func (response UploadExecutionArtifact422ApplicationProblemPlusJSONResponse) Vis
 type UploadExecutionArtifact500ApplicationProblemPlusJSONResponse Problem
 
 func (response UploadExecutionArtifact500ApplicationProblemPlusJSONResponse) VisitUploadExecutionArtifactResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogsRequestObject struct {
-	ExecutionId ExecutionId `json:"executionId"`
-	Body        *UploadExecutionLogsJSONRequestBody
-}
-
-type UploadExecutionLogsResponseObject interface {
-	VisitUploadExecutionLogsResponse(w http.ResponseWriter) error
-}
-
-type UploadExecutionLogs202JSONResponse ExecutionChunkReceipt
-
-func (response UploadExecutionLogs202JSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(202)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogs401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response UploadExecutionLogs401ApplicationProblemPlusJSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogs403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response UploadExecutionLogs403ApplicationProblemPlusJSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogs404ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionLogs404ApplicationProblemPlusJSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogs409ApplicationProblemPlusJSONResponse struct {
-	ExecutionConflictApplicationProblemPlusJSONResponse
-}
-
-func (response UploadExecutionLogs409ApplicationProblemPlusJSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogs413ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionLogs413ApplicationProblemPlusJSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(413)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogs422ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionLogs422ApplicationProblemPlusJSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionLogs500ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionLogs500ApplicationProblemPlusJSONResponse) VisitUploadExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetExecutionStreamsRequestObject struct {
-	ExecutionId ExecutionId `json:"executionId"`
-}
-
-type GetExecutionStreamsResponseObject interface {
-	VisitGetExecutionStreamsResponse(w http.ResponseWriter) error
-}
-
-type GetExecutionStreams200JSONResponse []ExecutionStreamCursor
-
-func (response GetExecutionStreams200JSONResponse) VisitGetExecutionStreamsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetExecutionStreams401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response GetExecutionStreams401ApplicationProblemPlusJSONResponse) VisitGetExecutionStreamsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetExecutionStreams403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response GetExecutionStreams403ApplicationProblemPlusJSONResponse) VisitGetExecutionStreamsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetExecutionStreams404ApplicationProblemPlusJSONResponse Problem
-
-func (response GetExecutionStreams404ApplicationProblemPlusJSONResponse) VisitGetExecutionStreamsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetExecutionStreams500ApplicationProblemPlusJSONResponse Problem
-
-func (response GetExecutionStreams500ApplicationProblemPlusJSONResponse) VisitGetExecutionStreamsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscriptRequestObject struct {
-	ExecutionId ExecutionId `json:"executionId"`
-	Body        *UploadExecutionTranscriptJSONRequestBody
-}
-
-type UploadExecutionTranscriptResponseObject interface {
-	VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error
-}
-
-type UploadExecutionTranscript202JSONResponse ExecutionChunkReceipt
-
-func (response UploadExecutionTranscript202JSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(202)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscript401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response UploadExecutionTranscript401ApplicationProblemPlusJSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscript403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response UploadExecutionTranscript403ApplicationProblemPlusJSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscript404ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionTranscript404ApplicationProblemPlusJSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscript409ApplicationProblemPlusJSONResponse struct {
-	ExecutionConflictApplicationProblemPlusJSONResponse
-}
-
-func (response UploadExecutionTranscript409ApplicationProblemPlusJSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscript413ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionTranscript413ApplicationProblemPlusJSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(413)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscript422ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionTranscript422ApplicationProblemPlusJSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type UploadExecutionTranscript500ApplicationProblemPlusJSONResponse Problem
-
-func (response UploadExecutionTranscript500ApplicationProblemPlusJSONResponse) VisitUploadExecutionTranscriptResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -126819,6 +125251,157 @@ func (response GetWorkspaceCycleScope500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
+type GetWorkspaceDecisionChannelRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceDecisionChannelResponseObject interface {
+	VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceDecisionChannel200JSONResponse DecisionChannelSetting
+
+func (response GetWorkspaceDecisionChannel200JSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannelRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SetWorkspaceDecisionChannelJSONRequestBody
+}
+
+type SetWorkspaceDecisionChannelResponseObject interface {
+	VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceDecisionChannel200JSONResponse DecisionChannelSetting
+
+func (response SetWorkspaceDecisionChannel200JSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceDecisionChannel401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceDecisionChannel403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceDecisionChannel422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceDecisionChannel500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceDecisionChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DisconnectWorkspaceDirectoryRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -127510,157 +126093,6 @@ func (response RotateWorkspaceDirectoryToken503ApplicationProblemPlusJSONRespons
 	return err
 }
 
-type GetWorkspaceExecutionPolicyRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-}
-
-type GetWorkspaceExecutionPolicyResponseObject interface {
-	VisitGetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error
-}
-
-type GetWorkspaceExecutionPolicy200JSONResponse WorkspaceExecutionPolicy
-
-func (response GetWorkspaceExecutionPolicy200JSONResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWorkspaceExecutionPolicy401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response GetWorkspaceExecutionPolicy401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWorkspaceExecutionPolicy403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response GetWorkspaceExecutionPolicy403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWorkspaceExecutionPolicy500ApplicationProblemPlusJSONResponse Problem
-
-func (response GetWorkspaceExecutionPolicy500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SetWorkspaceExecutionPolicyRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-	Body        *SetWorkspaceExecutionPolicyJSONRequestBody
-}
-
-type SetWorkspaceExecutionPolicyResponseObject interface {
-	VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error
-}
-
-type SetWorkspaceExecutionPolicy200JSONResponse WorkspaceExecutionPolicy
-
-func (response SetWorkspaceExecutionPolicy200JSONResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SetWorkspaceExecutionPolicy401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response SetWorkspaceExecutionPolicy401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SetWorkspaceExecutionPolicy403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response SetWorkspaceExecutionPolicy403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SetWorkspaceExecutionPolicy422ApplicationProblemPlusJSONResponse Problem
-
-func (response SetWorkspaceExecutionPolicy422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SetWorkspaceExecutionPolicy500ApplicationProblemPlusJSONResponse Problem
-
-func (response SetWorkspaceExecutionPolicy500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceExecutionPolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type ListWorkspaceExecutionsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Params      ListWorkspaceExecutionsParams
@@ -128089,90 +126521,6 @@ func (response CancelWorkspaceExecution422ApplicationProblemPlusJSONResponse) Vi
 type CancelWorkspaceExecution500ApplicationProblemPlusJSONResponse Problem
 
 func (response CancelWorkspaceExecution500ApplicationProblemPlusJSONResponse) VisitCancelWorkspaceExecutionResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionLogsRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-	ExecutionId ExecutionId `json:"executionId"`
-	Params      ListWorkspaceExecutionLogsParams
-}
-
-type ListWorkspaceExecutionLogsResponseObject interface {
-	VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error
-}
-
-type ListWorkspaceExecutionLogs200JSONResponse []ExecutionLogChunk
-
-func (response ListWorkspaceExecutionLogs200JSONResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionLogs401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ListWorkspaceExecutionLogs401ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionLogs403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ListWorkspaceExecutionLogs403ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionLogs404ApplicationProblemPlusJSONResponse Problem
-
-func (response ListWorkspaceExecutionLogs404ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionLogs500ApplicationProblemPlusJSONResponse Problem
-
-func (response ListWorkspaceExecutionLogs500ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionLogsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -129832,90 +128180,6 @@ func (response ListWorkspaceExecutionTimeline404ApplicationProblemPlusJSONRespon
 type ListWorkspaceExecutionTimeline500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceExecutionTimeline500ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionTimelineResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionTranscriptRequestObject struct {
-	WorkspaceId WorkspaceId `json:"workspaceId"`
-	ExecutionId ExecutionId `json:"executionId"`
-	Params      ListWorkspaceExecutionTranscriptParams
-}
-
-type ListWorkspaceExecutionTranscriptResponseObject interface {
-	VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error
-}
-
-type ListWorkspaceExecutionTranscript200JSONResponse []ExecutionTranscriptChunk
-
-func (response ListWorkspaceExecutionTranscript200JSONResponse) VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionTranscript401ApplicationProblemPlusJSONResponse struct {
-	ProblemApplicationProblemPlusJSONResponse
-}
-
-func (response ListWorkspaceExecutionTranscript401ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionTranscript403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response ListWorkspaceExecutionTranscript403ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionTranscript404ApplicationProblemPlusJSONResponse Problem
-
-func (response ListWorkspaceExecutionTranscript404ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type ListWorkspaceExecutionTranscript500ApplicationProblemPlusJSONResponse Problem
-
-func (response ListWorkspaceExecutionTranscript500ApplicationProblemPlusJSONResponse) VisitListWorkspaceExecutionTranscriptResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -134989,6 +133253,89 @@ func (response DeleteWorkspaceIssueEvidence404ApplicationProblemPlusJSONResponse
 type DeleteWorkspaceIssueEvidence500ApplicationProblemPlusJSONResponse Problem
 
 func (response DeleteWorkspaceIssueEvidence500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceIssueEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRightRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type GetWorkspaceIssueDecisionRightResponseObject interface {
+	VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceIssueDecisionRight200JSONResponse DecisionRight
+
+func (response GetWorkspaceIssueDecisionRight200JSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueDecisionRight401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceIssueDecisionRight403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueDecisionRight404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceIssueDecisionRight500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceIssueDecisionRight500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceIssueDecisionRightResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -141633,6 +139980,74 @@ func (response RestoreWorkspace409ApplicationProblemPlusJSONResponse) VisitResto
 type RestoreWorkspace500ApplicationProblemPlusJSONResponse Problem
 
 func (response RestoreWorkspace500ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueueRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceReviewQueueResponseObject interface {
+	VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceReviewQueue200JSONResponse ReviewQueue
+
+func (response GetWorkspaceReviewQueue200JSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueue401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceReviewQueue401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueue403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceReviewQueue403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceReviewQueue500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceReviewQueue500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceReviewQueueResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -151223,15 +149638,6 @@ type StrictServerInterface interface {
 	// UploadExecutionArtifact Publish a file this run produced
 	// (POST /runners/me/executions/{executionId}/artifacts)
 	UploadExecutionArtifact(ctx context.Context, request UploadExecutionArtifactRequestObject) (UploadExecutionArtifactResponseObject, error)
-	// UploadExecutionLogs Send a batch of this run's command output
-	// (POST /runners/me/executions/{executionId}/logs)
-	UploadExecutionLogs(ctx context.Context, request UploadExecutionLogsRequestObject) (UploadExecutionLogsResponseObject, error)
-	// GetExecutionStreams How far each of this run's streams got
-	// (GET /runners/me/executions/{executionId}/streams)
-	GetExecutionStreams(ctx context.Context, request GetExecutionStreamsRequestObject) (GetExecutionStreamsResponseObject, error)
-	// UploadExecutionTranscript Send a chunk of the coding agent's normalised event stream
-	// (POST /runners/me/executions/{executionId}/transcript)
-	UploadExecutionTranscript(ctx context.Context, request UploadExecutionTranscriptRequestObject) (UploadExecutionTranscriptResponseObject, error)
 	// ExchangeRunnerToken Trade a signed assertion for a short-lived access token and a channel ticket
 	// (POST /runners/token)
 	ExchangeRunnerToken(ctx context.Context, request ExchangeRunnerTokenRequestObject) (ExchangeRunnerTokenResponseObject, error)
@@ -151457,6 +149863,12 @@ type StrictServerInterface interface {
 	// GetWorkspaceCycleScope Separate the cycle's original scope from what changed after it started
 	// (GET /workspaces/{workspaceId}/cycles/{cycleId}/scope)
 	GetWorkspaceCycleScope(ctx context.Context, request GetWorkspaceCycleScopeRequestObject) (GetWorkspaceCycleScopeResponseObject, error)
+	// GetWorkspaceDecisionChannel Read where your decision requests reach you besides Reviews
+	// (GET /workspaces/{workspaceId}/decision-channel)
+	GetWorkspaceDecisionChannel(ctx context.Context, request GetWorkspaceDecisionChannelRequestObject) (GetWorkspaceDecisionChannelResponseObject, error)
+	// SetWorkspaceDecisionChannel Choose where your decision requests reach you besides Reviews
+	// (PUT /workspaces/{workspaceId}/decision-channel)
+	SetWorkspaceDecisionChannel(ctx context.Context, request SetWorkspaceDecisionChannelRequestObject) (SetWorkspaceDecisionChannelResponseObject, error)
 	// DisconnectWorkspaceDirectory Disconnect the directory, leaving every member as they are
 	// (DELETE /workspaces/{workspaceId}/directory)
 	DisconnectWorkspaceDirectory(ctx context.Context, request DisconnectWorkspaceDirectoryRequestObject) (DisconnectWorkspaceDirectoryResponseObject, error)
@@ -151481,12 +149893,6 @@ type StrictServerInterface interface {
 	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 	// (POST /workspaces/{workspaceId}/directory/token)
 	RotateWorkspaceDirectoryToken(ctx context.Context, request RotateWorkspaceDirectoryTokenRequestObject) (RotateWorkspaceDirectoryTokenResponseObject, error)
-	// GetWorkspaceExecutionPolicy Read how much of a run this workspace keeps, and for how long
-	// (GET /workspaces/{workspaceId}/execution-policy)
-	GetWorkspaceExecutionPolicy(ctx context.Context, request GetWorkspaceExecutionPolicyRequestObject) (GetWorkspaceExecutionPolicyResponseObject, error)
-	// SetWorkspaceExecutionPolicy Set how much of a run this workspace keeps, and for how long
-	// (PUT /workspaces/{workspaceId}/execution-policy)
-	SetWorkspaceExecutionPolicy(ctx context.Context, request SetWorkspaceExecutionPolicyRequestObject) (SetWorkspaceExecutionPolicyResponseObject, error)
 	// ListWorkspaceExecutions The runs in this workspace, most recently finished first
 	// (GET /workspaces/{workspaceId}/executions)
 	ListWorkspaceExecutions(ctx context.Context, request ListWorkspaceExecutionsRequestObject) (ListWorkspaceExecutionsResponseObject, error)
@@ -151502,9 +149908,6 @@ type StrictServerInterface interface {
 	// CancelWorkspaceExecution Stop this run and tell the machine to tear it down
 	// (POST /workspaces/{workspaceId}/executions/{executionId}/cancel)
 	CancelWorkspaceExecution(ctx context.Context, request CancelWorkspaceExecutionRequestObject) (CancelWorkspaceExecutionResponseObject, error)
-	// ListWorkspaceExecutionLogs What this run printed, oldest batch first
-	// (GET /workspaces/{workspaceId}/executions/{executionId}/logs)
-	ListWorkspaceExecutionLogs(ctx context.Context, request ListWorkspaceExecutionLogsRequestObject) (ListWorkspaceExecutionLogsResponseObject, error)
 	// ListWorkspaceExecutionPlans Every plan this run has proposed, oldest revision first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/plans)
 	ListWorkspaceExecutionPlans(ctx context.Context, request ListWorkspaceExecutionPlansRequestObject) (ListWorkspaceExecutionPlansResponseObject, error)
@@ -151556,9 +149959,6 @@ type StrictServerInterface interface {
 	// ListWorkspaceExecutionTimeline What happened during this run, oldest first
 	// (GET /workspaces/{workspaceId}/executions/{executionId}/timeline)
 	ListWorkspaceExecutionTimeline(ctx context.Context, request ListWorkspaceExecutionTimelineRequestObject) (ListWorkspaceExecutionTimelineResponseObject, error)
-	// ListWorkspaceExecutionTranscript What the coding agent did, oldest chunk first
-	// (GET /workspaces/{workspaceId}/executions/{executionId}/transcript)
-	ListWorkspaceExecutionTranscript(ctx context.Context, request ListWorkspaceExecutionTranscriptRequestObject) (ListWorkspaceExecutionTranscriptResponseObject, error)
 	// ListWorkspaceImports List what this workspace has imported, newest first
 	// (GET /workspaces/{workspaceId}/imports)
 	ListWorkspaceImports(ctx context.Context, request ListWorkspaceImportsRequestObject) (ListWorkspaceImportsResponseObject, error)
@@ -151718,6 +150118,9 @@ type StrictServerInterface interface {
 	// DeleteWorkspaceIssueEvidence Take back a piece of evidence
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/criteria/evidence/{evidenceId})
 	DeleteWorkspaceIssueEvidence(ctx context.Context, request DeleteWorkspaceIssueEvidenceRequestObject) (DeleteWorkspaceIssueEvidenceResponseObject, error)
+	// GetWorkspaceIssueDecisionRight Whether the caller may answer this issue's questions and approve its runs
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/decision-right)
+	GetWorkspaceIssueDecisionRight(ctx context.Context, request GetWorkspaceIssueDecisionRightRequestObject) (GetWorkspaceIssueDecisionRightResponseObject, error)
 	// RecallWorkspaceIssue Take this issue back from the agent holding it
 	// (DELETE /workspaces/{workspaceId}/issues/{issueId}/delegation)
 	RecallWorkspaceIssue(ctx context.Context, request RecallWorkspaceIssueRequestObject) (RecallWorkspaceIssueResponseObject, error)
@@ -151928,6 +150331,9 @@ type StrictServerInterface interface {
 	// RestoreWorkspace Recover a workspace before its purge date passes
 	// (POST /workspaces/{workspaceId}/restore)
 	RestoreWorkspace(ctx context.Context, request RestoreWorkspaceRequestObject) (RestoreWorkspaceResponseObject, error)
+	// GetWorkspaceReviewQueue Every decision a person owes a run, oldest first
+	// (GET /workspaces/{workspaceId}/reviews)
+	GetWorkspaceReviewQueue(ctx context.Context, request GetWorkspaceReviewQueueRequestObject) (GetWorkspaceReviewQueueResponseObject, error)
 	// ListWorkspaceRunners Every machine connected to this workspace, newest first
 	// (GET /workspaces/{workspaceId}/runners)
 	ListWorkspaceRunners(ctx context.Context, request ListWorkspaceRunnersRequestObject) (ListWorkspaceRunnersResponseObject, error)
@@ -153245,98 +151651,6 @@ func (sh *strictHandler) UploadExecutionArtifact(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UploadExecutionArtifactResponseObject); ok {
 		if err := validResponse.VisitUploadExecutionArtifactResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UploadExecutionLogs operation middleware
-func (sh *strictHandler) UploadExecutionLogs(w http.ResponseWriter, r *http.Request, executionId ExecutionId) {
-	var request UploadExecutionLogsRequestObject
-
-	request.ExecutionId = executionId
-
-	var body UploadExecutionLogsJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UploadExecutionLogs(ctx, request.(UploadExecutionLogsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UploadExecutionLogs")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UploadExecutionLogsResponseObject); ok {
-		if err := validResponse.VisitUploadExecutionLogsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// GetExecutionStreams operation middleware
-func (sh *strictHandler) GetExecutionStreams(w http.ResponseWriter, r *http.Request, executionId ExecutionId) {
-	var request GetExecutionStreamsRequestObject
-
-	request.ExecutionId = executionId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetExecutionStreams(ctx, request.(GetExecutionStreamsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetExecutionStreams")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetExecutionStreamsResponseObject); ok {
-		if err := validResponse.VisitGetExecutionStreamsResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// UploadExecutionTranscript operation middleware
-func (sh *strictHandler) UploadExecutionTranscript(w http.ResponseWriter, r *http.Request, executionId ExecutionId) {
-	var request UploadExecutionTranscriptRequestObject
-
-	request.ExecutionId = executionId
-
-	var body UploadExecutionTranscriptJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UploadExecutionTranscript(ctx, request.(UploadExecutionTranscriptRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UploadExecutionTranscript")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UploadExecutionTranscriptResponseObject); ok {
-		if err := validResponse.VisitUploadExecutionTranscriptResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -155508,6 +153822,65 @@ func (sh *strictHandler) GetWorkspaceCycleScope(w http.ResponseWriter, r *http.R
 	}
 }
 
+// GetWorkspaceDecisionChannel operation middleware
+func (sh *strictHandler) GetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceDecisionChannelRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceDecisionChannel(ctx, request.(GetWorkspaceDecisionChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceDecisionChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceDecisionChannelResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceDecisionChannelResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceDecisionChannel operation middleware
+func (sh *strictHandler) SetWorkspaceDecisionChannel(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SetWorkspaceDecisionChannelRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SetWorkspaceDecisionChannelJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceDecisionChannel(ctx, request.(SetWorkspaceDecisionChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceDecisionChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceDecisionChannelResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceDecisionChannelResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DisconnectWorkspaceDirectory operation middleware
 func (sh *strictHandler) DisconnectWorkspaceDirectory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	var request DisconnectWorkspaceDirectoryRequestObject
@@ -155725,65 +154098,6 @@ func (sh *strictHandler) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r 
 	}
 }
 
-// GetWorkspaceExecutionPolicy operation middleware
-func (sh *strictHandler) GetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	var request GetWorkspaceExecutionPolicyRequestObject
-
-	request.WorkspaceId = workspaceId
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetWorkspaceExecutionPolicy(ctx, request.(GetWorkspaceExecutionPolicyRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetWorkspaceExecutionPolicy")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetWorkspaceExecutionPolicyResponseObject); ok {
-		if err := validResponse.VisitGetWorkspaceExecutionPolicyResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// SetWorkspaceExecutionPolicy operation middleware
-func (sh *strictHandler) SetWorkspaceExecutionPolicy(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
-	var request SetWorkspaceExecutionPolicyRequestObject
-
-	request.WorkspaceId = workspaceId
-
-	var body SetWorkspaceExecutionPolicyJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SetWorkspaceExecutionPolicy(ctx, request.(SetWorkspaceExecutionPolicyRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SetWorkspaceExecutionPolicy")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SetWorkspaceExecutionPolicyResponseObject); ok {
-		if err := validResponse.VisitSetWorkspaceExecutionPolicyResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // ListWorkspaceExecutions operation middleware
 func (sh *strictHandler) ListWorkspaceExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceExecutionsParams) {
 	var request ListWorkspaceExecutionsRequestObject
@@ -155923,34 +154237,6 @@ func (sh *strictHandler) CancelWorkspaceExecution(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CancelWorkspaceExecutionResponseObject); ok {
 		if err := validResponse.VisitCancelWorkspaceExecutionResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListWorkspaceExecutionLogs operation middleware
-func (sh *strictHandler) ListWorkspaceExecutionLogs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionLogsParams) {
-	var request ListWorkspaceExecutionLogsRequestObject
-
-	request.WorkspaceId = workspaceId
-	request.ExecutionId = executionId
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListWorkspaceExecutionLogs(ctx, request.(ListWorkspaceExecutionLogsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListWorkspaceExecutionLogs")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListWorkspaceExecutionLogsResponseObject); ok {
-		if err := validResponse.VisitListWorkspaceExecutionLogsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -156471,34 +154757,6 @@ func (sh *strictHandler) ListWorkspaceExecutionTimeline(w http.ResponseWriter, r
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceExecutionTimelineResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceExecutionTimelineResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListWorkspaceExecutionTranscript operation middleware
-func (sh *strictHandler) ListWorkspaceExecutionTranscript(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, executionId ExecutionId, params ListWorkspaceExecutionTranscriptParams) {
-	var request ListWorkspaceExecutionTranscriptRequestObject
-
-	request.WorkspaceId = workspaceId
-	request.ExecutionId = executionId
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListWorkspaceExecutionTranscript(ctx, request.(ListWorkspaceExecutionTranscriptRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListWorkspaceExecutionTranscript")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListWorkspaceExecutionTranscriptResponseObject); ok {
-		if err := validResponse.VisitListWorkspaceExecutionTranscriptResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -158059,6 +156317,33 @@ func (sh *strictHandler) DeleteWorkspaceIssueEvidence(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteWorkspaceIssueEvidenceResponseObject); ok {
 		if err := validResponse.VisitDeleteWorkspaceIssueEvidenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceIssueDecisionRight operation middleware
+func (sh *strictHandler) GetWorkspaceIssueDecisionRight(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request GetWorkspaceIssueDecisionRightRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceIssueDecisionRight(ctx, request.(GetWorkspaceIssueDecisionRightRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceIssueDecisionRight")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceIssueDecisionRightResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceIssueDecisionRightResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -160139,6 +158424,32 @@ func (sh *strictHandler) RestoreWorkspace(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RestoreWorkspaceResponseObject); ok {
 		if err := validResponse.VisitRestoreWorkspaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceReviewQueue operation middleware
+func (sh *strictHandler) GetWorkspaceReviewQueue(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceReviewQueueRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceReviewQueue(ctx, request.(GetWorkspaceReviewQueueRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceReviewQueue")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceReviewQueueResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceReviewQueueResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

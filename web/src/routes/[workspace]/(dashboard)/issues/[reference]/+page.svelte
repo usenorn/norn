@@ -106,6 +106,7 @@
 		type ActivityFeed,
 	} from "$lib/activity/activity";
 	import AttachmentList from "$lib/attachments/attachment-list.svelte";
+	import { waitingOnLine, type DecisionRight } from "$lib/executions/reviews";
 	import QuestionList from "$lib/questions/question-list.svelte";
 	import RunRow from "$lib/executions/run-row.svelte";
 	import RepoChange from "$lib/executions/repo-change.svelte";
@@ -387,6 +388,7 @@
 		(ready?.codeLinks ?? []).filter((link) => !removedCodeLinks.includes(link.id))
 	);
 	const questions = $derived<IssueQuestion[]>(ready ? ready.questions : []);
+	const right = $derived<DecisionRight>(ready ? ready.right : { canDecide: false });
 	const runs = $derived<Execution[]>(ready ? ready.runs : []);
 	const changed = $derived<IssueRepositoryChange[]>(ready ? (ready.changeset?.repositories ?? []) : []);
 	const automationSuppressed = $derived(automationOverride ?? false);
@@ -2379,7 +2381,8 @@
 							<QuestionList
 								{questions}
 								timezone={data.workspace.timezone}
-								canAnswer={canEdit}
+								canAnswer={right.canDecide}
+								refusal={waitingOnLine(right)}
 								{working}
 								onanswer={answerQuestion}
 								ondismiss={dismissQuestion}

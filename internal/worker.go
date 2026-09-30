@@ -67,11 +67,10 @@ func NewServeMux(
 	scmBackfill *job.SCMBackfillHandler,
 	scmResume *job.SCMResumeHandler,
 	executionLeaseSweep *job.ExecutionLeaseSweepHandler,
-	executionUploadSweep *job.ExecutionUploadSweepHandler,
 	questionExpirySweep *job.QuestionExpirySweepHandler,
 	intakeDelivery *job.IntakeDeliveryHandler,
 	telegramUpdate *job.TelegramUpdateHandler,
-	telegramQuestion *job.TelegramQuestionHandler,
+	telegramDecision *job.TelegramDecisionHandler,
 	telegramSettlement *job.TelegramSettlementHandler,
 	telegramSweep *job.TelegramSweepHandler,
 ) *asynq.ServeMux {
@@ -104,11 +103,10 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeSCMBackfill, scmBackfill)
 	mux.Handle(entity.TaskTypeSCMResume, scmResume)
 	mux.Handle(entity.TaskTypeExecutionLeaseSweep, executionLeaseSweep)
-	mux.Handle(entity.TaskTypeExecutionUploadSweep, executionUploadSweep)
 	mux.Handle(entity.TaskTypeQuestionExpirySweep, questionExpirySweep)
 	mux.Handle(entity.TaskTypeIntakeDelivery, intakeDelivery)
 	mux.Handle(entity.TaskTypeTelegramUpdate, telegramUpdate)
-	mux.Handle(entity.TaskTypeTelegramQuestion, telegramQuestion)
+	mux.Handle(entity.TaskTypeTelegramDecision, telegramDecision)
 	mux.Handle(entity.TaskTypeTelegramSettlement, telegramSettlement)
 	mux.Handle(entity.TaskTypeTelegramSweep, telegramSweep)
 
@@ -214,14 +212,6 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register execution lease sweep: %w", err)
-	}
-
-	if _, err := w.scheduler.Register(
-		w.executions.RetentionSchedule,
-		asynq.NewTask(entity.TaskTypeExecutionUploadSweep, nil),
-		asynq.Queue(entity.QueueDefault),
-	); err != nil {
-		return fmt.Errorf("register execution upload sweep: %w", err)
 	}
 
 	if _, err := w.scheduler.Register(

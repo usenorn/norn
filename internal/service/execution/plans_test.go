@@ -249,7 +249,93 @@ func TestAnsweringAQuestionWhileAPlanWaitsApprovesNothing(t *testing.T) {
 	}
 }
 
-func TestAPlanWaitingForApprovalTellsWhoeverDelegatedTheIssue(t *testing.T) {
+func TestAPlanWaitingForApprovalTellsWhoeverDecidesForTheIssue(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		assignee entity.AccountKind
+		want     func(h *harness) uuid.UUID
+	}{
+		{name: "the person assigned", assignee: entity.AccountKindPerson, want: func(h *harness) uuid.UUID { return h.caller }},
+		{name: "the delegator when an agent is assigned", assignee: entity.AccountKindAgent, want: func(h *harness) uuid.UUID { return h.delegator }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t)
+			h.authority.AssigneeKind = tc.assignee
+
+			execution := h.execution(entity.ExecutionRunning)
+			execution.Stage = entity.StagePlanning
+			h.holding(execution)
+			h.moving()
+			h.planned("Split the handler in two.")
+
+			payload, _ := json.Marshal(channelv1.Report{State: string(entity.ExecutionAwaitingPlan)})
+
+			if err := h.service.Reported(context.Background(), h.runner, entity.ChannelMessage{
+				ID: uuid.NewString(), Type: entity.ChannelExecutionState, ExecutionID: execution.ID,
+				Payload: payload, IssuedAt: time.Now().UTC(),
+			}); err != nil {
+				t.Fatalf("park for approval: %v", err)
+			}
+
+			if len(h.notified) != 1 || h.notified[0].Target != tc.want(h) ||
+				h.notified[0].Kind != entity.NotificationKindDecisionWaiting {
+				t.Fatalf(
+					"notified %+v; nobody would know a plan is waiting, and the run sits idle until "+
+						"somebody happens to look",
+					h.notified,
+				)
+			}
+		})
+	}
+}
+
+func TestOnlyTheAssigneeOrAnAdminDecidesAPlan(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		assignee  bool
+		role      entity.MembershipRole
+		forbidden bool
+	}{
+		{name: "the assignee", assignee: true, role: entity.MembershipRoleMember},
+		{name: "a workspace admin", role: entity.MembershipRoleAdmin},
+		{name: "another member who manages the issue", role: entity.MembershipRoleMember, forbidden: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t)
+			h.role = tc.role
+
+			if !tc.assignee {
+				h.authority.AssigneeAccountID = uuid.New()
+			}
+
+			execution := h.waitingOnPlan()
+			h.planned("Rename the table.")
+
+			_, approveErr := h.service.ApprovePlan(context.Background(), h.workspaceID, execution.ID, 1)
+
+			if !tc.forbidden {
+				if approveErr != nil {
+					t.Fatalf("approve the plan: %v", approveErr)
+				}
+
+				return
+			}
+
+			_, reviseErr := h.service.RevisePlan(context.Background(), h.workspaceID, execution.ID, 1, "Smaller steps.")
+
+			if !errors.Is(approveErr, entity.ErrIssueDecisionForbidden) ||
+				!errors.Is(reviseErr, entity.ErrIssueDecisionForbidden) {
+				t.Fatalf("approve %v, revise %v; want both refused as not theirs to decide", approveErr, reviseErr)
+			}
+
+			if _, moved := h.sent(entity.ChannelExecutionResume); moved {
+				t.Fatal("a refused decision still resumed the run")
+			}
+		})
+	}
+}
+
+func TestAPlanWaitingForApprovalIsSentToTelegram(t *testing.T) {
 	h := newHarness(t)
 
 	execution := h.execution(entity.ExecutionRunning)
@@ -267,12 +353,34 @@ func TestAPlanWaitingForApprovalTellsWhoeverDelegatedTheIssue(t *testing.T) {
 		t.Fatalf("park for approval: %v", err)
 	}
 
-	if len(h.notified) != 1 || h.notified[0].Target != h.delegator ||
-		h.notified[0].Kind != entity.NotificationKindApprovalWaiting {
-		t.Fatalf(
-			"notified %+v; nobody would know a plan is waiting, and the run sits idle until "+
-				"somebody happens to look",
-			h.notified,
-		)
+	want := entity.TelegramPlanDecision(execution, 1)
+	if len(h.relayed) != 1 || h.relayed[0] != want {
+		t.Fatalf("queued for telegram %+v, want revision 1 of the plan once", h.relayed)
+	}
+}
+
+func TestADecidedPlanIsSettledOnTelegram(t *testing.T) {
+	for _, decide := range []func(h *harness, id string) error{
+		func(h *harness, id string) error {
+			_, err := h.service.ApprovePlan(context.Background(), h.workspaceID, id, 1)
+			return err
+		},
+		func(h *harness, id string) error {
+			_, err := h.service.RevisePlan(context.Background(), h.workspaceID, id, 1, "Smaller steps.")
+			return err
+		},
+	} {
+		h := newHarness(t)
+		execution := h.waitingOnPlan()
+		h.planned("Rename the table.")
+
+		if err := decide(h, execution.ID); err != nil {
+			t.Fatalf("decide the plan: %v", err)
+		}
+
+		if len(h.settled) != 1 || h.settled[0].Kind != entity.TelegramDecisionPlan ||
+			h.settled[0].ExecutionID != execution.ID {
+			t.Fatalf("queued settlements %+v; the telegram message would keep offering a decision already made", h.settled)
+		}
 	}
 }

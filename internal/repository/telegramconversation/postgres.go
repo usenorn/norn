@@ -3,6 +3,7 @@ package telegramconversation
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -16,22 +17,30 @@ import (
 )
 
 const rememberQuery = `
-INSERT INTO workspace_telegram_question_messages (bot_id, chat_id, message_id, question_id, sent_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO workspace_telegram_decision_messages (
+    bot_id, chat_id, message_id, kind, question_id, execution_id, plan_revision, review_heads, sent_at
+)
+VALUES ($1, $2, $3, $4, nullif($5, '')::uuid, nullif($6, ''), nullif($7, 0), $8::jsonb, $9)
 ON CONFLICT DO NOTHING`
 
-const questionAtQuery = `
-SELECT question_id FROM workspace_telegram_question_messages
+const decisionColumns = `
+SELECT bot_id, chat_id, message_id, kind, coalesce(question_id::text, ''), coalesce(execution_id, ''),
+       coalesce(plan_revision, 0), review_heads, settled_at IS NOT NULL
+FROM workspace_telegram_decision_messages`
+
+const decisionAtQuery = decisionColumns + `
 WHERE bot_id = $1 AND chat_id = $2 AND message_id = $3`
 
-const postedQuery = `
-SELECT bot_id, chat_id, message_id, question_id, settled_at IS NOT NULL
-FROM workspace_telegram_question_messages
-WHERE question_id = $1
+const postedForQuestionQuery = decisionColumns + `
+WHERE kind = 'question' AND question_id = $1
+ORDER BY sent_at, chat_id`
+
+const postedForExecutionQuery = decisionColumns + `
+WHERE kind = $1 AND execution_id = $2
 ORDER BY sent_at, chat_id`
 
 const markSettledQuery = `
-UPDATE workspace_telegram_question_messages
+UPDATE workspace_telegram_decision_messages
 SET settled_at = $4
 WHERE bot_id = $1 AND chat_id = $2 AND message_id = $3`
 
@@ -62,92 +71,142 @@ func New(db *postgres.Client) repository.TelegramConversation {
 	return &telegramConversationRepository{db: db}
 }
 
-func (r *telegramConversationRepository) Remember(ctx context.Context, message entity.TelegramQuestionMessage) error {
+func (r *telegramConversationRepository) Remember(ctx context.Context, message entity.TelegramDecisionMessage) error {
+	var heads []byte
+
+	if message.Kind == entity.TelegramDecisionReview {
+		encoded, err := json.Marshal(message.ReviewHeads)
+		if err != nil {
+			return fmt.Errorf("encode telegram review heads: %w", err)
+		}
+
+		heads = encoded
+	}
+
 	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx, rememberQuery,
-		message.BotID.String(), message.ChatID, message.MessageID, message.QuestionID.String(), time.Now().UTC(),
+		message.BotID.String(), message.ChatID, message.MessageID, string(message.Kind),
+		idOrEmpty(message.QuestionID), message.ExecutionID, message.PlanRevision, heads, time.Now().UTC(),
 	); err != nil {
-		return fmt.Errorf("remember telegram question message: %w", err)
+		return fmt.Errorf("remember telegram decision message: %w", err)
 	}
 
 	return nil
 }
 
-func (r *telegramConversationRepository) QuestionAt(
+func (r *telegramConversationRepository) DecisionAt(
 	ctx context.Context,
 	botID uuid.UUID,
 	chatID, messageID int64,
-) (uuid.UUID, error) {
-	var question string
-
-	if err := r.db.Querier(ctx).QueryRowContext(
-		ctx, questionAtQuery, botID.String(), chatID, messageID,
-	).Scan(&question); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return uuid.Nil, entity.ErrIssueQuestionNotFound
-		}
-
-		return uuid.Nil, fmt.Errorf("find telegram question message: %w", err)
+) (entity.TelegramDecisionMessage, error) {
+	message, err := scanDecision(r.db.Querier(ctx).QueryRowContext(
+		ctx, decisionAtQuery, botID.String(), chatID, messageID,
+	))
+	if errors.Is(err, sql.ErrNoRows) {
+		return entity.TelegramDecisionMessage{}, entity.ErrTelegramDecisionNotFound
 	}
 
-	id, err := uuid.Parse(question)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("parse telegram question id: %w", err)
+		return entity.TelegramDecisionMessage{}, fmt.Errorf("find telegram decision message: %w", err)
 	}
 
-	return id, nil
+	return message, nil
 }
 
 func (r *telegramConversationRepository) Posted(
 	ctx context.Context,
-	questionID uuid.UUID,
-) ([]entity.TelegramQuestionMessage, error) {
-	rows, err := r.db.Querier(ctx).QueryContext(ctx, postedQuery, questionID.String())
+	decision entity.TelegramDecision,
+) ([]entity.TelegramDecisionMessage, error) {
+	query, args := postedForExecutionQuery, []any{string(decision.Kind), decision.ExecutionID}
+	if decision.Kind == entity.TelegramDecisionQuestion {
+		query, args = postedForQuestionQuery, []any{decision.QuestionID.String()}
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("list telegram question messages: %w", err)
+		return nil, fmt.Errorf("list telegram decision messages: %w", err)
 	}
 
 	defer func() { _ = rows.Close() }()
 
-	var posted []entity.TelegramQuestionMessage
+	var posted []entity.TelegramDecisionMessage
 
 	for rows.Next() {
-		var (
-			message       entity.TelegramQuestionMessage
-			bot, question string
-		)
-
-		if err := rows.Scan(&bot, &message.ChatID, &message.MessageID, &question, &message.Settled); err != nil {
-			return nil, fmt.Errorf("scan telegram question message: %w", err)
-		}
-
-		if message.BotID, err = uuid.Parse(bot); err != nil {
-			return nil, fmt.Errorf("parse telegram question message bot id: %w", err)
-		}
-
-		if message.QuestionID, err = uuid.Parse(question); err != nil {
-			return nil, fmt.Errorf("parse telegram question message question id: %w", err)
+		message, err := scanDecision(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan telegram decision message: %w", err)
 		}
 
 		posted = append(posted, message)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("list telegram question messages: %w", err)
+		return nil, fmt.Errorf("list telegram decision messages: %w", err)
 	}
 
 	return posted, nil
 }
 
+type scanner interface {
+	Scan(dest ...any) error
+}
+
+func scanDecision(row scanner) (entity.TelegramDecisionMessage, error) {
+	var (
+		message  entity.TelegramDecisionMessage
+		bot      string
+		kind     string
+		question string
+		heads    []byte
+	)
+
+	if err := row.Scan(
+		&bot, &message.ChatID, &message.MessageID, &kind, &question, &message.ExecutionID,
+		&message.PlanRevision, &heads, &message.Settled,
+	); err != nil {
+		return entity.TelegramDecisionMessage{}, err
+	}
+
+	message.Kind = entity.TelegramDecisionKind(kind)
+
+	var err error
+
+	if message.BotID, err = uuid.Parse(bot); err != nil {
+		return entity.TelegramDecisionMessage{}, fmt.Errorf("parse telegram decision bot id: %w", err)
+	}
+
+	if question != "" {
+		if message.QuestionID, err = uuid.Parse(question); err != nil {
+			return entity.TelegramDecisionMessage{}, fmt.Errorf("parse telegram decision question id: %w", err)
+		}
+	}
+
+	if len(heads) > 0 {
+		if err := json.Unmarshal(heads, &message.ReviewHeads); err != nil {
+			return entity.TelegramDecisionMessage{}, fmt.Errorf("read telegram review heads: %w", err)
+		}
+	}
+
+	return message, nil
+}
+
+func idOrEmpty(id uuid.UUID) string {
+	if id == uuid.Nil {
+		return ""
+	}
+
+	return id.String()
+}
+
 func (r *telegramConversationRepository) MarkSettled(
 	ctx context.Context,
-	message entity.TelegramQuestionMessage,
+	message entity.TelegramDecisionMessage,
 	at time.Time,
 ) error {
 	if _, err := r.db.Querier(ctx).ExecContext(
 		ctx, markSettledQuery, message.BotID.String(), message.ChatID, message.MessageID, at,
 	); err != nil {
-		return fmt.Errorf("settle telegram question message: %w", err)
+		return fmt.Errorf("settle telegram decision message: %w", err)
 	}
 
 	return nil

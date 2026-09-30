@@ -56,6 +56,27 @@ type ReviewSubmission struct {
 	Heads   entity.ReviewHeads
 }
 
+type DecisionRight struct {
+	CanDecide bool
+	MakerName string
+}
+
+type ReviewQuestion struct {
+	Question entity.IssueQuestion
+	Right    DecisionRight
+}
+
+type ReviewRun struct {
+	Listing entity.ExecutionListing
+	Right   DecisionRight
+}
+
+type ReviewQueue struct {
+	Questions []ReviewQuestion
+	Plans     []ReviewRun
+	Changes   []ReviewRun
+}
+
 type Executions interface {
 	OnDelegated(ctx context.Context, issue entity.Issue, delegation entity.IssueDelegation) error
 	Placement(
@@ -79,6 +100,8 @@ type Executions interface {
 		executionID string,
 		page entity.ExecutionTimelinePage,
 	) ([]entity.ExecutionEvent, error)
+	Queue(ctx context.Context, workspaceID uuid.UUID) (ReviewQueue, error)
+	DecisionRight(ctx context.Context, workspaceID, issueID uuid.UUID) (DecisionRight, error)
 
 	Cancel(ctx context.Context, workspaceID uuid.UUID, executionID, reason string) (entity.Execution, error)
 	Restart(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error)
