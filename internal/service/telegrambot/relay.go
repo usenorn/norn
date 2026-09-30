@@ -193,7 +193,7 @@ func (s *updates) prepareReview(ctx context.Context, decision entity.TelegramDec
 		about:  about,
 		text:   reviewText(about, latest),
 		buttons: []entity.TelegramButton{
-			{Label: "Approve changes", Data: entity.TelegramCallbackApprove},
+			{Label: "Approve and publish", Data: entity.TelegramCallbackApprove},
 			{Label: "Request changes", Data: entity.TelegramCallbackChanges},
 		},
 		template: entity.TelegramDecisionMessage{

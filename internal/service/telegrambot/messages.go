@@ -32,20 +32,42 @@ type decisionContext struct {
 	reviewURL  string
 }
 
-func (c decisionContext) heading(verb string) string {
+type decisionKind struct {
+	mark    string
+	open    string
+	settled string
+}
+
+var (
+	kindQuestion    = decisionKind{mark: "❓", open: "Question", settled: "Question"}
+	kindPlan        = decisionKind{mark: "📋", open: "Plan to approve", settled: "Plan"}
+	kindReview      = decisionKind{mark: "🔍", open: "Changes to review", settled: "Changes"}
+	kindPublication = decisionKind{mark: "⚠️", open: "Publication incomplete", settled: "Publication"}
+)
+
+func (c decisionContext) header(kind decisionKind, open bool) string {
+	label := kind.settled
+	if open {
+		label = kind.open
+	}
+
 	return fmt.Sprintf(
-		"<b>%s</b> %s on <a href=\"%s\">%s</a> · %s",
-		escaped(c.agentName, titleBudget), verb, html.EscapeString(c.issueURL),
-		html.EscapeString(c.reference), escaped(c.title, titleBudget),
+		"%s <b>%s</b> · <a href=\"%s\">%s</a>\n<b>%s</b>\n\n",
+		kind.mark, label, html.EscapeString(c.issueURL), html.EscapeString(c.reference),
+		escaped(c.title, titleBudget),
 	)
+}
+
+func (c decisionContext) agent() string {
+	return escaped(c.agentName, titleBudget)
 }
 
 func questionText(c decisionContext, question entity.IssueQuestion) string {
 	var built strings.Builder
 
-	built.WriteString(c.heading("asks"))
-	built.WriteString("\n\n")
-	built.WriteString(escaped(question.Question, questionBudget))
+	built.WriteString(c.header(kindQuestion, true))
+	fmt.Fprintf(&built, "%s asks:\n\n", c.agent())
+	built.WriteString(markup(question.Question, questionBudget))
 	built.WriteString("\n\n")
 
 	if question.DefaultAnswer != "" {
@@ -70,9 +92,9 @@ func questionText(c decisionContext, question entity.IssueQuestion) string {
 func settledText(c decisionContext, question entity.IssueQuestion) string {
 	var built strings.Builder
 
-	built.WriteString(c.heading("asked"))
-	built.WriteString("\n\n")
-	built.WriteString(escaped(question.Question, questionBudget))
+	built.WriteString(c.header(kindQuestion, false))
+	fmt.Fprintf(&built, "%s asked:\n\n", c.agent())
+	built.WriteString(markup(question.Question, questionBudget))
 	built.WriteString("\n\n")
 
 	switch {
@@ -94,12 +116,12 @@ func settledText(c decisionContext, question entity.IssueQuestion) string {
 func planText(c decisionContext, plan entity.ExecutionPlan) string {
 	var built strings.Builder
 
-	built.WriteString(c.heading("proposes a plan"))
-	built.WriteString("\n\n")
-	built.WriteString(escaped(strings.TrimSpace(plan.Body), planBudget))
+	built.WriteString(c.header(kindPlan, true))
+	fmt.Fprintf(&built, "%s proposes this plan. Nothing is built until it is approved.\n\n", c.agent())
+	built.WriteString(markup(plan.Body, planBudget))
 	built.WriteString("\n\n")
 	fmt.Fprintf(&built, "<a href=\"%s\">Read the whole plan in Norn</a>", html.EscapeString(c.runURL+planFragment))
-	built.WriteString("\n\nApprove it here, or reply to this message with what should change.")
+	built.WriteString("\n\nApprove the plan here, or reply to this message with what should change.")
 
 	return built.String()
 }
@@ -107,18 +129,50 @@ func planText(c decisionContext, plan entity.ExecutionPlan) string {
 func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot) string {
 	var built strings.Builder
 
-	built.WriteString(c.heading("finished its changes"))
-	built.WriteString("\n\n")
+	built.WriteString(c.header(kindReview, true))
+	fmt.Fprintf(&built,
+		"%s finished. Approving pushes exactly these commits and opens their pull requests.\n\n",
+		c.agent(),
+	)
+
+	writeRepositories(&built, snapshot.Repositories)
 
 	if summary := strings.TrimSpace(snapshot.Summary); summary != "" {
-		built.WriteString(escaped(summary, questionBudget))
+		built.WriteString(markup(summary, questionBudget))
 		built.WriteString("\n\n")
 	}
 
 	fmt.Fprintf(&built, "<a href=\"%s\">Review the changes in Norn</a>", html.EscapeString(c.reviewURL))
-	built.WriteString("\n\nApprove them here, or reply to this message with what should change.")
+	built.WriteString("\n\nApprove and publish here, or reply to this message with what should change.")
 
 	return built.String()
+}
+
+func writeRepositories(built *strings.Builder, repositories []entity.SnapshotRepository) {
+	if len(repositories) == 0 {
+		built.WriteString("No repository changed.\n\n")
+
+		return
+	}
+
+	for _, repository := range repositories {
+		fmt.Fprintf(built, "%s <b>%s</b>: %s, +%d −%d in %s\n",
+			bullet, escaped(repository.Repository, titleBudget),
+			counted(len(repository.Commits), "commit", "commits"),
+			repository.Additions, repository.Deletions,
+			counted(repository.FilesChanged, "file", "files"),
+		)
+	}
+
+	built.WriteString("\n")
+}
+
+func counted(count int, one, many string) string {
+	if count == 1 {
+		return "1 " + one
+	}
+
+	return fmt.Sprintf("%d %s", count, many)
 }
 
 func planSettled(
@@ -129,8 +183,7 @@ func planSettled(
 ) (string, bool) {
 	var built strings.Builder
 
-	built.WriteString(c.heading("proposed a plan"))
-	built.WriteString("\n\n")
+	built.WriteString(c.header(kindPlan, false))
 
 	latest, _ := entity.LatestPlan(plans)
 
@@ -170,8 +223,7 @@ func reviewSettled(
 ) (string, bool) {
 	var built strings.Builder
 
-	built.WriteString(c.heading("finished its changes"))
-	built.WriteString("\n\n")
+	built.WriteString(c.header(kindReview, false))
 
 	for index := len(reviews) - 1; index >= 0; index-- {
 		review := reviews[index]
@@ -205,8 +257,8 @@ func reviewSettled(
 func publicationText(c decisionContext, changeset entity.ExecutionChangeSet) string {
 	var built strings.Builder
 
-	built.WriteString(c.heading("could not publish all of its approved changes"))
-	built.WriteString("\n\n")
+	built.WriteString(c.header(kindPublication, true))
+	fmt.Fprintf(&built, "%s could not publish everything that was approved.\n\n", c.agent())
 	writePublication(&built, changeset)
 	built.WriteString("\n\nRetry publishes only what is left. Give up leaves the run failed.")
 
@@ -220,8 +272,7 @@ func publicationSettled(
 ) (string, bool) {
 	var built strings.Builder
 
-	built.WriteString(c.heading("published its approved changes"))
-	built.WriteString("\n\n")
+	built.WriteString(c.header(kindPublication, false))
 
 	switch {
 	case execution.State == entity.ExecutionCompleted:
@@ -245,7 +296,7 @@ func writePublication(built *strings.Builder, changeset entity.ExecutionChangeSe
 			built.WriteString("\n")
 		}
 
-		fmt.Fprintf(built, "<b>%s</b>: ", escaped(change.Repository, titleBudget))
+		fmt.Fprintf(built, "%s <b>%s</b>: ", bullet, escaped(change.Repository, titleBudget))
 
 		switch change.Publication.State {
 		case entity.PublicationPublished:
