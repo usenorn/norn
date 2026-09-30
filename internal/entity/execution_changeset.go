@@ -29,6 +29,7 @@ var (
 	ErrExecutionChangeNotFound = errors.New("this run has not reported a change in that repository")
 	ErrPublicationStale        = errors.New("that publication belongs to a revision nobody approved last")
 	ErrPublicationUnapproved   = errors.New("that publication names commits other than the approved ones")
+	ErrPublicationNotPending   = errors.New("this run is not waiting to publish its approved changes")
 )
 
 type PublicationState string

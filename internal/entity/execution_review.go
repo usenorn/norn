@@ -166,6 +166,16 @@ type ExecutionReview struct {
 	SubmittedAt     time.Time
 }
 
+func LastApproval(reviews []ExecutionReview) (ExecutionReview, bool) {
+	for index := len(reviews) - 1; index >= 0; index-- {
+		if reviews[index].Verdict == VerdictApprove {
+			return reviews[index], true
+		}
+	}
+
+	return ExecutionReview{}, false
+}
+
 func ValidateReviewAnchor(anchor ReviewAnchor) error {
 	var fields []FieldError
 

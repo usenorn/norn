@@ -135,6 +135,12 @@ type Executions interface {
 	SubmitReview(
 		ctx context.Context, workspaceID uuid.UUID, executionID string, submission ReviewSubmission,
 	) (entity.ExecutionReview, error)
+	RetryPublication(
+		ctx context.Context, workspaceID uuid.UUID, executionID string,
+	) (entity.Execution, error)
+	AbandonPublication(
+		ctx context.Context, workspaceID uuid.UUID, executionID string,
+	) (entity.Execution, error)
 
 	Retain(
 		ctx context.Context,

@@ -44,6 +44,21 @@ func (m *MockExecutions) EXPECT() *MockExecutionsMockRecorder {
 	return m.recorder
 }
 
+// AbandonPublication mocks base method.
+func (m *MockExecutions) AbandonPublication(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AbandonPublication", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AbandonPublication indicates an expected call of AbandonPublication.
+func (mr *MockExecutionsMockRecorder) AbandonPublication(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonPublication", reflect.TypeOf((*MockExecutions)(nil).AbandonPublication), ctx, workspaceID, executionID)
+}
+
 // Accepted mocks base method.
 func (m *MockExecutions) Accepted(ctx context.Context, runner entity.Runner, message entity.ChannelMessage) error {
 	m.ctrl.T.Helper()
@@ -465,6 +480,21 @@ func (m *MockExecutions) Retain(ctx context.Context, workspaceID uuid.UUID, exec
 func (mr *MockExecutionsMockRecorder) Retain(ctx, workspaceID, executionID, longer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Retain", reflect.TypeOf((*MockExecutions)(nil).Retain), ctx, workspaceID, executionID, longer)
+}
+
+// RetryPublication mocks base method.
+func (m *MockExecutions) RetryPublication(ctx context.Context, workspaceID uuid.UUID, executionID string) (entity.Execution, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetryPublication", ctx, workspaceID, executionID)
+	ret0, _ := ret[0].(entity.Execution)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RetryPublication indicates an expected call of RetryPublication.
+func (mr *MockExecutionsMockRecorder) RetryPublication(ctx, workspaceID, executionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetryPublication", reflect.TypeOf((*MockExecutions)(nil).RetryPublication), ctx, workspaceID, executionID)
 }
 
 // Review mocks base method.

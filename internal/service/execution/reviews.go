@@ -543,7 +543,9 @@ func (s *executionsService) handBack(
 	}
 
 	if execution.RunnerID != uuid.Nil {
-		instruction := publishing(channelv1.ResumeApproved, execution, approved)
+		instruction := publishing(
+			channelv1.ResumeApproved, execution, approved.Revision, approved.Heads(),
+		)
 
 		if verdict == entity.VerdictRequestChanges {
 			instruction = channelv1.Instruction{
@@ -571,13 +573,14 @@ func (s *executionsService) handBack(
 func publishing(
 	reason string,
 	execution entity.Execution,
-	approved entity.ExecutionSnapshot,
+	revision int,
+	heads entity.ReviewHeads,
 ) channelv1.Instruction {
 	return channelv1.Instruction{
 		Reason:   reason,
 		Stage:    execution.Stage,
-		Revision: approved.Revision,
-		Heads:    approved.Heads(),
+		Revision: revision,
+		Heads:    heads,
 	}
 }
 

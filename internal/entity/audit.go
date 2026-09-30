@@ -97,6 +97,8 @@ const (
 	AuditExecutionResumed   AuditAction = "execution.resumed"
 	AuditExecutionStranded  AuditAction = "execution.stranded"
 	AuditExecutionRetained  AuditAction = "execution.retained"
+	AuditExecutionRepublish AuditAction = "execution.publication_retried"
+	AuditExecutionAbandoned AuditAction = "execution.publication_abandoned"
 
 	AuditPreviewOpened       AuditAction = "preview.opened"
 	AuditPreviewShared       AuditAction = "preview.shared"
@@ -154,6 +156,7 @@ func AuditActions() []AuditAction {
 		AuditCodebaseConnected, AuditCodebaseDisconnected,
 		AuditExecutionCancelled, AuditExecutionApproved, AuditExecutionPlanned,
 		AuditExecutionReplanned, AuditExecutionResumed, AuditExecutionStranded, AuditExecutionRetained,
+		AuditExecutionRepublish, AuditExecutionAbandoned,
 		AuditPreviewOpened, AuditPreviewShared, AuditPreviewShareRevoked,
 		AuditWebhookRegistered, AuditWebhookRemoved, AuditWebhookDisabled,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
