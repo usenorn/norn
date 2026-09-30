@@ -33,6 +33,7 @@ type WorkspaceExecutionReview struct {
 	Heads           types.JSON  `boil:"heads" json:"heads" toml:"heads" yaml:"heads"`
 	AuthorAccountID null.String `boil:"author_account_id" json:"author_account_id,omitempty" toml:"author_account_id" yaml:"author_account_id,omitempty"`
 	SubmittedAt     time.Time   `boil:"submitted_at" json:"submitted_at" toml:"submitted_at" yaml:"submitted_at"`
+	Revision        int         `boil:"revision" json:"revision" toml:"revision" yaml:"revision"`
 
 	R *workspaceExecutionReviewR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceExecutionReviewL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -47,6 +48,7 @@ var WorkspaceExecutionReviewColumns = struct {
 	Heads           string
 	AuthorAccountID string
 	SubmittedAt     string
+	Revision        string
 }{
 	ID:              "id",
 	ExecutionID:     "execution_id",
@@ -56,6 +58,7 @@ var WorkspaceExecutionReviewColumns = struct {
 	Heads:           "heads",
 	AuthorAccountID: "author_account_id",
 	SubmittedAt:     "submitted_at",
+	Revision:        "revision",
 }
 
 var WorkspaceExecutionReviewTableColumns = struct {
@@ -67,6 +70,7 @@ var WorkspaceExecutionReviewTableColumns = struct {
 	Heads           string
 	AuthorAccountID string
 	SubmittedAt     string
+	Revision        string
 }{
 	ID:              "workspace_execution_reviews.id",
 	ExecutionID:     "workspace_execution_reviews.execution_id",
@@ -76,6 +80,7 @@ var WorkspaceExecutionReviewTableColumns = struct {
 	Heads:           "workspace_execution_reviews.heads",
 	AuthorAccountID: "workspace_execution_reviews.author_account_id",
 	SubmittedAt:     "workspace_execution_reviews.submitted_at",
+	Revision:        "workspace_execution_reviews.revision",
 }
 
 // Generated where
@@ -89,6 +94,7 @@ var WorkspaceExecutionReviewWhere = struct {
 	Heads           whereHelpertypes_JSON
 	AuthorAccountID whereHelpernull_String
 	SubmittedAt     whereHelpertime_Time
+	Revision        whereHelperint
 }{
 	ID:              whereHelperstring{field: "\"workspace_execution_reviews\".\"id\""},
 	ExecutionID:     whereHelperstring{field: "\"workspace_execution_reviews\".\"execution_id\""},
@@ -98,6 +104,7 @@ var WorkspaceExecutionReviewWhere = struct {
 	Heads:           whereHelpertypes_JSON{field: "\"workspace_execution_reviews\".\"heads\""},
 	AuthorAccountID: whereHelpernull_String{field: "\"workspace_execution_reviews\".\"author_account_id\""},
 	SubmittedAt:     whereHelpertime_Time{field: "\"workspace_execution_reviews\".\"submitted_at\""},
+	Revision:        whereHelperint{field: "\"workspace_execution_reviews\".\"revision\""},
 }
 
 // WorkspaceExecutionReviewRels is where relationship names are stored.
@@ -194,8 +201,8 @@ func (r *workspaceExecutionReviewR) GetReviewWorkspaceExecutionReviewComments() 
 type workspaceExecutionReviewL struct{}
 
 var (
-	workspaceExecutionReviewAllColumns            = []string{"id", "execution_id", "workspace_id", "verdict", "summary", "heads", "author_account_id", "submitted_at"}
-	workspaceExecutionReviewColumnsWithoutDefault = []string{"execution_id", "workspace_id", "verdict"}
+	workspaceExecutionReviewAllColumns            = []string{"id", "execution_id", "workspace_id", "verdict", "summary", "heads", "author_account_id", "submitted_at", "revision"}
+	workspaceExecutionReviewColumnsWithoutDefault = []string{"execution_id", "workspace_id", "verdict", "revision"}
 	workspaceExecutionReviewColumnsWithDefault    = []string{"id", "summary", "heads", "author_account_id", "submitted_at"}
 	workspaceExecutionReviewPrimaryKeyColumns     = []string{"id"}
 	workspaceExecutionReviewGeneratedColumns      = []string{}

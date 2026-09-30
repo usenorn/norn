@@ -107,23 +107,26 @@ var WorkspaceExecutionArtifactWhere = struct {
 
 // WorkspaceExecutionArtifactRels is where relationship names are stored.
 var WorkspaceExecutionArtifactRels = struct {
-	Execution                             string
-	Workspace                             string
-	DiffArtifactWorkspaceExecutionChanges string
-	ArtifactWorkspaceExecutionValidations string
+	Execution                                          string
+	Workspace                                          string
+	DiffArtifactWorkspaceExecutionChanges              string
+	DiffArtifactWorkspaceExecutionSnapshotRepositories string
+	ArtifactWorkspaceExecutionValidations              string
 }{
 	Execution:                             "Execution",
 	Workspace:                             "Workspace",
 	DiffArtifactWorkspaceExecutionChanges: "DiffArtifactWorkspaceExecutionChanges",
-	ArtifactWorkspaceExecutionValidations: "ArtifactWorkspaceExecutionValidations",
+	DiffArtifactWorkspaceExecutionSnapshotRepositories: "DiffArtifactWorkspaceExecutionSnapshotRepositories",
+	ArtifactWorkspaceExecutionValidations:              "ArtifactWorkspaceExecutionValidations",
 }
 
 // workspaceExecutionArtifactR is where relationships are stored.
 type workspaceExecutionArtifactR struct {
-	Execution                             *WorkspaceExecution               `boil:"Execution" json:"Execution" toml:"Execution" yaml:"Execution"`
-	Workspace                             *Workspace                        `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
-	DiffArtifactWorkspaceExecutionChanges WorkspaceExecutionChangeSlice     `boil:"DiffArtifactWorkspaceExecutionChanges" json:"DiffArtifactWorkspaceExecutionChanges" toml:"DiffArtifactWorkspaceExecutionChanges" yaml:"DiffArtifactWorkspaceExecutionChanges"`
-	ArtifactWorkspaceExecutionValidations WorkspaceExecutionValidationSlice `boil:"ArtifactWorkspaceExecutionValidations" json:"ArtifactWorkspaceExecutionValidations" toml:"ArtifactWorkspaceExecutionValidations" yaml:"ArtifactWorkspaceExecutionValidations"`
+	Execution                                          *WorkspaceExecution                       `boil:"Execution" json:"Execution" toml:"Execution" yaml:"Execution"`
+	Workspace                                          *Workspace                                `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
+	DiffArtifactWorkspaceExecutionChanges              WorkspaceExecutionChangeSlice             `boil:"DiffArtifactWorkspaceExecutionChanges" json:"DiffArtifactWorkspaceExecutionChanges" toml:"DiffArtifactWorkspaceExecutionChanges" yaml:"DiffArtifactWorkspaceExecutionChanges"`
+	DiffArtifactWorkspaceExecutionSnapshotRepositories WorkspaceExecutionSnapshotRepositorySlice `boil:"DiffArtifactWorkspaceExecutionSnapshotRepositories" json:"DiffArtifactWorkspaceExecutionSnapshotRepositories" toml:"DiffArtifactWorkspaceExecutionSnapshotRepositories" yaml:"DiffArtifactWorkspaceExecutionSnapshotRepositories"`
+	ArtifactWorkspaceExecutionValidations              WorkspaceExecutionValidationSlice         `boil:"ArtifactWorkspaceExecutionValidations" json:"ArtifactWorkspaceExecutionValidations" toml:"ArtifactWorkspaceExecutionValidations" yaml:"ArtifactWorkspaceExecutionValidations"`
 }
 
 // NewStruct creates a new relationship struct
@@ -177,6 +180,22 @@ func (r *workspaceExecutionArtifactR) GetDiffArtifactWorkspaceExecutionChanges()
 	}
 
 	return r.DiffArtifactWorkspaceExecutionChanges
+}
+
+func (o *WorkspaceExecutionArtifact) GetDiffArtifactWorkspaceExecutionSnapshotRepositories() WorkspaceExecutionSnapshotRepositorySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetDiffArtifactWorkspaceExecutionSnapshotRepositories()
+}
+
+func (r *workspaceExecutionArtifactR) GetDiffArtifactWorkspaceExecutionSnapshotRepositories() WorkspaceExecutionSnapshotRepositorySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.DiffArtifactWorkspaceExecutionSnapshotRepositories
 }
 
 func (o *WorkspaceExecutionArtifact) GetArtifactWorkspaceExecutionValidations() WorkspaceExecutionValidationSlice {
@@ -547,6 +566,20 @@ func (o *WorkspaceExecutionArtifact) DiffArtifactWorkspaceExecutionChanges(mods 
 	return WorkspaceExecutionChanges(queryMods...)
 }
 
+// DiffArtifactWorkspaceExecutionSnapshotRepositories retrieves all the workspace_execution_snapshot_repository's WorkspaceExecutionSnapshotRepositories with an executor via diff_artifact_id column.
+func (o *WorkspaceExecutionArtifact) DiffArtifactWorkspaceExecutionSnapshotRepositories(mods ...qm.QueryMod) workspaceExecutionSnapshotRepositoryQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_execution_snapshot_repositories\".\"diff_artifact_id\"=?", o.ID),
+	)
+
+	return WorkspaceExecutionSnapshotRepositories(queryMods...)
+}
+
 // ArtifactWorkspaceExecutionValidations retrieves all the workspace_execution_validation's WorkspaceExecutionValidations with an executor via artifact_id column.
 func (o *WorkspaceExecutionArtifact) ArtifactWorkspaceExecutionValidations(mods ...qm.QueryMod) workspaceExecutionValidationQuery {
 	var queryMods []qm.QueryMod
@@ -914,6 +947,119 @@ func (workspaceExecutionArtifactL) LoadDiffArtifactWorkspaceExecutionChanges(ctx
 	return nil
 }
 
+// LoadDiffArtifactWorkspaceExecutionSnapshotRepositories allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceExecutionArtifactL) LoadDiffArtifactWorkspaceExecutionSnapshotRepositories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceExecutionArtifact any, mods queries.Applicator) error {
+	var slice []*WorkspaceExecutionArtifact
+	var object *WorkspaceExecutionArtifact
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceExecutionArtifact.(*WorkspaceExecutionArtifact)
+		if !ok {
+			object = new(WorkspaceExecutionArtifact)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceExecutionArtifact)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceExecutionArtifact))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceExecutionArtifact.(*[]*WorkspaceExecutionArtifact)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceExecutionArtifact)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceExecutionArtifact))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceExecutionArtifactR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceExecutionArtifactR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_execution_snapshot_repositories`),
+		qm.WhereIn(`workspace_execution_snapshot_repositories.diff_artifact_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_execution_snapshot_repositories")
+	}
+
+	var resultSlice []*WorkspaceExecutionSnapshotRepository
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_execution_snapshot_repositories")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_execution_snapshot_repositories")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_execution_snapshot_repositories")
+	}
+
+	if len(workspaceExecutionSnapshotRepositoryAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.DiffArtifactWorkspaceExecutionSnapshotRepositories = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceExecutionSnapshotRepositoryR{}
+			}
+			foreign.R.DiffArtifact = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.DiffArtifactID) {
+				local.R.DiffArtifactWorkspaceExecutionSnapshotRepositories = append(local.R.DiffArtifactWorkspaceExecutionSnapshotRepositories, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceExecutionSnapshotRepositoryR{}
+				}
+				foreign.R.DiffArtifact = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadArtifactWorkspaceExecutionValidations allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceExecutionArtifactL) LoadArtifactWorkspaceExecutionValidations(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceExecutionArtifact any, mods queries.Applicator) error {
@@ -1241,6 +1387,133 @@ func (o *WorkspaceExecutionArtifact) RemoveDiffArtifactWorkspaceExecutionChanges
 				o.R.DiffArtifactWorkspaceExecutionChanges[i] = o.R.DiffArtifactWorkspaceExecutionChanges[ln-1]
 			}
 			o.R.DiffArtifactWorkspaceExecutionChanges = o.R.DiffArtifactWorkspaceExecutionChanges[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddDiffArtifactWorkspaceExecutionSnapshotRepositories adds the given related objects to the existing relationships
+// of the workspace_execution_artifact, optionally inserting them as new records.
+// Appends related to o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories.
+// Sets related.R.DiffArtifact appropriately.
+func (o *WorkspaceExecutionArtifact) AddDiffArtifactWorkspaceExecutionSnapshotRepositories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceExecutionSnapshotRepository) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.DiffArtifactID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_execution_snapshot_repositories\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"diff_artifact_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceExecutionSnapshotRepositoryPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.DiffArtifactID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceExecutionArtifactR{
+			DiffArtifactWorkspaceExecutionSnapshotRepositories: related,
+		}
+	} else {
+		o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories = append(o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceExecutionSnapshotRepositoryR{
+				DiffArtifact: o,
+			}
+		} else {
+			rel.R.DiffArtifact = o
+		}
+	}
+	return nil
+}
+
+// SetDiffArtifactWorkspaceExecutionSnapshotRepositories removes all previously related items of the
+// workspace_execution_artifact replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.DiffArtifact's DiffArtifactWorkspaceExecutionSnapshotRepositories accordingly.
+// Replaces o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories with related.
+// Sets related.R.DiffArtifact's DiffArtifactWorkspaceExecutionSnapshotRepositories accordingly.
+func (o *WorkspaceExecutionArtifact) SetDiffArtifactWorkspaceExecutionSnapshotRepositories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceExecutionSnapshotRepository) error {
+	query := "update \"workspace_execution_snapshot_repositories\" set \"diff_artifact_id\" = null where \"diff_artifact_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories {
+			queries.SetScanner(&rel.DiffArtifactID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.DiffArtifact = nil
+		}
+		o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories = nil
+	}
+
+	return o.AddDiffArtifactWorkspaceExecutionSnapshotRepositories(ctx, exec, insert, related...)
+}
+
+// RemoveDiffArtifactWorkspaceExecutionSnapshotRepositories relationships from objects passed in.
+// Removes related items from R.DiffArtifactWorkspaceExecutionSnapshotRepositories (uses pointer comparison, removal does not keep order)
+// Sets related.R.DiffArtifact.
+func (o *WorkspaceExecutionArtifact) RemoveDiffArtifactWorkspaceExecutionSnapshotRepositories(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceExecutionSnapshotRepository) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.DiffArtifactID, nil)
+		if rel.R != nil {
+			rel.R.DiffArtifact = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("diff_artifact_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories)
+			if ln > 1 && i < ln-1 {
+				o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories[i] = o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories[ln-1]
+			}
+			o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories = o.R.DiffArtifactWorkspaceExecutionSnapshotRepositories[:ln-1]
 			break
 		}
 	}
