@@ -143,7 +143,7 @@ func previewLinks(
 		link := previewLink{name: outcome.Name, reason: outcome.Reason}
 
 		for _, session := range sessions {
-			if outcome.State == entity.SnapshotPreviewReady && session.Open() && session.Name == outcome.Name {
+			if outcome.State == entity.SnapshotPreviewReady && session.Open() && session.Port == outcome.Port {
 				link.url = session.URL(scheme) + outcome.Path
 			}
 		}
@@ -189,8 +189,8 @@ func reviewText(c decisionContext, snapshot entity.ExecutionSnapshot, previews [
 		c.agent(),
 	)
 
-	writeRepositories(&built, snapshot.Repositories)
 	writePreviews(&built, previews)
+	writeRepositories(&built, snapshot.Repositories)
 
 	if summary := strings.TrimSpace(snapshot.Summary); summary != "" {
 		built.WriteString(markup(summary, questionBudget))

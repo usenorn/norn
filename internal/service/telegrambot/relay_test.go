@@ -300,12 +300,12 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 		Summary:      "Split the handler.",
 		Repositories: []entity.SnapshotRepository{{Repository: "api", HeadSHA: "abc123"}},
 		Previews: []entity.SnapshotPreview{
-			{Name: "Application", State: entity.SnapshotPreviewReady, Path: "/totals"},
+			{Name: "Application", State: entity.SnapshotPreviewReady, Path: "/totals", Port: 43000},
 			{Name: "Admin", State: entity.SnapshotPreviewFailed, Reason: "the admin service never became healthy"},
 		},
 	}, nil)
 	h.previews.EXPECT().ByExecution(gomock.Any(), execution.ID).Return([]entity.PreviewSession{
-		{Name: "Application", Host: "app-tg-1.preview.example", State: entity.PreviewOpen},
+		{Name: "application", Host: "app-tg-1.preview.example", State: entity.PreviewOpen, Port: 43000},
 	}, nil)
 	h.conversation.EXPECT().Posted(gomock.Any(), gomock.Any()).Return(nil, nil)
 
@@ -329,6 +329,12 @@ func TestAReviewMessageRemembersTheHeadsItAsksAbout(t *testing.T) {
 		if !strings.Contains(h.sent[0].Text, want) {
 			t.Errorf("review message lacks %q:\n%s", want, h.sent[0].Text)
 		}
+	}
+
+	text := h.sent[0].Text
+	if preview := strings.Index(text, "app-tg-1.preview.example"); preview > strings.Index(text, "<b>api</b>") ||
+		preview > strings.Index(text, "Split the handler.") {
+		t.Errorf("the preview link is not ahead of the repositories and the summary:\n%s", text)
 	}
 }
 
