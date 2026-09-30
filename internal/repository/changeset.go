@@ -17,6 +17,11 @@ type ChangeSet interface {
 		ctx context.Context,
 		validation entity.ExecutionValidation,
 	) (entity.ExecutionValidation, error)
+	SavePublication(
+		ctx context.Context,
+		executionID string,
+		published entity.RepositoryPublication,
+	) (entity.ExecutionChange, error)
 	LinkChange(ctx context.Context, changeID, codeLinkID uuid.UUID) error
 	Get(ctx context.Context, executionID string) (entity.ExecutionChangeSet, error)
 	ByIssue(ctx context.Context, workspaceID, issueID uuid.UUID) (entity.IssueChangeSet, error)

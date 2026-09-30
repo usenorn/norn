@@ -66,6 +66,17 @@
 	--cyan-600: #1e7f98;
 	--cyan-quiet: rgba(53, 183, 214, 0.18);
 
+	--syntax-foreground: var(--ink-900);
+	--syntax-token-keyword: var(--label-violet);
+	--syntax-token-string: var(--green-500);
+	--syntax-token-string-expression: var(--green-500);
+	--syntax-token-comment: var(--ink-500);
+	--syntax-token-constant: var(--amber-500);
+	--syntax-token-function: var(--label-blue);
+	--syntax-token-parameter: var(--ink-700);
+	--syntax-token-punctuation: var(--ink-600);
+	--syntax-token-link: var(--cyan-500);
+
 	--line-subtle: #1c2028;
 	--line-default: #262b34;
 	--line-strong: #384050;

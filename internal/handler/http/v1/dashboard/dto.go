@@ -2627,8 +2627,30 @@ func repositoryChangeDTO(change entity.ExecutionChange) api.ExecutionRepositoryC
 		DiffArtifactId: nilIfNoID(change.DiffArtifactID),
 		PullRequestUrl: nilIfEmpty(change.PullRequestURL),
 		CodeLinkId:     nilIfNoID(change.CodeLinkID),
+		Publication:    publicationDTO(change.Publication),
 		ReportedAt:     change.ReportedAt,
 	}
+}
+
+func publicationDTO(publication entity.ExecutionPublication) *api.RepositoryPublication {
+	if publication.State == entity.PublicationNone {
+		return nil
+	}
+
+	dto := &api.RepositoryPublication{
+		State:       api.PublicationState(publication.State),
+		Error:       nilIfEmpty(publication.Error),
+		Sha:         publication.SHA,
+		Revision:    publication.Revision,
+		PublishedAt: publication.PublishedAt,
+	}
+
+	if publication.Step != entity.PublicationStepNone {
+		step := api.PublicationStep(publication.Step)
+		dto.Step = &step
+	}
+
+	return dto
 }
 
 func repositoryChangeDTOs(changes []entity.ExecutionChange) []api.ExecutionRepositoryChange {

@@ -174,6 +174,38 @@ func (h *handler) CancelWorkspaceExecution(
 	return api.CancelWorkspaceExecution200JSONResponse(executionDTO(execution)), nil
 }
 
+func (h *handler) RetryWorkspaceExecutionPublication(
+	ctx context.Context,
+	request api.RetryWorkspaceExecutionPublicationRequestObject,
+) (api.RetryWorkspaceExecutionPublicationResponseObject, error) {
+	execution, err := h.executions.RetryPublication(ctx, request.WorkspaceId, request.ExecutionId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RetryWorkspaceExecutionPublication200JSONResponse(executionDTO(execution)), nil
+}
+
+func (h *handler) AbandonWorkspaceExecutionPublication(
+	ctx context.Context,
+	request api.AbandonWorkspaceExecutionPublicationRequestObject,
+) (api.AbandonWorkspaceExecutionPublicationResponseObject, error) {
+	execution, err := h.executions.AbandonPublication(ctx, request.WorkspaceId, request.ExecutionId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.AbandonWorkspaceExecutionPublication200JSONResponse(executionDTO(execution)), nil
+}
+
 func (h *handler) RestartWorkspaceExecution(
 	ctx context.Context,
 	request api.RestartWorkspaceExecutionRequestObject,

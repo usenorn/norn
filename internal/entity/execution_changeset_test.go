@@ -107,3 +107,55 @@ func TestAChangeSetNothingHasReportedIntoIsEmpty(t *testing.T) {
 		t.Fatal("a changeset carrying a repository reads as empty")
 	}
 }
+
+func TestAPublicationIsOnlyCompleteWhenNoRepositoryIsStillGoingOrFailed(t *testing.T) {
+	published := func(states ...entity.PublicationState) []entity.RepositoryPublication {
+		repositories := make([]entity.RepositoryPublication, 0, len(states))
+		for _, state := range states {
+			repositories = append(repositories,
+				entity.RepositoryPublication{Publication: entity.ExecutionPublication{State: state}})
+		}
+
+		return repositories
+	}
+
+	for name, tc := range map[string]struct {
+		repositories []entity.RepositoryPublication
+		want         entity.PublicationOutcome
+	}{
+		"all published": {
+			published(entity.PublicationPublished, entity.PublicationPushed), entity.PublicationOutcomeComplete,
+		},
+		"one failed": {
+			published(entity.PublicationPublished, entity.PublicationFailed), entity.PublicationOutcomeIncomplete,
+		},
+		"one still going": {
+			published(entity.PublicationFailed, entity.PublicationPending), entity.PublicationOutcomeUnderway,
+		},
+	} {
+		if got := entity.PublicationOutcomeOf(tc.repositories); got != tc.want {
+			t.Errorf("%s: outcome %d, want %d", name, got, tc.want)
+		}
+	}
+}
+
+func TestAPublicationReportIsCurrentOnlyWhenEveryRepositoryHoldsItsRevisionAndAttempt(t *testing.T) {
+	held := func(revision, attempt int) entity.ExecutionChange {
+		return entity.ExecutionChange{Publication: entity.ExecutionPublication{Revision: revision, Attempt: attempt}}
+	}
+
+	for name, tc := range map[string]struct {
+		changes []entity.ExecutionChange
+		want    bool
+	}{
+		"every repository took it":            {[]entity.ExecutionChange{held(2, 2), held(2, 2)}, true},
+		"a newer attempt kept one repository": {[]entity.ExecutionChange{held(2, 2), held(2, 3)}, false},
+		"nothing was stored":                  {nil, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := (entity.ExecutionChangeSet{Changes: tc.changes}).Holds(2, 2); got != tc.want {
+				t.Fatalf("Holds = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

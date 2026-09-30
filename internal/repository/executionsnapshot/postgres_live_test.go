@@ -52,7 +52,11 @@ func heldRun(t *testing.T, client *postgres.Client) (string, uuid.UUID) {
 	var executionID, workspaceID string
 
 	err := client.Querier(ctx).
-		QueryRowContext(ctx, `SELECT id, workspace_id FROM workspace_executions LIMIT 1`).
+		QueryRowContext(ctx, `
+SELECT e.id, e.workspace_id
+FROM workspace_executions e
+WHERE NOT EXISTS (SELECT 1 FROM workspace_execution_snapshots s WHERE s.execution_id = e.id)
+LIMIT 1`).
 		Scan(&executionID, &workspaceID)
 	if err != nil {
 		t.Skipf("this database holds no execution to hang a snapshot off: %v", err)

@@ -43,6 +43,11 @@ func (s *executionsService) Review(
 		}
 	}
 
+	previous, err := s.previousOf(ctx, snapshot)
+	if err != nil {
+		return service.ExecutionReviewState{}, err
+	}
+
 	revisions, err := s.snapshots.Revisions(ctx, execution.ID)
 	if err != nil {
 		return service.ExecutionReviewState{}, err
@@ -74,11 +79,23 @@ func (s *executionsService) Review(
 	return service.ExecutionReviewState{
 		Snapshot:  snapshot,
 		Latest:    latest,
+		Unchanged: snapshot.Repeats(previous),
 		Revisions: revisions,
 		Sessions:  sessions,
 		Comments:  visible,
 		Reviews:   reviews,
 	}, nil
+}
+
+func (s *executionsService) previousOf(
+	ctx context.Context,
+	snapshot entity.ExecutionSnapshot,
+) (entity.ExecutionSnapshot, error) {
+	if snapshot.Revision <= 1 {
+		return entity.ExecutionSnapshot{}, nil
+	}
+
+	return s.snapshots.ByRevision(ctx, snapshot.ExecutionID, snapshot.Revision-1)
 }
 
 func (s *executionsService) latest(
@@ -386,17 +403,6 @@ func (s *executionsService) SubmitReview(
 		return entity.ExecutionReview{}, entity.ErrExecutionSelfApproval
 	}
 
-	latest, err := s.latest(ctx, execution)
-	if err != nil {
-		return entity.ExecutionReview{}, err
-	}
-
-	heads := latest.Heads()
-
-	if !heads.Matches(submission.Heads) {
-		return entity.ExecutionReview{}, entity.ErrReviewStale
-	}
-
 	comments, err := s.reviews.ListComments(ctx, execution.ID)
 	if err != nil {
 		return entity.ExecutionReview{}, err
@@ -433,16 +439,33 @@ func (s *executionsService) SubmitReview(
 	var (
 		review entity.ExecutionReview
 		moved  entity.Execution
+		latest entity.ExecutionSnapshot
 	)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		locked, err := s.executions.LockByID(ctx, execution.ID)
+		if err != nil {
+			return err
+		}
+
+		if locked.State != entity.ExecutionAwaitingReview {
+			return entity.ErrReviewClosed
+		}
+
+		latest, err = s.reviewed(ctx, locked, submission.Heads)
+		if err != nil {
+			return err
+		}
+
+		execution = locked
+
 		review, err = s.reviews.CreateReview(ctx, entity.ExecutionReview{
 			ExecutionID:     execution.ID,
 			WorkspaceID:     execution.WorkspaceID,
 			Verdict:         submission.Verdict,
 			Summary:         summary,
 			Revision:        latest.Revision,
-			Heads:           heads,
+			Heads:           latest.Heads(),
 			AuthorAccountID: decision.Actor.AccountID,
 			SubmittedAt:     time.Now().UTC(),
 		})
@@ -471,11 +494,28 @@ func (s *executionsService) SubmitReview(
 		return entity.ExecutionReview{}, err
 	}
 
-	if err := s.handBack(ctx, moved, submission.Verdict, summary, pending); err != nil {
+	if err := s.handBack(ctx, moved, latest, submission.Verdict, summary, pending); err != nil {
 		return entity.ExecutionReview{}, err
 	}
 
 	return review, nil
+}
+
+func (s *executionsService) reviewed(
+	ctx context.Context,
+	execution entity.Execution,
+	heads entity.ReviewHeads,
+) (entity.ExecutionSnapshot, error) {
+	latest, err := s.latest(ctx, execution)
+	if err != nil {
+		return entity.ExecutionSnapshot{}, err
+	}
+
+	if !latest.Heads().Matches(heads) {
+		return entity.ExecutionSnapshot{}, entity.ErrReviewStale
+	}
+
+	return latest, nil
 }
 
 func (s *executionsService) conclude(
@@ -506,6 +546,7 @@ func (s *executionsService) conclude(
 func (s *executionsService) handBack(
 	ctx context.Context,
 	execution entity.Execution,
+	approved entity.ExecutionSnapshot,
 	verdict entity.ExecutionReviewVerdict,
 	summary string,
 	comments []entity.ExecutionReviewComment,
@@ -515,12 +556,17 @@ func (s *executionsService) handBack(
 	}
 
 	if execution.RunnerID != uuid.Nil {
-		instruction := channelv1.Instruction{Reason: channelv1.ResumeApproved, Stage: execution.Stage}
+		instruction := publishing(
+			channelv1.ResumeApproved, execution, approved.Revision, approved.Heads(),
+		)
 
 		if verdict == entity.VerdictRequestChanges {
-			instruction.Reason = channelv1.ResumeFeedback
-			instruction.Instruction = entity.ComposeReviewFeedback(summary, comments)
-			instruction.Threads = entity.ReviewThreads(comments)
+			instruction = channelv1.Instruction{
+				Reason:      channelv1.ResumeFeedback,
+				Stage:       execution.Stage,
+				Instruction: entity.ComposeReviewFeedback(summary, comments),
+				Threads:     entity.ReviewThreads(comments),
+			}
 		}
 
 		if err := s.tell(ctx, execution, entity.ChannelExecutionResume, instruction); err != nil {
@@ -535,6 +581,20 @@ func (s *executionsService) handBack(
 	}
 
 	return nil
+}
+
+func publishing(
+	reason string,
+	execution entity.Execution,
+	revision int,
+	heads entity.ReviewHeads,
+) channelv1.Instruction {
+	return channelv1.Instruction{
+		Reason:   reason,
+		Stage:    execution.Stage,
+		Revision: revision,
+		Heads:    heads,
+	}
 }
 
 func (s *executionsService) ReviewReplied(

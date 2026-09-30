@@ -7352,6 +7352,49 @@ paths:
         '409': { $ref: '#/components/responses/ExecutionConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/executions/{executionId}/publication/retry:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: retryWorkspaceExecutionPublication
+      summary: Publish what is left of the approved revision again
+      description: >-
+        The machine pushes and opens pull requests only for the repositories whose publication did
+        not finish, and only the commits somebody approved.
+      responses:
+        '200':
+          description: The execution, still publishing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/executions/{executionId}/publication/abandon:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ExecutionId'
+    post:
+      tags: [executions]
+      operationId: abandonWorkspaceExecutionPublication
+      summary: Stop publishing the approved revision and fail the run
+      responses:
+        '200':
+          description: The execution, told to stop
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Execution' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/ExecutionConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/executions/{executionId}/plans:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -10296,7 +10339,37 @@ components:
           description: >-
             The code link this pull request became. Absent when norn does not follow the
             repository, in which case the address is all there is.
+        publication: { $ref: '#/components/schemas/RepositoryPublication' }
         reportedAt: { type: string, format: date-time }
+
+    PublicationState:
+      type: string
+      enum: [pending, pushed, published, failed]
+
+    PublicationStep:
+      type: string
+      enum: [push, pull_request]
+
+    RepositoryPublication:
+      type: object
+      description: >-
+        What happened when the machine published the approved revision of this repository. Absent
+        until somebody approves; each repository carries its own outcome while the run keeps one
+        decision.
+      required: [state, sha, revision]
+      properties:
+        state: { $ref: '#/components/schemas/PublicationState' }
+        step: { $ref: '#/components/schemas/PublicationStep' }
+        error:
+          type: string
+          maxLength: 4000
+          description: Why the step failed, as the machine reported it
+        sha:
+          type: string
+          maxLength: 64
+          description: The approved commit the machine published or tried to
+        revision: { type: integer, minimum: 1 }
+        publishedAt: { type: string, format: date-time }
 
     ExecutionValidation:
       type: object
@@ -10514,8 +10587,8 @@ components:
 
     ExecutionReviewState:
       type: object
-      required: [revision, latestRevision, revisions, summary, repositories, previews, heads,
-                 comments, reviews]
+      required: [revision, latestRevision, unchanged, revisions, summary, repositories, previews,
+                 heads, comments, reviews]
       properties:
         revision:
           type: integer
@@ -10525,6 +10598,11 @@ components:
           type: integer
           minimum: 0
           description: Only the latest snapshot can be approved or asked to change.
+        unchanged:
+          type: boolean
+          description: >-
+            True when this pass holds exactly the commits of the pass before it, so the coding
+            agent came back without changing anything.
         revisions:
           type: array
           items: { $ref: '#/components/schemas/ReviewRevision' }
@@ -10644,6 +10722,7 @@ components:
                 - review_comment_reply
                 - review_comment_anchor
                 - review_comments_full
+                - publication_not_pending
 
     PreviewProblem:
       allOf:

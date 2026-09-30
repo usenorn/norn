@@ -154,6 +154,41 @@ export function reviewPreviewLine(preview: ReviewPreview): string {
 	}
 }
 
+export function unchangedTitle(review: ReviewState): string {
+	return `Nothing changed since revision ${review.revision - 1}`;
+}
+
+export const unchangedLine =
+	"These are the commits you already reviewed. What the coding agent said below explains why.";
+
+const previewFixReasonMax = 300;
+
+export function failedPreviews(review: ReviewState): ReviewPreview[] {
+	return review.previews.filter((preview) => preview.state === "failed");
+}
+
+export function previewFixRequest(failed: ReviewPreview[]): string {
+	const lines = failed.map((preview) => {
+		const reason = preview.reason?.trim() || "no reason was given";
+		const clipped =
+			[...reason].length > previewFixReasonMax ? [...reason].slice(0, previewFixReasonMax).join("") + "…" : reason;
+
+		return `- ${preview.name}: ${clipped}`;
+	});
+
+	const request =
+		"These previews did not start, so nobody could try the change:\n\n" +
+		lines.join("\n") +
+		"\n\nMake them start. If the fix is in the code, change it on this branch; " +
+		"if it is in how the codebase is run, say what has to change.";
+
+	return [...request].slice(0, reviewBodyMaxLength).join("");
+}
+
+export function previewFixLabel(agentName: string | undefined): string {
+	return `Ask ${agentName || "the coding agent"} to fix the preview`;
+}
+
 export function previewStateLabel(preview: ReviewPreview): string {
 	switch (preview.state) {
 		case "ready":

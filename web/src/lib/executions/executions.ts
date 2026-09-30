@@ -213,6 +213,7 @@ export type RunFailure =
 	| { kind: "decision_forbidden" }
 	| { kind: "review_closed" }
 	| { kind: "review_stale" }
+	| { kind: "publication_not_pending" }
 	| { kind: "review_empty" }
 	| { kind: "comment_not_yours" }
 	| { kind: "comment_reply" }
@@ -257,6 +258,8 @@ export function readRunFailure(error: unknown): RunFailure {
 			return { kind: "review_closed" };
 		case "review_stale":
 			return { kind: "review_stale" };
+		case "publication_not_pending":
+			return { kind: "publication_not_pending" };
 		case "review_empty":
 			return { kind: "review_empty" };
 		case "review_comment_not_yours":
@@ -314,6 +317,8 @@ export function runFailureMessage(failure: RunFailure): string {
 			return "These changes are no longer waiting for review. Reload to see where the run got to.";
 		case "review_stale":
 			return "The changes moved on since you opened them. Reload to review what is there now.";
+		case "publication_not_pending":
+			return "This run is not waiting to publish any more. Reload to see where it got to.";
 		case "review_empty":
 			return "Say what should change, in the summary or on a line, before sending the work back.";
 		case "comment_not_yours":
@@ -567,19 +572,61 @@ export function pullRequestReach(
 	return { kind: "none" };
 }
 
-export function noPullRequestLine(
+export type RepositoryPublicationView =
+	| { kind: "held" }
+	| { kind: "publishing" }
+	| { kind: "pushed"; branch?: string }
+	| { kind: "failed"; step: "push" | "pull_request"; error: string };
+
+export function publicationOf(
 	execution: Execution | undefined,
 	change: ExecutionRepositoryChange
-): string {
-	if (execution && execution.stage !== "publication") {
-		return "Nothing is pushed until somebody approves the changes.";
+): RepositoryPublicationView {
+	if (execution && execution.stage !== "publication") return { kind: "held" };
+
+	const publication = change.publication;
+
+	if (publication?.state === "failed") {
+		return { kind: "failed", step: publication.step ?? "push", error: publication.error ?? "" };
 	}
 
-	if (execution?.state === "approved") return "Pushing the branch and opening the pull request.";
+	if (execution?.state === "approved" && publication?.state !== "pushed") {
+		return { kind: "publishing" };
+	}
 
-	if (change.branch) return `Pushed to ${change.branch}. No pull request was opened.`;
+	return { kind: "pushed", branch: change.branch };
+}
 
-	return "No pull request was opened.";
+export function publicationLine(view: RepositoryPublicationView): string {
+	switch (view.kind) {
+		case "held":
+			return "Nothing is pushed until somebody approves the changes.";
+		case "publishing":
+			return "Pushing the branch and opening the pull request.";
+		case "failed": {
+			const step =
+				view.step === "pull_request" ? "Opening the pull request failed" : "Pushing the approved commits failed";
+
+			return view.error ? `${step}: ${view.error}` : `${step}.`;
+		}
+		case "pushed":
+			return view.branch
+				? `Pushed to ${view.branch}. No pull request was opened.`
+				: "No pull request was opened.";
+	}
+}
+
+export function publicationIncomplete(
+	execution: Execution,
+	changeset: ExecutionChangeSet | undefined
+): boolean {
+	if (execution.state !== "approved" || !changeset) return false;
+
+	const states = changeset.repositories.map((change) => change.publication?.state);
+
+	if (states.length === 0 || states.some((state) => !state || state === "pending")) return false;
+
+	return states.includes("failed");
 }
 
 export type DiffReach = { kind: "available"; artifactId: string } | { kind: "absent" };

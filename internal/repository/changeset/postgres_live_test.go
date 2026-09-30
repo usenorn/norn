@@ -292,3 +292,112 @@ func TestALinkedPullRequestSurvivesTheNextReportOfTheSameRepository(t *testing.T
 		return nil
 	})
 }
+
+func TestAPublicationFromAnEarlierRevisionNeverOverwritesTheApprovedOne(t *testing.T) {
+	client, changesets := live(t)
+	executionID, workspaceID := heldRun(t, client)
+
+	rolledBack(t, client, func(ctx context.Context) error {
+		if _, err := changesets.SaveChange(ctx, entity.ExecutionChange{
+			ExecutionID: executionID,
+			WorkspaceID: workspaceID,
+			Repository:  "backend",
+			HeadSHA:     "b2",
+			ReportedAt:  at(reportedEarly),
+		}); err != nil {
+			return fmt.Errorf("record the reviewed change: %w", err)
+		}
+
+		published, err := changesets.SavePublication(ctx, executionID, entity.RepositoryPublication{
+			Repository:     "backend",
+			PullRequestURL: "https://github.com/usenorn/norn/pull/232",
+			Publication: entity.ExecutionPublication{
+				State:    entity.PublicationPublished,
+				Step:     entity.PublicationStepPullRequest,
+				SHA:      "b2",
+				Revision: 2,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("record revision two as published: %w", err)
+		}
+
+		if published.PullRequestURL != "https://github.com/usenorn/norn/pull/232" {
+			return fmt.Errorf("the pull request opened by publication was not kept: %q",
+				published.PullRequestURL)
+		}
+
+		replayed, err := changesets.SavePublication(ctx, executionID, entity.RepositoryPublication{
+			Repository: "backend",
+			Publication: entity.ExecutionPublication{
+				State:    entity.PublicationFailed,
+				Step:     entity.PublicationStepPush,
+				Error:    "rejected",
+				SHA:      "b1",
+				Revision: 1,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("replay a revision one failure: %w", err)
+		}
+
+		if replayed.Publication.State != entity.PublicationPublished ||
+			replayed.Publication.SHA != "b2" {
+			return fmt.Errorf("a replayed older publication overwrote the approved one: %+v",
+				replayed.Publication)
+		}
+
+		if _, err := changesets.SavePublication(ctx, executionID, entity.RepositoryPublication{
+			Repository:  "frontend",
+			Publication: entity.ExecutionPublication{State: entity.PublicationPushed, SHA: "f1"},
+		}); !errors.Is(err, entity.ErrExecutionChangeNotFound) {
+			return fmt.Errorf("publishing a repository the run never reported returned %v", err)
+		}
+
+		return nil
+	})
+}
+
+func TestALateReportFromAnEarlierAttemptNeverOverwritesTheRetryThatFollowed(t *testing.T) {
+	client, changesets := live(t)
+	executionID, workspaceID := heldRun(t, client)
+
+	rolledBack(t, client, func(ctx context.Context) error {
+		if _, err := changesets.SaveChange(ctx, entity.ExecutionChange{
+			ExecutionID: executionID,
+			WorkspaceID: workspaceID,
+			Repository:  "backend",
+			HeadSHA:     "b2",
+			ReportedAt:  at(reportedEarly),
+		}); err != nil {
+			return fmt.Errorf("record the reviewed change: %w", err)
+		}
+
+		if _, err := changesets.SavePublication(ctx, executionID, entity.RepositoryPublication{
+			Repository: "backend",
+			Publication: entity.ExecutionPublication{
+				State: entity.PublicationPublished, Step: entity.PublicationStepPullRequest,
+				SHA: "b2", Revision: 2, Attempt: 2,
+			},
+		}); err != nil {
+			return fmt.Errorf("record the retry as published: %w", err)
+		}
+
+		late, err := changesets.SavePublication(ctx, executionID, entity.RepositoryPublication{
+			Repository: "backend",
+			Publication: entity.ExecutionPublication{
+				State: entity.PublicationFailed, Step: entity.PublicationStepPush,
+				Error: "HTTP 502", SHA: "b2", Revision: 2, Attempt: 1,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("record the late first attempt: %w", err)
+		}
+
+		if late.Publication.State != entity.PublicationPublished || late.Publication.Attempt != 2 {
+			return fmt.Errorf("a late report from the first attempt overwrote the retry: %+v", late.Publication)
+		}
+
+		return nil
+	})
+}

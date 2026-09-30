@@ -40,6 +40,7 @@ type ExecutionPlacement struct {
 type ExecutionReviewState struct {
 	Snapshot  entity.ExecutionSnapshot
 	Latest    entity.ExecutionSnapshot
+	Unchanged bool
 	Revisions []entity.ExecutionRevision
 	Sessions  []entity.PreviewSession
 	Comments  []entity.ExecutionReviewComment
@@ -135,6 +136,12 @@ type Executions interface {
 	SubmitReview(
 		ctx context.Context, workspaceID uuid.UUID, executionID string, submission ReviewSubmission,
 	) (entity.ExecutionReview, error)
+	RetryPublication(
+		ctx context.Context, workspaceID uuid.UUID, executionID string,
+	) (entity.Execution, error)
+	AbandonPublication(
+		ctx context.Context, workspaceID uuid.UUID, executionID string,
+	) (entity.Execution, error)
 
 	Retain(
 		ctx context.Context,

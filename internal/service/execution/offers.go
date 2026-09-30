@@ -439,11 +439,22 @@ func (s *executionsService) tell(
 		return err
 	}
 
-	if _, err := s.channels.Append(ctx, execution.RunnerID, message); err != nil {
-		return err
-	}
+	var failure error
 
-	return nil
+	postgres.AfterCommit(ctx, func(ctx context.Context) {
+		if _, err := s.channels.Append(ctx, execution.RunnerID, message); err != nil {
+			failure = err
+
+			logging.From(ctx).WarnContext(
+				ctx, "a message for a runner could not be queued",
+				slog.String("execution_id", execution.ID),
+				slog.String("type", string(kind)),
+				slog.String("error", err.Error()),
+			)
+		}
+	})
+
+	return failure
 }
 
 func (s *executionsService) requirements(ctx context.Context, issue entity.Issue) uuid.UUID {

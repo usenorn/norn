@@ -22,6 +22,9 @@ const (
 	TelegramCallbackAnswer     = "a:"
 	TelegramCallbackApprove    = "approve"
 	TelegramCallbackChanges    = "changes"
+	TelegramCallbackRetry      = "retry"
+	TelegramCallbackAbandon    = "abandon"
+	TelegramCallbackFixPreview = "fixpreview"
 	TelegramConnectionName     = "Telegram"
 	TelegramTypingAction       = "typing"
 	TelegramUpdateSweepBatch   = 500
@@ -297,14 +300,15 @@ type TelegramOutgoing struct {
 type TelegramDecisionKind string
 
 const (
-	TelegramDecisionQuestion TelegramDecisionKind = "question"
-	TelegramDecisionPlan     TelegramDecisionKind = "plan"
-	TelegramDecisionReview   TelegramDecisionKind = "review"
+	TelegramDecisionQuestion    TelegramDecisionKind = "question"
+	TelegramDecisionPlan        TelegramDecisionKind = "plan"
+	TelegramDecisionReview      TelegramDecisionKind = "review"
+	TelegramDecisionPublication TelegramDecisionKind = "publication"
 )
 
 func (k TelegramDecisionKind) Valid() bool {
 	switch k {
-	case TelegramDecisionQuestion, TelegramDecisionPlan, TelegramDecisionReview:
+	case TelegramDecisionQuestion, TelegramDecisionPlan, TelegramDecisionReview, TelegramDecisionPublication:
 		return true
 	default:
 		return false
@@ -345,6 +349,15 @@ func TelegramReviewDecision(execution Execution, heads ReviewHeads) TelegramDeci
 	}
 }
 
+func TelegramPublicationDecision(execution Execution, revision, attempt int) TelegramDecision {
+	return TelegramDecision{
+		WorkspaceID: execution.WorkspaceID,
+		Kind:        TelegramDecisionPublication,
+		ExecutionID: execution.ID,
+		Round:       strconv.Itoa(revision) + "." + strconv.Itoa(attempt),
+	}
+}
+
 func TelegramDecisionLeft(execution Execution, from ExecutionState, at time.Time) (TelegramDecision, bool) {
 	kind := TelegramDecisionPlan
 
@@ -352,6 +365,8 @@ func TelegramDecisionLeft(execution Execution, from ExecutionState, at time.Time
 	case ExecutionAwaitingPlan:
 	case ExecutionAwaitingReview:
 		kind = TelegramDecisionReview
+	case ExecutionApproved:
+		kind = TelegramDecisionPublication
 	default:
 		return TelegramDecision{}, false
 	}
@@ -393,6 +408,7 @@ type TelegramDecisionMessage struct {
 	ExecutionID  string
 	PlanRevision int
 	ReviewHeads  ReviewHeads
+	Round        string
 	Settled      bool
 }
 

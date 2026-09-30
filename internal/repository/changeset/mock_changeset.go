@@ -101,6 +101,21 @@ func (mr *MockChangeSetMockRecorder) SaveChange(ctx, change any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChange", reflect.TypeOf((*MockChangeSet)(nil).SaveChange), ctx, change)
 }
 
+// SavePublication mocks base method.
+func (m *MockChangeSet) SavePublication(ctx context.Context, executionID string, published entity.RepositoryPublication) (entity.ExecutionChange, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SavePublication", ctx, executionID, published)
+	ret0, _ := ret[0].(entity.ExecutionChange)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SavePublication indicates an expected call of SavePublication.
+func (mr *MockChangeSetMockRecorder) SavePublication(ctx, executionID, published any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePublication", reflect.TypeOf((*MockChangeSet)(nil).SavePublication), ctx, executionID, published)
+}
+
 // SaveResult mocks base method.
 func (m *MockChangeSet) SaveResult(ctx context.Context, result entity.ExecutionResult) (entity.ExecutionResult, error) {
 	m.ctrl.T.Helper()

@@ -70,15 +70,6 @@ func (v ExecutionReviewVerdict) Valid() bool {
 
 type ReviewHeads map[string]string
 
-func HeadsOf(changes []ExecutionChange) ReviewHeads {
-	heads := make(ReviewHeads, len(changes))
-
-	for _, change := range changes {
-		heads[change.Repository] = change.HeadSHA
-	}
-
-	return heads
-}
 
 func (h ReviewHeads) Matches(other ReviewHeads) bool {
 	return maps.Equal(h, other)
@@ -164,6 +155,16 @@ type ExecutionReview struct {
 	AuthorAccountID uuid.UUID
 	AuthorName      string
 	SubmittedAt     time.Time
+}
+
+func LastApproval(reviews []ExecutionReview) (ExecutionReview, bool) {
+	for index := len(reviews) - 1; index >= 0; index-- {
+		if reviews[index].Verdict == VerdictApprove {
+			return reviews[index], true
+		}
+	}
+
+	return ExecutionReview{}, false
 }
 
 func ValidateReviewAnchor(anchor ReviewAnchor) error {

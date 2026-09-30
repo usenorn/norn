@@ -17,6 +17,7 @@ const (
 	ExecutionCheckMaxLen       = 200
 	ExecutionCheckDetailMaxLen = 4000
 	ExecutionPullRequestMaxLen = 2000
+	ExecutionPublicationMaxLen = 4000
 	ExecutionRevisionMaxLen    = 64
 	ExecutionChangesMax        = 50
 	ExecutionValidationsMax    = 100
@@ -25,7 +26,90 @@ const (
 var (
 	ErrExecutionResultNotFound = errors.New("this run has not reported what it changed")
 	ErrExecutionResultStale    = errors.New("a newer report is already on record for this run")
+	ErrExecutionChangeNotFound = errors.New("this run has not reported a change in that repository")
+	ErrPublicationStale        = errors.New("that publication belongs to a revision nobody approved last")
+	ErrPublicationUnapproved   = errors.New("that publication names commits other than the approved ones")
+	ErrPublicationNotPending   = errors.New("this run is not waiting to publish its approved changes")
 )
+
+type PublicationState string
+
+const (
+	PublicationNone      PublicationState = ""
+	PublicationPending   PublicationState = channelv1.PublicationPending
+	PublicationPushed    PublicationState = channelv1.PublicationPushed
+	PublicationPublished PublicationState = channelv1.PublicationPublished
+	PublicationFailed    PublicationState = channelv1.PublicationFailed
+)
+
+func PublicationStates() []PublicationState {
+	return []PublicationState{
+		PublicationPending, PublicationPushed, PublicationPublished, PublicationFailed,
+	}
+}
+
+func (s PublicationState) Valid() bool {
+	return slices.Contains(PublicationStates(), s)
+}
+
+type PublicationStep string
+
+const (
+	PublicationStepNone        PublicationStep = ""
+	PublicationStepPush        PublicationStep = channelv1.PublicationStepPush
+	PublicationStepPullRequest PublicationStep = channelv1.PublicationStepPullRequest
+)
+
+func (s PublicationStep) Valid() bool {
+	return s == PublicationStepNone || s == PublicationStepPush || s == PublicationStepPullRequest
+}
+
+type ExecutionPublication struct {
+	State       PublicationState
+	Step        PublicationStep
+	Error       string
+	SHA         string
+	Revision    int
+	Attempt     int
+	PublishedAt *time.Time
+}
+
+func (p ExecutionPublication) Failed() bool {
+	return p.State == PublicationFailed
+}
+
+type PublicationOutcome int
+
+const (
+	PublicationOutcomeUnderway PublicationOutcome = iota
+	PublicationOutcomeIncomplete
+	PublicationOutcomeComplete
+)
+
+func PublicationOutcomeOf(published []RepositoryPublication) PublicationOutcome {
+	failed := false
+
+	for _, repository := range published {
+		switch repository.Publication.State {
+		case PublicationPending, PublicationNone:
+			return PublicationOutcomeUnderway
+		case PublicationFailed:
+			failed = true
+		}
+	}
+
+	if failed {
+		return PublicationOutcomeIncomplete
+	}
+
+	return PublicationOutcomeComplete
+}
+
+type RepositoryPublication struct {
+	Repository     string
+	PullRequestURL string
+	Publication    ExecutionPublication
+}
 
 type ValidationStatus string
 
@@ -67,6 +151,7 @@ type ExecutionChange struct {
 	DiffArtifactID uuid.UUID
 	PullRequestURL string
 	CodeLinkID     uuid.UUID
+	Publication    ExecutionPublication
 	ReportedAt     time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -90,6 +175,26 @@ type ExecutionChangeSet struct {
 	Result      ExecutionResult
 	Changes     []ExecutionChange
 	Validations []ExecutionValidation
+}
+
+func (c ExecutionChangeSet) Holds(revision, attempt int) bool {
+	return len(c.Changes) > 0 && !slices.ContainsFunc(c.Changes, func(change ExecutionChange) bool {
+		return change.Publication.Revision != revision || change.Publication.Attempt != attempt
+	})
+}
+
+func (c ExecutionChangeSet) PublicationOutcome() PublicationOutcome {
+	published := make([]RepositoryPublication, 0, len(c.Changes))
+
+	for _, change := range c.Changes {
+		published = append(published, RepositoryPublication{
+			Repository:     change.Repository,
+			PullRequestURL: change.PullRequestURL,
+			Publication:    change.Publication,
+		})
+	}
+
+	return PublicationOutcomeOf(published)
 }
 
 func (c ExecutionChangeSet) Empty() bool {
@@ -139,6 +244,29 @@ func ValidateExecutionChange(field string, change ExecutionChange) error {
 		notNegative(field+".additions", change.Additions),
 		notNegative(field+".deletions", change.Deletions),
 		notNegative(field+".filesChanged", change.FilesChanged),
+	)
+}
+
+func ValidateRepositoryPublication(field string, published RepositoryPublication) error {
+	state := FieldError{}
+	if !published.Publication.State.Valid() {
+		state = FieldError{Field: field + ".state", Code: ValidationCodeUnsupportedValue}
+	}
+
+	step := FieldError{}
+	if !published.Publication.Step.Valid() {
+		step = FieldError{Field: field + ".step", Code: ValidationCodeUnsupportedValue}
+	}
+
+	return NewValidationError(
+		requiredText(field+".repo", published.Repository, CodebaseRepositoryMaxLen),
+		requiredText(field+".sha", published.Publication.SHA, ExecutionRevisionMaxLen),
+		optionalText(field+".failure", published.Publication.Error, ExecutionPublicationMaxLen),
+		optionalText(
+			field+".pullRequestUrl", published.PullRequestURL, ExecutionPullRequestMaxLen,
+		),
+		state,
+		step,
 	)
 }
 

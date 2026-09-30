@@ -13,6 +13,7 @@ import (
 	changesetrepo "github.com/usenorn/norn/internal/repository/changeset"
 	executionsnapshotrepo "github.com/usenorn/norn/internal/repository/executionsnapshot"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
+	jobrepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -44,6 +45,8 @@ type harness struct {
 	recorded    []entity.ExecutionSnapshot
 	published   []entity.Event
 	linked      []service.LinkIssueCodeInput
+	relayed     []entity.TelegramDecision
+	settled     []entity.TelegramDecision
 }
 
 func newHarness(t *testing.T) *harness {
@@ -106,8 +109,27 @@ func newHarness(t *testing.T) *harness {
 		Do(func(_ context.Context, event entity.Event) { h.published = append(h.published, event) }).
 		AnyTimes()
 
+	jobs := jobrepo.NewMockJobProducer(ctrl)
+	jobs.EXPECT().
+		EnqueueTelegramDecision(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, decision entity.TelegramDecision) error {
+			h.relayed = append(h.relayed, decision)
+
+			return nil
+		}).
+		AnyTimes()
+	jobs.EXPECT().
+		EnqueueTelegramSettlement(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, decision entity.TelegramDecision) error {
+			h.settled = append(h.settled, decision)
+
+			return nil
+		}).
+		AnyTimes()
+
 	h.service = changesetsvc.New(
 		h.changesets, h.snapshots, h.issues, h.executions, h.source, h.events, h.authorizer, transactor,
+		jobs,
 	)
 
 	return h
@@ -192,6 +214,39 @@ func (h *harness) expectStore() {
 			h.recorded = append(h.recorded, snapshot)
 
 			return snapshot, nil
+		}).
+		AnyTimes()
+
+	h.snapshots.EXPECT().
+		Latest(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, string) (entity.ExecutionSnapshot, error) {
+			if len(h.recorded) == 0 {
+				return entity.ExecutionSnapshot{}, entity.ErrExecutionSnapshotNotFound
+			}
+
+			return h.recorded[len(h.recorded)-1], nil
+		}).
+		AnyTimes()
+
+	h.changesets.EXPECT().
+		SavePublication(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ string, published entity.RepositoryPublication,
+		) (entity.ExecutionChange, error) {
+			for index, held := range h.changes {
+				if held.Repository != published.Repository {
+					continue
+				}
+
+				h.changes[index].Publication = published.Publication
+				if published.PullRequestURL != "" {
+					h.changes[index].PullRequestURL = published.PullRequestURL
+				}
+
+				return h.changes[index], nil
+			}
+
+			return entity.ExecutionChange{}, entity.ErrExecutionChangeNotFound
 		}).
 		AnyTimes()
 

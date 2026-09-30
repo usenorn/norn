@@ -26,6 +26,7 @@
 		changeTotals,
 		isSettled,
 		mergeTimeline,
+		publicationIncomplete,
 		readRunFailure,
 		retainLongerSeconds,
 		runFailureMessage,
@@ -93,6 +94,7 @@
 	const questions = $derived(ready?.questions ?? []);
 	const right = $derived<DecisionRight>(ready?.right ?? { canDecide: false });
 	const asking = $derived(blockingQuestion(questions));
+	const stalled = $derived(execution ? publicationIncomplete(execution, changeset) : false);
 	const now = $derived(ticked ?? data.now);
 	const live = $derived(Boolean(execution) && !isSettled(execution!.state));
 	const moreTimeline = $derived.by(() => {
@@ -205,6 +207,22 @@
 			api.POST("/workspaces/{workspaceId}/executions/{executionId}/cancel", {
 				params: { path: pathOf(execution!.id) },
 				body: {},
+			})
+		);
+	}
+
+	function retryPublication() {
+		void act(() =>
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/publication/retry", {
+				params: { path: pathOf(execution!.id) },
+			})
+		);
+	}
+
+	function abandonPublication() {
+		void act(() =>
+			api.POST("/workspaces/{workspaceId}/executions/{executionId}/publication/abandon", {
+				params: { path: pathOf(execution!.id) },
 			})
 		);
 	}
@@ -470,6 +488,25 @@
 						<div>
 							<Button href={reviewHref} size="sm">Review the changes</Button>
 						</div>
+					</AttentionPanel>
+				{:else if stalled}
+					<AttentionPanel label="Publication is incomplete" title={waitingTitle("publication", right)}>
+						<p class="max-w-prose text-sm leading-normal text-ink-900 text-pretty">
+							Some repositories were not published. Retry publishes only what is left of the approved
+							changes. Give up leaves the run failed.
+						</p>
+						{#if right.canDecide}
+							<div class="flex flex-wrap items-center gap-2">
+								<Button size="sm" disabled={working} onclick={retryPublication}>
+									Retry publication
+								</Button>
+								<Button variant="secondary" size="sm" disabled={working} onclick={abandonPublication}>
+									Give up
+								</Button>
+							</div>
+						{:else}
+							<p class="text-xs text-muted-foreground">{waitingOnLine(right)}</p>
+						{/if}
 					</AttentionPanel>
 				{/if}
 

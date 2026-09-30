@@ -7,7 +7,8 @@
 		diffReach,
 		diffStatLine,
 		noDiffLine,
-		noPullRequestLine,
+		publicationLine,
+		publicationOf,
 		pullRequestReach,
 		reviewLinkLabel,
 		type Execution,
@@ -29,6 +30,7 @@
 	} = $props();
 
 	const reach = $derived(pullRequestReach(change, links));
+	const publication = $derived(publicationOf(execution, change));
 	const patch = $derived(diffReach(change));
 	const commits = $derived(change.commits === 1 ? "1 commit" : `${change.commits} commits`);
 </script>
@@ -50,7 +52,9 @@
 		</p>
 	{/if}
 
-	{#if reach.kind === "linked"}
+	{#if publication.kind === "failed"}
+		<p class="text-2xs break-words text-destructive">{publicationLine(publication)}</p>
+	{:else if reach.kind === "linked"}
 		<CodeLinkPanel links={[reach.link]} />
 	{:else if reach.kind === "address"}
 		<a
@@ -63,7 +67,7 @@
 			<ExternalLink aria-hidden="true" class="size-3 shrink-0" />
 		</a>
 	{:else}
-		<p class="text-2xs text-muted-foreground">{noPullRequestLine(execution, change)}</p>
+		<p class="text-2xs text-muted-foreground">{publicationLine(publication)}</p>
 	{/if}
 
 	<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">

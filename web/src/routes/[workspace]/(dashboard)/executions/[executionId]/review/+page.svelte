@@ -44,6 +44,8 @@
 		reviewOpen,
 		revisionLabel,
 		snapshotTotals,
+		unchangedLine,
+		unchangedTitle,
 		threadsOf,
 		threadsOn,
 		verdictLabel,
@@ -414,6 +416,14 @@
 						/>
 					{/if}
 
+					{#if ready.review.unchanged}
+						<Alert.Root variant="warning">
+							<CircleAlert aria-hidden="true" class="size-4" />
+							<Alert.Title>{unchangedTitle(ready.review)}</Alert.Title>
+							<Alert.Description>{unchangedLine}</Alert.Description>
+						</Alert.Root>
+					{/if}
+
 					{#if ready.review.summary}
 						<section class="flex min-w-0 flex-col gap-1.5" aria-label="What the coding agent said">
 							<Eyebrow rule>What the coding agent said</Eyebrow>
@@ -424,7 +434,13 @@
 					{/if}
 
 					{#if ready.review.revision > 0}
-						<ReviewPreviews review={ready.review} />
+						<ReviewPreviews
+							review={ready.review}
+							agentName={execution?.agentName}
+							deciding={open && locked === undefined}
+							{working}
+							onfix={(request) => submit("request_changes", request)}
+						/>
 					{/if}
 
 					{#if ready.review.reviews.length > 0}

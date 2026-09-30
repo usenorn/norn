@@ -95,7 +95,7 @@ func (s State) CanTransitionTo(target State) bool {
 		return target == StateApproved || target == StateQueuedForResume ||
 			target == StateCancelled || target == StateFailed
 	case StateApproved:
-		return target == StateCompleted || target == StateFailed
+		return target == StateCompleted || target == StateFailed || target == StateAwaitingReview
 	default:
 		return false
 	}

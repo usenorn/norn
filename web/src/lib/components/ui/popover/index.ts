@@ -6,6 +6,7 @@ import Portal from "./popover-portal.svelte";
 import Title from "./popover-title.svelte";
 import Trigger from "./popover-trigger.svelte";
 import Root from "./popover.svelte";
+export { popoverContentVariants, type PopoverContentSize } from "./popover-content.svelte";
 
 export {
 	Root,

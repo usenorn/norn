@@ -4957,6 +4957,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/executions/{executionId}/publication/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish what is left of the approved revision again
+         * @description The machine pushes and opens pull requests only for the repositories whose publication did not finish, and only the commits somebody approved.
+         */
+        post: operations["retryWorkspaceExecutionPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/executions/{executionId}/publication/abandon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop publishing the approved revision and fail the run */
+        post: operations["abandonWorkspaceExecutionPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/executions/{executionId}/plans": {
         parameters: {
             query?: never;
@@ -6618,8 +6661,25 @@ export interface components {
              * @description The code link this pull request became. Absent when norn does not follow the repository, in which case the address is all there is.
              */
             codeLinkId?: string;
+            publication?: components["schemas"]["RepositoryPublication"];
             /** Format: date-time */
             reportedAt: string;
+        };
+        /** @enum {string} */
+        PublicationState: "pending" | "pushed" | "published" | "failed";
+        /** @enum {string} */
+        PublicationStep: "push" | "pull_request";
+        /** @description What happened when the machine published the approved revision of this repository. Absent until somebody approves; each repository carries its own outcome while the run keeps one decision. */
+        RepositoryPublication: {
+            state: components["schemas"]["PublicationState"];
+            step?: components["schemas"]["PublicationStep"];
+            /** @description Why the step failed, as the machine reported it */
+            error?: string;
+            /** @description The approved commit the machine published or tried to */
+            sha: string;
+            revision: number;
+            /** Format: date-time */
+            publishedAt?: string;
         };
         ExecutionValidation: {
             check: string;
@@ -6781,6 +6841,8 @@ export interface components {
             revision: number;
             /** @description Only the latest snapshot can be approved or asked to change. */
             latestRevision: number;
+            /** @description True when this pass holds exactly the commits of the pass before it, so the coding agent came back without changing anything. */
+            unchanged: boolean;
             revisions: components["schemas"]["ReviewRevision"][];
             /** @description What the coding agent said about this pass */
             summary: string;
@@ -6837,7 +6899,7 @@ export interface components {
         };
         ExecutionProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_not_planning" | "execution_plan_missing" | "execution_plan_stale" | "execution_questions_open" | "decision_forbidden" | "review_closed" | "review_stale" | "review_empty" | "review_comment_not_yours" | "review_comment_reply" | "review_comment_anchor" | "review_comments_full";
+            code: "execution_transition" | "execution_finished" | "execution_unfinished" | "execution_not_reviewable" | "execution_self_approval" | "execution_no_runner" | "execution_not_planning" | "execution_plan_missing" | "execution_plan_stale" | "execution_questions_open" | "decision_forbidden" | "review_closed" | "review_stale" | "review_empty" | "review_comment_not_yours" | "review_comment_reply" | "review_comment_anchor" | "review_comments_full" | "publication_not_pending";
         };
         PreviewProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -20154,6 +20216,62 @@ export interface operations {
         responses: {
             /** @description The new attempt, waiting for the machine to accept it */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    retryWorkspaceExecutionPublication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The execution, still publishing */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Execution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["ExecutionConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    abandonWorkspaceExecutionPublication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                executionId: components["parameters"]["ExecutionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The execution, told to stop */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

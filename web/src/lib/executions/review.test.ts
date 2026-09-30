@@ -1,10 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { previewsView, readingLatest, reviewPreviewLine, snapshotTotals, type ReviewState } from "./review";
+import {
+	failedPreviews,
+	previewFixRequest,
+	previewsView,
+	readingLatest,
+	reviewBodyMaxLength,
+	reviewPreviewLine,
+	snapshotTotals,
+	unchangedTitle,
+	type ReviewState,
+} from "./review";
 
 function state(overrides: Partial<ReviewState>): ReviewState {
 	return {
 		revision: 2,
 		latestRevision: 2,
+		unchanged: false,
 		revisions: [],
 		summary: "",
 		repositories: [],
@@ -67,5 +78,45 @@ describe("review snapshots", () => {
 		]);
 
 		expect(totals).toEqual({ repositories: 2, commits: 3, additions: 11, deletions: 3, filesChanged: 4 });
+	});
+});
+
+describe("asking the agent to fix a preview", () => {
+	it("names each failed preview with its reason, in the words Telegram sends", () => {
+		const review = state({
+			previews: [
+				{ name: "API", service: "api", state: "ready" },
+				{ name: "Greeting page", service: "web", state: "failed", reason: "directory not found" },
+				{ name: "Docs", service: "docs", state: "failed" },
+			],
+		});
+
+		expect(previewFixRequest(failedPreviews(review))).toBe(
+			"These previews did not start, so nobody could try the change:\n\n" +
+				"- Greeting page: directory not found\n" +
+				"- Docs: no reason was given\n\n" +
+				"Make them start. If the fix is in the code, change it on this branch; " +
+				"if it is in how the codebase is run, say what has to change."
+		);
+	});
+
+	it("stays within what a review may say", () => {
+		const request = previewFixRequest(
+			Array.from({ length: 32 }, (_, index) => ({
+				name: `Preview ${index}`,
+				service: "web",
+				state: "failed" as const,
+				reason: "x".repeat(2000),
+			}))
+		);
+
+		expect([...request].length).toBeLessThanOrEqual(reviewBodyMaxLength);
+		expect(request).not.toContain("x".repeat(301));
+	});
+});
+
+describe("a revision that changed nothing", () => {
+	it("names the revision it repeats", () => {
+		expect(unchangedTitle(state({ revision: 3 }))).toBe("Nothing changed since revision 2");
 	});
 });

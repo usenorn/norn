@@ -104,6 +104,8 @@
 	}
 </script>
 
+{#snippet source(line: DiffLine | undefined)}{#if line?.tokens}{#each line.tokens as token, index (index)}<span style:color={token.tone || null}>{token.text}</span>{/each}{:else}{line?.text ?? ""}{/if}{/snippet}
+
 {#snippet commentButton(line: DiffLine)}
 	{#if open}
 		<button
@@ -258,7 +260,7 @@
 											{line.newLine ?? ""}
 										</td>
 										<td class="px-2 whitespace-pre {code[line.kind]}"
-											><span class="select-none text-muted-foreground">{marks[line.kind]}</span>{line.text}</td
+											><span class="select-none text-muted-foreground">{marks[line.kind]}</span>{@render source(line)}</td
 										>
 									</tr>
 									{@render discussion(threadsOn(line), line, 3)}
@@ -297,7 +299,7 @@
 										<td
 											class="px-2 break-all whitespace-pre-wrap {row.left
 												? code[row.left.kind]
-												: 'bg-paper-1'}">{row.left?.text ?? ""}</td
+												: 'bg-paper-1'}">{@render source(row.left)}</td
 										>
 										<td
 											class="relative px-2 text-right select-none {row.right ? gutter[row.right.kind] : 'bg-paper-1'}"
@@ -310,7 +312,7 @@
 										<td
 											class="px-2 break-all whitespace-pre-wrap {row.right
 												? code[row.right.kind]
-												: 'bg-paper-1'}">{row.right?.text ?? ""}</td
+												: 'bg-paper-1'}">{@render source(row.right)}</td
 										>
 									</tr>
 									{@render discussion(

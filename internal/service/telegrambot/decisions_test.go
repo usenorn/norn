@@ -141,3 +141,85 @@ func TestAReplyToAReviewRequestsChangesOnTheHeadsItWasSentFor(t *testing.T) {
 		t.Errorf("sent = %+v", h.sent)
 	}
 }
+
+func (h *harness) publicationMessage(execution entity.Execution) entity.TelegramDecisionMessage {
+	return entity.TelegramDecisionMessage{
+		BotID: h.bot.ID, ChatID: groupChat, MessageID: 88, Kind: entity.TelegramDecisionPublication,
+		ExecutionID: execution.ID, Round: "2.1",
+	}
+}
+
+func TestRetryingAStalledPublicationFromTelegramHandsItBackToTheMachine(t *testing.T) {
+	h := newHarness(t)
+	execution := h.running(entity.ExecutionApproved)
+
+	id := h.tapping(entity.TelegramCallbackRetry, h.publicationMessage(execution))
+	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(uuid.New(), senderID), nil)
+	h.decisions.EXPECT().RetryPublication(gomock.Any(), h.workspaceID, execution.ID).Return(execution, nil)
+
+	h.noticed(t, id, "Retrying publication.")
+}
+
+func TestGivingUpOnAPublicationThatAlreadyFinishedDecidesNothing(t *testing.T) {
+	h := newHarness(t)
+	execution := h.running(entity.ExecutionApproved)
+
+	id := h.tapping(entity.TelegramCallbackAbandon, h.publicationMessage(execution))
+	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(uuid.New(), senderID), nil)
+	h.decisions.EXPECT().
+		AbandonPublication(gomock.Any(), h.workspaceID, execution.ID).
+		Return(entity.Execution{}, entity.ErrPublicationNotPending)
+
+	h.noticed(t, id, "This was already decided.")
+}
+
+func TestAskingTheAgentToFixAFailedPreviewSendsTheFailureBackAsRework(t *testing.T) {
+	h := newHarness(t)
+	execution := h.running(entity.ExecutionAwaitingReview)
+	heads := entity.ReviewHeads{"api": "abc123"}
+	failed := entity.SnapshotPreview{
+		Name: "Greeting page", State: entity.SnapshotPreviewFailed,
+		Reason: `it stopped on its own with exit code 1 after saying "stat ./cmd/greetweb: directory not found"`,
+	}
+
+	id := h.tapping(entity.TelegramCallbackFixPreview, entity.TelegramDecisionMessage{
+		BotID: h.bot.ID, ChatID: groupChat, MessageID: 88, Kind: entity.TelegramDecisionReview,
+		ExecutionID: execution.ID, ReviewHeads: heads,
+	})
+	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(uuid.New(), senderID), nil)
+	h.snapshots.EXPECT().Latest(gomock.Any(), execution.ID).Return(entity.ExecutionSnapshot{
+		ExecutionID:  execution.ID,
+		Repositories: []entity.SnapshotRepository{{Repository: "api", HeadSHA: "abc123"}},
+		Previews:     []entity.SnapshotPreview{{Name: "API", State: entity.SnapshotPreviewReady}, failed},
+	}, nil)
+	h.decisions.EXPECT().
+		SubmitReview(gomock.Any(), h.workspaceID, execution.ID, service.ReviewSubmission{
+			Verdict: entity.VerdictRequestChanges,
+			Summary: entity.PreviewFixRequest([]entity.SnapshotPreview{failed}),
+			Heads:   heads,
+		}).
+		Return(entity.ExecutionReview{}, nil)
+
+	h.noticed(t, id, "Sent back to fix the preview.")
+}
+
+func TestAskingToFixAPreviewOnAnOutdatedReviewDecidesNothing(t *testing.T) {
+	h := newHarness(t)
+	execution := h.running(entity.ExecutionAwaitingReview)
+
+	id := h.tapping(entity.TelegramCallbackFixPreview, entity.TelegramDecisionMessage{
+		BotID: h.bot.ID, ChatID: groupChat, MessageID: 88, Kind: entity.TelegramDecisionReview,
+		ExecutionID: execution.ID, ReviewHeads: entity.ReviewHeads{"api": "abc123"},
+	})
+	h.audience.EXPECT().AccountOf(gomock.Any(), h.bot.ID, int64(senderID)).Return(h.linked(uuid.New(), senderID), nil)
+	h.snapshots.EXPECT().Latest(gomock.Any(), execution.ID).Return(entity.ExecutionSnapshot{
+		ExecutionID:  execution.ID,
+		Repositories: []entity.SnapshotRepository{{Repository: "api", HeadSHA: "def456"}},
+		Previews:     []entity.SnapshotPreview{{Name: "Greeting page", State: entity.SnapshotPreviewFailed}},
+	}, nil)
+	h.decisions.EXPECT().
+		SubmitReview(gomock.Any(), h.workspaceID, execution.ID, gomock.Any()).
+		Return(entity.ExecutionReview{}, entity.ErrReviewStale)
+
+	h.noticed(t, id, "This is out of date. Open it in Norn to see the latest.")
+}
