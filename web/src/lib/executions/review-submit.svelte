@@ -54,7 +54,7 @@
 			</Button>
 		{/snippet}
 	</Popover.Trigger>
-	<Popover.Content align="end" class="flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3">
+	<Popover.Content align="end" size="body" class="flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3">
 		<Textarea
 			bind:value={summary}
 			rows={4}

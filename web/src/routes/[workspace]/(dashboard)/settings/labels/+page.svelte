@@ -423,7 +423,7 @@
 					</Button>
 				{/snippet}
 			</Popover.Trigger>
-			<Popover.Content align="end" class="w-[min(20rem,calc(100vw-2rem))] p-3">
+			<Popover.Content align="end" size="body" class="w-[min(20rem,calc(100vw-2rem))]">
 				<Popover.Header class="pb-2">
 					<Popover.Title>{editing ? "Edit label" : "New label"}</Popover.Title>
 				</Popover.Header>
