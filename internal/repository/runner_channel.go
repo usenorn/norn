@@ -30,5 +30,6 @@ type RunnerChannel interface {
 	Detach(ctx context.Context, runnerID uuid.UUID, epoch string) error
 	Presence(ctx context.Context, runnerID uuid.UUID) (entity.RunnerPresence, error)
 
-	Seen(ctx context.Context, runnerID uuid.UUID, messageID string) (bool, error)
+	Spent(ctx context.Context, runnerID uuid.UUID, messageID string) (bool, error)
+	Spend(ctx context.Context, runnerID uuid.UUID, messageID string) error
 }

@@ -126,7 +126,8 @@ func TestARedeliveredMessageIsNotActedOnTwice(t *testing.T) {
 
 	message := h.freshMessage("01ABC", entity.ChannelRunnerHeartbeat)
 
-	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spend(gomock.Any(), h.runner.ID, message.ID).Return(nil).AnyTimes()
 	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).Return(nil)
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
@@ -135,7 +136,7 @@ func TestARedeliveredMessageIsNotActedOnTwice(t *testing.T) {
 		t.Fatalf("first delivery: %v", err)
 	}
 
-	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(true, nil)
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(true, nil)
 
 	if err := h.service.Receive(context.Background(), session, message); err != nil {
 		t.Fatalf("second delivery: %v", err)
@@ -149,7 +150,8 @@ func TestSayingHelloTellsTheServerWhichBuildIsNowOnTheMachine(t *testing.T) {
 	message := h.freshMessage("01HELLO", entity.ChannelRunnerHello)
 	message.Payload = []byte(`{"version":"1.4.0","protocol":1,"capacity":2}`)
 
-	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spend(gomock.Any(), h.runner.ID, message.ID).Return(nil).AnyTimes()
 	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).Return(nil)
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
@@ -168,7 +170,8 @@ func TestAHelloThatNamesTheVersionAlreadyOnRecordChangesNothing(t *testing.T) {
 	message := h.freshMessage("01HELLO", entity.ChannelRunnerHello)
 	message.Payload = []byte(`{"version":"1.4.0","protocol":1}`)
 
-	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spend(gomock.Any(), h.runner.ID, message.ID).Return(nil).AnyTimes()
 	h.channels.EXPECT().Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).Return(nil)
 	h.runners.EXPECT().GetByID(gomock.Any(), h.runner.ID).Return(h.runner, nil)
 	h.runners.EXPECT().RecordSeen(gomock.Any(), h.runner.ID, gomock.Any()).Return(nil)
@@ -208,7 +211,8 @@ func TestWhatARunnerReportsAboutAnExecutionReachesTheExecution(t *testing.T) {
 			h := newHarness(t)
 			message := h.freshMessage("01MNO", kind)
 
-			h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+			h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+			h.channels.EXPECT().Spend(gomock.Any(), h.runner.ID, message.ID).Return(nil).AnyTimes()
 			expect(h).Return(nil)
 
 			if err := h.service.Receive(context.Background(), h.session(), message); err != nil {
@@ -320,7 +324,8 @@ func TestAHeartbeatCarriesWhatTheMachineHasRoomForIntoThePresenceRecord(t *testi
 
 	var recorded entity.RunnerLoad
 
-	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spend(gomock.Any(), h.runner.ID, message.ID).Return(nil).AnyTimes()
 	h.channels.EXPECT().
 		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
@@ -356,7 +361,8 @@ func TestAMachineComingBackIsAskedWhetherItCanTakeWhatIsWaiting(t *testing.T) {
 	message := h.freshMessage("01HELLO", entity.ChannelRunnerHello)
 	message.Payload = []byte(`{"version":"1.4.0","protocol":1,"capacity":2}`)
 
-	h.channels.EXPECT().Seen(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spend(gomock.Any(), h.runner.ID, message.ID).Return(nil).AnyTimes()
 	h.channels.EXPECT().
 		Renew(gomock.Any(), h.runner.ID, session.Epoch, gomock.Any(), gomock.Any()).
 		Return(nil)
@@ -374,5 +380,22 @@ func TestAMachineComingBackIsAskedWhetherItCanTakeWhatIsWaiting(t *testing.T) {
 				"Delegations made while it was switched off would wait for somebody to " +
 				"delegate again",
 		)
+	}
+}
+
+func TestAMessageTheServerCouldNotHandleIsNotSpentSoItsReplayIsHandledAgain(t *testing.T) {
+	h := newHarness(t)
+	session := h.session()
+	message := h.freshMessage("01ASK", entity.ChannelQuestionAsked)
+	unavailable := errors.New("the database went away")
+
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil).Times(2)
+	h.channels.EXPECT().Spend(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	h.questions.EXPECT().Asked(gomock.Any(), h.runner, message).Return(unavailable).Times(2)
+
+	for range 2 {
+		if err := h.service.Receive(context.Background(), session, message); !errors.Is(err, unavailable) {
+			t.Fatalf("a message the server could not handle came back as %v", err)
+		}
 	}
 }

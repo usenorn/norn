@@ -75,7 +75,7 @@ func (s *channelsService) Receive(
 		return err
 	}
 
-	spent, err := s.channels.Seen(ctx, session.Runner.ID, message.ID)
+	spent, err := s.channels.Spent(ctx, session.Runner.ID, message.ID)
 	if err != nil {
 		return err
 	}
@@ -84,8 +84,18 @@ func (s *channelsService) Receive(
 		return nil
 	}
 
-	ctx = identity.WithActor(ctx, session.Actor)
+	if err := s.dispatch(identity.WithActor(ctx, session.Actor), session, message); err != nil {
+		return err
+	}
 
+	return s.channels.Spend(ctx, session.Runner.ID, message.ID)
+}
+
+func (s *channelsService) dispatch(
+	ctx context.Context,
+	session service.ChannelSession,
+	message entity.ChannelMessage,
+) error {
 	switch message.Type {
 	case entity.ChannelRunnerHello:
 		return s.Heartbeat(ctx, session, s.greet(ctx, session, message))

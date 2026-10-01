@@ -234,26 +234,31 @@ func TestDetachingLeavesTheRunnerAbsent(t *testing.T) {
 	}
 }
 
-func TestAMessageIsOnlyEverSeenOnce(t *testing.T) {
+func TestAMessageCountsAsHandledOnlyOnceItHasBeenSpent(t *testing.T) {
 	channel, runnerID := newChannel(t)
 	ctx := context.Background()
 
-	spent, err := channel.Seen(ctx, runnerID, "abc")
+	spent, err := channel.Spent(ctx, runnerID, "abc")
 	if err != nil {
-		t.Fatalf("first seen: %v", err)
+		t.Fatalf("look up a fresh message: %v", err)
 	}
 
 	if spent {
-		t.Fatalf("a message the server had never seen was reported as already handled")
+		t.Fatal("a message the server had never handled was reported as already handled")
 	}
 
-	spent, err = channel.Seen(ctx, runnerID, "abc")
-	if err != nil {
-		t.Fatalf("second seen: %v", err)
+	spent, err = channel.Spent(ctx, runnerID, "abc")
+	if err != nil || spent {
+		t.Fatalf("looking a message up spent it (%v, %v), so a refused one would be swallowed on replay", spent, err)
 	}
 
-	if !spent {
-		t.Fatalf("a redelivered message was not recognised, so it would be handled twice")
+	if err := channel.Spend(ctx, runnerID, "abc"); err != nil {
+		t.Fatalf("spend: %v", err)
+	}
+
+	spent, err = channel.Spent(ctx, runnerID, "abc")
+	if err != nil || !spent {
+		t.Fatalf("a handled message was not recognised (%v, %v), so it would be handled twice", spent, err)
 	}
 }
 
