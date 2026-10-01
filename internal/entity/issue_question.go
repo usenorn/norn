@@ -8,15 +8,17 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+
+	channelv1 "github.com/usenorn/norn/pkg/channel/v1"
 )
 
 const (
-	QuestionTextMaxLen      = 1000
-	QuestionAnswerMaxLen    = 2000
-	QuestionRefMaxLen       = 64
-	QuestionOptionMaxLen    = 200
-	QuestionOptionsMax      = 8
-	QuestionContextFilesMax = 20
+	QuestionTextMaxLen      = channelv1.QuestionTextMax
+	QuestionAnswerMaxLen    = channelv1.QuestionDefaultMax
+	QuestionRefMaxLen       = channelv1.QuestionRefMax
+	QuestionOptionMaxLen    = channelv1.QuestionOptionMax
+	QuestionOptionsMax      = channelv1.QuestionOptionsMax
+	QuestionContextFilesMax = channelv1.QuestionContextFilesMax
 	QuestionWaitingMax      = 200
 	QuestionWaitMin         = time.Minute
 	QuestionWaitMax         = 7 * 24 * time.Hour
