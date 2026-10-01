@@ -129,6 +129,10 @@ export type DiffBudget = {
 	only?: string;
 };
 
+export type FileDiff = { kind: "ready"; file: DiffFile } | { kind: "too_large"; lines: number } | { kind: "failed" };
+
+export type DiffSource = { workspaceId: string; executionId: string; artifactId: string };
+
 export const unbounded: DiffBudget = { inline: Infinity, perFile: Infinity, files: Infinity };
 
 export const reviewBudget: DiffBudget = { inline: diffInlineLines, perFile: diffFileInlineMax, files: diffFilesMax };

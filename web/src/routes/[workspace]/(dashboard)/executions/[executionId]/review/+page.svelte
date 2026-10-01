@@ -43,6 +43,8 @@
 		reviewClosedLine,
 		reviewOpen,
 		revisionLabel,
+		moreFilesLabel,
+		reviewFilesStep,
 		snapshotTotals,
 		unchangedLine,
 		unchangedTitle,
@@ -96,19 +98,52 @@
 	);
 	const totals = $derived(snapshotTotals(ready?.review.repositories ?? []));
 
+	let shownFiles = $state<Record<string, number>>({});
+
+	function shownOf(repository: string): number {
+		return shownFiles[repository] ?? reviewFilesStep;
+	}
+
+	function showMore(repository: string) {
+		shownFiles[repository] = shownOf(repository) + reviewFilesStep;
+	}
+
+	function filesOf(repository: ReviewedRepository) {
+		return repository.diff.kind === "ready" ? repository.diff.files.slice(0, shownOf(repository.repository)) : [];
+	}
+
+	function remainingOf(repository: ReviewedRepository): number {
+		return repository.diff.kind === "ready"
+			? Math.max(0, repository.diff.files.length - shownOf(repository.repository))
+			: 0;
+	}
+
+	function nearEnd(repository: string) {
+		return (node: HTMLElement) => {
+			const observer = new IntersectionObserver(
+				(entries) => {
+					if (entries.some((entry) => entry.isIntersecting)) showMore(repository);
+				},
+				{ rootMargin: "800px 0px" }
+			);
+
+			observer.observe(node);
+
+			return () => observer.disconnect();
+		};
+	}
+
 	const listed = $derived<ListedRepository[]>(
 		(ready?.repositories ?? []).map((repository, repositoryIndex) => ({
 			repository: repository.repository,
 			note: repositoryNote(repository),
-			files:
-				repository.diff.kind === "ready"
-					? repository.diff.files.map((file, index) => ({
-							id: fileId(repositoryIndex, index),
-							file,
-							threads: threadsOn(threads, repository.repository, file.path).length,
-							viewed: isViewed(repository, file.path),
-						}))
-					: [],
+			remaining: remainingOf(repository),
+			files: filesOf(repository).map((file, index) => ({
+				id: fileId(repositoryIndex, index),
+				file,
+				threads: threadsOn(threads, repository.repository, file.path).length,
+				viewed: isViewed(repository, file.path),
+			})),
 		}))
 	);
 
@@ -377,7 +412,7 @@
 			>
 				<aside class="hidden lg:block">
 					<div class="sticky top-[calc(var(--review-bar)+--spacing(4))] max-h-[calc(100dvh-var(--review-bar)-6rem)] overflow-y-auto">
-						<ReviewFiles repositories={listed} />
+						<ReviewFiles repositories={listed} onmore={showMore} />
 					</div>
 				</aside>
 
@@ -511,10 +546,13 @@
 							{/if}
 
 							{#if repository.diff.kind === "ready"}
-								{#each repository.diff.files as file, index (fileId(repositoryIndex, index))}
+								{#each filesOf(repository) as file, index (fileId(repositoryIndex, index))}
 									<ReviewFile
 										id={fileId(repositoryIndex, index)}
 										{file}
+										origin={repository.artifactId
+											? { workspaceId: workspace.id, executionId: execution.id, artifactId: repository.artifactId }
+											: undefined}
 										threads={threadsOn(threads, repository.repository, file.path)}
 										{layout}
 										viewed={isViewed(repository, file.path)}
@@ -530,6 +568,14 @@
 										onresolve={resolve}
 									/>
 								{/each}
+
+								{#if remainingOf(repository) > 0}
+									<div class="flex justify-center py-2" {@attach nearEnd(repository.repository)}>
+										<Button variant="outline" size="sm" onclick={() => showMore(repository.repository)}>
+											{moreFilesLabel(remainingOf(repository))}
+										</Button>
+									</div>
+								{/if}
 							{/if}
 						</section>
 					{/each}
@@ -541,7 +587,7 @@
 					<Sheet.Header class="p-0">
 						<Sheet.Title>Changed files</Sheet.Title>
 					</Sheet.Header>
-					<ReviewFiles repositories={listed} onpick={() => (filesOpen = false)} />
+					<ReviewFiles repositories={listed} onpick={() => (filesOpen = false)} onmore={showMore} />
 				</Sheet.Content>
 			</Sheet.Root>
 		{/if}

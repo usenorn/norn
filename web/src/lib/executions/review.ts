@@ -1,5 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
-import { diffFilesMax, type DiffAnchor, type DiffFile } from "./diff";
+import { diffFilesMax, type DiffAnchor, type DiffFile, type FileDiff } from "./diff";
 import type { ChangeTotals, Execution, IssueQuestion } from "./executions";
 import type { DecisionRight } from "./reviews";
 
@@ -48,7 +48,17 @@ export type ReviewLayout = "unified" | "split";
 
 export type ListedFile = { id: string; file: DiffFile; threads: number; viewed: boolean };
 
-export type ListedRepository = { repository: string; files: ListedFile[]; note?: string };
+export type ListedRepository = { repository: string; files: ListedFile[]; remaining: number; note?: string };
+
+export const reviewFilesStep = 100;
+
+export function moreFilesLabel(remaining: number): string {
+	const next = Math.min(remaining, reviewFilesStep);
+
+	return remaining > next
+		? `Show ${next} more files (${remaining.toLocaleString("en")} left)`
+		: `Show the last ${remaining === 1 ? "file" : `${remaining} files`}`;
+}
 
 export type ReviewThread = { root: ReviewComment; replies: ReviewComment[] };
 
@@ -102,6 +112,29 @@ export function repositoryNote(repository: ReviewedRepository): string | undefin
 				? `This change touches more than ${diffFilesMax.toLocaleString("en")} files. The first ${diffFilesMax.toLocaleString("en")} are listed here; the rest are in the full diff.`
 				: undefined;
 	}
+}
+
+export type FileBody =
+	| { kind: "inline"; file: DiffFile }
+	| { kind: "waiting" }
+	| { kind: "loading" }
+	| { kind: "ready"; file: DiffFile }
+	| { kind: "too_large"; lines: number }
+	| { kind: "failed" };
+
+export type FileLoad = { current?: FileDiff; loading: boolean; error?: unknown };
+
+export function fileBodyOf(file: DiffFile, load: FileLoad | undefined): FileBody {
+	if (!file.deferred) return { kind: "inline", file };
+	if (!load) return { kind: "waiting" };
+	if (load.error) return { kind: "failed" };
+	if (!load.current) return { kind: "loading" };
+
+	return load.current;
+}
+
+export function tooLargeLine(lines: number): string {
+	return `This file changes ${lines.toLocaleString("en")} lines, more than a review shows. Download the full diff to read it.`;
 }
 
 export function fileId(repositoryIndex: number, fileIndex: number): string {
