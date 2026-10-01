@@ -65,7 +65,8 @@ export default defineConfig(({ mode }) => {
 				experimental: {
 					instrumentation: {
 						server: true
-					}
+					},
+					remoteFunctions: true
 				},
 				compilerOptions: {
 					// Force runes mode for the project, except for libraries. Can be removed in svelte 6.

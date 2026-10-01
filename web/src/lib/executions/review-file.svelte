@@ -5,6 +5,7 @@
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { Button } from "$lib/components/ui/button/index.js";
 	import ReviewComposer from "./review-composer.svelte";
 	import ReviewThread from "./review-thread.svelte";
 	import {
@@ -12,17 +13,21 @@
 		fileStatusLabel,
 		hunkExcerpt,
 		sameAnchor,
+		segmentsOf,
 		splitRows,
 		type DiffAnchor,
 		type DiffFile,
+		type DiffSource,
 		type DiffHunk,
 		type DiffLine,
 	} from "./diff";
-	import { outdatedThreads, type ReviewLayout, type ReviewThread as Thread } from "./review";
+	import { fileDiff } from "./diff.remote";
+	import { fileBodyOf, outdatedThreads, tooLargeLine, type ReviewLayout, type ReviewThread as Thread } from "./review";
 
 	let {
 		id,
 		file,
+		origin,
 		threads,
 		layout,
 		viewed,
@@ -38,6 +43,7 @@
 	}: {
 		id: string;
 		file: DiffFile;
+		origin: DiffSource | undefined;
 		threads: Thread[];
 		layout: ReviewLayout;
 		viewed: boolean;
@@ -54,12 +60,24 @@
 
 	let collapsed = $state<boolean | null>(null);
 	let composing = $state<DiffAnchor | null>(null);
+	let asked = $state(false);
+
+	const load = $derived(asked && origin && file.deferred ? fileDiff({ ...origin, path: file.path }) : undefined);
+	const body = $derived(
+		fileBodyOf(file, load ? { current: load.current, loading: load.loading, error: load.error } : undefined)
+	);
+	const shown = $derived(body.kind === "inline" || body.kind === "ready" ? body.file : undefined);
+	const download = $derived(
+		origin
+			? `/v1/workspaces/${origin.workspaceId}/executions/${origin.executionId}/artifacts/${origin.artifactId}/content`
+			: undefined
+	);
 
 	const hidden = $derived(collapsed ?? viewed);
 	const current = $derived(threads.filter((thread) => !thread.root.outdated));
 	const outdated = $derived(outdatedThreads(threads));
 	const status = $derived(fileStatusLabel(file));
-	const rows = $derived(layout === "split" ? splitRows(file.hunks) : []);
+	const rows = $derived(layout === "split" && shown ? splitRows(shown.hunks) : []);
 
 	const gutter = {
 		add: "bg-success/15 text-ink-600",
@@ -96,7 +114,22 @@
 	}
 
 	function hunkOf(line: DiffLine): DiffHunk {
-		return file.hunks.find((hunk) => hunk.lines.includes(line)) ?? file.hunks[0];
+		const hunks = shown?.hunks ?? [];
+
+		return hunks.find((hunk) => hunk.lines.includes(line)) ?? hunks[0];
+	}
+
+	function nearView(node: HTMLElement) {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) asked = true;
+			},
+			{ rootMargin: "600px 0px" }
+		);
+
+		observer.observe(node);
+
+		return () => observer.disconnect();
 	}
 
 	function numberOf(line: DiffLine): number {
@@ -104,7 +137,7 @@
 	}
 </script>
 
-{#snippet source(line: DiffLine | undefined)}{#if line?.tokens}{#each line.tokens as token, index (index)}<span style:color={token.tone || null}>{token.text}</span>{/each}{:else}{line?.text ?? ""}{/if}{/snippet}
+{#snippet source(line: DiffLine | undefined)}{#if line?.spans}{#each segmentsOf(line) as segment, index (index)}<span style:color={segment.tone}>{segment.text}</span>{/each}{:else}{line?.text ?? ""}{/if}{/snippet}
 
 {#snippet commentButton(line: DiffLine)}
 	{#if open}
@@ -236,7 +269,24 @@
 				<p class="px-3 py-3 text-xs text-muted-foreground">
 					A binary file, so there is nothing to read line by line.
 				</p>
-			{:else if file.hunks.length === 0}
+			{:else if !shown}
+				<div class="flex flex-wrap items-center gap-2 px-3 py-3 text-xs text-muted-foreground" aria-live="polite" {@attach nearView}>
+					{#if body.kind === "waiting"}
+						<span>These changes load when you reach them.</span>
+						<Button variant="outline" size="xs" onclick={() => (asked = true)}>Show the changes</Button>
+					{:else if body.kind === "loading"}
+						<span>Loading the changes…</span>
+					{:else if body.kind === "too_large"}
+						<span>{tooLargeLine(body.lines)}</span>
+						{#if download}
+							<a href={download} class="underline underline-offset-2 hover:text-foreground">Download the full diff</a>
+						{/if}
+					{:else}
+						<span>The changes could not be loaded.</span>
+						<Button variant="outline" size="xs" onclick={() => load?.refresh()}>Try again</Button>
+					{/if}
+				</div>
+			{:else if shown.hunks.length === 0}
 				<p class="px-3 py-3 text-xs text-muted-foreground">
 					{file.status === "renamed" ? "Moved without changing a line." : "No lines changed."}
 				</p>
@@ -244,7 +294,7 @@
 				<div class="overflow-x-auto overflow-y-hidden">
 					<table class="w-full border-collapse font-mono text-2xs leading-relaxed">
 						<tbody>
-							{#each file.hunks as hunk, hunkIndex (hunkIndex)}
+							{#each shown.hunks as hunk, hunkIndex (hunkIndex)}
 								<tr>
 									<td colspan="3" class="bg-paper-1 px-3 py-1 text-muted-foreground whitespace-pre">
 										{hunk.header}

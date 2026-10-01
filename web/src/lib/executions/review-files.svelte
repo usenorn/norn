@@ -2,12 +2,14 @@
 	import Check from "@lucide/svelte/icons/check";
 	import MessageSquare from "@lucide/svelte/icons/message-square";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import type { ListedRepository } from "./review";
+	import { Button } from "$lib/components/ui/button/index.js";
+	import { moreFilesLabel, type ListedRepository } from "./review";
 
 	let {
 		repositories,
 		onpick,
-	}: { repositories: ListedRepository[]; onpick?: () => void } = $props();
+		onmore,
+	}: { repositories: ListedRepository[]; onpick?: () => void; onmore?: (repository: string) => void } = $props();
 
 	const letters = { added: "A", deleted: "D", renamed: "R", modified: "M" };
 	const tones = {
@@ -63,6 +65,11 @@
 					</li>
 				{/each}
 			</ul>
+			{#if held.remaining > 0 && onmore}
+				<Button variant="ghost" size="xs" class="self-start" onclick={() => onmore(held.repository)}>
+					{moreFilesLabel(held.remaining)}
+				</Button>
+			{/if}
 		</div>
 	{/each}
 </nav>

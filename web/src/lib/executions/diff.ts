@@ -4,15 +4,57 @@ export type DiffLineKind = "add" | "remove" | "context";
 
 export type DiffSide = "old" | "new";
 
-export type DiffToken = { text: string; tone: string };
+export const syntaxTones = [
+	"foreground",
+	"token-keyword",
+	"token-string",
+	"token-string-expression",
+	"token-comment",
+	"token-constant",
+	"token-function",
+	"token-parameter",
+	"token-punctuation",
+	"token-link",
+] as const;
+
+export function toneOf(index: number): string | null {
+	const tone = syntaxTones[index];
+
+	return tone ? `var(--syntax-${tone})` : null;
+}
 
 export type DiffLine = {
 	kind: DiffLineKind;
 	text: string;
 	oldLine?: number;
 	newLine?: number;
-	tokens?: DiffToken[];
+	spans?: number[];
 };
+
+export type DiffSegment = { text: string; tone: string | null };
+
+export function segmentsOf(line: DiffLine): DiffSegment[] {
+	if (!line.spans) return [{ text: line.text, tone: null }];
+
+	const segments: DiffSegment[] = [];
+
+	let from = 0;
+
+	for (let index = 0; index + 1 < line.spans.length; index += 2) {
+		const to = from + line.spans[index];
+
+		segments.push({ text: line.text.slice(from, to), tone: toneOf(line.spans[index + 1]) });
+		from = to;
+	}
+
+	return segments;
+}
+
+export const diffLineMax = 4000;
+export const diffInlineLines = 2000;
+export const diffFileInlineMax = 400;
+export const diffFilesMax = 10_000;
+export const diffFileMax = 5000;
 
 const languagesByExtension: Record<string, BundledLanguage> = {
 	go: "go",
@@ -77,7 +119,23 @@ export type DiffFile = {
 	deletions: number;
 	hunks: DiffHunk[];
 	binary: boolean;
+	deferred?: boolean;
 };
+
+export type DiffBudget = {
+	inline: number;
+	perFile: number;
+	files: number;
+	only?: string;
+};
+
+export type FileDiff = { kind: "ready"; file: DiffFile } | { kind: "too_large"; lines: number } | { kind: "failed" };
+
+export type DiffSource = { workspaceId: string; executionId: string; artifactId: string };
+
+export const unbounded: DiffBudget = { inline: Infinity, perFile: Infinity, files: Infinity };
+
+export const reviewBudget: DiffBudget = { inline: diffInlineLines, perFile: diffFileInlineMax, files: diffFilesMax };
 
 export type DiffAnchor = { side: DiffSide; line: number };
 
@@ -102,84 +160,167 @@ function pathsOfDiffHeader(line: string): { oldPath: string; path: string } {
 	return { oldPath: stripPrefix(named.slice(0, split), "a/"), path: named.slice(split + 3) };
 }
 
-export function parseDiff(patch: string): DiffFile[] {
-	const files: DiffFile[] = [];
+export class DiffReader {
+	readonly files: DiffFile[] = [];
+	truncated = false;
+	oversized = false;
 
-	let file: DiffFile | undefined;
-	let hunk: DiffHunk | undefined;
-	let oldLine = 0;
-	let newLine = 0;
+	#budget: DiffBudget;
+	#spent = 0;
+	#file: DiffFile | undefined;
+	#hunk: DiffHunk | undefined;
+	#kept = 0;
+	#oldLine = 0;
+	#newLine = 0;
+	#done = false;
 
-	for (const line of patch.split("\n")) {
+	constructor(budget: DiffBudget) {
+		this.#budget = budget;
+	}
+
+	get done(): boolean {
+		return this.#done;
+	}
+
+	push(line: string): void {
+		if (this.#done) return;
+
 		if (line.startsWith("diff --git ")) {
-			const { oldPath, path } = pathsOfDiffHeader(line);
+			this.#open(line);
 
-			file = { path, oldPath, status: "modified", additions: 0, deletions: 0, hunks: [], binary: false };
-			hunk = undefined;
-			files.push(file);
-
-			continue;
+			return;
 		}
 
-		if (!file) continue;
+		const file = this.#file;
 
-		if (!hunk) {
-			if (line.startsWith("new file mode")) file.status = "added";
-			else if (line.startsWith("deleted file mode")) file.status = "deleted";
-			else if (line.startsWith("rename from ")) {
-				file.status = "renamed";
-				file.oldPath = line.slice("rename from ".length);
-			} else if (line.startsWith("rename to ")) file.path = line.slice("rename to ".length);
-			else if (line.startsWith("Binary files ") || line.startsWith("GIT binary patch")) {
-				file.binary = true;
-			} else if (line.startsWith("--- ")) {
-				const named = line.slice(4);
+		if (!file) return;
 
-				if (named !== "/dev/null") file.oldPath = stripPrefix(named, "a/");
-			} else if (line.startsWith("+++ ")) {
-				const named = line.slice(4);
-
-				if (named !== "/dev/null") file.path = stripPrefix(named, "b/");
-			}
-		}
+		if (!this.#hunk) this.#describe(file, line);
 
 		const opened = hunkHeader.exec(line);
 
 		if (opened) {
-			hunk = { header: line, lines: [] };
-			oldLine = Number(opened[1]);
-			newLine = Number(opened[2]);
-			file.hunks.push(hunk);
+			this.#hunk = { header: line, lines: [] };
+			this.#oldLine = Number(opened[1]);
+			this.#newLine = Number(opened[2]);
 
-			continue;
+			if (!file.deferred) file.hunks.push(this.#hunk);
+
+			return;
 		}
 
-		if (!hunk || file.binary) continue;
+		if (!this.#hunk || file.binary) return;
 
-		if (line.startsWith("+")) {
-			file.additions += 1;
-			hunk.lines.push({ kind: "add", text: line.slice(1), newLine });
-			newLine += 1;
+		const kind = line.startsWith("+") ? "add" : line.startsWith("-") ? "remove" : "context";
 
-			continue;
-		}
+		if (kind === "context" && (line.startsWith("\\") || line === "")) return;
 
-		if (line.startsWith("-")) {
-			file.deletions += 1;
-			hunk.lines.push({ kind: "remove", text: line.slice(1), oldLine });
-			oldLine += 1;
+		const held: DiffLine =
+			kind === "add"
+				? { kind, text: line.slice(1), newLine: this.#newLine }
+				: kind === "remove"
+					? { kind, text: line.slice(1), oldLine: this.#oldLine }
+					: { kind, text: line.slice(1), oldLine: this.#oldLine, newLine: this.#newLine };
 
-			continue;
-		}
+		if (kind === "add") file.additions += 1;
+		if (kind === "remove") file.deletions += 1;
+		if (kind !== "add") this.#oldLine += 1;
+		if (kind !== "remove") this.#newLine += 1;
 
-		if (line.startsWith("\\") || line === "") continue;
-
-		hunk.lines.push({ kind: "context", text: line.slice(1), oldLine, newLine });
-		oldLine += 1;
-		newLine += 1;
+		this.#keep(file, held);
 	}
 
-	return files;
+	finish(): DiffFile[] {
+		this.#done = true;
+
+		return this.files;
+	}
+
+	#open(line: string): void {
+		const { oldPath, path } = pathsOfDiffHeader(line);
+		const { only, files } = this.#budget;
+
+		if (only !== undefined && this.#file) {
+			this.#done = true;
+
+			return;
+		}
+
+		this.#file = undefined;
+		this.#hunk = undefined;
+		this.#kept = 0;
+
+		if (only !== undefined && path !== only) return;
+
+		if (this.files.length >= files) {
+			this.truncated = true;
+			this.#done = true;
+
+			return;
+		}
+
+		this.#file = { path, oldPath, status: "modified", additions: 0, deletions: 0, hunks: [], binary: false };
+		this.files.push(this.#file);
+	}
+
+	#describe(file: DiffFile, line: string): void {
+		if (line.startsWith("new file mode")) file.status = "added";
+		else if (line.startsWith("deleted file mode")) file.status = "deleted";
+		else if (line.startsWith("rename from ")) {
+			file.status = "renamed";
+			file.oldPath = line.slice("rename from ".length);
+		} else if (line.startsWith("rename to ")) file.path = line.slice("rename to ".length);
+		else if (line.startsWith("Binary files ") || line.startsWith("GIT binary patch")) {
+			file.binary = true;
+		} else if (line.startsWith("--- ")) {
+			const named = line.slice(4);
+
+			if (named !== "/dev/null") file.oldPath = stripPrefix(named, "a/");
+		} else if (line.startsWith("+++ ")) {
+			const named = line.slice(4);
+
+			if (named !== "/dev/null") file.path = stripPrefix(named, "b/");
+		}
+	}
+
+	#keep(file: DiffFile, line: DiffLine): void {
+		if (file.deferred) return;
+
+		const { inline, perFile, only } = this.#budget;
+
+		if (this.#kept >= perFile || this.#spent >= inline) {
+			if (only !== undefined) this.oversized = true;
+
+			this.#spent -= this.#kept;
+			this.#kept = 0;
+			file.hunks = [];
+			file.deferred = true;
+
+			return;
+		}
+
+		this.#hunk?.lines.push(line);
+		this.#kept += 1;
+		this.#spent += 1;
+	}
+}
+
+export function readDiff(lines: Iterable<string>, budget: DiffBudget): DiffReader {
+	const reader = new DiffReader(budget);
+
+	for (const line of lines) {
+		reader.push(line);
+
+		if (reader.done) break;
+	}
+
+	reader.finish();
+
+	return reader;
+}
+
+export function parseDiff(patch: string): DiffFile[] {
+	return readDiff(patch.split("\n"), unbounded).files;
 }
 
 export function anchorOf(line: DiffLine): DiffAnchor {

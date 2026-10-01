@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
 	failedPreviews,
+	fileBodyOf,
 	previewFixRequest,
 	previewsView,
 	readingLatest,
 	reviewBodyMaxLength,
 	reviewPreviewLine,
 	snapshotTotals,
+	tooLargeLine,
 	unchangedTitle,
 	type ReviewState,
 } from "./review";
@@ -118,5 +120,32 @@ describe("asking the agent to fix a preview", () => {
 describe("a revision that changed nothing", () => {
 	it("names the revision it repeats", () => {
 		expect(unchangedTitle(state({ revision: 3 }))).toBe("Nothing changed since revision 2");
+	});
+});
+
+describe("what a file in a large review shows", () => {
+	const deferred = { path: "a.ts", oldPath: "a.ts", status: "modified" as const, additions: 3, deletions: 1, hunks: [], binary: false, deferred: true };
+	const loaded = { ...deferred, deferred: undefined, hunks: [{ header: "@@ -1 +1 @@", lines: [] }] };
+
+	it("keeps a file that came with the page as it is", () => {
+		expect(fileBodyOf({ ...loaded }, undefined)).toEqual({ kind: "inline", file: loaded });
+	});
+
+	it("waits, loads, then shows a deferred file, or says why it cannot", () => {
+		expect(fileBodyOf(deferred, undefined)).toEqual({ kind: "waiting" });
+		expect(fileBodyOf(deferred, { loading: true })).toEqual({ kind: "loading" });
+		expect(fileBodyOf(deferred, { loading: false, current: { kind: "ready", file: loaded } })).toEqual({
+			kind: "ready",
+			file: loaded,
+		});
+		expect(fileBodyOf(deferred, { loading: false, current: { kind: "too_large", lines: 12000 } })).toEqual({
+			kind: "too_large",
+			lines: 12000,
+		});
+		expect(fileBodyOf(deferred, { loading: false, error: new Error("offline") })).toEqual({ kind: "failed" });
+	});
+
+	it("says how large a file it will not show is", () => {
+		expect(tooLargeLine(12000)).toContain("12,000 lines");
 	});
 });
