@@ -160,17 +160,31 @@ func (mr *MockRunnerChannelMockRecorder) Renew(ctx, runnerID, epoch, load, seenA
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Renew", reflect.TypeOf((*MockRunnerChannel)(nil).Renew), ctx, runnerID, epoch, load, seenAt)
 }
 
-// Seen mocks base method.
-func (m *MockRunnerChannel) Seen(ctx context.Context, runnerID uuid.UUID, messageID string) (bool, error) {
+// Spend mocks base method.
+func (m *MockRunnerChannel) Spend(ctx context.Context, runnerID uuid.UUID, messageID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Seen", ctx, runnerID, messageID)
+	ret := m.ctrl.Call(m, "Spend", ctx, runnerID, messageID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Spend indicates an expected call of Spend.
+func (mr *MockRunnerChannelMockRecorder) Spend(ctx, runnerID, messageID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Spend", reflect.TypeOf((*MockRunnerChannel)(nil).Spend), ctx, runnerID, messageID)
+}
+
+// Spent mocks base method.
+func (m *MockRunnerChannel) Spent(ctx context.Context, runnerID uuid.UUID, messageID string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Spent", ctx, runnerID, messageID)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Seen indicates an expected call of Seen.
-func (mr *MockRunnerChannelMockRecorder) Seen(ctx, runnerID, messageID any) *gomock.Call {
+// Spent indicates an expected call of Spent.
+func (mr *MockRunnerChannelMockRecorder) Spent(ctx, runnerID, messageID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seen", reflect.TypeOf((*MockRunnerChannel)(nil).Seen), ctx, runnerID, messageID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Spent", reflect.TypeOf((*MockRunnerChannel)(nil).Spent), ctx, runnerID, messageID)
 }

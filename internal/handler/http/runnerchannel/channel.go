@@ -178,12 +178,28 @@ func (c *connection) readPump(ctx context.Context) error {
 			continue
 		}
 
+		reply := channelv1.Acknowledgement(inbound.ID, time.Now())
+
+		var refusal entity.ChannelRefusal
+
 		if err := c.channels.Receive(ctx, c.session, inbound.Message()); err != nil {
-			return err
+			if !errors.As(err, &refusal) {
+				return err
+			}
+
+			logging.From(ctx).WarnContext(
+				ctx, "a runner message was refused",
+				slog.String("message_id", inbound.ID),
+				slog.String("type", inbound.Type),
+				slog.String("execution_id", inbound.ExecID),
+				slog.String("reason", refusal.Reason),
+			)
+
+			reply = channelv1.Refuse(inbound.ID, refusal.Reason, time.Now())
 		}
 
 		select {
-		case c.writes <- channelv1.Acknowledgement(inbound.ID, time.Now()):
+		case c.writes <- reply:
 		case <-ctx.Done():
 			return ctx.Err()
 		}

@@ -227,24 +227,25 @@ func (r *channelRepository) Presence(
 	}, nil
 }
 
-func (r *channelRepository) Seen(
+func (r *channelRepository) Spent(
 	ctx context.Context,
 	runnerID uuid.UUID,
 	messageID string,
 ) (bool, error) {
-	err := r.writer.SetArgs(ctx, seenKey(runnerID, messageID), seen, redis.SetArgs{
-		Mode: "NX",
-		TTL:  entity.ChannelSeenTTL,
-	}).Err()
+	count, err := r.writer.Exists(ctx, seenKey(runnerID, messageID)).Result()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return true, nil
-		}
-
-		return false, fmt.Errorf("remember a runner message: %w", err)
+		return false, fmt.Errorf("look up a runner message: %w", err)
 	}
 
-	return false, nil
+	return count > 0, nil
+}
+
+func (r *channelRepository) Spend(ctx context.Context, runnerID uuid.UUID, messageID string) error {
+	if err := r.writer.Set(ctx, seenKey(runnerID, messageID), seen, entity.ChannelSeenTTL).Err(); err != nil {
+		return fmt.Errorf("remember a runner message: %w", err)
+	}
+
+	return nil
 }
 
 func (r *channelRepository) hold(

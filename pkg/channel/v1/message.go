@@ -16,7 +16,10 @@ var (
 
 type MessageType string
 
-const Ack MessageType = "ack"
+const (
+	Ack     MessageType = "ack"
+	Refused MessageType = "refused"
+)
 
 const (
 	Sync             MessageType = "channel.sync"

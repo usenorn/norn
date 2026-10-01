@@ -3,6 +3,7 @@ package runnerchannel
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 
 	"github.com/usenorn/norn/internal/entity"
@@ -75,7 +76,7 @@ func (s *channelsService) Receive(
 		return err
 	}
 
-	spent, err := s.channels.Seen(ctx, session.Runner.ID, message.ID)
+	spent, err := s.channels.Spent(ctx, session.Runner.ID, message.ID)
 	if err != nil {
 		return err
 	}
@@ -84,8 +85,36 @@ func (s *channelsService) Receive(
 		return nil
 	}
 
-	ctx = identity.WithActor(ctx, session.Actor)
+	if err := s.dispatch(identity.WithActor(ctx, session.Actor), session, message); err != nil {
+		return refusalOf(err)
+	}
 
+	return s.channels.Spend(ctx, session.Runner.ID, message.ID)
+}
+
+func refusalOf(err error) error {
+	var (
+		invalid entity.ValidationError
+		denied  entity.AccessDeniedError
+	)
+
+	switch {
+	case errors.As(err, &invalid), errors.As(err, &denied),
+		errors.Is(err, entity.ErrChannelEnvelopeInvalid),
+		errors.Is(err, entity.ErrExecutionNotFound),
+		errors.Is(err, entity.ErrExecutionTransition),
+		errors.Is(err, entity.ErrExecutionStateNotRunners):
+		return entity.ChannelRefusal{Reason: err.Error()}
+	default:
+		return err
+	}
+}
+
+func (s *channelsService) dispatch(
+	ctx context.Context,
+	session service.ChannelSession,
+	message entity.ChannelMessage,
+) error {
 	switch message.Type {
 	case entity.ChannelRunnerHello:
 		return s.Heartbeat(ctx, session, s.greet(ctx, session, message))
