@@ -399,3 +399,21 @@ func TestAMessageTheServerCouldNotHandleIsNotSpentSoItsReplayIsHandledAgain(t *t
 		}
 	}
 }
+
+func TestAMessageTheServerWillNeverAcceptIsRefusedWithItsReasonAndNotSpent(t *testing.T) {
+	h := newHarness(t)
+	session := h.session()
+	message := h.freshMessage("01ASK", entity.ChannelQuestionAsked)
+	invalid := entity.NewValidationError(entity.FieldError{Field: "options", Code: entity.ValidationCodeTooLong})
+
+	h.channels.EXPECT().Spent(gomock.Any(), h.runner.ID, message.ID).Return(false, nil)
+	h.channels.EXPECT().Spend(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	h.questions.EXPECT().Asked(gomock.Any(), h.runner, message).Return(invalid)
+
+	var refusal entity.ChannelRefusal
+
+	err := h.service.Receive(context.Background(), session, message)
+	if !errors.As(err, &refusal) || !strings.Contains(refusal.Reason, "options: too_long") {
+		t.Fatalf("a question the server will never accept came back as %v, want a refusal naming why", err)
+	}
+}

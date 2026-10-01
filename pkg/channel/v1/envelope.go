@@ -19,6 +19,8 @@ const (
 	SpoolTTL        = 24 * time.Hour
 	SeenTTL         = time.Hour
 	MaxMessageBytes = 1 << 20
+
+	RefusalReasonMax = 1000
 )
 
 var ErrEnvelopeInvalid = errors.New("runner channel envelope is malformed")
@@ -51,6 +53,40 @@ func Acknowledgement(id string, now time.Time) Envelope {
 		TS:    now.UTC(),
 		AckID: id,
 	}
+}
+
+type Refusal struct {
+	Reason string `json:"reason"`
+}
+
+func Refuse(id, reason string, now time.Time) Envelope {
+	if runes := []rune(reason); len(runes) > RefusalReasonMax {
+		reason = string(runes[:RefusalReasonMax])
+	}
+
+	payload, _ := json.Marshal(Refusal{Reason: reason})
+
+	return Envelope{
+		V:       Version,
+		Type:    string(Refused),
+		TS:      now.UTC(),
+		AckID:   id,
+		Payload: payload,
+	}
+}
+
+func (e Envelope) Refusing() bool {
+	return MessageType(e.Type) == Refused
+}
+
+func (e Envelope) Reason() string {
+	var refusal Refusal
+
+	if err := json.Unmarshal(e.Payload, &refusal); err != nil {
+		return ""
+	}
+
+	return refusal.Reason
 }
 
 func (e Envelope) Message() Message {

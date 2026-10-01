@@ -321,3 +321,53 @@ func write(t *testing.T, ctx context.Context, socket *websocket.Conn, body frame
 		t.Fatalf("write: %v", err)
 	}
 }
+
+func TestAMessageTheServerRefusesIsAnsweredWithTheReasonAndTheChannelCarriesOn(t *testing.T) {
+	s := newStand(t)
+
+	s.channels.EXPECT().Open(gomock.Any(), "nrt_good").Return(s.session, nil)
+	s.channels.EXPECT().Close(gomock.Any(), gomock.Any()).AnyTimes()
+	s.channels.EXPECT().Verify(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	s.channels.EXPECT().
+		Deliver(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _ service.ChannelSession, cursor string) ([]entity.SpooledMessage, string, error) {
+			<-ctx.Done()
+
+			return nil, cursor, ctx.Err()
+		}).
+		AnyTimes()
+
+	gomock.InOrder(
+		s.channels.EXPECT().Receive(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(entity.ChannelRefusal{Reason: "validation failed: options: too_long"}),
+		s.channels.EXPECT().Receive(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	socket, _, err := websocket.Dial(ctx, s.url()+"?ticket=nrt_good", nil)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+
+	defer func() { _ = socket.CloseNow() }()
+
+	write(t, ctx, socket, frame{
+		V: entity.ChannelVersion, ID: "01ASK", Type: string(entity.ChannelQuestionAsked), TS: time.Now().UTC(),
+	})
+
+	refused := read(t, ctx, socket)
+	if refused.Type != string(entity.ChannelRefused) || refused.AckID != "01ASK" ||
+		!strings.Contains(string(refused.Payload), "options: too_long") {
+		t.Fatalf("the server answered a refused message with %+v", refused)
+	}
+
+	write(t, ctx, socket, frame{
+		V: entity.ChannelVersion, ID: "01BEAT", Type: string(entity.ChannelRunnerHeartbeat), TS: time.Now().UTC(),
+	})
+
+	if answer := read(t, ctx, socket); answer.Type != string(entity.ChannelAck) || answer.AckID != "01BEAT" {
+		t.Fatalf("after a refusal the channel answered %+v, want it still taking messages", answer)
+	}
+}

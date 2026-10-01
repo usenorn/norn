@@ -37,7 +37,18 @@ var (
 
 type ChannelMessageType = channelv1.MessageType
 
-const ChannelAck = channelv1.Ack
+const (
+	ChannelAck     = channelv1.Ack
+	ChannelRefused = channelv1.Refused
+)
+
+type ChannelRefusal struct {
+	Reason string
+}
+
+func (r ChannelRefusal) Error() string {
+	return "the runner's message was refused: " + r.Reason
+}
 
 const (
 	ChannelSync             = channelv1.Sync
