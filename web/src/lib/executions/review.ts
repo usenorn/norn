@@ -1,5 +1,5 @@
 import type { components } from "$lib/api/dashboard.gen";
-import type { DiffAnchor, DiffFile } from "./diff";
+import { diffFilesMax, type DiffAnchor, type DiffFile } from "./diff";
 import type { ChangeTotals, Execution, IssueQuestion } from "./executions";
 import type { DecisionRight } from "./reviews";
 
@@ -99,7 +99,7 @@ export function repositoryNote(repository: ReviewedRepository): string | undefin
 			return "The diff could not be read. Download it from the run page instead.";
 		case "ready":
 			return repository.diff.truncated
-				? "This diff is too long to show whole. The files it runs out on are left off here."
+				? `This change touches more than ${diffFilesMax.toLocaleString("en")} files. The first ${diffFilesMax.toLocaleString("en")} are listed here; the rest are in the full diff.`
 				: undefined;
 	}
 }

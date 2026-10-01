@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { anchorOf, hunkExcerpt, parseDiff, splitRows } from "./diff";
+import { anchorOf, hunkExcerpt, parseDiff, readDiff, splitRows } from "./diff";
 
 const patch = [
 	"diff --git a/internal/run.go b/internal/run.go",
@@ -96,5 +96,41 @@ describe("splitRows", () => {
 			[undefined, "add"],
 			["context", "context"],
 		]);
+	});
+});
+
+describe("reading a diff within a budget", () => {
+	const fileWith = (index: number, lines: number) =>
+		[`diff --git a/f${index}.ts b/f${index}.ts`, `@@ -0,0 +1,${lines} @@`]
+			.concat(Array.from({ length: lines }, (_, line) => `+line ${line}`))
+			.join("\n");
+
+	const patch = [fileWith(0, 3), fileWith(1, 50), fileWith(2, 3), fileWith(3, 3)].join("\n");
+
+	it("keeps small files whole and defers the ones past the budget, counting every one", () => {
+		const read = readDiff(patch.split("\n"), { inline: 8, perFile: 10, files: 100 });
+
+		expect(read.files.map((file) => [file.path, file.deferred ?? false, file.additions])).toEqual([
+			["f0.ts", false, 3],
+			["f1.ts", true, 50],
+			["f2.ts", false, 3],
+			["f3.ts", true, 3],
+		]);
+		expect(read.files.filter((file) => file.deferred).every((file) => file.hunks.length === 0)).toBe(true);
+	});
+
+	it("lists no more files than it may, and says so", () => {
+		const read = readDiff(patch.split("\n"), { inline: 100, perFile: 100, files: 2 });
+
+		expect(read.files).toHaveLength(2);
+		expect(read.truncated).toBe(true);
+	});
+
+	it("reads only the file asked for and stops after it", () => {
+		const read = readDiff(patch.split("\n"), { inline: Infinity, perFile: Infinity, files: Infinity, only: "f2.ts" });
+
+		expect(read.files.map((file) => file.path)).toEqual(["f2.ts"]);
+		expect(read.files[0].hunks[0].lines).toHaveLength(3);
+		expect(read.done).toBe(true);
 	});
 });

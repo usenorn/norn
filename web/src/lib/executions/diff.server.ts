@@ -1,26 +1,29 @@
 import type { Client } from "openapi-fetch";
 import type { paths } from "$lib/api/dashboard.gen";
 import { internalOrigin } from "$lib/api/server";
-import { parseDiff } from "./diff";
+import { reviewBudget } from "./diff";
 import { highlighted } from "./highlight.server";
+import { readPatch } from "./patch.server";
 import type { RepositoryDiff } from "./review";
 
-export const diffMaxBytes = 512 * 1024;
+export async function storedPatch(
+	api: Client<paths>,
+	workspaceId: string,
+	executionId: string,
+	artifactId: string
+): Promise<Response | null> {
+	const answered = await api.GET(
+		"/workspaces/{workspaceId}/executions/{executionId}/artifacts/{artifactId}/content",
+		{ params: { path: { workspaceId, executionId, artifactId } }, redirect: "manual" }
+	);
 
-async function unpack(stored: Response): Promise<string> {
-	const bytes = new Uint8Array(await stored.arrayBuffer());
+	const target = answered.response.headers.get("location");
 
-	if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return new TextDecoder().decode(bytes);
+	if (!target) return null;
 
-	const unpacked = new Blob([bytes.slice()]).stream().pipeThrough(new DecompressionStream("gzip"));
+	const stored = await fetch(new URL(target, internalOrigin()));
 
-	return new Response(unpacked).text();
-}
-
-function cut(patch: string): string {
-	const lastWholeFile = patch.lastIndexOf("\ndiff --git ", diffMaxBytes);
-
-	return patch.slice(0, lastWholeFile > 0 ? lastWholeFile : diffMaxBytes);
+	return stored.ok ? stored : null;
 }
 
 export async function readDiff(
@@ -31,26 +34,14 @@ export async function readDiff(
 ): Promise<RepositoryDiff> {
 	if (!artifactId) return { kind: "absent" };
 
-	const answered = await api.GET(
-		"/workspaces/{workspaceId}/executions/{executionId}/artifacts/{artifactId}/content",
-		{ params: { path: { workspaceId, executionId, artifactId } }, redirect: "manual" }
-	);
-
-	const target = answered.response.headers.get("location");
-
-	if (!target) return { kind: "absent" };
-
 	try {
-		const stored = await fetch(new URL(target, internalOrigin()));
+		const stored = await storedPatch(api, workspaceId, executionId, artifactId);
 
-		if (!stored.ok) return { kind: "failed" };
+		if (!stored) return { kind: "failed" };
 
-		const patch = await unpack(stored);
-		const truncated = patch.length > diffMaxBytes;
+		const read = await readPatch(stored, reviewBudget);
 
-		const files = await highlighted(parseDiff(truncated ? cut(patch) : patch));
-
-		return { kind: "ready", files, truncated };
+		return { kind: "ready", files: await highlighted(read.files), truncated: read.truncated };
 	} catch {
 		return { kind: "failed" };
 	}

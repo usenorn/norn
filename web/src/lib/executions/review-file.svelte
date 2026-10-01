@@ -12,6 +12,7 @@
 		fileStatusLabel,
 		hunkExcerpt,
 		sameAnchor,
+		segmentsOf,
 		splitRows,
 		type DiffAnchor,
 		type DiffFile,
@@ -104,7 +105,7 @@
 	}
 </script>
 
-{#snippet source(line: DiffLine | undefined)}{#if line?.tokens}{#each line.tokens as token, index (index)}<span style:color={token.tone || null}>{token.text}</span>{/each}{:else}{line?.text ?? ""}{/if}{/snippet}
+{#snippet source(line: DiffLine | undefined)}{#if line?.spans}{#each segmentsOf(line) as segment, index (index)}<span style:color={segment.tone}>{segment.text}</span>{/each}{:else}{line?.text ?? ""}{/if}{/snippet}
 
 {#snippet commentButton(line: DiffLine)}
 	{#if open}
@@ -235,6 +236,10 @@
 			{#if file.binary}
 				<p class="px-3 py-3 text-xs text-muted-foreground">
 					A binary file, so there is nothing to read line by line.
+				</p>
+			{:else if file.deferred}
+				<p class="px-3 py-3 text-xs text-muted-foreground">
+					Too much changed in this review to show every file at once. Download the full diff to read this one.
 				</p>
 			{:else if file.hunks.length === 0}
 				<p class="px-3 py-3 text-xs text-muted-foreground">
