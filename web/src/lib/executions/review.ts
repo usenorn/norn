@@ -258,6 +258,8 @@ export function reviewClosedLine(execution: Execution): string {
 	switch (execution.state) {
 		case "approved":
 			return "These changes were approved. The machine is pushing the branch and opening the pull request.";
+		case "watching":
+			return "These changes were approved and published. The machine is watching the pull request for comments, conflicts and failed checks.";
 		case "completed":
 			return "These changes were approved and published. The review is kept here as it was.";
 		case "queued_for_resume":

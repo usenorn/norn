@@ -74,3 +74,20 @@ func TestAnOfferStillGoesOutWhenNornCannotNameTheBranch(t *testing.T) {
 		t.Fatalf("the offer named branch %q, want none", branch)
 	}
 }
+
+func TestAnOfferNamesThePersonWhoseAgentCommitsTheWork(t *testing.T) {
+	h := newHarness(t)
+
+	h.author = entity.CommitAuthor{Name: "Rae Okafor", Email: "rae@northwind.co"}
+
+	h.delegate(t)
+
+	author := h.offered(t).Author
+	if author == nil || author.Name != "Rae Okafor" || author.Email != "rae@northwind.co" {
+		t.Fatalf(
+			"the offer named %+v as the author, so a machine without a git identity of its own "+
+				"cannot commit the work",
+			author,
+		)
+	}
+}

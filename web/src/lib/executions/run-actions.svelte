@@ -8,6 +8,7 @@
 		retentionClock,
 		retentionLine,
 		shouldShowRetention,
+		stopCopy,
 		type Execution,
 	} from "./executions";
 
@@ -33,6 +34,8 @@
 
 	const clock = $derived(retentionClock(execution, now));
 
+	const stopping = $derived(stopCopy(execution));
+
 	const deadline = $derived(
 		clock.kind === "holding" ? clock.until : clock.kind === "given_back" ? clock.at : now
 	);
@@ -52,7 +55,7 @@
 
 		{#if canCancel(execution)}
 			{#if confirming}
-				<span class="text-xs text-muted-foreground">Stop this run?</span>
+				<span class="text-xs text-muted-foreground">{stopping.ask}</span>
 				<Button
 					variant="destructive"
 					size="sm"
@@ -62,14 +65,14 @@
 						oncancel();
 					}}
 				>
-					Stop it
+					{stopping.confirm}
 				</Button>
 				<Button variant="ghost" size="sm" disabled={working} onclick={() => (confirming = false)}>
-					Leave it running
+					{stopping.keep}
 				</Button>
 			{:else}
 				<Button variant="secondary" size="sm" disabled={working} onclick={() => (confirming = true)}>
-					Stop this run
+					{stopping.action}
 				</Button>
 			{/if}
 		{/if}

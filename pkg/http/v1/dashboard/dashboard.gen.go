@@ -2248,6 +2248,7 @@ const (
 	ExecutionStateQueuedForResume      ExecutionState = "queued_for_resume"
 	ExecutionStateRunning              ExecutionState = "running"
 	ExecutionStateWaitingForInput      ExecutionState = "waiting_for_input"
+	ExecutionStateWatching             ExecutionState = "watching"
 )
 
 // Valid indicates whether the value is a known member of the ExecutionState enum.
@@ -2280,6 +2281,8 @@ func (e ExecutionState) Valid() bool {
 	case ExecutionStateRunning:
 		return true
 	case ExecutionStateWaitingForInput:
+		return true
+	case ExecutionStateWatching:
 		return true
 	default:
 		return false

@@ -79,6 +79,32 @@ func toolkitOf(toolkit entity.AgentToolkit) channelv1.Toolkit {
 	return converted
 }
 
+func (s *executionsService) offering(
+	ctx context.Context,
+	execution entity.Execution,
+	issue entity.Issue,
+) channelv1.Offer {
+	offer := offerOf(execution, issue, s.branchOf(ctx, execution, issue))
+
+	author, err := s.source.CommitAuthorForAgent(ctx, execution.WorkspaceID, execution.AgentID)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"norn could not name who authors a run's commits, so the machine will decide",
+			"execution_id", execution.ID,
+			"error", err,
+		)
+
+		return offer
+	}
+
+	if author.Complete() {
+		offer.Author = &channelv1.Author{Name: author.Name, Email: author.Email}
+	}
+
+	return offer
+}
+
 func offerOf(execution entity.Execution, issue entity.Issue, branch string) channelv1.Offer {
 	return channelv1.Offer{
 		ExecutionID: execution.ID,
@@ -223,7 +249,7 @@ func (s *executionsService) hand(
 	}
 
 	if err := s.tell(
-		ctx, bound, entity.ChannelExecutionOffer, offerOf(bound, issue, s.branchOf(ctx, bound, issue)),
+		ctx, bound, entity.ChannelExecutionOffer, s.offering(ctx, bound, issue),
 	); err != nil {
 		return err
 	}
@@ -319,7 +345,7 @@ func (s *executionsService) open(
 	}
 
 	if err := s.tell(
-		ctx, opened, entity.ChannelExecutionOffer, offerOf(opened, request.issue, s.branchOf(ctx, opened, request.issue)),
+		ctx, opened, entity.ChannelExecutionOffer, s.offering(ctx, opened, request.issue),
 	); err != nil {
 		return entity.Execution{}, err
 	}

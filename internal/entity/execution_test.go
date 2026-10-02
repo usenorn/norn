@@ -44,7 +44,12 @@ func permittedExecutionMoves() map[entity.ExecutionState][]entity.ExecutionState
 			entity.ExecutionFailed,
 		},
 		entity.ExecutionApproved: {
-			entity.ExecutionCompleted, entity.ExecutionFailed, entity.ExecutionAwaitingReview,
+			entity.ExecutionCompleted, entity.ExecutionWatching, entity.ExecutionFailed,
+			entity.ExecutionAwaitingReview,
+		},
+		entity.ExecutionWatching: {
+			entity.ExecutionRunning, entity.ExecutionCompleted, entity.ExecutionFailed,
+			entity.ExecutionCancelled, entity.ExecutionInterrupted,
 		},
 	}
 }
@@ -104,7 +109,7 @@ func TestAFailedFinalizeGoesBackToRunningSoUncommittedWorkIsNotLost(t *testing.T
 	}
 }
 
-func TestOnlyTheFourteenKnownExecutionStatesAreValid(t *testing.T) {
+func TestOnlyTheFifteenKnownExecutionStatesAreValid(t *testing.T) {
 	for _, state := range entity.ExecutionStates() {
 		if !state.Valid() {
 			t.Errorf("%q is listed as an execution state but does not validate", state)
@@ -206,7 +211,7 @@ func TestACompletedExecutionIsNotOfferedARestart(t *testing.T) {
 	}
 }
 
-func TestOnlyTheThreeStatesThatMoveAnIssueResolveATargetState(t *testing.T) {
+func TestOnlyTheStatesThatMoveAnIssueResolveATargetState(t *testing.T) {
 	states := []entity.WorkflowState{
 		{Name: "Todo", Category: entity.StateCategoryNotStarted, Position: 1},
 		{Name: "In progress", Category: entity.StateCategoryActive, Position: 2},
@@ -232,6 +237,7 @@ func TestOnlyTheThreeStatesThatMoveAnIssueResolveATargetState(t *testing.T) {
 		wanted := map[entity.ExecutionState]string{
 			entity.ExecutionRunning:        "In progress",
 			entity.ExecutionAwaitingReview: "In review",
+			entity.ExecutionWatching:       "In review",
 			entity.ExecutionCompleted:      "Done",
 		}[state]
 
@@ -275,6 +281,10 @@ func TestTheStageFollowsTheRunThroughReviewAndPublication(t *testing.T) {
 		"an answer during implementation stays in implementation": {
 			entity.ExecutionWaitingForInput, entity.StageImplementation,
 			entity.ExecutionQueuedForResume, entity.StageImplementation,
+		},
+		"pull request activity sends a published run back to work": {
+			entity.ExecutionWatching, entity.StagePublication,
+			entity.ExecutionRunning, entity.StageImplementation,
 		},
 	}
 

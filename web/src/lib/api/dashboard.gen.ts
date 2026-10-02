@@ -6413,7 +6413,7 @@ export interface components {
             previewGateway?: components["schemas"]["GatewayReach"];
         };
         /** @enum {string} */
-        ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "awaiting_plan_approval" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "completed" | "failed" | "cancelled" | "interrupted";
+        ExecutionState: "queued" | "leased" | "preparing" | "running" | "waiting_for_input" | "awaiting_plan_approval" | "queued_for_resume" | "finalizing" | "awaiting_review" | "approved" | "watching" | "completed" | "failed" | "cancelled" | "interrupted";
         /** @enum {string} */
         ExecutionEventKind: "transition" | "phase" | "command" | "tool" | "service" | "preview" | "question" | "note";
         /**

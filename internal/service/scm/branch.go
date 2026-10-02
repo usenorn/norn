@@ -107,6 +107,23 @@ func (s *connections) BranchNameForAgent(
 	return entity.BranchNameFor(settings, handle, issue, issue.Reference()), nil
 }
 
+func (s *connections) CommitAuthorForAgent(
+	ctx context.Context,
+	workspaceID, agentID uuid.UUID,
+) (entity.CommitAuthor, error) {
+	agent, err := s.agents.GetByID(ctx, workspaceID, agentID)
+	if err != nil {
+		return entity.CommitAuthor{}, err
+	}
+
+	account, err := s.accounts.GetByID(ctx, agent.OwnerAccountID)
+	if err != nil {
+		return entity.CommitAuthor{}, err
+	}
+
+	return entity.CommitAuthor{Name: account.DisplayName, Email: account.Email}, nil
+}
+
 func (s *connections) SuppressAutomation(
 	ctx context.Context,
 	workspaceID, issueID uuid.UUID,

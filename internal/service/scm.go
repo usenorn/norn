@@ -348,6 +348,7 @@ type SourceControl interface {
 	SetTeamSettings(ctx context.Context, workspaceID, teamID uuid.UUID, input SetTeamSCMSettingsInput) (entity.SCMTeamSettings, error)
 	BranchName(ctx context.Context, workspaceID, issueID uuid.UUID) (string, error)
 	BranchNameForAgent(ctx context.Context, issue entity.Issue, agentID uuid.UUID) (string, error)
+	CommitAuthorForAgent(ctx context.Context, workspaceID, agentID uuid.UUID) (entity.CommitAuthor, error)
 	SuppressAutomation(ctx context.Context, workspaceID, issueID uuid.UUID, suppressed bool) error
 
 	TeamRules(ctx context.Context, workspaceID, teamID uuid.UUID) ([]TeamTransitionRule, error)

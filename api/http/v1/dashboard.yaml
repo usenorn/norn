@@ -10013,6 +10013,7 @@ components:
         - finalizing
         - awaiting_review
         - approved
+        - watching
         - completed
         - failed
         - cancelled
