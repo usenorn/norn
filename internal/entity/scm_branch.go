@@ -46,6 +46,15 @@ func (s SCMTeamSettings) BranchName(handle, reference, title string) string {
 	return TrimBranchName(filled)
 }
 
+type CommitAuthor struct {
+	Name  string
+	Email string
+}
+
+func (a CommitAuthor) Complete() bool {
+	return strings.TrimSpace(a.Name) != "" && strings.TrimSpace(a.Email) != ""
+}
+
 func BranchNameFor(settings SCMTeamSettings, handle string, issue Issue, reference string) string {
 	if handle == "" {
 		handle = "norn"

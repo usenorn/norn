@@ -823,6 +823,21 @@ func (mr *MockSourceControlMockRecorder) ClearTeamRule(ctx, workspaceID, teamID,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearTeamRule", reflect.TypeOf((*MockSourceControl)(nil).ClearTeamRule), ctx, workspaceID, teamID, trigger)
 }
 
+// CommitAuthorForAgent mocks base method.
+func (m *MockSourceControl) CommitAuthorForAgent(ctx context.Context, workspaceID, agentID uuid.UUID) (entity.CommitAuthor, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CommitAuthorForAgent", ctx, workspaceID, agentID)
+	ret0, _ := ret[0].(entity.CommitAuthor)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CommitAuthorForAgent indicates an expected call of CommitAuthorForAgent.
+func (mr *MockSourceControlMockRecorder) CommitAuthorForAgent(ctx, workspaceID, agentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitAuthorForAgent", reflect.TypeOf((*MockSourceControl)(nil).CommitAuthorForAgent), ctx, workspaceID, agentID)
+}
+
 // Conflicts mocks base method.
 func (m *MockSourceControl) Conflicts(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.MirrorConflict, error) {
 	m.ctrl.T.Helper()

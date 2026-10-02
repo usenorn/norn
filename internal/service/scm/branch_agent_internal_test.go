@@ -132,3 +132,26 @@ func TestAnAgentNobodyCanResolveStillGetsAUsableBranch(t *testing.T) {
 		)
 	}
 }
+
+func TestARunCommitsAsThePersonWhoOwnsTheAgent(t *testing.T) {
+	h := newBranchHarness(t, "")
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.issue.WorkspaceID, h.agent.ID).
+		Return(h.agent, nil)
+
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), h.agent.OwnerAccountID).
+		Return(entity.Account{
+			ID: h.agent.OwnerAccountID, DisplayName: "Rae Chen", Email: "rae@northwind.co",
+		}, nil)
+
+	author, err := h.service.CommitAuthorForAgent(context.Background(), h.issue.WorkspaceID, h.agent.ID)
+	if err != nil {
+		t.Fatalf("name the author of a run's commits: %v", err)
+	}
+
+	if author.Name != "Rae Chen" || author.Email != "rae@northwind.co" {
+		t.Fatalf("a run commits as %+v, want the agent's owner", author)
+	}
+}

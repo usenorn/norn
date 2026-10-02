@@ -64,6 +64,7 @@ type harness struct {
 	source      *scmsvc.MockSourceControl
 	branch      string
 	branchFails error
+	author      entity.CommitAuthor
 	events      *eventsvc.MockEvents
 	toolkits    *agentcapabilitysvc.MockAgentToolkits
 	toolkit     entity.AgentToolkit
@@ -238,6 +239,17 @@ func newHarness(t *testing.T) *harness {
 		BranchNameForAgent(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ entity.Issue, _ uuid.UUID) (string, error) {
 			return h.branch, h.branchFails
+		}).
+		AnyTimes()
+
+	h.source.EXPECT().
+		CommitAuthorForAgent(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, agentID uuid.UUID) (entity.CommitAuthor, error) {
+			if agentID != h.runner.AgentID {
+				return entity.CommitAuthor{}, entity.ErrAgentNotFound
+			}
+
+			return h.author, nil
 		}).
 		AnyTimes()
 

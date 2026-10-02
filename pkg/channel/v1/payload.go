@@ -57,13 +57,19 @@ type Issue struct {
 }
 
 type Offer struct {
-	ExecutionID string `json:"execution_id"`
-	Reference   string `json:"reference"`
-	Attempt     int    `json:"attempt"`
-	WorkspaceID string `json:"workspace_id"`
-	Branch      string `json:"branch,omitempty"`
-	Issue       Issue  `json:"issue"`
-	Params      Params `json:"params"`
+	ExecutionID string  `json:"execution_id"`
+	Reference   string  `json:"reference"`
+	Attempt     int     `json:"attempt"`
+	WorkspaceID string  `json:"workspace_id"`
+	Branch      string  `json:"branch,omitempty"`
+	Author      *Author `json:"author,omitempty"`
+	Issue       Issue   `json:"issue"`
+	Params      Params  `json:"params"`
+}
+
+type Author struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 type Skill struct {
