@@ -346,6 +346,9 @@ func publicationSettled(
 	switch {
 	case execution.State == entity.ExecutionCompleted:
 		writePublication(&built, changeset)
+	case execution.State == entity.ExecutionWatching:
+		writePublication(&built, changeset)
+		built.WriteString("\n\n" + watchingPublication)
 	case execution.State == entity.ExecutionFailed:
 		built.WriteString("Publication was abandoned.")
 	case execution.State != entity.ExecutionApproved:

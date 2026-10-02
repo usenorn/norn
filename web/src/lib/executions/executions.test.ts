@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { publicationIncomplete, type Execution, type ExecutionChangeSet } from "./executions";
+import {
+	canCancel,
+	publicationIncomplete,
+	stateLabel,
+	stopCopy,
+	type Execution,
+	type ExecutionChangeSet,
+} from "./executions";
 
 function approved(): Execution {
 	return { state: "approved" } as Execution;
@@ -17,5 +24,19 @@ describe("a publication that needs a person", () => {
 		expect(publicationIncomplete(approved(), publishing("pending", "failed"))).toBe(false);
 		expect(publicationIncomplete(approved(), publishing(undefined, "failed"))).toBe(false);
 		expect(publicationIncomplete(approved(), publishing("published", "published"))).toBe(false);
+	});
+});
+
+describe("a run watching its pull request", () => {
+	const watching = { state: "watching" } as Execution;
+
+	it("says what it is doing", () => {
+		expect(stateLabel(watching.state)).toBe("Watching the pull request");
+	});
+
+	it("can be told to stop watching without calling it stopping the run", () => {
+		expect(canCancel(watching)).toBe(true);
+		expect(stopCopy(watching).action).toBe("Stop watching");
+		expect(stopCopy({ state: "running" } as Execution).action).toBe("Stop this run");
 	});
 });

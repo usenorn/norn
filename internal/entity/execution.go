@@ -61,6 +61,7 @@ const (
 	ExecutionFinalizing      = channelv1.StateFinalizing
 	ExecutionAwaitingReview  = channelv1.StateAwaitingReview
 	ExecutionApproved        = channelv1.StateApproved
+	ExecutionWatching        = channelv1.StateWatching
 	ExecutionCompleted       = channelv1.StateCompleted
 	ExecutionFailed          = channelv1.StateFailed
 	ExecutionCancelled       = channelv1.StateCancelled
@@ -81,14 +82,14 @@ func RunnerDrivenExecutionStates() []ExecutionState {
 
 func MovesTheIssue(state ExecutionState) bool {
 	return state == ExecutionRunning || state == ExecutionAwaitingReview ||
-		state == ExecutionCompleted
+		state == ExecutionWatching || state == ExecutionCompleted
 }
 
 func IssueStateFor(state ExecutionState, states []WorkflowState) (WorkflowState, bool) {
 	switch state {
 	case ExecutionRunning:
 		return FirstActiveState(states)
-	case ExecutionAwaitingReview:
+	case ExecutionAwaitingReview, ExecutionWatching:
 		return LastActiveState(states)
 	case ExecutionCompleted:
 		return CompletionState(states)
@@ -117,6 +118,8 @@ func StageAfter(from ExecutionState, stage ExecutionStage, to ExecutionState) Ex
 	case to == ExecutionApproved:
 		return StagePublication
 	case stage == StageReview && to == ExecutionQueuedForResume:
+		return StageImplementation
+	case stage == StagePublication && from == ExecutionWatching && to == ExecutionRunning:
 		return StageImplementation
 	default:
 		return stage

@@ -110,6 +110,7 @@ func TestOnlyARunWaitingOnAPersonOutlivesItsMachineGoingAway(t *testing.T) {
 		entity.ExecutionAwaitingPlan:    true,
 		entity.ExecutionQueuedForResume: true,
 		entity.ExecutionAwaitingReview:  true,
+		entity.ExecutionWatching:        true,
 	}
 
 	for _, state := range channelv1.States() {

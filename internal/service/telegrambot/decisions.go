@@ -15,7 +15,9 @@ import (
 const (
 	replyForChanges     = "Reply to this message with what should change."
 	retryingPublication = "Retrying publication."
-	optionUnavailable   = "That option is not available."
+	watchingPublication = "Watching the pull requests: new review comments, a conflict with the base " +
+		"branch or a failed check bring the run back for review."
+	optionUnavailable = "That option is not available."
 )
 
 func (s *updates) pressed(

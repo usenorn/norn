@@ -78,6 +78,8 @@ export function stateLabel(state: ExecutionState): string {
 			return "Waiting for review";
 		case "approved":
 			return "Approved";
+		case "watching":
+			return "Watching the pull request";
 		case "completed":
 			return "Completed";
 		case "failed":
@@ -122,6 +124,7 @@ export function stateTone(state: ExecutionState): StateTone {
 		case "awaiting_review":
 			return "attention";
 		case "approved":
+		case "watching":
 		case "completed":
 			return "done";
 		case "failed":
@@ -153,6 +156,8 @@ export function standingLine(execution: Execution): string {
 			return "The changes are ready to review. Nothing has been pushed yet.";
 		case "approved":
 			return "Somebody approved the changes. The machine is pushing the branch and opening the pull request.";
+		case "watching":
+			return "The pull request is open. The machine comes back to it for new review comments, a conflict with the base branch or a failed check, and finishes the run once it is merged.";
 		case "completed":
 			return "This run is finished and the machine has given the workspace back.";
 		case "failed":
@@ -184,6 +189,21 @@ export function waitingLine(reason: ExecutionQueuedReason | undefined): string {
 
 export function canCancel(execution: Execution): boolean {
 	return !isSettled(execution.state) && execution.state !== "approved";
+}
+
+export type StopCopy = { action: string; ask: string; confirm: string; keep: string };
+
+export function stopCopy(execution: Execution): StopCopy {
+	if (execution.state === "watching") {
+		return {
+			action: "Stop watching",
+			ask: "Stop watching the pull request? It stays open.",
+			confirm: "Stop watching",
+			keep: "Keep watching",
+		};
+	}
+
+	return { action: "Stop this run", ask: "Stop this run?", confirm: "Stop it", keep: "Leave it running" };
 }
 
 export function canRestart(execution: Execution): boolean {

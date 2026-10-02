@@ -15,6 +15,7 @@ const (
 	StateFinalizing      State = "finalizing"
 	StateAwaitingReview  State = "awaiting_review"
 	StateApproved        State = "approved"
+	StateWatching        State = "watching"
 	StateCompleted       State = "completed"
 	StateFailed          State = "failed"
 	StateCancelled       State = "cancelled"
@@ -24,8 +25,8 @@ const (
 func States() []State {
 	return []State{
 		StateQueued, StateLeased, StatePreparing, StateRunning, StateWaitingForInput,
-		StateAwaitingPlan, StateQueuedForResume, StateFinalizing, StateAwaitingReview, StateApproved, StateCompleted,
-		StateFailed, StateCancelled, StateInterrupted,
+		StateAwaitingPlan, StateQueuedForResume, StateFinalizing, StateAwaitingReview, StateApproved, StateWatching,
+		StateCompleted, StateFailed, StateCancelled, StateInterrupted,
 	}
 }
 
@@ -36,7 +37,7 @@ func TerminalStates() []State {
 func RunnerDrivenStates() []State {
 	return []State{
 		StatePreparing, StateRunning, StateWaitingForInput, StateAwaitingPlan, StateFinalizing,
-		StateAwaitingReview, StateCompleted, StateFailed,
+		StateAwaitingReview, StateWatching, StateCompleted, StateFailed,
 	}
 }
 
@@ -67,7 +68,7 @@ func (s State) HoldsSlot() bool {
 
 func (s State) Recoverable() bool {
 	return s == StateWaitingForInput || s == StateAwaitingPlan || s == StateQueuedForResume ||
-		s == StateAwaitingReview
+		s == StateAwaitingReview || s == StateWatching
 }
 
 func (s State) CanTransitionTo(target State) bool {
@@ -95,7 +96,10 @@ func (s State) CanTransitionTo(target State) bool {
 		return target == StateApproved || target == StateQueuedForResume ||
 			target == StateCancelled || target == StateFailed
 	case StateApproved:
-		return target == StateCompleted || target == StateFailed || target == StateAwaitingReview
+		return target == StateCompleted || target == StateWatching || target == StateFailed ||
+			target == StateAwaitingReview
+	case StateWatching:
+		return target == StateRunning || target == StateCompleted || abandons(target)
 	default:
 		return false
 	}
