@@ -62,8 +62,10 @@ export const load: PageServerLoad = async ({
 			changeset: detail.data.changeset,
 			codeLinks: links.data ?? [],
 			plans: plans.data ?? [],
+			plansReach: plans.data ? "loaded" : "unavailable",
 			right,
 			questions: questions.data?.questions ?? [],
+			questionsReach: questions.data ? "loaded" : "unavailable",
 		},
 	};
 };

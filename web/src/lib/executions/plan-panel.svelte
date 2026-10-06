@@ -1,10 +1,13 @@
 <script lang="ts">
 	import * as Tabs from "$lib/components/ui/tabs/index.js";
+	import { Button } from "$lib/components/ui/button/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import { onDateAndTime } from "$lib/time";
 	import DecisionActions from "./decision-actions.svelte";
-	import type { Execution, IssueQuestion } from "./executions";
+	import PlanCopy from "./plan-copy.svelte";
+	import type { Execution, IssueQuestion, Reach } from "./executions";
+	import { questionsMissingLine, reviewText, type ReviewLinks } from "./plan-review";
 	import type { DecisionRight } from "./reviews";
 	import {
 		latestPlan,
@@ -20,21 +23,29 @@
 	let {
 		execution,
 		plans,
+		plansReach,
 		questions,
+		questionsReach,
 		right,
 		timezone,
+		links,
 		working,
 		onapprove,
 		onrevise,
+		onretry,
 	}: {
 		execution: Execution;
 		plans: ExecutionPlan[];
+		plansReach: Reach;
 		questions: IssueQuestion[];
+		questionsReach: Reach;
 		right: DecisionRight;
 		timezone: string;
+		links: ReviewLinks;
 		working: boolean;
 		onapprove: (revision: number) => void;
 		onrevise: (revision: number, feedback: string) => Promise<boolean>;
+		onretry: () => void;
 	} = $props();
 
 	const latest = $derived(latestPlan(plans));
@@ -72,6 +83,10 @@
 	function feedbackOn(plan: ExecutionPlan): ExecutionPlan | undefined {
 		return plans.find((held) => held.revision === plan.revision - 1 && held.revisionFeedback);
 	}
+
+	function forReview(plan: ExecutionPlan): string {
+		return reviewText({ execution, plan, plans, questions, timezone, links });
+	}
 </script>
 
 {#snippet revision(plan: ExecutionPlan)}
@@ -87,6 +102,11 @@
 			</span>
 			<Eyebrow tone={standingTone(standing)}>{standingLabel(standing)}</Eyebrow>
 		</div>
+
+		<PlanCopy
+			text={forReview(plan)}
+			blocked={questionsReach === "unavailable" ? questionsMissingLine : undefined}
+		/>
 
 		{#if answering}
 			<figure class="flex min-w-0 flex-col gap-1 border-l-2 border-line-strong pl-3">
@@ -140,7 +160,12 @@
 <section id="plan" class="flex min-w-0 scroll-mt-4 flex-col gap-3" aria-label="Plan">
 	<Eyebrow rule>Plan</Eyebrow>
 
-	{#if !shown}
+	{#if plansReach === "unavailable"}
+		<div class="flex flex-wrap items-center gap-2 text-xs leading-normal text-muted-foreground">
+			<span>The plan could not be loaded.</span>
+			<Button variant="outline" size="xs" onclick={onretry}>Try again</Button>
+		</div>
+	{:else if !shown}
 		<p class="max-w-prose text-xs leading-normal text-muted-foreground">{noPlanLine(execution)}</p>
 	{:else if plans.length === 1}
 		{@render revision(shown)}
