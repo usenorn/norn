@@ -22,6 +22,8 @@ export type ExecutionChangeSummary = components["schemas"]["ExecutionChangeSumma
 export type IssueChangeSet = components["schemas"]["IssueChangeSet"];
 export type IssueRepositoryChange = components["schemas"]["IssueRepositoryChange"];
 
+export type Reach = "loaded" | "unavailable";
+
 export type RunView =
 	| { kind: "loading" }
 	| { kind: "not_found" }
@@ -34,9 +36,11 @@ export type RunView =
 			previews: ExecutionPreviewDetail[];
 			runner?: ExecutionRunner;
 			questions: IssueQuestion[];
+			questionsReach: Reach;
 			changeset?: ExecutionChangeSet;
 			codeLinks: CodeLink[];
 			plans: ExecutionPlan[];
+			plansReach: Reach;
 			right: DecisionRight;
 	  };
 

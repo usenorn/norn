@@ -89,6 +89,20 @@
 		execution ? workspacePath(workspace.slug, `/executions/${execution.id}/review`) : ""
 	);
 	const plans = $derived(ready?.plans ?? []);
+	const plansReach = $derived(ready?.plansReach ?? "loaded");
+	const questionsReach = $derived(ready?.questionsReach ?? "loaded");
+	const reviewLinks = $derived(
+		execution
+			? {
+					issue: new URL(
+						workspacePath(workspace.slug, `/issues/${execution.issueReference}`),
+						page.url.origin
+					).href,
+					run: new URL(workspacePath(workspace.slug, `/executions/${execution.id}`), page.url.origin)
+						.href,
+				}
+			: { issue: "", run: "" }
+	);
 	const shownMinted = $derived(minted.run === execution?.id ? minted.held : {});
 
 	const questions = $derived(ready?.questions ?? []);
@@ -510,16 +524,20 @@
 					</AttentionPanel>
 				{/if}
 
-				{#if execution.stage === "planning" || plans.length > 0}
+				{#if execution.stage === "planning" || plans.length > 0 || plansReach === "unavailable"}
 					<PlanPanel
 						{execution}
 						{plans}
+						{plansReach}
 						{questions}
+						{questionsReach}
 						{right}
 						timezone={workspace.timezone}
+						links={reviewLinks}
 						{working}
 						onapprove={approvePlan}
 						onrevise={revisePlan}
+						onretry={() => void invalidate(keys.execution(execution.id))}
 					/>
 				{/if}
 
