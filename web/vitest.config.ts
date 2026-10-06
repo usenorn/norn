@@ -5,7 +5,9 @@ export default defineConfig({
 	plugins: [svelte()],
 	resolve: {
 		alias: {
-			$lib: new URL('./src/lib', import.meta.url).pathname
+			$lib: new URL('./src/lib', import.meta.url).pathname,
+			'$app/navigation': new URL('./test/app-navigation.ts', import.meta.url).pathname,
+			'$app/state': new URL('./test/app-state.ts', import.meta.url).pathname
 		},
 		conditions: ['browser']
 	},
