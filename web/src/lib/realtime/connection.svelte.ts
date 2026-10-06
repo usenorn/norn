@@ -1,5 +1,6 @@
 import { getContext, setContext } from "svelte";
 import { invalidate, invalidateAll } from "$app/navigation";
+import { navigating } from "$app/state";
 import { keys } from "$lib/api/keys";
 import { sessionParam } from "$lib/account/accounts";
 import type { components } from "$lib/api/dashboard.gen";
@@ -54,6 +55,7 @@ export class RealtimeConnection {
 	#connectTimer: ReturnType<typeof setTimeout> | undefined;
 	#refetchTimer: ReturnType<typeof setTimeout> | undefined;
 	#pending = new Set<string>();
+	#resync = false;
 	#workspaceId = "";
 	#slot = "";
 	#topics = "workspace,inbox";
@@ -122,7 +124,7 @@ export class RealtimeConnection {
 			this.#degrade();
 		};
 
-		source.addEventListener("resync", () => void invalidateAll());
+		source.addEventListener("resync", () => this.resync());
 
 		for (const kind of eventKinds) {
 			source.addEventListener(kind, (message) => this.#dispatch(kind, message as MessageEvent));
@@ -156,6 +158,8 @@ export class RealtimeConnection {
 		this.#staleTimer = undefined;
 		this.#connectTimer = undefined;
 		this.#refetchTimer = undefined;
+		this.#pending.clear();
+		this.#resync = false;
 		this.#source?.close();
 		this.#source = null;
 	}
@@ -169,6 +173,16 @@ export class RealtimeConnection {
 	refetch(...invalidated: string[]) {
 		for (const key of invalidated) this.#pending.add(key);
 
+		this.#arm();
+	}
+
+	resync() {
+		this.#resync = true;
+
+		this.#arm();
+	}
+
+	#arm() {
 		if (this.#refetchTimer) return;
 
 		this.#refetchTimer = setTimeout(() => {
@@ -178,14 +192,27 @@ export class RealtimeConnection {
 		}, refetchWindowMs);
 	}
 
-	flush() {
-		const invalidated = [...this.#pending];
-
-		if (invalidated.length === 0) return Promise.resolve();
+	flush(): Promise<unknown> {
+		if (!this.#resync && this.#pending.size === 0) return Promise.resolve();
 
 		if (typeof document !== "undefined" && document.visibilityState === "hidden") {
 			return Promise.resolve();
 		}
+
+		if (navigating.to !== null) {
+			this.#arm();
+
+			return Promise.resolve();
+		}
+
+		if (this.#resync) {
+			this.#resync = false;
+			this.#pending.clear();
+
+			return invalidateAll();
+		}
+
+		const invalidated = [...this.#pending];
 
 		this.#pending.clear();
 
