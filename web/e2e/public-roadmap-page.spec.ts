@@ -515,9 +515,14 @@ test.describe("the public roadmap page", () => {
 	});
 
 	test("a roadmap host serves nothing but the roadmap", async ({ page }) => {
-		expect((await served(visitor, "/sign-in")).status).toBe(404);
-		expect((await served(visitor, `/${fixture().slug}`)).status).toBe(404);
-		expect((await served(visitor, "/create-workspace")).status).toBe(404);
+		for (const path of ["/sign-in", `/${fixture().slug}`, "/create-workspace", "/entries", "/a/b/c"]) {
+			const answer = await served(visitor, path);
+
+			expect(answer.body, path).toContain("This roadmap is not available");
+			expect(answer.body, path).not.toContain("Back to Norn");
+			expect(answer.body, path).not.toContain('type="password"');
+			expect(answer.headers["cache-control"], path).toBe("no-store");
+		}
 
 		await page.goto("/public-roadmap");
 		await expect(page.getByRole("heading", { level: 1, name: "This roadmap is not available" })).toBeVisible();
