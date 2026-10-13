@@ -89,7 +89,13 @@ function clientAddress(event: RequestEvent): string | undefined {
 	}
 }
 
-export function apiForEvent(event: RequestEvent, acting?: Promise<string | null>): Client<paths> {
+export type Credentials = "include" | "omit";
+
+export function apiForEvent(
+	event: RequestEvent,
+	acting?: Promise<string | null>,
+	credentials: Credentials = "include"
+): Client<paths> {
 	return createClient<paths>({
 		baseUrl: `${internalOrigin()}/v1`,
 		fetch: async (request) => {
@@ -100,7 +106,9 @@ export function apiForEvent(event: RequestEvent, acting?: Promise<string | null>
 				request.headers.set(sessionHeader, slot);
 			}
 
-			request.headers.set("cookie", cookieHeader(event.cookies));
+			if (credentials === "include") {
+				request.headers.set("cookie", cookieHeader(event.cookies));
+			}
 			request.headers.set("origin", event.url.origin);
 			if (address) {
 				request.headers.set("x-forwarded-for", address);
@@ -118,7 +126,9 @@ export function apiForEvent(event: RequestEvent, acting?: Promise<string | null>
 				return unreachable(event.locals.correlationId);
 			}
 
-			relaySetCookie(event.cookies, response);
+			if (credentials === "include") {
+				relaySetCookie(event.cookies, response);
+			}
 
 			return response;
 		},

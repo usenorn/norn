@@ -147,6 +147,15 @@ export function onCalendarDate(date: string): string {
 	});
 }
 
+export function onCalendarDay(date: string): string {
+	return new Date(`${date}T00:00:00Z`).toLocaleString(locale, {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+		timeZone: "UTC",
+	});
+}
+
 export function cycleWindow(startsOn: string, endsOn: string): string {
 	return `${onCalendarDate(startsOn)} – ${onCalendarDate(endsOn)}`;
 }

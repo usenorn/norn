@@ -13,6 +13,7 @@ import (
 	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/handler/http/middleware"
 	"github.com/usenorn/norn/internal/observability/logging"
+	"github.com/usenorn/norn/internal/pkg/identity"
 )
 
 const forwardedHeader = "X-Forwarded-For"
@@ -133,6 +134,76 @@ func TestAnUnconfiguredInstanceStillRecordsTheConnectingAddress(t *testing.T) {
 
 	if got.String() != "198.51.100.4" {
 		t.Fatalf("client IP = %s, want the peer address 198.51.100.4", got)
+	}
+}
+
+func capturedHost(t *testing.T, cfg config.HTTP, remoteAddr, forwardedHost string) string {
+	t.Helper()
+
+	var captured string
+
+	handler := middleware.ClientCapture(cfg)(
+		http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+			captured = identity.Host(r.Context())
+		}),
+	)
+
+	request := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:8080/", nil)
+	request.RemoteAddr = remoteAddr
+
+	if forwardedHost != "" {
+		request.Header.Set("X-Forwarded-Host", forwardedHost)
+	}
+
+	handler.ServeHTTP(httptest.NewRecorder(), request)
+
+	return captured
+}
+
+func TestAForwardedHostIsOnlyTrustedFromAProxyOnTheAllowList(t *testing.T) {
+	cases := []struct {
+		name    string
+		proxies []string
+		remote  string
+		host    string
+		want    string
+	}{
+		{
+			name:    "a trusted proxy hands over the host the visitor asked for",
+			proxies: []string{"127.0.0.1"},
+			remote:  "127.0.0.1:41234",
+			host:    "acme.roadmap.example.com",
+			want:    "acme.roadmap.example.com",
+		},
+		{
+			name:    "a forged host from an untrusted peer is ignored",
+			proxies: []string{"127.0.0.1"},
+			remote:  "198.51.100.4:41234",
+			host:    "acme.roadmap.example.com",
+			want:    "127.0.0.1:8080",
+		},
+		{
+			name:   "an instance with no trusted proxies keeps the connection host",
+			remote: "127.0.0.1:41234",
+			host:   "acme.roadmap.example.com",
+			want:   "127.0.0.1:8080",
+		},
+		{
+			name:    "a trusted proxy that forwards no host leaves the connection host",
+			proxies: []string{"127.0.0.1"},
+			remote:  "127.0.0.1:41234",
+			want:    "127.0.0.1:8080",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := capturedHost(t, config.HTTP{TrustedProxies: c.proxies}, c.remote, c.host)
+
+			if got != c.want {
+				t.Fatalf("host from %s forwarding %q = %q, want %q", c.remote, c.host, got, c.want)
+			}
+		})
 	}
 }
 

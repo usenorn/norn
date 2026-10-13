@@ -12,6 +12,8 @@ import (
 	"github.com/usenorn/norn/internal/pkg/identity"
 )
 
+const forwardedHostHeader = "X-Forwarded-Host"
+
 func ClientCapture(cfg config.HTTP) func(http.Handler) http.Handler {
 	trusted, _ := cfg.TrustedPrefixes()
 
@@ -22,7 +24,7 @@ func ClientCapture(cfg config.HTTP) func(http.Handler) http.Handler {
 				IP:        clientIP(r, cfg.ClientIPHeader, trusted),
 			}
 
-			ctx := identity.WithHost(identity.WithClient(r.Context(), client), r.Host)
+			ctx := identity.WithHost(identity.WithClient(r.Context(), client), requestHost(r, trusted))
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -31,6 +33,15 @@ func ClientCapture(cfg config.HTTP) func(http.Handler) http.Handler {
 
 func ClientFrom(ctx context.Context) entity.SessionClient {
 	return identity.Client(ctx)
+}
+
+func requestHost(r *http.Request, trusted []netip.Prefix) string {
+	forwarded := strings.TrimSpace(r.Header.Get(forwardedHostHeader))
+	if forwarded == "" || !within(peerIP(r), trusted) {
+		return r.Host
+	}
+
+	return forwarded
 }
 
 func clientIP(r *http.Request, header string, trusted []netip.Prefix) netip.Addr {
