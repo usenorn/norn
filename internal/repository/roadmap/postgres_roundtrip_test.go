@@ -286,3 +286,42 @@ func TestADraftEntryRefusesABlankPublicTitle(t *testing.T) {
 		return nil
 	})
 }
+
+func TestADraftEntryKeepsTheFieldsItHides(t *testing.T) {
+	withRoadmapFixture(t, func(ctx context.Context, client *postgres.Client, fixture roadmapFixture) error {
+		roadmaps := New(client)
+
+		roadmap, err := roadmaps.Ensure(ctx, fixture.workspaceID)
+		if err != nil {
+			return err
+		}
+
+		entry, err := draftEntry(roadmap, entity.RoadmapEntryProject, "Public project")
+		if err != nil {
+			return err
+		}
+
+		entry.SourceProjectID = fixture.projectID
+		entry.PublicDescription = "Shown only when descriptions are on"
+
+		created, err := roadmaps.CreateEntry(ctx, entry)
+		if err != nil {
+			return err
+		}
+
+		if created.Visibility != (entity.RoadmapVisibility{}) {
+			return errors.New("an entry created with every field hidden came back showing some")
+		}
+
+		entries, err := roadmaps.ListEntries(ctx, roadmap.ID)
+		if err != nil {
+			return err
+		}
+
+		if len(entries) != 1 || entries[0].Visibility != (entity.RoadmapVisibility{}) {
+			return errors.New("an entry created with every field hidden read back showing some")
+		}
+
+		return nil
+	})
+}
