@@ -20,6 +20,7 @@ import {
 	readRoadmapPreview,
 	readRoadmapPreviewEntry,
 	reviewSections,
+	reviewToPublish,
 	reviewValueLabel,
 	roadmapFailure,
 	roadmapFieldMessage,
@@ -398,6 +399,15 @@ describe("reading a refused roadmap change", () => {
 		expect(publishFailureDialog(frozen, { kind: "review_changed" }).kind).toBe("stale");
 		expect(publishFailureDialog(frozen, { kind: "stale", version: 4 }).kind).toBe("stale");
 		expect(publishFailureDialog(frozen, { kind: "unavailable" }).kind).toBe("failed");
+	});
+
+	it("lets a publish that never reached the server be sent again, and re-reads after any other refusal", () => {
+		const frozen = { version: 3, review: quiet };
+
+		expect(reviewToPublish({ kind: "ready", frozen })).toBe(frozen);
+		expect(reviewToPublish(publishFailureDialog(frozen, { kind: "unavailable" }))).toBe(frozen);
+		expect(reviewToPublish(publishFailureDialog(frozen, { kind: "unreachable", entryId: "e1" }))).toBeUndefined();
+		expect(reviewToPublish(publishFailureDialog(frozen, { kind: "stale", version: 4 }))).toBeUndefined();
 	});
 });
 

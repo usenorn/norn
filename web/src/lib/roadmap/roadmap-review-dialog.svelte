@@ -20,6 +20,7 @@
 		reviewFieldLabels,
 		reviewSectionCopy,
 		reviewSections,
+		reviewToPublish,
 		reviewValueLabel,
 		roadmapPreviewPath,
 		type ReviewDialog,
@@ -59,7 +60,8 @@
 	const blockers = $derived(frozen?.review.blockers ?? []);
 	const publishing = $derived(dialog.kind === "publishing");
 	const nothingToPublish = $derived(published && frozen !== undefined && !frozen.review.hasUnpublishedChanges);
-	const canPublish = $derived(dialog.kind === "ready" && blockers.length === 0 && !nothingToPublish);
+	const reviewed = $derived(reviewToPublish(dialog));
+	const canPublish = $derived(reviewed !== undefined && blockers.length === 0 && !nothingToPublish);
 
 	async function read() {
 		onchange({ kind: "loading" });
@@ -70,16 +72,16 @@
 	}
 
 	async function publish() {
-		if (dialog.kind !== "ready") return;
+		const frozenReview = reviewed;
 
-		const { frozen: reviewed } = dialog;
+		if (!canPublish || !frozenReview) return;
 
-		onchange({ kind: "publishing", frozen: reviewed });
+		onchange({ kind: "publishing", frozen: frozenReview });
 
 		const answer = await answerOf(
 			api.POST("/workspaces/{workspaceId}/roadmap/publish", {
 				params: { path: { workspaceId } },
-				body: { expectedVersion: reviewed.version, expectedDigest: reviewed.review.digest },
+				body: { expectedVersion: frozenReview.version, expectedDigest: frozenReview.review.digest },
 			})
 		);
 
@@ -91,7 +93,7 @@
 			return;
 		}
 
-		onchange(publishFailureDialog(reviewed, answer.failure));
+		onchange(publishFailureDialog(frozenReview, answer.failure));
 	}
 
 	function close() {
@@ -199,7 +201,12 @@
 						<Alert.Root variant="destructive">
 							<CircleAlert aria-hidden="true" />
 							<Alert.Title>Nothing was published</Alert.Title>
-							<Alert.Description>{failureMessage(dialog.failure)}</Alert.Description>
+							<Alert.Description>
+								<span class="block">{failureMessage(dialog.failure)}</span>
+								<span class="mt-2 block">
+									<Button size="sm" variant="secondary" onclick={read}>Review again</Button>
+								</span>
+							</Alert.Description>
 						</Alert.Root>
 					{/if}
 

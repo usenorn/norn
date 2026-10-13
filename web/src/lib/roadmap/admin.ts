@@ -691,6 +691,13 @@ export function publishFailureDialog(frozen: FrozenReview, failure: RoadmapFailu
 		: { kind: "failed", frozen, failure };
 }
 
+export function reviewToPublish(dialog: ReviewDialog): FrozenReview | undefined {
+	if (dialog.kind === "ready") return dialog.frozen;
+	if (dialog.kind === "failed" && dialog.failure.kind === "unavailable") return dialog.frozen;
+
+	return undefined;
+}
+
 export function roadmapSettingsPath(workspace: string): string {
 	return workspacePath(workspace, "/settings/roadmap");
 }
