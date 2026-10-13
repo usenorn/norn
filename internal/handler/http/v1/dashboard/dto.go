@@ -3086,3 +3086,215 @@ func criterionEvidenceDTO(
 
 	return dto
 }
+
+func roadmapVisibility(visibility api.RoadmapVisibility) entity.RoadmapVisibility {
+	return entity.RoadmapVisibility{
+		IssueLists:          visibility.IssueLists,
+		ProjectDescriptions: visibility.ProjectDescriptions,
+		IssueDescriptions:   visibility.IssueDescriptions,
+		Status:              visibility.Status,
+		Timeline:            visibility.Timeline,
+		Progress:            visibility.Progress,
+	}
+}
+
+func roadmapVisibilityDTO(visibility entity.RoadmapVisibility) api.RoadmapVisibility {
+	return api.RoadmapVisibility{
+		IssueLists:          visibility.IssueLists,
+		ProjectDescriptions: visibility.ProjectDescriptions,
+		IssueDescriptions:   visibility.IssueDescriptions,
+		Status:              visibility.Status,
+		Timeline:            visibility.Timeline,
+		Progress:            visibility.Progress,
+	}
+}
+
+func roadmapTimeline(timeline api.RoadmapTimeline) entity.RoadmapTimeline {
+	var converted entity.RoadmapTimeline
+
+	if timeline.StartOn != nil {
+		converted.StartOn = timeline.StartOn.Format(time.DateOnly)
+	}
+
+	if timeline.EndOn != nil {
+		converted.EndOn = timeline.EndOn.Format(time.DateOnly)
+	}
+
+	return converted
+}
+
+func roadmapTimelineDTO(timeline entity.RoadmapTimeline) api.RoadmapTimeline {
+	var dto api.RoadmapTimeline
+
+	if timeline.StartOn != "" {
+		start := calendarDate(timeline.StartOn)
+		dto.StartOn = &start
+	}
+
+	if timeline.EndOn != "" {
+		end := calendarDate(timeline.EndOn)
+		dto.EndOn = &end
+	}
+
+	return dto
+}
+
+func roadmapEntryKind(kind api.RoadmapEntryKind) entity.RoadmapEntryKind {
+	return entity.RoadmapEntryKind(kind)
+}
+
+func roadmapEntryContent(body api.RoadmapEntryContent) service.RoadmapEntryContent {
+	content := service.RoadmapEntryContent{
+		PublicTitle:  body.PublicTitle,
+		ProgressMode: entity.RoadmapProgressMode(body.ProgressMode),
+		Visibility:   roadmapVisibility(body.Visibility),
+	}
+
+	if body.PublicDescription != nil {
+		content.PublicDescription = *body.PublicDescription
+	}
+
+	if body.Status != nil {
+		content.Status = entity.PublicStatus(*body.Status)
+	}
+
+	if body.Timeline != nil {
+		content.Timeline = roadmapTimeline(*body.Timeline)
+	}
+
+	if body.ProgressPercent != nil {
+		content.ProgressPercent = int(*body.ProgressPercent)
+	}
+
+	if body.Position != nil {
+		content.Position = int(*body.Position)
+	}
+
+	return content
+}
+
+func optionalUUIDDTO(id uuid.UUID) *uuid.UUID {
+	if id == uuid.Nil {
+		return nil
+	}
+
+	return &id
+}
+
+func roadmapEntryDTO(view service.RoadmapEntryView) api.RoadmapEntry {
+	entry := view.Entry
+	createdAt, updatedAt := entry.CreatedAt, entry.UpdatedAt
+
+	return api.RoadmapEntry{
+		Id:                entry.ID,
+		PublicId:          entry.PublicID,
+		Kind:              api.RoadmapEntryKind(entry.Kind),
+		ProjectId:         optionalUUIDDTO(entry.SourceProjectID),
+		IssueId:           optionalUUIDDTO(entry.SourceIssueID),
+		ParentEntryId:     optionalUUIDDTO(entry.ParentEntryID),
+		PublicTitle:       entry.PublicTitle,
+		PublicDescription: entry.PublicDescription,
+		Status:            api.RoadmapPublicStatus(entry.Status),
+		Timeline:          roadmapTimelineDTO(entry.Timeline),
+		ProgressMode:      api.RoadmapProgressMode(entry.ProgressMode),
+		ProgressPercent:   int32(entry.ProgressPercent),
+		Visibility:        roadmapVisibilityDTO(entry.Visibility),
+		Position:          int32(entry.Position),
+		Reachable:         view.Reachable,
+		Published:         view.Published,
+		Withheld:          view.Withheld,
+		CreatedAt:         &createdAt,
+		UpdatedAt:         &updatedAt,
+	}
+}
+
+func roadmapDTO(view service.RoadmapDraftView) api.Roadmap {
+	roadmap := view.Roadmap
+	dto := api.Roadmap{
+		Id:          roadmap.ID,
+		Title:       roadmap.Title,
+		Description: roadmap.Description,
+		Visibility:  roadmapVisibilityDTO(roadmap.Visibility),
+		Version:     int32(roadmap.Version),
+		Entries:     make([]api.RoadmapEntry, 0, len(view.Entries)),
+	}
+
+	if publication := roadmap.Publication; publication != nil {
+		dto.Publication = &api.RoadmapPublication{
+			Title:       publication.Title,
+			Description: publication.Description,
+			Visibility:  roadmapVisibilityDTO(publication.Visibility),
+			Version:     int32(publication.Version),
+			PublishedAt: publication.PublishedAt,
+		}
+	}
+
+	for _, entry := range view.Entries {
+		dto.Entries = append(dto.Entries, roadmapEntryDTO(entry))
+	}
+
+	return dto
+}
+
+func publicRoadmapItemDTO(item entity.PublicRoadmapItem) api.PublicRoadmapItem {
+	dto := api.PublicRoadmapItem{
+		Id:    item.PublicID,
+		Kind:  api.RoadmapEntryKind(item.Kind),
+		Title: item.Title,
+	}
+
+	if item.Description != "" {
+		description := item.Description
+		dto.Description = &description
+	}
+
+	if item.Status != "" {
+		status := api.RoadmapPublicStatus(item.Status)
+		dto.Status = &status
+	}
+
+	if item.Timeline != nil {
+		timeline := roadmapTimelineDTO(*item.Timeline)
+		dto.Timeline = &timeline
+	}
+
+	if item.Progress != nil {
+		progress := int32(*item.Progress)
+		dto.Progress = &progress
+	}
+
+	if item.Issues != nil {
+		issues := make([]api.PublicRoadmapItem, 0, len(item.Issues))
+		for _, issue := range item.Issues {
+			issues = append(issues, publicRoadmapItemDTO(issue))
+		}
+
+		dto.Issues = &issues
+	}
+
+	return dto
+}
+
+func publicRoadmapDTO(roadmap entity.PublicRoadmap) api.PublicRoadmap {
+	dto := api.PublicRoadmap{
+		Title:       roadmap.Title,
+		PublishedAt: roadmap.PublishedAt,
+		Projects:    make([]api.PublicRoadmapItem, 0, len(roadmap.Projects)),
+		Issues:      make([]api.PublicRoadmapItem, 0, len(roadmap.Issues)),
+	}
+
+	if roadmap.Description != "" {
+		description := roadmap.Description
+		dto.Description = &description
+	}
+
+	for _, project := range roadmap.Projects {
+		dto.Projects = append(dto.Projects, publicRoadmapItemDTO(project))
+	}
+
+	for _, issue := range roadmap.Issues {
+		dto.Issues = append(dto.Issues, publicRoadmapItemDTO(issue))
+	}
+
+	return dto
+}

@@ -39,6 +39,8 @@ tags:
   - name: codebases
   - name: executions
   - name: previews
+  - name: roadmaps
+  - name: public-roadmaps
 
 paths:
   /health:
@@ -5183,6 +5185,236 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/roadmap:
+    get:
+      tags: [roadmaps]
+      operationId: getWorkspaceRoadmap
+      summary: Read the roadmap draft and what is published from it
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The roadmap
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [roadmaps]
+      operationId: updateWorkspaceRoadmap
+      summary: Change the roadmap draft's public title, description and visibility
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRoadmapRequest' }
+      responses:
+        '200':
+          description: The roadmap after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/RoadmapConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/roadmap/publish:
+    post:
+      tags: [roadmaps]
+      operationId: publishWorkspaceRoadmap
+      summary: Replace the public roadmap with the reviewed draft
+      description: >-
+        Publishes exactly the draft at the expected version. Every selected project and issue is
+        checked again against the publisher's access, and the published copy replaces the previous
+        one in a single step.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoadmapVersionRequest' }
+      responses:
+        '200':
+          description: The roadmap after publication
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/RoadmapConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/roadmap/unpublish:
+    post:
+      tags: [roadmaps]
+      operationId: unpublishWorkspaceRoadmap
+      summary: Take the public roadmap down, keeping the draft
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The roadmap after it was taken down
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/roadmap/entries:
+    post:
+      tags: [roadmaps]
+      operationId: createWorkspaceRoadmapEntry
+      summary: Select a project or issue for the roadmap draft, with its own public copy
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddRoadmapEntryRequest' }
+      responses:
+        '201':
+          description: The roadmap with the new entry
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/RoadmapConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/roadmap/entries/{entryId}:
+    patch:
+      tags: [roadmaps]
+      operationId: updateWorkspaceRoadmapEntry
+      summary: Change an entry's public copy, snapshot and visibility in the draft
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/RoadmapEntryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRoadmapEntryRequest' }
+      responses:
+        '200':
+          description: The roadmap after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/RoadmapConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [roadmaps]
+      operationId: deleteWorkspaceRoadmapEntry
+      summary: Remove an entry from the draft and from the public roadmap at once
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/RoadmapEntryId'
+        - name: expectedVersion
+          in: query
+          required: true
+          schema: { type: integer, format: int32, minimum: 1 }
+      responses:
+        '200':
+          description: The roadmap without the entry
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/RoadmapConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh:
+    post:
+      tags: [roadmaps]
+      operationId: refreshWorkspaceRoadmapEntry
+      summary: Take a fresh snapshot of an entry's status and date into the draft
+      description: >-
+        Reads the project or issue again and updates the draft's status, end date and grouping. The
+        public copy is untouched, and nothing reaches the public roadmap until it is published.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/RoadmapEntryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RoadmapVersionRequest' }
+      responses:
+        '200':
+          description: The roadmap after the refresh
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Roadmap' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/RoadmapConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /public/roadmap:
+    get:
+      tags: [public-roadmaps]
+      operationId: getPublicRoadmap
+      summary: Read the published roadmap of the workspace this host belongs to
+      security: []
+      responses:
+        '200':
+          description: The published roadmap
+          headers:
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicRoadmap' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /public/roadmap/entries/{entryId}:
+    get:
+      tags: [public-roadmaps]
+      operationId: getPublicRoadmapEntry
+      summary: Read one published roadmap entry by its public identifier
+      security: []
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 32 }
+      responses:
+        '200':
+          description: The published entry
+          headers:
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicRoadmapItem' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/notifications:
     get:
       tags: [notifications]
@@ -8051,6 +8283,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    RoadmapEntryId:
+      name: entryId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     SavedViewId:
       name: savedViewId
       in: path
@@ -8388,6 +8625,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ProjectConflictProblem' }
+
+    RoadmapConflict:
+      description: The roadmap refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/RoadmapConflictProblem' }
 
     SavedViewConflict:
       description: The view refuses the change
@@ -11010,6 +11253,197 @@ components:
                 - project_links_full
                 - project_has_scoped_agents
 
+    RoadmapVisibility:
+      type: object
+      required: [issueLists, projectDescriptions, issueDescriptions, status, timeline, progress]
+      properties:
+        issueLists: { type: boolean }
+        projectDescriptions: { type: boolean }
+        issueDescriptions: { type: boolean }
+        status: { type: boolean }
+        timeline: { type: boolean }
+        progress: { type: boolean }
+
+    RoadmapTimeline:
+      type: object
+      properties:
+        startOn: { type: string, format: date }
+        endOn: { type: string, format: date }
+
+    RoadmapPublicStatus:
+      type: string
+      enum: [planned, in_progress, paused, completed, cancelled]
+
+    RoadmapEntryKind:
+      type: string
+      enum: [project, issue]
+
+    RoadmapProgressMode:
+      type: string
+      enum: [hidden, approved, calculated]
+
+    RoadmapPublication:
+      type: object
+      required: [title, description, visibility, version, publishedAt]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        visibility: { $ref: '#/components/schemas/RoadmapVisibility' }
+        version: { type: integer, format: int32 }
+        publishedAt: { type: string, format: date-time }
+
+    RoadmapEntry:
+      type: object
+      required:
+        - id
+        - publicId
+        - kind
+        - publicTitle
+        - publicDescription
+        - status
+        - timeline
+        - progressMode
+        - progressPercent
+        - visibility
+        - position
+        - reachable
+        - published
+        - withheld
+      properties:
+        id: { type: string, format: uuid }
+        publicId: { type: string }
+        kind: { $ref: '#/components/schemas/RoadmapEntryKind' }
+        projectId: { type: string, format: uuid }
+        issueId: { type: string, format: uuid }
+        parentEntryId: { type: string, format: uuid }
+        publicTitle: { type: string }
+        publicDescription: { type: string }
+        status: { $ref: '#/components/schemas/RoadmapPublicStatus' }
+        timeline: { $ref: '#/components/schemas/RoadmapTimeline' }
+        progressMode: { $ref: '#/components/schemas/RoadmapProgressMode' }
+        progressPercent: { type: integer, format: int32 }
+        visibility: { $ref: '#/components/schemas/RoadmapVisibility' }
+        position: { type: integer, format: int32 }
+        reachable:
+          type: boolean
+          description: The project or issue still exists and is within the reader's reach
+        published:
+          type: boolean
+          description: The entry is part of the current publication
+        withheld:
+          type: boolean
+          description: >-
+            The published copy is hidden because its source was deleted, moved, or made private
+            since publication; it stays hidden until the roadmap is published again
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Roadmap:
+      type: object
+      required: [id, title, description, visibility, version, entries]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        visibility: { $ref: '#/components/schemas/RoadmapVisibility' }
+        version: { type: integer, format: int32 }
+        publication: { $ref: '#/components/schemas/RoadmapPublication' }
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/RoadmapEntry' }
+
+    UpdateRoadmapRequest:
+      type: object
+      required: [expectedVersion, title, description, visibility]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        title: { type: string, maxLength: 120 }
+        description: { type: string, maxLength: 4000 }
+        visibility: { $ref: '#/components/schemas/RoadmapVisibility' }
+
+    RoadmapVersionRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+
+    RoadmapEntryContent:
+      type: object
+      required: [publicTitle, progressMode, visibility]
+      properties:
+        publicTitle: { type: string, maxLength: 120 }
+        publicDescription: { type: string, maxLength: 4000 }
+        status: { $ref: '#/components/schemas/RoadmapPublicStatus' }
+        timeline: { $ref: '#/components/schemas/RoadmapTimeline' }
+        progressMode: { $ref: '#/components/schemas/RoadmapProgressMode' }
+        progressPercent: { type: integer, format: int32, minimum: 0, maximum: 100 }
+        visibility: { $ref: '#/components/schemas/RoadmapVisibility' }
+        position: { type: integer, format: int32 }
+
+    AddRoadmapEntryRequest:
+      type: object
+      required: [expectedVersion, kind, sourceId, content]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        kind: { $ref: '#/components/schemas/RoadmapEntryKind' }
+        sourceId:
+          type: string
+          format: uuid
+          description: The project or issue to select
+        content: { $ref: '#/components/schemas/RoadmapEntryContent' }
+
+    UpdateRoadmapEntryRequest:
+      type: object
+      required: [expectedVersion, content]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        content: { $ref: '#/components/schemas/RoadmapEntryContent' }
+
+    RoadmapConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - roadmap_stale
+                - roadmap_entry_duplicate
+                - roadmap_full
+                - roadmap_unreachable
+            version: { type: integer, format: int32 }
+            entryId: { type: string, format: uuid }
+
+    PublicRoadmap:
+      type: object
+      required: [title, publishedAt, projects, issues]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        publishedAt: { type: string, format: date-time }
+        projects:
+          type: array
+          items: { $ref: '#/components/schemas/PublicRoadmapItem' }
+        issues:
+          type: array
+          items: { $ref: '#/components/schemas/PublicRoadmapItem' }
+
+    PublicRoadmapItem:
+      type: object
+      required: [id, kind, title]
+      properties:
+        id: { type: string }
+        kind: { $ref: '#/components/schemas/RoadmapEntryKind' }
+        title: { type: string }
+        description: { type: string }
+        status: { $ref: '#/components/schemas/RoadmapPublicStatus' }
+        timeline: { $ref: '#/components/schemas/RoadmapTimeline' }
+        progress: { type: integer, format: int32 }
+        issues:
+          type: array
+          items: { $ref: '#/components/schemas/PublicRoadmapItem' }
+
     CyclePhase:
       type: string
       enum: [upcoming, current, ended, closed]
@@ -11445,6 +11879,9 @@ components:
         - webhook.registered
         - webhook.removed
         - webhook.disabled
+        - roadmap.published
+        - roadmap.unpublished
+        - roadmap.entry_removed
         - workspace.updated
         - workspace.deletion_requested
         - workspace.restored
@@ -12418,6 +12855,8 @@ components:
         - notification:read
         - notification:manage
         - audit_log:read
+        - roadmap:read
+        - roadmap:manage
 
     APITokenGrant:
       type: object

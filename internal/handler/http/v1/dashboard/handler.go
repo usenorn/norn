@@ -48,6 +48,8 @@ type handler struct {
 	ssoConnections    service.SSOConnections
 	cycles            service.Cycles
 	projects          service.Projects
+	roadmaps          service.Roadmaps
+	publicRoadmaps    service.PublicRoadmaps
 	savedViews        service.SavedViews
 	triages           service.Triages
 	intakes           service.Intakes
@@ -104,6 +106,8 @@ func New(
 	ssoConnections service.SSOConnections,
 	cycles service.Cycles,
 	projects service.Projects,
+	roadmaps service.Roadmaps,
+	publicRoadmaps service.PublicRoadmaps,
 	savedViews service.SavedViews,
 	triages service.Triages,
 	intakes service.Intakes,
@@ -159,6 +163,8 @@ func New(
 		ssoConnections:    ssoConnections,
 		cycles:            cycles,
 		projects:          projects,
+		roadmaps:          roadmaps,
+		publicRoadmaps:    publicRoadmaps,
 		savedViews:        savedViews,
 		triages:           triages,
 		intakes:           intakes,

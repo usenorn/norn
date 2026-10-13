@@ -22,7 +22,9 @@ func ClientCapture(cfg config.HTTP) func(http.Handler) http.Handler {
 				IP:        clientIP(r, cfg.ClientIPHeader, trusted),
 			}
 
-			next.ServeHTTP(w, r.WithContext(identity.WithClient(r.Context(), client)))
+			ctx := identity.WithHost(identity.WithClient(r.Context(), client), r.Host)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

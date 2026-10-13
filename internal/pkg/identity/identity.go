@@ -14,6 +14,7 @@ type (
 	signedInKey struct{}
 	approvalKey struct{}
 	clientKey   struct{}
+	hostKey     struct{}
 )
 
 func WithClient(ctx context.Context, client entity.SessionClient) context.Context {
@@ -24,6 +25,16 @@ func Client(ctx context.Context) entity.SessionClient {
 	client, _ := ctx.Value(clientKey{}).(entity.SessionClient)
 
 	return client
+}
+
+func WithHost(ctx context.Context, host string) context.Context {
+	return context.WithValue(ctx, hostKey{}, host)
+}
+
+func Host(ctx context.Context) string {
+	host, _ := ctx.Value(hostKey{}).(string)
+
+	return host
 }
 
 func WithApproval(ctx context.Context, approver uuid.UUID) context.Context {

@@ -113,6 +113,7 @@ import (
 	previewsharerepo "github.com/usenorn/norn/internal/repository/previewshare"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	requestkeyrepo "github.com/usenorn/norn/internal/repository/requestkey"
+	roadmaprepo "github.com/usenorn/norn/internal/repository/roadmap"
 	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	runnerchannelrepo "github.com/usenorn/norn/internal/repository/runnerchannel"
 	runnersessionrepo "github.com/usenorn/norn/internal/repository/runnersession"
@@ -183,6 +184,7 @@ import (
 	previewgatewaysvc "github.com/usenorn/norn/internal/service/previewgateway"
 	previewproxysvc "github.com/usenorn/norn/internal/service/previewproxy"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
+	roadmapsvc "github.com/usenorn/norn/internal/service/roadmap"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	runnerchannelsvc "github.com/usenorn/norn/internal/service/runnerchannel"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
@@ -265,6 +267,7 @@ var baseSet = wire.NewSet(
 	bulkactionrepo.Set,
 	cyclerepo.Set,
 	projectrepo.Set,
+	roadmaprepo.Set,
 	attachmentrepo.Set,
 	blobgrantrepo.Set,
 	issuecommentrepo.Set,
@@ -334,6 +337,7 @@ var baseSet = wire.NewSet(
 	bulkoperationsvc.Set,
 	cyclesvc.Set,
 	projectsvc.Set,
+	roadmapsvc.Set,
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
 	issuedraftsvc.Set,

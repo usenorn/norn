@@ -40,6 +40,7 @@ import (
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	previewsvc "github.com/usenorn/norn/internal/service/preview"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
+	roadmapsvc "github.com/usenorn/norn/internal/service/roadmap"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	savedviewsvc "github.com/usenorn/norn/internal/service/savedview"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
@@ -61,6 +62,8 @@ type edgeServices struct {
 	agentCapabilities service.AgentCapabilities
 	workspaces        service.Workspaces
 	projects          service.Projects
+	roadmaps          service.Roadmaps
+	publicRoadmaps    service.PublicRoadmaps
 	agents            service.Agents
 	hostedAgents      service.HostedAgents
 	telegramBots      service.TelegramBots
@@ -85,6 +88,14 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 
 	if services.projects == nil {
 		services.projects = projectsvc.NewMockProjects(ctrl)
+	}
+
+	if services.roadmaps == nil {
+		services.roadmaps = roadmapsvc.NewMockRoadmaps(ctrl)
+	}
+
+	if services.publicRoadmaps == nil {
+		services.publicRoadmaps = roadmapsvc.NewMockPublicRoadmaps(ctrl)
 	}
 
 	if services.agents == nil {
@@ -131,6 +142,8 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		ssoconnectionsvc.NewMockSSOConnections(ctrl),
 		cyclesvc.NewMockCycles(ctrl),
 		services.projects,
+		services.roadmaps,
+		services.publicRoadmaps,
 		savedviewsvc.NewMockSavedViews(ctrl),
 		triagesvc.NewMockTriages(ctrl),
 		intakesvc.NewMockIntakes(ctrl),
