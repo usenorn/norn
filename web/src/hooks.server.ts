@@ -4,22 +4,33 @@ import type { Handle, HandleServerError } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { actingSlot, signedInAccounts } from "$lib/api/acting.server";
 import { apiForEvent, correlationHeader } from "$lib/api/server";
-import { isPublicRoadmapRoute } from "$lib/roadmap/host";
+import { isPublicRoadmapRoute, onRoadmapHost } from "$lib/roadmap/host";
 import { reportingFrom } from "$lib/telemetry";
 
 const reporting = reportingFrom(env);
 
-const scope: Handle = ({ event, resolve }) => {
+const publicRoadmapHeaders = { "cache-control": "no-store", "x-robots-tag": "noindex" };
+
+const scope: Handle = async ({ event, resolve }) => {
 	event.locals.correlationId =
 		event.request.headers.get(correlationHeader) ?? crypto.randomUUID();
 
-	if (isPublicRoadmapRoute(event.route.id)) {
+	if (
+		onRoadmapHost(event.url.hostname, env.PUBLIC_ROADMAPS_DOMAIN) ||
+		isPublicRoadmapRoute(event.route.id)
+	) {
 		event.locals.signedIn = Promise.resolve([]);
 		event.locals.acting = Promise.resolve(null);
 		event.locals.api = apiForEvent(event, event.locals.acting, "omit");
 		event.locals.apiAs = () => event.locals.api;
 
-		return resolve(event);
+		const response = await resolve(event);
+
+		for (const [name, value] of Object.entries(publicRoadmapHeaders)) {
+			response.headers.set(name, value);
+		}
+
+		return response;
 	}
 
 	event.locals.signedIn = signedInAccounts(event);

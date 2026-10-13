@@ -1,5 +1,7 @@
 <script lang="ts">
+	import Map from "@lucide/svelte/icons/map";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { onDate } from "$lib/time";
 	import RoadmapItemRow from "./roadmap-item-row.svelte";
 	import { timelineWindow, type PublicRoadmap } from "./public-roadmap";
@@ -22,6 +24,16 @@
 			Published <time datetime={roadmap.publishedAt}>{onDate(roadmap.publishedAt, "UTC")}</time>
 		</p>
 	</header>
+
+	{#if roadmap.projects.length === 0 && roadmap.issues.length === 0}
+		<Empty.Root class="border border-line-subtle">
+			<Empty.Media variant="icon"><Map aria-hidden="true" /></Empty.Media>
+			<Empty.Header>
+				<Empty.Title>Nothing on this roadmap yet</Empty.Title>
+				<Empty.Description>Planned work will appear here once it is shared.</Empty.Description>
+			</Empty.Header>
+		</Empty.Root>
+	{/if}
 
 	{#if roadmap.projects.length > 0}
 		<section class="flex flex-col gap-2" aria-labelledby="roadmap-projects">
