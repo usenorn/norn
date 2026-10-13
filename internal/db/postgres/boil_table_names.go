@@ -94,6 +94,9 @@ var TableNames = struct {
 	WorkspaceProjectTeams                  string
 	WorkspaceProjects                      string
 	WorkspaceRequestKeys                   string
+	WorkspaceRoadmapEntries                string
+	WorkspaceRoadmapPublishedEntries       string
+	WorkspaceRoadmaps                      string
 	WorkspaceRunners                       string
 	WorkspaceSamlConnections               string
 	WorkspaceSavedViewPlacements           string
@@ -219,6 +222,9 @@ var TableNames = struct {
 	WorkspaceProjectTeams:                  "workspace_project_teams",
 	WorkspaceProjects:                      "workspace_projects",
 	WorkspaceRequestKeys:                   "workspace_request_keys",
+	WorkspaceRoadmapEntries:                "workspace_roadmap_entries",
+	WorkspaceRoadmapPublishedEntries:       "workspace_roadmap_published_entries",
+	WorkspaceRoadmaps:                      "workspace_roadmaps",
 	WorkspaceRunners:                       "workspace_runners",
 	WorkspaceSamlConnections:               "workspace_saml_connections",
 	WorkspaceSavedViewPlacements:           "workspace_saved_view_placements",
