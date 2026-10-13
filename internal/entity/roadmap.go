@@ -475,8 +475,12 @@ func ValidRoadmapPublicID(publicID string) bool {
 	return roadmapPublicIDPattern.MatchString(publicID)
 }
 
+func roadmapDomain(domain string) string {
+	return strings.ToLower(strings.TrimSuffix(strings.TrimSpace(domain), "."))
+}
+
 func RoadmapSlugFromHost(host, domain string) (string, bool) {
-	domain = strings.ToLower(strings.TrimSuffix(strings.TrimSpace(domain), "."))
+	domain = roadmapDomain(domain)
 	if domain == "" {
 		return "", false
 	}

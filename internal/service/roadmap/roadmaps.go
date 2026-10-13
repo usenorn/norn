@@ -58,14 +58,8 @@ func reachable(
 	source entity.RoadmapSource,
 	scope entity.TeamScope,
 ) error {
-	unreachable := entity.RoadmapUnreachableError{EntryID: entry.ID}
-
-	if !source.Present || source.WorkspaceID != workspaceID || !source.Active {
-		return unreachable
-	}
-
-	if entry.Kind == entity.RoadmapEntryIssue && !scope.Covers(source.TeamID) {
-		return unreachable
+	if !entity.RoadmapEntryReachable(workspaceID, entry, source, scope) {
+		return entity.RoadmapUnreachableError{EntryID: entry.ID}
 	}
 
 	return nil
