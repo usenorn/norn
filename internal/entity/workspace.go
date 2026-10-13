@@ -64,6 +64,7 @@ var reservedWorkspaceSlugs = map[string]struct{}{
 	"sso":               {},
 	"privacy":           {},
 	"terms":             {},
+	"public-roadmap":    {},
 }
 
 func WorkspaceSlugReserved(slug string) bool {
