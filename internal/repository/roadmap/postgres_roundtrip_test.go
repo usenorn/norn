@@ -203,6 +203,10 @@ func TestAPublishedRoadmapReadsItsSourcesLiveAndFailsClosed(t *testing.T) {
 			return errors.New("the published entry did not read back intact")
 		}
 
+		if read.Publication.PublishedAt.Location() != time.UTC {
+			return errors.New("the publication time did not read back in UTC")
+		}
+
 		if _, err := client.Querier(ctx).ExecContext(
 			ctx, "UPDATE workspace_teams SET visibility = 'private' WHERE id = $1", fixture.teamID,
 		); err != nil {

@@ -188,7 +188,7 @@ func roadmapToEntity(model *dbpostgres.WorkspaceRoadmap) (entity.Roadmap, error)
 				Progress:            model.PublishedShowProgress.Bool,
 			},
 			Version:     model.PublishedVersion.Int,
-			PublishedAt: model.PublishedAt.Time,
+			PublishedAt: model.PublishedAt.Time.UTC(),
 			PublishedBy: publishedBy,
 		}
 	}
@@ -385,6 +385,7 @@ func (h *publicationRow) resolve() (entity.PublishedRoadmap, error) {
 	}
 
 	publication := h.publication
+	publication.PublishedAt = publication.PublishedAt.UTC()
 
 	publication.PublishedBy, err = parseOptionalUUID(h.publishedBy)
 	if err != nil {
