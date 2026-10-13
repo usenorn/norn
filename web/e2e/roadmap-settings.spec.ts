@@ -388,8 +388,8 @@ test.describe("the public roadmap settings", () => {
 	}) => {
 		await page.goto(at("/settings/roadmap"));
 
-		await page.getByRole("radio", { name: /^Selected issues/ }).click();
-		await expect(page.getByText("1 entry does not fit Selected issues")).toBeVisible();
+		await page.getByRole("radio", { name: /^Selected issues only/ }).click();
+		await expect(page.getByText("1 entry does not fit Selected issues only")).toBeVisible();
 		await expect(page.getByRole("button", { name: "Add project" })).toBeHidden();
 
 		await addSource(

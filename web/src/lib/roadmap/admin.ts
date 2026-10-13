@@ -87,7 +87,7 @@ export const presetCopy: Record<ChosenPreset, { title: string; hint: string }> =
 		hint: "Share projects and list only the issues you pick under each one.",
 	},
 	issues: {
-		title: "Selected issues",
+		title: "Selected issues only",
 		hint: "Share individual issues without the projects they belong to.",
 	},
 };
