@@ -4,10 +4,13 @@
 	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { onDate } from "$lib/time";
 	import RoadmapItemList from "./roadmap-item-list.svelte";
-	import { timelineWindow, type PublicRoadmap } from "./public-roadmap";
+	import { timelineWindow, type PublicRoadmap, type RoadmapStamp } from "./public-roadmap";
 
-	let { roadmap, entryHref }: { roadmap: PublicRoadmap; entryHref: (id: string) => string } =
-		$props();
+	let {
+		roadmap,
+		stamp,
+		entryHref,
+	}: { roadmap: PublicRoadmap; stamp: RoadmapStamp; entryHref: (id: string) => string } = $props();
 
 	const window = $derived(timelineWindow([...roadmap.projects, ...roadmap.issues]));
 </script>
@@ -21,7 +24,11 @@
 			</p>
 		{/if}
 		<p class="font-mono text-xs text-muted-foreground">
-			Published <time datetime={roadmap.publishedAt}>{onDate(roadmap.publishedAt, "UTC")}</time>
+			{#if stamp === "published"}
+				Published <time datetime={roadmap.publishedAt}>{onDate(roadmap.publishedAt, "UTC")}</time>
+			{:else}
+				Draft · not published yet
+			{/if}
 		</p>
 	</header>
 

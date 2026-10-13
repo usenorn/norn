@@ -6,6 +6,7 @@
 		checked?: boolean;
 		hint?: string;
 		trailing?: boolean;
+		disabled?: boolean;
 	};
 </script>
 
@@ -25,6 +26,7 @@
 		align = "start",
 		empty = "No matches",
 		closeOnPick = true,
+		filter = true,
 		onpick,
 		trigger,
 		mark,
@@ -40,6 +42,7 @@
 		align?: "start" | "center" | "end";
 		empty?: string;
 		closeOnPick?: boolean;
+		filter?: boolean;
 		onpick?: (value: string) => void;
 		trigger: Snippet<[Record<string, unknown>]>;
 		mark?: Snippet<[PickerOption]>;
@@ -61,7 +64,7 @@
 		{/snippet}
 	</Popover.Trigger>
 	<Popover.Content {align} sideOffset={4} class={cn("w-51.5", className)}>
-		<Command.Root>
+		<Command.Root shouldFilter={filter}>
 			<Command.Input {placeholder} bind:value={search}>
 				{#if shortcut}
 					{@render shortcut()}
@@ -99,6 +102,7 @@
 							<Command.LinkItem
 								href={option.href}
 								value={option.label}
+								disabled={option.disabled}
 								onSelect={() => (open = false)}
 							>
 								{@render body()}
@@ -106,6 +110,7 @@
 						{:else}
 							<Command.Item
 								value={option.label}
+								disabled={option.disabled}
 								onSelect={() => {
 									if (closeOnPick) open = false;
 									search = "";

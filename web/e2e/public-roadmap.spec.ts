@@ -3,6 +3,7 @@ import type { components } from "../src/lib/api/dashboard.gen";
 import { fixture, ordinaryStatePath, statePath } from "./fixture";
 
 type Roadmap = components["schemas"]["Roadmap"];
+type RoadmapPreview = components["schemas"]["RoadmapPreview"];
 type RoadmapEntryContent = components["schemas"]["RoadmapEntryContent"];
 type RoadmapVisibility = components["schemas"]["RoadmapVisibility"];
 type PublicRoadmap = components["schemas"]["PublicRoadmap"];
@@ -113,6 +114,20 @@ test.describe("a public roadmap", () => {
 		return read<Roadmap>(await send(admin, "GET", `${workspace()}/roadmap`));
 	}
 
+	async function preview(): Promise<RoadmapPreview> {
+		return read<RoadmapPreview>(await send(admin, "GET", `${workspace()}/roadmap/preview`));
+	}
+
+	async function publishReviewed(): Promise<Roadmap> {
+		const reviewed = await roadmap();
+
+		return read<Roadmap>(
+			await send(admin, "POST", `${workspace()}/roadmap/publish`, {
+				expectedVersion: reviewed.version,
+				expectedDigest: reviewed.review.digest,
+			})
+		);
+	}
 	async function complete(issue: Issue): Promise<Issue> {
 		const states = await read<WorkflowState[]>(
 			await send(admin, "GET", `${workspace()}/teams/${team.id}/states`)
@@ -196,10 +211,14 @@ test.describe("a public roadmap", () => {
 		expect((await visit(visitor, "/roadmap")).status()).toBe(404);
 	});
 
-	test("only an admin may read, select for or publish the roadmap", async () => {
-		const { version } = await roadmap();
+	test("only an admin may read, preview, select for or publish the roadmap", async () => {
+		const { version, review } = await roadmap();
 
 		expect((await send(member, "GET", `${workspace()}/roadmap`)).status()).toBe(403);
+		expect((await send(member, "GET", `${workspace()}/roadmap/preview`)).status()).toBe(403);
+		expect((await send(member, "GET", `${workspace()}/roadmap/preview/entries/aaaaaaaaaaaaaaaa`)).status()).toBe(
+			403
+		);
 		expect(
 			(
 				await send(member, "POST", `${workspace()}/roadmap/entries`, {
@@ -211,7 +230,12 @@ test.describe("a public roadmap", () => {
 			).status()
 		).toBe(403);
 		expect(
-			(await send(member, "POST", `${workspace()}/roadmap/publish`, { expectedVersion: version })).status()
+			(
+				await send(member, "POST", `${workspace()}/roadmap/publish`, {
+					expectedVersion: version,
+					expectedDigest: review.digest,
+				})
+			).status()
 		).toBe(403);
 	});
 
@@ -295,8 +319,29 @@ test.describe("a public roadmap", () => {
 		await complete(secret);
 
 		const draft = await roadmap();
+		const drafted = await preview();
 
-		await read(await send(admin, "POST", `${workspace()}/roadmap/publish`, { expectedVersion: draft.version }));
+		expect(draft.publication).toBeUndefined();
+		expect(draft.review.hasUnpublishedChanges).toBe(true);
+		expect(draft.review.blockers).toEqual([]);
+		expect(draft.review.entries.map((entry) => entry.change)).toEqual(["added", "added", "added"]);
+		expect(drafted.version).toBe(draft.version);
+		expect(drafted.digest).toBe(draft.review.digest);
+		expect(drafted.blockers).toEqual([]);
+		expect(drafted.roadmap.projects.map((item) => item.title)).toEqual(["Faster billing"]);
+		expect(unlistedKeys(drafted.roadmap)).toEqual([]);
+		expect((await visit(visitor, "/roadmap")).status()).toBe(404);
+
+		const afterPublishing = await read<Roadmap>(
+			await send(admin, "POST", `${workspace()}/roadmap/publish`, {
+				expectedVersion: draft.version,
+				expectedDigest: draft.review.digest,
+			})
+		);
+
+		expect(afterPublishing.review.hasUnpublishedChanges).toBe(false);
+		expect(afterPublishing.review.entries).toEqual([]);
+		expect(afterPublishing.review.roadmap).toEqual([]);
 
 		const answer = await visit(visitor, "/roadmap");
 
@@ -343,6 +388,16 @@ test.describe("a public roadmap", () => {
 		expect(one.status()).toBe(200);
 		expect(one.headers()["cache-control"]).toBe("no-store");
 		expect(((await one.json()) as PublicRoadmapItem).title).toBe(faster.issues?.[0].title);
+
+		const republished = await preview();
+
+		expect({ ...republished.roadmap, publishedAt: published.publishedAt }).toEqual(published);
+
+		const previewedEntry = await send(admin, "GET", `${workspace()}/roadmap/preview/entries/${faster.id}`);
+
+		expect(previewedEntry.headers()["cache-control"]).toBe("no-store");
+		expect(await read<PublicRoadmapItem>(previewedEntry)).toEqual(faster);
+		expect((await send(admin, "GET", `${workspace()}/roadmap/preview/entries/${shipped.id}`)).status()).toBe(404);
 	});
 
 	test("internal edits and unpublished draft changes stay off the public roadmap", async () => {
@@ -361,10 +416,43 @@ test.describe("a public roadmap", () => {
 		await read(
 			await send(admin, "PATCH", `${workspace()}/roadmap/entries/${entry?.id}`, {
 				expectedVersion: draft.version,
-				content: content("A title nobody has reviewed"),
+				content: content("A title nobody has reviewed", {
+					timeline: { startOn: "2026-11-02", endOn: "2026-12-14" },
+				}),
 			})
 		);
 
+		expect(await (await visit(visitor, "/roadmap")).json()).toEqual(published);
+
+		const { review } = await roadmap();
+		const changed = review.entries.find((one) => one.entryId === entry?.id);
+		const field = (name: string) => changed?.fields.find((one) => one.field === name);
+
+		expect(review.hasUnpublishedChanges).toBe(true);
+		expect(review.entries).toHaveLength(1);
+		expect(changed?.change).toBe("changed");
+		expect(field("title")).toEqual({
+			field: "title",
+			kind: "changed",
+			before: "Reliable webhooks",
+			after: "A title nobody has reviewed",
+		});
+		expect(field("startOn")).toEqual({ field: "startOn", kind: "exposed", after: "2026-11-02" });
+		expect(field("endOn")).toEqual({ field: "endOn", kind: "exposed", after: "2026-12-14" });
+		expect(JSON.stringify(review)).not.toContain(internalTitles.planned);
+	});
+
+	test("a publication whose review no longer matches the draft is refused", async () => {
+		const draft = await roadmap();
+		const conflict = await read<Problem>(
+			await send(admin, "POST", `${workspace()}/roadmap/publish`, {
+				expectedVersion: draft.version,
+				expectedDigest: "0".repeat(64),
+			}),
+			409
+		);
+
+		expect(conflict.code).toBe("roadmap_review_changed");
 		expect(await (await visit(visitor, "/roadmap")).json()).toEqual(published);
 	});
 
@@ -398,11 +486,7 @@ test.describe("a public roadmap", () => {
 			})
 		);
 
-		await read(
-			await send(admin, "POST", `${workspace()}/roadmap/publish`, {
-				expectedVersion: (await roadmap()).version,
-			})
-		);
+		await publishReviewed();
 
 		const capped = (await (await visit(visitor, "/roadmap")).json()) as PublicRoadmap;
 		const [faster] = capped.projects;

@@ -21,6 +21,7 @@ export const keys = {
 	projects: (workspaceId: string) => `norn:projects:${workspaceId}`,
 	cycles: (workspaceId: string) => `norn:cycles:${workspaceId}`,
 	views: (workspaceId: string) => `norn:views:${workspaceId}`,
+	roadmap: (workspaceId: string) => `norn:roadmap:${workspaceId}`,
 	account: (accountId: string) => `norn:account:${accountId}`,
 	signedIn: () => "norn:signed-in",
 	sourceControl: (workspaceId: string) => `norn:source-control:${workspaceId}`,

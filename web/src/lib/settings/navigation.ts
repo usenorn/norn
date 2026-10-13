@@ -4,6 +4,7 @@ import GitBranch from "@lucide/svelte/icons/git-branch";
 import Import from "@lucide/svelte/icons/import";
 import KeyRound from "@lucide/svelte/icons/key-round";
 import Library from "@lucide/svelte/icons/library";
+import MapIcon from "@lucide/svelte/icons/map";
 import Network from "@lucide/svelte/icons/network";
 import ScrollText from "@lucide/svelte/icons/scroll-text";
 import Server from "@lucide/svelte/icons/server";
@@ -40,6 +41,7 @@ export function workspaceSettingsNavigation(slug: string): SettingsNavigationSec
 				{ href: settings("/members"), label: "Members", icon: Users },
 				{ href: settings("/teams"), label: "Teams", icon: UsersRound },
 				{ href: settings("/labels"), label: "Labels", icon: Tags },
+				{ href: settings("/roadmap"), label: "Public roadmap", icon: MapIcon },
 			],
 		},
 		{

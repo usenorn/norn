@@ -5,6 +5,7 @@ export type PublicRoadmap = components["schemas"]["PublicRoadmap"];
 export type PublicRoadmapItem = components["schemas"]["PublicRoadmapItem"];
 export type RoadmapPublicStatus = components["schemas"]["RoadmapPublicStatus"];
 export type RoadmapTimeline = components["schemas"]["RoadmapTimeline"];
+export type RoadmapStamp = "published" | "draft";
 
 export type PublicRoadmapView =
 	| { kind: "loading" }

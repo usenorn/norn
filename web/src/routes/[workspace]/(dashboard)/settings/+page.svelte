@@ -12,6 +12,7 @@
 	import * as Form from "$lib/components/ui/form/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import RowGroup from "$lib/components/norn/row-group.svelte";
 	import TeamKey from "$lib/components/norn/team-key.svelte";
 	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -378,7 +379,7 @@
 		<section class="flex flex-col gap-3.5" aria-labelledby="time-section">
 			<h2><Eyebrow id="time-section">Time and defaults</Eyebrow></h2>
 
-			<div class="flex flex-col divide-y divide-line-default rounded-md border border-line-default">
+			<RowGroup>
 				<SettingRow
 					{form}
 					name="timezone"
@@ -449,7 +450,7 @@
 						</Select.Root>
 					{/snippet}
 				</SettingRow>
-			</div>
+			</RowGroup>
 		</section>
 
 		<section class="flex flex-col gap-3.5" aria-labelledby="agents-section">

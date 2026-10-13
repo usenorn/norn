@@ -566,7 +566,14 @@ func (r *roadmapRepository) CreateEntry(ctx context.Context, entry entity.Roadma
 		return entity.RoadmapEntry{}, err
 	}
 
-	if err := model.Insert(ctx, r.db.Querier(ctx), boil.Infer()); err != nil {
+	if err := model.Insert(ctx, r.db.Querier(ctx), boil.Greylist(
+		dbpostgres.WorkspaceRoadmapEntryColumns.ShowIssueLists,
+		dbpostgres.WorkspaceRoadmapEntryColumns.ShowProjectDescriptions,
+		dbpostgres.WorkspaceRoadmapEntryColumns.ShowIssueDescriptions,
+		dbpostgres.WorkspaceRoadmapEntryColumns.ShowStatus,
+		dbpostgres.WorkspaceRoadmapEntryColumns.ShowTimeline,
+		dbpostgres.WorkspaceRoadmapEntryColumns.ShowProgress,
+	)); err != nil {
 		if translated := translateWriteError(err); !errors.Is(translated, err) {
 			return entity.RoadmapEntry{}, translated
 		}
