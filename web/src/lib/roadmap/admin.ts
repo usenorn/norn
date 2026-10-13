@@ -509,10 +509,72 @@ export function failureMessage(failure: RoadmapFailure): string {
 	}
 }
 
+export type RoadmapAnswer = { kind: "done"; roadmap: Roadmap } | { kind: "refused"; failure: RoadmapFailure };
+
+export async function answerOf(
+	call: Promise<{ data?: Roadmap; error?: unknown; response: Response }>
+): Promise<RoadmapAnswer> {
+	try {
+		const { data, error, response } = await call;
+
+		if (data) return { kind: "done", roadmap: data };
+
+		return { kind: "refused", failure: roadmapFailure(error, response.status) };
+	} catch {
+		return { kind: "refused", failure: { kind: "unavailable" } };
+	}
+}
+
+const fieldMessages: Partial<Record<string, string>> = {
+	"title:too_long": "Shorten the public title to 120 characters or fewer.",
+	"description:too_long": "Shorten the public description to 4000 characters or fewer.",
+	"publicTitle:required": "Give this entry a public title.",
+	"publicTitle:too_long": "Shorten the public title to 120 characters or fewer.",
+	"publicDescription:too_long": "Shorten the public description to 4000 characters or fewer.",
+	"status:unsupported_value": "Choose one of the listed statuses.",
+	"timeline.startOn:malformed": "Use a date like 2026-09-30.",
+	"timeline.endOn:malformed": "Use a date like 2026-09-30.",
+	"timeline.endOn:required": "Add an end date. A start date is only shown with one.",
+	"timeline.endOn:out_of_range": "End on or after the start date.",
+	"progressMode:unsupported_value": "Choose how progress is shown.",
+	"progressPercent:out_of_range": "Use a number from 0 to 100.",
+};
+
+export function roadmapFieldMessage(error: FieldError): string {
+	return fieldMessages[`${error.field}:${error.code}`] ?? "Check this value.";
+}
+
+export type RoadmapSettingsOutcome = { kind: "saved" } | { kind: "failed"; failure: RoadmapFailure };
+
+export type RoadmapSettingsField = Exclude<keyof RoadmapSettingsInput, "expectedVersion">;
+
+export const roadmapSettingsFields: RoadmapSettingsField[] = [
+	"title",
+	"description",
+	"issueLists",
+	"projectDescriptions",
+	"issueDescriptions",
+	"status",
+	"timeline",
+	"progress",
+];
+
+export function settingsDraftAfter(
+	baseline: RoadmapSettingsInput,
+	latest: RoadmapSettingsInput,
+	draft: RoadmapSettingsInput,
+	touched: RoadmapSettingsField[]
+): RoadmapSettingsInput | undefined {
+	if (touched.some((field) => latest[field] !== baseline[field])) return undefined;
+
+	return { ...latest, ...Object.fromEntries(touched.map((field) => [field, draft[field]])) };
+}
+
+export const issueSearchDelayMs = 250;
+
 export type RoadmapActivity =
 	| { kind: "idle" }
 	| { kind: "choosing_preset"; preset: ChosenPreset }
-	| { kind: "adding"; sourceId: string }
 	| { kind: "refreshing"; entryId: string }
 	| { kind: "removing"; entryId: string }
 	| { kind: "unpublishing" };

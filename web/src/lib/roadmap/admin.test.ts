@@ -18,7 +18,10 @@ import {
 	reviewSections,
 	reviewValueLabel,
 	roadmapFailure,
+	roadmapFieldMessage,
 	selectedSources,
+	settingsDraftAfter,
+	settingsInputOf,
 	staleStanding,
 	type Roadmap,
 	type RoadmapEntry,
@@ -373,5 +376,35 @@ describe("reading a refused roadmap change", () => {
 		expect(publishFailureDialog(frozen, { kind: "review_changed" }).kind).toBe("stale");
 		expect(publishFailureDialog(frozen, { kind: "stale", version: 4 }).kind).toBe("stale");
 		expect(publishFailureDialog(frozen, { kind: "unavailable" }).kind).toBe("failed");
+	});
+});
+
+describe("keeping a settings draft while the roadmap moves underneath it", () => {
+	const baseline = settingsInputOf(roadmap({ version: 3 }));
+
+	it("adopts the server's version and untouched fields, and keeps what was typed", () => {
+		const latest = settingsInputOf(roadmap({ version: 4, visibility: { ...hidden, issueLists: true } }));
+		const draft = { ...baseline, title: "Where Northwind is heading" };
+
+		expect(settingsDraftAfter(baseline, latest, draft, ["title"])).toEqual({
+			...latest,
+			title: "Where Northwind is heading",
+		});
+	});
+
+	it("refuses to merge when someone else changed a field that was typed, so saving meets the conflict", () => {
+		const latest = settingsInputOf(roadmap({ version: 4, title: "Their title" }));
+		const draft = { ...baseline, title: "My title" };
+
+		expect(settingsDraftAfter(baseline, latest, draft, ["title"])).toBeUndefined();
+	});
+});
+
+describe("explaining a refused field", () => {
+	it("speaks to the field and the reason, and falls back for anything unknown", () => {
+		expect(roadmapFieldMessage({ field: "timeline.endOn", code: "out_of_range" })).toBe(
+			"End on or after the start date."
+		);
+		expect(roadmapFieldMessage({ field: "kind", code: "unsupported_value" })).toBe("Check this value.");
 	});
 });
