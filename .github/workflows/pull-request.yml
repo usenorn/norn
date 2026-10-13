@@ -153,6 +153,7 @@ jobs:
       NORN_STORAGE_BACKEND: filesystem
       NORN_STORAGE_ROOT: ./data/blobs
       NORN_APP_BASE_URL: http://localhost:4173
+      NORN_ROADMAPS_DOMAIN: roadmap.localhost
       NORN_HTTP_ADDR: 127.0.0.1:8080
       NORN_E2E_API: http://localhost:8080
       NORN_E2E_MAILPIT: http://localhost:8025
