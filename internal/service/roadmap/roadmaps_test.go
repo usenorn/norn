@@ -516,6 +516,38 @@ func TestRefreshUpdatesTheDraftSnapshotButNeverItsPublicCopy(t *testing.T) {
 	}
 }
 
+func TestEditingAnEntryWithoutAStatusKeepsItsSnapshot(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.TeamScope{AllTeams: true})
+	h.lockAt(3)
+
+	entry := h.entry(entity.RoadmapEntryIssue, "Offline edits")
+	entry.Status = entity.PublicStatusInProgress
+
+	h.roadmaps.EXPECT().GetEntry(gomock.Any(), h.roadmap.ID, entry.ID).Return(entry, nil)
+	h.expectSaveAndView([]entity.RoadmapEntry{entry}, nil)
+
+	var saved entity.RoadmapEntry
+
+	h.roadmaps.EXPECT().UpdateEntry(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, updated entity.RoadmapEntry) (entity.RoadmapEntry, error) {
+			saved = updated
+
+			return updated, nil
+		})
+
+	if _, err := h.service.UpdateEntry(context.Background(), h.workspaceID, entry.ID, service.UpdateRoadmapEntryInput{
+		ExpectedVersion: 3,
+		Content:         content("Edits that survive going offline"),
+	}); err != nil {
+		t.Fatalf("UpdateEntry: %v", err)
+	}
+
+	if saved.PublicTitle != "Edits that survive going offline" || saved.Status != entity.PublicStatusInProgress {
+		t.Fatalf("saved = %q %s, want the new title over the existing in_progress snapshot", saved.PublicTitle, saved.Status)
+	}
+}
+
 func TestRemovingAnEntryRevokesItsPublicCopyImmediately(t *testing.T) {
 	h := newHarness(t)
 	h.actAs(entity.TeamScope{AllTeams: true})

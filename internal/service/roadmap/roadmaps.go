@@ -390,6 +390,10 @@ func (s *roadmapsService) UpdateEntry(
 				return err
 			}
 
+			if input.Content.Status == "" {
+				input.Content.Status = entry.Status
+			}
+
 			entry = applyContent(entry, input.Content)
 
 			if err := entity.ValidateRoadmapEntry(entry); err != nil {
