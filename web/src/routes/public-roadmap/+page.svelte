@@ -17,7 +17,7 @@
 
 {#if view.kind === "ready" || view.kind === "empty"}
 	<PublicRoadmapHead title={view.roadmap.title} description={view.roadmap.description} />
-	<PublicRoadmap roadmap={view.roadmap} entryHref={entryPath} />
+	<PublicRoadmap roadmap={view.roadmap} stamp="published" entryHref={entryPath} />
 {:else}
 	<PublicRoadmapFallback {view} />
 {/if}
