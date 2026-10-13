@@ -9407,7 +9407,7 @@ type RoadmapPublication struct {
 type RoadmapReview struct {
 	Blockers []RoadmapBlocker `json:"blockers"`
 
-	// Digest Identifies the reviewed projection; publishing requires it unchanged
+	// Digest Identifies the reviewed change, covering what is public now, what would be, and the source approvals it records; publishing requires it unchanged
 	Digest                string               `json:"digest"`
 	Entries               []RoadmapEntryReview `json:"entries"`
 	HasUnpublishedChanges bool                 `json:"hasUnpublishedChanges"`
@@ -14482,7 +14482,7 @@ type ClientInterface interface {
 
 	// PublishWorkspaceRoadmapWithBody Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -14491,7 +14491,7 @@ type ClientInterface interface {
 
 	// PublishWorkspaceRoadmap Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21519,7 +21519,7 @@ func (c *Client) GetWorkspaceRoadmapPreviewEntry(ctx context.Context, workspaceI
 
 // PublishWorkspaceRoadmapWithBody Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes any type of body and a specified content type.
 //
@@ -21538,7 +21538,7 @@ func (c *Client) PublishWorkspaceRoadmapWithBody(ctx context.Context, workspaceI
 
 // PublishWorkspaceRoadmap Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -44471,7 +44471,7 @@ type ClientWithResponsesInterface interface {
 
 	// PublishWorkspaceRoadmapWithBodyWithResponse Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -44480,7 +44480,7 @@ type ClientWithResponsesInterface interface {
 
 	// PublishWorkspaceRoadmapWithResponse Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -78253,7 +78253,7 @@ func (c *ClientWithResponses) GetWorkspaceRoadmapPreviewEntryWithResponse(ctx co
 
 // PublishWorkspaceRoadmapWithBodyWithResponse Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -78268,7 +78268,7 @@ func (c *ClientWithResponses) PublishWorkspaceRoadmapWithBodyWithResponse(ctx co
 
 // PublishWorkspaceRoadmapWithResponse Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

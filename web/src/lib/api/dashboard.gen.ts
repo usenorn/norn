@@ -3385,7 +3385,7 @@ export interface paths {
         put?: never;
         /**
          * Replace the public roadmap with the reviewed draft
-         * @description Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+         * @description Publishes exactly the draft at the expected version, and only while the current publication, the draft's rendering and the source approvals it records still match the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
          */
         post: operations["publishWorkspaceRoadmap"];
         delete?: never;
@@ -7335,7 +7335,7 @@ export interface components {
         /** @description What publishing the draft would change on the public roadmap, computed from both projections */
         RoadmapReview: {
             hasUnpublishedChanges: boolean;
-            /** @description Identifies the reviewed projection; publishing requires it unchanged */
+            /** @description Identifies the reviewed change, covering what is public now, what would be, and the source approvals it records; publishing requires it unchanged */
             digest: string;
             roadmap: components["schemas"]["RoadmapFieldChange"][];
             entries: components["schemas"]["RoadmapEntryReview"][];

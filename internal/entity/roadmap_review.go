@@ -196,10 +196,41 @@ func (c RoadmapCandidate) Public() PublicRoadmap {
 	return NewPublicRoadmap(c.Published)
 }
 
-func RoadmapDigest(public PublicRoadmap) string {
-	public.PublishedAt = time.Time{}
+type roadmapReviewApproval struct {
+	PublicID        string
+	SourceProjectID uuid.UUID
+	SourceIssueID   uuid.UUID
+	Approval        RoadmapApproval
+}
 
-	encoded, err := json.Marshal(public)
+type roadmapReviewSubject struct {
+	Before    *PublicRoadmap
+	After     PublicRoadmap
+	Approvals []roadmapReviewApproval
+}
+
+func RoadmapReviewDigest(current *PublishedRoadmap, candidate RoadmapCandidate) string {
+	subject := roadmapReviewSubject{
+		After:     candidate.Public(),
+		Approvals: make([]roadmapReviewApproval, 0, len(candidate.Published.Entries)),
+	}
+	subject.After.PublishedAt = time.Time{}
+
+	if current != nil {
+		before := NewPublicRoadmap(*current)
+		subject.Before = &before
+	}
+
+	for _, entry := range candidate.Published.Entries {
+		subject.Approvals = append(subject.Approvals, roadmapReviewApproval{
+			PublicID:        entry.PublicID,
+			SourceProjectID: entry.SourceProjectID,
+			SourceIssueID:   entry.SourceIssueID,
+			Approval:        entry.Approval,
+		})
+	}
+
+	encoded, err := json.Marshal(subject)
 	if err != nil {
 		return ""
 	}
@@ -272,7 +303,7 @@ func ReviewRoadmap(
 
 	after := candidate.Public()
 	review := RoadmapReview{
-		Digest: RoadmapDigest(after),
+		Digest: RoadmapReviewDigest(current, candidate),
 		Roadmap: roadmapFieldChanges(
 			[]roadmapReviewValue{{RoadmapReviewTitle, before.Title}, {RoadmapReviewDescription, before.Description}},
 			[]roadmapReviewValue{{RoadmapReviewTitle, after.Title}, {RoadmapReviewDescription, after.Description}},

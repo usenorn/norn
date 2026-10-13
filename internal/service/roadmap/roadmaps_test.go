@@ -821,6 +821,71 @@ func TestAReviewThatNoLongerDescribesTheDraftIsRefused(t *testing.T) {
 	}
 }
 
+func TestAReviewTakenBeforeAWithdrawalCannotRepublish(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.TeamScope{AllTeams: true})
+	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	h.expectSaveAndView([]entity.RoadmapEntry{project}, map[uuid.UUID]entity.RoadmapSource{
+		project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true},
+	})
+	h.expectPublish()
+	h.publish(t)
+
+	preview, err := h.service.Preview(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	h.roadmaps.EXPECT().Unpublish(gomock.Any(), h.roadmap.ID).DoAndReturn(func(context.Context, uuid.UUID) error {
+		h.publication, h.published = nil, nil
+
+		return nil
+	})
+
+	if _, err := h.service.Unpublish(context.Background(), h.workspaceID); err != nil {
+		t.Fatalf("Unpublish: %v", err)
+	}
+
+	if _, err := h.service.Publish(context.Background(), h.workspaceID, service.PublishRoadmapInput{
+		ExpectedVersion: preview.Version,
+		ExpectedDigest:  preview.Digest,
+	}); !errors.Is(err, entity.ErrRoadmapReviewChanged) {
+		t.Fatalf("Publish with a review of the withdrawn roadmap = %v, want ErrRoadmapReviewChanged", err)
+	}
+}
+
+func TestAnIssueWhoseTeamTurnedPrivateAfterReviewIsNotPublished(t *testing.T) {
+	h := newHarness(t)
+	team := uuid.New()
+	h.actAs(entity.TeamScope{AllTeams: true})
+	h.lockAt(3)
+
+	issue := h.entry(entity.RoadmapEntryIssue, "Offline edits")
+	sources := map[uuid.UUID]entity.RoadmapSource{
+		issue.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true, TeamID: team},
+	}
+	h.expectDraft([]entity.RoadmapEntry{issue}, sources)
+	h.roadmaps.EXPECT().Publish(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	preview, err := h.service.Preview(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	source := sources[issue.ID]
+	source.TeamPrivate = true
+	sources[issue.ID] = source
+
+	if _, err := h.service.Publish(context.Background(), h.workspaceID, service.PublishRoadmapInput{
+		ExpectedVersion: preview.Version,
+		ExpectedDigest:  preview.Digest,
+	}); !errors.Is(err, entity.ErrRoadmapReviewChanged) {
+		t.Fatalf("Publish after the team turned private = %v, want ErrRoadmapReviewChanged", err)
+	}
+}
+
 func TestThePublicAddressNeedsARoadmapDomain(t *testing.T) {
 	h := newHarness(t)
 	h.actAs(entity.TeamScope{AllTeams: true})

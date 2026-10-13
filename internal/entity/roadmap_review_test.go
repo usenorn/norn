@@ -158,10 +158,6 @@ func TestTheJustPublishedDraftHasNothingLeftToReview(t *testing.T) {
 	if review.HasUnpublishedChanges || len(review.Entries) != 0 || len(review.Roadmap) != 0 {
 		t.Fatalf("review = %+v, want nothing to publish", review)
 	}
-
-	if review.Digest != entity.RoadmapDigest(entity.NewPublicRoadmap(*current)) {
-		t.Fatal("the review digest differs from the digest of what is published")
-	}
 }
 
 func TestAnEditedTitleShowsWhatItWasAndWhatItWillBe(t *testing.T) {
@@ -402,19 +398,45 @@ func TestTheDigestIgnoresWhenItWasTakenButNotWhatIsShown(t *testing.T) {
 	f := newReviewFixture(everything)
 	f.project("Faster sync")
 
-	public := f.candidate().Public()
-	later := public
-	later.PublishedAt = public.PublishedAt.Add(time.Hour)
+	candidate := f.candidate()
+	later := candidate
+	later.Published.Publication.PublishedAt = candidate.Published.Publication.PublishedAt.Add(time.Hour)
 
-	if entity.RoadmapDigest(public) != entity.RoadmapDigest(later) {
+	if entity.RoadmapReviewDigest(nil, candidate) != entity.RoadmapReviewDigest(nil, later) {
 		t.Fatal("the digest changed with the publication time")
 	}
 
-	edited := f.candidate().Public()
-	edited.Projects[0].Title = "Instant sync"
+	f.drafts[0].PublicTitle = "Instant sync"
 
-	if entity.RoadmapDigest(public) == entity.RoadmapDigest(edited) {
+	if entity.RoadmapReviewDigest(nil, candidate) == entity.RoadmapReviewDigest(nil, f.candidate()) {
 		t.Fatal("the digest did not change with a visible title")
+	}
+}
+
+func TestTheDigestChangesWithWhatIsPublishedNow(t *testing.T) {
+	f := newReviewFixture(everything)
+	f.project("Faster sync")
+
+	current := f.published()
+
+	if entity.RoadmapReviewDigest(current, f.candidate()) == entity.RoadmapReviewDigest(nil, f.candidate()) {
+		t.Fatal("the digest of a review of a live roadmap matches the digest of a review after it was withdrawn")
+	}
+}
+
+func TestTheDigestChangesWhenAnIssueTeamTurnsPrivate(t *testing.T) {
+	f := newReviewFixture(everything)
+	project := f.project("Faster sync")
+	issue := f.issue("Offline edits", project)
+
+	reviewed := entity.RoadmapReviewDigest(nil, f.candidate())
+
+	source := f.sources[f.drafts[issue].ID]
+	source.TeamPrivate = true
+	f.sources[f.drafts[issue].ID] = source
+
+	if entity.RoadmapReviewDigest(nil, f.candidate()) == reviewed {
+		t.Fatal("the digest did not change when the approval it would record became private")
 	}
 }
 

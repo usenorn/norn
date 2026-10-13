@@ -129,14 +129,16 @@ func (s *roadmapsService) view(
 		return service.RoadmapDraftView{}, err
 	}
 
-	published, err := s.roadmaps.ListPublishedEntries(ctx, roadmap.ID)
+	current, err := s.current(ctx, roadmap)
 	if err != nil {
 		return service.RoadmapDraftView{}, err
 	}
 
-	intact := make(map[string]bool, len(published))
-	for _, entry := range published {
-		intact[entry.PublicID] = entry.Intact()
+	intact := make(map[string]bool)
+	if current != nil {
+		for _, entry := range current.Entries {
+			intact[entry.PublicID] = entry.Intact()
+		}
 	}
 
 	reachable := make(map[uuid.UUID]bool, len(entries))
@@ -150,15 +152,6 @@ func (s *roadmapsService) view(
 	labels, err := s.sourceLabels(ctx, roadmap.WorkspaceID, entries, reachable, decision.Scope)
 	if err != nil {
 		return service.RoadmapDraftView{}, err
-	}
-
-	var current *entity.PublishedRoadmap
-	if roadmap.Publication != nil {
-		current = &entity.PublishedRoadmap{
-			WorkspaceID: roadmap.WorkspaceID,
-			Publication: *roadmap.Publication,
-			Entries:     published,
-		}
 	}
 
 	candidate := entity.NewRoadmapCandidate(roadmap, entries, sources, decision.Scope, time.Time{})
@@ -195,6 +188,23 @@ func (s *roadmapsService) view(
 	}
 
 	return view, nil
+}
+
+func (s *roadmapsService) current(ctx context.Context, roadmap entity.Roadmap) (*entity.PublishedRoadmap, error) {
+	if roadmap.Publication == nil {
+		return nil, nil
+	}
+
+	entries, err := s.roadmaps.ListPublishedEntries(ctx, roadmap.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.PublishedRoadmap{
+		WorkspaceID: roadmap.WorkspaceID,
+		Publication: *roadmap.Publication,
+		Entries:     entries,
+	}, nil
 }
 
 func (s *roadmapsService) candidate(
@@ -261,16 +271,20 @@ func (s *roadmapsService) Preview(ctx context.Context, workspaceID uuid.UUID) (s
 	var preview service.RoadmapPreview
 
 	err = s.read(ctx, workspaceID, func(ctx context.Context, roadmap entity.Roadmap) error {
+		current, err := s.current(ctx, roadmap)
+		if err != nil {
+			return err
+		}
+
 		candidate, err := s.candidate(ctx, roadmap, decision.Scope, time.Now().UTC())
 		if err != nil {
 			return err
 		}
 
-		public := candidate.Public()
 		preview = service.RoadmapPreview{
 			Version:  roadmap.Version,
-			Digest:   entity.RoadmapDigest(public),
-			Roadmap:  public,
+			Digest:   entity.RoadmapReviewDigest(current, candidate),
+			Roadmap:  candidate.Public(),
 			Blockers: candidate.Blockers,
 		}
 
@@ -689,6 +703,11 @@ func (s *roadmapsService) Publish(
 			return err
 		}
 
+		current, err := s.current(ctx, roadmap)
+		if err != nil {
+			return err
+		}
+
 		candidate, err := s.candidate(ctx, roadmap, decision.Scope, time.Now().UTC())
 		if err != nil {
 			return err
@@ -698,7 +717,7 @@ func (s *roadmapsService) Publish(
 			return err
 		}
 
-		if entity.RoadmapDigest(candidate.Public()) != input.ExpectedDigest {
+		if entity.RoadmapReviewDigest(current, candidate) != input.ExpectedDigest {
 			return entity.ErrRoadmapReviewChanged
 		}
 
