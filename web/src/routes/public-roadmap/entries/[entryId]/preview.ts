@@ -8,12 +8,7 @@ export const publicRoadmapEntryPreviewStates: Record<string, PublicRoadmapEntryV
 			failed: { kind: "failed", reference: "5f1c8d2e-7a4b-4c3e-9d10-roadmapfail02" },
 			with_issues: {
 				kind: "ready",
-				roadmap: {
-					title: "Northwind roadmap",
-					publishedAt: "2026-10-01T09:00:00Z",
-					projects: [],
-					issues: [],
-				},
+				roadmapTitle: "Northwind roadmap",
 				item: {
 					id: "nwpreviewcheckou",
 					kind: "project",
@@ -45,22 +40,12 @@ export const publicRoadmapEntryPreviewStates: Record<string, PublicRoadmapEntryV
 			},
 			projects_only: {
 				kind: "ready",
-				roadmap: {
-					title: "Northwind roadmap",
-					publishedAt: "2026-10-01T09:00:00Z",
-					projects: [],
-					issues: [],
-				},
+				roadmapTitle: "Northwind roadmap",
 				item: { id: "nwpreviewcheckou", kind: "project", title: "Faster checkout" },
 			},
 			no_issues: {
 				kind: "ready",
-				roadmap: {
-					title: "Northwind roadmap",
-					publishedAt: "2026-10-01T09:00:00Z",
-					projects: [],
-					issues: [],
-				},
+				roadmapTitle: "Northwind roadmap",
 				item: {
 					id: "nwpreviewreports",
 					kind: "project",
@@ -72,12 +57,7 @@ export const publicRoadmapEntryPreviewStates: Record<string, PublicRoadmapEntryV
 			},
 			entry_issue: {
 				kind: "ready",
-				roadmap: {
-					title: "Northwind roadmap",
-					publishedAt: "2026-10-01T09:00:00Z",
-					projects: [],
-					issues: [],
-				},
+				roadmapTitle: "Northwind roadmap",
 				item: {
 					id: "nwpreviewdarkmod",
 					kind: "issue",

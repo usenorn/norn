@@ -17,7 +17,7 @@ export type PublicRoadmapEntryView =
 	| { kind: "loading" }
 	| { kind: "unavailable" }
 	| { kind: "failed"; reference: string }
-	| { kind: "ready"; roadmap: PublicRoadmap; item: PublicRoadmapItem };
+	| { kind: "ready"; roadmapTitle: string; item: PublicRoadmapItem };
 
 type Answer<T> = { data?: T; response: Response };
 
@@ -51,7 +51,7 @@ export function readPublicRoadmapEntry(
 		return failure([roadmapAnswer, itemAnswer], reference);
 	}
 
-	return { kind: "ready", roadmap, item };
+	return { kind: "ready", roadmapTitle: roadmap.title, item };
 }
 
 export const statusLabels: Record<RoadmapPublicStatus, string> = {

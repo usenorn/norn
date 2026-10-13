@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Progress } from "$lib/components/ui/progress/index.js";
+	import { cn } from "$lib/utils.js";
 	import RoadmapStatus from "./roadmap-status.svelte";
 	import RoadmapTimeline from "./roadmap-timeline.svelte";
 	import {
@@ -14,7 +15,8 @@
 		item,
 		href,
 		window,
-	}: { item: PublicRoadmapItem; href: string; window?: TimelineWindow } = $props();
+		class: className,
+	}: { item: PublicRoadmapItem; href: string; window?: TimelineWindow; class?: string } = $props();
 
 	const dates = $derived(timelineLabel(item.timeline));
 	const progress = $derived(progressLabel(item.progress));
@@ -23,7 +25,10 @@
 
 <a
 	{href}
-	class="flex flex-col gap-2 px-3 py-3 motion-control hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+	class={cn(
+		"flex flex-col gap-2 px-3 py-3 motion-control hover:bg-paper-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+		className
+	)}
 >
 	<span class="flex flex-wrap items-center gap-x-3 gap-y-1">
 		<span class="min-w-0 flex-[1_1_160px] text-md break-words text-ink-900">{item.title}</span>

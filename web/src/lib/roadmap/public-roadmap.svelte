@@ -42,6 +42,15 @@
 				{#each roadmap.projects as project (project.id)}
 					<li class="border-b border-line-subtle last:border-b-0">
 						<RoadmapItemRow item={project} href={entryHref(project.id)} {window} />
+						{#if project.issues && project.issues.length > 0}
+							<ul aria-label="Issues in {project.title}" class="border-t border-line-subtle">
+								{#each project.issues as issue (issue.id)}
+									<li class="border-b border-line-subtle last:border-b-0">
+										<RoadmapItemRow item={issue} href={entryHref(issue.id)} class="pl-8" />
+									</li>
+								{/each}
+							</ul>
+						{/if}
 					</li>
 				{/each}
 			</ul>

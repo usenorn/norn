@@ -18,11 +18,11 @@
 
 {#if view.kind === "ready"}
 	<PublicRoadmapHead
-		title="{view.item.title} · {view.roadmap.title}"
+		title="{view.item.title} · {view.roadmapTitle}"
 		description={view.item.description}
 	/>
 	<PublicRoadmapEntry
-		roadmap={view.roadmap}
+		roadmapTitle={view.roadmapTitle}
 		item={view.item}
 		entryHref={entryPath}
 		roadmapHref={roadmapPath}

@@ -8,17 +8,16 @@
 		progressLabel,
 		timelineLabel,
 		timelineWindow,
-		type PublicRoadmap,
 		type PublicRoadmapItem,
 	} from "./public-roadmap";
 
 	let {
-		roadmap,
+		roadmapTitle,
 		item,
 		entryHref,
 		roadmapHref,
 	}: {
-		roadmap: PublicRoadmap;
+		roadmapTitle: string;
 		item: PublicRoadmapItem;
 		entryHref: (id: string) => string;
 		roadmapHref: string;
@@ -36,7 +35,7 @@
 			class="inline-flex min-w-0 items-center gap-1.5 self-start rounded-sm text-sm text-muted-foreground hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 		>
 			<ArrowLeft class="size-3.5 shrink-0" aria-hidden="true" />
-			<span class="break-words">{roadmap.title}</span>
+			<span class="break-words">{roadmapTitle}</span>
 		</a>
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
 			<h1 class="min-w-0 text-2xl font-medium tracking-title break-words text-ink-900">

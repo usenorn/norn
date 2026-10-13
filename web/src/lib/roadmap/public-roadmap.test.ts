@@ -64,7 +64,7 @@ describe("readPublicRoadmapEntry", () => {
 	it("is ready with both the roadmap and the entry", () => {
 		expect(readPublicRoadmapEntry(answer(200, roadmap), answer(200, item), reference)).toEqual({
 			kind: "ready",
-			roadmap,
+			roadmapTitle: roadmap.title,
 			item,
 		});
 	});
