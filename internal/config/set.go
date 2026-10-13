@@ -38,6 +38,7 @@ var Set = wire.NewSet(
 	NewAgentTooling,
 	NewSourceControl,
 	NewIntake,
+	NewRoadmaps,
 	NewEpostix,
 	NewSession,
 	NewCasbin,

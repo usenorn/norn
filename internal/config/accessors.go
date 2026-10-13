@@ -68,6 +68,8 @@ func NewSourceControl(cfg Config) SourceControl { return cfg.SourceControl }
 
 func NewIntake(cfg Config) Intake { return cfg.Intake }
 
+func NewRoadmaps(cfg Config) Roadmaps { return cfg.Roadmaps }
+
 func NewEpostix(cfg Config) Epostix { return cfg.Epostix }
 
 func NewSession(cfg Config) Session { return cfg.Session }

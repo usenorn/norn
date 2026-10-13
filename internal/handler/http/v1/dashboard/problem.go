@@ -111,6 +111,24 @@ func problemFor(err error) (problemResponse, bool) {
 		}, true
 	}
 
+	var staleRoadmap entity.RoadmapStaleError
+	if errors.As(err, &staleRoadmap) {
+		version := int32(staleRoadmap.Version)
+
+		return roadmapConflict(api.RoadmapStale, err, func(body *api.RoadmapConflictProblem) {
+			body.Version = &version
+		}), true
+	}
+
+	var outOfReach entity.RoadmapUnreachableError
+	if errors.As(err, &outOfReach) {
+		entryID := outOfReach.EntryID
+
+		return roadmapConflict(api.RoadmapUnreachable, err, func(body *api.RoadmapConflictProblem) {
+			body.EntryId = &entryID
+		}), true
+	}
+
 	var stale entity.IssueStaleError
 	if errors.As(err, &stale) {
 		base := baseProblem(http.StatusConflict, stale.Error())
@@ -681,6 +699,8 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrProjectNotFound),
 		errors.Is(err, entity.ErrProjectMembershipNotFound),
 		errors.Is(err, entity.ErrProjectLinkNotFound),
+		errors.Is(err, entity.ErrRoadmapNotFound),
+		errors.Is(err, entity.ErrRoadmapEntryNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
 		errors.Is(err, entity.ErrIssueCommentNotFound),
 		errors.Is(err, entity.ErrAttachmentNotFound),
@@ -690,6 +710,12 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrNotificationNotFound),
 		errors.Is(err, entity.ErrBreakGlassCodeInvalid):
 		return newProblem(http.StatusNotFound, err.Error()), true
+
+	case errors.Is(err, entity.ErrRoadmapEntryDuplicate):
+		return roadmapConflict(api.RoadmapEntryDuplicate, err, nil), true
+
+	case errors.Is(err, entity.ErrRoadmapFull):
+		return roadmapConflict(api.RoadmapFull, err, nil), true
 
 	case errors.Is(err, entity.ErrIntakeDomainUnset):
 		return intakeConflict(api.IntakeDomainUnset, err), true
@@ -2123,6 +2149,46 @@ func (r problemResponse) VisitGetWorkspaceProjectResponse(w http.ResponseWriter)
 	return r.write(w)
 }
 
+func (r problemResponse) VisitGetWorkspaceRoadmapResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceRoadmapResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitPublishWorkspaceRoadmapResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnpublishWorkspaceRoadmapResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceRoadmapEntryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceRoadmapEntryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteWorkspaceRoadmapEntryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRefreshWorkspaceRoadmapEntryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetPublicRoadmapResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetPublicRoadmapEntryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitUpdateWorkspaceProjectResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
@@ -2421,6 +2487,28 @@ func projectConflictProblem(code api.ProjectConflictProblemCode, err error) prob
 			Type:     base.Type,
 		},
 	}
+}
+
+func roadmapConflict(
+	code api.RoadmapConflictProblemCode,
+	err error,
+	detail func(*api.RoadmapConflictProblem),
+) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+	body := api.RoadmapConflictProblem{
+		Code:     code,
+		Detail:   base.Detail,
+		Instance: base.Instance,
+		Status:   base.Status,
+		Title:    base.Title,
+		Type:     base.Type,
+	}
+
+	if detail != nil {
+		detail(&body)
+	}
+
+	return problemResponse{status: http.StatusConflict, body: body}
 }
 
 func cycleConflictProblem(code api.CycleConflictProblemCode, err error) problemResponse {

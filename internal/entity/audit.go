@@ -108,6 +108,10 @@ const (
 	AuditWebhookRemoved    AuditAction = "webhook.removed"
 	AuditWebhookDisabled   AuditAction = "webhook.disabled"
 
+	AuditRoadmapPublished    AuditAction = "roadmap.published"
+	AuditRoadmapUnpublished  AuditAction = "roadmap.unpublished"
+	AuditRoadmapEntryRemoved AuditAction = "roadmap.entry_removed"
+
 	AuditWorkspaceUpdated  AuditAction = "workspace.updated"
 	AuditWorkspaceDeletion AuditAction = "workspace.deletion_requested"
 	AuditWorkspaceRestored AuditAction = "workspace.restored"
@@ -159,6 +163,7 @@ func AuditActions() []AuditAction {
 		AuditExecutionRepublish, AuditExecutionAbandoned,
 		AuditPreviewOpened, AuditPreviewShared, AuditPreviewShareRevoked,
 		AuditWebhookRegistered, AuditWebhookRemoved, AuditWebhookDisabled,
+		AuditRoadmapPublished, AuditRoadmapUnpublished, AuditRoadmapEntryRemoved,
 		AuditWorkspaceUpdated, AuditWorkspaceDeletion, AuditWorkspaceRestored, AuditWorkspacePurged,
 		AuditDirectoryConnected, AuditDirectoryDisconnected, AuditDirectoryTokenRotated,
 		AuditSourceControlConnected, AuditSourceControlDisconnected,

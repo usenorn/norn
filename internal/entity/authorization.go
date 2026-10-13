@@ -31,6 +31,7 @@ const (
 	ResourceSession        Resource = "session"
 	ResourceInstance       Resource = "instance"
 	ResourceAuditLog       Resource = "audit_log"
+	ResourceRoadmap        Resource = "roadmap"
 )
 
 func (r Resource) GatedByAuthMethod() bool {

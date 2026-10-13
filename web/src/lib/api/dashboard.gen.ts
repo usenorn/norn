@@ -3356,6 +3356,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/roadmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the roadmap draft and what is published from it */
+        get: operations["getWorkspaceRoadmap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change the roadmap draft's public title, description and visibility */
+        patch: operations["updateWorkspaceRoadmap"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/roadmap/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Replace the public roadmap with the reviewed draft
+         * @description Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+         */
+        post: operations["publishWorkspaceRoadmap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/roadmap/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take the public roadmap down, keeping the draft */
+        post: operations["unpublishWorkspaceRoadmap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/roadmap/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Select a project or issue for the roadmap draft, with its own public copy */
+        post: operations["createWorkspaceRoadmapEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/roadmap/entries/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an entry from the draft and from the public roadmap at once */
+        delete: operations["deleteWorkspaceRoadmapEntry"];
+        options?: never;
+        head?: never;
+        /** Change an entry's public copy, snapshot and visibility in the draft */
+        patch: operations["updateWorkspaceRoadmapEntry"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take a fresh snapshot of an entry's status and date into the draft
+         * @description Reads the project or issue again and updates the draft's status, end date and grouping. The public copy is untouched, and nothing reaches the public roadmap until it is published.
+         */
+        post: operations["refreshWorkspaceRoadmapEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/roadmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the published roadmap of the workspace this host belongs to */
+        get: operations["getPublicRoadmap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/roadmap/entries/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read one published roadmap entry by its public identifier */
+        get: operations["getPublicRoadmapEntry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/notifications": {
         parameters: {
             query?: never;
@@ -7049,6 +7193,144 @@ export interface components {
             /** @enum {string} */
             code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents";
         };
+        RoadmapVisibility: {
+            issueLists: boolean;
+            projectDescriptions: boolean;
+            issueDescriptions: boolean;
+            status: boolean;
+            timeline: boolean;
+            progress: boolean;
+        };
+        RoadmapTimeline: {
+            /** Format: date */
+            startOn?: string;
+            /** Format: date */
+            endOn?: string;
+        };
+        /** @enum {string} */
+        RoadmapPublicStatus: "planned" | "in_progress" | "paused" | "completed" | "cancelled";
+        /** @enum {string} */
+        RoadmapEntryKind: "project" | "issue";
+        /** @enum {string} */
+        RoadmapProgressMode: "hidden" | "approved" | "calculated";
+        RoadmapPublication: {
+            title: string;
+            description: string;
+            visibility: components["schemas"]["RoadmapVisibility"];
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            publishedAt: string;
+        };
+        RoadmapEntry: {
+            /** Format: uuid */
+            id: string;
+            publicId: string;
+            kind: components["schemas"]["RoadmapEntryKind"];
+            /** Format: uuid */
+            projectId?: string;
+            /** Format: uuid */
+            issueId?: string;
+            /** Format: uuid */
+            parentEntryId?: string;
+            publicTitle: string;
+            publicDescription: string;
+            status: components["schemas"]["RoadmapPublicStatus"];
+            timeline: components["schemas"]["RoadmapTimeline"];
+            progressMode: components["schemas"]["RoadmapProgressMode"];
+            /** Format: int32 */
+            progressPercent: number;
+            visibility: components["schemas"]["RoadmapVisibility"];
+            /** Format: int32 */
+            position: number;
+            /** @description The project or issue still exists and is within the reader's reach */
+            reachable: boolean;
+            /** @description The entry is part of the current publication */
+            published: boolean;
+            /** @description The published copy is hidden because its source was deleted, moved, or made private since publication; it stays hidden until the roadmap is published again */
+            withheld: boolean;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        Roadmap: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description: string;
+            visibility: components["schemas"]["RoadmapVisibility"];
+            /** Format: int32 */
+            version: number;
+            publication?: components["schemas"]["RoadmapPublication"];
+            entries: components["schemas"]["RoadmapEntry"][];
+        };
+        UpdateRoadmapRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            title: string;
+            description: string;
+            visibility: components["schemas"]["RoadmapVisibility"];
+        };
+        RoadmapVersionRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        RoadmapEntryContent: {
+            publicTitle: string;
+            publicDescription?: string;
+            status?: components["schemas"]["RoadmapPublicStatus"];
+            timeline?: components["schemas"]["RoadmapTimeline"];
+            progressMode: components["schemas"]["RoadmapProgressMode"];
+            /** Format: int32 */
+            progressPercent?: number;
+            visibility: components["schemas"]["RoadmapVisibility"];
+            /** Format: int32 */
+            position?: number;
+        };
+        AddRoadmapEntryRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            kind: components["schemas"]["RoadmapEntryKind"];
+            /**
+             * Format: uuid
+             * @description The project or issue to select
+             */
+            sourceId: string;
+            content: components["schemas"]["RoadmapEntryContent"];
+        };
+        UpdateRoadmapEntryRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            content: components["schemas"]["RoadmapEntryContent"];
+        };
+        RoadmapConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "roadmap_stale" | "roadmap_entry_duplicate" | "roadmap_full" | "roadmap_unreachable";
+            /** Format: int32 */
+            version?: number;
+            /** Format: uuid */
+            entryId?: string;
+        };
+        PublicRoadmap: {
+            title: string;
+            description?: string;
+            /** Format: date-time */
+            publishedAt: string;
+            projects: components["schemas"]["PublicRoadmapItem"][];
+            issues: components["schemas"]["PublicRoadmapItem"][];
+        };
+        PublicRoadmapItem: {
+            id: string;
+            kind: components["schemas"]["RoadmapEntryKind"];
+            title: string;
+            description?: string;
+            status?: components["schemas"]["RoadmapPublicStatus"];
+            timeline?: components["schemas"]["RoadmapTimeline"];
+            /** Format: int32 */
+            progress?: number;
+            issues?: components["schemas"]["PublicRoadmapItem"][];
+        };
         /** @enum {string} */
         CyclePhase: "upcoming" | "current" | "ended" | "closed";
         /** @enum {string} */
@@ -7312,7 +7594,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "roadmap.published" | "roadmap.unpublished" | "roadmap.entry_removed" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -7919,7 +8201,7 @@ export interface components {
             current: boolean;
         };
         /** @enum {string} */
-        APIScope: "workspace:read" | "workspace:update" | "membership:read" | "membership:manage" | "invitation:read" | "invitation:manage" | "team:read" | "team:manage" | "team_membership:read" | "team_membership:manage" | "issue:read" | "issue:manage" | "cycle:read" | "label:read" | "label:manage" | "project:read" | "project:manage" | "comment:read" | "comment:manage" | "notification:read" | "notification:manage" | "audit_log:read";
+        APIScope: "workspace:read" | "workspace:update" | "membership:read" | "membership:manage" | "invitation:read" | "invitation:manage" | "team:read" | "team:manage" | "team_membership:read" | "team_membership:manage" | "issue:read" | "issue:manage" | "cycle:read" | "label:read" | "label:manage" | "project:read" | "project:manage" | "comment:read" | "comment:manage" | "notification:read" | "notification:manage" | "audit_log:read" | "roadmap:read" | "roadmap:manage";
         APITokenGrant: {
             /** Format: uuid */
             workspaceId: string;
@@ -9820,6 +10102,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProjectConflictProblem"];
             };
         };
+        /** @description The roadmap refuses the change */
+        RoadmapConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["RoadmapConflictProblem"];
+            };
+        };
         /** @description The view refuses the change */
         SavedViewConflict: {
             headers: {
@@ -10149,6 +10440,7 @@ export interface components {
         QuestionId: string;
         CycleId: string;
         ProjectId: string;
+        RoadmapEntryId: string;
         SavedViewId: string;
         LabelId: string;
         GroupId: string;
@@ -17255,6 +17547,297 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["ProjectConflict"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceRoadmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The roadmap */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceRoadmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoadmapRequest"];
+            };
+        };
+        responses: {
+            /** @description The roadmap after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["RoadmapConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    publishWorkspaceRoadmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoadmapVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description The roadmap after publication */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["RoadmapConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unpublishWorkspaceRoadmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The roadmap after it was taken down */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceRoadmapEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddRoadmapEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description The roadmap with the new entry */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["RoadmapConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceRoadmapEntry: {
+        parameters: {
+            query: {
+                expectedVersion: number;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                entryId: components["parameters"]["RoadmapEntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The roadmap without the entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["RoadmapConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceRoadmapEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                entryId: components["parameters"]["RoadmapEntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoadmapEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description The roadmap after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["RoadmapConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    refreshWorkspaceRoadmapEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                entryId: components["parameters"]["RoadmapEntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoadmapVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description The roadmap after the refresh */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roadmap"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["RoadmapConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getPublicRoadmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The published roadmap */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRoadmap"];
+                };
+            };
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getPublicRoadmapEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The published entry */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRoadmapItem"];
+                };
+            };
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

@@ -141,6 +141,7 @@ var WorkspaceRels = struct {
 	WorkspaceAuthPolicy                string
 	WorkspaceDirectoryConnection       string
 	WorkspaceOidcConnection            string
+	WorkspaceRoadmap                   string
 	WorkspaceSsoConnection             string
 	WorkspaceStorageLedger             string
 	APITokenGrants                     string
@@ -197,6 +198,7 @@ var WorkspaceRels = struct {
 	WorkspaceAuthPolicy:                "WorkspaceAuthPolicy",
 	WorkspaceDirectoryConnection:       "WorkspaceDirectoryConnection",
 	WorkspaceOidcConnection:            "WorkspaceOidcConnection",
+	WorkspaceRoadmap:                   "WorkspaceRoadmap",
 	WorkspaceSsoConnection:             "WorkspaceSsoConnection",
 	WorkspaceStorageLedger:             "WorkspaceStorageLedger",
 	APITokenGrants:                     "APITokenGrants",
@@ -256,6 +258,7 @@ type workspaceR struct {
 	WorkspaceAuthPolicy                *WorkspaceAuthPolicy                   `boil:"WorkspaceAuthPolicy" json:"WorkspaceAuthPolicy" toml:"WorkspaceAuthPolicy" yaml:"WorkspaceAuthPolicy"`
 	WorkspaceDirectoryConnection       *WorkspaceDirectoryConnection          `boil:"WorkspaceDirectoryConnection" json:"WorkspaceDirectoryConnection" toml:"WorkspaceDirectoryConnection" yaml:"WorkspaceDirectoryConnection"`
 	WorkspaceOidcConnection            *WorkspaceOidcConnection               `boil:"WorkspaceOidcConnection" json:"WorkspaceOidcConnection" toml:"WorkspaceOidcConnection" yaml:"WorkspaceOidcConnection"`
+	WorkspaceRoadmap                   *WorkspaceRoadmap                      `boil:"WorkspaceRoadmap" json:"WorkspaceRoadmap" toml:"WorkspaceRoadmap" yaml:"WorkspaceRoadmap"`
 	WorkspaceSsoConnection             *WorkspaceSsoConnection                `boil:"WorkspaceSsoConnection" json:"WorkspaceSsoConnection" toml:"WorkspaceSsoConnection" yaml:"WorkspaceSsoConnection"`
 	WorkspaceStorageLedger             *WorkspaceStorageLedger                `boil:"WorkspaceStorageLedger" json:"WorkspaceStorageLedger" toml:"WorkspaceStorageLedger" yaml:"WorkspaceStorageLedger"`
 	APITokenGrants                     APITokenGrantSlice                     `boil:"APITokenGrants" json:"APITokenGrants" toml:"APITokenGrants" yaml:"APITokenGrants"`
@@ -391,6 +394,22 @@ func (r *workspaceR) GetWorkspaceOidcConnection() *WorkspaceOidcConnection {
 	}
 
 	return r.WorkspaceOidcConnection
+}
+
+func (o *Workspace) GetWorkspaceRoadmap() *WorkspaceRoadmap {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceRoadmap()
+}
+
+func (r *workspaceR) GetWorkspaceRoadmap() *WorkspaceRoadmap {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceRoadmap
 }
 
 func (o *Workspace) GetWorkspaceSsoConnection() *WorkspaceSsoConnection {
@@ -1562,6 +1581,17 @@ func (o *Workspace) WorkspaceOidcConnection(mods ...qm.QueryMod) workspaceOidcCo
 	queryMods = append(queryMods, mods...)
 
 	return WorkspaceOidcConnections(queryMods...)
+}
+
+// WorkspaceRoadmap pointed to by the foreign key.
+func (o *Workspace) WorkspaceRoadmap(mods ...qm.QueryMod) workspaceRoadmapQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"workspace_id\" = ?", o.ID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceRoadmaps(queryMods...)
 }
 
 // WorkspaceSsoConnection pointed to by the foreign key.
@@ -2840,6 +2870,123 @@ func (workspaceL) LoadWorkspaceOidcConnection(ctx context.Context, e boil.Contex
 				local.R.WorkspaceOidcConnection = foreign
 				if foreign.R == nil {
 					foreign.R = &workspaceOidcConnectionR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceRoadmap allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-1 relationship.
+func (workspaceL) LoadWorkspaceRoadmap(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_roadmaps`),
+		qm.WhereIn(`workspace_roadmaps.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceRoadmap")
+	}
+
+	var resultSlice []*WorkspaceRoadmap
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceRoadmap")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_roadmaps")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_roadmaps")
+	}
+
+	if len(workspaceRoadmapAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.WorkspaceRoadmap = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceRoadmapR{}
+		}
+		foreign.R.Workspace = object
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceRoadmap = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceRoadmapR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -8780,6 +8927,56 @@ func (o *Workspace) SetWorkspaceOidcConnection(ctx context.Context, exec boil.Co
 
 	if related.R == nil {
 		related.R = &workspaceOidcConnectionR{
+			Workspace: o,
+		}
+	} else {
+		related.R.Workspace = o
+	}
+	return nil
+}
+
+// SetWorkspaceRoadmap of the workspace to the related item.
+// Sets o.R.WorkspaceRoadmap to related.
+// Adds o to related.R.Workspace.
+func (o *Workspace) SetWorkspaceRoadmap(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceRoadmap) error {
+	var err error
+
+	if insert {
+		related.WorkspaceID = o.ID
+
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	} else {
+		updateQuery := fmt.Sprintf(
+			"UPDATE \"workspace_roadmaps\" SET %s WHERE %s",
+			strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+			strmangle.WhereClause("\"", "\"", 2, workspaceRoadmapPrimaryKeyColumns),
+		)
+		values := []any{o.ID, related.ID}
+
+		if boil.IsDebug(ctx) {
+			writer := boil.DebugWriterFrom(ctx)
+			fmt.Fprintln(writer, updateQuery)
+			fmt.Fprintln(writer, values)
+		}
+		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+			return errors.Wrap(err, "failed to update foreign table")
+		}
+
+		related.WorkspaceID = o.ID
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceRoadmap: related,
+		}
+	} else {
+		o.R.WorkspaceRoadmap = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceRoadmapR{
 			Workspace: o,
 		}
 	} else {
