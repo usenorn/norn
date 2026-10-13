@@ -51,7 +51,9 @@ func (h *handler) PublishWorkspaceRoadmap(
 	ctx context.Context,
 	request api.PublishWorkspaceRoadmapRequestObject,
 ) (api.PublishWorkspaceRoadmapResponseObject, error) {
-	view, err := h.roadmaps.Publish(ctx, request.WorkspaceId, int(request.Body.ExpectedVersion))
+	view, err := h.roadmaps.Publish(ctx, request.WorkspaceId, service.PublishRoadmapInput{
+		ExpectedVersion: int(request.Body.ExpectedVersion),
+	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil

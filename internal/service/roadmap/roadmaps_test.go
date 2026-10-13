@@ -3,6 +3,7 @@ package roadmap_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -35,6 +36,8 @@ type harness struct {
 	accountID   uuid.UUID
 	roadmap     entity.Roadmap
 	recorded    []entity.AuditEntry
+	publication *entity.RoadmapPublication
+	published   []entity.PublishedRoadmapEntry
 }
 
 func newHarness(t *testing.T) *harness {
@@ -70,9 +73,17 @@ func newHarness(t *testing.T) *harness {
 		Do(func(_ context.Context, entry entity.AuditEntry) { h.recorded = append(h.recorded, entry) }).
 		AnyTimes()
 
-	h.service = roadmapsvc.New(h.roadmaps, h.projects, h.issues, h.authorizer, h.audit, h.transactor)
+	h.withDomain("roadmap.example.com")
 
 	return h
+}
+
+func (h *harness) withDomain(domain string) {
+	h.service = roadmapsvc.New(
+		h.roadmaps, h.projects, h.issues, h.authorizer, h.audit, h.transactor,
+		config.App{BaseURL: "https://app.example.com"},
+		config.Roadmaps{Domain: domain},
+	)
 }
 
 func (h *harness) actAs(scope entity.TeamScope) {
@@ -88,7 +99,7 @@ func (h *harness) actAs(scope entity.TeamScope) {
 			return entity.Decision{
 				Actor:     entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID},
 				Role:      entity.MembershipRoleAdmin,
-				Workspace: entity.Workspace{ID: h.workspaceID},
+				Workspace: entity.Workspace{ID: h.workspaceID, Slug: "acme"},
 				Scope:     scope,
 			}, nil
 		}).
@@ -96,20 +107,68 @@ func (h *harness) actAs(scope entity.TeamScope) {
 }
 
 func (h *harness) lockAt(version int) {
-	locked := h.roadmap
-	locked.Version = version
+	locked := func(context.Context, uuid.UUID) (entity.Roadmap, error) {
+		roadmap := h.roadmap
+		roadmap.Version = version
 
-	h.roadmaps.EXPECT().Ensure(gomock.Any(), h.workspaceID).Return(locked, nil).AnyTimes()
-	h.roadmaps.EXPECT().Lock(gomock.Any(), h.workspaceID).Return(locked, nil).AnyTimes()
+		if h.publication != nil {
+			roadmap.Publication = h.publication
+		}
+
+		return roadmap, nil
+	}
+
+	h.roadmaps.EXPECT().Ensure(gomock.Any(), h.workspaceID).DoAndReturn(locked).AnyTimes()
+	h.roadmaps.EXPECT().Lock(gomock.Any(), h.workspaceID).DoAndReturn(locked).AnyTimes()
+}
+
+func (h *harness) expectDraft(entries []entity.RoadmapEntry, sources map[uuid.UUID]entity.RoadmapSource) {
+	h.roadmaps.EXPECT().ListEntries(gomock.Any(), h.roadmap.ID).Return(entries, nil).AnyTimes()
+	h.roadmaps.EXPECT().EntrySources(gomock.Any(), h.roadmap.ID).Return(sources, nil).AnyTimes()
+	h.roadmaps.EXPECT().ListPublishedEntries(gomock.Any(), h.roadmap.ID).
+		DoAndReturn(func(context.Context, uuid.UUID) ([]entity.PublishedRoadmapEntry, error) { return h.published, nil }).
+		AnyTimes()
 }
 
 func (h *harness) expectSaveAndView(entries []entity.RoadmapEntry, sources map[uuid.UUID]entity.RoadmapSource) {
 	h.roadmaps.EXPECT().Save(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, roadmap entity.Roadmap) (entity.Roadmap, error) { return roadmap, nil }).
 		AnyTimes()
-	h.roadmaps.EXPECT().ListEntries(gomock.Any(), h.roadmap.ID).Return(entries, nil).AnyTimes()
-	h.roadmaps.EXPECT().EntrySources(gomock.Any(), h.roadmap.ID).Return(sources, nil).AnyTimes()
-	h.roadmaps.EXPECT().ListPublishedEntries(gomock.Any(), h.roadmap.ID).Return(nil, nil).AnyTimes()
+	h.expectDraft(entries, sources)
+	h.projects.EXPECT().ListByWorkspaceID(gomock.Any(), h.workspaceID, gomock.Any()).Return(nil, nil).AnyTimes()
+	h.issues.EXPECT().ListVisibleByIDs(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+}
+
+func (h *harness) expectPublish() {
+	h.roadmaps.EXPECT().Publish(gomock.Any(), h.roadmap.ID, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, p entity.RoadmapPublication, entries []entity.PublishedRoadmapEntry) error {
+			h.publication, h.published = &p, entries
+
+			return nil
+		})
+}
+
+func (h *harness) publish(t *testing.T) service.RoadmapDraftView {
+	t.Helper()
+
+	preview, err := h.service.Preview(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	view, err := h.service.Publish(context.Background(), h.workspaceID, service.PublishRoadmapInput{
+		ExpectedVersion: preview.Version,
+		ExpectedDigest:  preview.Digest,
+	})
+	if err != nil {
+		t.Fatalf("Publish: %v", err)
+	}
+
+	return view
+}
+
+func reviewed(version int) service.PublishRoadmapInput {
+	return service.PublishRoadmapInput{ExpectedVersion: version, ExpectedDigest: "reviewed"}
 }
 
 func (h *harness) entry(kind entity.RoadmapEntryKind, title string) entity.RoadmapEntry {
@@ -172,7 +231,7 @@ func TestOnlyARoadmapGrantPublishesAndProjectEditingNeverImpliesIt(t *testing.T)
 		}).
 		Times(3)
 
-	if _, err := h.service.Publish(context.Background(), h.workspaceID, 3); !errors.As(err, &entity.AccessDeniedError{}) {
+	if _, err := h.service.Publish(context.Background(), h.workspaceID, reviewed(3)); !errors.As(err, &entity.AccessDeniedError{}) {
 		t.Fatalf("Publish = %v, want access denied", err)
 	}
 
@@ -341,7 +400,7 @@ func TestAConcurrentDraftChangeIsRefused(t *testing.T) {
 		t.Fatalf("Update on an old version = %v, want RoadmapStaleError at version 5", err)
 	}
 
-	if _, err := h.service.Publish(context.Background(), h.workspaceID, 4); !errors.Is(err, entity.ErrRoadmapStale) {
+	if _, err := h.service.Publish(context.Background(), h.workspaceID, reviewed(4)); !errors.Is(err, entity.ErrRoadmapStale) {
 		t.Fatalf("Publish of an unreviewed version = %v, want ErrRoadmapStale", err)
 	}
 }
@@ -374,7 +433,7 @@ func TestPublishingReverifiesEverySourceAgainstThePublisher(t *testing.T) {
 				Return(map[uuid.UUID]entity.RoadmapSource{issue.ID: source}, nil)
 			h.roadmaps.EXPECT().Publish(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
-			_, err := h.service.Publish(context.Background(), h.workspaceID, 3)
+			_, err := h.service.Publish(context.Background(), h.workspaceID, reviewed(3))
 
 			var unreachable entity.RoadmapUnreachableError
 			if !errors.As(err, &unreachable) || unreachable.EntryID != issue.ID {
@@ -410,22 +469,10 @@ func TestPublishingCapturesTheApprovedScopeAndNeverRevealsAnUnpublishedProject(t
 	}
 
 	h.expectSaveAndView([]entity.RoadmapEntry{project, grouped, moved, alone}, sources)
+	h.expectPublish()
+	h.publish(t)
 
-	var (
-		publication entity.RoadmapPublication
-		published   []entity.PublishedRoadmapEntry
-	)
-
-	h.roadmaps.EXPECT().Publish(gomock.Any(), h.roadmap.ID, gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ uuid.UUID, p entity.RoadmapPublication, entries []entity.PublishedRoadmapEntry) error {
-			publication, published = p, entries
-
-			return nil
-		})
-
-	if _, err := h.service.Publish(context.Background(), h.workspaceID, 3); err != nil {
-		t.Fatalf("Publish: %v", err)
-	}
+	publication, published := *h.publication, h.published
 
 	if publication.Version != 3 || publication.Title != h.roadmap.Title || publication.PublishedBy != h.accountID {
 		t.Fatalf("publication = %+v, want the reviewed version 3 by the publisher", publication)
@@ -460,15 +507,32 @@ func TestPublishingCapturesTheApprovedScopeAndNeverRevealsAnUnpublishedProject(t
 	}
 }
 
-func TestPublishingNeedsAPublicRoadmapTitle(t *testing.T) {
+func TestATitlelessDraftPreviewsButCannotBePublished(t *testing.T) {
 	h := newHarness(t)
 	h.actAs(entity.TeamScope{AllTeams: true})
 	h.roadmap.Title = ""
 	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	h.expectDraft([]entity.RoadmapEntry{project}, map[uuid.UUID]entity.RoadmapSource{
+		project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true},
+	})
 	h.roadmaps.EXPECT().Publish(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
+	preview, err := h.service.Preview(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	if len(preview.Roadmap.Projects) != 1 || len(preview.Blockers) != 1 || preview.Blockers[0].Code != entity.RoadmapBlockerTitleRequired {
+		t.Fatalf("preview = %+v, want the project rendered and the missing title named", preview)
+	}
+
 	var validation entity.ValidationError
-	if _, err := h.service.Publish(context.Background(), h.workspaceID, 3); !errors.As(err, &validation) {
+	if _, err := h.service.Publish(context.Background(), h.workspaceID, service.PublishRoadmapInput{
+		ExpectedVersion: preview.Version,
+		ExpectedDigest:  preview.Digest,
+	}); !errors.As(err, &validation) {
 		t.Fatalf("Publish without a title = %v, want a validation error", err)
 	}
 }
@@ -595,6 +659,279 @@ func TestUnpublishingWithdrawsTheRoadmapAndAuditsOnce(t *testing.T) {
 
 	if len(h.recorded) != 1 || h.recorded[0].Action != entity.AuditRoadmapUnpublished {
 		t.Fatalf("audit = %+v, want one unpublish entry", h.recorded)
+	}
+}
+
+func zeroed(roadmap entity.PublicRoadmap) entity.PublicRoadmap {
+	roadmap.PublishedAt = time.Time{}
+
+	return roadmap
+}
+
+func TestThePreviewIsExactlyWhatPublishingWrites(t *testing.T) {
+	h := newHarness(t)
+	team := uuid.New()
+	h.actAs(entity.TeamScope{TeamIDs: []uuid.UUID{team}})
+	h.roadmap.Visibility = entity.RoadmapVisibility{IssueLists: true, Status: true, Progress: true}
+	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	done := h.entry(entity.RoadmapEntryIssue, "Offline edits")
+	done.ParentEntryID = project.ID
+	done.Status = entity.PublicStatusCompleted
+	open := h.entry(entity.RoadmapEntryIssue, "Conflict hints")
+	open.ParentEntryID = project.ID
+	project.Visibility = entity.RoadmapVisibility{IssueLists: true, Status: true, Progress: true}
+
+	live := func(projectID uuid.UUID) entity.RoadmapSource {
+		return entity.RoadmapSource{Present: true, WorkspaceID: h.workspaceID, Active: true, TeamID: team, ProjectID: projectID}
+	}
+
+	h.expectSaveAndView([]entity.RoadmapEntry{project, done, open}, map[uuid.UUID]entity.RoadmapSource{
+		project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true},
+		done.ID:    live(project.SourceProjectID),
+		open.ID:    live(project.SourceProjectID),
+	})
+	h.expectPublish()
+
+	preview, err := h.service.Preview(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	if preview.Version != 3 || len(preview.Blockers) != 0 {
+		t.Fatalf("preview = version %d, blockers %+v; want version 3 and nothing blocking", preview.Version, preview.Blockers)
+	}
+
+	if progress := preview.Roadmap.Projects[0].Progress; progress == nil || *progress != 50 {
+		t.Fatalf("previewed progress = %v, want 50", progress)
+	}
+
+	view := h.publish(t)
+
+	written := entity.NewPublicRoadmap(entity.PublishedRoadmap{
+		WorkspaceID: h.workspaceID,
+		Publication: *h.publication,
+		Entries:     h.published,
+	})
+
+	if !reflect.DeepEqual(zeroed(written), zeroed(preview.Roadmap)) {
+		t.Fatalf("published %+v, previewed %+v; the preview must be what publishing writes", written, preview.Roadmap)
+	}
+
+	if view.Review.HasUnpublishedChanges || len(view.Review.Entries) != 0 {
+		t.Fatalf("review right after publishing = %+v, want nothing left", view.Review)
+	}
+
+	for _, entry := range view.Entries {
+		if entry.Entry.ID == project.ID && entry.ProgressCoverage != 2 {
+			t.Fatalf("progress coverage = %d, want the 2 selected issues", entry.ProgressCoverage)
+		}
+	}
+}
+
+func TestAnUnreachableEntryIsLeftOutOfThePreviewAndStillRefusesPublication(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.TeamScope{TeamIDs: []uuid.UUID{uuid.New()}})
+	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	hidden := h.entry(entity.RoadmapEntryIssue, "Out of reach")
+
+	h.expectDraft([]entity.RoadmapEntry{project, hidden}, map[uuid.UUID]entity.RoadmapSource{
+		project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true},
+		hidden.ID:  {Present: true, WorkspaceID: h.workspaceID, Active: true, TeamID: uuid.New()},
+	})
+	h.roadmaps.EXPECT().Publish(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	preview, err := h.service.Preview(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Preview: %v", err)
+	}
+
+	if len(preview.Roadmap.Projects) != 1 || len(preview.Roadmap.Issues) != 0 {
+		t.Fatalf("preview = %+v, want only the reachable project", preview.Roadmap)
+	}
+
+	if len(preview.Blockers) != 1 || preview.Blockers[0].EntryID != hidden.ID || preview.Blockers[0].Code != entity.RoadmapBlockerEntryUnreachable {
+		t.Fatalf("blockers = %+v, want the unreachable issue named", preview.Blockers)
+	}
+
+	var unreachable entity.RoadmapUnreachableError
+	if _, err := h.service.Publish(context.Background(), h.workspaceID, service.PublishRoadmapInput{
+		ExpectedVersion: preview.Version,
+		ExpectedDigest:  preview.Digest,
+	}); !errors.As(err, &unreachable) || unreachable.EntryID != hidden.ID {
+		t.Fatalf("Publish = %v, want the entry reported unreachable", err)
+	}
+}
+
+func TestEditsAfterPublicationReadAsUnpublishedChanges(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.TeamScope{AllTeams: true})
+	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	sources := map[uuid.UUID]entity.RoadmapSource{project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true}}
+
+	h.expectSaveAndView([]entity.RoadmapEntry{project}, sources)
+	h.publication = &entity.RoadmapPublication{Title: h.roadmap.Title, Version: 2, PublishedAt: time.Now()}
+	h.published = []entity.PublishedRoadmapEntry{{
+		RoadmapEntry: func() entity.RoadmapEntry {
+			before := project
+			before.PublicTitle = "Sync, but faster"
+
+			return before
+		}(),
+		Source: sources[project.ID],
+	}}
+
+	view, err := h.service.Get(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+
+	if !view.Review.HasUnpublishedChanges || len(view.Review.Entries) != 1 {
+		t.Fatalf("review = %+v, want the edited entry listed", view.Review)
+	}
+
+	title := view.Review.Entries[0].Fields[0]
+	if title.Field != entity.RoadmapReviewTitle || title.Before != "Sync, but faster" || title.After != "Faster sync" {
+		t.Fatalf("title change = %+v, want what is public and what will be", title)
+	}
+}
+
+func TestAReviewThatNoLongerDescribesTheDraftIsRefused(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.TeamScope{AllTeams: true})
+	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	h.expectDraft([]entity.RoadmapEntry{project}, map[uuid.UUID]entity.RoadmapSource{
+		project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true},
+	})
+	h.roadmaps.EXPECT().Publish(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	if _, err := h.service.Publish(context.Background(), h.workspaceID, reviewed(3)); !errors.Is(err, entity.ErrRoadmapReviewChanged) {
+		t.Fatalf("Publish with a digest of another review = %v, want ErrRoadmapReviewChanged", err)
+	}
+
+	if len(h.recorded) != 0 {
+		t.Fatalf("a refused publication was audited: %+v", h.recorded)
+	}
+}
+
+func TestThePublicAddressNeedsARoadmapDomain(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.TeamScope{AllTeams: true})
+	h.lockAt(3)
+	h.expectSaveAndView(nil, nil)
+
+	view, err := h.service.Get(context.Background(), h.workspaceID)
+	if err != nil || view.PublicURL != "https://acme.roadmap.example.com" {
+		t.Fatalf("Get = %q, %v; want the workspace's roadmap address", view.PublicURL, err)
+	}
+
+	h.withDomain("")
+
+	view, err = h.service.Get(context.Background(), h.workspaceID)
+	if err != nil || view.PublicURL != "" {
+		t.Fatalf("Get without a domain = %q, %v; want no address", view.PublicURL, err)
+	}
+}
+
+func TestThePreviewAsksForTheRoadmapGrant(t *testing.T) {
+	h := newHarness(t)
+	denied := entity.AccessDeniedError{Reason: entity.DenyReasonRoleLacksAction, Resource: entity.ResourceRoadmap}
+
+	h.authorizer.EXPECT().
+		Decide(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, request entity.AccessRequest) (entity.Decision, error) {
+			if request.Resource != entity.ResourceRoadmap || request.Action != entity.ActionRead {
+				t.Fatalf("preview asked for %s %s, want roadmap read", request.Resource, request.Action)
+			}
+
+			return entity.Decision{}, denied
+		}).
+		Times(2)
+	h.roadmaps.EXPECT().Ensure(gomock.Any(), gomock.Any()).Times(0)
+
+	if _, err := h.service.Preview(context.Background(), h.workspaceID); !errors.As(err, &entity.AccessDeniedError{}) {
+		t.Fatalf("Preview = %v, want access denied", err)
+	}
+
+	if _, err := h.service.PreviewEntry(context.Background(), h.workspaceID, "abcdefghijklmnop"); !errors.As(err, &entity.AccessDeniedError{}) {
+		t.Fatalf("PreviewEntry = %v, want access denied", err)
+	}
+}
+
+func TestAPreviewEntryIsFoundOnlyByItsPublicID(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.TeamScope{AllTeams: true})
+	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	h.expectDraft([]entity.RoadmapEntry{project}, map[uuid.UUID]entity.RoadmapSource{
+		project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true},
+	})
+
+	if item, err := h.service.PreviewEntry(context.Background(), h.workspaceID, project.PublicID); err != nil || item.Title != "Faster sync" {
+		t.Fatalf("PreviewEntry(public id) = %+v, %v", item, err)
+	}
+
+	for _, guess := range []string{project.ID.String(), project.SourceProjectID.String(), ""} {
+		if _, err := h.service.PreviewEntry(context.Background(), h.workspaceID, guess); !errors.Is(err, entity.ErrRoadmapEntryNotFound) {
+			t.Fatalf("PreviewEntry(%q) = %v, want not found", guess, err)
+		}
+	}
+}
+
+func TestASourceIsNamedOnlyWhileItIsInReach(t *testing.T) {
+	h := newHarness(t)
+	team := uuid.New()
+	h.actAs(entity.TeamScope{TeamIDs: []uuid.UUID{team}})
+	h.lockAt(3)
+
+	project := h.entry(entity.RoadmapEntryProject, "Faster sync")
+	visible := h.entry(entity.RoadmapEntryIssue, "Offline edits")
+	hidden := h.entry(entity.RoadmapEntryIssue, "Out of reach")
+
+	h.expectDraft([]entity.RoadmapEntry{project, visible, hidden}, map[uuid.UUID]entity.RoadmapSource{
+		project.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true},
+		visible.ID: {Present: true, WorkspaceID: h.workspaceID, Active: true, TeamID: team},
+		hidden.ID:  {Present: true, WorkspaceID: h.workspaceID, Active: true, TeamID: uuid.New()},
+	})
+	h.projects.EXPECT().ListByWorkspaceID(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return([]entity.Project{{ID: project.SourceProjectID, Name: "Sync engine v2"}}, nil)
+	h.issues.EXPECT().ListVisibleByIDs(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ entity.TeamScope, ids []uuid.UUID) ([]entity.Issue, error) {
+			if len(ids) != 1 || ids[0] != visible.SourceIssueID {
+				t.Fatalf("looked up issues %v, want only the one in reach", ids)
+			}
+
+			return []entity.Issue{{ID: visible.SourceIssueID, Title: "CRDT merge for drafts", ReferenceKey: "ENG", Number: 7}}, nil
+		})
+
+	view, err := h.service.Get(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+
+	byID := make(map[uuid.UUID]service.RoadmapEntryView, len(view.Entries))
+	for _, entry := range view.Entries {
+		byID[entry.Entry.ID] = entry
+	}
+
+	if got := byID[project.ID]; got.SourceLabel != "Sync engine v2" || got.SourceReference != "" {
+		t.Fatalf("project source = %q %q", got.SourceLabel, got.SourceReference)
+	}
+
+	if got := byID[visible.ID]; got.SourceLabel != "CRDT merge for drafts" || got.SourceReference != "ENG-7" {
+		t.Fatalf("issue source = %q %q, want its title and reference", got.SourceLabel, got.SourceReference)
+	}
+
+	if got := byID[hidden.ID]; got.Reachable || got.SourceLabel != "" || got.SourceReference != "" {
+		t.Fatalf("unreachable source = %+v, want it unnamed", got)
 	}
 }
 

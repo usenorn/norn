@@ -73,19 +73,49 @@ func (mr *MockRoadmapsMockRecorder) Get(ctx, workspaceID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRoadmaps)(nil).Get), ctx, workspaceID)
 }
 
-// Publish mocks base method.
-func (m *MockRoadmaps) Publish(ctx context.Context, workspaceID uuid.UUID, expectedVersion int) (service.RoadmapDraftView, error) {
+// Preview mocks base method.
+func (m *MockRoadmaps) Preview(ctx context.Context, workspaceID uuid.UUID) (service.RoadmapPreview, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", ctx, workspaceID, expectedVersion)
+	ret := m.ctrl.Call(m, "Preview", ctx, workspaceID)
+	ret0, _ := ret[0].(service.RoadmapPreview)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Preview indicates an expected call of Preview.
+func (mr *MockRoadmapsMockRecorder) Preview(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Preview", reflect.TypeOf((*MockRoadmaps)(nil).Preview), ctx, workspaceID)
+}
+
+// PreviewEntry mocks base method.
+func (m *MockRoadmaps) PreviewEntry(ctx context.Context, workspaceID uuid.UUID, publicID string) (entity.PublicRoadmapItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PreviewEntry", ctx, workspaceID, publicID)
+	ret0, _ := ret[0].(entity.PublicRoadmapItem)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PreviewEntry indicates an expected call of PreviewEntry.
+func (mr *MockRoadmapsMockRecorder) PreviewEntry(ctx, workspaceID, publicID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreviewEntry", reflect.TypeOf((*MockRoadmaps)(nil).PreviewEntry), ctx, workspaceID, publicID)
+}
+
+// Publish mocks base method.
+func (m *MockRoadmaps) Publish(ctx context.Context, workspaceID uuid.UUID, input service.PublishRoadmapInput) (service.RoadmapDraftView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Publish", ctx, workspaceID, input)
 	ret0, _ := ret[0].(service.RoadmapDraftView)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Publish indicates an expected call of Publish.
-func (mr *MockRoadmapsMockRecorder) Publish(ctx, workspaceID, expectedVersion any) *gomock.Call {
+func (mr *MockRoadmapsMockRecorder) Publish(ctx, workspaceID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockRoadmaps)(nil).Publish), ctx, workspaceID, expectedVersion)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockRoadmaps)(nil).Publish), ctx, workspaceID, input)
 }
 
 // RefreshEntry mocks base method.

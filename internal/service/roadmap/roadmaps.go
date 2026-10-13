@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -19,6 +20,8 @@ type roadmapsService struct {
 	authorizer service.Authorizer
 	audit      service.Audit
 	transactor repository.Transactor
+	baseURL    string
+	domain     string
 }
 
 func New(
@@ -28,6 +31,8 @@ func New(
 	authorizer service.Authorizer,
 	audit service.Audit,
 	transactor repository.Transactor,
+	app config.App,
+	cfg config.Roadmaps,
 ) service.Roadmaps {
 	return &roadmapsService{
 		roadmaps:   roadmaps,
@@ -36,6 +41,8 @@ func New(
 		authorizer: authorizer,
 		audit:      audit,
 		transactor: transactor,
+		baseURL:    app.BaseURL,
+		domain:     cfg.Domain,
 	}
 }
 
@@ -52,23 +59,65 @@ func (s *roadmapsService) decide(
 	})
 }
 
-func reachable(
+type sourceLabel struct {
+	label     string
+	reference string
+}
+
+func (s *roadmapsService) sourceLabels(
+	ctx context.Context,
 	workspaceID uuid.UUID,
-	entry entity.RoadmapEntry,
-	source entity.RoadmapSource,
+	entries []entity.RoadmapEntry,
+	reachable map[uuid.UUID]bool,
 	scope entity.TeamScope,
-) error {
-	if !entity.RoadmapEntryReachable(workspaceID, entry, source, scope) {
-		return entity.RoadmapUnreachableError{EntryID: entry.ID}
+) (map[uuid.UUID]sourceLabel, error) {
+	var (
+		labelsProjects bool
+		issueIDs       []uuid.UUID
+	)
+
+	for _, entry := range entries {
+		switch {
+		case !reachable[entry.ID]:
+			continue
+		case entry.Kind == entity.RoadmapEntryProject:
+			labelsProjects = true
+		default:
+			issueIDs = append(issueIDs, entry.SourceIssueID)
+		}
 	}
 
-	return nil
+	labels := make(map[uuid.UUID]sourceLabel, len(entries))
+
+	if labelsProjects {
+		projects, err := s.projects.ListByWorkspaceID(ctx, workspaceID, repository.ProjectFilter{IncludeArchived: true})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, project := range projects {
+			labels[project.ID] = sourceLabel{label: project.Name}
+		}
+	}
+
+	if len(issueIDs) > 0 {
+		issues, err := s.issues.ListVisibleByIDs(ctx, scope, issueIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, issue := range issues {
+			labels[issue.ID] = sourceLabel{label: issue.Title, reference: issue.Reference()}
+		}
+	}
+
+	return labels, nil
 }
 
 func (s *roadmapsService) view(
 	ctx context.Context,
 	roadmap entity.Roadmap,
-	scope entity.TeamScope,
+	decision entity.Decision,
 ) (service.RoadmapDraftView, error) {
 	entries, err := s.roadmaps.ListEntries(ctx, roadmap.ID)
 	if err != nil {
@@ -90,23 +139,97 @@ func (s *roadmapsService) view(
 		intact[entry.PublicID] = entry.Intact()
 	}
 
+	reachable := make(map[uuid.UUID]bool, len(entries))
+	ids := make(map[string]uuid.UUID, len(entries))
+
+	for _, entry := range entries {
+		reachable[entry.ID] = entity.RoadmapEntryReachable(roadmap.WorkspaceID, entry, sources[entry.ID], decision.Scope)
+		ids[entry.PublicID] = entry.ID
+	}
+
+	labels, err := s.sourceLabels(ctx, roadmap.WorkspaceID, entries, reachable, decision.Scope)
+	if err != nil {
+		return service.RoadmapDraftView{}, err
+	}
+
+	var current *entity.PublishedRoadmap
+	if roadmap.Publication != nil {
+		current = &entity.PublishedRoadmap{
+			WorkspaceID: roadmap.WorkspaceID,
+			Publication: *roadmap.Publication,
+			Entries:     published,
+		}
+	}
+
+	candidate := entity.NewRoadmapCandidate(roadmap, entries, sources, decision.Scope, time.Time{})
+	coverage := entity.RoadmapProgressCoverage(candidate.Published)
+
 	view := service.RoadmapDraftView{
-		Roadmap: roadmap,
-		Entries: make([]service.RoadmapEntryView, 0, len(entries)),
+		Roadmap:   roadmap,
+		Entries:   make([]service.RoadmapEntryView, 0, len(entries)),
+		Review:    entity.ReviewRoadmap(current, candidate, ids),
+		PublicURL: entity.RoadmapPublicURL(s.baseURL, s.domain, decision.Workspace.Slug),
 	}
 
 	for _, entry := range entries {
 		isIntact, isPublished := intact[entry.PublicID]
+		entryView := service.RoadmapEntryView{
+			Entry:            entry,
+			Reachable:        reachable[entry.ID],
+			Published:        isPublished,
+			Withheld:         isPublished && !isIntact,
+			ProgressCoverage: coverage[entry.PublicID],
+		}
 
-		view.Entries = append(view.Entries, service.RoadmapEntryView{
-			Entry:     entry,
-			Reachable: reachable(roadmap.WorkspaceID, entry, sources[entry.ID], scope) == nil,
-			Published: isPublished,
-			Withheld:  isPublished && !isIntact,
-		})
+		if entryView.Reachable {
+			source := labels[entry.SourceProjectID]
+			if entry.Kind == entity.RoadmapEntryIssue {
+				source = labels[entry.SourceIssueID]
+			}
+
+			entryView.SourceLabel = source.label
+			entryView.SourceReference = source.reference
+		}
+
+		view.Entries = append(view.Entries, entryView)
 	}
 
 	return view, nil
+}
+
+func (s *roadmapsService) candidate(
+	ctx context.Context,
+	roadmap entity.Roadmap,
+	scope entity.TeamScope,
+	at time.Time,
+) (entity.RoadmapCandidate, error) {
+	drafts, err := s.roadmaps.ListEntries(ctx, roadmap.ID)
+	if err != nil {
+		return entity.RoadmapCandidate{}, err
+	}
+
+	sources, err := s.roadmaps.EntrySources(ctx, roadmap.ID)
+	if err != nil {
+		return entity.RoadmapCandidate{}, err
+	}
+
+	return entity.NewRoadmapCandidate(roadmap, drafts, sources, scope, at), nil
+}
+
+func (s *roadmapsService) read(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	use func(ctx context.Context, roadmap entity.Roadmap) error,
+) error {
+	return s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		// Read before the entries: a racing edit then only leaves this version behind, and publishing it fails stale.
+		roadmap, err := s.roadmaps.Ensure(ctx, workspaceID)
+		if err != nil {
+			return err
+		}
+
+		return use(ctx, roadmap)
+	})
 }
 
 func (s *roadmapsService) Get(ctx context.Context, workspaceID uuid.UUID) (service.RoadmapDraftView, error) {
@@ -115,12 +238,67 @@ func (s *roadmapsService) Get(ctx context.Context, workspaceID uuid.UUID) (servi
 		return service.RoadmapDraftView{}, err
 	}
 
-	roadmap, err := s.roadmaps.Ensure(ctx, workspaceID)
+	var view service.RoadmapDraftView
+
+	err = s.read(ctx, workspaceID, func(ctx context.Context, roadmap entity.Roadmap) error {
+		view, err = s.view(ctx, roadmap, decision)
+
+		return err
+	})
 	if err != nil {
 		return service.RoadmapDraftView{}, err
 	}
 
-	return s.view(ctx, roadmap, decision.Scope)
+	return view, nil
+}
+
+func (s *roadmapsService) Preview(ctx context.Context, workspaceID uuid.UUID) (service.RoadmapPreview, error) {
+	decision, err := s.decide(ctx, workspaceID, entity.ActionRead)
+	if err != nil {
+		return service.RoadmapPreview{}, err
+	}
+
+	var preview service.RoadmapPreview
+
+	err = s.read(ctx, workspaceID, func(ctx context.Context, roadmap entity.Roadmap) error {
+		candidate, err := s.candidate(ctx, roadmap, decision.Scope, time.Now().UTC())
+		if err != nil {
+			return err
+		}
+
+		public := candidate.Public()
+		preview = service.RoadmapPreview{
+			Version:  roadmap.Version,
+			Digest:   entity.RoadmapDigest(public),
+			Roadmap:  public,
+			Blockers: candidate.Blockers,
+		}
+
+		return nil
+	})
+	if err != nil {
+		return service.RoadmapPreview{}, err
+	}
+
+	return preview, nil
+}
+
+func (s *roadmapsService) PreviewEntry(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	publicID string,
+) (entity.PublicRoadmapItem, error) {
+	preview, err := s.Preview(ctx, workspaceID)
+	if err != nil {
+		return entity.PublicRoadmapItem{}, err
+	}
+
+	item, ok := preview.Roadmap.Item(publicID)
+	if !ok {
+		return entity.PublicRoadmapItem{}, entity.ErrRoadmapEntryNotFound
+	}
+
+	return item, nil
 }
 
 func (s *roadmapsService) edit(
@@ -153,7 +331,7 @@ func (s *roadmapsService) edit(
 			return err
 		}
 
-		view, err = s.view(ctx, saved, decision.Scope)
+		view, err = s.view(ctx, saved, decision)
 
 		return err
 	})
@@ -493,7 +671,7 @@ func (s *roadmapsService) RemoveEntry(
 func (s *roadmapsService) Publish(
 	ctx context.Context,
 	workspaceID uuid.UUID,
-	expectedVersion int,
+	input service.PublishRoadmapInput,
 ) (service.RoadmapDraftView, error) {
 	decision, err := s.decide(ctx, workspaceID, entity.ActionManage)
 	if err != nil {
@@ -506,30 +684,29 @@ func (s *roadmapsService) Publish(
 	)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		roadmap, err := s.lock(ctx, workspaceID, expectedVersion)
+		roadmap, err := s.lock(ctx, workspaceID, input.ExpectedVersion)
 		if err != nil {
 			return err
 		}
 
-		if err := entity.NewValidationError(
-			entity.ValidateRoadmapTitle(entity.RoadmapFieldTitle, roadmap.Title),
-		); err != nil {
-			return err
-		}
-
-		entries, err = s.reviewed(ctx, roadmap, decision.Scope)
+		candidate, err := s.candidate(ctx, roadmap, decision.Scope, time.Now().UTC())
 		if err != nil {
 			return err
 		}
 
-		if err := s.roadmaps.Publish(ctx, roadmap.ID, entity.RoadmapPublication{
-			Title:       roadmap.Title,
-			Description: roadmap.Description,
-			Visibility:  roadmap.Visibility,
-			Version:     roadmap.Version,
-			PublishedAt: time.Now().UTC(),
-			PublishedBy: decision.Actor.AccountID,
-		}, entries); err != nil {
+		if err := candidate.Err(); err != nil {
+			return err
+		}
+
+		if entity.RoadmapDigest(candidate.Public()) != input.ExpectedDigest {
+			return entity.ErrRoadmapReviewChanged
+		}
+
+		publication := candidate.Published.Publication
+		publication.PublishedBy = decision.Actor.AccountID
+		entries = candidate.Published.Entries
+
+		if err := s.roadmaps.Publish(ctx, roadmap.ID, publication, entries); err != nil {
 			return err
 		}
 
@@ -538,7 +715,7 @@ func (s *roadmapsService) Publish(
 			return err
 		}
 
-		view, err = s.view(ctx, published, decision.Scope)
+		view, err = s.view(ctx, published, decision)
 
 		return err
 	})
@@ -558,61 +735,6 @@ func (s *roadmapsService) Publish(
 	})
 
 	return view, nil
-}
-
-func (s *roadmapsService) reviewed(
-	ctx context.Context,
-	roadmap entity.Roadmap,
-	scope entity.TeamScope,
-) ([]entity.PublishedRoadmapEntry, error) {
-	drafts, err := s.roadmaps.ListEntries(ctx, roadmap.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	sources, err := s.roadmaps.EntrySources(ctx, roadmap.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	projects := make(map[uuid.UUID]entity.RoadmapEntry, len(drafts))
-
-	for _, draft := range drafts {
-		if err := reachable(roadmap.WorkspaceID, draft, sources[draft.ID], scope); err != nil {
-			return nil, err
-		}
-
-		if err := entity.ValidateRoadmapEntry(draft); err != nil {
-			return nil, err
-		}
-
-		if draft.Kind == entity.RoadmapEntryProject {
-			projects[draft.ID] = draft
-		}
-	}
-
-	reviewed := make([]entity.PublishedRoadmapEntry, 0, len(drafts))
-
-	for _, draft := range drafts {
-		source := sources[draft.ID]
-		entry := entity.PublishedRoadmapEntry{RoadmapEntry: draft}
-
-		if draft.Kind == entity.RoadmapEntryIssue {
-			entry.Approval = entity.RoadmapApproval{
-				TeamID:      source.TeamID,
-				TeamPrivate: source.TeamPrivate,
-				ProjectID:   source.ProjectID,
-			}
-
-			if parent, ok := projects[draft.ParentEntryID]; ok && parent.SourceProjectID == source.ProjectID {
-				entry.ParentPublicID = parent.PublicID
-			}
-		}
-
-		reviewed = append(reviewed, entry)
-	}
-
-	return reviewed, nil
 }
 
 func (s *roadmapsService) Unpublish(ctx context.Context, workspaceID uuid.UUID) (service.RoadmapDraftView, error) {
@@ -645,7 +767,7 @@ func (s *roadmapsService) Unpublish(ctx context.Context, workspaceID uuid.UUID) 
 			withdrawn = true
 		}
 
-		view, err = s.view(ctx, roadmap, decision.Scope)
+		view, err = s.view(ctx, roadmap, decision)
 
 		return err
 	})
