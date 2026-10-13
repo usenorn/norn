@@ -1667,22 +1667,22 @@ func (e CycleRollover) Valid() bool {
 
 // Defines values for CycleScopeChangeKind.
 const (
-	Added      CycleScopeChangeKind = "added"
-	Removed    CycleScopeChangeKind = "removed"
-	Returned   CycleScopeChangeKind = "returned"
-	RolledOver CycleScopeChangeKind = "rolled_over"
+	CycleScopeChangeKindAdded      CycleScopeChangeKind = "added"
+	CycleScopeChangeKindRemoved    CycleScopeChangeKind = "removed"
+	CycleScopeChangeKindReturned   CycleScopeChangeKind = "returned"
+	CycleScopeChangeKindRolledOver CycleScopeChangeKind = "rolled_over"
 )
 
 // Valid indicates whether the value is a known member of the CycleScopeChangeKind enum.
 func (e CycleScopeChangeKind) Valid() bool {
 	switch e {
-	case Added:
+	case CycleScopeChangeKindAdded:
 		return true
-	case Removed:
+	case CycleScopeChangeKindRemoved:
 		return true
-	case Returned:
+	case CycleScopeChangeKindReturned:
 		return true
-	case RolledOver:
+	case CycleScopeChangeKindRolledOver:
 		return true
 	default:
 		return false
@@ -3873,10 +3873,35 @@ func (e ReviewVerdict) Valid() bool {
 	}
 }
 
+// Defines values for RoadmapBlockerCode.
+const (
+	EntryInvalid         RoadmapBlockerCode = "entry_invalid"
+	EntryUnreachable     RoadmapBlockerCode = "entry_unreachable"
+	RoadmapTitleRequired RoadmapBlockerCode = "roadmap_title_required"
+	RoadmapTitleTooLong  RoadmapBlockerCode = "roadmap_title_too_long"
+)
+
+// Valid indicates whether the value is a known member of the RoadmapBlockerCode enum.
+func (e RoadmapBlockerCode) Valid() bool {
+	switch e {
+	case EntryInvalid:
+		return true
+	case EntryUnreachable:
+		return true
+	case RoadmapTitleRequired:
+		return true
+	case RoadmapTitleTooLong:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RoadmapConflictProblemCode.
 const (
 	RoadmapEntryDuplicate RoadmapConflictProblemCode = "roadmap_entry_duplicate"
 	RoadmapFull           RoadmapConflictProblemCode = "roadmap_full"
+	RoadmapReviewChanged  RoadmapConflictProblemCode = "roadmap_review_changed"
 	RoadmapStale          RoadmapConflictProblemCode = "roadmap_stale"
 	RoadmapUnreachable    RoadmapConflictProblemCode = "roadmap_unreachable"
 )
@@ -3887,6 +3912,8 @@ func (e RoadmapConflictProblemCode) Valid() bool {
 	case RoadmapEntryDuplicate:
 		return true
 	case RoadmapFull:
+		return true
+	case RoadmapReviewChanged:
 		return true
 	case RoadmapStale:
 		return true
@@ -3909,6 +3936,84 @@ func (e RoadmapEntryKind) Valid() bool {
 	case RoadmapEntryKindIssue:
 		return true
 	case RoadmapEntryKindProject:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RoadmapEntryReviewChange.
+const (
+	RoadmapEntryReviewChangeAdded   RoadmapEntryReviewChange = "added"
+	RoadmapEntryReviewChangeChanged RoadmapEntryReviewChange = "changed"
+	RoadmapEntryReviewChangeRemoved RoadmapEntryReviewChange = "removed"
+)
+
+// Valid indicates whether the value is a known member of the RoadmapEntryReviewChange enum.
+func (e RoadmapEntryReviewChange) Valid() bool {
+	switch e {
+	case RoadmapEntryReviewChangeAdded:
+		return true
+	case RoadmapEntryReviewChangeChanged:
+		return true
+	case RoadmapEntryReviewChangeRemoved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RoadmapFieldChangeField.
+const (
+	RoadmapFieldChangeFieldDescription RoadmapFieldChangeField = "description"
+	RoadmapFieldChangeFieldEndOn       RoadmapFieldChangeField = "endOn"
+	RoadmapFieldChangeFieldIssues      RoadmapFieldChangeField = "issues"
+	RoadmapFieldChangeFieldPlacement   RoadmapFieldChangeField = "placement"
+	RoadmapFieldChangeFieldProgress    RoadmapFieldChangeField = "progress"
+	RoadmapFieldChangeFieldStartOn     RoadmapFieldChangeField = "startOn"
+	RoadmapFieldChangeFieldStatus      RoadmapFieldChangeField = "status"
+	RoadmapFieldChangeFieldTitle       RoadmapFieldChangeField = "title"
+)
+
+// Valid indicates whether the value is a known member of the RoadmapFieldChangeField enum.
+func (e RoadmapFieldChangeField) Valid() bool {
+	switch e {
+	case RoadmapFieldChangeFieldDescription:
+		return true
+	case RoadmapFieldChangeFieldEndOn:
+		return true
+	case RoadmapFieldChangeFieldIssues:
+		return true
+	case RoadmapFieldChangeFieldPlacement:
+		return true
+	case RoadmapFieldChangeFieldProgress:
+		return true
+	case RoadmapFieldChangeFieldStartOn:
+		return true
+	case RoadmapFieldChangeFieldStatus:
+		return true
+	case RoadmapFieldChangeFieldTitle:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RoadmapFieldChangeKind.
+const (
+	RoadmapFieldChangeKindChanged   RoadmapFieldChangeKind = "changed"
+	RoadmapFieldChangeKindConcealed RoadmapFieldChangeKind = "concealed"
+	RoadmapFieldChangeKindExposed   RoadmapFieldChangeKind = "exposed"
+)
+
+// Valid indicates whether the value is a known member of the RoadmapFieldChangeKind enum.
+func (e RoadmapFieldChangeKind) Valid() bool {
+	switch e {
+	case RoadmapFieldChangeKindChanged:
+		return true
+	case RoadmapFieldChangeKindConcealed:
+		return true
+	case RoadmapFieldChangeKindExposed:
 		return true
 	default:
 		return false
@@ -8833,6 +8938,12 @@ type PublicationState string
 // PublicationStep defines model for PublicationStep.
 type PublicationStep string
 
+// PublishRoadmapRequest defines model for PublishRoadmapRequest.
+type PublishRoadmapRequest struct {
+	ExpectedDigest  string `json:"expectedDigest"`
+	ExpectedVersion int32  `json:"expectedVersion"`
+}
+
 // RateLimitedProblem defines model for RateLimitedProblem.
 type RateLimitedProblem struct {
 	Code     RateLimitedProblemCode `json:"code"`
@@ -9139,14 +9250,29 @@ type RewriteAgentSkillRequest struct {
 
 // Roadmap defines model for Roadmap.
 type Roadmap struct {
-	Description string              `json:"description"`
-	Entries     []RoadmapEntry      `json:"entries"`
-	Id          openapi_types.UUID  `json:"id"`
+	Description string             `json:"description"`
+	Entries     []RoadmapEntry     `json:"entries"`
+	Id          openapi_types.UUID `json:"id"`
+
+	// PublicUrl Where the roadmap is served once published; null while no roadmap domain is configured
+	PublicUrl   *string             `json:"publicUrl"`
 	Publication *RoadmapPublication `json:"publication,omitempty"`
-	Title       string              `json:"title"`
-	Version     int32               `json:"version"`
-	Visibility  RoadmapVisibility   `json:"visibility"`
+
+	// Review What publishing the draft would change on the public roadmap, computed from both projections
+	Review     RoadmapReview     `json:"review"`
+	Title      string            `json:"title"`
+	Version    int32             `json:"version"`
+	Visibility RoadmapVisibility `json:"visibility"`
 }
+
+// RoadmapBlocker defines model for RoadmapBlocker.
+type RoadmapBlocker struct {
+	Code    RoadmapBlockerCode  `json:"code"`
+	EntryId *openapi_types.UUID `json:"entryId,omitempty"`
+}
+
+// RoadmapBlockerCode defines model for RoadmapBlocker.Code.
+type RoadmapBlockerCode string
 
 // RoadmapConflictProblem defines model for RoadmapConflictProblem.
 type RoadmapConflictProblem struct {
@@ -9166,12 +9292,15 @@ type RoadmapConflictProblemCode string
 
 // RoadmapEntry defines model for RoadmapEntry.
 type RoadmapEntry struct {
-	CreatedAt         *time.Time          `json:"createdAt,omitempty"`
-	Id                openapi_types.UUID  `json:"id"`
-	IssueId           *openapi_types.UUID `json:"issueId,omitempty"`
-	Kind              RoadmapEntryKind    `json:"kind"`
-	ParentEntryId     *openapi_types.UUID `json:"parentEntryId,omitempty"`
-	Position          int32               `json:"position"`
+	CreatedAt     *time.Time          `json:"createdAt,omitempty"`
+	Id            openapi_types.UUID  `json:"id"`
+	IssueId       *openapi_types.UUID `json:"issueId,omitempty"`
+	Kind          RoadmapEntryKind    `json:"kind"`
+	ParentEntryId *openapi_types.UUID `json:"parentEntryId,omitempty"`
+	Position      int32               `json:"position"`
+
+	// ProgressCoverage For a project, how many of the issues selected under it calculated progress counts; cancelled issues and issues outside the selection are never counted
+	ProgressCoverage  int32               `json:"progressCoverage"`
 	ProgressMode      RoadmapProgressMode `json:"progressMode"`
 	ProgressPercent   int32               `json:"progressPercent"`
 	ProjectId         *openapi_types.UUID `json:"projectId,omitempty"`
@@ -9183,7 +9312,10 @@ type RoadmapEntry struct {
 	Published bool `json:"published"`
 
 	// Reachable The project or issue still exists and is within the reader's reach
-	Reachable  bool                `json:"reachable"`
+	Reachable bool `json:"reachable"`
+
+	// Source Internal and never published; present only while the source is within the reader's reach
+	Source     *RoadmapEntrySource `json:"source,omitempty"`
 	Status     RoadmapPublicStatus `json:"status"`
 	Timeline   RoadmapTimeline     `json:"timeline"`
 	UpdatedAt  *time.Time          `json:"updatedAt,omitempty"`
@@ -9208,6 +9340,53 @@ type RoadmapEntryContent struct {
 // RoadmapEntryKind defines model for RoadmapEntryKind.
 type RoadmapEntryKind string
 
+// RoadmapEntryReview defines model for RoadmapEntryReview.
+type RoadmapEntryReview struct {
+	Change   RoadmapEntryReviewChange `json:"change"`
+	EntryId  *openapi_types.UUID      `json:"entryId,omitempty"`
+	Fields   []RoadmapFieldChange     `json:"fields"`
+	Kind     RoadmapEntryKind         `json:"kind"`
+	PublicId string                   `json:"publicId"`
+	Title    string                   `json:"title"`
+}
+
+// RoadmapEntryReviewChange defines model for RoadmapEntryReview.Change.
+type RoadmapEntryReviewChange string
+
+// RoadmapEntrySource Internal and never published; present only while the source is within the reader's reach
+type RoadmapEntrySource struct {
+	// Label The project's name or the issue's title
+	Label string `json:"label"`
+
+	// Reference The issue's reference, such as ENG-7
+	Reference *string `json:"reference,omitempty"`
+}
+
+// RoadmapFieldChange defines model for RoadmapFieldChange.
+type RoadmapFieldChange struct {
+	// After What it will show once published; absent when it will show nothing. For issues this is the number of issues listed, and for placement the public title of the project listing it.
+	After *string `json:"after,omitempty"`
+
+	// Before What the public roadmap shows now; absent when it shows nothing
+	Before *string                 `json:"before,omitempty"`
+	Field  RoadmapFieldChangeField `json:"field"`
+	Kind   RoadmapFieldChangeKind  `json:"kind"`
+}
+
+// RoadmapFieldChangeField defines model for RoadmapFieldChange.Field.
+type RoadmapFieldChangeField string
+
+// RoadmapFieldChangeKind defines model for RoadmapFieldChange.Kind.
+type RoadmapFieldChangeKind string
+
+// RoadmapPreview defines model for RoadmapPreview.
+type RoadmapPreview struct {
+	Blockers []RoadmapBlocker `json:"blockers"`
+	Digest   string           `json:"digest"`
+	Roadmap  PublicRoadmap    `json:"roadmap"`
+	Version  int32            `json:"version"`
+}
+
 // RoadmapProgressMode defines model for RoadmapProgressMode.
 type RoadmapProgressMode string
 
@@ -9216,11 +9395,23 @@ type RoadmapPublicStatus string
 
 // RoadmapPublication defines model for RoadmapPublication.
 type RoadmapPublication struct {
-	Description string            `json:"description"`
-	PublishedAt time.Time         `json:"publishedAt"`
-	Title       string            `json:"title"`
-	Version     int32             `json:"version"`
-	Visibility  RoadmapVisibility `json:"visibility"`
+	Description          string              `json:"description"`
+	PublishedAt          time.Time           `json:"publishedAt"`
+	PublishedByAccountId *openapi_types.UUID `json:"publishedByAccountId,omitempty"`
+	Title                string              `json:"title"`
+	Version              int32               `json:"version"`
+	Visibility           RoadmapVisibility   `json:"visibility"`
+}
+
+// RoadmapReview What publishing the draft would change on the public roadmap, computed from both projections
+type RoadmapReview struct {
+	Blockers []RoadmapBlocker `json:"blockers"`
+
+	// Digest Identifies the reviewed projection; publishing requires it unchanged
+	Digest                string               `json:"digest"`
+	Entries               []RoadmapEntryReview `json:"entries"`
+	HasUnpublishedChanges bool                 `json:"hasUnpublishedChanges"`
+	Roadmap               []RoadmapFieldChange `json:"roadmap"`
 }
 
 // RoadmapTimeline defines model for RoadmapTimeline.
@@ -11632,7 +11823,7 @@ type UpdateWorkspaceRoadmapEntryJSONRequestBody = UpdateRoadmapEntryRequest
 type RefreshWorkspaceRoadmapEntryJSONRequestBody = RoadmapVersionRequest
 
 // PublishWorkspaceRoadmapJSONRequestBody defines body for PublishWorkspaceRoadmap for application/json ContentType.
-type PublishWorkspaceRoadmapJSONRequestBody = RoadmapVersionRequest
+type PublishWorkspaceRoadmapJSONRequestBody = PublishRoadmapRequest
 
 // CreateWorkspaceSavedViewJSONRequestBody defines body for CreateWorkspaceSavedView for application/json ContentType.
 type CreateWorkspaceSavedViewJSONRequestBody = CreateSavedViewRequest
@@ -14277,9 +14468,21 @@ type ClientInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh (the `RefreshWorkspaceRoadmapEntry` operationId).
 	RefreshWorkspaceRoadmapEntry(ctx context.Context, workspaceId WorkspaceId, entryId RoadmapEntryId, body RefreshWorkspaceRoadmapEntryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetWorkspaceRoadmapPreview Render the draft exactly as publishing it would serve it
+	//
+	// The public projection of the current draft, checked against the reader's access the way publishing checks it. Entries that could not be published are left out and named in blockers.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview (the `GetWorkspaceRoadmapPreview` operationId).
+	GetWorkspaceRoadmapPreview(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceRoadmapPreviewEntry Render one draft entry by its public identifier, as publishing would serve it
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview/entries/{entryId} (the `GetWorkspaceRoadmapPreviewEntry` operationId).
+	GetWorkspaceRoadmapPreviewEntry(ctx context.Context, workspaceId WorkspaceId, entryId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PublishWorkspaceRoadmapWithBody Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -14288,7 +14491,7 @@ type ClientInterface interface {
 
 	// PublishWorkspaceRoadmap Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -21282,9 +21485,41 @@ func (c *Client) RefreshWorkspaceRoadmapEntry(ctx context.Context, workspaceId W
 	return c.Client.Do(req)
 }
 
+// GetWorkspaceRoadmapPreview Render the draft exactly as publishing it would serve it
+//
+// The public projection of the current draft, checked against the reader's access the way publishing checks it. Entries that could not be published are left out and named in blockers.
+//
+// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview (the `GetWorkspaceRoadmapPreview` operationId).
+func (c *Client) GetWorkspaceRoadmapPreview(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceRoadmapPreviewRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceRoadmapPreviewEntry Render one draft entry by its public identifier, as publishing would serve it
+//
+// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview/entries/{entryId} (the `GetWorkspaceRoadmapPreviewEntry` operationId).
+func (c *Client) GetWorkspaceRoadmapPreviewEntry(ctx context.Context, workspaceId WorkspaceId, entryId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceRoadmapPreviewEntryRequest(c.Server, workspaceId, entryId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // PublishWorkspaceRoadmapWithBody Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes any type of body and a specified content type.
 //
@@ -21303,7 +21538,7 @@ func (c *Client) PublishWorkspaceRoadmapWithBody(ctx context.Context, workspaceI
 
 // PublishWorkspaceRoadmap Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -36485,6 +36720,81 @@ func NewRefreshWorkspaceRoadmapEntryRequestWithBody(server string, workspaceId W
 	return req, nil
 }
 
+// NewGetWorkspaceRoadmapPreviewRequest constructs an http.Request for the GetWorkspaceRoadmapPreview method
+func NewGetWorkspaceRoadmapPreviewRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/roadmap/preview", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceRoadmapPreviewEntryRequest constructs an http.Request for the GetWorkspaceRoadmapPreviewEntry method
+func NewGetWorkspaceRoadmapPreviewEntryRequest(server string, workspaceId WorkspaceId, entryId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "entryId", entryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/roadmap/preview/entries/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewPublishWorkspaceRoadmapRequest calls the generic PublishWorkspaceRoadmap builder with application/json body
 func NewPublishWorkspaceRoadmapRequest(server string, workspaceId WorkspaceId, body PublishWorkspaceRoadmapJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -44143,9 +44453,25 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh (the `RefreshWorkspaceRoadmapEntry` operationId).
 	RefreshWorkspaceRoadmapEntryWithResponse(ctx context.Context, workspaceId WorkspaceId, entryId RoadmapEntryId, body RefreshWorkspaceRoadmapEntryJSONRequestBody, reqEditors ...RequestEditorFn) (*RefreshWorkspaceRoadmapEntryResponse, error)
 
+	// GetWorkspaceRoadmapPreviewWithResponse Render the draft exactly as publishing it would serve it
+	//
+	// The public projection of the current draft, checked against the reader's access the way publishing checks it. Entries that could not be published are left out and named in blockers.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview (the `GetWorkspaceRoadmapPreview` operationId).
+	GetWorkspaceRoadmapPreviewWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceRoadmapPreviewResponse, error)
+
+	// GetWorkspaceRoadmapPreviewEntryWithResponse Render one draft entry by its public identifier, as publishing would serve it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview/entries/{entryId} (the `GetWorkspaceRoadmapPreviewEntry` operationId).
+	GetWorkspaceRoadmapPreviewEntryWithResponse(ctx context.Context, workspaceId WorkspaceId, entryId string, reqEditors ...RequestEditorFn) (*GetWorkspaceRoadmapPreviewEntryResponse, error)
+
 	// PublishWorkspaceRoadmapWithBodyWithResponse Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -44154,7 +44480,7 @@ type ClientWithResponsesInterface interface {
 
 	// PublishWorkspaceRoadmapWithResponse Replace the public roadmap with the reviewed draft
 	//
-	// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+	// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -65112,6 +65438,158 @@ func (r RefreshWorkspaceRoadmapEntryResponse) ContentType() string {
 	return ""
 }
 
+// GetWorkspaceRoadmapPreviewResponse200Headers the declared response headers of an HTTP 200 response for GetWorkspaceRoadmapPreview
+type GetWorkspaceRoadmapPreviewResponse200Headers struct {
+	CacheControl *string
+}
+
+type GetWorkspaceRoadmapPreviewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *RoadmapPreview
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetWorkspaceRoadmapPreviewResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceRoadmapPreviewResponse) GetJSON200() *RoadmapPreview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceRoadmapPreviewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceRoadmapPreviewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceRoadmapPreviewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceRoadmapPreviewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetWorkspaceRoadmapPreviewEntryResponse200Headers the declared response headers of an HTTP 200 response for GetWorkspaceRoadmapPreviewEntry
+type GetWorkspaceRoadmapPreviewEntryResponse200Headers struct {
+	CacheControl *string
+}
+
+type GetWorkspaceRoadmapPreviewEntryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *PublicRoadmapItem
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetWorkspaceRoadmapPreviewEntryResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceRoadmapPreviewEntryResponse) GetJSON200() *PublicRoadmapItem {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewEntryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewEntryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewEntryResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceRoadmapPreviewEntryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceRoadmapPreviewEntryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceRoadmapPreviewEntryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceRoadmapPreviewEntryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceRoadmapPreviewEntryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type PublishWorkspaceRoadmapResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -77745,9 +78223,37 @@ func (c *ClientWithResponses) RefreshWorkspaceRoadmapEntryWithResponse(ctx conte
 	return ParseRefreshWorkspaceRoadmapEntryResponse(rsp)
 }
 
+// GetWorkspaceRoadmapPreviewWithResponse Render the draft exactly as publishing it would serve it
+//
+// The public projection of the current draft, checked against the reader's access the way publishing checks it. Entries that could not be published are left out and named in blockers.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview (the `GetWorkspaceRoadmapPreview` operationId).
+func (c *ClientWithResponses) GetWorkspaceRoadmapPreviewWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceRoadmapPreviewResponse, error) {
+	rsp, err := c.GetWorkspaceRoadmapPreview(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceRoadmapPreviewResponse(rsp)
+}
+
+// GetWorkspaceRoadmapPreviewEntryWithResponse Render one draft entry by its public identifier, as publishing would serve it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/roadmap/preview/entries/{entryId} (the `GetWorkspaceRoadmapPreviewEntry` operationId).
+func (c *ClientWithResponses) GetWorkspaceRoadmapPreviewEntryWithResponse(ctx context.Context, workspaceId WorkspaceId, entryId string, reqEditors ...RequestEditorFn) (*GetWorkspaceRoadmapPreviewEntryResponse, error) {
+	rsp, err := c.GetWorkspaceRoadmapPreviewEntry(ctx, workspaceId, entryId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceRoadmapPreviewEntryResponse(rsp)
+}
+
 // PublishWorkspaceRoadmapWithBodyWithResponse Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -77762,7 +78268,7 @@ func (c *ClientWithResponses) PublishWorkspaceRoadmapWithBodyWithResponse(ctx co
 
 // PublishWorkspaceRoadmapWithResponse Replace the public roadmap with the reviewed draft
 //
-// Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+// Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -95659,6 +96165,140 @@ func ParseRefreshWorkspaceRoadmapEntryResponse(rsp *http.Response) (*RefreshWork
 	return response, nil
 }
 
+// ParseGetWorkspaceRoadmapPreviewResponse parses an HTTP response from a GetWorkspaceRoadmapPreviewWithResponse call
+func ParseGetWorkspaceRoadmapPreviewResponse(rsp *http.Response) (*GetWorkspaceRoadmapPreviewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceRoadmapPreviewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RoadmapPreview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetWorkspaceRoadmapPreviewResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceRoadmapPreviewEntryResponse parses an HTTP response from a GetWorkspaceRoadmapPreviewEntryWithResponse call
+func ParseGetWorkspaceRoadmapPreviewEntryResponse(rsp *http.Response) (*GetWorkspaceRoadmapPreviewEntryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceRoadmapPreviewEntryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PublicRoadmapItem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetWorkspaceRoadmapPreviewEntryResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
 // ParsePublishWorkspaceRoadmapResponse parses an HTTP response from a PublishWorkspaceRoadmapWithResponse call
 func ParsePublishWorkspaceRoadmapResponse(rsp *http.Response) (*PublishWorkspaceRoadmapResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -102578,6 +103218,12 @@ type ServerInterface interface {
 	// RefreshWorkspaceRoadmapEntry Take a fresh snapshot of an entry's status and date into the draft
 	// (POST /workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh)
 	RefreshWorkspaceRoadmapEntry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, entryId RoadmapEntryId)
+	// GetWorkspaceRoadmapPreview Render the draft exactly as publishing it would serve it
+	// (GET /workspaces/{workspaceId}/roadmap/preview)
+	GetWorkspaceRoadmapPreview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceRoadmapPreviewEntry Render one draft entry by its public identifier, as publishing would serve it
+	// (GET /workspaces/{workspaceId}/roadmap/preview/entries/{entryId})
+	GetWorkspaceRoadmapPreviewEntry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, entryId string)
 	// PublishWorkspaceRoadmap Replace the public roadmap with the reviewed draft
 	// (POST /workspaces/{workspaceId}/roadmap/publish)
 	PublishWorkspaceRoadmap(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -104561,6 +105207,18 @@ func (_ Unimplemented) UpdateWorkspaceRoadmapEntry(w http.ResponseWriter, r *htt
 // RefreshWorkspaceRoadmapEntry Take a fresh snapshot of an entry's status and date into the draft
 // (POST /workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh)
 func (_ Unimplemented) RefreshWorkspaceRoadmapEntry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, entryId RoadmapEntryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceRoadmapPreview Render the draft exactly as publishing it would serve it
+// (GET /workspaces/{workspaceId}/roadmap/preview)
+func (_ Unimplemented) GetWorkspaceRoadmapPreview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceRoadmapPreviewEntry Render one draft entry by its public identifier, as publishing would serve it
+// (GET /workspaces/{workspaceId}/roadmap/preview/entries/{entryId})
+func (_ Unimplemented) GetWorkspaceRoadmapPreviewEntry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, entryId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -114628,6 +115286,67 @@ func (siw *ServerInterfaceWrapper) RefreshWorkspaceRoadmapEntry(w http.ResponseW
 	handler.ServeHTTP(w, r)
 }
 
+// GetWorkspaceRoadmapPreview operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceRoadmapPreview(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceRoadmapPreview(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceRoadmapPreviewEntry operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceRoadmapPreviewEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "entryId" -------------
+	var entryId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "entryId", chi.URLParam(r, "entryId"), &entryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "entryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceRoadmapPreviewEntry(w, r, workspaceId, entryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // PublishWorkspaceRoadmap operation middleware
 func (siw *ServerInterfaceWrapper) PublishWorkspaceRoadmap(w http.ResponseWriter, r *http.Request) {
 
@@ -119158,6 +119877,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh", wrapper.RefreshWorkspaceRoadmapEntry)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/roadmap/preview", wrapper.GetWorkspaceRoadmapPreview)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/roadmap/preview/entries/{entryId}", wrapper.GetWorkspaceRoadmapPreviewEntry)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/public/roadmap", wrapper.GetPublicRoadmap)
@@ -144917,6 +145642,191 @@ func (response RefreshWorkspaceRoadmapEntry500ApplicationProblemPlusJSONResponse
 	return err
 }
 
+type GetWorkspaceRoadmapPreviewRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceRoadmapPreviewResponseObject interface {
+	VisitGetWorkspaceRoadmapPreviewResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceRoadmapPreview200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetWorkspaceRoadmapPreview200JSONResponse struct {
+	Body    RoadmapPreview
+	Headers GetWorkspaceRoadmapPreview200ResponseHeaders
+}
+
+func (response GetWorkspaceRoadmapPreview200JSONResponse) VisitGetWorkspaceRoadmapPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreview401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceRoadmapPreview401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreview403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceRoadmapPreview403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreview404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceRoadmapPreview404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreview500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceRoadmapPreview500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreviewEntryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	EntryId     string      `json:"entryId"`
+}
+
+type GetWorkspaceRoadmapPreviewEntryResponseObject interface {
+	VisitGetWorkspaceRoadmapPreviewEntryResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceRoadmapPreviewEntry200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetWorkspaceRoadmapPreviewEntry200JSONResponse struct {
+	Body    PublicRoadmapItem
+	Headers GetWorkspaceRoadmapPreviewEntry200ResponseHeaders
+}
+
+func (response GetWorkspaceRoadmapPreviewEntry200JSONResponse) VisitGetWorkspaceRoadmapPreviewEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreviewEntry401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceRoadmapPreviewEntry401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreviewEntry403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceRoadmapPreviewEntry403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreviewEntry404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceRoadmapPreviewEntry404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceRoadmapPreviewEntry500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceRoadmapPreviewEntry500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceRoadmapPreviewEntryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type PublishWorkspaceRoadmapRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	Body        *PublishWorkspaceRoadmapJSONRequestBody
@@ -155417,6 +156327,12 @@ type StrictServerInterface interface {
 	// RefreshWorkspaceRoadmapEntry Take a fresh snapshot of an entry's status and date into the draft
 	// (POST /workspaces/{workspaceId}/roadmap/entries/{entryId}/refresh)
 	RefreshWorkspaceRoadmapEntry(ctx context.Context, request RefreshWorkspaceRoadmapEntryRequestObject) (RefreshWorkspaceRoadmapEntryResponseObject, error)
+	// GetWorkspaceRoadmapPreview Render the draft exactly as publishing it would serve it
+	// (GET /workspaces/{workspaceId}/roadmap/preview)
+	GetWorkspaceRoadmapPreview(ctx context.Context, request GetWorkspaceRoadmapPreviewRequestObject) (GetWorkspaceRoadmapPreviewResponseObject, error)
+	// GetWorkspaceRoadmapPreviewEntry Render one draft entry by its public identifier, as publishing would serve it
+	// (GET /workspaces/{workspaceId}/roadmap/preview/entries/{entryId})
+	GetWorkspaceRoadmapPreviewEntry(ctx context.Context, request GetWorkspaceRoadmapPreviewEntryRequestObject) (GetWorkspaceRoadmapPreviewEntryResponseObject, error)
 	// PublishWorkspaceRoadmap Replace the public roadmap with the reviewed draft
 	// (POST /workspaces/{workspaceId}/roadmap/publish)
 	PublishWorkspaceRoadmap(ctx context.Context, request PublishWorkspaceRoadmapRequestObject) (PublishWorkspaceRoadmapResponseObject, error)
@@ -163832,6 +164748,59 @@ func (sh *strictHandler) RefreshWorkspaceRoadmapEntry(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RefreshWorkspaceRoadmapEntryResponseObject); ok {
 		if err := validResponse.VisitRefreshWorkspaceRoadmapEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceRoadmapPreview operation middleware
+func (sh *strictHandler) GetWorkspaceRoadmapPreview(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceRoadmapPreviewRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceRoadmapPreview(ctx, request.(GetWorkspaceRoadmapPreviewRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceRoadmapPreview")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceRoadmapPreviewResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceRoadmapPreviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceRoadmapPreviewEntry operation middleware
+func (sh *strictHandler) GetWorkspaceRoadmapPreviewEntry(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, entryId string) {
+	var request GetWorkspaceRoadmapPreviewEntryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.EntryId = entryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceRoadmapPreviewEntry(ctx, request.(GetWorkspaceRoadmapPreviewEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceRoadmapPreviewEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceRoadmapPreviewEntryResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceRoadmapPreviewEntryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -3385,7 +3385,7 @@ export interface paths {
         put?: never;
         /**
          * Replace the public roadmap with the reviewed draft
-         * @description Publishes exactly the draft at the expected version. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
+         * @description Publishes exactly the draft at the expected version, and only while it still renders to the reviewed digest. Every selected project and issue is checked again against the publisher's access, and the published copy replaces the previous one in a single step.
          */
         post: operations["publishWorkspaceRoadmap"];
         delete?: never;
@@ -3460,6 +3460,43 @@ export interface paths {
          * @description Reads the project or issue again and updates the draft's status, end date and grouping. The public copy is untouched, and nothing reaches the public roadmap until it is published.
          */
         post: operations["refreshWorkspaceRoadmapEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/roadmap/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Render the draft exactly as publishing it would serve it
+         * @description The public projection of the current draft, checked against the reader's access the way publishing checks it. Entries that could not be published are left out and named in blockers.
+         */
+        get: operations["getWorkspaceRoadmapPreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/roadmap/preview/entries/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Render one draft entry by its public identifier, as publishing would serve it */
+        get: operations["getWorkspaceRoadmapPreviewEntry"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7221,6 +7258,15 @@ export interface components {
             version: number;
             /** Format: date-time */
             publishedAt: string;
+            /** Format: uuid */
+            publishedByAccountId?: string;
+        };
+        /** @description Internal and never published; present only while the source is within the reader's reach */
+        RoadmapEntrySource: {
+            /** @description The project's name or the issue's title */
+            label: string;
+            /** @description The issue's reference, such as ENG-7 */
+            reference?: string;
         };
         RoadmapEntry: {
             /** Format: uuid */
@@ -7249,10 +7295,58 @@ export interface components {
             published: boolean;
             /** @description The published copy is hidden because its source was deleted, moved, or made private since publication; it stays hidden until the roadmap is published again */
             withheld: boolean;
+            source?: components["schemas"]["RoadmapEntrySource"];
+            /**
+             * Format: int32
+             * @description For a project, how many of the issues selected under it calculated progress counts; cancelled issues and issues outside the selection are never counted
+             */
+            progressCoverage: number;
             /** Format: date-time */
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        RoadmapBlocker: {
+            /** @enum {string} */
+            code: "roadmap_title_required" | "roadmap_title_too_long" | "entry_unreachable" | "entry_invalid";
+            /** Format: uuid */
+            entryId?: string;
+        };
+        RoadmapFieldChange: {
+            /** @enum {string} */
+            field: "title" | "description" | "status" | "startOn" | "endOn" | "progress" | "issues" | "placement";
+            /** @enum {string} */
+            kind: "exposed" | "changed" | "concealed";
+            /** @description What the public roadmap shows now; absent when it shows nothing */
+            before?: string;
+            /** @description What it will show once published; absent when it will show nothing. For issues this is the number of issues listed, and for placement the public title of the project listing it. */
+            after?: string;
+        };
+        RoadmapEntryReview: {
+            /** Format: uuid */
+            entryId?: string;
+            publicId: string;
+            kind: components["schemas"]["RoadmapEntryKind"];
+            title: string;
+            /** @enum {string} */
+            change: "added" | "removed" | "changed";
+            fields: components["schemas"]["RoadmapFieldChange"][];
+        };
+        /** @description What publishing the draft would change on the public roadmap, computed from both projections */
+        RoadmapReview: {
+            hasUnpublishedChanges: boolean;
+            /** @description Identifies the reviewed projection; publishing requires it unchanged */
+            digest: string;
+            roadmap: components["schemas"]["RoadmapFieldChange"][];
+            entries: components["schemas"]["RoadmapEntryReview"][];
+            blockers: components["schemas"]["RoadmapBlocker"][];
+        };
+        RoadmapPreview: {
+            /** Format: int32 */
+            version: number;
+            digest: string;
+            roadmap: components["schemas"]["PublicRoadmap"];
+            blockers: components["schemas"]["RoadmapBlocker"][];
         };
         Roadmap: {
             /** Format: uuid */
@@ -7264,6 +7358,9 @@ export interface components {
             version: number;
             publication?: components["schemas"]["RoadmapPublication"];
             entries: components["schemas"]["RoadmapEntry"][];
+            review: components["schemas"]["RoadmapReview"];
+            /** @description Where the roadmap is served once published; null while no roadmap domain is configured */
+            publicUrl: string | null;
         };
         UpdateRoadmapRequest: {
             /** Format: int32 */
@@ -7275,6 +7372,11 @@ export interface components {
         RoadmapVersionRequest: {
             /** Format: int32 */
             expectedVersion: number;
+        };
+        PublishRoadmapRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            expectedDigest: string;
         };
         RoadmapEntryContent: {
             publicTitle: string;
@@ -7306,7 +7408,7 @@ export interface components {
         };
         RoadmapConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "roadmap_stale" | "roadmap_entry_duplicate" | "roadmap_full" | "roadmap_unreachable";
+            code: "roadmap_stale" | "roadmap_entry_duplicate" | "roadmap_full" | "roadmap_unreachable" | "roadmap_review_changed";
             /** Format: int32 */
             version?: number;
             /** Format: uuid */
@@ -17619,7 +17721,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RoadmapVersionRequest"];
+                "application/json": components["schemas"]["PublishRoadmapRequest"];
             };
         };
         responses: {
@@ -17790,6 +17892,61 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["RoadmapConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceRoadmapPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The draft preview */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoadmapPreview"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceRoadmapPreviewEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                entryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The previewed entry */
+            200: {
+                headers: {
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRoadmapItem"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

@@ -53,6 +53,7 @@ func (h *handler) PublishWorkspaceRoadmap(
 ) (api.PublishWorkspaceRoadmapResponseObject, error) {
 	view, err := h.roadmaps.Publish(ctx, request.WorkspaceId, service.PublishRoadmapInput{
 		ExpectedVersion: int(request.Body.ExpectedVersion),
+		ExpectedDigest:  request.Body.ExpectedDigest,
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
@@ -63,6 +64,49 @@ func (h *handler) PublishWorkspaceRoadmap(
 	}
 
 	return api.PublishWorkspaceRoadmap200JSONResponse(roadmapDTO(view)), nil
+}
+
+func (h *handler) GetWorkspaceRoadmapPreview(
+	ctx context.Context,
+	request api.GetWorkspaceRoadmapPreviewRequestObject,
+) (api.GetWorkspaceRoadmapPreviewResponseObject, error) {
+	preview, err := h.roadmaps.Preview(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceRoadmapPreview200JSONResponse{
+		Body: api.RoadmapPreview{
+			Version:  int32(preview.Version),
+			Digest:   preview.Digest,
+			Roadmap:  publicRoadmapDTO(preview.Roadmap),
+			Blockers: roadmapBlockersDTO(preview.Blockers),
+		},
+		Headers: api.GetWorkspaceRoadmapPreview200ResponseHeaders{CacheControl: &publicRoadmapCache},
+	}, nil
+}
+
+func (h *handler) GetWorkspaceRoadmapPreviewEntry(
+	ctx context.Context,
+	request api.GetWorkspaceRoadmapPreviewEntryRequestObject,
+) (api.GetWorkspaceRoadmapPreviewEntryResponseObject, error) {
+	item, err := h.roadmaps.PreviewEntry(ctx, request.WorkspaceId, request.EntryId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceRoadmapPreviewEntry200JSONResponse{
+		Body:    publicRoadmapItemDTO(item),
+		Headers: api.GetWorkspaceRoadmapPreviewEntry200ResponseHeaders{CacheControl: &publicRoadmapCache},
+	}, nil
 }
 
 func (h *handler) UnpublishWorkspaceRoadmap(

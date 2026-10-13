@@ -3203,9 +3203,68 @@ func roadmapEntryDTO(view service.RoadmapEntryView) api.RoadmapEntry {
 		Reachable:         view.Reachable,
 		Published:         view.Published,
 		Withheld:          view.Withheld,
+		Source:            roadmapEntrySourceDTO(view),
+		ProgressCoverage:  int32(view.ProgressCoverage),
 		CreatedAt:         &createdAt,
 		UpdatedAt:         &updatedAt,
 	}
+}
+
+func roadmapEntrySourceDTO(view service.RoadmapEntryView) *api.RoadmapEntrySource {
+	if view.SourceLabel == "" {
+		return nil
+	}
+
+	return &api.RoadmapEntrySource{Label: view.SourceLabel, Reference: nilIfEmpty(view.SourceReference)}
+}
+
+func roadmapBlockersDTO(blockers []entity.RoadmapBlocker) []api.RoadmapBlocker {
+	dto := make([]api.RoadmapBlocker, 0, len(blockers))
+	for _, blocker := range blockers {
+		dto = append(dto, api.RoadmapBlocker{
+			Code:    api.RoadmapBlockerCode(blocker.Code),
+			EntryId: optionalUUIDDTO(blocker.EntryID),
+		})
+	}
+
+	return dto
+}
+
+func roadmapFieldChangesDTO(changes []entity.RoadmapFieldChange) []api.RoadmapFieldChange {
+	dto := make([]api.RoadmapFieldChange, 0, len(changes))
+	for _, change := range changes {
+		dto = append(dto, api.RoadmapFieldChange{
+			Field:  api.RoadmapFieldChangeField(change.Field),
+			Kind:   api.RoadmapFieldChangeKind(change.Kind),
+			Before: nilIfEmpty(change.Before),
+			After:  nilIfEmpty(change.After),
+		})
+	}
+
+	return dto
+}
+
+func roadmapReviewDTO(review entity.RoadmapReview) api.RoadmapReview {
+	dto := api.RoadmapReview{
+		HasUnpublishedChanges: review.HasUnpublishedChanges,
+		Digest:                review.Digest,
+		Roadmap:               roadmapFieldChangesDTO(review.Roadmap),
+		Entries:               make([]api.RoadmapEntryReview, 0, len(review.Entries)),
+		Blockers:              roadmapBlockersDTO(review.Blockers),
+	}
+
+	for _, entry := range review.Entries {
+		dto.Entries = append(dto.Entries, api.RoadmapEntryReview{
+			EntryId:  optionalUUIDDTO(entry.EntryID),
+			PublicId: entry.PublicID,
+			Kind:     api.RoadmapEntryKind(entry.Kind),
+			Title:    entry.Title,
+			Change:   api.RoadmapEntryReviewChange(entry.Change),
+			Fields:   roadmapFieldChangesDTO(entry.Fields),
+		})
+	}
+
+	return dto
 }
 
 func roadmapDTO(view service.RoadmapDraftView) api.Roadmap {
@@ -3217,15 +3276,18 @@ func roadmapDTO(view service.RoadmapDraftView) api.Roadmap {
 		Visibility:  roadmapVisibilityDTO(roadmap.Visibility),
 		Version:     int32(roadmap.Version),
 		Entries:     make([]api.RoadmapEntry, 0, len(view.Entries)),
+		Review:      roadmapReviewDTO(view.Review),
+		PublicUrl:   nilIfEmpty(view.PublicURL),
 	}
 
 	if publication := roadmap.Publication; publication != nil {
 		dto.Publication = &api.RoadmapPublication{
-			Title:       publication.Title,
-			Description: publication.Description,
-			Visibility:  roadmapVisibilityDTO(publication.Visibility),
-			Version:     int32(publication.Version),
-			PublishedAt: publication.PublishedAt,
+			Title:                publication.Title,
+			Description:          publication.Description,
+			Visibility:           roadmapVisibilityDTO(publication.Visibility),
+			Version:              int32(publication.Version),
+			PublishedAt:          publication.PublishedAt,
+			PublishedByAccountId: optionalUUIDDTO(publication.PublishedBy),
 		}
 	}
 

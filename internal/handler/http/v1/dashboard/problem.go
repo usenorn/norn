@@ -717,6 +717,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrRoadmapFull):
 		return roadmapConflict(api.RoadmapFull, err, nil), true
 
+	case errors.Is(err, entity.ErrRoadmapReviewChanged):
+		return roadmapConflict(api.RoadmapReviewChanged, err, nil), true
+
 	case errors.Is(err, entity.ErrIntakeDomainUnset):
 		return intakeConflict(api.IntakeDomainUnset, err), true
 
@@ -2162,6 +2165,14 @@ func (r problemResponse) VisitPublishWorkspaceRoadmapResponse(w http.ResponseWri
 }
 
 func (r problemResponse) VisitUnpublishWorkspaceRoadmapResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceRoadmapPreviewResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceRoadmapPreviewEntryResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

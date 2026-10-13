@@ -149,6 +149,17 @@ test.describe("the public roadmap page", () => {
 		return read<Roadmap>(await send(admin, "GET", `${workspace()}/roadmap`));
 	}
 
+	async function publishReviewed() {
+		const reviewed = await roadmap();
+
+		await read(
+			await send(admin, "POST", `${workspace()}/roadmap/publish`, {
+				expectedVersion: reviewed.version,
+				expectedDigest: reviewed.review.digest,
+			})
+		);
+	}
+
 	async function publish(visibility: RoadmapVisibility) {
 		const draft = await roadmap();
 
@@ -161,11 +172,7 @@ test.describe("the public roadmap page", () => {
 			})
 		);
 
-		await read(
-			await send(admin, "POST", `${workspace()}/roadmap/publish`, {
-				expectedVersion: (await roadmap()).version,
-			})
-		);
+		await publishReviewed();
 	}
 
 	async function select(kind: "project" | "issue", sourceId: string, content: RoadmapEntryContent) {
@@ -468,9 +475,7 @@ test.describe("the public roadmap page", () => {
 		await read(
 			await send(admin, "DELETE", `${workspace()}/roadmap/entries/${entry?.id}?expectedVersion=${draft.version}`)
 		);
-		await read(
-			await send(admin, "POST", `${workspace()}/roadmap/publish`, { expectedVersion: (await roadmap()).version })
-		);
+		await publishReviewed();
 
 		await page.reload();
 		await expect(unavailable).toBeVisible();

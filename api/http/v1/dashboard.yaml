@@ -5232,16 +5232,16 @@ paths:
       operationId: publishWorkspaceRoadmap
       summary: Replace the public roadmap with the reviewed draft
       description: >-
-        Publishes exactly the draft at the expected version. Every selected project and issue is
-        checked again against the publisher's access, and the published copy replaces the previous
-        one in a single step.
+        Publishes exactly the draft at the expected version, and only while it still renders to the
+        reviewed digest. Every selected project and issue is checked again against the publisher's
+        access, and the published copy replaces the previous one in a single step.
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/RoadmapVersionRequest' }
+            schema: { $ref: '#/components/schemas/PublishRoadmapRequest' }
       responses:
         '200':
           description: The roadmap after publication
@@ -5372,6 +5372,56 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/RoadmapConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/roadmap/preview:
+    get:
+      tags: [roadmaps]
+      operationId: getWorkspaceRoadmapPreview
+      summary: Render the draft exactly as publishing it would serve it
+      description: >-
+        The public projection of the current draft, checked against the reader's access the way
+        publishing checks it. Entries that could not be published are left out and named in
+        blockers.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The draft preview
+          headers:
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RoadmapPreview' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/roadmap/preview/entries/{entryId}:
+    get:
+      tags: [roadmaps]
+      operationId: getWorkspaceRoadmapPreviewEntry
+      summary: Render one draft entry by its public identifier, as publishing would serve it
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: entryId
+          in: path
+          required: true
+          schema: { type: string, maxLength: 32 }
+      responses:
+        '200':
+          description: The previewed entry
+          headers:
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicRoadmapItem' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /public/roadmap:
@@ -11291,6 +11341,19 @@ components:
         visibility: { $ref: '#/components/schemas/RoadmapVisibility' }
         version: { type: integer, format: int32 }
         publishedAt: { type: string, format: date-time }
+        publishedByAccountId: { type: string, format: uuid }
+
+    RoadmapEntrySource:
+      type: object
+      description: Internal and never published; present only while the source is within the reader's reach
+      required: [label]
+      properties:
+        label:
+          type: string
+          description: The project's name or the issue's title
+        reference:
+          type: string
+          description: The issue's reference, such as ENG-7
 
     RoadmapEntry:
       type: object
@@ -11309,6 +11372,7 @@ components:
         - reachable
         - published
         - withheld
+        - progressCoverage
       properties:
         id: { type: string, format: uuid }
         publicId: { type: string }
@@ -11335,12 +11399,96 @@ components:
           description: >-
             The published copy is hidden because its source was deleted, moved, or made private
             since publication; it stays hidden until the roadmap is published again
+        source: { $ref: '#/components/schemas/RoadmapEntrySource' }
+        progressCoverage:
+          type: integer
+          format: int32
+          description: >-
+            For a project, how many of the issues selected under it calculated progress counts;
+            cancelled issues and issues outside the selection are never counted
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
+    RoadmapBlocker:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          enum:
+            - roadmap_title_required
+            - roadmap_title_too_long
+            - entry_unreachable
+            - entry_invalid
+        entryId: { type: string, format: uuid }
+
+    RoadmapFieldChange:
+      type: object
+      required: [field, kind]
+      properties:
+        field:
+          type: string
+          enum: [title, description, status, startOn, endOn, progress, issues, placement]
+        kind:
+          type: string
+          enum: [exposed, changed, concealed]
+        before:
+          type: string
+          description: What the public roadmap shows now; absent when it shows nothing
+        after:
+          type: string
+          description: >-
+            What it will show once published; absent when it will show nothing. For issues this is
+            the number of issues listed, and for placement the public title of the project listing it.
+
+    RoadmapEntryReview:
+      type: object
+      required: [publicId, kind, title, change, fields]
+      properties:
+        entryId: { type: string, format: uuid }
+        publicId: { type: string }
+        kind: { $ref: '#/components/schemas/RoadmapEntryKind' }
+        title: { type: string }
+        change:
+          type: string
+          enum: [added, removed, changed]
+        fields:
+          type: array
+          items: { $ref: '#/components/schemas/RoadmapFieldChange' }
+
+    RoadmapReview:
+      type: object
+      description: What publishing the draft would change on the public roadmap, computed from both projections
+      required: [hasUnpublishedChanges, digest, roadmap, entries, blockers]
+      properties:
+        hasUnpublishedChanges: { type: boolean }
+        digest:
+          type: string
+          description: Identifies the reviewed projection; publishing requires it unchanged
+        roadmap:
+          type: array
+          items: { $ref: '#/components/schemas/RoadmapFieldChange' }
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/RoadmapEntryReview' }
+        blockers:
+          type: array
+          items: { $ref: '#/components/schemas/RoadmapBlocker' }
+
+    RoadmapPreview:
+      type: object
+      required: [version, digest, roadmap, blockers]
+      properties:
+        version: { type: integer, format: int32 }
+        digest: { type: string }
+        roadmap: { $ref: '#/components/schemas/PublicRoadmap' }
+        blockers:
+          type: array
+          items: { $ref: '#/components/schemas/RoadmapBlocker' }
+
     Roadmap:
       type: object
-      required: [id, title, description, visibility, version, entries]
+      required: [id, title, description, visibility, version, entries, review, publicUrl]
       properties:
         id: { type: string, format: uuid }
         title: { type: string }
@@ -11351,6 +11499,11 @@ components:
         entries:
           type: array
           items: { $ref: '#/components/schemas/RoadmapEntry' }
+        review: { $ref: '#/components/schemas/RoadmapReview' }
+        publicUrl:
+          type: string
+          nullable: true
+          description: Where the roadmap is served once published; null while no roadmap domain is configured
 
     UpdateRoadmapRequest:
       type: object
@@ -11366,6 +11519,13 @@ components:
       required: [expectedVersion]
       properties:
         expectedVersion: { type: integer, format: int32, minimum: 1 }
+
+    PublishRoadmapRequest:
+      type: object
+      required: [expectedVersion, expectedDigest]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        expectedDigest: { type: string, minLength: 1, maxLength: 64 }
 
     RoadmapEntryContent:
       type: object
@@ -11412,6 +11572,7 @@ components:
                 - roadmap_entry_duplicate
                 - roadmap_full
                 - roadmap_unreachable
+                - roadmap_review_changed
             version: { type: integer, format: int32 }
             entryId: { type: string, format: uuid }
 
