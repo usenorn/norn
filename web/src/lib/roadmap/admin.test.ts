@@ -15,6 +15,8 @@ import {
 	progressCoverageLine,
 	publicationOf,
 	publishFailureDialog,
+	readRoadmapPreview,
+	readRoadmapPreviewEntry,
 	reviewSections,
 	reviewValueLabel,
 	roadmapFailure,
@@ -25,6 +27,7 @@ import {
 	staleStanding,
 	type Roadmap,
 	type RoadmapEntry,
+	type RoadmapPreview,
 	type RoadmapReview,
 	type RoadmapVisibility,
 } from "./admin";
@@ -406,5 +409,54 @@ describe("explaining a refused field", () => {
 			"End on or after the start date."
 		);
 		expect(roadmapFieldMessage({ field: "kind", code: "unsupported_value" })).toBe("Check this value.");
+	});
+});
+
+describe("reading the draft preview", () => {
+	const draft: RoadmapPreview = {
+		version: 3,
+		digest: "d1",
+		roadmap: { title: "Northwind roadmap", publishedAt: "0001-01-01T00:00:00Z", projects: [], issues: [] },
+		blockers: [{ code: "entry_unreachable", entryId: "p1" }],
+	};
+	const item = { id: "pub-p1", kind: "project" as const, title: "Faster checkout" };
+
+	function answer<T>(data: T | undefined, status: number) {
+		return { data, response: new Response(null, { status }) };
+	}
+
+	it("keeps the admin entries so a blocker can name what was left out", () => {
+		expect(readRoadmapPreview(answer(draft, 200), answer(roadmap({ entries: [checkout] }), 200))).toEqual({
+			kind: "ready",
+			preview: draft,
+			entries: [checkout],
+		});
+	});
+
+	it("still renders the preview when the entries could not be read", () => {
+		expect(readRoadmapPreview(answer(draft, 200), answer(undefined, 500))).toEqual({
+			kind: "ready",
+			preview: draft,
+			entries: [],
+		});
+	});
+
+	it("tells a member without the roadmap grant apart from a failure", () => {
+		expect(readRoadmapPreview(answer(undefined, 403), answer(undefined, 403)).kind).toBe("forbidden");
+		expect(readRoadmapPreview(answer(undefined, 500), answer(roadmap(), 200)).kind).toBe("unavailable");
+	});
+
+	it("titles an entry with the draft roadmap's public title", () => {
+		expect(readRoadmapPreviewEntry(answer(draft, 200), answer(item, 200))).toEqual({
+			kind: "ready",
+			roadmapTitle: "Northwind roadmap",
+			item,
+		});
+	});
+
+	it("reads an entry the draft does not show as not found, not as a failure", () => {
+		expect(readRoadmapPreviewEntry(answer(draft, 200), answer(undefined, 404)).kind).toBe("not_found");
+		expect(readRoadmapPreviewEntry(answer(undefined, 403), answer(undefined, 403)).kind).toBe("forbidden");
+		expect(readRoadmapPreviewEntry(answer(undefined, 500), answer(item, 200)).kind).toBe("unavailable");
 	});
 });

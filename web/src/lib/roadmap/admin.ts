@@ -486,6 +486,29 @@ export function roadmapFailure(problem: unknown, status: number): RoadmapFailure
 	return { kind: "unavailable" };
 }
 
+type PreviewAnswer<T> = { data?: T; response: Response };
+
+export function readRoadmapPreview(
+	preview: PreviewAnswer<RoadmapPreview>,
+	roadmap: PreviewAnswer<Roadmap>
+): RoadmapPreviewView {
+	if (preview.response.status === forbidden) return { kind: "forbidden" };
+	if (!preview.response.ok || !preview.data) return { kind: "unavailable" };
+
+	return { kind: "ready", preview: preview.data, entries: roadmap.data?.entries ?? [] };
+}
+
+export function readRoadmapPreviewEntry(
+	preview: PreviewAnswer<RoadmapPreview>,
+	item: PreviewAnswer<PublicRoadmapItem>
+): RoadmapPreviewEntryView {
+	if (preview.response.status === forbidden || item.response.status === forbidden) return { kind: "forbidden" };
+	if (item.response.status === notFound) return { kind: "not_found" };
+	if (!preview.response.ok || !item.response.ok || !preview.data || !item.data) return { kind: "unavailable" };
+
+	return { kind: "ready", roadmapTitle: preview.data.roadmap.title, item: item.data };
+}
+
 export function failureMessage(failure: RoadmapFailure): string {
 	switch (failure.kind) {
 		case "stale":
