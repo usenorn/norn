@@ -103,6 +103,7 @@
 		dataType: "json",
 		validators: zod4Client(roadmapEntrySchema),
 		resetForm: false,
+		applyAction: false,
 		onUpdate: async ({ form: entered }) => {
 			if (!entered.valid) return;
 
