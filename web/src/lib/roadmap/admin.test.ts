@@ -7,6 +7,7 @@ import {
 	entryDifferences,
 	entryInputOf,
 	entryLayout,
+	intendedPreset,
 	issueSourceText,
 	newEntryContent,
 	presetConflicts,
@@ -166,6 +167,16 @@ describe("reading the preset from what is selected", () => {
 		expect(presetConflicts(current, "projects")).toEqual([nested, loose]);
 		expect(presetConflicts(current, "issues")).toEqual([checkout]);
 		expect(presetConflicts(current, "projects_with_issues")).toEqual([loose]);
+	});
+
+	it("keeps a chosen preset only while the roadmap's issue lists agree with it", () => {
+		const projectsOnly = roadmap({ entries: [checkout] });
+		const listing = roadmap({ entries: [checkout], visibility: { ...hidden, issueLists: true } });
+
+		expect(intendedPreset(projectsOnly, "issues")).toBe("issues");
+		expect(intendedPreset(projectsOnly, "projects_with_issues")).toBe("projects");
+		expect(intendedPreset(listing, "projects")).toBe("projects_with_issues");
+		expect(intendedPreset(roadmap({ entries: [checkout, loose] }), undefined)).toBeUndefined();
 	});
 
 	it("only ever changes the roadmap's issue lists when a preset is applied", () => {

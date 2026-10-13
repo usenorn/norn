@@ -131,6 +131,22 @@ export function presetVisibility(visibility: RoadmapVisibility, preset: ChosenPr
 	return { ...visibility, issueLists: preset === "projects_with_issues" };
 }
 
+function isChosenPreset(preset: RoadmapPreset): preset is ChosenPreset {
+	return chosenPresets.some((option) => option === preset);
+}
+
+export function intendedPreset(roadmap: Roadmap, chosen: ChosenPreset | undefined): ChosenPreset | undefined {
+	const listsIssues = roadmap.visibility.issueLists;
+
+	if (chosen && presetVisibility(roadmap.visibility, chosen).issueLists === listsIssues) return chosen;
+
+	const preset = presetOf(roadmap);
+
+	if (isChosenPreset(preset)) return preset;
+
+	return listsIssues ? "projects_with_issues" : undefined;
+}
+
 export function presetKinds(preset: RoadmapPreset): RoadmapEntryKind[] {
 	switch (preset) {
 		case "projects":

@@ -35,8 +35,8 @@
 	import RoadmapUnpublishDialog from "$lib/roadmap/roadmap-unpublish-dialog.svelte";
 	import {
 		answerOf,
-		chosenPresets,
 		failureMessage,
+		intendedPreset,
 		newEntryContent,
 		presetConflicts,
 		presetKinds,
@@ -117,9 +117,7 @@
 
 	const publication = $derived(roadmap ? publicationOf(roadmap) : undefined);
 	const preset = $derived<RoadmapPreset>(roadmap ? presetOf(roadmap) : "unstarted");
-	const intended = $derived<ChosenPreset | undefined>(
-		chosen ?? (isChosenPreset(preset) ? preset : roadmap?.visibility.issueLists ? "projects_with_issues" : undefined)
-	);
+	const intended = $derived(roadmap ? intendedPreset(roadmap, chosen) : undefined);
 	const conflicts = $derived(roadmap && intended ? presetConflicts(roadmap, intended) : []);
 	const kinds = $derived(presetKinds(intended ?? preset));
 	const selected = $derived(roadmap ? selectedSources(roadmap) : new Set<string>());
@@ -183,10 +181,6 @@
 			baseline = latest;
 		});
 	});
-
-	function isChosenPreset(value: RoadmapPreset): value is ChosenPreset {
-		return chosenPresets.some((option) => option === value);
-	}
 
 	async function run(next: RoadmapActivity, call: () => Promise<RoadmapAnswer>): Promise<boolean> {
 		liveActivity = next;
