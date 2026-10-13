@@ -4,6 +4,7 @@ import type { Handle, HandleServerError } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import { actingSlot, signedInAccounts } from "$lib/api/acting.server";
 import { apiForEvent, correlationHeader } from "$lib/api/server";
+import { isPublicRoadmapRoute } from "$lib/roadmap/host";
 import { reportingFrom } from "$lib/telemetry";
 
 const reporting = reportingFrom(env);
@@ -11,6 +12,15 @@ const reporting = reportingFrom(env);
 const scope: Handle = ({ event, resolve }) => {
 	event.locals.correlationId =
 		event.request.headers.get(correlationHeader) ?? crypto.randomUUID();
+
+	if (isPublicRoadmapRoute(event.route.id)) {
+		event.locals.signedIn = Promise.resolve([]);
+		event.locals.acting = Promise.resolve(null);
+		event.locals.api = apiForEvent(event, event.locals.acting, "omit");
+		event.locals.apiAs = () => event.locals.api;
+
+		return resolve(event);
+	}
 
 	event.locals.signedIn = signedInAccounts(event);
 	event.locals.acting = actingSlot(event);
