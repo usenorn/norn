@@ -19,7 +19,6 @@ export type RoadmapFieldChange = components["schemas"]["RoadmapFieldChange"];
 export type RoadmapReviewField = RoadmapFieldChange["field"];
 export type RoadmapBlocker = components["schemas"]["RoadmapBlocker"];
 export type RoadmapPreview = components["schemas"]["RoadmapPreview"];
-export type RoadmapConflictCode = components["schemas"]["RoadmapConflictProblem"]["code"];
 type FieldError = components["schemas"]["FieldError"];
 type Issue = components["schemas"]["Issue"];
 
@@ -472,32 +471,35 @@ export type RoadmapFailure =
 const notFound = 404;
 const forbidden = 403;
 
-export function roadmapFailure(problem: unknown, status: number): RoadmapFailure {
+export type RoadmapProblem =
+	| components["schemas"]["Problem"]
+	| components["schemas"]["ForbiddenProblem"]
+	| components["schemas"]["RoadmapConflictProblem"];
+
+export function roadmapFailure(problem: RoadmapProblem | undefined, status: number): RoadmapFailure {
 	if (status === forbidden) return { kind: "forbidden" };
 	if (status === notFound) return { kind: "gone" };
 
 	if (typeof problem !== "object" || problem === null) return { kind: "unavailable" };
 
-	const held = problem as { code?: unknown; version?: unknown; entryId?: unknown; errors?: unknown };
-
-	switch (held.code as RoadmapConflictCode | undefined) {
-		case "roadmap_stale":
-			return typeof held.version === "number" ? { kind: "stale", version: held.version } : { kind: "stale" };
-		case "roadmap_review_changed":
-			return { kind: "review_changed" };
-		case "roadmap_entry_duplicate":
-			return { kind: "duplicate" };
-		case "roadmap_full":
-			return { kind: "full" };
-		case "roadmap_unreachable":
-			return typeof held.entryId === "string"
-				? { kind: "unreachable", entryId: held.entryId }
-				: { kind: "unreachable" };
+	if ("code" in problem) {
+		switch (problem.code) {
+			case "roadmap_stale":
+				return problem.version === undefined ? { kind: "stale" } : { kind: "stale", version: problem.version };
+			case "roadmap_review_changed":
+				return { kind: "review_changed" };
+			case "roadmap_entry_duplicate":
+				return { kind: "duplicate" };
+			case "roadmap_full":
+				return { kind: "full" };
+			case "roadmap_unreachable":
+				return problem.entryId === undefined
+					? { kind: "unreachable" }
+					: { kind: "unreachable", entryId: problem.entryId };
+		}
 	}
 
-	if (Array.isArray(held.errors) && held.errors.length > 0) {
-		return { kind: "invalid", errors: held.errors as FieldError[] };
-	}
+	if (Array.isArray(problem.errors) && problem.errors.length > 0) return { kind: "invalid", errors: problem.errors };
 
 	return { kind: "unavailable" };
 }
@@ -554,7 +556,7 @@ export function failureMessage(failure: RoadmapFailure): string {
 export type RoadmapAnswer = { kind: "done"; roadmap: Roadmap } | { kind: "refused"; failure: RoadmapFailure };
 
 export async function answerOf(
-	call: Promise<{ data?: Roadmap; error?: unknown; response: Response }>
+	call: Promise<{ data?: Roadmap; error?: RoadmapProblem; response: Response }>
 ): Promise<RoadmapAnswer> {
 	try {
 		const { data, error, response } = await call;

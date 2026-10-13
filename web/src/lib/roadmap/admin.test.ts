@@ -368,15 +368,17 @@ describe("sorting the review into what a reader will notice", () => {
 });
 
 describe("reading a refused roadmap change", () => {
+	const problem = { type: "about:blank", title: "Refused" };
+
 	it("keeps the version a stale write was refused at", () => {
-		expect(roadmapFailure({ status: 409, code: "roadmap_stale", version: 8 }, 409)).toEqual({
+		expect(roadmapFailure({ ...problem, status: 409, code: "roadmap_stale", version: 8 }, 409)).toEqual({
 			kind: "stale",
 			version: 8,
 		});
 	});
 
 	it("tells a changed review apart from a stale version", () => {
-		expect(roadmapFailure({ status: 409, code: "roadmap_review_changed" }, 409)).toEqual({
+		expect(roadmapFailure({ ...problem, status: 409, code: "roadmap_review_changed" }, 409)).toEqual({
 			kind: "review_changed",
 		});
 	});
@@ -384,11 +386,11 @@ describe("reading a refused roadmap change", () => {
 	it("keeps the field errors of a refused entry", () => {
 		const errors = [{ field: "timeline.endOn", code: "out_of_range" }];
 
-		expect(roadmapFailure({ status: 422, errors }, 422)).toEqual({ kind: "invalid", errors });
+		expect(roadmapFailure({ ...problem, status: 422, errors }, 422)).toEqual({ kind: "invalid", errors });
 	});
 
 	it("reads forbidden and missing from the status, and anything else as unavailable", () => {
-		expect(roadmapFailure({ status: 403, code: "forbidden" }, 403)).toEqual({ kind: "forbidden" });
+		expect(roadmapFailure({ ...problem, status: 403, code: "forbidden" }, 403)).toEqual({ kind: "forbidden" });
 		expect(roadmapFailure(undefined, 404)).toEqual({ kind: "gone" });
 		expect(roadmapFailure(undefined, 500)).toEqual({ kind: "unavailable" });
 	});
