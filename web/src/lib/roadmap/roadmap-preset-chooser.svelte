@@ -2,6 +2,7 @@
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
+	import SettingsSectionHeader from "$lib/settings/settings-section-header.svelte";
 	import {
 		chosenPresets,
 		presetCopy,
@@ -36,21 +37,18 @@
 </script>
 
 <section class="flex flex-col gap-3" aria-labelledby="roadmap-preset">
-	<div class="flex flex-col gap-0.5">
-		<h2 id="roadmap-preset" class="text-md font-medium tracking-snug text-ink-900">What to share</h2>
-		<p class="text-sm leading-normal text-muted-foreground text-pretty">
-			{#if preset === "custom" && intended}
-				Some entries do not fit this preset. Nothing is removed for you; remove them yourself or pick another preset.
-			{:else if preset === "custom"}
-				The selection fits no single preset. Nothing is removed for you; pick a preset to see what does not fit.
-			{:else if preset === "unstarted"}
-				Pick how much of your planning the public roadmap shows. You can change it later.
-			{:else}
-				A preset only decides what you can add and whether selected issues are listed. Descriptions, dates, status
-				and progress stay as you set them.
-			{/if}
-		</p>
-	</div>
+	<SettingsSectionHeader id="roadmap-preset" title="What to share">
+		{#if preset === "custom" && intended}
+			Some entries do not fit this preset. Nothing is removed for you; remove them yourself or pick another preset.
+		{:else if preset === "custom"}
+			The selection fits no single preset. Nothing is removed for you; pick a preset to see what does not fit.
+		{:else if preset === "unstarted"}
+			Pick how much of your planning the public roadmap shows. You can change it later.
+		{:else}
+			A preset only decides what you can add and whether selected issues are listed. Descriptions, dates, status
+			and progress stay as you set them.
+		{/if}
+	</SettingsSectionHeader>
 
 	<RadioGroup.Root
 		value={selected}

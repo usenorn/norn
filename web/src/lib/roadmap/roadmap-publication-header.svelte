@@ -6,6 +6,7 @@
 	import Pill, { type PillTone } from "$lib/components/norn/pill.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { copyText } from "$lib/clipboard";
+	import SettingsSectionHeader from "$lib/settings/settings-section-header.svelte";
 	import { onDateAndTime } from "$lib/time";
 	import { memberName, type Membership } from "$lib/workspace/members";
 	import {
@@ -64,12 +65,10 @@
 	aria-labelledby="roadmap-publication"
 >
 	<div class="flex flex-col gap-1">
-		<div class="flex flex-wrap items-center gap-2">
-			<h2 id="roadmap-publication" class="text-md font-medium tracking-snug text-ink-900">Publication</h2>
-			<Pill tone={tones[publication.kind]}>{publicationLabels[publication.kind]}</Pill>
-		</div>
-
-		<p class="text-sm leading-normal text-muted-foreground text-pretty">
+		<SettingsSectionHeader id="roadmap-publication" title="Publication">
+			{#snippet badge()}
+				<Pill tone={tones[publication.kind]}>{publicationLabels[publication.kind]}</Pill>
+			{/snippet}
 			{#if live}
 				{publishedLine}
 				{#if publication.kind === "unpublished_changes"}
@@ -80,7 +79,7 @@
 			{:else}
 				Nothing is public. Choose what to share, preview it, then review and publish.
 			{/if}
-		</p>
+		</SettingsSectionHeader>
 
 		{#if live && live.withheld > 0}
 			<p class="text-sm leading-normal text-warning text-pretty">

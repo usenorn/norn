@@ -2,6 +2,7 @@
 	import ListPlus from "@lucide/svelte/icons/list-plus";
 	import * as Empty from "$lib/components/ui/empty/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import RowGroup from "$lib/components/norn/row-group.svelte";
 	import RoadmapEntryRow from "./roadmap-entry-row.svelte";
 	import { entryLayout, type RoadmapActivity, type RoadmapEntry, type RoadmapVisibility } from "./admin";
 
@@ -43,7 +44,7 @@
 		{#if layout.projects.length > 0}
 			<div class="flex flex-col gap-2">
 				<h3><Eyebrow>Projects</Eyebrow></h3>
-				<ul class="flex flex-col divide-y divide-line-subtle rounded-md border border-line-default">
+				<RowGroup as="ul">
 					{#each layout.projects as group (group.project.id)}
 						<li>
 							{@render row(group.project)}
@@ -59,18 +60,18 @@
 							{/if}
 						</li>
 					{/each}
-				</ul>
+				</RowGroup>
 			</div>
 		{/if}
 
 		{#if layout.issues.length > 0}
 			<div class="flex flex-col gap-2">
 				<h3><Eyebrow>Issues on their own</Eyebrow></h3>
-				<ul class="flex flex-col divide-y divide-line-subtle rounded-md border border-line-default">
+				<RowGroup as="ul">
 					{#each layout.issues as issue (issue.id)}
 						<li>{@render row(issue)}</li>
 					{/each}
-				</ul>
+				</RowGroup>
 			</div>
 		{/if}
 	</div>

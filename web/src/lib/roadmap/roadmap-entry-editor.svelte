@@ -13,6 +13,7 @@
 	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
 	import * as Select from "$lib/components/ui/select/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import RowGroup from "$lib/components/norn/row-group.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
@@ -504,7 +505,7 @@
 
 			<Form.Fieldset {form} name="visibility" class="flex flex-col gap-2">
 				<Form.Legend>What is shown for this entry</Form.Legend>
-				<div class="flex flex-col divide-y divide-line-subtle rounded-md border border-line-default">
+				<RowGroup>
 					{#each visibilityFields as field (field)}
 						{@const effect = effectiveFlag(roadmap.visibility, $formData.visibility, field)}
 						<SettingRow {form} name={`visibility.${field}`} label={visibilityLabels[field]} hint={flagEffectLabels[effect]}>
@@ -518,7 +519,7 @@
 							{/snippet}
 						</SettingRow>
 					{/each}
-				</div>
+				</RowGroup>
 			</Form.Fieldset>
 
 			<Dialog.Footer>

@@ -15,6 +15,7 @@
 	import * as Form from "$lib/components/ui/form/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Retry from "$lib/components/norn/retry.svelte";
+	import RowGroup from "$lib/components/norn/row-group.svelte";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
@@ -22,6 +23,7 @@
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import SaveBar from "$lib/settings/save-bar.svelte";
 	import SettingRow from "$lib/settings/setting-row.svelte";
+	import SettingsSectionHeader from "$lib/settings/settings-section-header.svelte";
 	import SettingsPage from "$lib/settings/settings-page.svelte";
 	import { showToast } from "$lib/toast/toasts";
 	import { saveBarOf } from "$lib/workspace/settings";
@@ -392,15 +394,9 @@
 
 		<section class="flex flex-col gap-3" aria-labelledby="roadmap-entries">
 			<div class="flex flex-wrap items-end justify-between gap-3">
-				<div class="flex min-w-0 flex-col gap-0.5">
-					<h2 id="roadmap-entries" class="text-md font-medium tracking-snug text-ink-900">
-						Entries
-						<span class="font-mono text-xs text-muted-foreground">{roadmap.entries.length}</span>
-					</h2>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						Each entry has its own public copy. Internal names, descriptions and comments are never published.
-					</p>
-				</div>
+				<SettingsSectionHeader id="roadmap-entries" title="Entries" count={roadmap.entries.length}>
+					Each entry has its own public copy. Internal names, descriptions and comments are never published.
+				</SettingsSectionHeader>
 				<RoadmapSourcePicker
 					{kinds}
 					{projects}
@@ -435,13 +431,9 @@
 			<input type="hidden" name="workspaceId" value={workspace.id} />
 			<input type="hidden" name="expectedVersion" value={$formData.expectedVersion} />
 
-			<div class="flex flex-col gap-0.5">
-				<h2 id="roadmap-page" class="text-md font-medium tracking-snug text-ink-900">Roadmap page</h2>
-				<p class="text-sm leading-normal text-muted-foreground text-pretty">
-					The heading readers see, and what the whole roadmap is allowed to show. An entry can hide more, never
-					less.
-				</p>
-			</div>
+			<SettingsSectionHeader id="roadmap-page" title="Roadmap page">
+				The heading readers see, and what the whole roadmap is allowed to show. An entry can hide more, never less.
+			</SettingsSectionHeader>
 
 			{#if settingsFailure}
 				<Alert.Root variant={settingsFailure.kind === "stale" ? "warning" : "destructive"}>
@@ -492,7 +484,7 @@
 				<Form.FieldErrors />
 			</Form.Field>
 
-			<div class="flex flex-col divide-y divide-line-default rounded-md border border-line-default">
+			<RowGroup>
 				{#each visibilityOrder as field (field)}
 					<SettingRow {form} name={field} label={visibilityLabels[field]} hint={visibilityHints[field]}>
 						{#snippet control(props)}
@@ -500,7 +492,7 @@
 						{/snippet}
 					</SettingRow>
 				{/each}
-			</div>
+			</RowGroup>
 
 			<div class="flex flex-wrap gap-2">
 				<Button type="submit" disabled={saving}>{saving ? "Saving" : "Save roadmap page"}</Button>
