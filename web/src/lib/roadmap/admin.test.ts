@@ -425,8 +425,8 @@ describe("reading the draft preview", () => {
 		return { data, response: new Response(null, { status }) };
 	}
 
-	it("keeps the admin entries so a blocker can name what was left out", () => {
-		expect(readRoadmapPreview(answer(draft, 200), answer(roadmap({ entries: [checkout] }), 200))).toEqual({
+	it("keeps only the blocked admin entries, so a blocker can name what was left out", () => {
+		expect(readRoadmapPreview(answer(draft, 200), answer(roadmap({ entries: [checkout, loose] }), 200))).toEqual({
 			kind: "ready",
 			preview: draft,
 			entries: [checkout],

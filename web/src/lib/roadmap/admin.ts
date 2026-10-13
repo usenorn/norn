@@ -495,7 +495,10 @@ export function readRoadmapPreview(
 	if (preview.response.status === forbidden) return { kind: "forbidden" };
 	if (!preview.response.ok || !preview.data) return { kind: "unavailable" };
 
-	return { kind: "ready", preview: preview.data, entries: roadmap.data?.entries ?? [] };
+	const blocked = new Set(preview.data.blockers.map((blocker) => blocker.entryId));
+	const entries = (roadmap.data?.entries ?? []).filter((entry) => blocked.has(entry.id));
+
+	return { kind: "ready", preview: preview.data, entries };
 }
 
 export function readRoadmapPreviewEntry(
