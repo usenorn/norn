@@ -18,6 +18,7 @@
 	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
 	import { Switch } from "$lib/components/ui/switch/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import SettingRow from "$lib/settings/setting-row.svelte";
 	import { statusLabels, timelineLabel } from "./public-roadmap";
 	import {
 		answerOf,
@@ -412,8 +413,8 @@
 				<Form.FieldErrors />
 			</Form.Field>
 
-			<fieldset class="flex flex-col gap-3">
-				<legend class="mb-1 text-sm font-medium text-ink-900">Public dates</legend>
+			<Form.Fieldset {form} name="timeline" class="flex flex-col gap-3">
+				<Form.Legend>Public dates</Form.Legend>
 				<div class="flex flex-col gap-3 sm:flex-row">
 					<Form.Field {form} name="timeline.startOn" class="flex-1">
 						<Form.Control>
@@ -447,7 +448,7 @@
 						No dates set, so readers see none.
 					{/if}
 				</p>
-			</fieldset>
+			</Form.Fieldset>
 
 			{#if kind === "project"}
 				<Form.Fieldset {form} name="progressMode" class="flex flex-col gap-2">
@@ -501,23 +502,24 @@
 				{/if}
 			{/if}
 
-			<fieldset class="flex flex-col gap-1">
-				<legend class="mb-1 text-sm font-medium text-ink-900">What is shown for this entry</legend>
-				<ul class="flex flex-col divide-y divide-line-subtle rounded-md border border-line-default">
+			<Form.Fieldset {form} name="visibility" class="flex flex-col gap-2">
+				<Form.Legend>What is shown for this entry</Form.Legend>
+				<div class="flex flex-col divide-y divide-line-subtle rounded-md border border-line-default">
 					{#each visibilityFields as field (field)}
 						{@const effect = effectiveFlag(roadmap.visibility, $formData.visibility, field)}
-						<li class="flex items-center justify-between gap-3 px-3 py-2">
-							<label for="roadmap-entry-{field}" class="flex min-w-0 flex-col gap-0.5">
-								<span class="text-sm text-ink-900">{visibilityLabels[field]}</span>
-								<span class={["text-xs leading-normal", effect === "shown" ? "text-ink-700" : "text-muted-foreground"]}>
-									{flagEffectLabels[effect]}
-								</span>
-							</label>
-							<Switch id="roadmap-entry-{field}" bind:checked={$formData.visibility[field]} disabled={busy} />
-						</li>
+						<SettingRow {form} name={`visibility.${field}`} label={visibilityLabels[field]} hint={flagEffectLabels[effect]}>
+							{#snippet control(props)}
+								<Switch
+									{...props}
+									bind:checked={$formData.visibility[field]}
+									disabled={busy}
+									class="sm:justify-self-end"
+								/>
+							{/snippet}
+						</SettingRow>
 					{/each}
-				</ul>
-			</fieldset>
+				</div>
+			</Form.Fieldset>
 
 			<Dialog.Footer>
 				<Button type="button" variant="secondary" disabled={busy} onclick={onclose}>Cancel</Button>
