@@ -35,6 +35,7 @@ type Config struct {
 	AgentTooling  AgentTooling  `mapstructure:"agent_tooling"`
 	SourceControl SourceControl `mapstructure:"source_control"`
 	Intake        Intake        `mapstructure:"intake"`
+	Roadmaps      Roadmaps      `mapstructure:"roadmaps"`
 	Epostix       Epostix       `mapstructure:"epostix"`
 	Session       Session       `mapstructure:"session"`
 	Casbin        Casbin        `mapstructure:"casbin"`
@@ -53,6 +54,10 @@ type Config struct {
 }
 
 type Intake struct {
+	Domain string `mapstructure:"domain"`
+}
+
+type Roadmaps struct {
 	Domain string `mapstructure:"domain"`
 }
 

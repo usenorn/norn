@@ -35,7 +35,6 @@ const (
 	RoadmapFieldProgressMode    = "progressMode"
 	RoadmapFieldProgressPercent = "progressPercent"
 	RoadmapFieldKind            = "kind"
-	RoadmapFieldEntries         = "entries"
 )
 
 var (
@@ -43,7 +42,8 @@ var (
 	ErrRoadmapStale          = errors.New("roadmap changed since it was read")
 	ErrRoadmapEntryNotFound  = errors.New("roadmap entry not found")
 	ErrRoadmapEntryDuplicate = errors.New("that project or issue is already on the roadmap")
-	ErrRoadmapNotPublished   = errors.New("roadmap is not published")
+	ErrRoadmapFull           = errors.New("roadmap already holds the most entries it may")
+	ErrRoadmapUnreachable    = errors.New("roadmap entry's project or issue is missing or out of reach")
 )
 
 var (
@@ -61,6 +61,18 @@ func (e RoadmapStaleError) Error() string {
 
 func (e RoadmapStaleError) Unwrap() error {
 	return ErrRoadmapStale
+}
+
+type RoadmapUnreachableError struct {
+	EntryID uuid.UUID
+}
+
+func (e RoadmapUnreachableError) Error() string {
+	return fmt.Sprintf("%s: entry %s", ErrRoadmapUnreachable, e.EntryID)
+}
+
+func (e RoadmapUnreachableError) Unwrap() error {
+	return ErrRoadmapUnreachable
 }
 
 type RoadmapVisibility struct {

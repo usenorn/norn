@@ -1079,6 +1079,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("source_control.allowed_destinations", []string{})
 
 	v.SetDefault("intake.domain", "")
+	v.SetDefault("roadmaps.domain", "")
 
 	v.SetDefault("epostix.endpoint", "")
 	v.SetDefault("epostix.api_key", "")
