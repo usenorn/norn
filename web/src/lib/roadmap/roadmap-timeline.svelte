@@ -8,15 +8,15 @@
 </script>
 
 {#if placement}
-	<div class="relative h-1.5 w-full rounded-xs bg-paper-3" aria-hidden="true">
+	<div class="relative h-1 w-full rounded-xs bg-paper-2" aria-hidden="true">
 		{#if placement.kind === "span"}
 			<div
-				class="absolute inset-y-0 min-w-1.5 rounded-xs bg-status-active"
+				class="absolute inset-y-0 min-w-1 rounded-xs bg-line-strong"
 				style="left: {placement.offset}%; width: {placement.width}%"
 			></div>
 		{:else}
 			<div
-				class="absolute inset-y-0 w-1.5 -translate-x-1/2 rounded-full bg-status-active"
+				class="absolute inset-y-0 w-1 -translate-x-1/2 rounded-full bg-line-strong"
 				style="left: {placement.offset}%"
 			></div>
 		{/if}
