@@ -102,7 +102,13 @@ describe("reading where the publication stands", () => {
 	it("is unpublished until something was published, whatever the review says", () => {
 		const review = { ...quiet, hasUnpublishedChanges: true };
 
-		expect(publicationOf(roadmap({ review }))).toEqual({ kind: "unpublished", review });
+		expect(publicationOf(roadmap({ review }))).toEqual({ kind: "unpublished", url: null, review });
+	});
+
+	it("keeps the public address before the first publication", () => {
+		const state = publicationOf(roadmap({ review: quiet, publicUrl: "https://roadmap.example.com" }));
+
+		expect(state).toEqual({ kind: "unpublished", url: "https://roadmap.example.com", review: quiet });
 	});
 
 	it("takes unpublished changes from the server's review, not from a local diff", () => {

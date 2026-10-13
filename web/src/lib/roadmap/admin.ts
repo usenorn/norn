@@ -43,7 +43,7 @@ export type RoadmapPreviewEntryView =
 	| { kind: "ready"; roadmapTitle: string; item: PublicRoadmapItem };
 
 export type RoadmapPublicationState =
-	| { kind: "unpublished"; review: RoadmapReview }
+	| { kind: "unpublished"; url: string | null; review: RoadmapReview }
 	| { kind: "published"; publication: RoadmapPublication; url: string | null; withheld: number }
 	| {
 			kind: "unpublished_changes";
@@ -56,7 +56,7 @@ export type RoadmapPublicationState =
 export function publicationOf(roadmap: Roadmap): RoadmapPublicationState {
 	const { publication, review } = roadmap;
 
-	if (!publication) return { kind: "unpublished", review };
+	if (!publication) return { kind: "unpublished", url: roadmap.publicUrl, review };
 
 	const withheld = roadmap.entries.filter((entry) => entry.withheld).length;
 	const published = { publication, url: roadmap.publicUrl, withheld };

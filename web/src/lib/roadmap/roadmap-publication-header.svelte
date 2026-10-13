@@ -43,7 +43,7 @@
 
 	const busy = $derived(activity.kind !== "idle");
 	const live = $derived(publication.kind === "unpublished" ? undefined : publication);
-	const url = $derived(live?.url ?? null);
+	const url = $derived(publication.url);
 	const publisher = $derived(
 		live?.publication.publishedByAccountId
 			? members.find((member) => member.accountId === live.publication.publishedByAccountId)
