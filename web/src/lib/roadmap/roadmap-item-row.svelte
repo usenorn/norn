@@ -53,7 +53,7 @@
 			{/if}
 			{#if progress && item.progress !== undefined}
 				<span class="flex items-center gap-2">
-					<Progress value={item.progress} class="w-16" aria-label={progress} />
+					<Progress value={item.progress} class="w-16" aria-hidden="true" />
 					<span>{progress}</span>
 				</span>
 			{/if}

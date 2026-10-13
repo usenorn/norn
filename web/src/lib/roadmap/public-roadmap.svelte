@@ -3,7 +3,7 @@
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import * as Empty from "$lib/components/ui/empty/index.js";
 	import { onDate } from "$lib/time";
-	import RoadmapItemRow from "./roadmap-item-row.svelte";
+	import RoadmapItemList from "./roadmap-item-list.svelte";
 	import { timelineWindow, type PublicRoadmap } from "./public-roadmap";
 
 	let { roadmap, entryHref }: { roadmap: PublicRoadmap; entryHref: (id: string) => string } =
@@ -26,7 +26,7 @@
 	</header>
 
 	{#if roadmap.projects.length === 0 && roadmap.issues.length === 0}
-		<Empty.Root class="border border-line-subtle">
+		<Empty.Root>
 			<Empty.Media variant="icon"><Map aria-hidden="true" /></Empty.Media>
 			<Empty.Header>
 				<Empty.Title>Nothing on this roadmap yet</Empty.Title>
@@ -37,36 +37,15 @@
 
 	{#if roadmap.projects.length > 0}
 		<section class="flex flex-col gap-2" aria-labelledby="roadmap-projects">
-			<Eyebrow id="roadmap-projects" class="text-ink-600">Projects</Eyebrow>
-			<ul class="flex flex-col rounded-lg border border-line-subtle">
-				{#each roadmap.projects as project (project.id)}
-					<li class="border-b border-line-subtle last:border-b-0">
-						<RoadmapItemRow item={project} href={entryHref(project.id)} {window} />
-						{#if project.issues && project.issues.length > 0}
-							<ul aria-label="Issues in {project.title}" class="border-t border-line-subtle">
-								{#each project.issues as issue (issue.id)}
-									<li class="border-b border-line-subtle last:border-b-0">
-										<RoadmapItemRow item={issue} href={entryHref(issue.id)} class="pl-8" />
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</li>
-				{/each}
-			</ul>
+			<h2 id="roadmap-projects"><Eyebrow class="text-ink-600">Projects</Eyebrow></h2>
+			<RoadmapItemList items={roadmap.projects} {entryHref} {window} />
 		</section>
 	{/if}
 
 	{#if roadmap.issues.length > 0}
 		<section class="flex flex-col gap-2" aria-labelledby="roadmap-issues">
-			<Eyebrow id="roadmap-issues" class="text-ink-600">Other planned work</Eyebrow>
-			<ul class="flex flex-col rounded-lg border border-line-subtle">
-				{#each roadmap.issues as issue (issue.id)}
-					<li class="border-b border-line-subtle last:border-b-0">
-						<RoadmapItemRow item={issue} href={entryHref(issue.id)} {window} />
-					</li>
-				{/each}
-			</ul>
+			<h2 id="roadmap-issues"><Eyebrow class="text-ink-600">Other planned work</Eyebrow></h2>
+			<RoadmapItemList items={roadmap.issues} {entryHref} {window} />
 		</section>
 	{/if}
 </article>

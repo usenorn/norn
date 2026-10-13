@@ -2,7 +2,7 @@
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import { Progress } from "$lib/components/ui/progress/index.js";
-	import RoadmapItemRow from "./roadmap-item-row.svelte";
+	import RoadmapItemList from "./roadmap-item-list.svelte";
 	import RoadmapStatus from "./roadmap-status.svelte";
 	import {
 		progressLabel,
@@ -56,7 +56,7 @@
 			{#if progress && item.progress !== undefined}
 				<dt class="text-muted-foreground">Progress</dt>
 				<dd class="flex items-center gap-2 font-mono text-ink-900 tabular-nums">
-					<Progress value={item.progress} class="w-24" aria-label={progress} />
+					<Progress value={item.progress} class="w-24" aria-hidden="true" />
 					<span>{progress}</span>
 				</dd>
 			{/if}
@@ -71,15 +71,9 @@
 
 	{#if item.issues}
 		<section class="flex flex-col gap-2" aria-labelledby="entry-issues">
-			<Eyebrow id="entry-issues" class="text-ink-600">Issues</Eyebrow>
+			<h2 id="entry-issues"><Eyebrow class="text-ink-600">Issues</Eyebrow></h2>
 			{#if item.issues.length > 0}
-				<ul class="flex flex-col rounded-lg border border-line-subtle">
-					{#each item.issues as issue (issue.id)}
-						<li class="border-b border-line-subtle last:border-b-0">
-							<RoadmapItemRow item={issue} href={entryHref(issue.id)} {window} />
-						</li>
-					{/each}
-				</ul>
+				<RoadmapItemList items={item.issues} {entryHref} {window} />
 			{:else}
 				<p class="text-sm text-muted-foreground">No issues are shared for this project yet.</p>
 			{/if}

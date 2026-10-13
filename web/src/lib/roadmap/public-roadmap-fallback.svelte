@@ -18,7 +18,8 @@
 
 {#if view.kind === "loading"}
 	<PublicRoadmapHead title="Roadmap" />
-	<div class="flex flex-col gap-8" aria-busy="true" aria-label="Loading the roadmap">
+	<div class="flex flex-col gap-8" role="status" aria-busy="true">
+		<span class="sr-only">Loading the roadmap</span>
 		<div class="flex flex-col gap-2">
 			<div class="h-7 w-2/3 animate-breathe rounded-md bg-paper-2"></div>
 			<div class="h-4 w-full animate-breathe rounded-md bg-paper-2"></div>
@@ -58,6 +59,8 @@
 			<Alert.Description>Wait a moment and try again.</Alert.Description>
 		</Alert.Root>
 		<Retry />
-		<p class="font-mono text-xs break-all text-muted-foreground">Reference {view.reference}</p>
+		{#if view.reference}
+			<p class="font-mono text-xs break-all text-muted-foreground">Reference {view.reference}</p>
+		{/if}
 	</div>
 {/if}
