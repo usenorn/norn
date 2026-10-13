@@ -622,7 +622,7 @@ export function projectSourceText(project: Project): SourceText {
 
 export function issueSourceText(issue: Issue): SourceText {
 	const description = issue.descriptionDoc
-		? documentExcerpt(issue.descriptionDoc, roadmapDescriptionMaxLength)
+		? documentExcerpt(issue.descriptionDoc, roadmapDescriptionMaxLength - 1)
 		: issue.description.trim().slice(0, roadmapDescriptionMaxLength);
 
 	return { kind: "ready", label: issue.title, reference: issue.reference, description };

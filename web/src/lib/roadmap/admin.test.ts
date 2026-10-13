@@ -7,6 +7,7 @@ import {
 	entryDifferences,
 	entryInputOf,
 	entryLayout,
+	issueSourceText,
 	newEntryContent,
 	presetConflicts,
 	presetKinds,
@@ -32,6 +33,7 @@ import {
 	type RoadmapVisibility,
 } from "./admin";
 import { roadmapEntrySchema } from "./roadmap-entry-schema";
+import { roadmapDescriptionMaxLength } from "./roadmap-settings-schema";
 
 const hidden: RoadmapVisibility = {
 	issueLists: false,
@@ -464,5 +466,23 @@ describe("reading the draft preview", () => {
 		expect(readRoadmapPreviewEntry(answer(draft, 200), answer(undefined, 404)).kind).toBe("not_found");
 		expect(readRoadmapPreviewEntry(answer(undefined, 403), answer(undefined, 403)).kind).toBe("forbidden");
 		expect(readRoadmapPreviewEntry(answer(undefined, 500), answer(item, 200)).kind).toBe("unavailable");
+	});
+});
+
+describe("copying an issue description into the public copy", () => {
+	it("fits the public description limit with its ellipsis", () => {
+		const issue = {
+			title: "Offline edits",
+			reference: "ENG-7",
+			description: "",
+			descriptionDoc: {
+				type: "doc",
+				content: [{ type: "paragraph", content: [{ type: "text", text: `${"a".repeat(4000)} b` }] }],
+			},
+		} as Parameters<typeof issueSourceText>[0];
+
+		const text = issueSourceText(issue);
+
+		expect(text.kind === "ready" && text.description.length).toBe(roadmapDescriptionMaxLength);
 	});
 });
