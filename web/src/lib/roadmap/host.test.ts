@@ -2,10 +2,17 @@ import { describe, expect, it } from "vitest";
 import { isPublicRoadmapRoute, onRoadmapHost, publicRoadmapPath } from "./host";
 
 describe("onRoadmapHost", () => {
-	it("recognises every host under the roadmaps domain", () => {
+	it("recognises a workspace slug directly under the roadmaps domain", () => {
 		expect(onRoadmapHost("acme.roadmap.norn.ink", "roadmap.norn.ink")).toBe(true);
-		expect(onRoadmapHost("ACME.Roadmap.Norn.Ink.", "roadmap.norn.ink")).toBe(true);
-		expect(onRoadmapHost("roadmap.norn.ink", "roadmap.norn.ink")).toBe(true);
+		expect(onRoadmapHost("ACME-labs.Roadmap.Norn.Ink.", "roadmap.norn.ink")).toBe(true);
+	});
+
+	it("follows the api in refusing the bare domain, deeper hosts and invalid slugs", () => {
+		expect(onRoadmapHost("roadmap.norn.ink", "roadmap.norn.ink")).toBe(false);
+		expect(onRoadmapHost("a.b.roadmap.norn.ink", "roadmap.norn.ink")).toBe(false);
+		expect(onRoadmapHost("a.roadmap.norn.ink", "roadmap.norn.ink")).toBe(false);
+		expect(onRoadmapHost("-acme.roadmap.norn.ink", "roadmap.norn.ink")).toBe(false);
+		expect(onRoadmapHost(`${"a".repeat(41)}.roadmap.norn.ink`, "roadmap.norn.ink")).toBe(false);
 	});
 
 	it("leaves the app host and look-alike hosts alone", () => {
