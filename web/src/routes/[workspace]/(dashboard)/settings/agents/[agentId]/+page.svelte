@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
-	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Gauge from "@lucide/svelte/icons/gauge";
 	import KeyRound from "@lucide/svelte/icons/key-round";
@@ -56,6 +55,8 @@
 	import type { TelegramPanel } from "$lib/agents/telegram";
 	import { agentRecordPreviewStates, type AgentDetailTab } from "./preview";
 	import type { PageProps } from "./$types";
+	import SettingsBody from "$lib/settings/settings-body.svelte";
+	import SettingsBackBar from "$lib/settings/settings-back-bar.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -420,383 +421,374 @@
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex h-11 flex-none items-center justify-between gap-3 border-b border-line-subtle px-4">
-		<a
-			href={agentsPath(workspace.slug)}
-			class="flex items-center gap-1.5 text-sm text-muted-foreground motion-control hover:text-ink-900"
-		>
-			<ArrowLeft class="size-4" aria-hidden="true" />
-			<span>Agents</span>
-		</a>
-		<a
-			href={runnersPath(workspace.slug)}
-			class="text-xs text-muted-foreground motion-control hover:text-ink-900"
-		>
-			Runners
-		</a>
-	</div>
+	<SettingsBackBar href={agentsPath(workspace.slug)} label="Agents">
+		{#snippet trailing()}
+			<a
+				href={runnersPath(workspace.slug)}
+				class="text-sm text-muted-foreground motion-control hover:text-ink-900"
+			>
+				Runners
+			</a>
+		{/snippet}
+	</SettingsBackBar>
 
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
-			<p class="sr-only" aria-live="polite" aria-atomic="true">{mutationAnnouncement}</p>
-			{#if record.kind === "loading"}
-				<div class="flex flex-col gap-5" role="status" aria-busy="true" aria-label="Loading agent">
-					<div class="flex items-start gap-3">
-						<Skeleton class="size-9" />
-						<div class="flex flex-1 flex-col gap-2">
-							<Skeleton class="h-5 w-44" />
-							<Skeleton class="h-3 w-full max-w-96" />
-						</div>
-					</div>
-					<Skeleton class="h-9 w-full" />
-					<div class="grid gap-4 md:grid-cols-2">
-						<Skeleton class="h-56 w-full" />
-						<Skeleton class="h-56 w-full" />
+	<SettingsBody width="wide">
+		<p class="sr-only" aria-live="polite" aria-atomic="true">{mutationAnnouncement}</p>
+		{#if record.kind === "loading"}
+			<div class="flex flex-col gap-5" role="status" aria-busy="true" aria-label="Loading agent">
+				<div class="flex items-start gap-3">
+					<Skeleton class="size-9" />
+					<div class="flex flex-1 flex-col gap-2">
+						<Skeleton class="h-5 w-44" />
+						<Skeleton class="h-3 w-full max-w-96" />
 					</div>
 				</div>
-			{:else if record.kind === "missing"}
-				<Alert.Root variant="muted">
-					<CircleAlert aria-hidden="true" />
-					<Alert.Title>That agent is not here</Alert.Title>
-					<Alert.Description>It may have been removed with its workspace.</Alert.Description>
-				</Alert.Root>
-			{:else if record.kind === "forbidden"}
-				<Alert.Root variant="muted">
-					<CircleAlert aria-hidden="true" />
-					<Alert.Title>You may not inspect this agent</Alert.Title>
-					<Alert.Description>Ask a workspace administrator for access.</Alert.Description>
-				</Alert.Root>
-			{:else if record.kind === "authority_missing"}
-				<Alert.Root variant="warning">
-					<CircleAlert aria-hidden="true" />
-					<Alert.Title>This agent has no authority to restore</Alert.Title>
-					<Alert.Description>
-						Return to the roster and register a replacement agent.
-					</Alert.Description>
-					<Alert.Action>
-						<Button href={agentsPath(workspace.slug)} variant="secondary" size="sm">
-							Return to agents
+				<Skeleton class="h-9 w-full" />
+				<div class="grid gap-4 md:grid-cols-2">
+					<Skeleton class="h-56 w-full" />
+					<Skeleton class="h-56 w-full" />
+				</div>
+			</div>
+		{:else if record.kind === "missing"}
+			<Alert.Root variant="muted">
+				<CircleAlert aria-hidden="true" />
+				<Alert.Title>That agent is not here</Alert.Title>
+				<Alert.Description>It may have been removed with its workspace.</Alert.Description>
+			</Alert.Root>
+		{:else if record.kind === "forbidden"}
+			<Alert.Root variant="muted">
+				<CircleAlert aria-hidden="true" />
+				<Alert.Title>You may not inspect this agent</Alert.Title>
+				<Alert.Description>Ask a workspace administrator for access.</Alert.Description>
+			</Alert.Root>
+		{:else if record.kind === "authority_missing"}
+			<Alert.Root variant="warning">
+				<CircleAlert aria-hidden="true" />
+				<Alert.Title>This agent has no authority to restore</Alert.Title>
+				<Alert.Description>
+					Return to the roster and register a replacement agent.
+				</Alert.Description>
+				<Alert.Action>
+					<Button href={agentsPath(workspace.slug)} variant="secondary" size="sm">
+						Return to agents
+					</Button>
+				</Alert.Action>
+			</Alert.Root>
+		{:else if record.kind === "unavailable"}
+			<Alert.Root variant="destructive">
+				<TriangleAlert aria-hidden="true" />
+				<Alert.Title>Could not load the agent</Alert.Title>
+				<Alert.Description>Check your connection and reload.</Alert.Description>
+			</Alert.Root>
+		{:else if agent}
+			<section class="flex flex-col gap-4 border-b border-line-subtle pb-5 sm:flex-row sm:items-start sm:justify-between">
+				<div class="flex min-w-0 items-start gap-3">
+					<AgentIcon icon={agent.agent.icon} class="size-9" />
+					<div class="min-w-0">
+						<div class="flex flex-wrap items-center gap-2">
+							<h1 class="truncate text-xl font-medium tracking-snug text-ink-900">{agent.agent.name}</h1>
+							<Tag name={agent.agent.status === "active" ? "Active" : "Disabled"} />
+						</div>
+						<p class="mt-1 text-sm text-muted-foreground">
+							Acts for {agent.ownerName || agent.ownerEmail || "somebody who has left"}
+						</p>
+					</div>
+				</div>
+				<div class="flex flex-none flex-wrap gap-2">
+					{#if agent.agent.status === "active"}
+						<Button
+							variant="secondary"
+							size="sm"
+							disabled={mutation !== null}
+							onclick={() => (confirmation = "rotate")}
+						>
+							<RotateCw aria-hidden="true" />
+							New credential
 						</Button>
-					</Alert.Action>
-				</Alert.Root>
-			{:else if record.kind === "unavailable"}
+						<Button
+							variant="destructive"
+							size="sm"
+							disabled={mutation !== null}
+							onclick={() => (confirmation = "disable")}
+						>
+							<Power aria-hidden="true" />
+							Disable
+						</Button>
+					{:else}
+						<Button
+							size="sm"
+							disabled={mutation !== null}
+							onclick={() => (confirmation = "enable")}
+						>
+							<Power aria-hidden="true" />
+							Enable agent
+						</Button>
+					{/if}
+				</div>
+			</section>
+
+			{#if lifecycleFailure}
 				<Alert.Root variant="destructive">
 					<TriangleAlert aria-hidden="true" />
-					<Alert.Title>Could not load the agent</Alert.Title>
-					<Alert.Description>Check your connection and reload.</Alert.Description>
+					<Alert.Title>That did not work</Alert.Title>
+					<Alert.Description>{agentLifecycleFailureMessage(lifecycleFailure)}</Alert.Description>
 				</Alert.Root>
-			{:else if agent}
-				<section class="flex flex-col gap-4 border-b border-line-subtle pb-5 sm:flex-row sm:items-start sm:justify-between">
-					<div class="flex min-w-0 items-start gap-3">
-						<AgentIcon icon={agent.agent.icon} class="size-9" />
-						<div class="min-w-0">
-							<div class="flex flex-wrap items-center gap-2">
-								<h1 class="truncate text-xl font-medium tracking-snug text-ink-900">{agent.agent.name}</h1>
-								<Tag name={agent.agent.status === "active" ? "Active" : "Disabled"} />
-							</div>
-							<p class="mt-1 text-sm text-muted-foreground">
-								Acts for {agent.ownerName || agent.ownerEmail || "somebody who has left"}
+			{/if}
+
+			<Tabs.Root bind:value={selectedTab} class="gap-0">
+				<Tabs.List variant="line" class="w-full justify-start overflow-x-auto">
+					<Tabs.Trigger value="overview" class="flex-none">Overview</Tabs.Trigger>
+					<Tabs.Trigger value="execution" class="flex-none">Execution</Tabs.Trigger>
+					<Tabs.Trigger value="capabilities" class="flex-none">Capabilities</Tabs.Trigger>
+					<Tabs.Trigger value="telegram" class="flex-none">Telegram</Tabs.Trigger>
+					<Tabs.Trigger value="scope" class="flex-none">Scope</Tabs.Trigger>
+					<Tabs.Trigger value="instructions" class="flex-none">Instructions</Tabs.Trigger>
+					<Tabs.Trigger value="activity" class="flex-none">Activity</Tabs.Trigger>
+				</Tabs.List>
+
+				<Tabs.Content value="overview" class="pt-5">
+					<div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(16rem,2fr)]">
+						<section class="min-w-0">
+							<h2 class="text-md font-semibold tracking-snug text-ink-900">Authority</h2>
+							<p class="mt-1 text-sm leading-normal text-muted-foreground text-pretty">
+								Read-only summary of what the latest credential permits.
 							</p>
-						</div>
-					</div>
-					<div class="flex flex-none flex-wrap gap-2">
-						{#if agent.agent.status === "active"}
-							<Button
-								variant="secondary"
-								size="sm"
-								disabled={mutation !== null}
-								onclick={() => (confirmation = "rotate")}
-							>
-								<RotateCw aria-hidden="true" />
-								New credential
-							</Button>
-							<Button
-								variant="destructive"
-								size="sm"
-								disabled={mutation !== null}
-								onclick={() => (confirmation = "disable")}
-							>
-								<Power aria-hidden="true" />
-								Disable
-							</Button>
-						{:else}
-							<Button
-								size="sm"
-								disabled={mutation !== null}
-								onclick={() => (confirmation = "enable")}
-							>
-								<Power aria-hidden="true" />
-								Enable agent
-							</Button>
-						{/if}
-					</div>
-				</section>
 
-				{#if lifecycleFailure}
-					<Alert.Root variant="destructive">
-						<TriangleAlert aria-hidden="true" />
-						<Alert.Title>That did not work</Alert.Title>
-						<Alert.Description>{agentLifecycleFailureMessage(lifecycleFailure)}</Alert.Description>
-					</Alert.Root>
-				{/if}
+							<div class="mt-3 border border-line-subtle bg-paper-0">
+								<div class="border-b border-line-subtle p-4">
+									<div class="flex items-center gap-2 text-sm font-medium text-ink-900">
+										<KeyRound aria-hidden="true" />
+										Permissions
+									</div>
+									<ul class="mt-3 divide-y divide-line-subtle border border-line-subtle bg-paper-1">
+										{#each agent.authority.scopes as scope (scope)}
+											<li class="flex flex-col gap-0.5 p-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+												<span class="text-sm text-ink-900">{agentPermissionLabels[scope] ?? scope}</span>
+												<code class="font-mono text-xs text-muted-foreground">{scope}</code>
+											</li>
+										{/each}
+									</ul>
+								</div>
 
-				<Tabs.Root bind:value={selectedTab} class="gap-0">
-					<Tabs.List variant="line" class="w-full justify-start overflow-x-auto">
-						<Tabs.Trigger value="overview" class="flex-none">Overview</Tabs.Trigger>
-						<Tabs.Trigger value="execution" class="flex-none">Execution</Tabs.Trigger>
-						<Tabs.Trigger value="capabilities" class="flex-none">Capabilities</Tabs.Trigger>
-						<Tabs.Trigger value="telegram" class="flex-none">Telegram</Tabs.Trigger>
-						<Tabs.Trigger value="scope" class="flex-none">Scope</Tabs.Trigger>
-						<Tabs.Trigger value="instructions" class="flex-none">Instructions</Tabs.Trigger>
-						<Tabs.Trigger value="activity" class="flex-none">Activity</Tabs.Trigger>
-					</Tabs.List>
-
-					<Tabs.Content value="overview" class="pt-5">
-						<div class="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(16rem,2fr)]">
-							<section class="min-w-0">
-								<h2 class="text-md font-medium tracking-snug text-ink-900">Authority</h2>
-								<p class="mt-1 text-sm leading-normal text-muted-foreground text-pretty">
-									Read-only summary of what the latest credential permits.
-								</p>
-
-								<div class="mt-3 border border-line-subtle bg-paper-0">
-									<div class="border-b border-line-subtle p-4">
-										<div class="flex items-center gap-2 text-sm font-medium text-ink-900">
-											<KeyRound aria-hidden="true" />
-											Permissions
-										</div>
-										<ul class="mt-3 divide-y divide-line-subtle border border-line-subtle bg-paper-1">
-											{#each agent.authority.scopes as scope (scope)}
-												<li class="flex flex-col gap-0.5 p-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-													<span class="text-sm text-ink-900">{agentPermissionLabels[scope] ?? scope}</span>
-													<code class="font-mono text-xs text-muted-foreground">{scope}</code>
-												</li>
+								<div class="p-4">
+									<div class="flex items-center gap-2 text-sm font-medium text-ink-900">
+										<Users aria-hidden="true" />
+										Team reach
+									</div>
+									{#if agent.authority.allTeams}
+										<p class="mt-2 text-sm text-muted-foreground">Every team its owner may reach.</p>
+									{:else}
+										<ul class="mt-2 flex flex-col gap-1">
+											{#each agent.authority.teamIds as teamId (teamId)}
+												<li class="font-mono text-xs text-muted-foreground">{teamName(teamId)}</li>
 											{/each}
 										</ul>
-									</div>
-
-									<div class="p-4">
-										<div class="flex items-center gap-2 text-sm font-medium text-ink-900">
-											<Users aria-hidden="true" />
-											Team reach
-										</div>
-										{#if agent.authority.allTeams}
-											<p class="mt-2 text-sm text-muted-foreground">Every team its owner may reach.</p>
-										{:else}
-											<ul class="mt-2 flex flex-col gap-1">
-												{#each agent.authority.teamIds as teamId (teamId)}
-													<li class="font-mono text-xs text-muted-foreground">{teamName(teamId)}</li>
-												{/each}
-											</ul>
-										{/if}
-									</div>
+									{/if}
 								</div>
+							</div>
+						</section>
+
+						<div class="flex min-w-0 flex-col gap-4">
+							<section class="border border-line-subtle bg-paper-0 p-4">
+								<div class="flex items-center gap-2 text-sm font-medium text-ink-900">
+									<Gauge aria-hidden="true" />
+									Action allowance
+								</div>
+								<p class="mt-2 text-2xl font-medium tracking-snug text-ink-900">{agent.agent.actionLimit}</p>
+								<p class="text-xs text-muted-foreground">changes each minute</p>
 							</section>
 
-							<div class="flex min-w-0 flex-col gap-4">
-								<section class="border border-line-subtle bg-paper-0 p-4">
-									<div class="flex items-center gap-2 text-sm font-medium text-ink-900">
-										<Gauge aria-hidden="true" />
-										Action allowance
+							<section class="border border-line-subtle bg-paper-0 p-4">
+								<h2 class="text-sm font-medium tracking-snug text-ink-900">Record</h2>
+								<dl class="mt-3 grid gap-3 text-sm">
+									<div>
+										<dt class="text-xs text-muted-foreground">Owner</dt>
+										<dd class="mt-0.5 text-ink-900">{agent.ownerName || agent.ownerEmail}</dd>
 									</div>
-									<p class="mt-2 text-2xl font-medium tracking-snug text-ink-900">{agent.agent.actionLimit}</p>
-									<p class="text-xs text-muted-foreground">changes each minute</p>
-								</section>
-
-								<section class="border border-line-subtle bg-paper-0 p-4">
-									<h2 class="text-sm font-medium tracking-snug text-ink-900">Record</h2>
-									<dl class="mt-3 grid gap-3 text-sm">
+									<div>
+										<dt class="text-xs text-muted-foreground">Execution</dt>
+										<dd class="mt-0.5 text-ink-900">{agentExecutionLabels[agent.agent.execution]}</dd>
+									</div>
+									<div>
+										<dt class="text-xs text-muted-foreground">Registered</dt>
+										<dd class="mt-0.5 text-ink-900">{onDate(agent.agent.createdAt, workspace.timezone)}</dd>
+									</div>
+									{#if agent.agent.disabledAt}
 										<div>
-											<dt class="text-xs text-muted-foreground">Owner</dt>
-											<dd class="mt-0.5 text-ink-900">{agent.ownerName || agent.ownerEmail}</dd>
+											<dt class="text-xs text-muted-foreground">Disabled</dt>
+											<dd class="mt-0.5 text-ink-900">{onDate(agent.agent.disabledAt, workspace.timezone)}</dd>
 										</div>
-										<div>
-											<dt class="text-xs text-muted-foreground">Execution</dt>
-											<dd class="mt-0.5 text-ink-900">{agentExecutionLabels[agent.agent.execution]}</dd>
-										</div>
-										<div>
-											<dt class="text-xs text-muted-foreground">Registered</dt>
-											<dd class="mt-0.5 text-ink-900">{onDate(agent.agent.createdAt, workspace.timezone)}</dd>
-										</div>
-										{#if agent.agent.disabledAt}
-											<div>
-												<dt class="text-xs text-muted-foreground">Disabled</dt>
-												<dd class="mt-0.5 text-ink-900">{onDate(agent.agent.disabledAt, workspace.timezone)}</dd>
-											</div>
-										{/if}
-									</dl>
-								</section>
-							</div>
+									{/if}
+								</dl>
+							</section>
 						</div>
-					</Tabs.Content>
+					</div>
+				</Tabs.Content>
 
-					<Tabs.Content value="execution" class="pt-5">
-						<div class="flex flex-col gap-4">
-							<p class="text-sm leading-normal text-muted-foreground text-pretty">
-								{agent.agent.execution === "hosted"
-									? "Norn runs this agent itself, so it needs no runner. It cannot be handed issues while it is hosted."
-									: "This agent works on a runner its owner enrolled. Its computers are listed on the"}
-								{#if agent.agent.execution === "runner"}
-									<a href={runnersPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">runners screen</a>.
-								{/if}
-							</p>
-
-							{#if executionFailure}
-								<Alert.Root variant="destructive">
-									<CircleAlert aria-hidden="true" />
-									<Alert.Title>Not saved</Alert.Title>
-									<Alert.Description>{agentLifecycleFailureMessage(executionFailure)}</Alert.Description>
-								</Alert.Root>
-							{/if}
-
-							<AgentExecutionForm
-								execution={agent.agent.execution}
-								locked={savingExecution}
-								onsave={saveExecution}
-							/>
-
-							{#if agent.agent.execution === "hosted"}
-								{#if agent.agent.status === "active"}
-									{#key preview?.conversation ?? agent.agent.id}
-										<AgentTestConversation
-											workspace={{ id: workspace.id, slug: workspace.slug }}
-											agentId={agent.agent.id}
-											{administrator}
-											{selfHosted}
-											opened={preview?.conversation}
-										/>
-									{/key}
-								{:else}
-									<Alert.Root variant="muted">
-										<CircleAlert aria-hidden="true" />
-										<Alert.Title>This agent is disabled</Alert.Title>
-										<Alert.Description>Enable it to test it here.</Alert.Description>
-									</Alert.Root>
-								{/if}
-							{/if}
-						</div>
-					</Tabs.Content>
-
-					<Tabs.Content value="capabilities" class="pt-5">
-						<div class="flex flex-col gap-4">
-							<p class="text-sm leading-normal text-muted-foreground text-pretty">
-								What this agent's runs start with. Skills and servers shared across agents live in the
-								<a href={agentLibraryPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">agent library</a>.
-							</p>
-							<AgentCapabilitiesManager
-								workspace={{ id: workspace.id, slug: workspace.slug }}
-								agentId={agent.agent.id}
-								rows={agentRows(capabilities)}
-								{library}
-								canManage
-								canManageLibrary={administrator}
-								{selfHosted}
-								connectForm={data.connectForm}
-								{outcome}
-								dialog={preview?.dialog}
-							/>
-						</div>
-					</Tabs.Content>
-
-					<Tabs.Content value="telegram" class="pt-5">
-						{#key preview?.telegramOutcome ?? agent.agent.id}
-							<AgentTelegramPanel
-								workspace={{ id: workspace.id, slug: workspace.slug }}
-								agentId={agent.agent.id}
-								agentName={agent.agent.name}
-								hosted={agent.agent.execution === "hosted"}
-								active={agent.agent.status === "active"}
-								panel={telegram}
-								connectForm={data.telegramForm}
-								{selfHosted}
-								timezone={workspace.timezone}
-								opened={preview?.telegramOutcome}
-							/>
-						{/key}
-					</Tabs.Content>
-
-					<Tabs.Content value="scope" class="pt-5">
-						<div class="flex flex-col gap-4">
-							<p class="text-sm leading-normal text-muted-foreground text-pretty">
-								{reachSummary(
-									agent.agent,
-									projects.find((project) => project.id === agent.agent.projectId)?.name
-								)}. Seeing this page, disabling the agent and rotating its credential stay with
-								its owner and the workspace's administrators whatever this says.
-							</p>
-
-							{#if scopeFailure}
-								<Alert.Root variant="destructive">
-									<CircleAlert aria-hidden="true" />
-									<Alert.Title>Not saved</Alert.Title>
-									<Alert.Description>
-										{scopeFailure.kind === "invalid"
-											? scopeFailure.message
-											: agentLifecycleFailureMessage(scopeFailure)}
-									</Alert.Description>
-								</Alert.Root>
-							{/if}
-
-							<AgentScopeForm
-								scope={agent.agent.scope}
-								projectId={agent.agent.projectId ?? ""}
-								{projects}
-								mayOpenToWorkspace={administrator}
-								locked={savingScope}
-								onsave={saveScope}
-							/>
-						</div>
-					</Tabs.Content>
-
-					<Tabs.Content value="instructions" class="pt-5">
-						<div class="flex flex-col gap-4">
-							<p class="text-sm leading-normal text-muted-foreground text-pretty">
-								Kept against this agent, alongside the workspace's instructions and a project's.
-								Nothing hands them to the agent when it runs yet.
-							</p>
-
-							{#if instructionsFailure}
-								<Alert.Root variant="destructive">
-									<CircleAlert aria-hidden="true" />
-									<Alert.Title>Not saved</Alert.Title>
-									<Alert.Description>
-										{instructionsFailure.kind === "invalid"
-											? instructionsFailure.message
-											: agentLifecycleFailureMessage(instructionsFailure)}
-									</Alert.Description>
-								</Alert.Root>
-							{/if}
-
-							<AgentInstructionsForm
-								instructions={agent.agent.agentInstructions ?? ""}
-								locked={savingInstructions}
-								onsave={saveInstructions}
-							/>
-						</div>
-					</Tabs.Content>
-
-					<Tabs.Content value="activity" class="pt-5">
-						<div class="flex flex-col gap-4">
-							<p class="text-sm leading-normal text-muted-foreground text-pretty">
-								Everything this agent has done across the work it could reach. The computers it
-								acts on are listed on the
+				<Tabs.Content value="execution" class="pt-5">
+					<div class="flex flex-col gap-4">
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							{agent.agent.execution === "hosted"
+								? "Norn runs this agent itself, so it needs no runner. It cannot be handed issues while it is hosted."
+								: "This agent works on a runner its owner enrolled. Its computers are listed on the"}
+							{#if agent.agent.execution === "runner"}
 								<a href={runnersPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">runners screen</a>.
-							</p>
-							<ActivityFeedView
-								feed={activity}
-								{when}
-								paging={working ? { kind: "loading" } : { kind: "idle" }}
-								emptyLine="This agent has not done anything yet."
-								onmore={more}
-							/>
-						</div>
-					</Tabs.Content>
-				</Tabs.Root>
-			{/if}
-		</div>
-	</div>
+							{/if}
+						</p>
+
+						{#if executionFailure}
+							<Alert.Root variant="destructive">
+								<CircleAlert aria-hidden="true" />
+								<Alert.Title>Not saved</Alert.Title>
+								<Alert.Description>{agentLifecycleFailureMessage(executionFailure)}</Alert.Description>
+							</Alert.Root>
+						{/if}
+
+						<AgentExecutionForm
+							execution={agent.agent.execution}
+							locked={savingExecution}
+							onsave={saveExecution}
+						/>
+
+						{#if agent.agent.execution === "hosted"}
+							{#if agent.agent.status === "active"}
+								{#key preview?.conversation ?? agent.agent.id}
+									<AgentTestConversation
+										workspace={{ id: workspace.id, slug: workspace.slug }}
+										agentId={agent.agent.id}
+										{administrator}
+										{selfHosted}
+										opened={preview?.conversation}
+									/>
+								{/key}
+							{:else}
+								<Alert.Root variant="muted">
+									<CircleAlert aria-hidden="true" />
+									<Alert.Title>This agent is disabled</Alert.Title>
+									<Alert.Description>Enable it to test it here.</Alert.Description>
+								</Alert.Root>
+							{/if}
+						{/if}
+					</div>
+				</Tabs.Content>
+
+				<Tabs.Content value="capabilities" class="pt-5">
+					<div class="flex flex-col gap-4">
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							What this agent's runs start with. Skills and servers shared across agents live in the
+							<a href={agentLibraryPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">agent library</a>.
+						</p>
+						<AgentCapabilitiesManager
+							workspace={{ id: workspace.id, slug: workspace.slug }}
+							agentId={agent.agent.id}
+							rows={agentRows(capabilities)}
+							{library}
+							canManage
+							canManageLibrary={administrator}
+							{selfHosted}
+							connectForm={data.connectForm}
+							{outcome}
+							dialog={preview?.dialog}
+						/>
+					</div>
+				</Tabs.Content>
+
+				<Tabs.Content value="telegram" class="pt-5">
+					{#key preview?.telegramOutcome ?? agent.agent.id}
+						<AgentTelegramPanel
+							workspace={{ id: workspace.id, slug: workspace.slug }}
+							agentId={agent.agent.id}
+							agentName={agent.agent.name}
+							hosted={agent.agent.execution === "hosted"}
+							active={agent.agent.status === "active"}
+							panel={telegram}
+							connectForm={data.telegramForm}
+							{selfHosted}
+							timezone={workspace.timezone}
+							opened={preview?.telegramOutcome}
+						/>
+					{/key}
+				</Tabs.Content>
+
+				<Tabs.Content value="scope" class="pt-5">
+					<div class="flex flex-col gap-4">
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							{reachSummary(
+								agent.agent,
+								projects.find((project) => project.id === agent.agent.projectId)?.name
+							)}. Seeing this page, disabling the agent and rotating its credential stay with
+							its owner and the workspace's administrators whatever this says.
+						</p>
+
+						{#if scopeFailure}
+							<Alert.Root variant="destructive">
+								<CircleAlert aria-hidden="true" />
+								<Alert.Title>Not saved</Alert.Title>
+								<Alert.Description>
+									{scopeFailure.kind === "invalid"
+										? scopeFailure.message
+										: agentLifecycleFailureMessage(scopeFailure)}
+								</Alert.Description>
+							</Alert.Root>
+						{/if}
+
+						<AgentScopeForm
+							scope={agent.agent.scope}
+							projectId={agent.agent.projectId ?? ""}
+							{projects}
+							mayOpenToWorkspace={administrator}
+							locked={savingScope}
+							onsave={saveScope}
+						/>
+					</div>
+				</Tabs.Content>
+
+				<Tabs.Content value="instructions" class="pt-5">
+					<div class="flex flex-col gap-4">
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							Kept against this agent, alongside the workspace's instructions and a project's.
+							Nothing hands them to the agent when it runs yet.
+						</p>
+
+						{#if instructionsFailure}
+							<Alert.Root variant="destructive">
+								<CircleAlert aria-hidden="true" />
+								<Alert.Title>Not saved</Alert.Title>
+								<Alert.Description>
+									{instructionsFailure.kind === "invalid"
+										? instructionsFailure.message
+										: agentLifecycleFailureMessage(instructionsFailure)}
+								</Alert.Description>
+							</Alert.Root>
+						{/if}
+
+						<AgentInstructionsForm
+							instructions={agent.agent.agentInstructions ?? ""}
+							locked={savingInstructions}
+							onsave={saveInstructions}
+						/>
+					</div>
+				</Tabs.Content>
+
+				<Tabs.Content value="activity" class="pt-5">
+					<div class="flex flex-col gap-4">
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							Everything this agent has done across the work it could reach. The computers it
+							acts on are listed on the
+							<a href={runnersPath(workspace.slug)} class="text-link underline-offset-2 hover:underline">runners screen</a>.
+						</p>
+						<ActivityFeedView
+							feed={activity}
+							{when}
+							paging={working ? { kind: "loading" } : { kind: "idle" }}
+							emptyLine="This agent has not done anything yet."
+							onmore={more}
+						/>
+					</div>
+				</Tabs.Content>
+			</Tabs.Root>
+		{/if}
+	</SettingsBody>
 </div>
 
 <CredentialDialog

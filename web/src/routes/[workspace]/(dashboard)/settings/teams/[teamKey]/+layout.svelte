@@ -12,6 +12,7 @@
 	import { workspacePath } from "$lib/workspace/navigation";
 	import { teamSettingsPreviewStates } from "./preview";
 	import type { LayoutProps } from "./$types";
+	import SettingsBody from "$lib/settings/settings-body.svelte";
 
 	let { data, children }: LayoutProps = $props();
 
@@ -59,7 +60,10 @@
 
 <div class="flex min-h-0 flex-1 flex-col">
 	<div class="flex-none border-b border-line-default">
-		<nav aria-label="Breadcrumb" class="flex h-11 min-w-0 items-center gap-2 pr-3 pl-4">
+		<nav
+			aria-label="Breadcrumb"
+			class="mx-auto flex h-11 w-full max-w-272 min-w-0 items-center gap-2 px-4 sm:px-6 lg:px-8"
+		>
 			<Users class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			{#if team && entry}
 				{@render crumb(workspacePath(slug, "/settings/teams"), "Teams")}
@@ -81,56 +85,52 @@
 		</nav>
 	</div>
 
-	<div class="flex-1 overflow-auto">
-		<div
-			class="mx-auto flex w-full max-w-140 flex-col gap-6 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
-		>
-			{#if settings.kind === "loading"}
-				<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
-			{:else if settings.kind === "not_found"}
-				<div class="flex flex-col gap-2">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">No team here</h2>
-					<p class="text-sm leading-normal text-muted-foreground text-pretty">
-						There is no team at this address in {data.workspace.name}, or it is private and you are
-						not on it.
-					</p>
-					<div>
-						<Button variant="secondary" size="sm" href={workspacePath(slug, "/settings/teams")}>
-							Back to teams
-						</Button>
-					</div>
+	<SettingsBody width="compact">
+		{#if settings.kind === "loading"}
+			<div class="h-40 animate-breathe rounded-lg bg-paper-2" aria-busy="true"></div>
+		{:else if settings.kind === "not_found"}
+			<div class="flex flex-col gap-2">
+				<h2 class="text-md font-semibold tracking-snug text-ink-900">No team here</h2>
+				<p class="text-sm leading-normal text-muted-foreground text-pretty">
+					There is no team at this address in {data.workspace.name}, or it is private and you are
+					not on it.
+				</p>
+				<div>
+					<Button variant="secondary" size="sm" href={workspacePath(slug, "/settings/teams")}>
+						Back to teams
+					</Button>
 				</div>
-			{:else if !team}
+			</div>
+		{:else if !team}
+			<Alert.Root variant="destructive">
+				<CircleX aria-hidden="true" />
+				<Alert.Title>We could not load this team</Alert.Title>
+				<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+			</Alert.Root>
+		{:else}
+			{#if archived}
+				<Alert.Root variant="destructive">
+					<Archive aria-hidden="true" />
+					<Alert.Title>This team is archived</Alert.Title>
+					<Alert.Description>
+						Its issues stay readable and {team.key}-1 style references still resolve. Nothing about
+						the team can change until it is brought back from General.
+					</Alert.Description>
+				</Alert.Root>
+			{/if}
+
+			{#if readOnly}
 				<Alert.Root variant="destructive">
 					<CircleX aria-hidden="true" />
-					<Alert.Title>We could not load this team</Alert.Title>
-					<Alert.Description>Nothing changed. Wait a moment and try again.</Alert.Description>
+					<Alert.Title>You cannot change this team</Alert.Title>
+					<Alert.Description>
+						Only workspace administrators can change a team's settings. What you hear about from
+						it under Notifications is still yours to set.
+					</Alert.Description>
 				</Alert.Root>
-			{:else}
-				{#if archived}
-					<Alert.Root variant="destructive">
-						<Archive aria-hidden="true" />
-						<Alert.Title>This team is archived</Alert.Title>
-						<Alert.Description>
-							Its issues stay readable and {team.key}-1 style references still resolve. Nothing about
-							the team can change until it is brought back from General.
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-
-				{#if readOnly}
-					<Alert.Root variant="destructive">
-						<CircleX aria-hidden="true" />
-						<Alert.Title>You cannot change this team</Alert.Title>
-						<Alert.Description>
-							Only workspace administrators can change a team's settings. What you hear about from
-							it under Notifications is still yours to set.
-						</Alert.Description>
-					</Alert.Root>
-				{/if}
-
-				{@render children()}
 			{/if}
-		</div>
-	</div>
+
+			{@render children()}
+		{/if}
+	</SettingsBody>
 </div>
