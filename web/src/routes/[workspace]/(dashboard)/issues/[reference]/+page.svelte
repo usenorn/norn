@@ -32,7 +32,6 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
-	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as Popover from "$lib/components/ui/popover/index.js";
@@ -1731,15 +1730,23 @@
 		const states = ready.states;
 		const released = [
 			shortcuts.register("issue-status", () =>
-				railShown.current ? openPicker(() => (pickingStatus = true)) : (stripStatus = true)
+				openPicker("Status: change", () =>
+					railShown.current ? (pickingStatus = true) : (stripStatus = true)
+				)
 			),
 			shortcuts.register("issue-priority", () =>
-				railShown.current ? openPicker(() => (pickingPriority = true)) : (stripPriority = true)
+				openPicker("Priority: change", () =>
+					railShown.current ? (pickingPriority = true) : (stripPriority = true)
+				)
 			),
 			shortcuts.register("issue-assignee", () =>
-				railShown.current ? openPicker(() => (pickingAssignee = true)) : (stripAssignee = true)
+				openPicker("Assignee: change", () =>
+					railShown.current ? (pickingAssignee = true) : (stripAssignee = true)
+				)
 			),
-			shortcuts.register("issue-labels", () => openPicker(() => (pickingLabels = true))),
+			shortcuts.register("issue-labels", () =>
+				openPicker("Labels: change", () => (pickingLabels = true))
+			),
 			shortcuts.register("status-set", (binding) => {
 				const state = states[statusIndexOf(binding)];
 
@@ -1780,8 +1787,13 @@
 		);
 	}
 
-	function openPicker(open: () => void) {
-		document.getElementById("issue-properties")?.scrollIntoView({ block: "nearest" });
+	function openPicker(label: string, open: () => void) {
+		const trigger = [...document.querySelectorAll<HTMLElement>(`[aria-label="${label}"]`)].find(
+			(element) => element.offsetParent !== null
+		);
+
+		trigger?.scrollIntoView({ block: "nearest" });
+		trigger?.focus({ preventScroll: true });
 		open();
 	}
 
@@ -1965,15 +1977,6 @@
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 
-			<Button
-				variant="outline"
-				size="icon-sm"
-				class="hidden sm:inline-flex"
-				href={backToList}
-				aria-label="Close this issue"
-			>
-				<X aria-hidden="true" />
-			</Button>
 		{/if}
 	</div>
 
@@ -2116,10 +2119,8 @@
 				/>
 			{/if}
 
-			<div class="relative min-w-0 flex-1 lg:overflow-auto">
-				<div
-					class="mx-auto flex max-w-192 flex-col gap-6.5 px-4 pt-5 pb-16 sm:px-8 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))]"
-				>
+			<div class="contents lg:relative lg:block lg:min-w-0 lg:flex-1 lg:overflow-auto">
+				<div class="order-1 mx-auto flex w-full max-w-192 flex-col gap-6.5 px-4 pt-5 pb-6.5 sm:px-8">
 					{#if labelFailure}
 						<Alert.Root variant="destructive">
 							<CircleX aria-hidden="true" />
@@ -2324,17 +2325,6 @@
 								</span>
 								<span class="inline-flex items-center gap-1.5 text-sm text-ink-900">
 									{assigneeName || "Unassigned"}
-								</span>
-							{/if}
-							{#if issue.dueOn}
-								<span
-									class="inline-flex items-center gap-1.5 px-1 text-sm tabular-nums {!done &&
-									overdue(issue.dueOn, data.now, data.workspace.timezone)
-										? 'text-priority-urgent'
-										: 'text-muted-foreground'}"
-								>
-									<CalendarDays class="size-icon-row" aria-hidden="true" />
-									{dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)}
 								</span>
 							{/if}
 						</div>
@@ -2849,7 +2839,11 @@
 							{/if}
 						</section>
 					{/if}
+				</div>
 
+				<div
+					class="order-3 mx-auto w-full max-w-192 px-4 pt-6.5 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))] sm:px-8 lg:pt-0"
+				>
 					<section class="flex flex-col gap-0.5">
 						<div class="mb-1.5 flex items-center gap-2.5">
 							<h2 class="min-w-0 flex-1">
@@ -2863,7 +2857,7 @@
 										type="button"
 										aria-pressed={shown === choice.key}
 										onclick={() => (shown = choice.key as "all" | "comments")}
-										class="h-5 cursor-pointer rounded-xs px-2 caption motion-control {shown ===
+										class="h-7 cursor-pointer rounded-xs px-2.5 caption motion-control sm:h-5 sm:px-2 {shown ===
 										choice.key
 											? 'bg-primary text-primary-foreground'
 											: 'text-ink-600 hover:bg-accent'}"
@@ -2915,7 +2909,7 @@
 				id="issue-properties"
 				aria-label="Issue properties"
 				class={cn(
-					"relative w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-(--properties-width) lg:overflow-auto lg:border-t-0 lg:border-l",
+					"relative order-2 w-full flex-none border-y border-line-default px-3.5 pt-3.5 pb-6 lg:w-(--properties-width) lg:overflow-auto lg:border-y-0 lg:border-l",
 					panels.collapsed("properties") && "lg:hidden"
 				)}
 			>
