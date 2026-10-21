@@ -26,7 +26,6 @@
 	import Info from "@lucide/svelte/icons/info";
 	import Link2 from "@lucide/svelte/icons/link-2";
 	import History from "@lucide/svelte/icons/history";
-	import Pencil from "@lucide/svelte/icons/pencil";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Tags from "@lucide/svelte/icons/tags";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
@@ -1862,15 +1861,6 @@
 				{/if}
 				<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
 				<span class="font-mono text-sm tracking-wide text-ink-900">{issue.reference}</span>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					class="hidden sm:inline-flex"
-					aria-label="Copy the identifier"
-					onclick={() => copy(issue.reference, `Copied ${issue.reference}`)}
-				>
-					<Copy aria-hidden="true" />
-				</Button>
 			{/if}
 		</div>
 
@@ -1937,6 +1927,13 @@
 						<Hash aria-hidden="true" />
 						Copy identifier
 					</DropdownMenu.Item>
+					{#if issue.description.trim()}
+						<DropdownMenu.Item onSelect={() => (showingHistory = true)}>
+							<History aria-hidden="true" />
+							Description history
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
+					{/if}
 					<DropdownMenu.Item onSelect={() => copy(issue.title, "Copied the title")}>
 						<Type aria-hidden="true" />
 						Copy title
@@ -2264,10 +2261,16 @@
 							/>
 							<span class="text-sm text-muted-foreground">{reporter} opened this</span>
 							<span class="tabular-nums text-xs text-muted-foreground">
-								<time datetime={issue.createdAt}>
+								<time datetime={issue.createdAt} title={when(issue.createdAt)}>
 									{onDate(issue.createdAt, data.workspace.timezone)}
 								</time>
 							</span>
+							{#if lastActivity && lastActivity !== issue.createdAt}
+								<span class="text-text-disabled" aria-hidden="true">·</span>
+								<span class="tabular-nums text-xs text-muted-foreground">
+									updated <time datetime={lastActivity}>{when(lastActivity)}</time>
+								</span>
+							{/if}
 							{#if commentTotal > 0}
 								<span class="text-text-disabled" aria-hidden="true">·</span>
 								<span class="tabular-nums text-xs text-muted-foreground">
@@ -2349,24 +2352,8 @@
 							{/if}
 						</div>
 
-						<div class="mt-3.5 flex flex-col gap-3">
-							<div class="flex items-center gap-2.5">
-								<h2 class="min-w-0 flex-1">
-									<Eyebrow rule class="text-ink-600">Description</Eyebrow>
-								</h2>
-								{#if editingField !== "description" && issue.description.trim()}
-									<Button variant="ghost" size="sm" onclick={() => (showingHistory = true)}>
-										<History aria-hidden="true" />
-										History
-									</Button>
-								{/if}
-								{#if canEdit && editingField !== "description"}
-									<Button variant="ghost" size="sm" onclick={() => startEditing("description")}>
-										<Pencil aria-hidden="true" />
-										Edit
-									</Button>
-								{/if}
-							</div>
+						<div class="mt-4 flex flex-col gap-3">
+							<h2 class="sr-only">Description</h2>
 
 							{#if editingField === "description"}
 								<div data-editing-region class="flex flex-col gap-3">
@@ -2530,6 +2517,7 @@
 								<button
 									type="button"
 									disabled={!canEdit}
+									title={canEdit ? "Edit the description" : undefined}
 									onclick={() => startEditing("description")}
 									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
@@ -2539,6 +2527,7 @@
 								<button
 									type="button"
 									disabled={!canEdit}
+									title={canEdit ? "Edit the description" : undefined}
 									onclick={() => startEditing("description")}
 									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left text-md text-muted-foreground motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
@@ -2871,26 +2860,28 @@
 									Activity
 								</Eyebrow>
 							</h2>
-							<div class="inline-flex gap-0.5 rounded-sm border border-line-default p-0.5">
-								{#each [{ key: "all", label: "All" }, { key: "comments", label: "Comments" }] as choice (choice.key)}
-									<button
-										type="button"
-										aria-pressed={shown === choice.key}
-										onclick={() => (shown = choice.key as "all" | "comments")}
-										class="h-7 cursor-pointer rounded-xs px-2.5 caption motion-control sm:h-5 sm:px-2 {shown ===
-										choice.key
-											? 'bg-primary text-primary-foreground'
-											: 'text-ink-600 hover:bg-accent'}"
-									>
-										{choice.label}
-									</button>
-								{/each}
-							</div>
+							{#if commentTotal > 0}
+								<div class="inline-flex gap-0.5 rounded-sm border border-line-default p-0.5">
+									{#each [{ key: "all", label: "All" }, { key: "comments", label: "Comments" }] as choice (choice.key)}
+										<button
+											type="button"
+											aria-pressed={shown === choice.key}
+											onclick={() => (shown = choice.key as "all" | "comments")}
+											class="h-7 cursor-pointer rounded-xs px-2.5 caption motion-control sm:h-5 sm:px-2 {shown ===
+											choice.key
+												? 'bg-primary text-primary-foreground'
+												: 'text-ink-600 hover:bg-accent'}"
+										>
+											{choice.label}
+										</button>
+									{/each}
+								</div>
+							{/if}
 						</div>
 
 						<CommentThreadView
 							{thread}
-							events={shown === "all" ? events : []}
+							events={shown === "all" || commentTotal === 0 ? events : []}
 							uploads={shownCommentUploads}
 							onfiles={(files) => begin("comment", files)}
 							oncancelupload={cancelUpload}
@@ -3322,32 +3313,6 @@
 						{/if}
 					</div>
 
-					<span class="my-2.5 h-px bg-line-subtle"></span>
-
-					<div class="flex min-h-5.5 items-center gap-1.5">
-						<span
-							class="w-19.5 flex-none caption text-muted-foreground"
-						>
-							Created
-						</span>
-						<span class="tabular-nums text-md text-ink-600">
-							<time datetime={issue.createdAt}>{when(issue.createdAt)}</time>
-						</span>
-					</div>
-
-					{#if lastActivity}
-						<div class="flex min-h-5.5 items-center gap-1.5">
-							<span
-								class="w-19.5 flex-none caption text-muted-foreground"
-							>
-								Updated
-							</span>
-							<span class="tabular-nums text-md text-ink-600">
-								<time datetime={lastActivity}>{when(lastActivity)}</time>
-							</span>
-						</div>
-					{/if}
-
 				</div>
 			</aside>
 		</div>
@@ -3383,7 +3348,6 @@
 			<div
 				class="hidden h-8.5 flex-none items-center gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
 			>
-				<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
 				<span class="flex-1"></span>
 				<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
 					<Kbd keys="⌘ ↵" /> Save
@@ -3404,11 +3368,7 @@
 					"issue-back",
 					"help",
 				]}
-			>
-				{#snippet lead()}
-					<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
-				{/snippet}
-			</ShortcutBar>
+			/>
 		{/if}
 	{/if}
 </div>

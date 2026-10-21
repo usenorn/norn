@@ -78,7 +78,7 @@ test.describe("the suggestions in an editor", () => {
 
 	test("work the same on the issue page, where there is no dialog", async ({ page }) => {
 		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-		await page.getByRole("button", { name: "Edit" }).first().click();
+		await page.getByTitle("Edit the description").click();
 
 		const writing = page.getByRole("textbox", { name: "Description" });
 
@@ -115,7 +115,7 @@ test("the placeholder is there before anybody clicks, and follows the caret", as
 
 test("no editor carries a formatting toolbar any more", async ({ page }) => {
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByRole("button", { name: "Edit" }).first().click();
+	await page.getByTitle("Edit the description").click();
 
 	await expect(page.getByRole("textbox", { name: "Description" })).toBeVisible();
 	await expect(page.getByRole("toolbar", { name: "Formatting" })).toHaveCount(0);
