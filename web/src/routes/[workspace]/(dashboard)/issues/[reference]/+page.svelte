@@ -9,6 +9,7 @@
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import ChevronLeft from "@lucide/svelte/icons/chevron-left";
+	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import ChevronUp from "@lucide/svelte/icons/chevron-up";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
@@ -34,6 +35,7 @@
 	import Users from "@lucide/svelte/icons/users";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
+	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
 	import * as Popover from "$lib/components/ui/popover/index.js";
 	import { Calendar } from "$lib/components/ui/calendar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
@@ -67,7 +69,7 @@
 	import { showToast } from "$lib/toast/toasts";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
+	import { calendarDate, cycleWindow, dueValue, onDate, onDateAndTime, overdue } from "$lib/time";
 	import { finished } from "$lib/team/states";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
@@ -1251,6 +1253,7 @@
 	let pickingAssignee = $state(false);
 	let pickingLabels = $state(false);
 	let stripStatus = $state(false);
+	let showingDetails = $state(false);
 	let stripPriority = $state(false);
 	let stripAssignee = $state(false);
 
@@ -1730,22 +1733,22 @@
 		const states = ready.states;
 		const released = [
 			shortcuts.register("issue-status", () =>
-				openPicker("Status: change", () =>
+				openPicker("Status", () =>
 					railShown.current ? (pickingStatus = true) : (stripStatus = true)
 				)
 			),
 			shortcuts.register("issue-priority", () =>
-				openPicker("Priority: change", () =>
+				openPicker("Priority", () =>
 					railShown.current ? (pickingPriority = true) : (stripPriority = true)
 				)
 			),
 			shortcuts.register("issue-assignee", () =>
-				openPicker("Assignee: change", () =>
+				openPicker("Assignee", () =>
 					railShown.current ? (pickingAssignee = true) : (stripAssignee = true)
 				)
 			),
 			shortcuts.register("issue-labels", () =>
-				openPicker("Labels: change", () => (pickingLabels = true))
+				openPicker("Labels", () => (pickingLabels = true))
 			),
 			shortcuts.register("status-set", (binding) => {
 				const state = states[statusIndexOf(binding)];
@@ -1787,8 +1790,11 @@
 		);
 	}
 
-	function openPicker(label: string, open: () => void) {
-		const trigger = [...document.querySelectorAll<HTMLElement>(`[aria-label="${label}"]`)].find(
+	async function openPicker(property: string, open: () => void) {
+		showingDetails = true;
+		await tick();
+
+		const trigger = [...document.querySelectorAll<HTMLElement>(`[data-property="${property}"]`)].find(
 			(element) => element.offsetParent !== null
 		);
 
@@ -1832,7 +1838,13 @@
 	<div
 		class="flex h-11 flex-none items-center gap-2 border-b border-line-default pr-2.5 pl-2.5"
 	>
-		<Button variant="outline" size="icon-touch" href={backToList} aria-label="Back to the list">
+		<Button
+			variant="outline"
+			size="icon-touch"
+			class="sm:hidden"
+			href={backToList}
+			aria-label="Back to the list"
+		>
 			<ChevronLeft aria-hidden="true" />
 		</Button>
 
@@ -1848,8 +1860,9 @@
 					<span class="hidden text-sm text-text-disabled sm:inline" aria-hidden="true">/</span>
 					<a
 						href={at(`/projects/${issue.projectSlug}`)}
-						class="hidden text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline"
+						class="hidden items-center gap-1.25 text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline-flex"
 					>
+						<Folder class="size-3.25 text-muted-foreground" aria-hidden="true" />
 						{issue.projectName}
 					</a>
 				{/if}
@@ -2274,13 +2287,19 @@
 							{#if canEdit}
 								<PropertyPicker
 									options={statusOptions}
-									placeholder="Move to"
+									placeholder="Set status…"
 									bind:open={stripStatus}
 									onpick={move}
 									mark={statusMark}
 								>
 									{#snippet trigger(props)}
-										<Button {...props} variant="property" size="property" aria-label="Status: change">
+										<Button
+											{...props}
+											variant="property"
+											size="property"
+											aria-label="Status: {issue.state.name}"
+											data-property="Status"
+										>
 											<StatusIcon category={issue.state.category} decorative />
 											{issue.state.name}
 										</Button>
@@ -2294,12 +2313,19 @@
 								/>
 								<PropertyPicker
 									options={assigneeOptions}
-									placeholder="Assign to"
+									placeholder="Assign to…"
+									mark={assigneeMark}
 									bind:open={stripAssignee}
 									onpick={setAssignee}
 								>
 									{#snippet trigger(props)}
-										<Button {...props} variant="property" size="property" aria-label="Assignee: change">
+										<Button
+											{...props}
+											variant="property"
+											size="property"
+											aria-label="Assignee: {assigneeName || 'Unassigned'}"
+											data-property="Assignee"
+										>
 											{#if assigneeName}
 												<PersonAvatar
 													accountId={issue.assigneeAccountId ?? ""}
@@ -2898,6 +2924,14 @@
 				</div>
 			</div>
 
+			{#snippet assigneeMark(option: PickerOption)}
+				{#if option.value}
+					<PersonAvatar accountId={option.value} name={option.label} size="xs" />
+				{:else}
+					<UnassignedAvatar />
+				{/if}
+			{/snippet}
+
 			{#snippet statusMark(option: PickerOption)}
 				{@const state = ready.states.find((each) => each.id === option.value)}
 				{#if state}
@@ -2909,7 +2943,7 @@
 				id="issue-properties"
 				aria-label="Issue properties"
 				class={cn(
-					"relative order-2 w-full flex-none border-y border-line-default px-3.5 pt-3.5 pb-6 lg:w-(--properties-width) lg:overflow-auto lg:border-y-0 lg:border-l",
+					"relative order-2 w-full flex-none border-y border-line-default px-3.5 py-1 lg:w-(--properties-width) lg:overflow-auto lg:border-y-0 lg:border-l lg:pt-3.5 lg:pb-6",
 					panels.collapsed("properties") && "lg:hidden"
 				)}
 			>
@@ -2924,11 +2958,34 @@
 					class="hidden lg:flex"
 				/>
 
-				<div class="flex flex-col gap-0.75">
+				<button
+					type="button"
+					aria-expanded={showingDetails}
+					aria-controls="issue-property-list"
+					onclick={() => (showingDetails = !showingDetails)}
+					class="flex min-h-11 w-full cursor-pointer items-center gap-2 text-left lg:hidden"
+				>
+					<ChevronRight
+						class="size-icon-row flex-none text-muted-foreground motion-control {showingDetails
+							? 'rotate-90'
+							: ''}"
+						aria-hidden="true"
+					/>
+					<span class="text-md font-medium text-ink-900">Details</span>
+					<span class="min-w-0 truncate text-sm text-muted-foreground">
+						Labels, project, due date and more
+					</span>
+				</button>
+
+				<div
+					id="issue-property-list"
+					class={cn("flex flex-col gap-0.75 pb-4 lg:flex lg:pb-0", !showingDetails && "hidden")}
+				>
 					<div class="hidden lg:contents">
 						<IssueField
 							label="Status"
-							placeholder="Move to"
+							valueText={issue.state.name}
+							placeholder="Set status…"
 							editable={canEdit}
 							bind:open={pickingStatus}
 							options={statusOptions}
@@ -2963,11 +3020,13 @@
 
 						<IssueField
 							label="Assignee"
-							placeholder="Assign to"
+							valueText={assigneeName || "Unassigned"}
+							placeholder="Assign to…"
 							editable={canEdit}
 							bind:open={pickingAssignee}
 							options={assigneeOptions}
 							onpick={setAssignee}
+							mark={assigneeMark}
 						>
 							{#snippet glyph()}
 								{#if assigneeName}
@@ -3029,7 +3088,8 @@
 
 					<IssueField
 						label="Project"
-						placeholder="Move to project"
+						valueText={issue.projectName || "No project"}
+						placeholder="Move to project…"
 						editable={canEdit}
 						empty="No projects in this workspace yet"
 						options={[
@@ -3057,7 +3117,8 @@
 					{#if cycling}
 						<IssueField
 							label="Cycle"
-							placeholder="Move to cycle"
+							valueText={issue.cycleNumber ? `Cycle ${issue.cycleNumber}` : "No cycle"}
+							placeholder="Move to cycle…"
 							editable={canEdit}
 							bind:open={pickingCycle}
 							options={[
@@ -3108,7 +3169,7 @@
 													: 'text-muted-foreground'}"
 											>
 												{issue.dueOn
-													? dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)
+													? dueValue(issue.dueOn, data.now, data.workspace.timezone, done)
 													: "No due date"}
 											</span>
 										</button>
@@ -3145,7 +3206,7 @@
 								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
 								<span class="truncate {issue.dueOn ? 'text-ink-900' : 'text-muted-foreground'}">
 									{issue.dueOn
-										? dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)
+										? dueValue(issue.dueOn, data.now, data.workspace.timezone, done)
 										: "No due date"}
 								</span>
 							</span>
@@ -3154,7 +3215,10 @@
 
 					<IssueField
 						label="Estimate"
-						placeholder="Set an estimate"
+						valueText={issue.estimate
+							? `${issue.estimate} ${issue.estimate === 1 ? "point" : "points"}`
+							: "No estimate"}
+						placeholder="Set an estimate…"
 						editable={canEdit}
 						options={[
 							{ value: "", label: "No estimate", checked: !issue.estimate },
@@ -3180,7 +3244,8 @@
 
 					<IssueField
 						label="Parent"
-						placeholder="Search issues"
+						valueText={issue.parentReference || "No parent"}
+						placeholder="Search issues…"
 						editable={canEdit}
 						bind:open={parentPicking}
 						options={[
@@ -3210,7 +3275,8 @@
 
 					<IssueField
 						label="Team"
-						placeholder="Move to team"
+						valueText={teams.find((team) => team.id === issue.teamId)?.name ?? issue.teamKey}
+						placeholder="Move to team…"
 						editable={canEdit}
 						options={teams.map((team) => ({
 							value: team.id,
