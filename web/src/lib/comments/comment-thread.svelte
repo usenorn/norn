@@ -319,16 +319,6 @@
 			</ul>
 		{/if}
 
-		{#if thread.kind === "empty"}
-			<div class="flex flex-col gap-1.5 border-t border-line-subtle pt-5.5 pb-4.5">
-				<span class="caption text-ink-600">
-					No comments yet
-				</span>
-				<span class="text-md leading-normal text-muted-foreground text-pretty">
-					Ask a question or leave what you found. Everyone watching this issue is notified.
-				</span>
-			</div>
-		{/if}
 	{/if}
 
 	{#if canEdit}
@@ -343,7 +333,8 @@
 					{oncancelupload}
 					{onretryupload}
 					{ondismissupload}
-					placeholder="Write a comment"
+					label="Write a comment"
+					placeholder="Ask a question or leave what you found. Watchers are notified."
 					submitLabel="Comment"
 					onsubmit={(body, attachmentIds) => onpost(body, attachmentIds)}
 				/>
