@@ -107,6 +107,21 @@ export function dueLabel(
 	return `Due ${onDueDate(due, today)}`;
 }
 
+export function dueValue(
+	due: string | undefined,
+	now: string,
+	timezone: string,
+	settled: boolean
+): string {
+	const label = dueLabel(due, now, timezone, settled);
+
+	if (!label.startsWith("Due ")) return label;
+
+	const rest = label.slice("Due ".length);
+
+	return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
 export function overdue(due: string | undefined, now: string, timezone: string): boolean {
 	return Boolean(due) && (due as string) < calendarDate(now, timezone);
 }

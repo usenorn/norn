@@ -473,20 +473,20 @@
 			<Target class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<a
 				href={projectsPath(slug)}
-				class="text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="relative text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:after:absolute pointer-coarse:after:-inset-3"
 			>
 				Projects
 			</a>
 			{#if project}
 				<span class="text-md text-muted-foreground" aria-hidden="true">/</span>
-				<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+				<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">
 					{project.name}
 				</h1>
 				<StandingBadge standing={projectStanding(project)} />
 				<span class="hidden h-3.5 w-px bg-line-default sm:block" aria-hidden="true"></span>
 				<span
 					class={cn(
-						"hidden font-mono text-xs whitespace-nowrap sm:block",
+						"hidden tabular-nums text-xs whitespace-nowrap sm:block",
 						projectStanding(project) === "at_risk" ? "text-warning" : "text-muted-foreground"
 					)}
 				>
@@ -495,7 +495,7 @@
 				<span class="ml-auto flex shrink-0 items-center gap-2">
 					{#if editing}
 						{#if unsaved}
-							<span class="font-mono text-2xs tracking-caps uppercase text-warning">Unsaved</span>
+							<span class="caption text-warning">Unsaved</span>
 						{/if}
 						<Button
 							variant="ghost"
@@ -579,7 +579,7 @@
 		>
 			<ScopeBar {progress} class="w-full max-w-105 sm:w-auto sm:flex-1" />
 			<span class="flex items-center gap-2">
-				<span class="font-mono text-2xs tracking-caps uppercase text-muted-foreground">Lead</span>
+				<span class="caption text-muted-foreground">Lead</span>
 				{#if project.leadName}
 					<PersonAvatar
 						accountId={project.leadAccountId ?? ""}
@@ -593,7 +593,7 @@
 			</span>
 			<span class="hidden h-3.5 w-px bg-line-default sm:block" aria-hidden="true"></span>
 			<span class="flex min-w-0 items-center gap-2">
-				<span class="font-mono text-2xs tracking-caps uppercase text-muted-foreground">Team</span>
+				<span class="caption text-muted-foreground">Team</span>
 				<span class="truncate font-mono text-xs text-muted-foreground">
 					{teamsLine(project, data.teams ?? [])}
 				</span>
@@ -940,7 +940,7 @@
 								<div class="flex items-center gap-2 py-1.5">
 									<StatusIcon category={group.category} decorative />
 									<span class="text-sm text-ink-900">{categoryLabels[group.category]}</span>
-									<span class="font-mono text-xs text-muted-foreground tabular-nums">
+									<span class="text-xs text-muted-foreground tabular-nums">
 										{group.issues.length}
 									</span>
 								</div>

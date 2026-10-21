@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dueLabel } from "./time";
+import { dueLabel, dueValue } from "./time";
 
 const now = "2026-09-10T12:00:00Z";
 const timezone = "UTC";
@@ -36,5 +36,18 @@ describe("dueLabel", () => {
 	it("says there is no due date when none is set", () => {
 		expect(dueLabel(undefined, now, timezone, false)).toBe("No due date");
 		expect(dueLabel(undefined, now, timezone, true)).toBe("No due date");
+	});
+});
+
+describe("dueValue", () => {
+	it("drops the word due where the field is already labelled Due", () => {
+		expect(dueValue("2026-09-10", now, timezone, false)).toBe("Today");
+		expect(dueValue("2026-09-11", now, timezone, false)).toBe("Tomorrow");
+		expect(dueValue("2026-09-24", now, timezone, false)).toBe("24 Sept");
+	});
+
+	it("keeps overdue, which says more than the date", () => {
+		expect(dueValue("2026-09-03", now, timezone, false)).toBe("Overdue · 3 Sept");
+		expect(dueValue(undefined, now, timezone, false)).toBe("No due date");
 	});
 });

@@ -47,7 +47,7 @@
 				{/if}
 				{held.authorName || "Somebody"}
 			</span>
-			<time class="font-mono text-2xs text-muted-foreground" datetime={held.createdAt}>
+			<time class="tabular-nums text-2xs text-muted-foreground" datetime={held.createdAt}>
 				{onDateAndTime(held.createdAt, timezone)}
 			</time>
 			{#if held.editedAt}

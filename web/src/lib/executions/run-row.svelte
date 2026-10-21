@@ -40,7 +40,7 @@
 				: ""}{change && change.repositories > 0 ? ` · ${diffStatLine(change)}` : ""}
 		</span>
 	</span>
-	<span class="flex-none font-mono text-2xs whitespace-nowrap text-muted-foreground">
+	<span class="flex-none tabular-nums text-2xs whitespace-nowrap text-muted-foreground">
 		{onDateAndTime(execution.finishedAt ?? execution.queuedAt, timezone)}
 	</span>
 </a>

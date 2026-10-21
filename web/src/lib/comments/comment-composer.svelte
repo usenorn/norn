@@ -21,6 +21,7 @@
 		working = false,
 		body = emptyDocument,
 		placeholder = "Leave a comment",
+		label = placeholder,
 		submitLabel = "Comment",
 		onsubmit,
 		oncancel,
@@ -35,6 +36,7 @@
 		working?: boolean;
 		body?: Document;
 		placeholder?: string;
+		label?: string;
 		submitLabel?: string;
 		onsubmit: (body: Document, attachmentIds: string[]) => Promise<boolean> | boolean;
 		oncancel?: () => void;
@@ -123,8 +125,8 @@
 		take(Array.from(event.dataTransfer?.files ?? []));
 	}}
 >
-	<Label for="comment-{id}" class="sr-only">{placeholder}</Label>
-	<div class="rounded-md border border-line-default px-2.5 pb-1">
+	<Label for="comment-{id}" class="sr-only">{label}</Label>
+	<div class="rounded-md border border-line-default px-2.5 pb-1 motion-control focus-within:border-ring">
 		<Editor
 			bind:this={editor}
 			bind:document={draft}
@@ -132,7 +134,7 @@
 			{workspaceId}
 			{workspace}
 			{placeholder}
-			label={placeholder}
+			{label}
 			disabled={working || sending}
 			minHeight="min-h-17.5"
 			onfiles={onfiles ? (files) => onfiles(files) : undefined}

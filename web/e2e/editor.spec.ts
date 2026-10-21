@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { at, fixture } from "./fixture";
+import { editDescription } from "./description";
 
 const popup = '[data-slot="popover-content"]';
 
@@ -19,7 +20,7 @@ async function onScreen(page: Page) {
 
 async function openComposer(page: Page) {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 	await expect(page.getByRole("dialog")).toBeVisible();
 
 	const writing = page.getByRole("textbox", { name: "Description" });
@@ -78,7 +79,7 @@ test.describe("the suggestions in an editor", () => {
 
 	test("work the same on the issue page, where there is no dialog", async ({ page }) => {
 		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-		await page.getByRole("button", { name: "Edit" }).first().click();
+		await editDescription(page);
 
 		const writing = page.getByRole("textbox", { name: "Description" });
 
@@ -94,7 +95,7 @@ test.describe("the suggestions in an editor", () => {
 
 test("the placeholder is there before anybody clicks, and follows the caret", async ({ page }) => {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 	await expect(page.getByRole("dialog")).toBeVisible();
 
 	const shown = () =>
@@ -115,7 +116,7 @@ test("the placeholder is there before anybody clicks, and follows the caret", as
 
 test("no editor carries a formatting toolbar any more", async ({ page }) => {
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByRole("button", { name: "Edit" }).first().click();
+	await editDescription(page);
 
 	await expect(page.getByRole("textbox", { name: "Description" })).toBeVisible();
 	await expect(page.getByRole("toolbar", { name: "Formatting" })).toHaveCount(0);

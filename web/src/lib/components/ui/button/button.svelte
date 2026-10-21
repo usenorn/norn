@@ -4,7 +4,7 @@
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from "svelte/elements";
 
 	export const buttonVariants = tv({
-		base: "group/button relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-transparent font-medium tracking-snug whitespace-nowrap motion-control select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none aria-disabled:pointer-events-none aria-disabled:opacity-40 aria-disabled:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-row",
+		base: "group/button relative inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md border border-transparent font-medium tracking-snug whitespace-nowrap motion-control select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none aria-disabled:pointer-events-none aria-disabled:opacity-40 aria-disabled:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-row pointer-coarse:after:absolute pointer-coarse:after:-inset-2",
 		variants: {
 			variant: {
 				default:
@@ -20,6 +20,8 @@
 				destructive:
 					"keycap bg-destructive text-primary-foreground [--keycap-lip:var(--danger-active)] hover:bg-danger-hover active:shadow-none",
 				link: "text-link underline-offset-2 hover:text-link-hover hover:underline",
+				property:
+					"keycap border-line-strong bg-card font-normal text-foreground [--keycap-lip:var(--paper-0)] hover:border-ink-400 hover:bg-paper-2 active:bg-paper-0 active:shadow-none data-[state=open]:border-ink-400",
 				chip: "border-line-default bg-paper-2 font-mono text-ink-600 hover:bg-accent hover:text-ink-900 aria-[current=page]:border-line-strong aria-[current=page]:bg-card aria-[current=page]:text-ink-900",
 			},
 			size: {
@@ -27,10 +29,12 @@
 				chip: "h-5 gap-1 rounded-xs px-1.5 text-xs",
 				xs: "h-control-xs gap-1 rounded-sm px-1.5 text-2xs [&_svg:not([class*='size-'])]:size-3",
 				sm: "h-control-sm gap-1 px-2 text-sm",
+				property: "h-8 gap-1.5 px-2.5 text-sm sm:h-control-sm sm:px-2",
 				lg: "h-control-lg px-4 text-base",
 				icon: "size-control-md rounded-sm",
 				"icon-xs": "size-control-xs rounded-sm [&_svg:not([class*='size-'])]:size-3",
 				"icon-sm": "size-control-sm rounded-sm",
+				"icon-touch": "size-10 rounded-sm sm:size-control-sm",
 				"icon-lg": "size-control-lg rounded-sm",
 				touch: "size-11 rounded-md [&_svg:not([class*='size-'])]:size-5",
 			},

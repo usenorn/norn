@@ -59,7 +59,7 @@
 					<RadioGroup.Item id={`agent-execution-${offer}`} value={offer} class="mt-0.5" />
 					<label for={`agent-execution-${offer}`} class="flex flex-col gap-0.5">
 						<span class="text-sm leading-normal text-ink-900">{agentExecutionLabels[offer]}</span>
-						<span class="text-xs leading-normal text-ink-400">{agentExecutionHints[offer]}</span>
+						<span class="text-xs leading-normal text-muted-foreground">{agentExecutionHints[offer]}</span>
 					</label>
 				</div>
 			{/each}

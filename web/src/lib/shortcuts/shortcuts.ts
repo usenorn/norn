@@ -5,6 +5,7 @@ export type ShortcutGroup =
 	| "navigation"
 	| "list"
 	| "issues"
+	| "issue"
 	| "agents"
 	| "selection"
 	| "triage"
@@ -26,6 +27,7 @@ export const shortcutGroupLabels: Record<ShortcutGroup, string> = {
 	navigation: "Going places",
 	list: "Moving through a list",
 	issues: "Issues",
+	issue: "This issue",
 	agents: "Agents",
 	selection: "What you have selected",
 	triage: "Triage",
@@ -37,6 +39,7 @@ export const shortcutGroupOrder: ShortcutGroup[] = [
 	"navigation",
 	"list",
 	"issues",
+	"issue",
 	"agents",
 	"selection",
 	"triage",
@@ -44,11 +47,11 @@ export const shortcutGroupOrder: ShortcutGroup[] = [
 ];
 
 const declared = [
-	{ id: "search", keys: ["mod+k"], label: "Go anywhere", group: "global" },
+	{ id: "search", keys: ["mod+k"], label: "Search", group: "global" },
 	{
 		id: "search-find",
-		keys: ["mod+f"],
-		label: "Search this workspace",
+		keys: ["mod+shift+f"],
+		label: "Search, even while typing",
 		group: "global",
 		whileTyping: true,
 	},
@@ -59,6 +62,7 @@ const declared = [
 	{ id: "go-reviews", keys: ["g r"], label: "Reviews", group: "navigation" },
 	{ id: "go-triage", keys: ["g t"], label: "Triage", group: "navigation" },
 	{ id: "go-issues", keys: ["g i"], label: "Issues", group: "navigation" },
+	{ id: "go-projects", keys: ["g p"], label: "Projects", group: "navigation" },
 	{ id: "go-settings", keys: ["g s"], label: "Settings", group: "navigation" },
 
 	{ id: "cursor-down", keys: ["j", "arrowdown"], label: "Move down", group: "list" },
@@ -77,7 +81,19 @@ const declared = [
 		label: "Set status",
 		group: "issues",
 	},
-	{ id: "issue-edit", keys: ["e"], label: "Edit the description", group: "issues" },
+	{
+		id: "issue-step",
+		keys: ["j", "k"],
+		keysLabel: "J K",
+		label: "Next or previous issue",
+		group: "issue",
+	},
+	{ id: "issue-status", keys: ["s"], label: "Change status", group: "issue" },
+	{ id: "issue-priority", keys: ["p"], label: "Change priority", group: "issue" },
+	{ id: "issue-assignee", keys: ["a"], label: "Assign", group: "issue" },
+	{ id: "issue-labels", keys: ["l"], label: "Change labels", group: "issue" },
+	{ id: "issue-edit", keys: ["e"], label: "Edit the description", group: "issue" },
+	{ id: "issue-back", keys: ["escape"], label: "Back to the list", group: "issue" },
 	{ id: "agent-register", keys: ["shift+a"], label: "Register agent", group: "agents" },
 
 	{ id: "select-toggle", keys: ["x", " "], label: "Select", group: "selection" },

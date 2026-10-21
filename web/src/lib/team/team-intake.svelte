@@ -144,7 +144,7 @@
 
 <section class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">Issues by email</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">Issues by email</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Give {team.name} an address anyone can write to. Each message arrives as an issue, and it waits
 			in triage when this team holds incoming work for review.

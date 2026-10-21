@@ -39,9 +39,7 @@
 </script>
 
 <div class="flex flex-col gap-1.5">
-	{#if groups.length === 0}
-		<p class="text-md text-muted-foreground">Nothing is linked to this issue yet.</p>
-	{:else}
+	{#if groups.length > 0}
 		<ul class="flex flex-col">
 			{#each groups as group (group.kind)}
 					{#each group.relations as relation (relation.id)}
@@ -53,7 +51,7 @@
 									class="-mx-1 flex h-row min-w-0 flex-1 items-center gap-2.25 rounded-sm px-1 motion-control hover:bg-accent"
 								>
 									<span
-										class="w-19 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+										class="w-19 flex-none caption text-muted-foreground"
 									>
 										{relationHeading(group.kind)}
 									</span>

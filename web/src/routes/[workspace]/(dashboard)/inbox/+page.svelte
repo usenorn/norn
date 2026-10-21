@@ -154,7 +154,7 @@
 			return;
 		}
 
-		showToast("Your inbox is clear.");
+		showToast("Marked everything as read");
 		await reload();
 	}
 
@@ -233,11 +233,9 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 flex-wrap items-center gap-2 pr-3 pl-4">
 			<Inbox class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Inbox</h1>
-			{#if unread !== undefined}
-				<span class="text-sm text-muted-foreground">
-					{unread === 0 ? "Nothing unread" : `${unread} unread`}
-				</span>
+			<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">Inbox</h1>
+			{#if unread}
+				<span class="tabular-nums text-sm text-muted-foreground">{unread} unread</span>
 			{/if}
 			<div class="ml-auto flex shrink-0 items-center gap-1">
 				<Button
@@ -245,7 +243,7 @@
 					variant="ghost"
 					size="sm"
 				>
-					{filter === "unread" ? "Show everything" : "Show unread only"}
+					{filter === "unread" ? "Show read notifications" : "Show unread only"}
 				</Button>
 				<Button
 					variant="secondary"
@@ -285,20 +283,21 @@
 				<div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
 					<p class="text-md font-medium tracking-snug text-ink-900">You are caught up</p>
 					<p class="max-w-90 text-md leading-normal text-muted-foreground text-pretty">
-						Twelve changes to one issue arrive as one line here, so this stays worth reading.
+						Notifications you have read are hidden. Several changes to one issue are grouped into a
+						single line.
 					</p>
 					<Button href={workspacePath(slug, "/inbox?filter=all")} variant="secondary" size="sm">
-						Show everything
+						Show read notifications
 					</Button>
 				</div>
 			{:else if listing.kind === "empty"}
 				<div class="flex flex-col items-center gap-3 px-6 py-16 text-center">
-					<p class="text-md font-medium tracking-snug text-ink-900">Nothing here yet</p>
+					<p class="text-md font-medium tracking-snug text-ink-900">Your inbox is empty</p>
 					<p class="max-w-90 text-md leading-normal text-muted-foreground text-pretty">
-						Being assigned something, being mentioned, or following an issue puts it here.
+						Issues assigned to you, mentions of you and changes to issues you follow arrive here.
 					</p>
 					<Button href={workspacePath(slug, "/my-tasks")} variant="secondary" size="sm">
-						Go to your tasks
+						Open My tasks
 					</Button>
 				</div>
 			{:else}

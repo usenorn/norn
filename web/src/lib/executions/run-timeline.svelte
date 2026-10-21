@@ -29,13 +29,13 @@
 			{#each timeline as event (event.id)}
 				<li class="flex min-w-0 items-baseline gap-2.5 border-b border-line-subtle py-1.5 last:border-b-0">
 					<time
-						class="w-12 flex-none font-mono text-2xs text-muted-foreground"
+						class="w-12 flex-none tabular-nums text-2xs text-muted-foreground"
 						datetime={event.occurredAt}
 						title={onDateAndTime(event.occurredAt, timezone)}
 					>
 						{atClock(event.occurredAt, timezone)}
 					</time>
-					<span class="w-16 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+					<span class="w-16 flex-none caption text-muted-foreground">
 						{eventLabel(event.kind)}
 					</span>
 					<span class="min-w-0 flex-1 text-xs leading-normal break-words text-ink-900 text-pretty">

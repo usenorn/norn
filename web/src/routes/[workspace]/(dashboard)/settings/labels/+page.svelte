@@ -499,7 +499,7 @@
 					/>
 				</InputGroup.Root>
 				<span class="flex-1"></span>
-				<span class="font-mono text-2xs text-muted-foreground">{countLine}</span>
+				<span class="tabular-nums text-2xs text-muted-foreground">{countLine}</span>
 			</div>
 
 			{#if uncounted}
@@ -549,13 +549,13 @@
 								<Eyebrow>{section.group ? section.group.name : "Ungrouped"}</Eyebrow>
 								{#if section.group}
 									<span
-										class="rounded-full border border-line-default px-1.5 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+										class="rounded-full border border-line-default px-1.5 text-xs font-medium text-muted-foreground"
 									>
 										one at a time
 									</span>
 								{/if}
 								<span class="h-px flex-1 bg-line-subtle" aria-hidden="true"></span>
-								<span class="font-mono text-2xs text-muted-foreground">
+								<span class="tabular-nums text-2xs text-muted-foreground">
 									{section.labels.length}
 								</span>
 								{#if section.group}
@@ -610,7 +610,7 @@
 											<TeamKey key={teamKeyOf(label.teamId)} />
 										{/if}
 
-										<span class="shrink-0 font-mono text-2xs text-muted-foreground">
+										<span class="shrink-0 tabular-nums text-2xs text-muted-foreground">
 											{usageLabel(usage, label)}
 										</span>
 

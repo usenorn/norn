@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { deflateSync } from "node:zlib";
 import { expect, test } from "@playwright/test";
 import { at, fixture } from "./fixture";
+import { editDescription } from "./description";
 
 function png(path: string, colour: [number, number, number]) {
 	const width = 40;
@@ -65,7 +66,7 @@ test("several files land in the description, in the order they were picked", asy
 	names.forEach((name, index) => png(join(held, name), colours[index]));
 
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByRole("button", { name: "Edit" }).first().click();
+	await editDescription(page);
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page
@@ -98,7 +99,7 @@ const screenshot = `async () => {
 
 test("a screenshot pasted into a new issue stays where the caret was", async ({ page }) => {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 
 	await page.getByRole("textbox", { name: "Issue title" }).fill("Pasted screenshot");
 	await page.getByRole("textbox", { name: "Description" }).click();
@@ -143,7 +144,7 @@ test("a screenshot pasted into a new issue stays where the caret was", async ({ 
 
 test("a file dropped on the editor inside the form is attached once", async ({ page }) => {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page.evaluate(async (make) => {
@@ -183,7 +184,7 @@ test("a file that will not upload takes its place in the text with it", async ({
 	});
 
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByRole("button", { name: "Edit" }).first().click();
+	await editDescription(page);
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page.evaluate(async (make) => {
@@ -217,7 +218,7 @@ test("pasting rich text uploads nothing, because its pictures already have an ad
 	});
 
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByRole("button", { name: "Edit" }).first().click();
+	await editDescription(page);
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page.evaluate(async (make) => {

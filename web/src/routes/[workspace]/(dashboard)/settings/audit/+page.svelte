@@ -206,7 +206,7 @@
 			{:else if record.kind === "unlicensed"}
 				<section class="flex flex-col gap-3 rounded-lg border border-line-default bg-paper-0 p-5">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">
 							The audit log is not part of this instance's licence
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">

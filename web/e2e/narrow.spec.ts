@@ -43,7 +43,7 @@ test.describe("on a touch screen", () => {
 
 		await page.keyboard.press("Escape");
 
-		await page.getByRole("button", { name: "New task" }).first().tap();
+		await page.getByRole("button", { name: "New issue" }).first().tap();
 		await expect(page.getByRole("dialog").getByRole("textbox", { name: "Issue title" })).toBeVisible();
 	});
 });

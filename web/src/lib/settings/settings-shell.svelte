@@ -91,7 +91,7 @@
 
 			<div class="flex min-w-0 flex-1 flex-col">
 				<span class="truncate text-md font-medium tracking-snug text-ink-900">{scopeName}</span>
-				<span class="truncate font-mono text-2xs tracking-caps text-muted-foreground uppercase">
+				<span class="truncate caption text-muted-foreground">
 					{current?.label ?? kindLabel}
 				</span>
 			</div>

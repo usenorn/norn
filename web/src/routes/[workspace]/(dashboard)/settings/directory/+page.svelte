@@ -211,7 +211,7 @@
 			{:else if view.kind === "unlicensed"}
 				<section class="flex flex-col gap-3 rounded-lg border border-line-default bg-paper-0 p-5">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">
 							Directory synchronization is not part of this instance's licence
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -240,7 +240,7 @@
 			{:else if view.kind === "disconnected"}
 				<section class="flex flex-col gap-4 rounded-lg border border-line-default bg-paper-0 p-5">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">
 							Let your identity provider manage who is here
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -259,7 +259,7 @@
 				{#if view.kind === "issued"}
 					<section class="flex flex-col gap-3 rounded-lg border border-success/40 bg-paper-0 p-4">
 						<div class="flex flex-col gap-1">
-							<h2 class="text-md font-medium tracking-snug text-ink-900">
+							<h2 class="text-md font-semibold tracking-snug text-ink-900">
 								Copy this credential now
 							</h2>
 							<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -273,7 +273,7 @@
 				{/if}
 
 				<section class="flex flex-col gap-3 rounded-lg border border-line-default bg-paper-0 p-4">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">Point your provider here</h2>
+					<h2 class="text-md font-semibold tracking-snug text-ink-900">Point your provider here</h2>
 					<div class="flex flex-col gap-1.5">
 						<Label for="scim-url">SCIM base URL</Label>
 						<Input id="scim-url" readonly value={`${origin}${live.scimBaseUrl}`} />
@@ -299,7 +299,7 @@
 				</section>
 
 				<section class="flex flex-col gap-4 rounded-lg border border-line-default bg-paper-0 p-4">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">How changes are handled</h2>
+					<h2 class="text-md font-semibold tracking-snug text-ink-900">How changes are handled</h2>
 
 					<div class="flex flex-col gap-1.5">
 						<Label for="on-unknown">Somebody arrives who is not here yet</Label>
@@ -363,7 +363,7 @@
 				</section>
 
 				<section class="flex flex-col gap-3">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">What the directory changed</h2>
+					<h2 class="text-md font-semibold tracking-snug text-ink-900">What the directory changed</h2>
 
 					{#if live.runs.length === 0}
 						<div

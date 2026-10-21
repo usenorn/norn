@@ -76,6 +76,6 @@
 	{/if}
 	<span class="min-w-0 flex-1 truncate">{label}</span>
 	{#if count !== undefined}
-		<span class="font-mono text-xs text-muted-foreground tabular-nums">{count}</span>
+		<span class="text-xs text-muted-foreground tabular-nums">{count}</span>
 	{/if}
 </a>

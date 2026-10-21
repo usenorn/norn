@@ -17,8 +17,14 @@
 
 	holdShortcuts(() => open);
 
+	const screenFirst: ShortcutGroup[] = [
+		...shortcutGroupOrder.filter((group) => group !== "global" && group !== "navigation"),
+		"global",
+		"navigation",
+	];
+
 	const groups = $derived(
-		shortcutGroupOrder
+		screenFirst
 			.map((group: ShortcutGroup) => ({
 				group,
 				label: shortcutGroupLabels[group],
@@ -33,14 +39,14 @@
 		<Dialog.Header>
 			<Dialog.Title>Keyboard shortcuts</Dialog.Title>
 			<Dialog.Description>
-				What this screen answers to right now. It changes as you move around.
+				Shortcuts that work on this screen, starting with the ones only it has.
 			</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="flex max-h-[60dvh] flex-col gap-5 overflow-y-auto">
 			{#each groups as section (section.group)}
 				<section class="flex flex-col gap-1.5">
-					<h3 class="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
+					<h3 class="caption text-muted-foreground">
 						{section.label}
 					</h3>
 					<ul class="flex flex-col">

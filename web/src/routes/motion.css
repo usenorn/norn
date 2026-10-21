@@ -187,13 +187,41 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+	@keyframes pop {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes lift {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	*,
 	*::before,
 	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
+		animation-delay: 0ms !important;
+		transition-delay: 0ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	.motion-drag,
+	.motion-slot,
+	.motion-fill,
+	.motion-panel {
+		transition: none !important;
+	}
+
+	.motion-control {
+		transition: var(--transition-control), opacity var(--duration-hover) var(--ease-out) !important;
 	}
 
 	.animate-breathe,

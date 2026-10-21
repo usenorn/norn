@@ -22,7 +22,6 @@
 		projectStates,
 		readProjectFailure,
 		stateLabel,
-		type Project,
 		type ProjectFailure,
 		type ProjectListing,
 	} from "$lib/projects/projects";
@@ -112,9 +111,6 @@
 		await goto(projectPath(slug, outcome.value));
 	}
 
-	function targetLabel(project: Project): string {
-		return project.targetOn ? `Target ${onCalendarDate(project.targetOn)}` : "No target date";
-	}
 </script>
 
 <svelte:head>
@@ -125,7 +121,7 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Target class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+			<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">
 				{team ? team.name : "Projects"}
 			</h1>
 			{#if team}
@@ -227,15 +223,22 @@
 				<Empty.Root>
 					<Empty.Media variant="icon"><Folder aria-hidden="true" /></Empty.Media>
 					<Empty.Header>
-						<Empty.Title>No projects here</Empty.Title>
+						<Empty.Title>
+							{team ? `No projects under ${team.name}` : "No projects yet, archived or not"}
+						</Empty.Title>
 						<Empty.Description>
-							{showingArchived
-								? "Nothing archived matches what you are looking at."
-								: "Nothing matches what you are looking at."}
+							{team
+								? "Projects started under this team show up here. Projects from other teams are under Every project."
+								: "A project groups issues from any team towards one goal and an end date."}
 						</Empty.Description>
 					</Empty.Header>
 					<Empty.Content>
-						<Button size="sm" variant="secondary" href={projectsPath(slug)}>Every project</Button>
+						<div class="flex flex-wrap justify-center gap-2">
+							<Button size="sm" href="?new">New project</Button>
+							{#if team}
+								<Button size="sm" variant="secondary" href={projectsPath(slug)}>Every project</Button>
+							{/if}
+						</div>
 					</Empty.Content>
 				</Empty.Root>
 			{:else if listing.kind === "empty"}
@@ -278,12 +281,14 @@
 												color={project.health === "on_track" ? "cyan" : "orchid"}
 											/>
 										{/if}
-										<span class="shrink-0 text-sm text-muted-foreground">
-											{project.leadName || "No lead"}
-										</span>
-										<span class="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
-											{targetLabel(project)}
-										</span>
+										{#if project.leadName}
+											<span class="shrink-0 text-sm text-muted-foreground">{project.leadName}</span>
+										{/if}
+										{#if project.targetOn}
+											<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
+												Target {onCalendarDate(project.targetOn)}
+											</span>
+										{/if}
 									</a>
 								</li>
 							{/each}

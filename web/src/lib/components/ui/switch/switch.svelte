@@ -19,7 +19,7 @@
 	data-slot="switch"
 	data-size={size}
 	class={cn(
-		"shrink-0 rounded-xs border border-line-strong focus-visible:border-ring aria-invalid:border-destructive data-[size=default]:h-4 data-[size=default]:w-7 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-checked:border-primary-active data-checked:bg-primary data-unchecked:bg-paper-3 peer group/switch relative inline-flex items-center p-px motion-control outline-none after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-50",
+		"shrink-0 rounded-xs border border-line-strong focus-visible:border-ring aria-invalid:border-destructive data-[size=default]:h-4 data-[size=default]:w-7 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-checked:border-primary-active data-checked:bg-primary data-unchecked:border-ink-400 data-unchecked:bg-paper-0 peer group/switch relative inline-flex items-center p-px motion-control outline-none after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-50",
 		className
 	)}
 	{...restProps}

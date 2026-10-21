@@ -2,7 +2,7 @@
 	import { type VariantProps, tv } from "tailwind-variants";
 
 	export const pillVariants = tv({
-		base: "inline-flex shrink-0 items-center gap-1 rounded-xs border px-1.5 py-0.5 font-mono text-2xs tracking-caps uppercase [&_svg]:size-3 [&_svg]:shrink-0",
+		base: "inline-flex shrink-0 items-center gap-1 rounded-xs border px-1.5 py-0.5 text-xs font-medium [&_svg]:size-3 [&_svg]:shrink-0",
 		variants: {
 			tone: {
 				success: "border-success/40 text-success",

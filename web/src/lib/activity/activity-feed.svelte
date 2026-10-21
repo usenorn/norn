@@ -65,11 +65,11 @@
 						{/if}
 						{actorLabel(event)}
 					</span>
-					<span class="font-mono text-xs text-muted-foreground">
+					<span class="tabular-nums text-xs text-muted-foreground">
 						<time datetime={event.createdAt}>{when(event.createdAt)}</time>
 					</span>
 					{#if event.bulkActionId}
-						<span class="font-mono text-2xs tracking-eyebrow text-ink-600 uppercase">
+						<span class="caption text-ink-600">
 							In bulk
 						</span>
 					{/if}

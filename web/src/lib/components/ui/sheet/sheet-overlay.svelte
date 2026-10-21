@@ -13,7 +13,7 @@
 	bind:ref
 	data-slot="sheet-overlay"
 	class={cn(
-		"fixed inset-0 isolate z-50 bg-surface-scrim supports-backdrop-filter:backdrop-blur-[6px] data-open:animate-scrim data-closed:animate-dismiss",
+		"fixed inset-0 isolate z-50 bg-surface-scrim data-open:animate-scrim data-closed:animate-dismiss",
 		className
 	)}
 	{...restProps}

@@ -25,6 +25,7 @@
 	import { priorities } from "$lib/issues/issues";
 	import { linkTo } from "$lib/issues/linking";
 	import { withReturn } from "$lib/issues/return-to-list";
+	import { rememberOrder } from "$lib/issues/visit-order";
 	import { surfaceDefaults, surfaceGroupings, surfaceOrderings, writeDisplay } from "$lib/issues/display";
 	import { pickableFacets, type FacetKind } from "$lib/issues/facets";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
@@ -157,15 +158,24 @@
 	}
 
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
+	const referenceWidth = $derived(Math.max(5, ...flat.map((task) => task.id.length)) + 1);
+
+	$effect(() => {
+		rememberOrder(returnTo, flat.map((task) => task.id));
+	});
 
 	const cursor = listCursor(() => ({
 		rows: flat,
+		referenceOf: (task) => task.id,
 		open: (task) => void goto(issueHref(task.id)),
 	}));
 
 	const issueOf = $derived(new Map(loaded.map((issue) => [issue.reference, issue])));
 
+	let filterOpen = $state(false);
+
 	bindShortcuts({
+		"issue-filter": () => (filterOpen = true),
 		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
 	});
 
@@ -194,27 +204,30 @@
 
 <svelte:head><title>My tasks · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
+<div
+	class="flex min-h-0 flex-1 flex-col"
+	style="--reference-width: {referenceWidth}ch"
+>
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
 				<CircleDot class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-				<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">My tasks</h1>
+				<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">My tasks</h1>
 				{#if rows.kind === "ready"}
-					<span class="font-mono text-xs text-muted-foreground tabular-nums">
+					<span class="text-xs text-muted-foreground tabular-nums">
 						{total}{nextCursor ? "+" : ""}
 					</span>
 				{/if}
 			</div>
-			<Button size="sm" onclick={() => raising.raise()}>
+			<Button size="sm" class="hidden sm:inline-flex" onclick={() => raising.raise()}>
 				<Plus aria-hidden="true" />
-				New task
+				New issue
 			</Button>
 		</div>
 		<div
 			class="flex min-h-8.5 flex-wrap items-center gap-x-3 gap-y-1 border-t border-line-subtle py-1 pr-3 pl-3.5"
 		>
-			<FilterBar {facets} {offered} {catalogue} {linkWith} />
+			<FilterBar {facets} {offered} {catalogue} {linkWith} bind:open={filterOpen} />
 
 			<div class="min-w-2 flex-1"></div>
 
@@ -250,7 +263,7 @@
 			</div>
 		{:else if rows.kind === "no_matches"}
 			<div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-				<p class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+				<p class="caption text-ink-600">
 					No tasks match these filters
 				</p>
 				<Button href={cleared} variant="secondary" size="sm">Clear filters</Button>
@@ -274,13 +287,13 @@
 						class="sticky top-0 z-1 flex h-7.5 items-center gap-2 border-b border-line-default bg-background pr-3 pl-3.5"
 					>
 						<span
-							class="font-mono text-2xs font-medium tracking-eyebrow uppercase {bucket.emphasis
+							class="caption {bucket.emphasis
 								? 'text-ink-900'
 								: 'text-ink-600'}"
 						>
 							{bucket.label}
 						</span>
-						<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+						<span class="text-2xs text-muted-foreground tabular-nums">
 							{bucket.tasks.length}
 						</span>
 						<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
@@ -291,6 +304,9 @@
 							href={issueHref(task.id)}
 							cursor={cursor.holds(task)}
 							shown={data.display.shown}
+							now={data.now}
+							timezone={data.workspace.timezone}
+							showAssignee={false}
 						/>
 					{/each}
 				</section>

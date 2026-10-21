@@ -160,7 +160,7 @@
 				<h1
 					bind:this={heading}
 					tabindex="-1"
-					class="text-2xl font-medium tracking-title text-ink-900"
+					class="text-2xl font-semibold tracking-title text-ink-900"
 				>
 					{title}
 				</h1>
@@ -175,7 +175,7 @@
 			{:else if confirmation.kind === "confirmed"}
 				<div class="flex items-start gap-2 rounded-lg border border-line-strong bg-paper-0 px-3 py-2.5">
 					<CircleCheck class="mt-px size-icon-row shrink-0 text-success" aria-hidden="true" />
-					<p class="min-w-0 flex-1 font-mono text-xs break-all text-ink-600">
+					<p class="min-w-0 flex-1 tabular-nums text-xs break-all text-ink-600">
 						{confirmation.email}
 					</p>
 				</div>

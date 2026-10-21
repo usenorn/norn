@@ -41,7 +41,7 @@
 <div class="flex flex-col gap-3 rounded-lg border border-line-subtle bg-paper-0 p-4">
 	<div class="flex flex-wrap items-baseline justify-between gap-2">
 		<span class="text-sm font-medium tracking-snug text-ink-900">{statusLabel(run.status)}</span>
-		<span class="font-mono text-xs text-muted-foreground tabular-nums">
+		<span class="text-xs text-muted-foreground tabular-nums">
 			{counted(run.staged, "read", "read")} · {counted(run.processed, "handled", "handled")}
 		</span>
 	</div>

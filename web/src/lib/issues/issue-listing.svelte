@@ -3,6 +3,7 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
+	import Bookmark from "@lucide/svelte/icons/bookmark";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import CircleHelp from "@lucide/svelte/icons/circle-help";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -13,7 +14,7 @@
 	import Plus from "@lucide/svelte/icons/plus";
 	import { SvelteSet } from "svelte/reactivity";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -51,6 +52,8 @@
 	} from "$lib/issues/facet-options";
 	import { linkTo } from "$lib/issues/linking";
 	import { withReturn } from "$lib/issues/return-to-list";
+	import { edgeScroll, type TouchDragHandlers } from "$lib/issues/touch-drag";
+	import { rememberOrder } from "$lib/issues/visit-order";
 	import { failures, rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
 	import { flash } from "$lib/motion";
@@ -66,6 +69,7 @@
 	import {
 		boardGroupings,
 		surfaceDefaults,
+		atDefaults,
 		surfaceOrderings,
 		groupings,
 		issueTabs,
@@ -216,6 +220,7 @@
 		new Map(members.map((member) => [member.accountId, member.displayName ?? ""]))
 	);
 	const flat = $derived(columns.flatMap((column) => column.issues));
+	const referenceWidth = $derived(Math.max(5, ...flat.map((issue) => issue.reference.length)) + 1);
 	const offsets = $derived.by(() => {
 		const at = new Map<string, number>();
 		let seen = 0;
@@ -237,9 +242,14 @@
 	const statesOfTeam = $derived((teamId: string) => statesByTeam[teamId] ?? []);
 	const keyOfTeam = $derived((teamId: string) => teams.find((each) => each.id === teamId)?.key);
 	const ambiguous = $derived(new Set(states.map((state) => state.teamId)).size > 1);
-	const stateLabel = $derived((state: WorkflowState) =>
-		ambiguous ? `${state.name} · ${keyOfTeam(state.teamId) ?? ""}`.trim() : state.name
+	const nameOfTeam = $derived(
+		(teamId: string) => teams.find((each) => each.id === teamId)?.name ?? keyOfTeam(teamId)
 	);
+	const stateLabel = $derived((state: WorkflowState) => {
+		const team = ambiguous ? nameOfTeam(state.teamId) : undefined;
+
+		return team ? `${state.name} · ${team}` : state.name;
+	});
 	const columnName = $derived((column: (typeof columns)[number]) =>
 		ambiguous && column.mark.kind === "state" ? stateLabel(column.mark.state) : column.name
 	);
@@ -270,6 +280,13 @@
 	const issueHref = $derived((reference: string) =>
 		withReturn(at(`/issues/${reference}`), returnTo)
 	);
+
+	$effect(() => {
+		rememberOrder(
+			returnTo,
+			flat.filter((issue) => !draftIDs.has(issue.id)).map((issue) => issue.reference)
+		);
+	});
 
 	const catalogue = $derived<FacetCatalogue>({
 		state: states.map((state) => ({ value: state.id, label: stateLabel(state) })),
@@ -514,6 +531,57 @@
 		dropTarget = null;
 	}
 
+	let dragScroller = $state<HTMLElement>();
+	let gliding = 0;
+
+	function touchMove(x: number, y: number) {
+		const zone = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-drop-key]");
+		const key = zone?.dataset.dropKey;
+
+		dropTarget =
+			zone && key && dragging && landsIn(dragging, key)
+				? { key, index: insertionIndex(zone, y) }
+				: null;
+
+		cancelAnimationFrame(gliding);
+
+		const glide = () => {
+			if (dragging && edgeScroll(dragScroller, x, y) > 0) gliding = requestAnimationFrame(glide);
+		};
+
+		glide();
+	}
+
+	function touchDrop() {
+		const id = dragging;
+		const target = dropTarget;
+
+		cancelAnimationFrame(gliding);
+		onDragEnd();
+
+		if (id && target) void settleDrop(id, target);
+	}
+
+	function touchCancel() {
+		cancelAnimationFrame(gliding);
+		onDragEnd();
+	}
+
+	function touchHandlers(issue: Issue): TouchDragHandlers {
+		return {
+			start: () => {
+				if (draftIDs.has(issue.id)) return false;
+
+				dragging = issue.id;
+
+				return true;
+			},
+			move: touchMove,
+			drop: touchDrop,
+			cancel: touchCancel,
+		};
+	}
+
 	function landsIn(id: string | null, key: string): boolean {
 		const issue = flat.find((candidate) => candidate.id === id);
 
@@ -559,7 +627,10 @@
 		};
 
 		onDragEnd();
+		await settleDrop(id, target);
+	}
 
+	async function settleDrop(id: string | null, target: DropTarget) {
 		const issue = flat.find((candidate) => candidate.id === id);
 		if (!issue || !landsIn(id, target.key)) return;
 
@@ -893,6 +964,7 @@
 
 	const cursor = listCursor(() => ({
 		rows: flat,
+		referenceOf: (issue) => issue.reference,
 		open: (issue) => {
 			if (!draftIDs.has(issue.id)) void goto(issueHref(issue.reference));
 		},
@@ -1019,6 +1091,9 @@
 	}
 
 	const filtered = $derived(facetCount(facets) > 0);
+	const savable = $derived(
+		filtered || data.layout === "board" || !atDefaults(display, surfaceDefaults.issues)
+	);
 </script>
 
 {#snippet dropGap(key: string, index: number)}
@@ -1032,9 +1107,6 @@
 {#snippet columnMark(column: (typeof columns)[number])}
 	{#if column.mark.kind === "state"}
 		<StatusIcon category={column.mark.state.category} name={column.mark.state.name} />
-		{#if ambiguous}
-			<TeamKey key={keyOfTeam(column.mark.state.teamId) ?? ""} />
-		{/if}
 	{:else if column.mark.kind === "priority"}
 		<PriorityIcon priority={column.mark.priority} />
 	{:else if column.mark.kind === "assignee"}
@@ -1046,9 +1118,7 @@
 				title={column.mark.name}
 			/>
 		{:else}
-			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-				<Avatar.Fallback>+</Avatar.Fallback>
-			</Avatar.Root>
+			<UnassignedAvatar />
 		{/if}
 	{:else if column.mark.kind === "project"}
 		<Folder class="size-icon-row text-muted-foreground" aria-hidden="true" />
@@ -1085,7 +1155,7 @@
 				type="button"
 				aria-label="Change status on {issue.reference}"
 				disabled={draftIDs.has(issue.id)}
-				class="inline-flex h-6 w-5.5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
+				class="relative inline-flex h-6 w-5.5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5"
 			>
 				<StatusIcon category={issue.state.category} name={issue.state.name} />
 			</button>
@@ -1135,7 +1205,7 @@
 				type="button"
 				aria-label="Change assignee on {issue.reference}"
 				disabled={draftIDs.has(issue.id)}
-				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
+				class="relative inline-flex size-6 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5"
 			>
 				{#if held}
 					<PersonAvatar
@@ -1145,9 +1215,7 @@
 						title={held}
 					/>
 				{:else}
-					<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-						<Avatar.Fallback>+</Avatar.Fallback>
-					</Avatar.Root>
+					<UnassignedAvatar />
 				{/if}
 			</button>
 		{/snippet}
@@ -1155,25 +1223,29 @@
 			{#if option.value}
 				<PersonAvatar accountId={option.value} name={option.label} size="xs" />
 			{:else}
-				<Avatar.Root size="xs" variant="ghost">
-					<Avatar.Fallback>+</Avatar.Fallback>
-				</Avatar.Root>
+				<UnassignedAvatar />
 			{/if}
 		{/snippet}
 	</PropertyPicker>
 {/snippet}
 
-<div class="relative flex min-h-0 flex-1 flex-col">
+<div
+	class="relative flex min-h-0 flex-1 flex-col"
+	style="--reference-width: {referenceWidth}ch"
+>
 	<div class="flex-none border-b border-line-default">
 		<div class="flex min-h-11 flex-wrap items-center gap-2 py-1.5 pr-3 pl-4 sm:flex-nowrap sm:py-0">
 			<div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-				<List class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-				<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Issues</h1>
+				<List
+					class="hidden size-icon-toolbar shrink-0 text-muted-foreground sm:block"
+					aria-hidden="true"
+				/>
+				<h1 class="sr-only text-md font-semibold tracking-snug whitespace-nowrap text-ink-900 sm:not-sr-only">Issues</h1>
 
 				{#if applied.kind === "applied"}
 					<span class="flex min-w-0 shrink items-center gap-1.5">
 						<span class="truncate text-md text-ink-900">{applied.view.name}</span>
-						<span class="shrink-0 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase">
+						<span class="shrink-0 caption text-ink-600">
 							{scopeOf(applied.view)}
 						</span>
 					</span>
@@ -1187,7 +1259,7 @@
 				{#if source}
 					<div
 						role="tablist"
-						class="ml-1 flex shrink-0 items-center gap-3"
+						class="scrollbar-none flex min-w-0 items-center gap-3 overflow-x-auto pr-4 mask-r-from-[calc(100%-1rem)] sm:ml-1 sm:pr-0 sm:mask-none"
 						aria-label="Which issues"
 					>
 						{#each issueTabs as tab (tab)}
@@ -1196,11 +1268,11 @@
 								role="tab"
 								aria-selected={data.tab === tab}
 								data-active={data.tab === tab}
-								class="relative inline-flex h-7.5 items-center gap-1.5 text-md font-medium whitespace-nowrap text-muted-foreground motion-control after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent after:motion-control hover:text-ink-900 hover:after:bg-line-strong data-[active=true]:text-ink-900 data-[active=true]:after:bg-primary"
+								class="relative inline-flex h-11 items-center gap-1.5 text-md font-medium whitespace-nowrap sm:h-7.5 text-muted-foreground motion-control after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent after:motion-control hover:text-ink-900 hover:after:bg-line-strong data-[active=true]:text-ink-900 data-[active=true]:after:bg-primary"
 							>
 								{tabLabels[tab]}
 								{#if counts}
-									<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+									<span class="text-2xs text-muted-foreground tabular-nums">
 										{counts[tab]}
 									</span>
 								{/if}
@@ -1211,7 +1283,7 @@
 
 				{#if openCycle && progress}
 					<span class="hidden shrink-0 items-center gap-2 whitespace-nowrap lg:inline-flex">
-						<span class="font-mono text-xs text-muted-foreground">
+						<span class="tabular-nums text-xs text-muted-foreground">
 							{cycleWindow(openCycle.startsOn, openCycle.endsOn)}
 						</span>
 						<ProgressBar {progress} />
@@ -1225,7 +1297,8 @@
 					variant="outline"
 					size="icon-sm"
 					aria-label="List view"
-					aria-pressed={data.layout === "list"}
+					title="List view"
+					aria-current={data.layout === "list" ? "true" : undefined}
 					class={data.layout === "list" ? "border-primary bg-primary text-primary-foreground" : ""}
 				>
 					<List class="size-icon-toolbar" aria-hidden="true" />
@@ -1235,12 +1308,18 @@
 					variant="outline"
 					size="icon-sm"
 					aria-label="Board view"
-					aria-pressed={data.layout === "board"}
+					title="Board view"
+					aria-current={data.layout === "board" ? "true" : undefined}
 					class={data.layout === "board" ? "border-primary bg-primary text-primary-foreground" : ""}
 				>
 					<Kanban class="size-icon-toolbar" aria-hidden="true" />
 				</Button>
-				<Button size="sm" disabled={teams.length === 0} onclick={() => raising.raise()}>
+				<Button
+					size="sm"
+					class="hidden sm:inline-flex"
+					disabled={teams.length === 0}
+					onclick={() => raising.raise()}
+				>
 					<Plus aria-hidden="true" />
 					New issue
 				</Button>
@@ -1280,13 +1359,19 @@
 					Manage views
 				</a>
 			{:else}
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="sm"
+					class={savable ? "shrink-0" : "hidden shrink-0 sm:inline-flex"}
+					disabled={!savable}
+					title={savable
+						? undefined
+						: "Filter or change the display first; this is already the default view"}
 					onclick={() => (saving = true)}
-					class="shrink-0 cursor-pointer text-sm whitespace-nowrap text-link underline-offset-2 hover:text-link-hover hover:underline"
 				>
+					<Bookmark aria-hidden="true" />
 					Save as view
-				</button>
+				</Button>
 			{/if}
 
 			<div class="min-w-2 flex-1"></div>
@@ -1295,6 +1380,7 @@
 			<DisplayMenu
 				{display}
 				defaults={surfaceDefaults.issues}
+				perTeam={ambiguous}
 				groupings={boardGroupings}
 				orderings={surfaceOrderings.issues}
 				{linkWith}
@@ -1394,7 +1480,7 @@
 			</div>
 		{:else if board.kind === "empty" && filtered}
 			<div class="my-auto flex flex-col items-center gap-3 px-6 py-10 text-center">
-				<p class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+				<p class="caption text-ink-600">
 					No issues match these filters
 				</p>
 				<Button href={cleared} variant="secondary" size="sm">Clear filters</Button>
@@ -1412,8 +1498,20 @@
 					{#if applied.kind === "applied"}
 						Nothing you can see matches this view right now. Someone else opening it may well see
 						something &mdash; it is evaluated against whichever teams each person can see.
+					{:else if counts && counts.all > 0}
+						{data.tab === "backlog"
+							? "Nothing is waiting to be picked up; everything else is under way or finished."
+							: "Nothing is in progress or waiting to start."}
+						{#if data.tab === "backlog" && counts.active > 0}
+							<a
+								href={linkWith({ tab: "active" })}
+								class="mt-1 block text-link underline-offset-2 hover:text-link-hover hover:underline"
+							>
+								See the {counts.active} active {counts.active === 1 ? "issue" : "issues"}
+							</a>
+						{/if}
 					{:else}
-						Raise the first one, and it starts in whichever state this team files new work into.
+						Raise the first one, and it starts in whichever state its team files new work into.
 					{/if}
 				</p>
 				<Button size="sm" disabled={teams.length === 0} onclick={() => raising.raise()}>
@@ -1422,7 +1520,7 @@
 				</Button>
 			</div>
 		{:else if data.layout === "list"}
-			<div class="flex-1 overflow-auto">
+			<div bind:this={dragScroller} class="flex-1 overflow-auto">
 				{#each columns as column (column.key)}
 					{@const shut = collapsed.has(column.key)}
 					<section
@@ -1430,6 +1528,7 @@
 						ondragover={(event) => onDragOver(event, column.key)}
 						ondragleave={(event) => onDragLeave(event, column.key)}
 						ondrop={(event) => void onDrop(event, column.key)}
+						data-drop-key={column.key}
 						data-dropping={dropTarget?.key === column.key}
 						class="data-[dropping=true]:bg-accent"
 					>
@@ -1441,7 +1540,7 @@
 								aria-expanded={!shut}
 								onclick={() =>
 									shut ? collapsed.delete(column.key) : collapsed.add(column.key)}
-								class="inline-flex h-6 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-accent"
+								class="relative inline-flex h-6 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-accent pointer-coarse:after:absolute pointer-coarse:after:-inset-y-2.5"
 							>
 								<ChevronDown
 									class="size-3.25 text-muted-foreground motion-control {shut
@@ -1451,11 +1550,11 @@
 								/>
 								{@render columnMark(column)}
 								<span
-									class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+									class="caption text-ink-600"
 								>
-									{column.name}
+									{columnName(column)}
 								</span>
-								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+								<span class="text-2xs text-muted-foreground tabular-nums">
 									{column.total}
 								</span>
 							</button>
@@ -1482,6 +1581,7 @@
 										timezone={data.workspace.timezone}
 										shown={display.shown}
 										cursor={cursor.holds(issue)}
+										onarrive={() => cursor.to(flat.indexOf(issue))}
 										selected={selected.has(issue.id)}
 										pending={draftIDs.has(issue.id)}
 										onselect={(extend) => toggle(issue.id, extend)}
@@ -1492,6 +1592,7 @@
 										draggable
 										dragging={dragging === issue.id}
 										ondragstart={(event) => onDragStart(event, issue.id)}
+										touchdrag={touchHandlers(issue)}
 										ondragend={onDragEnd}
 									/>
 								{/each}
@@ -1508,7 +1609,7 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="flex-1 overflow-auto bg-background p-4">
+			<div bind:this={dragScroller} class="flex-1 overflow-auto bg-background p-4">
 				<div class="flex min-h-full items-stretch gap-3">
 					{#each columns as column (column.key)}
 						<div
@@ -1517,17 +1618,18 @@
 							ondragover={(event) => onDragOver(event, column.key)}
 							ondragleave={(event) => onDragLeave(event, column.key)}
 							ondrop={(event) => void onDrop(event, column.key)}
+							data-drop-key={column.key}
 							data-dropping={dropTarget?.key === column.key}
 							class="group/column flex w-60 flex-none sm:w-62.5 flex-col gap-2 rounded-lg border border-transparent p-1 motion-control data-[dropping=true]:border-dashed data-[dropping=true]:border-ink-400 data-[dropping=true]:bg-accent"
 						>
 							<div class="flex h-7 items-center gap-2 px-1">
 								{@render columnMark(column)}
 								<span
-									class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+									class="caption text-ink-600"
 								>
-									{column.name}
+									{columnName(column)}
 								</span>
-								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+								<span class="text-2xs text-muted-foreground tabular-nums">
 									{column.total}
 								</span>
 								<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
@@ -1548,6 +1650,7 @@
 									<IssueCard
 										{issue}
 										cursor={cursor.holds(issue)}
+										onarrive={() => cursor.to(flat.indexOf(issue))}
 										href={issueHref(issue.reference)}
 										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
 										now={data.now}
@@ -1563,6 +1666,7 @@
 										draggable
 										dragging={dragging === issue.id}
 										ondragstart={(event) => onDragStart(event, issue.id)}
+										touchdrag={touchHandlers(issue)}
 										ondragend={onDragEnd}
 									/>
 								{/each}
@@ -1571,9 +1675,9 @@
 
 							{#if column.issues.length === 0 && column.load.kind === "complete"}
 								<p
-									class="border-t border-dashed border-line-strong px-0.5 py-3 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase"
+									class="border-t border-dashed border-line-strong px-0.5 py-3 caption text-ink-600"
 								>
-									Nothing here
+									No issues
 								</p>
 							{/if}
 
@@ -1632,12 +1736,16 @@
 	{:else}
 		<ShortcutBar
 			ids={[
-				"cursor-down",
-				...(data.layout === "board" ? (["cursor-left", "cursor-right"] as const) : []),
-				"cursor-open",
-				"status-set",
-				"select-toggle",
-				...(cycling.size > 0 ? (["bulk-cycle"] as const) : []),
+				...(flat.length > 0
+					? ([
+							"cursor-down",
+							...(data.layout === "board" ? (["cursor-left", "cursor-right"] as const) : []),
+							"cursor-open",
+							"status-set",
+							"select-toggle",
+							...(cycling.size > 0 ? (["bulk-cycle"] as const) : []),
+						] as const)
+					: []),
 				"issue-filter",
 				"issue-new",
 				"help",
@@ -1645,7 +1753,7 @@
 		>
 			{#snippet lead()}
 				{#if board.kind !== "unavailable"}
-					<span class="font-mono text-xs text-muted-foreground tabular-nums">
+					<span class="text-xs text-muted-foreground tabular-nums">
 						{total}
 						{total === 1 ? "issue" : "issues"}
 					</span>

@@ -3,7 +3,7 @@ import { dueBucketLabels, dueBuckets, dueBucketOf } from "$lib/issues/facets";
 import { priorities, priorityLabel, type Issue, type IssuePriority } from "$lib/issues/issues";
 import type { Project } from "$lib/projects/projects";
 import type { WorkflowState } from "$lib/team/states";
-import { calendarDate, onCalendarDate } from "$lib/time";
+import { calendarDate } from "$lib/time";
 import type { Task, TaskBucket } from "./types";
 
 export type GroupingContext = { states: WorkflowState[]; projects: Project[] };
@@ -16,7 +16,7 @@ export function taskOf(issue: Issue, assignee: string | null): Task {
 		priority: issue.priority,
 		assignee,
 		assigneeAccountId: issue.assigneeAccountId ?? null,
-		date: issue.dueOn ? onCalendarDate(issue.dueOn) : null,
+		dueOn: issue.dueOn ?? null,
 		labels: issue.labels.map((label) => ({ name: label.name, color: label.color })),
 		project: issue.projectName ?? "",
 		cycle: issue.cycleNumber === undefined ? null : String(issue.cycleNumber),

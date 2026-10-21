@@ -38,7 +38,7 @@
 			<span class="break-words">{roadmapTitle}</span>
 		</a>
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-			<h1 class="min-w-0 text-2xl font-medium tracking-title break-words text-ink-900">
+			<h1 class="min-w-0 text-2xl font-semibold tracking-title break-words text-ink-900">
 				{item.title}
 			</h1>
 			{#if item.status}
@@ -51,11 +51,11 @@
 		<dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
 			{#if dates}
 				<dt class="text-muted-foreground">Timeline</dt>
-				<dd class="font-mono text-ink-900 tabular-nums">{dates}</dd>
+				<dd class="text-ink-900 tabular-nums">{dates}</dd>
 			{/if}
 			{#if progress && item.progress !== undefined}
 				<dt class="text-muted-foreground">Progress</dt>
-				<dd class="flex items-center gap-2 font-mono text-ink-900 tabular-nums">
+				<dd class="flex items-center gap-2 text-ink-900 tabular-nums">
 					<Progress value={item.progress} class="w-24" aria-hidden="true" />
 					<span>{progress}</span>
 				</dd>

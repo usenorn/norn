@@ -16,6 +16,7 @@
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import * as Popover from "$lib/components/ui/popover/index.js";
+	import Kbd from "$lib/components/norn/kbd.svelte";
 	import { cn } from "$lib/utils.js";
 
 	let {
@@ -63,11 +64,18 @@
 			{@render trigger(props)}
 		{/snippet}
 	</Popover.Trigger>
-	<Popover.Content {align} sideOffset={4} class={cn("w-51.5", className)}>
+	<Popover.Content
+		{align}
+		sideOffset={4}
+		collisionPadding={8}
+		class={cn("w-max max-w-[min(20rem,calc(100vw-1rem))] min-w-51.5", className)}
+	>
 		<Command.Root shouldFilter={filter}>
 			<Command.Input {placeholder} bind:value={search}>
 				{#if shortcut}
 					{@render shortcut()}
+				{:else}
+					<Kbd keys="Esc" />
 				{/if}
 			</Command.Input>
 			<Command.List>

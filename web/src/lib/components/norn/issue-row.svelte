@@ -2,7 +2,7 @@
 	import type { Snippet } from "svelte";
 	import Check from "@lucide/svelte/icons/check";
 	import Link2 from "@lucide/svelte/icons/link-2";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "./unassigned-avatar.svelte";
 	import PersonAvatar from "./person-avatar.svelte";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
@@ -14,6 +14,8 @@
 	import { totalIssues } from "$lib/issues/board";
 	import type { RowProperty } from "$lib/issues/display";
 	import type { Issue } from "$lib/issues/issues";
+	import { rovingControls } from "$lib/shortcuts/roving";
+	import { touchDrag, type TouchDragHandlers } from "$lib/issues/touch-drag";
 
 	let {
 		issue,
@@ -25,6 +27,7 @@
 		selected = false,
 		pending = false,
 		onselect,
+		onarrive,
 		shown = ["labels", "due"],
 		priorityControl,
 		stateControl,
@@ -34,6 +37,7 @@
 		dragging = false,
 		ondragstart,
 		ondragend,
+		touchdrag,
 		class: className,
 	}: {
 		issue: Issue;
@@ -45,6 +49,7 @@
 		selected?: boolean;
 		pending?: boolean;
 		onselect?: (extend: boolean) => void;
+		onarrive?: () => void;
 		shown?: RowProperty[];
 		priorityControl?: Snippet<[Issue]>;
 		stateControl?: Snippet<[Issue]>;
@@ -54,6 +59,7 @@
 		dragging?: boolean;
 		ondragstart?: (event: DragEvent) => void;
 		ondragend?: (event: DragEvent) => void;
+		touchdrag?: TouchDragHandlers;
 		class?: string;
 	} = $props();
 
@@ -64,15 +70,15 @@
 	const children = $derived(issue.childProgress);
 	const hasChildren = $derived(children ? totalIssues(children) > 0 : false);
 
-	const line = $derived(
-		[issue.reference, due ? dueLabel(due, now, timezone, done) : "", assignee.split(" ")[0] ?? ""]
-			.filter(Boolean)
-			.join(" · ")
-	);
+	const dueLine = $derived(due ? dueLabel(due, now, timezone, done) : "");
+	const firstName = $derived(assignee.split(" ")[0] ?? "");
 </script>
 
 <div
 	role="listitem"
+	{@attach rovingControls(cursor)}
+	{@attach touchDrag(draggable && !pending ? touchdrag : undefined)}
+	onfocusin={onarrive}
 	data-issue={issue.id}
 	data-cursor={cursor}
 	aria-current={cursor ? "true" : undefined}
@@ -84,7 +90,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		"group/row relative flex min-h-12 items-center pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none] has-[[data-row-anchor]:focus-visible]:outline-2 has-[[data-row-anchor]:focus-visible]:-outline-offset-2 has-[[data-row-anchor]:focus-visible]:outline-ring gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
 		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
@@ -97,7 +103,7 @@
 			aria-label="Select {issue.reference}"
 			disabled={pending}
 			onclick={(event) => onselect(event.shiftKey)}
-			data-on={selected || cursor}
+			data-on={selected}
 			class="relative z-1 -mr-0.5 hidden h-row w-4 flex-none cursor-pointer items-center justify-center opacity-0 sm:flex motion-control group-hover/row:opacity-100 focus-visible:opacity-100 data-[on=true]:opacity-100"
 		>
 			<span
@@ -120,7 +126,7 @@
 	{/if}
 
 	<span
-		class="hidden w-15 flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900 sm:block"
+		class="hidden w-[var(--reference-width,7ch)] flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900 sm:block"
 		data-strong={cursor || selected}
 	>
 		{issue.reference}
@@ -143,6 +149,7 @@
 			</span>
 		{:else}
 			<a
+				data-row-anchor
 				{href}
 				draggable="false"
 				onclick={(event) => {
@@ -151,14 +158,18 @@
 					event.preventDefault();
 					onselect(event.shiftKey);
 				}}
-				class="block truncate text-base font-medium tracking-snug after:absolute after:inset-0 sm:text-md sm:font-normal {done
+				class="block truncate text-base font-medium tracking-snug outline-none after:absolute after:inset-0 sm:text-md sm:font-normal {done
 					? 'text-muted-foreground'
 					: 'text-ink-900'}"
 			>
 				{issue.title}
 			</a>
 		{/if}
-		<span class="truncate font-mono text-2xs text-muted-foreground sm:hidden">{line}</span>
+		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">
+			<span class="font-mono">{issue.reference}</span>{#if dueLine}{" · "}<span
+					class={late ? "text-priority-urgent" : ""}>{dueLine}</span
+				>{/if}{#if firstName}{" · "}{firstName}{/if}
+		</span>
 	</span>
 
 	<span
@@ -176,13 +187,18 @@
 			<LabelChips {labels} place="row" />
 		{/if}
 		{#if issue.estimate}
-			<span class="hidden font-mono text-2xs text-muted-foreground sm:inline">
+			<span class="hidden tabular-nums text-2xs text-muted-foreground sm:inline">
 				{issue.estimate}
+			</span>
+		{/if}
+		{#if issue.cycleNumber}
+			<span class="hidden tabular-nums text-2xs whitespace-nowrap text-muted-foreground lg:inline">
+				Cycle {issue.cycleNumber}
 			</span>
 		{/if}
 		{#if due}
 			<span
-				class="hidden font-mono text-xs whitespace-nowrap sm:inline {late
+				class="hidden tabular-nums text-xs whitespace-nowrap sm:inline {late
 					? 'text-priority-urgent'
 					: 'text-muted-foreground'}"
 			>
@@ -199,9 +215,7 @@
 				title={assignee}
 			/>
 		{:else}
-			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-				<Avatar.Fallback>+</Avatar.Fallback>
-			</Avatar.Root>
+			<UnassignedAvatar />
 		{/if}
 	</span>
 </div>

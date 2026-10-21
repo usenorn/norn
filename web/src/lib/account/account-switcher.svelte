@@ -41,8 +41,11 @@
 		context === "workspace-settings" ? "/settings" : "/my-tasks"
 	);
 
+	const instance = $props.id();
+	const signOutAllForm = `sign-out-all-${instance}`;
+
 	function signOutForm(accountId: string): string {
-		return `sign-out-${accountId}`;
+		return `sign-out-${accountId}-${instance}`;
 	}
 </script>
 
@@ -51,7 +54,7 @@
 		class={[
 			"flex items-center text-left motion-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
 			trigger === "avatar"
-				? "rounded-full"
+				? "relative rounded-full pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5"
 				: "h-8.5 w-full gap-2 rounded-md px-1.5 hover:bg-accent",
 			className,
 		]}
@@ -223,7 +226,7 @@
 		{#if accounts.length > 1}
 			<DropdownMenu.Item variant="destructive">
 				{#snippet child({ props })}
-					<button type="submit" form="sign-out-all" {...props}>
+					<button type="submit" form={signOutAllForm} {...props}>
 						<LogOut aria-hidden="true" />
 						Sign out of all accounts
 					</button>
@@ -241,4 +244,4 @@
 		class="hidden"
 	></form>
 {/each}
-<form id="sign-out-all" method="POST" action="/sign-out?scope=all" class="hidden"></form>
+<form id={signOutAllForm} method="POST" action="/sign-out?scope=all" class="hidden"></form>

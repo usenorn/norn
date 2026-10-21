@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from "svelte";
 	import type { Snippet } from "svelte";
-	import { goto, invalidate } from "$app/navigation";
+	import { afterNavigate, goto, invalidate, onNavigate } from "$app/navigation";
 	import { page } from "$app/state";
 	import Archive from "@lucide/svelte/icons/archive";
 	import BellOff from "@lucide/svelte/icons/bell-off";
@@ -9,6 +9,7 @@
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import ChevronLeft from "@lucide/svelte/icons/chevron-left";
+	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import ChevronUp from "@lucide/svelte/icons/chevron-up";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
@@ -16,20 +17,24 @@
 	import Copy from "@lucide/svelte/icons/copy";
 	import CornerDownLeft from "@lucide/svelte/icons/corner-down-left";
 	import Ellipsis from "@lucide/svelte/icons/ellipsis";
-	import Folder from "@lucide/svelte/icons/folder";
+	import Gauge from "@lucide/svelte/icons/gauge";
+	import GitBranch from "@lucide/svelte/icons/git-branch";
+	import Hash from "@lucide/svelte/icons/hash";
+	import CirclePause from "@lucide/svelte/icons/circle-pause";
+	import CirclePlay from "@lucide/svelte/icons/circle-play";
+	import Type from "@lucide/svelte/icons/type";
 	import Info from "@lucide/svelte/icons/info";
 	import Link2 from "@lucide/svelte/icons/link-2";
 	import History from "@lucide/svelte/icons/history";
-	import Pencil from "@lucide/svelte/icons/pencil";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Tags from "@lucide/svelte/icons/tags";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
-	import X from "@lucide/svelte/icons/x";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
+	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
 	import * as Popover from "$lib/components/ui/popover/index.js";
 	import { Calendar } from "$lib/components/ui/calendar/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
@@ -43,6 +48,8 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueField from "$lib/issues/issue-field.svelte";
+	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
+	import { MediaQuery } from "svelte/reactivity";
 	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
 	import DelegationField from "$lib/agents/delegation-field.svelte";
 	import {
@@ -61,7 +68,7 @@
 	import { showToast } from "$lib/toast/toasts";
 	import { keys } from "$lib/api/keys";
 	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import { calendarDate, cycleWindow, dueLabel, onDate, onDateAndTime, overdue } from "$lib/time";
+	import { calendarDate, cycleWindow, dueValue, onDate, onDateAndTime, overdue } from "$lib/time";
 	import { finished } from "$lib/team/states";
 	import Markdown from "$lib/issues/markdown.svelte";
 	import {
@@ -164,7 +171,10 @@
 	import { setIssueLabels } from "$lib/labels/set-issue-labels";
 	import { parseDate } from "@internationalized/date";
 	import { workspacePath } from "$lib/workspace/navigation";
-	import { listReturn } from "$lib/issues/return-to-list";
+	import { listReturn, withReturn } from "$lib/issues/return-to-list";
+	import { neighboursIn, orderFor } from "$lib/issues/visit-order";
+	import { statusIndexOf } from "$lib/issues/set-status";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		activityPreviewStates,
 		attachmentPreviewStates,
@@ -422,16 +432,7 @@
 		}
 
 		branchName = found.branch;
-
-		try {
-			await navigator.clipboard.writeText(found.branch);
-
-			branchCopied = true;
-		} catch {
-			// Writing to the clipboard is refused without a user gesture or over plain http.
-			// The name is shown below the button either way, so there is still something to copy.
-			branchCopied = false;
-		}
+		branchCopied = await copyText(found.branch, `Copied ${found.branch}`);
 	}
 
 	async function setAutomation(suppressed: boolean) {
@@ -1246,10 +1247,44 @@
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
 	let pickingCycle = $state(false);
+	let pickingStatus = $state(false);
+	let pickingPriority = $state(false);
+	let pickingAssignee = $state(false);
+	let pickingLabels = $state(false);
+	let stripStatus = $state(false);
+	let showingDetails = $state(false);
+	let stripPriority = $state(false);
+	let stripAssignee = $state(false);
+
+	const railShown = new MediaQuery("min-width: 64rem", true);
+
+	const statusOptions = $derived(
+		(ready?.states ?? []).map((state, index) => ({
+			value: state.id,
+			label: state.name,
+			checked: state.id === issue?.state.id,
+			hint: index < 6 ? String(index + 1) : undefined,
+		}))
+	);
+	const assigneeOptions = $derived([
+		{ value: "", label: "Unassigned", checked: !issue?.assigneeAccountId },
+		...people.map((member) => ({
+			value: member.accountId,
+			label: member.displayName || member.email || member.accountId,
+			checked: member.accountId === issue?.assigneeAccountId,
+		})),
+	]);
 	let addingChild = $state(false);
 	let filingUnder = $state.raw<{ id: string; reference: string } | null>(null);
 	let childPrefill = $state<NewIssuePrefill | undefined>(undefined);
-	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
+
+	function addSubIssue() {
+		childPrefill = undefined;
+		filingUnder = issue ? { id: issue.id, reference: issue.reference } : null;
+		addingChild = true;
+	}
+
+	const due =$derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
 
 	const role = $derived(
@@ -1397,16 +1432,40 @@
 	const lastActivity = $derived(
 		activity.kind === "ready" ? (activity.events.at(-1)?.createdAt ?? null) : null
 	);
-	const issueLink = $derived(
-		issue ? `${page.url.host}${at(`/issues/${issue.reference}`)}` : ""
+	let linking = $state(false);
+
+	const showChildren = $derived((ready?.children.length ?? 0) > 0);
+	const showLinks = $derived((ready?.relations.length ?? 0) > 0 || linking);
+	const showAttachments = $derived(
+		attachments.kind === "ready" ||
+			attachments.kind === "unavailable" ||
+			attachmentFailure !== null ||
+			(editingField !== "description" &&
+				(attachmentPreview?.bodyUploads ?? bodyUploads).length > 0)
+	);
+	const showCodeLinks = $derived(
+		codeLinks.length > 0 ||
+			shipping.releases.length > 0 ||
+			shipping.deployments.length > 0 ||
+			mirrorConflicts.length > 0 ||
+			codeLinkFailure !== null ||
+			(branchName !== "" && !branchCopied) ||
+			automationSuppressed
 	);
 
-	const order = $derived(ready?.candidates ?? []);
-	const position = $derived(order.findIndex((candidate) => candidate.id === issue?.id));
-	const previous = $derived(position > 0 ? order[position - 1] : null);
-	const next = $derived(
-		position >= 0 && position < order.length - 1 ? order[position + 1] : null
-	);
+	let visitOrder = $state<string[] | null>(null);
+
+	$effect(() => {
+		visitOrder = orderFor(backToList);
+	});
+
+	const neighbours = $derived(issue ? neighboursIn(visitOrder, issue.reference) : null);
+	const openedFrom = $derived(page.url.searchParams.get("from"));
+	const stepHref = $derived((reference: string) => {
+		const href = at(`/issues/${reference}`);
+
+		return openedFrom ? withReturn(href, openedFrom) : href;
+	});
 
 	const reopenState = $derived(
 		(ready?.states ?? []).find(
@@ -1660,6 +1719,89 @@
 		return shortcuts.register("bulk-cycle", () => (pickingCycle = true));
 	});
 
+	let leaving = $state(false);
+
+	onNavigate(() => {
+		leaving = true;
+	});
+	afterNavigate(() => (leaving = false));
+
+	$effect(() => {
+		if (!canEdit || editingField || !ready || leaving) return;
+
+		const states = ready.states;
+		const released = [
+			shortcuts.register("issue-status", () =>
+				openPicker("Status", () =>
+					railShown.current ? (pickingStatus = true) : (stripStatus = true)
+				)
+			),
+			shortcuts.register("issue-priority", () =>
+				openPicker("Priority", () =>
+					railShown.current ? (pickingPriority = true) : (stripPriority = true)
+				)
+			),
+			shortcuts.register("issue-assignee", () =>
+				openPicker("Assignee", () =>
+					railShown.current ? (pickingAssignee = true) : (stripAssignee = true)
+				)
+			),
+			shortcuts.register("issue-labels", () =>
+				openPicker("Labels", () => (pickingLabels = true))
+			),
+			shortcuts.register("status-set", (binding) => {
+				const state = states[statusIndexOf(binding)];
+
+				if (state && state.id !== issue?.state.id) void move(state.id);
+			}),
+		];
+
+		return () => released.forEach((release) => release());
+	});
+
+	$effect(() => {
+		if (editingField || !neighbours || leaving) return;
+
+		const { previous, next } = neighbours;
+
+		return shortcuts.register("issue-step", (binding) => {
+			const reference = binding === "j" ? next : previous;
+
+			if (reference) void goto(stepHref(reference));
+		});
+	});
+
+	$effect(() => {
+		if (editingField || leaving) return;
+
+		return shortcuts.register("issue-back", () => {
+			if (overlayOpen()) return;
+
+			void goto(backToList);
+		});
+	});
+
+	function overlayOpen(): boolean {
+		return Boolean(
+			document.querySelector(
+				'[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-slot="popover-content"]'
+			)
+		);
+	}
+
+	async function openPicker(property: string, open: () => void) {
+		showingDetails = true;
+		await tick();
+
+		const trigger = [...document.querySelectorAll<HTMLElement>(`[data-property="${property}"]`)].find(
+			(element) => element.offsetParent !== null
+		);
+
+		trigger?.scrollIntoView({ block: "nearest" });
+		trigger?.focus({ preventScroll: true });
+		open();
+	}
+
 	function onKey(event: KeyboardEvent) {
 		const target = event.target as HTMLElement | null;
 		const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA";
@@ -1695,51 +1837,44 @@
 	<div
 		class="flex h-11 flex-none items-center gap-2 border-b border-line-default pr-2.5 pl-2.5"
 	>
-		<Button variant="outline" size="icon-sm" href={backToList} aria-label="Back to the list">
+		<Button variant="outline" size="icon-touch" href={backToList} aria-label="Back to the list">
 			<ChevronLeft aria-hidden="true" />
 		</Button>
 
 		<div class="flex min-w-0 flex-1 items-center gap-1.75">
 			<a
 				href={backToList}
-				class="text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="relative text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:after:absolute pointer-coarse:after:-inset-3"
 			>
 				Issues
 			</a>
 			{#if issue}
 				{#if issue.projectName && issue.projectSlug}
-					<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
+					<span class="hidden text-sm text-text-disabled sm:inline" aria-hidden="true">/</span>
 					<a
 						href={at(`/projects/${issue.projectSlug}`)}
-						class="hidden text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline"
+						class="hidden items-center gap-1.25 text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline-flex"
 					>
+						<Target class="size-3.25 text-muted-foreground" aria-hidden="true" />
 						{issue.projectName}
 					</a>
 				{/if}
 				<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
 				<span class="font-mono text-sm tracking-wide text-ink-900">{issue.reference}</span>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					aria-label="Copy the identifier"
-					onclick={() => copy(issue.reference, `Copied ${issue.reference}`)}
-				>
-					<Copy aria-hidden="true" />
-				</Button>
 			{/if}
 		</div>
 
-		{#if issue && position >= 0}
-			<span class="hidden font-mono text-xs text-muted-foreground sm:inline">
-				{position + 1} of {order.length}
+		{#if issue && neighbours}
+			<span class="hidden tabular-nums text-xs text-muted-foreground sm:inline">
+				{neighbours.position + 1} of {neighbours.total}
 			</span>
-			<div class="flex gap-0.5">
+			<div class="hidden gap-0.5 sm:flex">
 				<Button
 					variant="outline"
 					size="icon-sm"
 					aria-label="Previous issue"
-					disabled={!previous}
-					href={previous ? at(`/issues/${previous.reference}`) : undefined}
+					disabled={!neighbours.previous}
+					href={neighbours.previous ? stepHref(neighbours.previous) : undefined}
 				>
 					<ChevronUp aria-hidden="true" />
 				</Button>
@@ -1747,8 +1882,8 @@
 					variant="outline"
 					size="icon-sm"
 					aria-label="Next issue"
-					disabled={!next}
-					href={next ? at(`/issues/${next.reference}`) : undefined}
+					disabled={!neighbours.next}
+					href={neighbours.next ? stepHref(neighbours.next) : undefined}
 				>
 					<ChevronDown aria-hidden="true" />
 				</Button>
@@ -1758,8 +1893,9 @@
 		{#if issue}
 			<Button
 				variant="outline"
-				size="icon-sm"
+				size="icon-touch"
 				aria-label={following ? "Stop following this issue" : "Follow this issue"}
+				title={following ? "You follow this issue. Click to stop." : "Follow this issue"}
 				aria-pressed={following}
 				class={following ? "bg-accent text-ink-900" : ""}
 				disabled={followWorking}
@@ -1775,7 +1911,7 @@
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
 					{#snippet child({ props })}
-						<Button {...props} variant="outline" size="icon-sm" aria-label="More on this issue">
+						<Button {...props} variant="outline" size="icon-touch" aria-label="More on this issue">
 							<Ellipsis aria-hidden="true" />
 						</Button>
 					{/snippet}
@@ -1787,7 +1923,39 @@
 						<Link2 aria-hidden="true" />
 						Copy link
 					</DropdownMenu.Item>
+					<DropdownMenu.Item onSelect={() => copy(issue.reference, `Copied ${issue.reference}`)}>
+						<Hash aria-hidden="true" />
+						Copy identifier
+					</DropdownMenu.Item>
+					{#if issue.description.trim()}
+						<DropdownMenu.Item onSelect={() => (showingHistory = true)}>
+							<History aria-hidden="true" />
+							Description history
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
+					{/if}
+					<DropdownMenu.Item onSelect={() => copy(issue.title, "Copied the title")}>
+						<Type aria-hidden="true" />
+						Copy title
+					</DropdownMenu.Item>
 					{#if canEdit}
+						<DropdownMenu.Item disabled={copyingBranch} onSelect={() => void copyBranchName()}>
+							<GitBranch aria-hidden="true" />
+							Copy branch name
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							disabled={togglingAutomation}
+							onSelect={() => void setAutomation(!automationSuppressed)}
+						>
+							{#if automationSuppressed}
+								<CirclePlay aria-hidden="true" />
+								Resume git automation
+							{:else}
+								<CirclePause aria-hidden="true" />
+								Pause git automation
+							{/if}
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
 						<DropdownMenu.Item disabled={working} onSelect={duplicate}>
 							<Copy aria-hidden="true" />
 							Duplicate issue
@@ -1813,9 +1981,6 @@
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 
-			<Button variant="outline" size="icon-sm" href={backToList} aria-label="Close this issue">
-				<X aria-hidden="true" />
-			</Button>
 		{/if}
 	</div>
 
@@ -1925,7 +2090,7 @@
 		<div class="flex flex-1 items-center justify-center p-10">
 			<div class="flex max-w-95 flex-col items-center gap-2.5 text-center">
 				<CircleX class="size-4 text-muted-foreground" aria-hidden="true" />
-				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+				<span class="caption text-ink-600">
 					{page.params.reference} is no longer available
 				</span>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">
@@ -1958,10 +2123,8 @@
 				/>
 			{/if}
 
-			<div class="relative min-w-0 flex-1 lg:overflow-auto">
-				<div
-					class="mx-auto flex max-w-192 flex-col gap-6.5 px-4 pt-5 pb-16 sm:px-8 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))]"
-				>
+			<div class="contents lg:relative lg:block lg:min-w-0 lg:flex-1 lg:overflow-auto">
+				<div class="order-1 mx-auto flex w-full max-w-192 flex-col gap-6.5 px-4 pt-5 pb-6.5 sm:px-8">
 					{#if labelFailure}
 						<Alert.Root variant="destructive">
 							<CircleX aria-hidden="true" />
@@ -2050,7 +2213,7 @@
 												bind:this={titleField}
 												bind:value={$formData.title}
 												disabled={$submitting}
-												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-2xl leading-tight font-medium tracking-title text-ink-900 outline-none"
+												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-ring bg-transparent px-2.25 py-1.25 text-3xl leading-tight font-semibold tracking-title text-ink-900 outline-none"
 											/>
 										{/snippet}
 									</Form.Control>
@@ -2075,30 +2238,19 @@
 								</div>
 							</div>
 						{:else}
-							<div class="flex items-start gap-1">
-								<button
-									type="button"
-									disabled={!canEdit}
-									onclick={() => startEditing("title")}
-									title={canEdit ? "Click to rename" : ""}
-									class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							<button
+								type="button"
+								disabled={!canEdit}
+								onclick={() => startEditing("title")}
+								title={canEdit ? "Click to rename" : ""}
+								class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							>
+								<h1
+									class="text-3xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
 								>
-									<h1
-										class="text-2xl leading-tight font-medium tracking-title text-ink-900 text-pretty"
-									>
-										{issue.title}
-									</h1>
-								</button>
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									aria-label="Copy the title"
-									class="mt-1"
-									onclick={() => copy(issue.title, "Copied the title")}
-								>
-									<Copy aria-hidden="true" />
-								</Button>
-							</div>
+									{issue.title}
+								</h1>
+							</button>
 						{/if}
 
 						<div class="flex flex-wrap items-center gap-2">
@@ -2108,36 +2260,100 @@
 								size="xs"
 							/>
 							<span class="text-sm text-muted-foreground">{reporter} opened this</span>
-							<span class="font-mono text-xs text-muted-foreground">
-								<time datetime={issue.createdAt}>
+							<span class="tabular-nums text-xs text-muted-foreground">
+								<time datetime={issue.createdAt} title={when(issue.createdAt)}>
 									{onDate(issue.createdAt, data.workspace.timezone)}
 								</time>
 							</span>
-							<span class="text-text-disabled" aria-hidden="true">·</span>
-							<span class="font-mono text-xs text-muted-foreground">
-								{commentTotal}
-								{commentTotal === 1 ? "comment" : "comments"}
-							</span>
+							{#if lastActivity && lastActivity !== issue.createdAt}
+								<span class="text-text-disabled" aria-hidden="true">·</span>
+								<span class="tabular-nums text-xs text-muted-foreground">
+									updated <time datetime={lastActivity}>{when(lastActivity)}</time>
+								</span>
+							{/if}
+							{#if commentTotal > 0}
+								<span class="text-text-disabled" aria-hidden="true">·</span>
+								<span class="tabular-nums text-xs text-muted-foreground">
+									{commentTotal}
+									{commentTotal === 1 ? "comment" : "comments"}
+								</span>
+							{/if}
 						</div>
 
-						<div class="mt-3.5 flex flex-col gap-3">
-							<div class="flex items-center gap-2.5">
-								<h2 class="min-w-0 flex-1">
-									<Eyebrow rule class="text-ink-600">Description</Eyebrow>
-								</h2>
-								{#if editingField !== "description"}
-									<Button variant="ghost" size="sm" onclick={() => (showingHistory = true)}>
-										<History aria-hidden="true" />
-										History
-									</Button>
-								{/if}
-								{#if canEdit && editingField !== "description"}
-									<Button variant="ghost" size="sm" onclick={() => startEditing("description")}>
-										<Pencil aria-hidden="true" />
-										Edit
-									</Button>
-								{/if}
-							</div>
+						<div class="mt-1 flex flex-wrap items-center gap-1.5 lg:hidden">
+							{#if canEdit}
+								<PropertyPicker
+									options={statusOptions}
+									placeholder="Set status…"
+									bind:open={stripStatus}
+									onpick={move}
+									mark={statusMark}
+								>
+									{#snippet trigger(props)}
+										<Button
+											{...props}
+											variant="property"
+											size="property"
+											aria-label="Status: {issue.state.name}"
+											data-property="Status"
+										>
+											<StatusIcon category={issue.state.category} decorative />
+											{issue.state.name}
+										</Button>
+									{/snippet}
+								</PropertyPicker>
+								<PriorityPicker
+									chosen={issue.priority}
+									place="dialog"
+									bind:open={stripPriority}
+									onchange={(priority) => setPriority(priority)}
+								/>
+								<PropertyPicker
+									options={assigneeOptions}
+									placeholder="Assign to…"
+									mark={assigneeMark}
+									bind:open={stripAssignee}
+									onpick={setAssignee}
+								>
+									{#snippet trigger(props)}
+										<Button
+											{...props}
+											variant="property"
+											size="property"
+											aria-label="Assignee: {assigneeName || 'Unassigned'}"
+											data-property="Assignee"
+										>
+											{#if assigneeName}
+												<PersonAvatar
+													accountId={issue.assigneeAccountId ?? ""}
+													name={assigneeName}
+													size="xs"
+												/>
+												{assigneeName}
+											{:else}
+												<UserRound aria-hidden="true" />
+												Unassigned
+											{/if}
+										</Button>
+									{/snippet}
+								</PropertyPicker>
+							{:else}
+								<span class="inline-flex items-center gap-1.5 text-sm text-ink-900">
+									<StatusIcon category={issue.state.category} decorative />
+									{issue.state.name}
+								</span>
+								<span class="inline-flex items-center gap-1.5 text-sm text-ink-900">
+									<PriorityIcon priority={issue.priority} />
+									{priorityLabel(issue.priority)}
+								</span>
+								<span class="inline-flex items-center gap-1.5 text-sm text-ink-900">
+									{assigneeName || "Unassigned"}
+								</span>
+							{/if}
+						</div>
+
+						<div class="mt-4 flex flex-col gap-3">
+							<h2 class="sr-only">Description</h2>
 
 							{#if editingField === "description"}
 								<div data-editing-region class="flex flex-col gap-3">
@@ -2145,7 +2361,7 @@
 										<Form.Control>
 											{#snippet children({ props })}
 												<Form.Label class="sr-only">Description</Form.Label>
-												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5">
+												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5 motion-control focus-within:border-ring">
 													<Editor
 														{...props}
 														bind:this={descriptionEditor}
@@ -2301,6 +2517,7 @@
 								<button
 									type="button"
 									disabled={!canEdit}
+									title={canEdit ? "Edit the description" : undefined}
 									onclick={() => startEditing("description")}
 									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
@@ -2310,6 +2527,7 @@
 								<button
 									type="button"
 									disabled={!canEdit}
+									title={canEdit ? "Edit the description" : undefined}
 									onclick={() => startEditing("description")}
 									class="-mx-2.25 -my-1.75 rounded-md px-2.25 py-1.75 text-left text-md text-muted-foreground motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
@@ -2318,6 +2536,37 @@
 							{/if}
 						</div>
 					</form>
+
+					{#if canEdit && (!showChildren || !showLinks || !showAttachments)}
+						<div class="-mt-3 -ml-2 flex flex-wrap items-center gap-1">
+							{#if !showChildren}
+								<Button variant="ghost" size="sm" class="text-muted-foreground" onclick={addSubIssue}>
+									<Plus aria-hidden="true" />
+									Sub-issue
+								</Button>
+							{/if}
+							{#if !showLinks}
+								<Button
+									variant="ghost"
+									size="sm"
+									class="text-muted-foreground"
+									onclick={() => (linking = true)}
+								>
+									<Link2 aria-hidden="true" />
+									Link an issue
+								</Button>
+							{/if}
+							{#if !showAttachments}
+								<span data-editing-region class="contents">
+									<AttachmentPicker
+										disabled={working}
+										label="Attach a file"
+										onfiles={(files) => begin("body", files)}
+									/>
+								</span>
+							{/if}
+						</div>
+					{/if}
 
 					{#if changed.length > 0}
 						<section class="flex min-w-0 flex-col gap-1.5">
@@ -2398,204 +2647,212 @@
 						{when}
 					/>
 
-					<section class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Sub-issues
-								</Eyebrow>
-							</h2>
-							{#if ready.children.length > 0}
-								<span class="inline-flex items-center gap-1.75">
-									<span class="font-mono text-xs text-muted-foreground">
-										{ready.childProgress.complete}/{totalIssues(ready.childProgress)}
+					{#if showChildren}
+						<section class="flex flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Sub-issues
+									</Eyebrow>
+								</h2>
+								{#if ready.children.length > 0}
+									<span class="inline-flex items-center gap-1.75">
+										<span class="tabular-nums text-xs text-muted-foreground">
+											{ready.childProgress.complete}/{totalIssues(ready.childProgress)}
+										</span>
+										<ProgressBar progress={ready.childProgress} label={false} class="w-14" />
 									</span>
-									<ProgressBar progress={ready.childProgress} label={false} class="w-14" />
-								</span>
-							{/if}
-							{#if canEdit}
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									aria-label="Add a sub-issue"
-									onclick={() => {
-										childPrefill = undefined;
-										filingUnder = issue
-											? { id: issue.id, reference: issue.reference }
-											: null;
-										addingChild = true;
-									}}
-								>
-									<Plus aria-hidden="true" />
-								</Button>
-							{/if}
-						</div>
-						<IssueChildren
-							children={ready.children}
-							{at}
-							states={canEdit ? ready.states : []}
-							now={data.now}
-							timezone={data.workspace.timezone}
-							nameOf={nameOf}
-							{working}
-							onstate={moveChild}
-						/>
-					</section>
-
-					<section class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Links
-								</Eyebrow>
-							</h2>
-						</div>
-						<IssueRelations
-							{issue}
-							groups={ready.relations}
-							candidates={ready.candidates}
-							{at}
-							working={working || !canEdit}
-							onadd={addRelation}
-							onremove={removeRelation}
-						/>
-					</section>
-
-					<section class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Attachments
-								</Eyebrow>
-							</h2>
-							{#if canEdit}
-								<span data-editing-region class="contents">
-									<AttachmentPicker
-										disabled={working}
-										label="Attach"
-										onfiles={(files) => begin("body", files)}
-									/>
-								</span>
-							{/if}
-						</div>
-
-						{#if attachmentFailure}
-							<Alert.Root variant="destructive">
-								<CircleX aria-hidden="true" />
-								<Alert.Title>That did not stick</Alert.Title>
-								<Alert.Description>{attachmentFailureMessage(attachmentFailure)}</Alert.Description>
-							</Alert.Root>
-						{/if}
-
-						<AttachmentList
-							panel={attachments}
-							working={working || !canEdit}
-							onremove={removeAttachment}
-						/>
-
-						{#if editingField !== "description"}
-							<UploadList
-								uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
-								oncancel={cancelUpload}
-								onretry={(taskId) => retryUpload("body", taskId)}
-								ondismiss={(taskId) => dismissUpload("body", taskId)}
+								{/if}
+								{#if canEdit}
+									<Button
+										variant="ghost"
+										size="icon-xs"
+										aria-label="Add a sub-issue"
+										onclick={addSubIssue}
+									>
+										<Plus aria-hidden="true" />
+									</Button>
+								{/if}
+							</div>
+							<IssueChildren
+								children={ready.children}
+								{at}
+								states={canEdit ? ready.states : []}
+								now={data.now}
+								timezone={data.workspace.timezone}
+								nameOf={nameOf}
+								{working}
+								onstate={moveChild}
 							/>
-						{/if}
-				</section>
+						</section>
+					{/if}
 
-					<section class="flex flex-col gap-0.5">
-						<div class="mb-1.5 flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Linked changes
-								</Eyebrow>
-							</h2>
-						</div>
-
-						{#if codeLinkFailure}
-							<Alert.Root variant="destructive">
-								<CircleX aria-hidden="true" />
-								<Alert.Title>That did not stick</Alert.Title>
-								<Alert.Description>{codeFailureMessage(codeLinkFailure)}</Alert.Description>
-							</Alert.Root>
-						{/if}
-
-						<CodeLinkPanel
-							links={codeLinks}
-							busy={unlinking}
-							onunlink={canEdit ? unlinkCode : undefined}
-						/>
-
-						{#if shipping.releases.length > 0 || shipping.deployments.length > 0}
-							<div class="flex flex-col gap-1 pt-1">
-								{#if shipping.releases.length > 0}
-									<p class="text-sm text-ink-900">
-										Shipped in
-										{#each shipping.releases as release, index (release.id)}{#if index > 0}, {/if}{#if release.url}<a
-												href={release.url}
-												target="_blank"
-												rel="noreferrer"
-												class="underline underline-offset-2">{releaseLabel(release)}</a
-											>{:else}{releaseLabel(release)}{/if}{/each}
-									</p>
-								{/if}
-								{#if shipping.deployments.length > 0}
-									<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-										{#each shipping.deployments as deployment (deployment.id)}
-											<li class:text-success={deployment.state === "succeeded"}
-												class:text-destructive={deployment.state === "failed"}>
-												{deploymentLabel(deployment)}
-											</li>
-										{/each}
-									</ul>
+					{#if showLinks}
+						<section class="flex flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Links
+									</Eyebrow>
+								</h2>
+								{#if ready.relations.length === 0}
+									<Button variant="ghost" size="sm" onclick={() => (linking = false)}>
+										Cancel
+									</Button>
 								{/if}
 							</div>
-						{/if}
+							<IssueRelations
+								{issue}
+								groups={ready.relations}
+								candidates={ready.candidates}
+								{at}
+								working={working || !canEdit}
+								onadd={addRelation}
+								onremove={removeRelation}
+							/>
+						</section>
+					{/if}
 
-						{#if mirrorConflicts.length > 0}
-							<div class="flex flex-col gap-2 rounded-md border border-warning/40 p-3">
-								<p class="text-sm text-ink-900">
-									An edit here and one on the platform landed together. Whichever moved last was
-									kept; the other is below so nothing is lost.
-								</p>
-								{#each mirrorConflicts as conflict (conflict.id)}
-									<div class="flex flex-col gap-0.5">
-										<p class="text-xs text-muted-foreground">
-											{conflict.field} · {conflictSummary(conflict)}
+					{#if showAttachments}
+						<section class="flex flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Attachments
+									</Eyebrow>
+								</h2>
+								{#if canEdit}
+									<span data-editing-region class="contents">
+										<AttachmentPicker
+											disabled={working}
+											label="Attach"
+											onfiles={(files) => begin("body", files)}
+										/>
+									</span>
+								{/if}
+							</div>
+
+							{#if attachmentFailure}
+								<Alert.Root variant="destructive">
+									<CircleX aria-hidden="true" />
+									<Alert.Title>That did not stick</Alert.Title>
+									<Alert.Description>{attachmentFailureMessage(attachmentFailure)}</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							<AttachmentList
+								panel={attachments}
+								working={working || !canEdit}
+								onremove={removeAttachment}
+							/>
+
+							{#if editingField !== "description"}
+								<UploadList
+									uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
+									oncancel={cancelUpload}
+									onretry={(taskId) => retryUpload("body", taskId)}
+									ondismiss={(taskId) => dismissUpload("body", taskId)}
+								/>
+							{/if}
+						</section>
+					{/if}
+
+					{#if showCodeLinks}
+						<section class="flex flex-col gap-0.5">
+							<div class="mb-1.5 flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Linked changes
+									</Eyebrow>
+								</h2>
+							</div>
+
+							{#if codeLinkFailure}
+								<Alert.Root variant="destructive">
+									<CircleX aria-hidden="true" />
+									<Alert.Title>That did not stick</Alert.Title>
+									<Alert.Description>{codeFailureMessage(codeLinkFailure)}</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							<CodeLinkPanel
+								links={codeLinks}
+								busy={unlinking}
+								onunlink={canEdit ? unlinkCode : undefined}
+							/>
+
+							{#if shipping.releases.length > 0 || shipping.deployments.length > 0}
+								<div class="flex flex-col gap-1 pt-1">
+									{#if shipping.releases.length > 0}
+										<p class="text-sm text-ink-900">
+											Shipped in
+											{#each shipping.releases as release, index (release.id)}{#if index > 0}, {/if}{#if release.url}<a
+													href={release.url}
+													target="_blank"
+													rel="noreferrer"
+													class="underline underline-offset-2">{releaseLabel(release)}</a
+												>{:else}{releaseLabel(release)}{/if}{/each}
 										</p>
-										<pre class="overflow-x-auto rounded-sm bg-muted p-2 text-xs whitespace-pre-wrap text-ink-900">{conflict.discarded}</pre>
-									</div>
-								{/each}
-							</div>
-						{/if}
+									{/if}
+									{#if shipping.deployments.length > 0}
+										<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+											{#each shipping.deployments as deployment (deployment.id)}
+												<li class:text-success={deployment.state === "succeeded"}
+													class:text-destructive={deployment.state === "failed"}>
+													{deploymentLabel(deployment)}
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								</div>
+							{/if}
 
-						{#if canEdit}
-							<div class="flex flex-wrap items-center gap-2 pt-1">
-								<Button variant="secondary" onclick={copyBranchName} disabled={copyingBranch}>
-									{branchCopied ? "Copied" : copyingBranch ? "Reading…" : "Copy branch name"}
-								</Button>
-								<Button
-									variant="ghost"
-									onclick={() => setAutomation(!automationSuppressed)}
-									disabled={togglingAutomation}
-								>
-									{automationSuppressed ? "Resume automation" : "Stop moving this issue"}
-								</Button>
-							</div>
+							{#if mirrorConflicts.length > 0}
+								<div class="flex flex-col gap-2 rounded-md border border-warning/40 p-3">
+									<p class="text-sm text-ink-900">
+										An edit here and one on the platform landed together. Whichever moved last was
+										kept; the other is below so nothing is lost.
+									</p>
+									{#each mirrorConflicts as conflict (conflict.id)}
+										<div class="flex flex-col gap-0.5">
+											<p class="text-xs text-muted-foreground">
+												{conflict.field} · {conflictSummary(conflict)}
+											</p>
+											<pre class="overflow-x-auto rounded-sm bg-muted p-2 text-xs whitespace-pre-wrap text-ink-900">{conflict.discarded}</pre>
+										</div>
+									{/each}
+								</div>
+							{/if}
 
-							{#if branchName}
-								<p class="font-mono text-xs break-all text-muted-foreground">{branchName}</p>
+							{#if branchName && !branchCopied}
+								<p class="pt-1 font-mono text-xs break-all text-ink-700 select-all">{branchName}</p>
 							{/if}
 
 							{#if automationSuppressed}
-								<p class="text-xs text-muted-foreground">
-									Source control still records what happens to the code here; it just does not
-									move this issue.
-								</p>
+								<div class="flex flex-wrap items-center gap-2 pt-1">
+									<p class="min-w-0 flex-1 text-xs text-muted-foreground text-pretty">
+										Git automation is paused. Source control still records what happens to the code
+										here; it just does not move this issue.
+									</p>
+									{#if canEdit}
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={togglingAutomation}
+											onclick={() => setAutomation(false)}
+										>
+											Resume
+										</Button>
+									{/if}
+								</div>
 							{/if}
-						{/if}
-					</section>
+						</section>
+					{/if}
+				</div>
 
+				<div
+					class="order-3 mx-auto w-full max-w-192 px-4 pt-6.5 pb-[calc(--spacing(16)+env(safe-area-inset-bottom))] sm:px-8 lg:pt-0"
+				>
 					<section class="flex flex-col gap-0.5">
 						<div class="mb-1.5 flex items-center gap-2.5">
 							<h2 class="min-w-0 flex-1">
@@ -2603,26 +2860,28 @@
 									Activity
 								</Eyebrow>
 							</h2>
-							<div class="inline-flex gap-0.5 rounded-sm border border-line-default p-0.5">
-								{#each [{ key: "all", label: "All" }, { key: "comments", label: "Comments" }] as choice (choice.key)}
-									<button
-										type="button"
-										aria-pressed={shown === choice.key}
-										onclick={() => (shown = choice.key as "all" | "comments")}
-										class="h-5 cursor-pointer rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {shown ===
-										choice.key
-											? 'bg-primary text-primary-foreground'
-											: 'text-ink-600 hover:bg-accent'}"
-									>
-										{choice.label}
-									</button>
-								{/each}
-							</div>
+							{#if commentTotal > 0}
+								<div class="inline-flex gap-0.5 rounded-sm border border-line-default p-0.5">
+									{#each [{ key: "all", label: "All" }, { key: "comments", label: "Comments" }] as choice (choice.key)}
+										<button
+											type="button"
+											aria-pressed={shown === choice.key}
+											onclick={() => (shown = choice.key as "all" | "comments")}
+											class="h-7 cursor-pointer rounded-xs px-2.5 caption motion-control sm:h-5 sm:px-2 {shown ===
+											choice.key
+												? 'bg-primary text-primary-foreground'
+												: 'text-ink-600 hover:bg-accent'}"
+										>
+											{choice.label}
+										</button>
+									{/each}
+								</div>
+							{/if}
 						</div>
 
 						<CommentThreadView
 							{thread}
-							events={shown === "all" ? events : []}
+							events={shown === "all" || commentTotal === 0 ? events : []}
 							uploads={shownCommentUploads}
 							onfiles={(files) => begin("comment", files)}
 							oncancelupload={cancelUpload}
@@ -2650,9 +2909,26 @@
 				</div>
 			</div>
 
+			{#snippet assigneeMark(option: PickerOption)}
+				{#if option.value}
+					<PersonAvatar accountId={option.value} name={option.label} size="xs" />
+				{:else}
+					<UnassignedAvatar />
+				{/if}
+			{/snippet}
+
+			{#snippet statusMark(option: PickerOption)}
+				{@const state = ready.states.find((each) => each.id === option.value)}
+				{#if state}
+					<StatusIcon category={state.category} decorative />
+				{/if}
+			{/snippet}
+
 			<aside
+				id="issue-properties"
+				aria-label="Issue properties"
 				class={cn(
-					"relative w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-(--properties-width) lg:overflow-auto lg:border-t-0 lg:border-l",
+					"relative order-2 w-full flex-none border-y border-line-default px-3.5 py-1 lg:w-(--properties-width) lg:overflow-auto lg:border-y-0 lg:border-l lg:pt-3.5 lg:pb-6",
 					panels.collapsed("properties") && "lg:hidden"
 				)}
 			>
@@ -2667,76 +2943,96 @@
 					class="hidden lg:flex"
 				/>
 
-				<div class="flex flex-col gap-0.75">
-					<IssueField
-						label="Status"
-						placeholder="Move to"
-						editable={canEdit}
-						options={ready.states.map((state) => ({
-							value: state.id,
-							label: state.name,
-							checked: state.id === issue.state.id,
-						}))}
-						onpick={move}
-					>
-						{#snippet glyph()}
-							<StatusIcon category={issue.state.category} decorative />
-						{/snippet}
-						{#snippet value()}
-							<span class="min-w-0 flex-1 truncate">{issue.state.name}</span>
-						{/snippet}
-					</IssueField>
+				<button
+					type="button"
+					aria-expanded={showingDetails}
+					aria-controls="issue-property-list"
+					onclick={() => (showingDetails = !showingDetails)}
+					class="flex min-h-11 w-full cursor-pointer items-center gap-2 text-left lg:hidden"
+				>
+					<ChevronRight
+						class="size-icon-row flex-none text-muted-foreground motion-control {showingDetails
+							? 'rotate-90'
+							: ''}"
+						aria-hidden="true"
+					/>
+					<span class="text-md font-medium text-ink-900">Details</span>
+					<span class="min-w-0 truncate text-sm text-muted-foreground">
+						Labels, project, due date and more
+					</span>
+				</button>
 
-					<IssueField label="Priority" control={canEdit ? priorityControl : undefined}>
-						{#snippet glyph()}
-							<PriorityIcon priority={issue.priority} />
-						{/snippet}
-						{#snippet value()}
-							<span class="min-w-0 flex-1 truncate">{priorityLabel(issue.priority)}</span>
-						{/snippet}
-					</IssueField>
+				<div
+					id="issue-property-list"
+					class={cn("flex flex-col gap-0.75 pb-4 lg:flex lg:pb-0", !showingDetails && "hidden")}
+				>
+					<div class="hidden lg:contents">
+						<IssueField
+							label="Status"
+							valueText={issue.state.name}
+							placeholder="Set status…"
+							editable={canEdit}
+							bind:open={pickingStatus}
+							options={statusOptions}
+							onpick={move}
+							mark={statusMark}
+						>
+							{#snippet glyph()}
+								<StatusIcon category={issue.state.category} decorative />
+							{/snippet}
+							{#snippet value()}
+								<span class="min-w-0 flex-1 truncate">{issue.state.name}</span>
+							{/snippet}
+						</IssueField>
 
-					{#snippet priorityControl()}
-						<PriorityPicker
-							chosen={issue.priority}
-							place="field"
-							onchange={(priority) => setPriority(priority)}
-						/>
-					{/snippet}
+						<IssueField label="Priority" control={canEdit ? priorityControl : undefined}>
+							{#snippet glyph()}
+								<PriorityIcon priority={issue.priority} />
+							{/snippet}
+							{#snippet value()}
+								<span class="min-w-0 flex-1 truncate">{priorityLabel(issue.priority)}</span>
+							{/snippet}
+						</IssueField>
 
-					<IssueField
-						label="Assignee"
-						placeholder="Assign to"
-						editable={canEdit}
-						options={[
-							{ value: "", label: "Unassigned", checked: !issue.assigneeAccountId },
-							...people.map((member) => ({
-								value: member.accountId,
-								label: member.displayName || member.email || member.accountId,
-								checked: member.accountId === issue.assigneeAccountId,
-							})),
-						]}
-						onpick={setAssignee}
-					>
-						{#snippet glyph()}
-							{#if assigneeName}
-								<PersonAvatar
-									accountId={issue?.assigneeAccountId ?? ""}
-									name={assigneeName}
-									size="xs"
-								/>
-							{:else}
-								<UserRound class="size-icon-row text-muted-foreground" aria-hidden="true" />
-							{/if}
+						{#snippet priorityControl()}
+							<PriorityPicker
+								chosen={issue.priority}
+								place="field"
+								bind:open={pickingPriority}
+								onchange={(priority) => setPriority(priority)}
+							/>
 						{/snippet}
-						{#snippet value()}
-							<span
-								class="min-w-0 flex-1 truncate {assigneeName ? '' : 'text-muted-foreground'}"
-							>
-								{assigneeName || "Unassigned"}
-							</span>
-						{/snippet}
-					</IssueField>
+
+						<IssueField
+							label="Assignee"
+							valueText={assigneeName || "Unassigned"}
+							placeholder="Assign to…"
+							editable={canEdit}
+							bind:open={pickingAssignee}
+							options={assigneeOptions}
+							onpick={setAssignee}
+							mark={assigneeMark}
+						>
+							{#snippet glyph()}
+								{#if assigneeName}
+									<PersonAvatar
+										accountId={issue?.assigneeAccountId ?? ""}
+										name={assigneeName}
+										size="xs"
+									/>
+								{:else}
+									<UserRound class="size-icon-row text-muted-foreground" aria-hidden="true" />
+								{/if}
+							{/snippet}
+							{#snippet value()}
+								<span
+									class="min-w-0 flex-1 truncate {assigneeName ? '' : 'text-muted-foreground'}"
+								>
+									{assigneeName || "Unassigned"}
+								</span>
+							{/snippet}
+						</IssueField>
+					</div>
 
 					<DelegationField
 						panel={delegation}
@@ -2768,6 +3064,7 @@
 							chosen={labels}
 							teamId={issue.teamId}
 							place="field"
+							bind:open={pickingLabels}
 							canCreate={canCreateLabels(role)}
 							onchange={changeLabels}
 							oncreated={(label) => (createdLabels = [...createdLabels, label])}
@@ -2776,7 +3073,8 @@
 
 					<IssueField
 						label="Project"
-						placeholder="Move to project"
+						valueText={issue.projectName || "No project"}
+						placeholder="Move to project…"
 						editable={canEdit}
 						empty="No projects in this workspace yet"
 						options={[
@@ -2790,7 +3088,7 @@
 						onpick={setProject}
 					>
 						{#snippet glyph()}
-							<Folder class="size-icon-row text-muted-foreground" aria-hidden="true" />
+							<Target class="size-icon-row text-muted-foreground" aria-hidden="true" />
 						{/snippet}
 						{#snippet value()}
 							<span
@@ -2804,7 +3102,8 @@
 					{#if cycling}
 						<IssueField
 							label="Cycle"
-							placeholder="Move to cycle"
+							valueText={issue.cycleNumber ? `Cycle ${issue.cycleNumber}` : "No cycle"}
+							placeholder="Move to cycle…"
 							editable={canEdit}
 							bind:open={pickingCycle}
 							options={[
@@ -2832,7 +3131,7 @@
 
 					<div class="relative flex min-h-7 items-center gap-1.5">
 						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+							class="w-19.5 flex-none caption text-muted-foreground"
 						>
 							Due
 						</span>
@@ -2855,7 +3154,7 @@
 													: 'text-muted-foreground'}"
 											>
 												{issue.dueOn
-													? dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)
+													? dueValue(issue.dueOn, data.now, data.workspace.timezone, done)
 													: "No due date"}
 											</span>
 										</button>
@@ -2892,7 +3191,7 @@
 								<CalendarDays class="size-icon-row text-muted-foreground" aria-hidden="true" />
 								<span class="truncate {issue.dueOn ? 'text-ink-900' : 'text-muted-foreground'}">
 									{issue.dueOn
-										? dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)
+										? dueValue(issue.dueOn, data.now, data.workspace.timezone, done)
 										: "No due date"}
 								</span>
 							</span>
@@ -2901,7 +3200,10 @@
 
 					<IssueField
 						label="Estimate"
-						placeholder="Set an estimate"
+						valueText={issue.estimate
+							? `${issue.estimate} ${issue.estimate === 1 ? "point" : "points"}`
+							: "No estimate"}
+						placeholder="Set an estimate…"
 						editable={canEdit}
 						options={[
 							{ value: "", label: "No estimate", checked: !issue.estimate },
@@ -2914,7 +3216,7 @@
 						onpick={setEstimate}
 					>
 						{#snippet glyph()}
-							<Target class="size-icon-row text-muted-foreground" aria-hidden="true" />
+							<Gauge class="size-icon-row text-muted-foreground" aria-hidden="true" />
 						{/snippet}
 						{#snippet value()}
 							<span class="min-w-0 flex-1 truncate {issue.estimate ? '' : 'text-muted-foreground'}">
@@ -2927,7 +3229,8 @@
 
 					<IssueField
 						label="Parent"
-						placeholder="Search issues"
+						valueText={issue.parentReference || "No parent"}
+						placeholder="Search issues…"
 						editable={canEdit}
 						bind:open={parentPicking}
 						options={[
@@ -2957,7 +3260,8 @@
 
 					<IssueField
 						label="Team"
-						placeholder="Move to team"
+						valueText={teams.find((team) => team.id === issue.teamId)?.name ?? issue.teamKey}
+						placeholder="Move to team…"
 						editable={canEdit}
 						options={teams.map((team) => ({
 							value: team.id,
@@ -2970,7 +3274,10 @@
 							<Users class="size-icon-row text-muted-foreground" aria-hidden="true" />
 						{/snippet}
 						{#snippet value()}
-							<span class="min-w-0 flex-1 truncate">{issue.teamKey}</span>
+							<span class="min-w-0 flex-1 truncate">
+								{teams.find((team) => team.id === issue.teamId)?.name ?? issue.teamKey}
+								<span class="ml-1 font-mono text-xs text-muted-foreground">{issue.teamKey}</span>
+							</span>
 						{/snippet}
 					</IssueField>
 
@@ -2978,7 +3285,7 @@
 
 					<div class="flex min-h-7 items-center gap-2">
 						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+							class="w-19.5 flex-none caption text-muted-foreground"
 						>
 							Watching
 						</span>
@@ -2995,7 +3302,7 @@
 								{/each}
 								{#if watchers.length > 5}
 									<span
-										class="inline-flex size-icon-row items-center justify-center rounded-full bg-paper-2 font-mono text-2xs text-muted-foreground ring-1 ring-card"
+										class="inline-flex size-icon-row items-center justify-center rounded-full bg-paper-2 tabular-nums text-2xs text-muted-foreground ring-1 ring-card"
 									>
 										+{watchers.length - 5}
 									</span>
@@ -3004,55 +3311,8 @@
 						{:else}
 							<span class="flex-1 truncate text-md text-muted-foreground">Nobody yet</span>
 						{/if}
-						<Button variant="ghost" size="sm" disabled={followWorking} onclick={toggleFollow}>
-							{following ? "Unsubscribe" : "Subscribe"}
-						</Button>
 					</div>
 
-					<span class="my-2.5 h-px bg-line-subtle"></span>
-
-					<div class="flex min-h-5.5 items-center gap-1.5">
-						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
-						>
-							Created
-						</span>
-						<span class="font-mono text-xs text-muted-foreground">
-							<time datetime={issue.createdAt}>{when(issue.createdAt)}</time>
-						</span>
-					</div>
-
-					{#if lastActivity}
-						<div class="flex min-h-5.5 items-center gap-1.5">
-							<span
-								class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
-							>
-								Updated
-							</span>
-							<span class="font-mono text-xs text-muted-foreground">
-								<time datetime={lastActivity}>{when(lastActivity)}</time>
-							</span>
-						</div>
-					{/if}
-
-					<div class="flex min-h-5.5 items-center gap-1.5">
-						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
-						>
-							Link
-						</span>
-						<button
-							type="button"
-							aria-label="Copy the link to {issue.reference}"
-							title="Copy"
-							onclick={() =>
-								copy(`${page.url.origin}${at(`/issues/${issue.reference}`)}`, `Copied a link to ${issue.reference}`)}
-							class="flex min-w-0 cursor-pointer items-center gap-1.5 font-mono text-xs text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-						>
-							<span class="min-w-0 truncate">{issueLink}</span>
-							<Copy class="size-3 flex-none" aria-hidden="true" />
-						</button>
-					</div>
 				</div>
 			</aside>
 		</div>
@@ -3084,23 +3344,32 @@
 			</div>
 		{/if}
 
-		<div
-			class="hidden h-7.5 flex-none items-center gap-4 border-t border-line-subtle px-3.5 lg:flex"
-		>
-			<span class="font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
-				{issue.reference}
-			</span>
-			<div class="flex-1"></div>
-			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="E" /> edit description
-			</span>
-			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="⌘ ↵" /> save
-			</span>
-			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="Esc" /> cancel
-			</span>
-		</div>
+		{#if editingField}
+			<div
+				class="hidden h-8.5 flex-none items-center gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
+			>
+				<span class="flex-1"></span>
+				<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<Kbd keys="⌘ ↵" /> Save
+				</span>
+				<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<Kbd keys="Esc" /> Stop editing
+				</span>
+			</div>
+		{:else}
+			<ShortcutBar
+				ids={[
+					"issue-step",
+					"issue-status",
+					"issue-priority",
+					"issue-assignee",
+					"issue-labels",
+					"issue-edit",
+					"issue-back",
+					"help",
+				]}
+			/>
+		{/if}
 	{/if}
 </div>
 
@@ -3140,6 +3409,7 @@
 		now={data.now}
 		prefill={childPrefill ?? { teamId: issue.teamId, projectId: issue.projectId ?? "" }}
 		canCreateLabel={canCreateLabels(role)}
+		formId="new-sub-issue"
 		onsettled={settleUnder(filingUnder, data.workspace.id)}
 	/>
 

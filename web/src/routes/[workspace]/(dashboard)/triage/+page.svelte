@@ -278,11 +278,11 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Zap class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Triage</h1>
-			<span class="font-mono text-xs text-muted-foreground">{counts.all}</span>
+			<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">Triage</h1>
+			<span class="tabular-nums text-xs text-muted-foreground">{counts.all}</span>
 			{#if item}
 				<span class="h-3.5 w-px bg-line-default" aria-hidden="true"></span>
-				<span class="font-mono text-xs text-muted-foreground">
+				<span class="tabular-nums text-xs text-muted-foreground">
 					{cursor.at + 1} of {shown.length}
 				</span>
 			{/if}
@@ -293,16 +293,16 @@
 			</Button>
 		</div>
 
-		<div class="flex h-8.5 items-center gap-2.5 border-t border-line-subtle pr-3 pl-3.5">
+		<div class="flex min-h-8.5 items-center gap-2.5 border-t border-line-subtle py-1 pr-3 pl-3.5 sm:py-0">
 			<div
-				class="flex min-w-0 gap-0.5 overflow-x-auto rounded-sm border border-line-default p-0.5"
+				class="scrollbar-none flex min-w-0 gap-0.5 overflow-x-auto rounded-sm border border-line-default p-0.5"
 			>
 				{#each sourceSlots as slot (slot.label)}
 					{#if slot.kind === "live"}
 						<a
 							href={sourcePath(slot.value)}
 							aria-current={tab === slot.value ? "page" : undefined}
-							class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {tab ===
+							class="inline-flex h-8 flex-none sm:h-5.5 cursor-pointer items-center gap-1.5 rounded-xs px-2 caption motion-control {tab ===
 							slot.value
 								? 'bg-primary text-primary-foreground'
 								: 'text-ink-600 hover:bg-accent'}"
@@ -316,7 +316,7 @@
 							disabled
 							aria-label="{slot.label} — {unrecordedSource}"
 							title={unrecordedSource}
-							class="inline-flex h-5.5 flex-none items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase opacity-60"
+							class="inline-flex h-8 flex-none sm:h-5.5 items-center gap-1.5 rounded-xs px-2 caption text-muted-foreground opacity-60"
 						>
 							{slot.label}
 							<span aria-hidden="true">—</span>
@@ -327,7 +327,7 @@
 			</div>
 			<div class="flex-1"></div>
 			{#if readOnly}
-				<span class="inline-flex items-center gap-1.5 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+				<span class="inline-flex items-center gap-1.5 caption text-muted-foreground">
 					<Info class="size-3" aria-hidden="true" />
 					Read only
 				</span>
@@ -379,7 +379,7 @@
 		<div class="flex flex-1 flex-col items-center justify-center gap-5 p-10">
 			<div class="flex max-w-95 flex-col items-center gap-2.5 text-center">
 				<Zap class="size-4.5 text-muted-foreground" aria-hidden="true" />
-				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">Triage zero</span>
+				<p class="text-md font-medium tracking-snug text-ink-900">Nothing to triage</p>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">
 					Reports from integrations, agents and people outside the team land here before anyone
 					commits to them.
@@ -419,7 +419,7 @@
 										{issue.title}
 									</span>
 									<span
-										class="flex items-center gap-1.75 font-mono text-2xs text-muted-foreground"
+										class="flex items-center gap-1.75 tabular-nums text-2xs text-muted-foreground"
 									>
 										<span>{sourceLabels[issue.triageSource ?? "user"]}</span>
 										<span class="size-0.5 rounded-full bg-line-strong" aria-hidden="true"></span>
@@ -433,7 +433,7 @@
 						</li>
 					{/each}
 				</ul>
-				<p class="px-3.5 py-3 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+				<p class="px-3.5 py-3 caption text-muted-foreground">
 					{shown.length} waiting
 				</p>
 			</div>
@@ -456,13 +456,13 @@
 							<div class="flex flex-col gap-2.5">
 								<div class="flex flex-wrap items-center gap-2">
 									<span
-										class="inline-flex items-center gap-1.5 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+										class="inline-flex items-center gap-1.5 caption text-ink-600"
 									>
 										{@render sourceMark(item.triageSource ?? "user")}
 										{sourceLabels[item.triageSource ?? "user"]}
 									</span>
 									<span class="h-3 w-px bg-line-default" aria-hidden="true"></span>
-									<span class="font-mono text-xs text-muted-foreground">
+									<span class="tabular-nums text-xs text-muted-foreground">
 										received <time datetime={item.createdAt}>
 											{onDateAndTime(item.createdAt, data.workspace.timezone)}
 										</time>
@@ -479,7 +479,7 @@
 								</div>
 
 								<h2
-									class="text-xl leading-tight font-medium tracking-title text-ink-900 text-pretty"
+									class="text-xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
 								>
 									{item.title}
 								</h2>
@@ -497,7 +497,7 @@
 										</Avatar.Root>
 									{/if}
 									<span class="text-sm text-ink-600">{reporterOf(item)}</span>
-									<span class="font-mono text-xs text-muted-foreground">
+									<span class="tabular-nums text-xs text-muted-foreground">
 										{item.createdByAccountId ? "member" : "outside the workspace"}
 									</span>
 								</div>
@@ -514,25 +514,25 @@
 								<dl
 									class="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-1.75 rounded-lg border border-line-default bg-card px-3.5 py-3"
 								>
-									<dt class="font-mono text-xs text-muted-foreground">Team</dt>
+									<dt class="tabular-nums text-xs text-muted-foreground">Team</dt>
 									<dd class="text-sm text-ink-900">
 										{teamOf(item)?.name ?? item.teamKey}
 									</dd>
 
-									<dt class="font-mono text-xs text-muted-foreground">Priority</dt>
+									<dt class="tabular-nums text-xs text-muted-foreground">Priority</dt>
 									<dd class="flex items-center gap-1.5 text-sm text-ink-900">
 										<PriorityIcon priority={item.priority} />
 										{priorityLabel(item.priority)}
 									</dd>
 
-									<dt class="font-mono text-xs text-muted-foreground">State</dt>
+									<dt class="tabular-nums text-xs text-muted-foreground">State</dt>
 									<dd class="flex items-center gap-1.5 text-sm text-ink-900">
 										<StatusIcon category={item.state.category} decorative />
 										{item.state.name}
 									</dd>
 
 									{#if item.labels.length > 0}
-										<dt class="font-mono text-xs text-muted-foreground">Labels</dt>
+										<dt class="tabular-nums text-xs text-muted-foreground">Labels</dt>
 										<dd class="flex">
 											<LabelChips labels={item.labels} place="field" />
 										</dd>
@@ -750,7 +750,7 @@
 						<span class="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
 							<Kbd keys="J K" /> move through the queue
 						</span>
-						<span class="font-mono text-xs text-muted-foreground">
+						<span class="tabular-nums text-xs text-muted-foreground">
 							{cursor.at + 1} of {shown.length}
 						</span>
 					</div>

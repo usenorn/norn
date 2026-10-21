@@ -62,7 +62,7 @@
 		<button
 			type="button"
 			onclick={onaction}
-			class="motion-control shrink-0 cursor-pointer border-b border-transparent px-0.5 font-mono text-2xs font-medium tracking-caps uppercase hover:border-primary-foreground"
+			class="motion-control shrink-0 cursor-pointer border-b border-transparent px-0.5 caption hover:border-primary-foreground"
 		>
 			{action}
 		</button>

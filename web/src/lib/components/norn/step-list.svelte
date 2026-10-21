@@ -51,7 +51,7 @@
 		{@const Glyph = glyph[step.state]}
 		<li class="flex h-6.5 items-center gap-2" aria-current={step.state === "active" ? "step" : undefined}>
 			<Glyph class="size-icon-row shrink-0 {glyphTone[step.state]}" aria-hidden="true" />
-			<span class="font-mono text-xs {labelTone[step.state]}">{step.label}</span>
+			<span class="tabular-nums text-xs {labelTone[step.state]}">{step.label}</span>
 		</li>
 	{/each}
 </ol>

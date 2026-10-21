@@ -40,7 +40,7 @@ test("every row in the sidebar tree shares one band, and a team's pages sit one 
 
 	const top = measured.find((row) => row.label === "Inbox");
 	const team = measured.find((row) => row.label === "Billing");
-	const child = measured.find((row) => row.label === "Issues");
+	const child = measured.findLast((row) => row.label === "Issues");
 
 	expect(team?.icon).toBe(top?.icon);
 	expect(child?.icon).toBeGreaterThan(team?.icon ?? 0);

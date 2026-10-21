@@ -53,3 +53,36 @@ export async function moveCard(page: Page, issueId: string, column: string) {
 		[issueId, column] as const
 	);
 }
+
+export async function touchMoveCard(page: Page, issueId: string, column: string) {
+	await page.evaluate(
+		async ([id, name]) => {
+			const card = document.querySelector<HTMLElement>(`[data-issue="${id}"]`);
+			const landing = [...document.querySelectorAll('[role="group"]')].find(
+				(one) => one.getAttribute("aria-label") === name
+			);
+
+			if (!card || !landing) throw new Error(`no card ${id} or column ${name}`);
+
+			const from = card.getBoundingClientRect();
+			const to = landing.getBoundingClientRect();
+			const touch = (type: string, x: number, y: number) =>
+				card.dispatchEvent(
+					new PointerEvent(type, {
+						bubbles: true,
+						pointerId: 1,
+						pointerType: "touch",
+						isPrimary: true,
+						clientX: x,
+						clientY: y,
+					})
+				);
+
+			touch("pointerdown", from.left + from.width / 2, from.top + from.height / 2);
+			await new Promise((settle) => setTimeout(settle, 600));
+			touch("pointermove", to.left + to.width / 2, to.bottom - 4);
+			touch("pointerup", to.left + to.width / 2, to.bottom - 4);
+		},
+		[issueId, column] as const
+	);
+}

@@ -37,4 +37,13 @@
 	{/if}
 </Button>
 
-<input bind:this={input} type="file" multiple {disabled} class="sr-only" onchange={chosen} />
+<input
+	bind:this={input}
+	type="file"
+	multiple
+	{disabled}
+	tabindex="-1"
+	aria-hidden="true"
+	class="sr-only"
+	onchange={chosen}
+/>

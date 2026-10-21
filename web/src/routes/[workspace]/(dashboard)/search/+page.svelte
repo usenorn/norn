@@ -104,7 +104,7 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Search class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Search</h1>
+			<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">Search</h1>
 		</div>
 	</div>
 
@@ -158,7 +158,7 @@
 					<section class="flex flex-col" aria-label={kindLabels[group.kind]}>
 						<div class="flex h-7.5 items-center gap-2 border-b border-line-default">
 							<span
-								class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+								class="caption text-ink-600"
 							>
 								{kindLabels[group.kind]}
 							</span>

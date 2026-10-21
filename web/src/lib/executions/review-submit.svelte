@@ -48,7 +48,7 @@
 			<Button {...props} size="sm" disabled={working}>
 				Finish your review
 				{#if drafts > 0}
-					<span class="rounded-xs bg-primary-foreground/20 px-1 font-mono text-2xs">{drafts}</span>
+					<span class="rounded-xs bg-primary-foreground/20 px-1 tabular-nums text-2xs">{drafts}</span>
 				{/if}
 				<ChevronDown aria-hidden="true" />
 			</Button>

@@ -85,7 +85,7 @@
 
 <section class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">Require single sign-on</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">Require single sign-on</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			With this on, a Norn password no longer opens {workspace.name}. People stay signed in to
 			any other workspace they belong to, and automation keeps working through API tokens.

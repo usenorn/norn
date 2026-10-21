@@ -117,7 +117,7 @@
 
 <section class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">Issue templates</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">Issue templates</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			The shapes {teamName} raises issues from: the prose an issue starts with, and the properties
 			it insists on before it may be raised.
@@ -214,7 +214,7 @@
 
 			<div class="flex flex-col gap-1.5">
 				<span class="text-sm font-medium text-ink-900">The description it starts with</span>
-				<div class="rounded-md border border-line-default px-2.5 pb-1">
+				<div class="rounded-md border border-line-default px-2.5 pb-1 motion-control focus-within:border-ring">
 					<Editor
 						bind:document={body}
 						{workspaceId}

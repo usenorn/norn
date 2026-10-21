@@ -92,7 +92,7 @@
 					<Users class="size-icon-row" aria-hidden="true" />
 					Members
 				</dt>
-				<dd class="font-mono text-ink-900 tabular-nums">
+				<dd class="text-ink-900 tabular-nums">
 					{members.length === 1 ? "1 person" : `${members.length} people`}
 				</dd>
 			</div>
@@ -102,7 +102,7 @@
 					Target
 				</dt>
 				<dd
-					class="font-mono tabular-nums"
+					class="tabular-nums"
 					class:text-warning={projectStanding(project) === "at_risk"}
 					class:text-ink-900={projectStanding(project) !== "at_risk"}
 				>
@@ -121,7 +121,7 @@
 					<Clock class="size-icon-row" aria-hidden="true" />
 					Started
 				</dt>
-				<dd class="font-mono text-ink-900 tabular-nums">
+				<dd class="text-ink-900 tabular-nums">
 					{onDate(project.createdAt, timezone)}
 				</dd>
 			</div>
@@ -130,7 +130,7 @@
 					<ArrowUpRight class="size-icon-row" aria-hidden="true" />
 					Raised
 				</dt>
-				<dd class="font-mono text-ink-900 tabular-nums">
+				<dd class="text-ink-900 tabular-nums">
 					{progress?.raisedSinceStart === undefined
 						? "Unknown"
 						: `+${progress.raisedSinceStart} since start`}
@@ -149,7 +149,7 @@
 							<StatusIcon category={row.category} decorative class="size-icon-row" />
 							{categoryLabels[row.category]}
 						</dt>
-						<dd class="font-mono text-ink-900 tabular-nums">{row.count}</dd>
+						<dd class="text-ink-900 tabular-nums">{row.count}</dd>
 					</div>
 				{/each}
 			</dl>

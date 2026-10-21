@@ -163,7 +163,7 @@
 			{#if creating}
 				<section class="flex flex-col gap-4 rounded-lg border border-line-default p-4">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">Create a team</h2>
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">Create a team</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							Teams own issues. The key is stamped on every issue the team raises, and it is
 							permanent.

@@ -301,7 +301,7 @@
 
 				<section class="flex flex-col gap-2">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">Protocol</h2>
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">Protocol</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							A workspace uses one provider. Choosing the other protocol replaces the one
 							configured now.
@@ -336,7 +336,7 @@
 
 				<section class="flex flex-col gap-2">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">
 							{protocol === "saml"
 								? "Single sign-on with SAML 2.0"
 								: "Single sign-on with OpenID Connect"}
@@ -693,7 +693,7 @@
 				{#if anyConnection}
 					<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">
 						<div class="flex flex-col gap-1">
-							<h2 class="text-md font-medium tracking-snug text-ink-900">Remove this provider</h2>
+							<h2 class="text-md font-semibold tracking-snug text-ink-900">Remove this provider</h2>
 							<p class="text-sm leading-normal text-muted-foreground text-pretty">
 								Single sign-on stops working for {workspace.name} immediately. Anyone who has no
 								password will need one before they can sign in again.

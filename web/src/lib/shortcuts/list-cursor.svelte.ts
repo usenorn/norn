@@ -1,4 +1,5 @@
-import { untrack } from "svelte";
+import { tick, untrack } from "svelte";
+import { afterNavigate } from "$app/navigation";
 import { bindShortcuts } from "./registry.svelte";
 import { registerRoam } from "./roam/roam.svelte";
 
@@ -6,6 +7,7 @@ export type ListCursorSurface<T> = {
 	rows: readonly T[];
 	open?: (row: T, index: number) => void;
 	keyOf?: (row: T) => string;
+	referenceOf?: (row: T) => string;
 	left?: () => boolean;
 	right?: () => boolean;
 };
@@ -91,6 +93,30 @@ export class ListCursor<T> {
 		this.to(this.at + by);
 	}
 
+	land(reference: string): boolean {
+		const referenceOf = this.#surface().referenceOf;
+
+		if (!referenceOf) return false;
+
+		const index = this.#rows.findIndex((row) => referenceOf(row) === reference);
+
+		if (index < 0) return false;
+
+		this.to(index);
+
+		return true;
+	}
+
+	async reveal() {
+		await tick();
+
+		const anchor = document.querySelector<HTMLElement>(
+			'[data-cursor="true"][data-row-anchor], [data-cursor="true"] [data-row-anchor]'
+		);
+
+		anchor?.focus({ preventScroll: true });
+	}
+
 	open() {
 		const row = this.row;
 
@@ -111,15 +137,27 @@ export class ListCursor<T> {
 export function listCursor<T>(surface: () => ListCursorSurface<T>): ListCursor<T> {
 	const cursor = new ListCursor(surface);
 
+	const step = (by: number) => {
+		cursor.move(by);
+		void cursor.reveal();
+	};
+
 	bindShortcuts({
-		"cursor-down": () => cursor.move(1),
-		"cursor-up": () => cursor.move(-1),
+		"cursor-down": () => step(1),
+		"cursor-up": () => step(-1),
 		"cursor-open": () => cursor.open(),
 	});
 
+	afterNavigate(({ from }) => {
+		const reference = from?.params?.reference;
+
+		if (!reference || !from?.route.id?.endsWith("/issues/[reference]")) return;
+		if (cursor.land(reference)) void cursor.reveal();
+	});
+
 	registerRoam(() => ({
-		up: () => cursor.move(-1),
-		down: () => cursor.move(1),
+		up: () => step(-1),
+		down: () => step(1),
 		left: () => surface().left?.() ?? false,
 		right: () => surface().right?.() ?? false,
 		enter: () => cursor.open(),

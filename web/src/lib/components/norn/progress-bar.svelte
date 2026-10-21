@@ -25,7 +25,7 @@
 			<span class="motion-fill block h-[3px] rounded-xs bg-primary" style="width: {done}%"></span>
 		</span>
 		{#if label}
-			<span class="font-mono text-xs text-muted-foreground tabular-nums">
+			<span class="text-xs text-muted-foreground tabular-nums">
 				{progress.complete}/{total} done
 			</span>
 		{/if}

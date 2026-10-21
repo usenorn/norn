@@ -18,7 +18,7 @@
 	data-slot="dropdown-menu-label"
 	data-inset={inset}
 	class={cn(
-		"flex items-center gap-1.5 px-2 pt-1.5 pb-1 font-mono text-2xs font-medium tracking-caps text-ink-600 uppercase data-inset:pl-8 data-[inset]:pl-8",
+		"flex items-center gap-1.5 px-2 pt-1.5 pb-1 caption text-ink-600 data-inset:pl-8 data-[inset]:pl-8",
 		className
 	)}
 	{...restProps}

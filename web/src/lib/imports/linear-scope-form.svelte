@@ -109,7 +109,7 @@
 
 <form method="POST" id={formId} use:enhance class="flex flex-col gap-5">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">Which teams to read</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">Which teams to read</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Everything is narrowed by this: only issues, projects, cycles and labels belonging to the
 			teams you pick are read. A team you leave out costs nothing and can be brought across by a

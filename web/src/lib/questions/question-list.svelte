@@ -55,7 +55,7 @@
 						</span>
 						<span
 							class="text-xs {open_ && question.blocking
-								? 'text-amber-700 dark:text-amber-400'
+								? 'text-warning'
 								: 'text-muted-foreground'}"
 						>
 							{statusLine(question, canAnswer)}
@@ -73,7 +73,7 @@
 						{#if question.executionId}
 							<Tag name="while running" />
 						{/if}
-						<span class="font-mono text-xs text-muted-foreground">
+						<span class="tabular-nums text-xs text-muted-foreground">
 							{question.answered && question.answeredAt
 								? onDateAndTime(question.answeredAt, timezone)
 								: onDateAndTime(question.deadline, timezone)}

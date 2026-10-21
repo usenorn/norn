@@ -37,7 +37,7 @@
 					<span class="min-w-0 flex-1 truncate text-md tracking-snug text-ink-900">
 						{attachment.fileName}
 					</span>
-					<span class="shrink-0 font-mono text-xs text-muted-foreground">
+					<span class="shrink-0 tabular-nums text-xs text-muted-foreground">
 						{formatBytes(attachment.byteSize)}
 					</span>
 					<Download class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

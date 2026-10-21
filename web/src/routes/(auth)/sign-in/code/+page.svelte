@@ -82,7 +82,7 @@
 	<div class="notch w-full max-w-form">
 		<div class="flex flex-col gap-4.5 p-6.5 pb-5.5">
 			<div class="flex flex-col gap-1.5">
-				<h1 class="text-2xl font-medium tracking-title text-ink-900">Enter your code</h1>
+				<h1 class="text-2xl font-semibold tracking-title text-ink-900">Enter your code</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">
 					We sent a {signInCodeLength}-digit code to your email. It works once and lasts ten
 					minutes.

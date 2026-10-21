@@ -9,6 +9,8 @@ import {
 	Eye as EyeGlyph,
 	Filter as FilterGlyph,
 	Inbox as InboxGlyph,
+	List as ListGlyph,
+	ListChecks as ListChecksGlyph,
 	MailOpen as MailOpenGlyph,
 	Target as TargetGlyph,
 	Zap as ZapGlyph,
@@ -46,6 +48,12 @@ export function primaryNav(workspace: string, waiting = 0, unread = 0): NavEntry
 			href: at("/my-tasks"),
 			glyph: CircleDotGlyph,
 			glyphEngaged: TargetGlyph,
+		},
+		{
+			label: "Issues",
+			href: at("/issues"),
+			glyph: ListGlyph,
+			glyphEngaged: ListChecksGlyph,
 		},
 		{
 			label: "Reviews",

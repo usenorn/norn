@@ -3,9 +3,9 @@
 
 	export const labelChipsVariants = tv({
 		slots: {
-			root: "flex min-w-0 items-center gap-1.5",
+			root: "flex min-w-0 items-center gap-2.5",
 			tag: "",
-			more: "font-mono text-2xs whitespace-nowrap text-muted-foreground",
+			more: "tabular-nums text-2xs whitespace-nowrap text-muted-foreground",
 		},
 		variants: {
 			place: {
@@ -32,10 +32,10 @@
 		place?: LabelChipsPlace;
 	} = $props();
 
-	const shownAtMost = 2;
+	const shownAtMost = { row: 2, card: 1, field: Infinity };
 
 	const styles = $derived(labelChipsVariants({ place }));
-	const visible = $derived(place === "field" ? labels : labels.slice(0, shownAtMost));
+	const visible = $derived(labels.slice(0, shownAtMost[place]));
 	const hidden = $derived(labels.length - visible.length);
 </script>
 

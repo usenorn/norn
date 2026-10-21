@@ -114,7 +114,7 @@
 				{/if}
 				{authorLabel(comment)}
 			</span>
-			<span class="font-mono text-xs text-muted-foreground">
+			<span class="tabular-nums text-xs text-muted-foreground">
 				<time datetime={comment.createdAt}>{when(comment.createdAt)}</time>
 			</span>
 			{#if comment.edited}
@@ -292,7 +292,7 @@
 				type="button"
 				disabled={working}
 				onclick={onmore}
-				class="flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-line-default font-mono text-xs text-muted-foreground motion-control hover:bg-accent hover:text-ink-600"
+				class="flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-line-default tabular-nums text-xs text-muted-foreground motion-control hover:bg-accent hover:text-ink-600"
 			>
 				{working ? "Loading" : "Load earlier comments"}
 			</button>
@@ -304,13 +304,13 @@
 					{#if item.comment}
 						{@render entry(item.comment, false)}
 					{:else if item.event}
-						<li class="flex h-7 items-center gap-2.25">
-							<span class="inline-flex w-4 flex-none justify-center">
+						<li class="flex min-h-7 items-start gap-2.25 py-1.25">
+							<span class="inline-flex h-4.5 w-4 flex-none items-center justify-center">
 								<Dot class="size-3 text-muted-foreground" aria-hidden="true" />
 							</span>
-							<span class="min-w-0 truncate text-sm text-ink-600">{item.event.line}</span>
+							<span class="min-w-0 text-sm text-pretty text-ink-600">{item.event.line}</span>
 							<span class="min-w-2 flex-1"></span>
-							<span class="font-mono text-2xs whitespace-nowrap text-muted-foreground">
+							<span class="pt-px tabular-nums text-2xs whitespace-nowrap text-muted-foreground">
 								<time datetime={item.event.at}>{when(item.event.at)}</time>
 							</span>
 						</li>
@@ -319,16 +319,6 @@
 			</ul>
 		{/if}
 
-		{#if thread.kind === "empty"}
-			<div class="flex flex-col gap-1.5 border-t border-line-subtle pt-5.5 pb-4.5">
-				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
-					No comments yet
-				</span>
-				<span class="text-md text-muted-foreground">
-					Ask a question or leave what you found. Everyone watching this issue is notified.
-				</span>
-			</div>
-		{/if}
 	{/if}
 
 	{#if canEdit}
@@ -343,7 +333,8 @@
 					{oncancelupload}
 					{onretryupload}
 					{ondismissupload}
-					placeholder="Write a comment"
+					label="Write a comment"
+					placeholder="Ask a question or leave what you found. Watchers are notified."
 					submitLabel="Comment"
 					onsubmit={(body, attachmentIds) => onpost(body, attachmentIds)}
 				/>

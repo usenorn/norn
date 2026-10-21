@@ -84,7 +84,7 @@
 						{child.title}
 					</span>
 					{#if child.dueOn}
-						<span class="relative z-1 font-mono text-2xs whitespace-nowrap text-muted-foreground">
+						<span class="relative z-1 tabular-nums text-2xs whitespace-nowrap text-muted-foreground">
 							{onDayMonth(child.dueOn, now, timezone)}
 						</span>
 					{/if}

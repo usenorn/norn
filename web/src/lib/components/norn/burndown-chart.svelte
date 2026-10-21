@@ -27,7 +27,7 @@
 {#snippet amount({ value, name, item }: { value: unknown; name: string; item: { key: string } })}
 	<span class="flex flex-1 items-center justify-between gap-4 leading-none">
 		<span class="text-muted-foreground">{name}</span>
-		<span class="font-mono font-medium text-foreground tabular-nums">
+		<span class="font-medium text-foreground tabular-nums">
 			{#if value === null || value === undefined}
 				—
 			{:else if item.key === "ideal"}

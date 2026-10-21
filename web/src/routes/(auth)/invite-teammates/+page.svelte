@@ -363,7 +363,7 @@
 				{#if !allSent}
 					<Eyebrow>Step 4 of 4</Eyebrow>
 				{/if}
-				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
+				<h1 class="text-2xl font-semibold tracking-title text-ink-900">{title}</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 			</div>
 
@@ -408,7 +408,7 @@
 					>
 						<Eyebrow class="text-ink-600">{rowsLabel}</Eyebrow>
 						{#if rowsRight}
-							<span class="font-mono text-xs {rowsRight.tone}">{rowsRight.text}</span>
+							<span class="tabular-nums text-xs {rowsRight.tone}">{rowsRight.text}</span>
 						{/if}
 					</div>
 					<ul>
@@ -422,7 +422,7 @@
 									aria-hidden="true"
 								/>
 								<span
-									class="min-w-0 flex-[1_1_160px] truncate font-mono text-sm {rowTone[row.status]}"
+									class="min-w-0 flex-[1_1_160px] truncate tabular-nums text-sm {rowTone[row.status]}"
 								>
 									{row.email}
 								</span>
@@ -505,7 +505,7 @@
 						aria-label="Sending invitations"
 						class="flex-1"
 					/>
-					<span class="font-mono text-xs text-muted-foreground tabular-nums">
+					<span class="text-xs text-muted-foreground tabular-nums">
 						{counts.sent} of {counts.total}
 					</span>
 				</div>

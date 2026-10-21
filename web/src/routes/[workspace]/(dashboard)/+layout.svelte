@@ -25,7 +25,6 @@
 	import Tags from "@lucide/svelte/icons/tags";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Kbd from "$lib/components/norn/kbd.svelte";
-	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import { canCreateLabels } from "$lib/labels/create-label";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
 	import { provideCommandTargets } from "$lib/command/scope.svelte";
@@ -158,6 +157,28 @@
 
 	const raising = provideNewIssue();
 
+	let newIssueDialog = $state<Promise<typeof import("$lib/issues/new-issue-dialog.svelte")>>();
+
+	function loadNewIssueDialog() {
+		newIssueDialog ??= import("$lib/issues/new-issue-dialog.svelte");
+	}
+
+	$effect(() => {
+		if (raising.open) loadNewIssueDialog();
+	});
+
+	$effect(() => {
+		if (typeof requestIdleCallback !== "function") {
+			const timer = setTimeout(loadNewIssueDialog, 1500);
+
+			return () => clearTimeout(timer);
+		}
+
+		const idle = requestIdleCallback(loadNewIssueDialog, { timeout: 4000 });
+
+		return () => cancelIdleCallback(idle);
+	});
+
 	provideCommandTargets();
 
 	$effect(() => applyDensity(readDensity()));
@@ -219,6 +240,13 @@
 </script>
 
 <div class="relative flex h-dvh bg-background" style="--sidebar-width: {panels.width('sidebar')}px">
+	<Button
+		href="#content"
+		class="fixed top-2 left-2 z-50 -translate-y-20 focus-visible:translate-y-0"
+	>
+		Skip to content
+	</Button>
+
 	{#if panels.collapsed("sidebar")}
 		<PanelRestore
 			side="leading"
@@ -428,7 +456,7 @@
 			/>
 		</header>
 
-		<main class="flex min-h-0 flex-1 flex-col">
+		<main id="content" tabindex="-1" class="flex min-h-0 flex-1 flex-col outline-none">
 			<StaleBanner shown={realtime.degraded} off={realtime.state === "off"} />
 			{#if narrowed}
 				<ProviderRequired workspace={data.workspace} />
@@ -445,7 +473,7 @@
 				{@const Glyph = entry.icon}
 				{#if index === 2}
 					<div class="flex flex-1 items-center justify-center">
-						<Button size="touch" aria-label="New task" onclick={() => raising.raise()}>
+						<Button size="touch" aria-label="New issue" onclick={() => raising.raise()}>
 							<Plus aria-hidden="true" />
 						</Button>
 					</div>
@@ -470,25 +498,27 @@
 
 <ShortcutHelp bind:open={helping} />
 
-{#if teams.length > 0}
-	<NewIssueDialog
-		bind:open={raising.open}
-		workspaceId={data.workspace.id}
-		workspace={data.workspace.slug}
-		{teams}
-		states={{}}
-		members={data.members}
-		labels={data.labels}
-		projects={data.projects}
-		{today}
-		now={data.now}
-		prefill={raising.prefill}
-		canCreateLabel={canCreateLabels(
-			data.members.find((member) => member.accountId === data.member.id)?.role
-		)}
-		onraising={raising.onraising}
-		onsettled={settlement}
-	/>
+{#if teams.length > 0 && newIssueDialog}
+	{#await newIssueDialog then { default: NewIssueDialog }}
+		<NewIssueDialog
+			bind:open={raising.open}
+			workspaceId={data.workspace.id}
+			workspace={data.workspace.slug}
+			{teams}
+			states={{}}
+			members={data.members}
+			labels={data.labels}
+			projects={data.projects}
+			{today}
+			now={data.now}
+			prefill={raising.prefill}
+			canCreateLabel={canCreateLabels(
+				data.members.find((member) => member.accountId === data.member.id)?.role
+			)}
+			onraising={raising.onraising}
+			onsettled={settlement}
+		/>
+	{/await}
 {/if}
 
 <SearchPalette

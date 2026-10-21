@@ -10,16 +10,15 @@
 		},
 		variants: {
 			place: {
-				field: { trigger: fieldTrigger(), blank: "text-muted-foreground" },
+				field: { trigger: fieldTrigger({ class: "items-start" }), blank: "text-muted-foreground" },
 				row: {
 					trigger:
-						"inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2",
-					blank: "h-0.5 w-2 bg-line-strong",
+						"relative inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5",
+					blank: "size-3.5 text-muted-foreground",
 					content: "w-49",
 				},
 				dialog: {
-					trigger:
-						"h-control-sm gap-1.5 px-2 text-sm font-normal text-foreground data-[state=open]:border-ink-400",
+					trigger: "",
 					content: "w-49",
 				},
 			},
@@ -32,7 +31,18 @@
 			{
 				place: "row",
 				always: false,
-				class: { blank: "hidden opacity-0 group-hover/row:opacity-100 lg:inline-block" },
+				class: {
+					blank:
+						"hidden opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 lg:inline-block",
+				},
+			},
+			{
+				place: "row",
+				always: true,
+				class: {
+					blank:
+						"opacity-0 group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+				},
 			},
 		],
 		defaultVariants: { place: "field", always: false },
@@ -46,7 +56,6 @@
 	import Tags from "@lucide/svelte/icons/tags";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
 	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
 	import LabelChips from "./label-chips.svelte";
 	import LabelDot from "./label-dot.svelte";
@@ -109,7 +118,9 @@
 			!reachable.some((label) => label.name.toLowerCase() === wanted.toLowerCase())
 	);
 	const triggerLabel = $derived(
-		place === "row" && subject ? `Change labels on ${subject}` : "Labels: change"
+		place === "row" && subject
+			? `Change labels on ${subject}`
+			: `Labels: ${shownChips.map((label) => label.name).join(", ") || "none"}`
 	);
 
 	$effect(() => {
@@ -176,12 +187,9 @@
 	onpick={pick}
 	action={canCreate ? createRow : undefined}
 >
-	{#snippet shortcut()}
-		<Kbd keys="Esc" />
-	{/snippet}
 	{#snippet trigger(props)}
 		{#if place === "dialog"}
-			<Button {...props} variant="outline" size="sm" {disabled} class={styles.trigger()}>
+			<Button {...props} variant="property" size="property" {disabled}>
 				<Tags class="text-muted-foreground" aria-hidden="true" />
 				{#if shownChips.length > 0}
 					<LabelChips labels={shownChips} place="card" />
@@ -194,18 +202,21 @@
 				{...props}
 				type="button"
 				aria-label={triggerLabel}
+				data-property={place === "field" ? "Labels" : undefined}
 				{disabled}
 				class={styles.trigger()}
 			>
-				{#if place === "field"}
+				{#if place === "field" && shownChips.length === 0}
 					<Tags class="size-icon-row text-muted-foreground" aria-hidden="true" />
 				{/if}
-				<LabelChips labels={shownChips} {place} />
+				{#if shownChips.length > 0}
+					<LabelChips labels={shownChips} place={place === "row" && always ? "card" : place} />
+				{/if}
 				{#if shownChips.length === 0}
 					{#if place === "field"}
 						<span class={styles.blank()}>Add labels</span>
 					{:else}
-						<span class={styles.blank()} aria-hidden="true"></span>
+						<Tags class={styles.blank()} aria-hidden="true" />
 					{/if}
 				{/if}
 			</button>

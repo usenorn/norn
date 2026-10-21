@@ -110,7 +110,7 @@
 			{:else}
 				<Users class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			{/if}
-			<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+			<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">
 				{team ? team.name : "Team"}
 			</h1>
 			{#if team}
@@ -128,14 +128,14 @@
 				<a
 					href={here}
 					aria-current={data.tab === "overview" ? "page" : undefined}
-					class="rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900"
+					class="inline-flex items-center rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900 pointer-coarse:min-h-10 pointer-coarse:px-3"
 				>
 					Overview
 				</a>
 				<a
 					href="{here}?tab=members"
 					aria-current={data.tab === "members" ? "page" : undefined}
-					class="rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900"
+					class="inline-flex items-center rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900 pointer-coarse:min-h-10 pointer-coarse:px-3"
 				>
 					Members
 				</a>
@@ -241,7 +241,7 @@
 					{:else}
 						<div class="flex items-start gap-2">
 							<div class="flex min-w-0 flex-1 flex-col gap-1">
-								<h2 class="text-lg font-medium tracking-title text-ink-900">
+								<h2 class="text-lg font-semibold tracking-title text-ink-900">
 									{overview.team.name}
 								</h2>
 								<p class="text-sm leading-normal text-muted-foreground text-pretty">

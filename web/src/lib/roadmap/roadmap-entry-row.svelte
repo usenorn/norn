@@ -123,7 +123,7 @@
 		{/each}
 	</div>
 
-	<p class="font-mono text-xs text-muted-foreground tabular-nums" aria-live="polite">
+	<p class="text-xs text-muted-foreground tabular-nums" aria-live="polite">
 		{#if refreshing}
 			Refreshing from the source…
 		{:else if removing}

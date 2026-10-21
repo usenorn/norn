@@ -109,7 +109,7 @@
 
 <section class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">Cycles</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">Cycles</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			A repeating time box {team.name} plans against. Norn keeps the next three ready, so nobody has
 			to remember to make them.
@@ -194,7 +194,7 @@
 						{#each cadence.upcoming as cycle (cycle.id)}
 							<li class="flex items-baseline justify-between gap-2">
 								<span class="text-sm text-ink-900">{cycle.name}</span>
-								<span class="font-mono text-xs text-muted-foreground tabular-nums">
+								<span class="text-xs text-muted-foreground tabular-nums">
 									{cycleWindow(cycle.startsOn, cycle.endsOn)}
 								</span>
 							</li>

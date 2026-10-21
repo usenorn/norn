@@ -12,6 +12,6 @@
 <AlertDialogPrimitive.Overlay
 	bind:ref
 	data-slot="alert-dialog-overlay"
-	class={cn("bg-surface-scrim supports-backdrop-filter:backdrop-blur-[6px] data-open:animate-scrim data-closed:animate-dismiss fixed inset-0 isolate z-50", className)}
+	class={cn("bg-surface-scrim data-open:animate-scrim data-closed:animate-dismiss fixed inset-0 isolate z-50", className)}
 	{...restProps}
 />

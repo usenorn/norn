@@ -24,6 +24,15 @@ async function registerAgent(page: Page, name: string): Promise<string> {
 	return registered.agent.id;
 }
 
+async function openInstructionsTab(page: Page) {
+	const tab = page.getByRole("tab", { name: "Instructions" });
+
+	await expect(async () => {
+		await tab.click();
+		await expect(tab).toHaveAttribute("aria-selected", "true", { timeout: 500 });
+	}).toPass();
+}
+
 test("instructions written at every level are there after a reload, and can be emptied", async ({
 	page,
 }) => {
@@ -48,6 +57,7 @@ test("instructions written at every level are there after a reload, and can be e
 	await page.getByRole("button", { name: "Edit" }).click();
 	await projectBox.fill(projectWritten);
 	await page.getByRole("button", { name: "Save changes" }).click();
+	await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
 
 	await page.goto(at("/projects/billing"));
 	await page.getByRole("button", { name: "Edit" }).click();
@@ -59,7 +69,7 @@ test("instructions written at every level are there after a reload, and can be e
 	const saveAgent = page.getByRole("button", { name: "Save instructions" });
 
 	await page.goto(at(`/settings/agents/${agentId}`));
-	await page.getByRole("tab", { name: "Instructions" }).click();
+	await openInstructionsTab(page);
 	await expect(saveAgent).toBeDisabled();
 
 	await agentBox.fill(agentWritten);
@@ -78,7 +88,7 @@ test("instructions written at every level are there after a reload, and can be e
 	await expect(saveAgent).toBeDisabled();
 
 	await page.goto(at(`/settings/agents/${agentId}`));
-	await page.getByRole("tab", { name: "Instructions" }).click();
+	await openInstructionsTab(page);
 	await expect(agentBox).toHaveValue(agentWritten);
 
 	await page.goto(at("/settings"));
@@ -149,7 +159,7 @@ test("a slow refresh after a save never puts the old instructions back", async (
 	const save = page.getByRole("button", { name: "Save instructions" });
 
 	await page.goto(at(`/settings/agents/${agentId}`));
-	await page.getByRole("tab", { name: "Instructions" }).click();
+	await openInstructionsTab(page);
 
 	await box.fill(first);
 	await save.click();
@@ -206,6 +216,6 @@ test("a slow refresh after a save never puts the old instructions back", async (
 	await expect(save).toBeDisabled();
 
 	await page.goto(at(`/settings/agents/${agentId}`));
-	await page.getByRole("tab", { name: "Instructions" }).click();
+	await openInstructionsTab(page);
 	await expect(box).toHaveValue(second);
 });

@@ -272,7 +272,7 @@
 					</Avatar.Root>
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<span class="text-md text-ink-900">{invitedHeadline(detail)}</span>
-						<span class="font-mono text-xs break-all text-muted-foreground">{invitedMeta}</span>
+						<span class="tabular-nums text-xs break-all text-muted-foreground">{invitedMeta}</span>
 					</div>
 				</div>
 
@@ -286,12 +286,12 @@
 						<span class="text-base font-medium tracking-snug text-ink-900">
 							{detail.workspace.name}
 						</span>
-						<span class="font-mono text-xs text-muted-foreground">{workspaceMeta}</span>
+						<span class="tabular-nums text-xs text-muted-foreground">{workspaceMeta}</span>
 					</div>
 				</div>
 			{:else}
 				<div class="flex flex-col gap-1.5">
-					<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
+					<h1 class="text-2xl font-semibold tracking-title text-ink-900">{title}</h1>
 					<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 				</div>
 			{/if}
@@ -329,7 +329,7 @@
 					</Form.Field>
 
 					<div class="flex flex-col gap-1">
-						<span class="font-mono text-2xs font-medium tracking-caps text-ink-600 uppercase">
+						<span class="caption text-ink-600">
 							Email
 						</span>
 						<Input value={invitation.kind === "create_account" ? invitation.email : ""} disabled />
@@ -380,7 +380,7 @@
 					</Avatar.Root>
 					<div class="flex min-w-0 flex-1 flex-col gap-px">
 						<span class="truncate text-md text-ink-900">{data.signedInAs || invitation.email}</span>
-						<span class="font-mono text-xs break-all text-muted-foreground">{invitation.email}</span>
+						<span class="tabular-nums text-xs break-all text-muted-foreground">{invitation.email}</span>
 					</div>
 					<a
 						href="/sign-in?add=1&return={encodeURIComponent(page.url.pathname + page.url.search)}"
