@@ -26,7 +26,7 @@
 			></span>
 		{/each}
 	</span>
-	<span class="shrink-0 font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+	<span class="shrink-0 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
 		{progressLabel(progress)}
 	</span>
 </span>

@@ -194,7 +194,7 @@
 						{#each cadence.upcoming as cycle (cycle.id)}
 							<li class="flex items-baseline justify-between gap-2">
 								<span class="text-sm text-ink-900">{cycle.name}</span>
-								<span class="font-mono text-xs text-muted-foreground tabular-nums">
+								<span class="text-xs text-muted-foreground tabular-nums">
 									{cycleWindow(cycle.startsOn, cycle.endsOn)}
 								</span>
 							</li>

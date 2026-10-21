@@ -25,7 +25,7 @@
 	<div class="flex flex-col gap-0.5">
 		<h3 class="text-sm font-medium tracking-snug text-ink-900">
 			{heading}
-			<span class="font-mono text-xs text-muted-foreground">{items.length}</span>
+			<span class="tabular-nums text-xs text-muted-foreground">{items.length}</span>
 		</h3>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">{note}</p>
 	</div>

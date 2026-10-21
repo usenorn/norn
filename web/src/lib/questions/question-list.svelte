@@ -73,7 +73,7 @@
 						{#if question.executionId}
 							<Tag name="while running" />
 						{/if}
-						<span class="font-mono text-xs text-muted-foreground">
+						<span class="tabular-nums text-xs text-muted-foreground">
 							{question.answered && question.answeredAt
 								? onDateAndTime(question.answeredAt, timezone)
 								: onDateAndTime(question.deadline, timezone)}

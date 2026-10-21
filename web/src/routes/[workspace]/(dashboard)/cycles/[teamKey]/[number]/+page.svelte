@@ -502,7 +502,7 @@
 					{standingLabels[standing.kind]}
 				</span>
 				<span class="hidden h-3.5 w-px bg-line-default sm:block" aria-hidden="true"></span>
-				<span class="hidden font-mono text-xs text-muted-foreground tabular-nums sm:inline">
+				<span class="hidden text-xs text-muted-foreground tabular-nums sm:inline">
 					{cycleWindow(cycle.startsOn, cycle.endsOn)}
 				</span>
 				<span class="text-xs text-muted-foreground">
@@ -595,7 +595,7 @@
 					<div class="flex flex-col gap-0.5">
 						<span class="text-xs text-muted-foreground">{stat.key}</span>
 						<span class="flex items-baseline gap-1.5">
-							<span class="font-mono text-md text-ink-900 tabular-nums">{stat.value}</span>
+							<span class="text-md text-ink-900 tabular-nums">{stat.value}</span>
 							{#if stat.sub}
 								<span class="text-xs text-muted-foreground">{stat.sub}</span>
 							{/if}
@@ -786,7 +786,7 @@
 								series={chart}
 								label="Remaining work across {cycle.name}"
 							/>
-							<div class="flex justify-between font-mono text-xs text-muted-foreground tabular-nums">
+							<div class="flex justify-between text-xs text-muted-foreground tabular-nums">
 								{#each ticks as tick (tick.at)}
 									<span>{tick.label}</span>
 								{/each}
@@ -845,7 +845,7 @@
 									></span>
 								{/if}
 							</span>
-							<span class="font-mono text-xs text-muted-foreground tabular-nums">
+							<span class="text-xs text-muted-foreground tabular-nums">
 								{counts.done}/{counts.scope} done{results.kind === "unrecorded" ? " today" : ""}
 							</span>
 						</div>
@@ -877,7 +877,7 @@
 									<div class="flex items-center gap-2 py-1.5">
 										<StatusIcon category={group.category} name={group.label} decorative />
 										<span class="text-sm text-ink-900">{group.label}</span>
-										<span class="font-mono text-xs text-muted-foreground tabular-nums">
+										<span class="text-xs text-muted-foreground tabular-nums">
 											{group.issues.length}
 										</span>
 									</div>

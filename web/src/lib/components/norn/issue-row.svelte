@@ -158,7 +158,7 @@
 				{issue.title}
 			</a>
 		{/if}
-		<span class="truncate font-mono text-2xs text-muted-foreground sm:hidden">{line}</span>
+		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">{line}</span>
 	</span>
 
 	<span
@@ -176,13 +176,13 @@
 			<LabelChips {labels} place="row" />
 		{/if}
 		{#if issue.estimate}
-			<span class="hidden font-mono text-2xs text-muted-foreground sm:inline">
+			<span class="hidden tabular-nums text-2xs text-muted-foreground sm:inline">
 				{issue.estimate}
 			</span>
 		{/if}
 		{#if due}
 			<span
-				class="hidden font-mono text-xs whitespace-nowrap sm:inline {late
+				class="hidden tabular-nums text-xs whitespace-nowrap sm:inline {late
 					? 'text-priority-urgent'
 					: 'text-muted-foreground'}"
 			>

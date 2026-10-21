@@ -60,7 +60,7 @@
 			<span class="mt-2 block">
 				<ProgressBar progress={progress} label={false} />
 				{#if result.expected == null}
-					<span class="font-mono text-xs text-muted-foreground">
+					<span class="tabular-nums text-xs text-muted-foreground">
 						This set is still being worked out, so there is no finish line to show yet.
 					</span>
 				{/if}

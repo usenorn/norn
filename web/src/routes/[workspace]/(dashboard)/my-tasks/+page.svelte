@@ -201,7 +201,7 @@
 				<CircleDot class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 				<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">My tasks</h1>
 				{#if rows.kind === "ready"}
-					<span class="font-mono text-xs text-muted-foreground tabular-nums">
+					<span class="text-xs text-muted-foreground tabular-nums">
 						{total}{nextCursor ? "+" : ""}
 					</span>
 				{/if}
@@ -280,7 +280,7 @@
 						>
 							{bucket.label}
 						</span>
-						<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+						<span class="text-2xs text-muted-foreground tabular-nums">
 							{bucket.tasks.length}
 						</span>
 						<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>

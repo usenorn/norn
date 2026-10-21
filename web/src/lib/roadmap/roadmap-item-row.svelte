@@ -44,7 +44,7 @@
 	{/if}
 
 	{#if dates || progress || issues}
-		<span class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted-foreground tabular-nums">
+		<span class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground tabular-nums">
 			{#if dates}
 				<span>{dates}</span>
 			{/if}

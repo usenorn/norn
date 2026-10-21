@@ -279,10 +279,10 @@
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Zap class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Triage</h1>
-			<span class="font-mono text-xs text-muted-foreground">{counts.all}</span>
+			<span class="tabular-nums text-xs text-muted-foreground">{counts.all}</span>
 			{#if item}
 				<span class="h-3.5 w-px bg-line-default" aria-hidden="true"></span>
-				<span class="font-mono text-xs text-muted-foreground">
+				<span class="tabular-nums text-xs text-muted-foreground">
 					{cursor.at + 1} of {shown.length}
 				</span>
 			{/if}
@@ -419,7 +419,7 @@
 										{issue.title}
 									</span>
 									<span
-										class="flex items-center gap-1.75 font-mono text-2xs text-muted-foreground"
+										class="flex items-center gap-1.75 tabular-nums text-2xs text-muted-foreground"
 									>
 										<span>{sourceLabels[issue.triageSource ?? "user"]}</span>
 										<span class="size-0.5 rounded-full bg-line-strong" aria-hidden="true"></span>
@@ -462,7 +462,7 @@
 										{sourceLabels[item.triageSource ?? "user"]}
 									</span>
 									<span class="h-3 w-px bg-line-default" aria-hidden="true"></span>
-									<span class="font-mono text-xs text-muted-foreground">
+									<span class="tabular-nums text-xs text-muted-foreground">
 										received <time datetime={item.createdAt}>
 											{onDateAndTime(item.createdAt, data.workspace.timezone)}
 										</time>
@@ -497,7 +497,7 @@
 										</Avatar.Root>
 									{/if}
 									<span class="text-sm text-ink-600">{reporterOf(item)}</span>
-									<span class="font-mono text-xs text-muted-foreground">
+									<span class="tabular-nums text-xs text-muted-foreground">
 										{item.createdByAccountId ? "member" : "outside the workspace"}
 									</span>
 								</div>
@@ -514,25 +514,25 @@
 								<dl
 									class="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-1.75 rounded-lg border border-line-default bg-card px-3.5 py-3"
 								>
-									<dt class="font-mono text-xs text-muted-foreground">Team</dt>
+									<dt class="tabular-nums text-xs text-muted-foreground">Team</dt>
 									<dd class="text-sm text-ink-900">
 										{teamOf(item)?.name ?? item.teamKey}
 									</dd>
 
-									<dt class="font-mono text-xs text-muted-foreground">Priority</dt>
+									<dt class="tabular-nums text-xs text-muted-foreground">Priority</dt>
 									<dd class="flex items-center gap-1.5 text-sm text-ink-900">
 										<PriorityIcon priority={item.priority} />
 										{priorityLabel(item.priority)}
 									</dd>
 
-									<dt class="font-mono text-xs text-muted-foreground">State</dt>
+									<dt class="tabular-nums text-xs text-muted-foreground">State</dt>
 									<dd class="flex items-center gap-1.5 text-sm text-ink-900">
 										<StatusIcon category={item.state.category} decorative />
 										{item.state.name}
 									</dd>
 
 									{#if item.labels.length > 0}
-										<dt class="font-mono text-xs text-muted-foreground">Labels</dt>
+										<dt class="tabular-nums text-xs text-muted-foreground">Labels</dt>
 										<dd class="flex">
 											<LabelChips labels={item.labels} place="field" />
 										</dd>
@@ -750,7 +750,7 @@
 						<span class="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
 							<Kbd keys="J K" /> move through the queue
 						</span>
-						<span class="font-mono text-xs text-muted-foreground">
+						<span class="tabular-nums text-xs text-muted-foreground">
 							{cursor.at + 1} of {shown.length}
 						</span>
 					</div>

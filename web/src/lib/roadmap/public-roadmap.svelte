@@ -23,7 +23,7 @@
 				{roadmap.description}
 			</p>
 		{/if}
-		<p class="font-mono text-xs text-muted-foreground">
+		<p class="tabular-nums text-xs text-muted-foreground">
 			{#if stamp === "published"}
 				Published <time datetime={roadmap.publishedAt}>{onDate(roadmap.publishedAt, "UTC")}</time>
 			{:else}

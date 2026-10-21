@@ -97,7 +97,7 @@
 	<div class="flex min-w-0 flex-col gap-3">
 		<div class="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
 			<span class="font-mono text-xs text-ink-900">{revisionLabel(plan)}</span>
-			<span class="font-mono text-2xs text-muted-foreground">
+			<span class="tabular-nums text-2xs text-muted-foreground">
 				proposed {onDateAndTime(plan.proposedAt, timezone)}
 			</span>
 			<Eyebrow tone={standingTone(standing)}>{standingLabel(standing)}</Eyebrow>

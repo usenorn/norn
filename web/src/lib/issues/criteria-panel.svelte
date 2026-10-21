@@ -141,7 +141,7 @@
 				</span>
 			</h2>
 			{#if counted}
-				<span class="font-mono text-2xs text-muted-foreground">{counted}</span>
+				<span class="tabular-nums text-2xs text-muted-foreground">{counted}</span>
 			{/if}
 		</div>
 
@@ -167,7 +167,7 @@
 							<span class="min-w-0 flex-1 text-md text-ink-900">{criterion.text}</span>
 							{#if criterion.proven}
 								<span
-									class="inline-flex shrink-0 items-center gap-1 font-mono text-2xs text-muted-foreground"
+									class="inline-flex shrink-0 items-center gap-1 tabular-nums text-2xs text-muted-foreground"
 								>
 									<Check class="size-3" aria-hidden="true" />
 									Proven
@@ -179,7 +179,7 @@
 							<ul class="flex flex-col gap-1">
 								{#each criterion.evidence as evidence (evidence.id)}
 									<li class="flex items-center gap-2">
-										<span class="font-mono text-2xs text-muted-foreground">
+										<span class="tabular-nums text-2xs text-muted-foreground">
 											{evidenceLabels[evidence.kind]}
 										</span>
 										{#if evidence.url}
@@ -201,7 +201,7 @@
 										</span>
 										{#if evidence.stale}
 											<span
-												class="shrink-0 rounded-sm border border-warning/40 px-1 py-0.5 font-mono text-2xs text-warning"
+												class="shrink-0 rounded-sm border border-warning/40 px-1 py-0.5 tabular-nums text-2xs text-warning"
 												title="This was filed against “{evidence.criterionText}”"
 											>
 												Answers older wording

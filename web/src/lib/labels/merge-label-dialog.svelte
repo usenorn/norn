@@ -55,7 +55,7 @@
 						<div class="flex min-w-0 flex-1 flex-col gap-1.5">
 							<Eyebrow>Disappears</Eyebrow>
 							<Tag name={source.name} color={source.color} />
-							<span class="font-mono text-2xs text-muted-foreground">
+							<span class="tabular-nums text-2xs text-muted-foreground">
 								{usageLabel(usage, source)}
 							</span>
 						</div>
@@ -71,7 +71,7 @@
 							<Eyebrow>Survives</Eyebrow>
 							{#if target}
 								<Tag name={target.name} color={target.color} />
-								<span class="font-mono text-2xs text-muted-foreground">
+								<span class="tabular-nums text-2xs text-muted-foreground">
 									{usageLabel(usage, target)}
 								</span>
 							{:else}

@@ -1200,7 +1200,7 @@
 							>
 								{tabLabels[tab]}
 								{#if counts}
-									<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+									<span class="text-2xs text-muted-foreground tabular-nums">
 										{counts[tab]}
 									</span>
 								{/if}
@@ -1211,7 +1211,7 @@
 
 				{#if openCycle && progress}
 					<span class="hidden shrink-0 items-center gap-2 whitespace-nowrap lg:inline-flex">
-						<span class="font-mono text-xs text-muted-foreground">
+						<span class="tabular-nums text-xs text-muted-foreground">
 							{cycleWindow(openCycle.startsOn, openCycle.endsOn)}
 						</span>
 						<ProgressBar {progress} />
@@ -1455,7 +1455,7 @@
 								>
 									{column.name}
 								</span>
-								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+								<span class="text-2xs text-muted-foreground tabular-nums">
 									{column.total}
 								</span>
 							</button>
@@ -1527,7 +1527,7 @@
 								>
 									{column.name}
 								</span>
-								<span class="font-mono text-2xs text-muted-foreground tabular-nums">
+								<span class="text-2xs text-muted-foreground tabular-nums">
 									{column.total}
 								</span>
 								<span class="h-px flex-1 bg-line-default" aria-hidden="true"></span>
@@ -1645,7 +1645,7 @@
 		>
 			{#snippet lead()}
 				{#if board.kind !== "unavailable"}
-					<span class="font-mono text-xs text-muted-foreground tabular-nums">
+					<span class="text-xs text-muted-foreground tabular-nums">
 						{total}
 						{total === 1 ? "issue" : "issues"}
 					</span>

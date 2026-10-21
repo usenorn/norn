@@ -120,13 +120,13 @@
 		</span>
 		<span class="min-w-1.5 flex-1"></span>
 		{#if issue.cycleNumber}
-			<span class="font-mono text-2xs whitespace-nowrap text-muted-foreground">
+			<span class="tabular-nums text-2xs whitespace-nowrap text-muted-foreground">
 				Cycle {issue.cycleNumber}
 			</span>
 		{/if}
 		{#if due}
 			<span
-				class="font-mono text-2xs whitespace-nowrap {late
+				class="tabular-nums text-2xs whitespace-nowrap {late
 					? 'text-priority-urgent'
 					: 'text-muted-foreground'}"
 			>

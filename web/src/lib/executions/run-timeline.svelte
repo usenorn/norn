@@ -29,7 +29,7 @@
 			{#each timeline as event (event.id)}
 				<li class="flex min-w-0 items-baseline gap-2.5 border-b border-line-subtle py-1.5 last:border-b-0">
 					<time
-						class="w-12 flex-none font-mono text-2xs text-muted-foreground"
+						class="w-12 flex-none tabular-nums text-2xs text-muted-foreground"
 						datetime={event.occurredAt}
 						title={onDateAndTime(event.occurredAt, timezone)}
 					>

@@ -140,7 +140,7 @@
 									>
 										<span class="flex min-w-0 flex-col gap-0.5">
 											<span class="truncate text-md text-ink-900">{cycle.name}</span>
-											<span class="font-mono text-xs text-muted-foreground tabular-nums">
+											<span class="text-xs text-muted-foreground tabular-nums">
 												{cycleWindow(cycle.startsOn, cycle.endsOn)}
 											</span>
 										</span>

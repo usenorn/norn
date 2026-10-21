@@ -486,7 +486,7 @@
 				<span class="hidden h-3.5 w-px bg-line-default sm:block" aria-hidden="true"></span>
 				<span
 					class={cn(
-						"hidden font-mono text-xs whitespace-nowrap sm:block",
+						"hidden tabular-nums text-xs whitespace-nowrap sm:block",
 						projectStanding(project) === "at_risk" ? "text-warning" : "text-muted-foreground"
 					)}
 				>
@@ -940,7 +940,7 @@
 								<div class="flex items-center gap-2 py-1.5">
 									<StatusIcon category={group.category} decorative />
 									<span class="text-sm text-ink-900">{categoryLabels[group.category]}</span>
-									<span class="font-mono text-xs text-muted-foreground tabular-nums">
+									<span class="text-xs text-muted-foreground tabular-nums">
 										{group.issues.length}
 									</span>
 								</div>

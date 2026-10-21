@@ -785,7 +785,7 @@
 											class="flex min-w-0 flex-[1_1_100%] flex-wrap items-center gap-x-2 text-sm text-muted-foreground"
 										>
 											{#if member.email}
-												<span class="truncate font-mono text-xs">{member.email}</span>
+												<span class="truncate tabular-nums text-xs">{member.email}</span>
 												<span aria-hidden="true">·</span>
 											{/if}
 											<span>

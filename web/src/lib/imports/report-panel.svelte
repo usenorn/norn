@@ -95,7 +95,7 @@
 			<ul class="flex flex-wrap gap-x-4 gap-y-1 rounded-md border border-line-subtle bg-paper-0 p-3">
 				{#each [...madeByResource] as [resource, made] (resource)}
 					<li class="text-sm text-ink-900">
-						<span class="font-mono text-xs text-muted-foreground">{resourceLabel(resource)}</span>
+						<span class="tabular-nums text-xs text-muted-foreground">{resourceLabel(resource)}</span>
 						{made.toLocaleString("en-GB")}
 					</li>
 				{/each}

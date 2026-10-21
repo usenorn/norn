@@ -104,7 +104,7 @@
 	aria-label="Bulk actions"
 	class="flex min-h-8.5 flex-none flex-wrap items-center gap-2.5 bg-primary py-1 pr-2.5 pl-3.5"
 >
-	<span class="font-mono text-xs whitespace-nowrap text-primary-foreground tabular-nums">
+	<span class="text-xs whitespace-nowrap text-primary-foreground tabular-nums">
 		{count} selected
 	</span>
 

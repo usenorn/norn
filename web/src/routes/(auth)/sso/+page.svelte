@@ -146,7 +146,7 @@
 			<div class="flex w-full flex-col gap-3" aria-live="polite">
 				<div class="flex items-baseline justify-between gap-2">
 					<Eyebrow class="text-ink-600">{stage}</Eyebrow>
-					<span class="font-mono text-xs text-muted-foreground tabular-nums">{elapsed}</span>
+					<span class="text-xs text-muted-foreground tabular-nums">{elapsed}</span>
 				</div>
 				<Progress indeterminate aria-label={stage} />
 				<p class="text-md leading-normal text-ink-600 text-pretty">{line}</p>

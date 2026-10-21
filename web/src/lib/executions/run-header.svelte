@@ -42,12 +42,12 @@
 	<div class="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
 		<h1 class="font-mono text-lg text-ink-900">{execution.reference}</h1>
 		<RunState state={execution.state} />
-		<span class="font-mono text-xs text-muted-foreground">
+		<span class="tabular-nums text-xs text-muted-foreground">
 			{elapsedLabel(execution.state)}
 			{ran}
 		</span>
 		{#if execution.attempt > 1}
-			<span class="font-mono text-2xs text-muted-foreground">attempt {execution.attempt}</span>
+			<span class="tabular-nums text-2xs text-muted-foreground">attempt {execution.attempt}</span>
 		{/if}
 	</div>
 

@@ -52,7 +52,7 @@
 								>
 							</span>
 							{#if listed.threads > 0}
-								<span class="inline-flex items-center gap-0.5 font-mono text-2xs text-muted-foreground">
+								<span class="inline-flex items-center gap-0.5 tabular-nums text-2xs text-muted-foreground">
 									<MessageSquare class="size-3" aria-hidden="true" />
 									{listed.threads}
 									<span class="sr-only">threads</span>

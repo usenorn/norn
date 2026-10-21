@@ -230,7 +230,7 @@
 		</span>
 
 		{#if threads.length > 0}
-			<span class="font-mono text-2xs whitespace-nowrap text-muted-foreground">
+			<span class="tabular-nums text-2xs whitespace-nowrap text-muted-foreground">
 				{threads.length === 1 ? "1 thread" : `${threads.length} threads`}
 			</span>
 		{/if}

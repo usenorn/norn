@@ -1730,7 +1730,7 @@
 		</div>
 
 		{#if issue && position >= 0}
-			<span class="hidden font-mono text-xs text-muted-foreground sm:inline">
+			<span class="hidden tabular-nums text-xs text-muted-foreground sm:inline">
 				{position + 1} of {order.length}
 			</span>
 			<div class="flex gap-0.5">
@@ -2108,13 +2108,13 @@
 								size="xs"
 							/>
 							<span class="text-sm text-muted-foreground">{reporter} opened this</span>
-							<span class="font-mono text-xs text-muted-foreground">
+							<span class="tabular-nums text-xs text-muted-foreground">
 								<time datetime={issue.createdAt}>
 									{onDate(issue.createdAt, data.workspace.timezone)}
 								</time>
 							</span>
 							<span class="text-text-disabled" aria-hidden="true">·</span>
-							<span class="font-mono text-xs text-muted-foreground">
+							<span class="tabular-nums text-xs text-muted-foreground">
 								{commentTotal}
 								{commentTotal === 1 ? "comment" : "comments"}
 							</span>
@@ -2407,7 +2407,7 @@
 							</h2>
 							{#if ready.children.length > 0}
 								<span class="inline-flex items-center gap-1.75">
-									<span class="font-mono text-xs text-muted-foreground">
+									<span class="tabular-nums text-xs text-muted-foreground">
 										{ready.childProgress.complete}/{totalIssues(ready.childProgress)}
 									</span>
 									<ProgressBar progress={ready.childProgress} label={false} class="w-14" />
@@ -2995,7 +2995,7 @@
 								{/each}
 								{#if watchers.length > 5}
 									<span
-										class="inline-flex size-icon-row items-center justify-center rounded-full bg-paper-2 font-mono text-2xs text-muted-foreground ring-1 ring-card"
+										class="inline-flex size-icon-row items-center justify-center rounded-full bg-paper-2 tabular-nums text-2xs text-muted-foreground ring-1 ring-card"
 									>
 										+{watchers.length - 5}
 									</span>
@@ -3017,7 +3017,7 @@
 						>
 							Created
 						</span>
-						<span class="font-mono text-xs text-muted-foreground">
+						<span class="tabular-nums text-xs text-muted-foreground">
 							<time datetime={issue.createdAt}>{when(issue.createdAt)}</time>
 						</span>
 					</div>
@@ -3029,7 +3029,7 @@
 							>
 								Updated
 							</span>
-							<span class="font-mono text-xs text-muted-foreground">
+							<span class="tabular-nums text-xs text-muted-foreground">
 								<time datetime={lastActivity}>{when(lastActivity)}</time>
 							</span>
 						</div>

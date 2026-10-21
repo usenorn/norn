@@ -2,7 +2,7 @@
 	import { type VariantProps, tv } from "tailwind-variants";
 
 	export const avatarVariants = tv({
-		base: "group/avatar relative flex shrink-0 items-center justify-center overflow-hidden font-mono font-medium select-none",
+		base: "group/avatar relative flex shrink-0 items-center justify-center overflow-hidden tabular-nums font-medium select-none",
 		variants: {
 			size: {
 				xs: "size-4.5 text-[9px]",

@@ -5,7 +5,7 @@
 		slots: {
 			root: "flex min-w-0 items-center gap-1.5",
 			tag: "",
-			more: "font-mono text-2xs whitespace-nowrap text-muted-foreground",
+			more: "tabular-nums text-2xs whitespace-nowrap text-muted-foreground",
 		},
 		variants: {
 			place: {

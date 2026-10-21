@@ -281,7 +281,7 @@
 										<span class="shrink-0 text-sm text-muted-foreground">
 											{project.leadName || "No lead"}
 										</span>
-										<span class="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
+										<span class="shrink-0 text-xs text-muted-foreground tabular-nums">
 											{targetLabel(project)}
 										</span>
 									</a>

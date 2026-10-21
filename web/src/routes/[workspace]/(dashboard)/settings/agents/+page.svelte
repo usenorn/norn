@@ -475,23 +475,23 @@
 											/>
 											<div class="flex flex-wrap items-center gap-x-3 gap-y-1 pl-11">
 												<Tag name={owned.agent.status === "active" ? "Active" : "Disabled"} />
-												<span class="font-mono text-2xs text-muted-foreground">
+												<span class="tabular-nums text-2xs text-muted-foreground">
 													{agentExecutionLabels[owned.agent.execution]}
 												</span>
 												{#if owned.authorityMissing}
 													<Tag name="No authority" />
 													<span class="text-2xs text-muted-foreground">Register a replacement</span>
 												{:else}
-													<span class="font-mono text-2xs text-muted-foreground">
+													<span class="tabular-nums text-2xs text-muted-foreground">
 														{owned.authority.scopes.length} permissions
 													</span>
-													<span class="font-mono text-2xs text-muted-foreground">
+													<span class="tabular-nums text-2xs text-muted-foreground">
 														{owned.authority.allTeams
 															? "All reachable teams"
 															: `${owned.authority.teamIds.length} teams`}
 													</span>
 												{/if}
-												<span class="font-mono text-2xs text-muted-foreground">
+												<span class="tabular-nums text-2xs text-muted-foreground">
 													{owned.agent.actionLimit}/min
 												</span>
 												<span class="text-2xs text-muted-foreground">

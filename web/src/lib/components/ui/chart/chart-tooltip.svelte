@@ -167,7 +167,7 @@
 								</span>
 							</div>
 							{#if item.value !== undefined}
-								<span class="font-mono font-medium text-foreground tabular-nums">
+								<span class="font-medium text-foreground tabular-nums">
 									{item.value.toLocaleString()}
 								</span>
 							{/if}

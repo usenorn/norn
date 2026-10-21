@@ -272,7 +272,7 @@
 					</Avatar.Root>
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<span class="text-md text-ink-900">{invitedHeadline(detail)}</span>
-						<span class="font-mono text-xs break-all text-muted-foreground">{invitedMeta}</span>
+						<span class="tabular-nums text-xs break-all text-muted-foreground">{invitedMeta}</span>
 					</div>
 				</div>
 
@@ -286,7 +286,7 @@
 						<span class="text-base font-medium tracking-snug text-ink-900">
 							{detail.workspace.name}
 						</span>
-						<span class="font-mono text-xs text-muted-foreground">{workspaceMeta}</span>
+						<span class="tabular-nums text-xs text-muted-foreground">{workspaceMeta}</span>
 					</div>
 				</div>
 			{:else}
@@ -380,7 +380,7 @@
 					</Avatar.Root>
 					<div class="flex min-w-0 flex-1 flex-col gap-px">
 						<span class="truncate text-md text-ink-900">{data.signedInAs || invitation.email}</span>
-						<span class="font-mono text-xs break-all text-muted-foreground">{invitation.email}</span>
+						<span class="tabular-nums text-xs break-all text-muted-foreground">{invitation.email}</span>
 					</div>
 					<a
 						href="/sign-in?add=1&return={encodeURIComponent(page.url.pathname + page.url.search)}"

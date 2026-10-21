@@ -71,7 +71,7 @@
 	<span class="flex flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground">
 		<LabelChips {labels} place="row" />
 		{#if task.date && showing.includes("due")}
-			<span class="hidden font-mono text-xs whitespace-nowrap text-muted-foreground sm:inline">
+			<span class="hidden tabular-nums text-xs whitespace-nowrap text-muted-foreground sm:inline">
 				{task.date}
 			</span>
 		{/if}

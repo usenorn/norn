@@ -114,7 +114,7 @@
 				{/if}
 				{authorLabel(comment)}
 			</span>
-			<span class="font-mono text-xs text-muted-foreground">
+			<span class="tabular-nums text-xs text-muted-foreground">
 				<time datetime={comment.createdAt}>{when(comment.createdAt)}</time>
 			</span>
 			{#if comment.edited}
@@ -292,7 +292,7 @@
 				type="button"
 				disabled={working}
 				onclick={onmore}
-				class="flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-line-default font-mono text-xs text-muted-foreground motion-control hover:bg-accent hover:text-ink-600"
+				class="flex h-7 w-full cursor-pointer items-center justify-center rounded-md border border-line-default tabular-nums text-xs text-muted-foreground motion-control hover:bg-accent hover:text-ink-600"
 			>
 				{working ? "Loading" : "Load earlier comments"}
 			</button>
@@ -310,7 +310,7 @@
 							</span>
 							<span class="min-w-0 truncate text-sm text-ink-600">{item.event.line}</span>
 							<span class="min-w-2 flex-1"></span>
-							<span class="font-mono text-2xs whitespace-nowrap text-muted-foreground">
+							<span class="tabular-nums text-2xs whitespace-nowrap text-muted-foreground">
 								<time datetime={item.event.at}>{when(item.event.at)}</time>
 							</span>
 						</li>

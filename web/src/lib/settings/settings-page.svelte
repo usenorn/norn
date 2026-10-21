@@ -52,7 +52,7 @@
 				<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
 					<h1 class="text-md font-medium tracking-snug text-ink-900">{title}</h1>
 					{#if meta}
-						<span class="font-mono text-2xs text-muted-foreground">{meta}</span>
+						<span class="tabular-nums text-2xs text-muted-foreground">{meta}</span>
 					{/if}
 				</div>
 				<p class="text-xs leading-normal text-muted-foreground text-pretty">{description}</p>

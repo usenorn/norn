@@ -21,7 +21,7 @@
 		<h2 {id} class="text-md font-medium tracking-snug text-ink-900">
 			{title}
 			{#if count !== undefined}
-				<span class="font-mono text-xs text-muted-foreground">{count}</span>
+				<span class="tabular-nums text-xs text-muted-foreground">{count}</span>
 			{/if}
 		</h2>
 		{@render badge?.()}

@@ -207,8 +207,8 @@
 					{#if reset.kind === "sent"}
 						<div class="flex flex-col gap-2.5 rounded-lg border border-line-default bg-paper-1 p-3">
 							<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-								<span class="font-mono text-xs break-all text-ink-900">{reset.email}</span>
-								<span class="font-mono text-xs text-muted-foreground">
+								<span class="tabular-nums text-xs break-all text-ink-900">{reset.email}</span>
+								<span class="tabular-nums text-xs text-muted-foreground">
 									expires in {reset.expiresIn}
 								</span>
 							</div>

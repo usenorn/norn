@@ -33,7 +33,7 @@
 			<li class="flex flex-col gap-1 rounded-lg border border-line-subtle p-2">
 				<div class="flex items-center gap-2">
 					<span class="min-w-0 flex-1 truncate text-sm text-ink-900">{task.name}</span>
-					<span class="font-mono text-xs text-muted-foreground">
+					<span class="tabular-nums text-xs text-muted-foreground">
 						{labels[task.state]}
 					</span>
 					{#if task.state === "failed" && onretry}
@@ -53,7 +53,7 @@
 
 				{#if task.state === "sending"}
 					<Progress value={task.size > 0 ? (100 * task.sent) / task.size : 0} max={100} />
-					<p class="font-mono text-2xs text-muted-foreground">
+					<p class="tabular-nums text-2xs text-muted-foreground">
 						{formatBytes(task.sent)} of {formatBytes(task.size)}
 					</p>
 				{:else if task.state === "reserving" || task.state === "finalizing"}
