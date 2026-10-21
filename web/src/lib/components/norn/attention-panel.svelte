@@ -15,7 +15,7 @@
 <section
 	{id}
 	class={cn(
-		"flex min-w-0 scroll-mt-4 flex-col gap-2 rounded-sm border border-amber-700/40 bg-amber-500/5 p-3 dark:border-amber-400/30",
+		"flex min-w-0 scroll-mt-4 flex-col gap-2 rounded-sm border border-warning/30 bg-warning/5 p-3",
 		className
 	)}
 	aria-label={label}

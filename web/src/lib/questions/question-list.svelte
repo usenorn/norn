@@ -55,7 +55,7 @@
 						</span>
 						<span
 							class="text-xs {open_ && question.blocking
-								? 'text-amber-700 dark:text-amber-400'
+								? 'text-warning'
 								: 'text-muted-foreground'}"
 						>
 							{statusLine(question, canAnswer)}

@@ -7,7 +7,7 @@
 	const tone = {
 		waiting: "text-status-not-started",
 		working: "text-status-active",
-		attention: "text-amber-700 dark:text-amber-400",
+		attention: "text-warning",
 		done: "text-status-complete",
 		bad: "text-danger",
 	};
@@ -15,7 +15,7 @@
 	const pip = {
 		waiting: "bg-status-not-started",
 		working: "bg-status-active animate-breathe",
-		attention: "bg-amber-700 dark:bg-amber-400",
+		attention: "bg-warning",
 		done: "bg-status-complete",
 		bad: "bg-danger",
 	};
