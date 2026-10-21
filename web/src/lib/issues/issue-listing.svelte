@@ -13,7 +13,7 @@
 	import Plus from "@lucide/svelte/icons/plus";
 	import { SvelteSet } from "svelte/reactivity";
 	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
@@ -1057,9 +1057,7 @@
 				title={column.mark.name}
 			/>
 		{:else}
-			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-				<Avatar.Fallback>+</Avatar.Fallback>
-			</Avatar.Root>
+			<UnassignedAvatar />
 		{/if}
 	{:else if column.mark.kind === "project"}
 		<Folder class="size-icon-row text-muted-foreground" aria-hidden="true" />
@@ -1156,9 +1154,7 @@
 						title={held}
 					/>
 				{:else}
-					<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-						<Avatar.Fallback>+</Avatar.Fallback>
-					</Avatar.Root>
+					<UnassignedAvatar />
 				{/if}
 			</button>
 		{/snippet}
@@ -1166,9 +1162,7 @@
 			{#if option.value}
 				<PersonAvatar accountId={option.value} name={option.label} size="xs" />
 			{:else}
-				<Avatar.Root size="xs" variant="ghost">
-					<Avatar.Fallback>+</Avatar.Fallback>
-				</Avatar.Root>
+				<UnassignedAvatar />
 			{/if}
 		{/snippet}
 	</PropertyPicker>
@@ -1506,6 +1500,7 @@
 										timezone={data.workspace.timezone}
 										shown={display.shown}
 										cursor={cursor.holds(issue)}
+										onarrive={() => cursor.to(flat.indexOf(issue))}
 										selected={selected.has(issue.id)}
 										pending={draftIDs.has(issue.id)}
 										onselect={(extend) => toggle(issue.id, extend)}
@@ -1572,6 +1567,7 @@
 									<IssueCard
 										{issue}
 										cursor={cursor.holds(issue)}
+										onarrive={() => cursor.to(flat.indexOf(issue))}
 										href={issueHref(issue.reference)}
 										assignee={names.get(issue.assigneeAccountId ?? "") ?? ""}
 										now={data.now}

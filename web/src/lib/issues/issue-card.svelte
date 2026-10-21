@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
@@ -10,6 +10,7 @@
 	import { finished } from "$lib/team/states";
 	import type { RowProperty } from "./display";
 	import type { Issue } from "./issues";
+	import { rovingControls } from "$lib/shortcuts/roving";
 
 	let {
 		issue,
@@ -21,6 +22,7 @@
 		cursor = false,
 		pending = false,
 		onselect,
+		onarrive,
 		shown = ["labels", "due"],
 		priorityControl,
 		stateControl,
@@ -41,6 +43,7 @@
 		cursor?: boolean;
 		pending?: boolean;
 		onselect?: (extend: boolean) => void;
+		onarrive?: () => void;
 		shown?: RowProperty[];
 		priorityControl?: Snippet<[Issue]>;
 		stateControl?: Snippet<[Issue]>;
@@ -61,6 +64,8 @@
 
 <div
 	role="listitem"
+	{@attach rovingControls(cursor)}
+	onfocusin={onarrive}
 	data-issue={issue.id}
 	data-selected={selected}
 	data-cursor={cursor}
@@ -72,7 +77,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 cursor-row active:bg-paper-2 data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		"group/card relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 cursor-row active:bg-paper-2 data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
 		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
@@ -96,6 +101,7 @@
 		<span class="text-md leading-snug font-medium tracking-snug text-ink-900">{issue.title}</span>
 	{:else}
 		<a
+			data-row-anchor
 			{href}
 			draggable="false"
 			onclick={(event) => {
@@ -111,7 +117,7 @@
 	{/if}
 
 	<div class="flex min-h-5 items-center gap-1.5">
-		<span class="relative z-1 flex min-w-0 items-center gap-1.5">
+		<span class="relative z-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
 			{#if labelsControl}
 				{@render labelsControl(issue, true)}
 			{:else}
@@ -144,9 +150,7 @@
 					title={assignee}
 				/>
 			{:else}
-				<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-					<Avatar.Fallback>+</Avatar.Fallback>
-				</Avatar.Root>
+				<UnassignedAvatar />
 			{/if}
 		</span>
 	</div>

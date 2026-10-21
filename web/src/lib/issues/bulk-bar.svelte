@@ -7,7 +7,7 @@
 	import Ellipsis from "@lucide/svelte/icons/ellipsis";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import X from "@lucide/svelte/icons/x";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
@@ -150,9 +150,7 @@
 			{#if option.value}
 				<PersonAvatar accountId={option.value} name={option.label} size="xs" />
 			{:else}
-				<Avatar.Root size="xs" variant="ghost">
-					<Avatar.Fallback>+</Avatar.Fallback>
-				</Avatar.Root>
+				<UnassignedAvatar />
 			{/if}
 		{/snippet}
 	</PropertyPicker>

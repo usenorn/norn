@@ -39,16 +39,20 @@
 			role="img"
 			aria-label={priorityLabel(priority)}
 		>
-			{#each bars as bar, index (index)}
-				<rect
-					x={bar.x}
-					y={bar.y}
-					width="3"
-					height={bar.height}
-					rx="1"
-					fill={index < filled[priority] ? tone[priority] : "var(--priority-empty)"}
-				/>
-			{/each}
+			{#if priority === "none"}
+				<rect x="3" y="7.25" width="10" height="1.5" rx="0.75" fill={tone.none} />
+			{:else}
+				{#each bars as bar, index (index)}
+					<rect
+						x={bar.x}
+						y={bar.y}
+						width="3"
+						height={bar.height}
+						rx="1"
+						fill={index < filled[priority] ? tone[priority] : "var(--priority-empty)"}
+					/>
+				{/each}
+			{/if}
 		</svg>
 	{/if}
 {/snippet}

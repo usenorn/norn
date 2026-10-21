@@ -5,7 +5,7 @@
 		base: "group/avatar relative flex shrink-0 items-center justify-center overflow-hidden tabular-nums font-medium select-none",
 		variants: {
 			size: {
-				xs: "size-4.5 text-[9px]",
+				xs: "size-5 text-2xs tracking-tight",
 				sm: "size-6 text-2xs",
 				default: "size-8 text-sm",
 				lg: "size-10 text-base",

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "./unassigned-avatar.svelte";
 	import PersonAvatar from "./person-avatar.svelte";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
@@ -97,9 +97,7 @@
 				title={task.assignee}
 			/>
 		{:else}
-			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-				<Avatar.Fallback>+</Avatar.Fallback>
-			</Avatar.Root>
+			<UnassignedAvatar />
 		{/if}
 	</span>
 </a>

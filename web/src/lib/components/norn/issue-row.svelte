@@ -2,7 +2,7 @@
 	import type { Snippet } from "svelte";
 	import Check from "@lucide/svelte/icons/check";
 	import Link2 from "@lucide/svelte/icons/link-2";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "./unassigned-avatar.svelte";
 	import PersonAvatar from "./person-avatar.svelte";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
@@ -14,6 +14,7 @@
 	import { totalIssues } from "$lib/issues/board";
 	import type { RowProperty } from "$lib/issues/display";
 	import type { Issue } from "$lib/issues/issues";
+	import { rovingControls } from "$lib/shortcuts/roving";
 
 	let {
 		issue,
@@ -25,6 +26,7 @@
 		selected = false,
 		pending = false,
 		onselect,
+		onarrive,
 		shown = ["labels", "due"],
 		priorityControl,
 		stateControl,
@@ -45,6 +47,7 @@
 		selected?: boolean;
 		pending?: boolean;
 		onselect?: (extend: boolean) => void;
+		onarrive?: () => void;
 		shown?: RowProperty[];
 		priorityControl?: Snippet<[Issue]>;
 		stateControl?: Snippet<[Issue]>;
@@ -73,6 +76,8 @@
 
 <div
 	role="listitem"
+	{@attach rovingControls(cursor)}
+	onfocusin={onarrive}
 	data-issue={issue.id}
 	data-cursor={cursor}
 	aria-current={cursor ? "true" : undefined}
@@ -143,6 +148,7 @@
 			</span>
 		{:else}
 			<a
+				data-row-anchor
 				{href}
 				draggable="false"
 				onclick={(event) => {
@@ -199,9 +205,7 @@
 				title={assignee}
 			/>
 		{:else}
-			<Avatar.Root size="xs" variant="ghost" title="Unassigned">
-				<Avatar.Fallback>+</Avatar.Fallback>
-			</Avatar.Root>
+			<UnassignedAvatar />
 		{/if}
 	</span>
 </div>
