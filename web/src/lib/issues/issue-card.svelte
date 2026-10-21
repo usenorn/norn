@@ -77,7 +77,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"group/card relative flex flex-col gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 cursor-row active:bg-paper-2 data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		"group/card relative flex flex-col has-[[data-row-anchor]:focus-visible]:outline-2 has-[[data-row-anchor]:focus-visible]:outline-offset-2 has-[[data-row-anchor]:focus-visible]:outline-ring gap-2 rounded-lg border border-line-default bg-card px-3 py-2.5 motion-control hover:border-ink-400 cursor-row active:bg-paper-2 data-[selected=true]:rule-lead data-[selected=true]:border-ink-400 data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
 		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
@@ -110,7 +110,7 @@
 				event.preventDefault();
 				onselect(event.shiftKey);
 			}}
-			class="text-md leading-snug font-medium tracking-snug text-ink-900 after:absolute after:inset-0"
+			class="text-md leading-snug font-medium tracking-snug text-ink-900 outline-none after:absolute after:inset-0"
 		>
 			{issue.title}
 		</a>

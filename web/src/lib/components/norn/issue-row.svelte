@@ -67,11 +67,8 @@
 	const children = $derived(issue.childProgress);
 	const hasChildren = $derived(children ? totalIssues(children) > 0 : false);
 
-	const line = $derived(
-		[issue.reference, due ? dueLabel(due, now, timezone, done) : "", assignee.split(" ")[0] ?? ""]
-			.filter(Boolean)
-			.join(" · ")
-	);
+	const dueLine = $derived(due ? dueLabel(due, now, timezone, done) : "");
+	const firstName = $derived(assignee.split(" ")[0] ?? "");
 </script>
 
 <div
@@ -89,7 +86,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"group/row relative flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		"group/row relative flex min-h-12 items-center has-[[data-row-anchor]:focus-visible]:outline-2 has-[[data-row-anchor]:focus-visible]:-outline-offset-2 has-[[data-row-anchor]:focus-visible]:outline-ring gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
 		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
@@ -157,14 +154,18 @@
 					event.preventDefault();
 					onselect(event.shiftKey);
 				}}
-				class="block truncate text-base font-medium tracking-snug after:absolute after:inset-0 sm:text-md sm:font-normal {done
+				class="block truncate text-base font-medium tracking-snug outline-none after:absolute after:inset-0 sm:text-md sm:font-normal {done
 					? 'text-muted-foreground'
 					: 'text-ink-900'}"
 			>
 				{issue.title}
 			</a>
 		{/if}
-		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">{line}</span>
+		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">
+			{issue.reference}{#if dueLine}
+				· <span class={late ? "text-priority-urgent" : ""}>{dueLine}</span>{/if}{#if firstName}
+				· {firstName}{/if}
+		</span>
 	</span>
 
 	<span

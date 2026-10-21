@@ -303,6 +303,7 @@
 							shown={data.display.shown}
 							now={data.now}
 							timezone={data.workspace.timezone}
+							showAssignee={false}
 						/>
 					{/each}
 				</section>

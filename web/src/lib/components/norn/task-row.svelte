@@ -22,6 +22,7 @@
 		shown: showing = ["labels", "due"],
 		now = "",
 		timezone = "UTC",
+		showAssignee = true,
 		class: className,
 	}: {
 		task: Task;
@@ -35,6 +36,7 @@
 		shown?: readonly RowProperty[];
 		now?: string;
 		timezone?: string;
+		showAssignee?: boolean;
 		class?: string;
 	} = $props();
 
@@ -43,9 +45,7 @@
 	const due = $derived(showing.includes("due") && task.dueOn ? task.dueOn : undefined);
 	const late = $derived(!settled && overdue(due, now, timezone));
 	const dueLine = $derived(due ? dueLabel(due, now, timezone, settled) : "");
-	const line = $derived(
-		[task.id, dueLine, task.assignee?.split(" ")[0] ?? ""].filter(Boolean).join(" · ")
-	);
+	const firstName = $derived(showAssignee ? (task.assignee?.split(" ")[0] ?? "") : "");
 </script>
 
 <a
@@ -82,7 +82,11 @@
 		>
 			{task.title}
 		</span>
-		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">{line}</span>
+		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">
+			{task.id}{#if dueLine}
+				· <span class={late ? "text-priority-urgent" : ""}>{dueLine}</span>{/if}{#if firstName}
+				· {firstName}{/if}
+		</span>
 	</span>
 	<span class="hidden flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground sm:flex">
 		<LabelChips {labels} place="row" />
@@ -95,15 +99,17 @@
 				{dueLine}
 			</span>
 		{/if}
-		{#if task.assignee}
-			<PersonAvatar
-				accountId={task.assigneeAccountId ?? ""}
-				name={task.assignee}
-				size="xs"
-				title={task.assignee}
-			/>
-		{:else}
-			<UnassignedAvatar />
+		{#if showAssignee}
+			{#if task.assignee}
+				<PersonAvatar
+					accountId={task.assigneeAccountId ?? ""}
+					name={task.assignee}
+					size="xs"
+					title={task.assignee}
+				/>
+			{:else}
+				<UnassignedAvatar />
+			{/if}
 		{/if}
 	</span>
 </a>

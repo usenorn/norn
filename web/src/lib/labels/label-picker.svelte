@@ -207,7 +207,7 @@
 				{disabled}
 				class={styles.trigger()}
 			>
-				{#if place === "field"}
+				{#if place === "field" && shownChips.length === 0}
 					<Tags class="size-icon-row text-muted-foreground" aria-hidden="true" />
 				{/if}
 				{#if shownChips.length > 0}

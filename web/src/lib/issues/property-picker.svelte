@@ -63,7 +63,12 @@
 			{@render trigger(props)}
 		{/snippet}
 	</Popover.Trigger>
-	<Popover.Content {align} sideOffset={4} class={cn("w-51.5", className)}>
+	<Popover.Content
+		{align}
+		sideOffset={4}
+		collisionPadding={8}
+		class={cn("w-max max-w-[min(20rem,calc(100vw-1rem))] min-w-51.5", className)}
+	>
 		<Command.Root shouldFilter={filter}>
 			<Command.Input {placeholder} bind:value={search}>
 				{#if shortcut}

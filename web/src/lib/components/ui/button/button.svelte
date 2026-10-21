@@ -29,7 +29,7 @@
 				chip: "h-5 gap-1 rounded-xs px-1.5 text-xs",
 				xs: "h-control-xs gap-1 rounded-sm px-1.5 text-2xs [&_svg:not([class*='size-'])]:size-3",
 				sm: "h-control-sm gap-1 px-2 text-sm",
-				property: "h-control-sm gap-1.5 px-2 text-sm",
+				property: "h-8 gap-1.5 px-2.5 text-sm sm:h-control-sm sm:px-2",
 				lg: "h-control-lg px-4 text-base",
 				icon: "size-control-md rounded-sm",
 				"icon-xs": "size-control-xs rounded-sm [&_svg:not([class*='size-'])]:size-3",

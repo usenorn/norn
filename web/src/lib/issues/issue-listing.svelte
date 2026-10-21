@@ -3,6 +3,7 @@
 	import { goto, invalidate } from "$app/navigation";
 	import { keys } from "$lib/api/keys";
 	import { page } from "$app/state";
+	import Bookmark from "@lucide/svelte/icons/bookmark";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import CircleHelp from "@lucide/svelte/icons/circle-help";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -67,6 +68,7 @@
 	import {
 		boardGroupings,
 		surfaceDefaults,
+		atDefaults,
 		surfaceOrderings,
 		groupings,
 		issueTabs,
@@ -1256,12 +1258,12 @@
 				</Button>
 				<Button
 					size="sm"
-					aria-label="New issue"
+					class="hidden sm:inline-flex"
 					disabled={teams.length === 0}
 					onclick={() => raising.raise()}
 				>
 					<Plus aria-hidden="true" />
-					<span class="hidden sm:inline">New issue</span>
+					New issue
 				</Button>
 			</div>
 		</div>
@@ -1298,14 +1300,11 @@
 				>
 					Manage views
 				</a>
-			{:else}
-				<button
-					type="button"
-					onclick={() => (saving = true)}
-					class="shrink-0 cursor-pointer text-sm whitespace-nowrap text-link underline-offset-2 hover:text-link-hover hover:underline"
-				>
+			{:else if filtered || data.layout === "board" || !atDefaults(display, surfaceDefaults.issues)}
+				<Button variant="ghost" size="sm" class="shrink-0" onclick={() => (saving = true)}>
+					<Bookmark aria-hidden="true" />
 					Save as view
-				</button>
+				</Button>
 			{/if}
 
 			<div class="min-w-2 flex-1"></div>
@@ -1432,7 +1431,7 @@
 						Nothing you can see matches this view right now. Someone else opening it may well see
 						something &mdash; it is evaluated against whichever teams each person can see.
 					{:else}
-						Raise the first one, and it starts in whichever state this team files new work into.
+						Raise the first one, and it starts in whichever state its team files new work into.
 					{/if}
 				</p>
 				<Button size="sm" disabled={teams.length === 0} onclick={() => raising.raise()}>
