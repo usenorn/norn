@@ -219,6 +219,13 @@
 </script>
 
 <div class="relative flex h-dvh bg-background" style="--sidebar-width: {panels.width('sidebar')}px">
+	<Button
+		href="#content"
+		class="fixed top-2 left-2 z-50 -translate-y-20 focus-visible:translate-y-0"
+	>
+		Skip to content
+	</Button>
+
 	{#if panels.collapsed("sidebar")}
 		<PanelRestore
 			side="leading"
@@ -428,7 +435,7 @@
 			/>
 		</header>
 
-		<main class="flex min-h-0 flex-1 flex-col">
+		<main id="content" tabindex="-1" class="flex min-h-0 flex-1 flex-col outline-none">
 			<StaleBanner shown={realtime.degraded} off={realtime.state === "off"} />
 			{#if narrowed}
 				<ProviderRequired workspace={data.workspace} />
