@@ -1011,14 +1011,6 @@
 					</PropertyPicker>
 				{/if}
 				<span class="flex-1"></span>
-				{#if team}
-					<span
-						class="font-mono text-xs text-muted-foreground"
-						title="This issue will be numbered in {team.name}"
-					>
-						{team.key}
-					</span>
-				{/if}
 				<Button
 					type="button"
 					variant="ghost"

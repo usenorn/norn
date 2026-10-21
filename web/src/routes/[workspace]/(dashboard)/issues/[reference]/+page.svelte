@@ -17,7 +17,7 @@
 	import Copy from "@lucide/svelte/icons/copy";
 	import CornerDownLeft from "@lucide/svelte/icons/corner-down-left";
 	import Ellipsis from "@lucide/svelte/icons/ellipsis";
-	import Folder from "@lucide/svelte/icons/folder";
+	import Gauge from "@lucide/svelte/icons/gauge";
 	import GitBranch from "@lucide/svelte/icons/git-branch";
 	import Hash from "@lucide/svelte/icons/hash";
 	import CirclePause from "@lucide/svelte/icons/circle-pause";
@@ -1856,7 +1856,7 @@
 						href={at(`/projects/${issue.projectSlug}`)}
 						class="hidden items-center gap-1.25 text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline-flex"
 					>
-						<Folder class="size-3.25 text-muted-foreground" aria-hidden="true" />
+						<Target class="size-3.25 text-muted-foreground" aria-hidden="true" />
 						{issue.projectName}
 					</a>
 				{/if}
@@ -2216,7 +2216,7 @@
 												bind:this={titleField}
 												bind:value={$formData.title}
 												disabled={$submitting}
-												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-2xl leading-tight font-semibold tracking-title text-ink-900 outline-none"
+												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-3xl leading-tight font-semibold tracking-title text-ink-900 outline-none"
 											/>
 										{/snippet}
 									</Form.Control>
@@ -2249,7 +2249,7 @@
 								class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 							>
 								<h1
-									class="text-2xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
+									class="text-3xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
 								>
 									{issue.title}
 								</h1>
@@ -3097,7 +3097,7 @@
 						onpick={setProject}
 					>
 						{#snippet glyph()}
-							<Folder class="size-icon-row text-muted-foreground" aria-hidden="true" />
+							<Target class="size-icon-row text-muted-foreground" aria-hidden="true" />
 						{/snippet}
 						{#snippet value()}
 							<span
@@ -3225,7 +3225,7 @@
 						onpick={setEstimate}
 					>
 						{#snippet glyph()}
-							<Target class="size-icon-row text-muted-foreground" aria-hidden="true" />
+							<Gauge class="size-icon-row text-muted-foreground" aria-hidden="true" />
 						{/snippet}
 						{#snippet value()}
 							<span class="min-w-0 flex-1 truncate {issue.estimate ? '' : 'text-muted-foreground'}">
