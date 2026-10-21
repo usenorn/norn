@@ -15,8 +15,7 @@
 						"inline-flex h-6 w-5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2",
 				},
 				dialog: {
-					trigger:
-						"h-control-sm gap-1.5 px-2 text-sm font-normal text-foreground data-[state=open]:border-ink-400",
+					trigger: "",
 				},
 			},
 		},
@@ -72,7 +71,7 @@
 >
 	{#snippet trigger(props)}
 		{#if place === "dialog"}
-			<Button {...props} variant="outline" size="sm" {disabled} class={styles.trigger()}>
+			<Button {...props} variant="property" size="property" {disabled}>
 				<PriorityIcon priority={chosen} />
 				{chosen === "none" ? "Priority" : priorityLabel(chosen)}
 			</Button>

@@ -20,6 +20,8 @@
 				destructive:
 					"keycap bg-destructive text-primary-foreground [--keycap-lip:var(--danger-active)] hover:bg-danger-hover active:shadow-none",
 				link: "text-link underline-offset-2 hover:text-link-hover hover:underline",
+				property:
+					"keycap border-line-strong bg-card font-normal text-foreground [--keycap-lip:var(--paper-0)] hover:border-ink-400 hover:bg-paper-2 active:bg-paper-0 active:shadow-none data-[state=open]:border-ink-400",
 				chip: "border-line-default bg-paper-2 font-mono text-ink-600 hover:bg-accent hover:text-ink-900 aria-[current=page]:border-line-strong aria-[current=page]:bg-card aria-[current=page]:text-ink-900",
 			},
 			size: {
@@ -27,6 +29,7 @@
 				chip: "h-5 gap-1 rounded-xs px-1.5 text-xs",
 				xs: "h-control-xs gap-1 rounded-sm px-1.5 text-2xs [&_svg:not([class*='size-'])]:size-3",
 				sm: "h-control-sm gap-1 px-2 text-sm",
+				property: "h-control-sm gap-1.5 px-2 text-sm",
 				lg: "h-control-lg px-4 text-base",
 				icon: "size-control-md rounded-sm",
 				"icon-xs": "size-control-xs rounded-sm [&_svg:not([class*='size-'])]:size-3",

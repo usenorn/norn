@@ -923,9 +923,6 @@
 			checked: preset.value === $formData.dueOn,
 		}))
 	);
-
-	const chipClass =
-		"h-control-sm gap-1.5 px-2 text-sm font-normal text-foreground data-[state=open]:border-ink-400";
 </script>
 
 <Dialog.Root bind:open={() => open, (next) => (open = next || !busy ? next : open)}>
@@ -1202,10 +1199,9 @@
 						{#snippet trigger(props)}
 							<Button
 								{...props}
-								variant="outline"
-								size="sm"
+								variant="property"
+								size="property"
 								disabled={busy || Boolean(raised)}
-								class={chipClass}
 							>
 								{#if openState}
 									<StatusIcon category={openState.category} decorative />
@@ -1239,10 +1235,9 @@
 						{#snippet trigger(props)}
 							<Button
 								{...props}
-								variant="outline"
-								size="sm"
+								variant="property"
+								size="property"
 								disabled={busy || Boolean(raised)}
-								class={chipClass}
 							>
 								{#if assignee}
 									<PersonAvatar accountId={$formData.assigneeId} name={assignee} size="xs" />
@@ -1286,10 +1281,9 @@
 						{#snippet trigger(props)}
 							<Button
 								{...props}
-								variant="outline"
-								size="sm"
+								variant="property"
+								size="property"
 								disabled={busy || Boolean(raised)}
-								class={chipClass}
 							>
 								{project ? project.name : "Project"}
 							</Button>
@@ -1304,10 +1298,9 @@
 						{#snippet trigger(props)}
 							<Button
 								{...props}
-								variant="outline"
-								size="sm"
+								variant="property"
+								size="property"
 								disabled={busy || Boolean(raised)}
-								class={chipClass}
 							>
 								<CalendarDays class="text-muted-foreground" aria-hidden="true" />
 								{$formData.dueOn ? onCalendarDate($formData.dueOn) : "Due date"}
