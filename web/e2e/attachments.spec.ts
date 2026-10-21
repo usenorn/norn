@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { deflateSync } from "node:zlib";
 import { expect, test } from "@playwright/test";
 import { at, fixture } from "./fixture";
+import { editDescription } from "./description";
 
 function png(path: string, colour: [number, number, number]) {
 	const width = 40;
@@ -65,7 +66,7 @@ test("several files land in the description, in the order they were picked", asy
 	names.forEach((name, index) => png(join(held, name), colours[index]));
 
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByTitle("Edit the description").click();
+	await editDescription(page);
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page
@@ -183,7 +184,7 @@ test("a file that will not upload takes its place in the text with it", async ({
 	});
 
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByTitle("Edit the description").click();
+	await editDescription(page);
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page.evaluate(async (make) => {
@@ -217,7 +218,7 @@ test("pasting rich text uploads nothing, because its pictures already have an ad
 	});
 
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-	await page.getByTitle("Edit the description").click();
+	await editDescription(page);
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page.evaluate(async (make) => {
