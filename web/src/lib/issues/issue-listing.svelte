@@ -1618,7 +1618,7 @@
 								<p
 									class="border-t border-dashed border-line-strong px-0.5 py-3 caption text-ink-600"
 								>
-									Nothing here
+									No issues
 								</p>
 							{/if}
 

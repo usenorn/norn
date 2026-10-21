@@ -379,7 +379,7 @@
 		<div class="flex flex-1 flex-col items-center justify-center gap-5 p-10">
 			<div class="flex max-w-95 flex-col items-center gap-2.5 text-center">
 				<Zap class="size-4.5 text-muted-foreground" aria-hidden="true" />
-				<span class="caption text-ink-600">Triage zero</span>
+				<p class="text-md font-medium tracking-snug text-ink-900">Nothing to triage</p>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">
 					Reports from integrations, agents and people outside the team land here before anyone
 					commits to them.
