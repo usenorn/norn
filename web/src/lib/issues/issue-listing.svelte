@@ -1180,7 +1180,7 @@
 					class="hidden size-icon-toolbar shrink-0 text-muted-foreground sm:block"
 					aria-hidden="true"
 				/>
-				<h1 class="hidden text-md font-semibold tracking-snug whitespace-nowrap text-ink-900 sm:block">Issues</h1>
+				<h1 class="sr-only text-md font-semibold tracking-snug whitespace-nowrap text-ink-900 sm:not-sr-only">Issues</h1>
 
 				{#if applied.kind === "applied"}
 					<span class="flex min-w-0 shrink items-center gap-1.5">
