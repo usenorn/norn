@@ -82,7 +82,7 @@
 <div class="flex flex-col gap-6">
 	<section class="flex flex-col gap-3">
 		<div class="flex flex-col gap-1">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">What this import made</h2>
+			<h2 class="text-md font-semibold tracking-snug text-ink-900">What this import made</h2>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
 				Every record below was created by this run and is held against it, which is what makes
 				taking the run back possible at all.
@@ -125,7 +125,7 @@
 
 	<section class="flex flex-col gap-3">
 		<div class="flex flex-col gap-1">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Line by line</h2>
+			<h2 class="text-md font-semibold tracking-snug text-ink-900">Line by line</h2>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
 				What the run did with each record it handled, including what it could not carry across.
 			</p>
@@ -176,7 +176,7 @@
 	{#if revertible(run.status)}
 		<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">
 			<div class="flex flex-col gap-1">
-				<h2 class="text-md font-medium tracking-snug text-ink-900">Take this import back</h2>
+				<h2 class="text-md font-semibold tracking-snug text-ink-900">Take this import back</h2>
 				<p class="text-sm leading-normal text-muted-foreground text-pretty">
 					This removes what the import created, in the reverse of the order it created it. Anything
 					a person has commented on, edited or moved since is kept and listed rather than removed.

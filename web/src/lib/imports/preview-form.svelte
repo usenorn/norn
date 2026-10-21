@@ -106,7 +106,7 @@
 
 <form method="POST" id={formId} use:enhance class="flex flex-col gap-6">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">
 			{stale ? "Read again, because this workspace changed" : "What this import would do"}
 		</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">

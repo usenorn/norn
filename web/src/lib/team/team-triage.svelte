@@ -115,7 +115,7 @@
 
 <section class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">Triage</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">Triage</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Hold incoming issues for review instead of dropping them straight into the backlog, so what
 			the team is counting is work somebody agreed to.

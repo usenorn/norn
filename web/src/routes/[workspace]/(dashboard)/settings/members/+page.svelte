@@ -516,7 +516,7 @@
 
 			<section class="flex flex-col gap-4">
 				<div class="flex flex-col gap-1">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">Roles</h2>
+					<h2 class="text-md font-semibold tracking-snug text-ink-900">Roles</h2>
 					<dl class="flex flex-col gap-0.5">
 						{#each membershipRoles as role (role)}
 							<div class="flex flex-wrap gap-x-2 text-sm leading-normal">
@@ -851,7 +851,7 @@
 			{#if tokens}
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
-					<h2 class="text-md font-medium tracking-snug text-ink-900">
+					<h2 class="text-md font-semibold tracking-snug text-ink-900">
 						API tokens reaching {workspace.name}
 					</h2>
 					<p class="text-sm leading-normal text-muted-foreground text-pretty">

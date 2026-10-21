@@ -86,7 +86,7 @@
 
 <section id="telegram" class="flex flex-col gap-3" aria-labelledby="telegram-heading">
 	<div class="flex flex-col gap-1">
-		<h2 id="telegram-heading" class="text-md font-medium tracking-snug text-ink-900">Telegram</h2>
+		<h2 id="telegram-heading" class="text-md font-semibold tracking-snug text-ink-900">Telegram</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Link your Telegram to an agent's bot and the questions it asks on work you handed it reach you there.
 			Answer with a tap or a reply.

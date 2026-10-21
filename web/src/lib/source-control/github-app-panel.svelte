@@ -133,7 +133,7 @@
 </script>
 
 <section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4">
-	<h2 class="text-md font-medium tracking-snug text-ink-900">GitHub</h2>
+	<h2 class="text-md font-semibold tracking-snug text-ink-900">GitHub</h2>
 
 	{#if notice?.kind === "registered"}
 		<Alert.Root variant="success">

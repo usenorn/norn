@@ -115,7 +115,7 @@
 
 <section class="flex flex-col gap-4 rounded-lg border border-line-strong p-4" aria-labelledby="hosted-test-title">
 	<div>
-		<h2 id="hosted-test-title" class="text-md font-medium tracking-snug text-ink-900">Test this agent</h2>
+		<h2 id="hosted-test-title" class="text-md font-semibold tracking-snug text-ink-900">Test this agent</h2>
 		<p class="mt-1 text-sm leading-normal text-muted-foreground text-pretty">
 			Ask it about this workspace. It answers as itself, with the permissions on its overview, and
 			nothing here is kept once you leave the page.

@@ -43,7 +43,7 @@
 	<input type="hidden" name="workspaceId" value={workspaceId} />
 
 	<div class="flex flex-col gap-1">
-		<h2 id="decision-channel-heading" class="text-md font-medium tracking-snug text-ink-900">
+		<h2 id="decision-channel-heading" class="text-md font-semibold tracking-snug text-ink-900">
 			Decision requests
 		</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">

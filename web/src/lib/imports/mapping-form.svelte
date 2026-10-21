@@ -201,7 +201,7 @@
 
 <form method="POST" id={formId} use:enhance class="flex flex-col gap-6">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">What becomes what</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">What becomes what</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Everything the source named is listed here. Nothing is imported until each one has an answer,
 			and a decision applies to every issue that names it. Where Norn found something already

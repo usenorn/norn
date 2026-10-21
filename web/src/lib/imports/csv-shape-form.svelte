@@ -163,7 +163,7 @@
 
 <form method="POST" id={formId} use:enhance class="flex flex-col gap-5">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">What the columns hold</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">What the columns hold</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Norn read the head of the file and proposed a meaning for each column. Correct anything it
 			got wrong. A column left as not imported is read and thrown away.

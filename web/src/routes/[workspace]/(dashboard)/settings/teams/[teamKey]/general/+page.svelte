@@ -276,7 +276,7 @@
 {#if archived}
 	<section class="flex flex-col gap-4 rounded-lg border border-line-default p-4">
 		<div class="flex flex-col gap-1">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Bring this team back</h2>
+			<h2 class="text-md font-semibold tracking-snug text-ink-900">Bring this team back</h2>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
 				Restoring {team.name} lets its settings, members and issues change again.
 			</p>
@@ -291,7 +291,7 @@
 {:else}
 	<section class="flex flex-col gap-4 rounded-lg border border-destructive/40 p-4">
 		<div class="flex flex-col gap-1">
-			<h2 class="text-md font-medium tracking-snug text-ink-900">Archive this team</h2>
+			<h2 class="text-md font-semibold tracking-snug text-ink-900">Archive this team</h2>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
 				Archiving retires {team.name} without touching its issues. They stay readable and every
 				{team.key}-1 style reference keeps resolving. An administrator can bring the team back at

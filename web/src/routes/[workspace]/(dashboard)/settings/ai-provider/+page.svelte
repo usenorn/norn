@@ -215,7 +215,7 @@
 
 		{#if provider}
 			<section class="flex flex-col gap-3 rounded-lg border border-line-subtle p-4" aria-labelledby="ai-provider-status">
-				<h2 id="ai-provider-status" class="text-md font-medium tracking-snug text-ink-900">Status</h2>
+				<h2 id="ai-provider-status" class="text-md font-semibold tracking-snug text-ink-900">Status</h2>
 
 				{#if provider.status === "verified"}
 					<p class="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -287,7 +287,7 @@
 			<input type="hidden" name="keyStored" value={String($formData.keyStored)} />
 
 			<div class="flex flex-col gap-1">
-				<h2 id="ai-provider-key" class="text-md font-medium tracking-snug text-ink-900">
+				<h2 id="ai-provider-key" class="text-md font-semibold tracking-snug text-ink-900">
 					{provider ? "Change the key or model" : "Connect a provider"}
 				</h2>
 				<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -432,7 +432,7 @@
 
 		{#if provider}
 			<section class="flex flex-col gap-3 rounded-lg border border-destructive/40 p-4" aria-labelledby="ai-provider-remove">
-				<h2 id="ai-provider-remove" class="text-md font-medium tracking-snug text-ink-900">Remove the key</h2>
+				<h2 id="ai-provider-remove" class="text-md font-semibold tracking-snug text-ink-900">Remove the key</h2>
 				<p class="text-sm leading-normal text-muted-foreground text-pretty">
 					The key is deleted from Norn. It is not revoked at {label}; do that in your {label} account if it
 					should stop working everywhere.

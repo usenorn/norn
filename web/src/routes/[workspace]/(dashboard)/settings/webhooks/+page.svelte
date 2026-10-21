@@ -164,7 +164,7 @@
 			{#if view.kind === "signing_unavailable"}
 				<section class="flex flex-col gap-3 rounded-lg border border-line-default bg-paper-0 p-5">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">
 							This instance cannot sign a webhook yet
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -201,7 +201,7 @@
 			{#if created}
 				<section class="flex flex-col gap-3 rounded-lg border border-success/40 bg-paper-0 p-4">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">
 							Copy the signing secret for {created.webhook.name} now
 						</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
@@ -230,7 +230,7 @@
 			{#if composable}
 				<section class="flex flex-col gap-3">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">Subscriptions</h2>
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">Subscriptions</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							Norn posts each event you pick to your address, signed with a secret only you and this
 							instance hold. Deliveries that keep failing are retried, then the subscription is
@@ -303,7 +303,7 @@
 
 				<form method="POST" id={formId} use:enhance class="flex flex-col gap-5">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">Add a subscription</h2>
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">Add a subscription</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							The address has to be reachable from the internet. Norn refuses addresses inside its
 							own network, so a subscription cannot be used to reach something private.

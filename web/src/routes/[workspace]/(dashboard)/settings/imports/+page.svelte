@@ -139,7 +139,7 @@
 			{:else}
 				<form method="POST" id={formId} use:enhance class="flex flex-col gap-5">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">Bring a backlog across</h2>
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">Bring a backlog across</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							Norn reads the source into a copy of its own first, shows you exactly what it would
 							create, and applies nothing until you say so. Everything an import makes is recorded,
@@ -216,7 +216,7 @@
 
 				<section class="flex flex-col gap-3">
 					<div class="flex flex-col gap-1">
-						<h2 class="text-md font-medium tracking-snug text-ink-900">Runs</h2>
+						<h2 class="text-md font-semibold tracking-snug text-ink-900">Runs</h2>
 						<p class="text-sm leading-normal text-muted-foreground text-pretty">
 							Newest first. A run you started but never finished is still here, and picks up where
 							you left it.

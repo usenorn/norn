@@ -75,7 +75,7 @@
 
 <section class="flex flex-col gap-4">
 	<div class="flex flex-col gap-1">
-		<h2 class="text-md font-medium tracking-snug text-ink-900">Agents</h2>
+		<h2 class="text-md font-semibold tracking-snug text-ink-900">Agents</h2>
 		<p class="text-sm leading-normal text-muted-foreground text-pretty">
 			Hold what an agent does in {team.name} until a person agrees to it. Approving applies the
 			change as the agent, so the record still says which one did it.

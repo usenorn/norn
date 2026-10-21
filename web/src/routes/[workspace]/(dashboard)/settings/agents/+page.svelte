@@ -368,7 +368,7 @@
 				{:else}
 					<section class="flex flex-col gap-3" aria-labelledby="agent-roster-heading">
 						<div class="flex flex-col gap-1">
-							<h2 id="agent-roster-heading" class="text-md font-medium tracking-snug text-ink-900">
+							<h2 id="agent-roster-heading" class="text-md font-semibold tracking-snug text-ink-900">
 								Command roster
 							</h2>
 							<p class="text-sm leading-normal text-muted-foreground">
