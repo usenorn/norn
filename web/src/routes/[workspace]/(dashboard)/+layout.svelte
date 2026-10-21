@@ -25,7 +25,6 @@
 	import Tags from "@lucide/svelte/icons/tags";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Kbd from "$lib/components/norn/kbd.svelte";
-	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
 	import { canCreateLabels } from "$lib/labels/create-label";
 	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
 	import { provideCommandTargets } from "$lib/command/scope.svelte";
@@ -157,6 +156,28 @@
 	bindRoam(provideRoam());
 
 	const raising = provideNewIssue();
+
+	let newIssueDialog = $state<Promise<typeof import("$lib/issues/new-issue-dialog.svelte")>>();
+
+	function loadNewIssueDialog() {
+		newIssueDialog ??= import("$lib/issues/new-issue-dialog.svelte");
+	}
+
+	$effect(() => {
+		if (raising.open) loadNewIssueDialog();
+	});
+
+	$effect(() => {
+		if (typeof requestIdleCallback !== "function") {
+			const timer = setTimeout(loadNewIssueDialog, 1500);
+
+			return () => clearTimeout(timer);
+		}
+
+		const idle = requestIdleCallback(loadNewIssueDialog, { timeout: 4000 });
+
+		return () => cancelIdleCallback(idle);
+	});
 
 	provideCommandTargets();
 
@@ -477,25 +498,27 @@
 
 <ShortcutHelp bind:open={helping} />
 
-{#if teams.length > 0}
-	<NewIssueDialog
-		bind:open={raising.open}
-		workspaceId={data.workspace.id}
-		workspace={data.workspace.slug}
-		{teams}
-		states={{}}
-		members={data.members}
-		labels={data.labels}
-		projects={data.projects}
-		{today}
-		now={data.now}
-		prefill={raising.prefill}
-		canCreateLabel={canCreateLabels(
-			data.members.find((member) => member.accountId === data.member.id)?.role
-		)}
-		onraising={raising.onraising}
-		onsettled={settlement}
-	/>
+{#if teams.length > 0 && newIssueDialog}
+	{#await newIssueDialog then { default: NewIssueDialog }}
+		<NewIssueDialog
+			bind:open={raising.open}
+			workspaceId={data.workspace.id}
+			workspace={data.workspace.slug}
+			{teams}
+			states={{}}
+			members={data.members}
+			labels={data.labels}
+			projects={data.projects}
+			{today}
+			now={data.now}
+			prefill={raising.prefill}
+			canCreateLabel={canCreateLabels(
+				data.members.find((member) => member.accountId === data.member.id)?.role
+			)}
+			onraising={raising.onraising}
+			onsettled={settlement}
+		/>
+	{/await}
 {/if}
 
 <SearchPalette
