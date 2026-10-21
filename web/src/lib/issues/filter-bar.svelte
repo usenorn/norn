@@ -84,7 +84,7 @@
 		</Button>
 	{/snippet}
 	{#snippet shortcut()}
-		<Kbd keys="F" />
+		<Kbd keys="f" />
 	{/snippet}
 	{#snippet mark(option)}
 		{@const labelColor = facetLabelColor(catalogue, category, option.value)}

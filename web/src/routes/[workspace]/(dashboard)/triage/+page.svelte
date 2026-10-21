@@ -570,7 +570,7 @@
 									</div>
 									<p class="text-sm text-muted-foreground text-pretty">
 										{unsuggestedDuplicates} Mark one yourself with Duplicate
-										<Kbd keys="M" />.
+										<Kbd keys="m" />.
 									</p>
 								</div>
 							</div>
@@ -702,7 +702,7 @@
 					>
 						<Button size="sm" disabled={readOnly || working} onclick={() => open("accept")}>
 							Accept
-							<Kbd keys="A" tone="inverse" />
+							<Kbd keys="a" tone="inverse" />
 						</Button>
 						<Button
 							variant="secondary"
@@ -711,7 +711,7 @@
 							onclick={() => open("decline")}
 						>
 							Decline
-							<Kbd keys="D" />
+							<Kbd keys="d" />
 						</Button>
 						<Button
 							variant="ghost"
@@ -721,7 +721,7 @@
 						>
 							<GitBranch aria-hidden="true" />
 							Duplicate
-							<Kbd keys="M" />
+							<Kbd keys="m" />
 						</Button>
 
 						<DropdownMenu.Root>
@@ -748,7 +748,7 @@
 						<div class="flex-1"></div>
 
 						<span class="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
-							<Kbd keys="J K" /> move through the queue
+							<Kbd keys="j k" /> move through the queue
 						</span>
 						<span class="tabular-nums text-xs text-muted-foreground">
 							{cursor.at + 1} of {shown.length}

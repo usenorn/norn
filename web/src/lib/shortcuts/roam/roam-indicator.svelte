@@ -14,6 +14,6 @@
 		role="status"
 		aria-live="polite"
 	>
-		<Kbd keys="W A S D" />moving — <Kbd keys="Esc" />to stop
+		<Kbd keys="w a s d" />moving focus — <Kbd keys="Esc" />to stop
 	</span>
 {/if}

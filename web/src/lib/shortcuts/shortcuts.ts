@@ -5,6 +5,7 @@ export type ShortcutGroup =
 	| "navigation"
 	| "list"
 	| "issues"
+	| "issue"
 	| "agents"
 	| "selection"
 	| "triage"
@@ -26,6 +27,7 @@ export const shortcutGroupLabels: Record<ShortcutGroup, string> = {
 	navigation: "Going places",
 	list: "Moving through a list",
 	issues: "Issues",
+	issue: "This issue",
 	agents: "Agents",
 	selection: "What you have selected",
 	triage: "Triage",
@@ -37,6 +39,7 @@ export const shortcutGroupOrder: ShortcutGroup[] = [
 	"navigation",
 	"list",
 	"issues",
+	"issue",
 	"agents",
 	"selection",
 	"triage",
@@ -47,7 +50,7 @@ const declared = [
 	{ id: "search", keys: ["mod+k"], label: "Go anywhere", group: "global" },
 	{
 		id: "search-find",
-		keys: ["mod+f"],
+		keys: ["mod+shift+f"],
 		label: "Search this workspace",
 		group: "global",
 		whileTyping: true,
@@ -77,7 +80,19 @@ const declared = [
 		label: "Set status",
 		group: "issues",
 	},
-	{ id: "issue-edit", keys: ["e"], label: "Edit the description", group: "issues" },
+	{
+		id: "issue-step",
+		keys: ["j", "k"],
+		keysLabel: "j k",
+		label: "Next or previous issue",
+		group: "issue",
+	},
+	{ id: "issue-status", keys: ["s"], label: "Change status", group: "issue" },
+	{ id: "issue-priority", keys: ["p"], label: "Change priority", group: "issue" },
+	{ id: "issue-assignee", keys: ["a"], label: "Assign", group: "issue" },
+	{ id: "issue-labels", keys: ["l"], label: "Change labels", group: "issue" },
+	{ id: "issue-edit", keys: ["e"], label: "Edit the description", group: "issue" },
+	{ id: "issue-back", keys: ["escape"], label: "Back to the list", group: "issue" },
 	{ id: "agent-register", keys: ["shift+a"], label: "Register agent", group: "agents" },
 
 	{ id: "select-toggle", keys: ["x", " "], label: "Select", group: "selection" },
@@ -127,17 +142,19 @@ const namedKeys: Record<string, string> = {
 export function displayKeys(binding: string, apple: boolean): string {
 	return binding
 		.split(" ")
-		.map((chord) =>
-			chord
+		.map((chord) => {
+			const shifted = chord.split("+").includes("shift");
+
+			return chord
 				.split("+")
 				.map((part) => {
 					if (part === "mod") return apple ? "⌘" : "Ctrl";
 					if (part === "shift") return "⇧";
 
-					return namedKeys[part] ?? (part.length === 1 ? part.toUpperCase() : part);
+					return namedKeys[part] ?? (shifted ? part.toUpperCase() : part);
 				})
-				.join(" ")
-		)
+				.join(" ");
+		})
 		.join(" ");
 }
 
