@@ -214,7 +214,7 @@
 
 			<div class="flex flex-col gap-1.5">
 				<span class="text-sm font-medium text-ink-900">The description it starts with</span>
-				<div class="rounded-md border border-line-default px-2.5 pb-1">
+				<div class="rounded-md border border-line-default px-2.5 pb-1 motion-control focus-within:border-ring">
 					<Editor
 						bind:document={body}
 						{workspaceId}

@@ -126,7 +126,7 @@
 	}}
 >
 	<Label for="comment-{id}" class="sr-only">{label}</Label>
-	<div class="rounded-md border border-line-default px-2.5 pb-1">
+	<div class="rounded-md border border-line-default px-2.5 pb-1 motion-control focus-within:border-ring">
 		<Editor
 			bind:this={editor}
 			bind:document={draft}

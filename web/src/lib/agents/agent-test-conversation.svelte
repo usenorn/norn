@@ -149,7 +149,7 @@
 								{/each}
 							</ul>
 						{/if}
-						<p class="text-xs text-ink-400">{tokens.format(tokenCount(exchange.reply))} tokens</p>
+						<p class="text-xs text-muted-foreground">{tokens.format(tokenCount(exchange.reply))} tokens</p>
 					</div>
 				</li>
 			{/each}

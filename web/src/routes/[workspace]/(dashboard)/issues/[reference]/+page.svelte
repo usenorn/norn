@@ -2213,7 +2213,7 @@
 												bind:this={titleField}
 												bind:value={$formData.title}
 												disabled={$submitting}
-												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-3xl leading-tight font-semibold tracking-title text-ink-900 outline-none"
+												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-ring bg-transparent px-2.25 py-1.25 text-3xl leading-tight font-semibold tracking-title text-ink-900 outline-none"
 											/>
 										{/snippet}
 									</Form.Control>
@@ -2361,7 +2361,7 @@
 										<Form.Control>
 											{#snippet children({ props })}
 												<Form.Label class="sr-only">Description</Form.Label>
-												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5">
+												<div class="rounded-md border border-line-strong bg-paper-0 px-3 py-1.5 motion-control focus-within:border-ring">
 													<Editor
 														{...props}
 														bind:this={descriptionEditor}

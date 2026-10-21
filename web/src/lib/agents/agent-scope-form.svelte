@@ -83,7 +83,7 @@
 					/>
 					<label for={`agent-scope-${offer}`} class="flex flex-col gap-0.5">
 						<span class="text-sm leading-normal text-ink-900">{agentScopeLabels[offer]}</span>
-						<span class="text-xs leading-normal text-ink-400">{agentScopeHints[offer]}</span>
+						<span class="text-xs leading-normal text-muted-foreground">{agentScopeHints[offer]}</span>
 					</label>
 				</div>
 			{/each}

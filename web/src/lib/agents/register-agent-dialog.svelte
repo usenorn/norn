@@ -309,7 +309,7 @@
 				{/each}
 			</div>
 			{#if withheld.size > 0}
-				<p id={withheldId} class="text-xs leading-normal text-ink-400">
+				<p id={withheldId} class="text-xs leading-normal text-muted-foreground">
 					An agent cannot do more than you can, so the greyed permissions need an administrator.
 				</p>
 			{/if}
@@ -414,7 +414,7 @@
 						/>
 						<label for={`agent-reach-${scope}`} class="flex flex-col gap-0.5">
 							<span class="text-sm leading-normal text-ink-900">{agentScopeLabels[scope]}</span>
-							<span class="text-xs leading-normal text-ink-400">{agentScopeHints[scope]}</span>
+							<span class="text-xs leading-normal text-muted-foreground">{agentScopeHints[scope]}</span>
 						</label>
 					</div>
 				{/each}
