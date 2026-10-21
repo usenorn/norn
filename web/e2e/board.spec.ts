@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectBoardLive, moveCard } from "./board";
+import { expectBoardLive, moveCard, touchMoveCard } from "./board";
 import { at, fixture } from "./fixture";
 
 test("moving a card twice over is not reported as somebody else's change", async ({ page }) => {
@@ -23,6 +23,22 @@ test("moving a card twice over is not reported as somebody else's change", async
 
 	await expect(page.getByText(`Set ${moved.reference} to low priority`)).toBeVisible();
 	await expect(page.getByText(/while you were editing/)).toHaveCount(0);
+});
+
+test("a card held down on a touch screen can be dragged to another column", async ({ page }) => {
+	const moved = fixture().issues[4];
+
+	await page.goto(at(`/teams/${fixture().teamKey}/issues?layout=board&group=priority&empty=1`));
+
+	await expect(page.locator(`[data-issue="${moved.id}"]`)).toBeVisible();
+	await expectBoardLive(page);
+
+	await touchMoveCard(page, moved.id, "Urgent");
+
+	await expect(page.getByText(`Set ${moved.reference} to urgent priority`)).toBeVisible();
+	await expect(
+		page.getByRole("group", { name: "Urgent" }).locator(`[data-issue="${moved.id}"]`)
+	).toBeVisible();
 });
 
 type Columns = string[][];

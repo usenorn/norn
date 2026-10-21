@@ -52,6 +52,7 @@
 	} from "$lib/issues/facet-options";
 	import { linkTo } from "$lib/issues/linking";
 	import { withReturn } from "$lib/issues/return-to-list";
+	import { edgeScroll, type TouchDragHandlers } from "$lib/issues/touch-drag";
 	import { rememberOrder } from "$lib/issues/visit-order";
 	import { failures, rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
@@ -530,6 +531,57 @@
 		dropTarget = null;
 	}
 
+	let dragScroller = $state<HTMLElement>();
+	let gliding = 0;
+
+	function touchMove(x: number, y: number) {
+		const zone = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-drop-key]");
+		const key = zone?.dataset.dropKey;
+
+		dropTarget =
+			zone && key && dragging && landsIn(dragging, key)
+				? { key, index: insertionIndex(zone, y) }
+				: null;
+
+		cancelAnimationFrame(gliding);
+
+		const glide = () => {
+			if (dragging && edgeScroll(dragScroller, x, y) > 0) gliding = requestAnimationFrame(glide);
+		};
+
+		glide();
+	}
+
+	function touchDrop() {
+		const id = dragging;
+		const target = dropTarget;
+
+		cancelAnimationFrame(gliding);
+		onDragEnd();
+
+		if (id && target) void settleDrop(id, target);
+	}
+
+	function touchCancel() {
+		cancelAnimationFrame(gliding);
+		onDragEnd();
+	}
+
+	function touchHandlers(issue: Issue): TouchDragHandlers {
+		return {
+			start: () => {
+				if (draftIDs.has(issue.id)) return false;
+
+				dragging = issue.id;
+
+				return true;
+			},
+			move: touchMove,
+			drop: touchDrop,
+			cancel: touchCancel,
+		};
+	}
+
 	function landsIn(id: string | null, key: string): boolean {
 		const issue = flat.find((candidate) => candidate.id === id);
 
@@ -575,7 +627,10 @@
 		};
 
 		onDragEnd();
+		await settleDrop(id, target);
+	}
 
+	async function settleDrop(id: string | null, target: DropTarget) {
 		const issue = flat.find((candidate) => candidate.id === id);
 		if (!issue || !landsIn(id, target.key)) return;
 
@@ -1465,7 +1520,7 @@
 				</Button>
 			</div>
 		{:else if data.layout === "list"}
-			<div class="flex-1 overflow-auto">
+			<div bind:this={dragScroller} class="flex-1 overflow-auto">
 				{#each columns as column (column.key)}
 					{@const shut = collapsed.has(column.key)}
 					<section
@@ -1473,6 +1528,7 @@
 						ondragover={(event) => onDragOver(event, column.key)}
 						ondragleave={(event) => onDragLeave(event, column.key)}
 						ondrop={(event) => void onDrop(event, column.key)}
+						data-drop-key={column.key}
 						data-dropping={dropTarget?.key === column.key}
 						class="data-[dropping=true]:bg-accent"
 					>
@@ -1536,6 +1592,7 @@
 										draggable
 										dragging={dragging === issue.id}
 										ondragstart={(event) => onDragStart(event, issue.id)}
+										touchdrag={touchHandlers(issue)}
 										ondragend={onDragEnd}
 									/>
 								{/each}
@@ -1552,7 +1609,7 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="flex-1 overflow-auto bg-background p-4">
+			<div bind:this={dragScroller} class="flex-1 overflow-auto bg-background p-4">
 				<div class="flex min-h-full items-stretch gap-3">
 					{#each columns as column (column.key)}
 						<div
@@ -1561,6 +1618,7 @@
 							ondragover={(event) => onDragOver(event, column.key)}
 							ondragleave={(event) => onDragLeave(event, column.key)}
 							ondrop={(event) => void onDrop(event, column.key)}
+							data-drop-key={column.key}
 							data-dropping={dropTarget?.key === column.key}
 							class="group/column flex w-60 flex-none sm:w-62.5 flex-col gap-2 rounded-lg border border-transparent p-1 motion-control data-[dropping=true]:border-dashed data-[dropping=true]:border-ink-400 data-[dropping=true]:bg-accent"
 						>
@@ -1608,6 +1666,7 @@
 										draggable
 										dragging={dragging === issue.id}
 										ondragstart={(event) => onDragStart(event, issue.id)}
+										touchdrag={touchHandlers(issue)}
 										ondragend={onDragEnd}
 									/>
 								{/each}

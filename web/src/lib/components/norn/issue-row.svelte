@@ -15,6 +15,7 @@
 	import type { RowProperty } from "$lib/issues/display";
 	import type { Issue } from "$lib/issues/issues";
 	import { rovingControls } from "$lib/shortcuts/roving";
+	import { touchDrag, type TouchDragHandlers } from "$lib/issues/touch-drag";
 
 	let {
 		issue,
@@ -36,6 +37,7 @@
 		dragging = false,
 		ondragstart,
 		ondragend,
+		touchdrag,
 		class: className,
 	}: {
 		issue: Issue;
@@ -57,6 +59,7 @@
 		dragging?: boolean;
 		ondragstart?: (event: DragEvent) => void;
 		ondragend?: (event: DragEvent) => void;
+		touchdrag?: TouchDragHandlers;
 		class?: string;
 	} = $props();
 
@@ -74,6 +77,7 @@
 <div
 	role="listitem"
 	{@attach rovingControls(cursor)}
+	{@attach touchDrag(draggable && !pending ? touchdrag : undefined)}
 	onfocusin={onarrive}
 	data-issue={issue.id}
 	data-cursor={cursor}
@@ -86,7 +90,7 @@
 	{ondragstart}
 	{ondragend}
 	class={cn(
-		"group/row relative flex min-h-12 items-center has-[[data-row-anchor]:focus-visible]:outline-2 has-[[data-row-anchor]:focus-visible]:-outline-offset-2 has-[[data-row-anchor]:focus-visible]:outline-ring gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
+		"group/row relative flex min-h-12 items-center pointer-coarse:select-none pointer-coarse:[-webkit-touch-callout:none] has-[[data-row-anchor]:focus-visible]:outline-2 has-[[data-row-anchor]:focus-visible]:-outline-offset-2 has-[[data-row-anchor]:focus-visible]:outline-ring gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0 cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 data-[pending=true]:opacity-60",
 		draggable && !pending && "cursor-grab active:cursor-grabbing",
 		className
 	)}
