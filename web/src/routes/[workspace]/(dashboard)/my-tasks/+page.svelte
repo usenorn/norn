@@ -25,6 +25,7 @@
 	import { priorities } from "$lib/issues/issues";
 	import { linkTo } from "$lib/issues/linking";
 	import { withReturn } from "$lib/issues/return-to-list";
+	import { rememberOrder } from "$lib/issues/visit-order";
 	import { surfaceDefaults, surfaceGroupings, surfaceOrderings, writeDisplay } from "$lib/issues/display";
 	import { pickableFacets, type FacetKind } from "$lib/issues/facets";
 	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
@@ -157,6 +158,10 @@
 	}
 
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
+
+	$effect(() => {
+		rememberOrder(returnTo, flat.map((task) => task.id));
+	});
 
 	const cursor = listCursor(() => ({
 		rows: flat,

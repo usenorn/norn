@@ -51,6 +51,7 @@
 	} from "$lib/issues/facet-options";
 	import { linkTo } from "$lib/issues/linking";
 	import { withReturn } from "$lib/issues/return-to-list";
+	import { rememberOrder } from "$lib/issues/visit-order";
 	import { failures, rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
 	import { api } from "$lib/api";
 	import { flash } from "$lib/motion";
@@ -270,6 +271,13 @@
 	const issueHref = $derived((reference: string) =>
 		withReturn(at(`/issues/${reference}`), returnTo)
 	);
+
+	$effect(() => {
+		rememberOrder(
+			returnTo,
+			flat.filter((issue) => !draftIDs.has(issue.id)).map((issue) => issue.reference)
+		);
+	});
 
 	const catalogue = $derived<FacetCatalogue>({
 		state: states.map((state) => ({ value: state.id, label: stateLabel(state) })),
