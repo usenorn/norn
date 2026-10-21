@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from "svelte";
 	import type { Snippet } from "svelte";
-	import { goto, invalidate } from "$app/navigation";
+	import { afterNavigate, goto, invalidate, onNavigate } from "$app/navigation";
 	import { page } from "$app/state";
 	import Archive from "@lucide/svelte/icons/archive";
 	import BellOff from "@lucide/svelte/icons/bell-off";
@@ -17,6 +17,10 @@
 	import CornerDownLeft from "@lucide/svelte/icons/corner-down-left";
 	import Ellipsis from "@lucide/svelte/icons/ellipsis";
 	import Folder from "@lucide/svelte/icons/folder";
+	import GitBranch from "@lucide/svelte/icons/git-branch";
+	import CirclePause from "@lucide/svelte/icons/circle-pause";
+	import CirclePlay from "@lucide/svelte/icons/circle-play";
+	import Type from "@lucide/svelte/icons/type";
 	import Info from "@lucide/svelte/icons/info";
 	import Link2 from "@lucide/svelte/icons/link-2";
 	import History from "@lucide/svelte/icons/history";
@@ -164,7 +168,10 @@
 	import { setIssueLabels } from "$lib/labels/set-issue-labels";
 	import { parseDate } from "@internationalized/date";
 	import { workspacePath } from "$lib/workspace/navigation";
-	import { listReturn } from "$lib/issues/return-to-list";
+	import { listReturn, withReturn } from "$lib/issues/return-to-list";
+	import { neighboursIn, orderFor } from "$lib/issues/visit-order";
+	import { statusIndexOf } from "$lib/issues/set-status";
+	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
 	import {
 		activityPreviewStates,
 		attachmentPreviewStates,
@@ -422,16 +429,7 @@
 		}
 
 		branchName = found.branch;
-
-		try {
-			await navigator.clipboard.writeText(found.branch);
-
-			branchCopied = true;
-		} catch {
-			// Writing to the clipboard is refused without a user gesture or over plain http.
-			// The name is shown below the button either way, so there is still something to copy.
-			branchCopied = false;
-		}
+		branchCopied = await copyText(found.branch, `Copied ${found.branch}`);
 	}
 
 	async function setAutomation(suppressed: boolean) {
@@ -1246,10 +1244,21 @@
 	let parentPicking = $state(false);
 	let pickingDue = $state(false);
 	let pickingCycle = $state(false);
+	let pickingStatus = $state(false);
+	let pickingPriority = $state(false);
+	let pickingAssignee = $state(false);
+	let pickingLabels = $state(false);
 	let addingChild = $state(false);
 	let filingUnder = $state.raw<{ id: string; reference: string } | null>(null);
 	let childPrefill = $state<NewIssuePrefill | undefined>(undefined);
-	const due = $derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
+
+	function addSubIssue() {
+		childPrefill = undefined;
+		filingUnder = issue ? { id: issue.id, reference: issue.reference } : null;
+		addingChild = true;
+	}
+
+	const due =$derived(issue?.dueOn ? parseDate(issue.dueOn) : undefined);
 	let shown = $state<"all" | "comments">("all");
 
 	const role = $derived(
@@ -1397,16 +1406,40 @@
 	const lastActivity = $derived(
 		activity.kind === "ready" ? (activity.events.at(-1)?.createdAt ?? null) : null
 	);
-	const issueLink = $derived(
-		issue ? `${page.url.host}${at(`/issues/${issue.reference}`)}` : ""
+	let linking = $state(false);
+
+	const showChildren = $derived((ready?.children.length ?? 0) > 0);
+	const showLinks = $derived((ready?.relations.length ?? 0) > 0 || linking);
+	const showAttachments = $derived(
+		attachments.kind === "ready" ||
+			attachments.kind === "unavailable" ||
+			attachmentFailure !== null ||
+			(editingField !== "description" &&
+				(attachmentPreview?.bodyUploads ?? bodyUploads).length > 0)
+	);
+	const showCodeLinks = $derived(
+		codeLinks.length > 0 ||
+			shipping.releases.length > 0 ||
+			shipping.deployments.length > 0 ||
+			mirrorConflicts.length > 0 ||
+			codeLinkFailure !== null ||
+			(branchName !== "" && !branchCopied) ||
+			automationSuppressed
 	);
 
-	const order = $derived(ready?.candidates ?? []);
-	const position = $derived(order.findIndex((candidate) => candidate.id === issue?.id));
-	const previous = $derived(position > 0 ? order[position - 1] : null);
-	const next = $derived(
-		position >= 0 && position < order.length - 1 ? order[position + 1] : null
-	);
+	let visitOrder = $state<string[] | null>(null);
+
+	$effect(() => {
+		visitOrder = orderFor(backToList);
+	});
+
+	const neighbours = $derived(issue ? neighboursIn(visitOrder, issue.reference) : null);
+	const openedFrom = $derived(page.url.searchParams.get("from"));
+	const stepHref = $derived((reference: string) => {
+		const href = at(`/issues/${reference}`);
+
+		return openedFrom ? withReturn(href, openedFrom) : href;
+	});
 
 	const reopenState = $derived(
 		(ready?.states ?? []).find(
@@ -1660,6 +1693,67 @@
 		return shortcuts.register("bulk-cycle", () => (pickingCycle = true));
 	});
 
+	let leaving = $state(false);
+
+	onNavigate(() => {
+		leaving = true;
+	});
+	afterNavigate(() => (leaving = false));
+
+	$effect(() => {
+		if (!canEdit || editingField || !ready || leaving) return;
+
+		const states = ready.states;
+		const released = [
+			shortcuts.register("issue-status", () => openPicker(() => (pickingStatus = true))),
+			shortcuts.register("issue-priority", () => openPicker(() => (pickingPriority = true))),
+			shortcuts.register("issue-assignee", () => openPicker(() => (pickingAssignee = true))),
+			shortcuts.register("issue-labels", () => openPicker(() => (pickingLabels = true))),
+			shortcuts.register("status-set", (binding) => {
+				const state = states[statusIndexOf(binding)];
+
+				if (state && state.id !== issue?.state.id) void move(state.id);
+			}),
+		];
+
+		return () => released.forEach((release) => release());
+	});
+
+	$effect(() => {
+		if (editingField || !neighbours || leaving) return;
+
+		const { previous, next } = neighbours;
+
+		return shortcuts.register("issue-step", (binding) => {
+			const reference = binding === "j" ? next : previous;
+
+			if (reference) void goto(stepHref(reference));
+		});
+	});
+
+	$effect(() => {
+		if (editingField || leaving) return;
+
+		return shortcuts.register("issue-back", () => {
+			if (overlayOpen()) return;
+
+			void goto(backToList);
+		});
+	});
+
+	function overlayOpen(): boolean {
+		return Boolean(
+			document.querySelector(
+				'[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-slot="popover-content"]'
+			)
+		);
+	}
+
+	function openPicker(open: () => void) {
+		document.getElementById("issue-properties")?.scrollIntoView({ block: "nearest" });
+		open();
+	}
+
 	function onKey(event: KeyboardEvent) {
 		const target = event.target as HTMLElement | null;
 		const typing = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA";
@@ -1729,17 +1823,17 @@
 			{/if}
 		</div>
 
-		{#if issue && position >= 0}
+		{#if issue && neighbours}
 			<span class="hidden tabular-nums text-xs text-muted-foreground sm:inline">
-				{position + 1} of {order.length}
+				{neighbours.position + 1} of {neighbours.total}
 			</span>
 			<div class="flex gap-0.5">
 				<Button
 					variant="outline"
 					size="icon-sm"
 					aria-label="Previous issue"
-					disabled={!previous}
-					href={previous ? at(`/issues/${previous.reference}`) : undefined}
+					disabled={!neighbours.previous}
+					href={neighbours.previous ? stepHref(neighbours.previous) : undefined}
 				>
 					<ChevronUp aria-hidden="true" />
 				</Button>
@@ -1747,8 +1841,8 @@
 					variant="outline"
 					size="icon-sm"
 					aria-label="Next issue"
-					disabled={!next}
-					href={next ? at(`/issues/${next.reference}`) : undefined}
+					disabled={!neighbours.next}
+					href={neighbours.next ? stepHref(neighbours.next) : undefined}
 				>
 					<ChevronDown aria-hidden="true" />
 				</Button>
@@ -1787,7 +1881,28 @@
 						<Link2 aria-hidden="true" />
 						Copy link
 					</DropdownMenu.Item>
+					<DropdownMenu.Item onSelect={() => copy(issue.title, "Copied the title")}>
+						<Type aria-hidden="true" />
+						Copy title
+					</DropdownMenu.Item>
 					{#if canEdit}
+						<DropdownMenu.Item disabled={copyingBranch} onSelect={() => void copyBranchName()}>
+							<GitBranch aria-hidden="true" />
+							Copy branch name
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							disabled={togglingAutomation}
+							onSelect={() => void setAutomation(!automationSuppressed)}
+						>
+							{#if automationSuppressed}
+								<CirclePlay aria-hidden="true" />
+								Resume git automation
+							{:else}
+								<CirclePause aria-hidden="true" />
+								Pause git automation
+							{/if}
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
 						<DropdownMenu.Item disabled={working} onSelect={duplicate}>
 							<Copy aria-hidden="true" />
 							Duplicate issue
@@ -2075,30 +2190,19 @@
 								</div>
 							</div>
 						{:else}
-							<div class="flex items-start gap-1">
-								<button
-									type="button"
-									disabled={!canEdit}
-									onclick={() => startEditing("title")}
-									title={canEdit ? "Click to rename" : ""}
-									class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							<button
+								type="button"
+								disabled={!canEdit}
+								onclick={() => startEditing("title")}
+								title={canEdit ? "Click to rename" : ""}
+								class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+							>
+								<h1
+									class="text-2xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
 								>
-									<h1
-										class="text-2xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
-									>
-										{issue.title}
-									</h1>
-								</button>
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									aria-label="Copy the title"
-									class="mt-1"
-									onclick={() => copy(issue.title, "Copied the title")}
-								>
-									<Copy aria-hidden="true" />
-								</Button>
-							</div>
+									{issue.title}
+								</h1>
+							</button>
 						{/if}
 
 						<div class="flex flex-wrap items-center gap-2">
@@ -2113,11 +2217,13 @@
 									{onDate(issue.createdAt, data.workspace.timezone)}
 								</time>
 							</span>
-							<span class="text-text-disabled" aria-hidden="true">·</span>
-							<span class="tabular-nums text-xs text-muted-foreground">
-								{commentTotal}
-								{commentTotal === 1 ? "comment" : "comments"}
-							</span>
+							{#if commentTotal > 0}
+								<span class="text-text-disabled" aria-hidden="true">·</span>
+								<span class="tabular-nums text-xs text-muted-foreground">
+									{commentTotal}
+									{commentTotal === 1 ? "comment" : "comments"}
+								</span>
+							{/if}
 						</div>
 
 						<div class="mt-3.5 flex flex-col gap-3">
@@ -2319,6 +2425,37 @@
 						</div>
 					</form>
 
+					{#if canEdit && (!showChildren || !showLinks || !showAttachments)}
+						<div class="-mt-3 -ml-2 flex flex-wrap items-center gap-1">
+							{#if !showChildren}
+								<Button variant="ghost" size="sm" class="text-muted-foreground" onclick={addSubIssue}>
+									<Plus aria-hidden="true" />
+									Sub-issue
+								</Button>
+							{/if}
+							{#if !showLinks}
+								<Button
+									variant="ghost"
+									size="sm"
+									class="text-muted-foreground"
+									onclick={() => (linking = true)}
+								>
+									<Link2 aria-hidden="true" />
+									Link an issue
+								</Button>
+							{/if}
+							{#if !showAttachments}
+								<span data-editing-region class="contents">
+									<AttachmentPicker
+										disabled={working}
+										label="Attach a file"
+										onfiles={(files) => begin("body", files)}
+									/>
+								</span>
+							{/if}
+						</div>
+					{/if}
+
 					{#if changed.length > 0}
 						<section class="flex min-w-0 flex-col gap-1.5">
 							<div class="flex items-center gap-2.5">
@@ -2398,6 +2535,7 @@
 						{when}
 					/>
 
+					{#if showChildren}
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
 							<h2 class="min-w-0 flex-1">
@@ -2418,13 +2556,7 @@
 									variant="ghost"
 									size="icon-xs"
 									aria-label="Add a sub-issue"
-									onclick={() => {
-										childPrefill = undefined;
-										filingUnder = issue
-											? { id: issue.id, reference: issue.reference }
-											: null;
-										addingChild = true;
-									}}
+									onclick={addSubIssue}
 								>
 									<Plus aria-hidden="true" />
 								</Button>
@@ -2441,7 +2573,9 @@
 							onstate={moveChild}
 						/>
 					</section>
+					{/if}
 
+					{#if showLinks}
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
 							<h2 class="min-w-0 flex-1">
@@ -2449,6 +2583,11 @@
 									Links
 								</Eyebrow>
 							</h2>
+							{#if ready.relations.length === 0}
+								<Button variant="ghost" size="sm" onclick={() => (linking = false)}>
+									Cancel
+								</Button>
+							{/if}
 						</div>
 						<IssueRelations
 							{issue}
@@ -2460,7 +2599,9 @@
 							onremove={removeRelation}
 						/>
 					</section>
+					{/if}
 
+					{#if showAttachments}
 					<section class="flex flex-col gap-1.5">
 						<div class="flex items-center gap-2.5">
 							<h2 class="min-w-0 flex-1">
@@ -2501,8 +2642,10 @@
 								ondismiss={(taskId) => dismissUpload("body", taskId)}
 							/>
 						{/if}
-				</section>
+					</section>
+					{/if}
 
+					{#if showCodeLinks}
 					<section class="flex flex-col gap-0.5">
 						<div class="mb-1.5 flex items-center gap-2.5">
 							<h2 class="min-w-0 flex-1">
@@ -2569,32 +2712,30 @@
 							</div>
 						{/if}
 
-						{#if canEdit}
+						{#if branchName && !branchCopied}
+							<p class="pt-1 font-mono text-xs break-all text-ink-700 select-all">{branchName}</p>
+						{/if}
+
+						{#if automationSuppressed}
 							<div class="flex flex-wrap items-center gap-2 pt-1">
-								<Button variant="secondary" onclick={copyBranchName} disabled={copyingBranch}>
-									{branchCopied ? "Copied" : copyingBranch ? "Reading…" : "Copy branch name"}
-								</Button>
-								<Button
-									variant="ghost"
-									onclick={() => setAutomation(!automationSuppressed)}
-									disabled={togglingAutomation}
-								>
-									{automationSuppressed ? "Resume automation" : "Stop moving this issue"}
-								</Button>
-							</div>
-
-							{#if branchName}
-								<p class="font-mono text-xs break-all text-muted-foreground">{branchName}</p>
-							{/if}
-
-							{#if automationSuppressed}
-								<p class="text-xs text-muted-foreground">
-									Source control still records what happens to the code here; it just does not
-									move this issue.
+								<p class="min-w-0 flex-1 text-xs text-muted-foreground text-pretty">
+									Git automation is paused. Source control still records what happens to the code
+									here; it just does not move this issue.
 								</p>
-							{/if}
+								{#if canEdit}
+									<Button
+										variant="ghost"
+										size="sm"
+										disabled={togglingAutomation}
+										onclick={() => setAutomation(false)}
+									>
+										Resume
+									</Button>
+								{/if}
+							</div>
 						{/if}
 					</section>
+					{/if}
 
 					<section class="flex flex-col gap-0.5">
 						<div class="mb-1.5 flex items-center gap-2.5">
@@ -2651,6 +2792,8 @@
 			</div>
 
 			<aside
+				id="issue-properties"
+				aria-label="Issue properties"
 				class={cn(
 					"relative w-full flex-none border-t border-line-default px-3.5 pt-3.5 pb-6 lg:w-(--properties-width) lg:overflow-auto lg:border-t-0 lg:border-l",
 					panels.collapsed("properties") && "lg:hidden"
@@ -2672,6 +2815,7 @@
 						label="Status"
 						placeholder="Move to"
 						editable={canEdit}
+						bind:open={pickingStatus}
 						options={ready.states.map((state) => ({
 							value: state.id,
 							label: state.name,
@@ -2700,6 +2844,7 @@
 						<PriorityPicker
 							chosen={issue.priority}
 							place="field"
+							bind:open={pickingPriority}
 							onchange={(priority) => setPriority(priority)}
 						/>
 					{/snippet}
@@ -2708,6 +2853,7 @@
 						label="Assignee"
 						placeholder="Assign to"
 						editable={canEdit}
+						bind:open={pickingAssignee}
 						options={[
 							{ value: "", label: "Unassigned", checked: !issue.assigneeAccountId },
 							...people.map((member) => ({
@@ -2768,6 +2914,7 @@
 							chosen={labels}
 							teamId={issue.teamId}
 							place="field"
+							bind:open={pickingLabels}
 							canCreate={canCreateLabels(role)}
 							onchange={changeLabels}
 							oncreated={(label) => (createdLabels = [...createdLabels, label])}
@@ -3035,24 +3182,6 @@
 						</div>
 					{/if}
 
-					<div class="flex min-h-5.5 items-center gap-1.5">
-						<span
-							class="w-19.5 flex-none caption text-muted-foreground"
-						>
-							Link
-						</span>
-						<button
-							type="button"
-							aria-label="Copy the link to {issue.reference}"
-							title="Copy"
-							onclick={() =>
-								copy(`${page.url.origin}${at(`/issues/${issue.reference}`)}`, `Copied a link to ${issue.reference}`)}
-							class="flex min-w-0 cursor-pointer items-center gap-1.5 font-mono text-xs text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-						>
-							<span class="min-w-0 truncate">{issueLink}</span>
-							<Copy class="size-3 flex-none" aria-hidden="true" />
-						</button>
-					</div>
 				</div>
 			</aside>
 		</div>
@@ -3084,23 +3213,28 @@
 			</div>
 		{/if}
 
-		<div
-			class="hidden h-7.5 flex-none items-center gap-4 border-t border-line-subtle px-3.5 lg:flex"
-		>
-			<span class="caption text-muted-foreground">
-				{issue.reference}
-			</span>
-			<div class="flex-1"></div>
-			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="E" /> edit description
-			</span>
-			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="⌘ ↵" /> save
-			</span>
-			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
-				<Kbd keys="Esc" /> cancel
-			</span>
-		</div>
+		{#if editingField}
+			<div
+				class="hidden h-8.5 flex-none items-center gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
+			>
+				<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
+				<span class="flex-1"></span>
+				<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<Kbd keys="⌘ ↵" /> Save
+				</span>
+				<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<Kbd keys="Esc" /> Stop editing
+				</span>
+			</div>
+		{:else}
+			<ShortcutBar
+				ids={["issue-step", "issue-status", "issue-priority", "issue-assignee", "issue-edit", "issue-back", "help"]}
+			>
+				{#snippet lead()}
+					<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>
+				{/snippet}
+			</ShortcutBar>
+		{/if}
 	{/if}
 </div>
 

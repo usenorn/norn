@@ -39,9 +39,7 @@
 </script>
 
 <div class="flex flex-col gap-1.5">
-	{#if groups.length === 0}
-		<p class="text-md text-muted-foreground">Nothing is linked to this issue yet.</p>
-	{:else}
+	{#if groups.length > 0}
 		<ul class="flex flex-col">
 			{#each groups as group (group.kind)}
 					{#each group.relations as relation (relation.id)}
