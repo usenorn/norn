@@ -11,9 +11,11 @@
 	class="hidden h-8.5 flex-none items-center gap-4 border-t border-line-subtle bg-card px-3.5 md:flex"
 >
 	{#if lead}
-		{@render lead()}
+		<span class="flex shrink-0 items-center whitespace-nowrap">
+			{@render lead()}
+		</span>
 	{/if}
 	<span class="flex-1"></span>
-	<ShortcutHints {ids} />
+	<ShortcutHints {ids} class="shrink" />
 	<RoamIndicator />
 </div>
