@@ -51,7 +51,7 @@
 		class={[
 			"flex items-center text-left motion-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
 			trigger === "avatar"
-				? "rounded-full"
+				? "relative rounded-full pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5"
 				: "h-8.5 w-full gap-2 rounded-md px-1.5 hover:bg-accent",
 			className,
 		]}
