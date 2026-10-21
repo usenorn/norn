@@ -27,6 +27,7 @@
 		orderings,
 		linkWith,
 		emptyGroups = true,
+		perTeam = false,
 	}: {
 		display: Display;
 		defaults: Display;
@@ -34,6 +35,7 @@
 		orderings: Ordering[];
 		linkWith: LinkWith;
 		emptyGroups?: boolean;
+		perTeam?: boolean;
 	} = $props();
 
 	let open = $state(false);
@@ -79,7 +81,9 @@
 				class="shrink-0"
 			>
 				<SlidersHorizontal aria-hidden="true" />
-				Grouped by {groupingNouns[display.grouping]}
+				{display.grouping === "none"
+					? "Not grouped"
+					: `Grouped by ${groupingNouns[display.grouping]}${perTeam && display.grouping === "state" ? ", per team" : ""}`}
 				<ChevronDown aria-hidden="true" />
 			</Button>
 		{/snippet}

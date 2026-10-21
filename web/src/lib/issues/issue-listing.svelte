@@ -1240,7 +1240,7 @@
 					size="icon-sm"
 					aria-label="List view"
 					title="List view"
-					aria-pressed={data.layout === "list"}
+					aria-current={data.layout === "list" ? "true" : undefined}
 					class={data.layout === "list" ? "border-primary bg-primary text-primary-foreground" : ""}
 				>
 					<List class="size-icon-toolbar" aria-hidden="true" />
@@ -1251,7 +1251,7 @@
 					size="icon-sm"
 					aria-label="Board view"
 					title="Board view"
-					aria-pressed={data.layout === "board"}
+					aria-current={data.layout === "board" ? "true" : undefined}
 					class={data.layout === "board" ? "border-primary bg-primary text-primary-foreground" : ""}
 				>
 					<Kanban class="size-icon-toolbar" aria-hidden="true" />
@@ -1313,6 +1313,7 @@
 			<DisplayMenu
 				{display}
 				defaults={surfaceDefaults.issues}
+				perTeam={ambiguous}
 				groupings={boardGroupings}
 				orderings={surfaceOrderings.issues}
 				{linkWith}
@@ -1430,6 +1431,10 @@
 					{#if applied.kind === "applied"}
 						Nothing you can see matches this view right now. Someone else opening it may well see
 						something &mdash; it is evaluated against whichever teams each person can see.
+					{:else if counts && counts.all > 0}
+						{data.tab === "backlog"
+							? "Nothing is waiting to be picked up; everything else is under way or finished."
+							: "Nothing is in progress or waiting to start."}
 					{:else}
 						Raise the first one, and it starts in whichever state its team files new work into.
 					{/if}
@@ -1652,12 +1657,16 @@
 	{:else}
 		<ShortcutBar
 			ids={[
-				"cursor-down",
-				...(data.layout === "board" ? (["cursor-left", "cursor-right"] as const) : []),
-				"cursor-open",
-				"status-set",
-				"select-toggle",
-				...(cycling.size > 0 ? (["bulk-cycle"] as const) : []),
+				...(flat.length > 0
+					? ([
+							"cursor-down",
+							...(data.layout === "board" ? (["cursor-left", "cursor-right"] as const) : []),
+							"cursor-open",
+							"status-set",
+							"select-toggle",
+							...(cycling.size > 0 ? (["bulk-cycle"] as const) : []),
+						] as const)
+					: []),
 				"issue-filter",
 				"issue-new",
 				"help",

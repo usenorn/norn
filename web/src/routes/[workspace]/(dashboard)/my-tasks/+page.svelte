@@ -172,7 +172,10 @@
 
 	const issueOf = $derived(new Map(loaded.map((issue) => [issue.reference, issue])));
 
+	let filterOpen = $state(false);
+
 	bindShortcuts({
+		"issue-filter": () => (filterOpen = true),
 		"status-set": (binding) => void moveStatus(statusIndexOf(binding)),
 	});
 
@@ -224,7 +227,7 @@
 		<div
 			class="flex min-h-8.5 flex-wrap items-center gap-x-3 gap-y-1 border-t border-line-subtle py-1 pr-3 pl-3.5"
 		>
-			<FilterBar {facets} {offered} {catalogue} {linkWith} />
+			<FilterBar {facets} {offered} {catalogue} {linkWith} bind:open={filterOpen} />
 
 			<div class="min-w-2 flex-1"></div>
 

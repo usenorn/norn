@@ -99,7 +99,7 @@
 			aria-label="Select {issue.reference}"
 			disabled={pending}
 			onclick={(event) => onselect(event.shiftKey)}
-			data-on={selected || cursor}
+			data-on={selected}
 			class="relative z-1 -mr-0.5 hidden h-row w-4 flex-none cursor-pointer items-center justify-center opacity-0 sm:flex motion-control group-hover/row:opacity-100 focus-visible:opacity-100 data-[on=true]:opacity-100"
 		>
 			<span
@@ -162,7 +162,7 @@
 			</a>
 		{/if}
 		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">
-			{issue.reference}{#if dueLine}
+			<span class="font-mono">{issue.reference}</span>{#if dueLine}
 				· <span class={late ? "text-priority-urgent" : ""}>{dueLine}</span>{/if}{#if firstName}
 				· {firstName}{/if}
 		</span>

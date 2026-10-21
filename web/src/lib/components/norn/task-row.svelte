@@ -83,7 +83,7 @@
 			{task.title}
 		</span>
 		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">
-			{task.id}{#if dueLine}
+			<span class="font-mono">{task.id}</span>{#if dueLine}
 				· <span class={late ? "text-priority-urgent" : ""}>{dueLine}</span>{/if}{#if firstName}
 				· {firstName}{/if}
 		</span>
