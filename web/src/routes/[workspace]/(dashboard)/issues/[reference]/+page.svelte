@@ -47,6 +47,8 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueField from "$lib/issues/issue-field.svelte";
+	import PropertyPicker from "$lib/issues/property-picker.svelte";
+	import { MediaQuery } from "svelte/reactivity";
 	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
 	import DelegationField from "$lib/agents/delegation-field.svelte";
 	import {
@@ -1248,6 +1250,27 @@
 	let pickingPriority = $state(false);
 	let pickingAssignee = $state(false);
 	let pickingLabels = $state(false);
+	let stripStatus = $state(false);
+	let stripPriority = $state(false);
+	let stripAssignee = $state(false);
+
+	const railShown = new MediaQuery("min-width: 64rem", true);
+
+	const statusOptions = $derived(
+		(ready?.states ?? []).map((state) => ({
+			value: state.id,
+			label: state.name,
+			checked: state.id === issue?.state.id,
+		}))
+	);
+	const assigneeOptions = $derived([
+		{ value: "", label: "Unassigned", checked: !issue?.assigneeAccountId },
+		...people.map((member) => ({
+			value: member.accountId,
+			label: member.displayName || member.email || member.accountId,
+			checked: member.accountId === issue?.assigneeAccountId,
+		})),
+	]);
 	let addingChild = $state(false);
 	let filingUnder = $state.raw<{ id: string; reference: string } | null>(null);
 	let childPrefill = $state<NewIssuePrefill | undefined>(undefined);
@@ -1705,9 +1728,15 @@
 
 		const states = ready.states;
 		const released = [
-			shortcuts.register("issue-status", () => openPicker(() => (pickingStatus = true))),
-			shortcuts.register("issue-priority", () => openPicker(() => (pickingPriority = true))),
-			shortcuts.register("issue-assignee", () => openPicker(() => (pickingAssignee = true))),
+			shortcuts.register("issue-status", () =>
+				railShown.current ? openPicker(() => (pickingStatus = true)) : (stripStatus = true)
+			),
+			shortcuts.register("issue-priority", () =>
+				railShown.current ? openPicker(() => (pickingPriority = true)) : (stripPriority = true)
+			),
+			shortcuts.register("issue-assignee", () =>
+				railShown.current ? openPicker(() => (pickingAssignee = true)) : (stripAssignee = true)
+			),
 			shortcuts.register("issue-labels", () => openPicker(() => (pickingLabels = true))),
 			shortcuts.register("status-set", (binding) => {
 				const state = states[statusIndexOf(binding)];
@@ -1802,7 +1831,7 @@
 			</a>
 			{#if issue}
 				{#if issue.projectName && issue.projectSlug}
-					<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
+					<span class="hidden text-sm text-text-disabled sm:inline" aria-hidden="true">/</span>
 					<a
 						href={at(`/projects/${issue.projectSlug}`)}
 						class="hidden text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:inline"
@@ -2222,6 +2251,75 @@
 								<span class="tabular-nums text-xs text-muted-foreground">
 									{commentTotal}
 									{commentTotal === 1 ? "comment" : "comments"}
+								</span>
+							{/if}
+						</div>
+
+						<div class="mt-1 flex flex-wrap items-center gap-1.5 lg:hidden">
+							{#if canEdit}
+								<PropertyPicker
+									options={statusOptions}
+									placeholder="Move to"
+									bind:open={stripStatus}
+									onpick={move}
+								>
+									{#snippet trigger(props)}
+										<Button {...props} variant="property" size="property" aria-label="Status: change">
+											<StatusIcon category={issue.state.category} decorative />
+											{issue.state.name}
+										</Button>
+									{/snippet}
+								</PropertyPicker>
+								<PriorityPicker
+									chosen={issue.priority}
+									place="dialog"
+									bind:open={stripPriority}
+									onchange={(priority) => setPriority(priority)}
+								/>
+								<PropertyPicker
+									options={assigneeOptions}
+									placeholder="Assign to"
+									bind:open={stripAssignee}
+									onpick={setAssignee}
+								>
+									{#snippet trigger(props)}
+										<Button {...props} variant="property" size="property" aria-label="Assignee: change">
+											{#if assigneeName}
+												<PersonAvatar
+													accountId={issue.assigneeAccountId ?? ""}
+													name={assigneeName}
+													size="xs"
+												/>
+												{assigneeName}
+											{:else}
+												<UserRound aria-hidden="true" />
+												Unassigned
+											{/if}
+										</Button>
+									{/snippet}
+								</PropertyPicker>
+							{:else}
+								<span class="inline-flex items-center gap-1.5 text-sm text-ink-900">
+									<StatusIcon category={issue.state.category} decorative />
+									{issue.state.name}
+								</span>
+								<span class="inline-flex items-center gap-1.5 text-sm text-ink-900">
+									<PriorityIcon priority={issue.priority} />
+									{priorityLabel(issue.priority)}
+								</span>
+								<span class="inline-flex items-center gap-1.5 text-sm text-ink-900">
+									{assigneeName || "Unassigned"}
+								</span>
+							{/if}
+							{#if issue.dueOn}
+								<span
+									class="inline-flex items-center gap-1.5 px-1 text-sm tabular-nums {!done &&
+									overdue(issue.dueOn, data.now, data.workspace.timezone)
+										? 'text-priority-urgent'
+										: 'text-muted-foreground'}"
+								>
+									<CalendarDays class="size-icon-row" aria-hidden="true" />
+									{dueLabel(issue.dueOn, data.now, data.workspace.timezone, done)}
 								</span>
 							{/if}
 						</div>
@@ -2816,11 +2914,7 @@
 						placeholder="Move to"
 						editable={canEdit}
 						bind:open={pickingStatus}
-						options={ready.states.map((state) => ({
-							value: state.id,
-							label: state.name,
-							checked: state.id === issue.state.id,
-						}))}
+						options={statusOptions}
 						onpick={move}
 					>
 						{#snippet glyph()}
@@ -2854,14 +2948,7 @@
 						placeholder="Assign to"
 						editable={canEdit}
 						bind:open={pickingAssignee}
-						options={[
-							{ value: "", label: "Unassigned", checked: !issue.assigneeAccountId },
-							...people.map((member) => ({
-								value: member.accountId,
-								label: member.displayName || member.email || member.accountId,
-								checked: member.accountId === issue.assigneeAccountId,
-							})),
-						]}
+						options={assigneeOptions}
 						onpick={setAssignee}
 					>
 						{#snippet glyph()}

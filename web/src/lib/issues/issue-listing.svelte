@@ -217,6 +217,7 @@
 		new Map(members.map((member) => [member.accountId, member.displayName ?? ""]))
 	);
 	const flat = $derived(columns.flatMap((column) => column.issues));
+	const referenceWidth = $derived(Math.max(5, ...flat.map((issue) => issue.reference.length)));
 	const offsets = $derived.by(() => {
 		const at = new Map<string, number>();
 		let seen = 0;
@@ -238,9 +239,14 @@
 	const statesOfTeam = $derived((teamId: string) => statesByTeam[teamId] ?? []);
 	const keyOfTeam = $derived((teamId: string) => teams.find((each) => each.id === teamId)?.key);
 	const ambiguous = $derived(new Set(states.map((state) => state.teamId)).size > 1);
-	const stateLabel = $derived((state: WorkflowState) =>
-		ambiguous ? `${state.name} · ${keyOfTeam(state.teamId) ?? ""}`.trim() : state.name
+	const nameOfTeam = $derived(
+		(teamId: string) => teams.find((each) => each.id === teamId)?.name ?? keyOfTeam(teamId)
 	);
+	const stateLabel = $derived((state: WorkflowState) => {
+		const team = ambiguous ? nameOfTeam(state.teamId) : undefined;
+
+		return team ? `${state.name} · ${team}` : state.name;
+	});
 	const columnName = $derived((column: (typeof columns)[number]) =>
 		ambiguous && column.mark.kind === "state" ? stateLabel(column.mark.state) : column.name
 	);
@@ -1040,9 +1046,6 @@
 {#snippet columnMark(column: (typeof columns)[number])}
 	{#if column.mark.kind === "state"}
 		<StatusIcon category={column.mark.state.category} name={column.mark.state.name} />
-		{#if ambiguous}
-			<TeamKey key={keyOfTeam(column.mark.state.teamId) ?? ""} />
-		{/if}
 	{:else if column.mark.kind === "priority"}
 		<PriorityIcon priority={column.mark.priority} />
 	{:else if column.mark.kind === "assignee"}
@@ -1171,11 +1174,17 @@
 	</PropertyPicker>
 {/snippet}
 
-<div class="relative flex min-h-0 flex-1 flex-col">
+<div
+	class="relative flex min-h-0 flex-1 flex-col"
+	style="--reference-width: {referenceWidth}ch"
+>
 	<div class="flex-none border-b border-line-default">
 		<div class="flex min-h-11 flex-wrap items-center gap-2 py-1.5 pr-3 pl-4 sm:flex-nowrap sm:py-0">
 			<div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-				<List class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
+				<List
+					class="hidden size-icon-toolbar shrink-0 text-muted-foreground sm:block"
+					aria-hidden="true"
+				/>
 				<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Issues</h1>
 
 				{#if applied.kind === "applied"}
@@ -1195,7 +1204,7 @@
 				{#if source}
 					<div
 						role="tablist"
-						class="ml-1 flex shrink-0 items-center gap-3"
+						class="scrollbar-none ml-1 flex min-w-0 items-center gap-3 overflow-x-auto pr-4 mask-r-from-[calc(100%-1rem)] sm:pr-0 sm:mask-none"
 						aria-label="Which issues"
 					>
 						{#each issueTabs as tab (tab)}
@@ -1233,6 +1242,7 @@
 					variant="outline"
 					size="icon-sm"
 					aria-label="List view"
+					title="List view"
 					aria-pressed={data.layout === "list"}
 					class={data.layout === "list" ? "border-primary bg-primary text-primary-foreground" : ""}
 				>
@@ -1243,14 +1253,20 @@
 					variant="outline"
 					size="icon-sm"
 					aria-label="Board view"
+					title="Board view"
 					aria-pressed={data.layout === "board"}
 					class={data.layout === "board" ? "border-primary bg-primary text-primary-foreground" : ""}
 				>
 					<Kanban class="size-icon-toolbar" aria-hidden="true" />
 				</Button>
-				<Button size="sm" disabled={teams.length === 0} onclick={() => raising.raise()}>
+				<Button
+					size="sm"
+					aria-label="New issue"
+					disabled={teams.length === 0}
+					onclick={() => raising.raise()}
+				>
 					<Plus aria-hidden="true" />
-					New issue
+					<span class="hidden sm:inline">New issue</span>
 				</Button>
 			</div>
 		</div>
@@ -1461,7 +1477,7 @@
 								<span
 									class="caption text-ink-600"
 								>
-									{column.name}
+									{columnName(column)}
 								</span>
 								<span class="text-2xs text-muted-foreground tabular-nums">
 									{column.total}
@@ -1533,7 +1549,7 @@
 								<span
 									class="caption text-ink-600"
 								>
-									{column.name}
+									{columnName(column)}
 								</span>
 								<span class="text-2xs text-muted-foreground tabular-nums">
 									{column.total}

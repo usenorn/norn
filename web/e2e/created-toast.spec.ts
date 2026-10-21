@@ -10,7 +10,7 @@ test("the toast for a new issue shows how its description begins and copies its 
 
 	await page.goto(at("/my-tasks"));
 
-	await page.getByRole("button", { name: "New task" }).first().click();
+	await page.getByRole("button", { name: "New issue" }).first().click();
 	await page.getByRole("textbox", { name: "Issue title" }).fill(title);
 	await page.getByRole("textbox", { name: "Description" }).click();
 	await page.keyboard.type("Refunds stall after checkout");

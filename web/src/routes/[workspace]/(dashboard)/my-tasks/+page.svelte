@@ -158,6 +158,7 @@
 	}
 
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
+	const referenceWidth = $derived(Math.max(5, ...flat.map((task) => task.id.length)));
 
 	$effect(() => {
 		rememberOrder(returnTo, flat.map((task) => task.id));
@@ -199,7 +200,10 @@
 
 <svelte:head><title>My tasks · Norn</title></svelte:head>
 
-<div class="flex min-h-0 flex-1 flex-col">
+<div
+	class="flex min-h-0 flex-1 flex-col"
+	style="--reference-width: {referenceWidth}ch"
+>
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
@@ -213,7 +217,7 @@
 			</div>
 			<Button size="sm" onclick={() => raising.raise()}>
 				<Plus aria-hidden="true" />
-				New task
+				New issue
 			</Button>
 		</div>
 		<div

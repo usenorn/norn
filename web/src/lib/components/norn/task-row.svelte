@@ -36,6 +36,15 @@
 	const settled = $derived(
 		task.state.category === "complete" || task.state.category === "abandoned"
 	);
+	const line = $derived(
+		[
+			task.id,
+			task.date && showing.includes("due") ? task.date : "",
+			task.assignee?.split(" ")[0] ?? "",
+		]
+			.filter(Boolean)
+			.join(" · ")
+	);
 </script>
 
 <a
@@ -48,27 +57,32 @@
 	data-selected={selected}
 	data-dragging={dragging}
 	class={cn(
-		"flex h-row items-center gap-2 border-b border-line-subtle bg-card px-row-x motion-row cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40",
+		"flex min-h-12 items-center gap-3 border-b border-line-subtle bg-card px-4 py-1.5 motion-row cursor-row hover:bg-accent data-[selected=true]:rule-lead data-[selected=true]:bg-surface-selected data-[dragging=true]:opacity-40 sm:h-row sm:min-h-0 sm:gap-2 sm:px-row-x sm:py-0",
 		draggable && "cursor-grab active:cursor-grabbing",
 		className
 	)}
 >
-	<PriorityIcon priority={task.priority} class="size-icon-row" />
-	<StatusIcon category={task.state.category} name={task.state.name} />
+	<PriorityIcon priority={task.priority} class="size-icon-row order-last sm:order-none" />
+	<span class="order-first flex flex-none sm:order-none">
+		<StatusIcon category={task.state.category} name={task.state.name} />
+	</span>
 	<span
-		class="w-15 flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900"
+		class="hidden w-[var(--reference-width,7ch)] flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900 sm:block"
 		data-strong={cursor || selected}
 	>
 		{task.id}
 	</span>
-	<span
-		class="min-w-0 flex-1 truncate text-md tracking-snug {settled
-			? 'text-muted-foreground'
-			: 'text-ink-900'}"
-	>
-		{task.title}
+	<span class="flex min-w-0 flex-1 flex-col gap-0.5 sm:block">
+		<span
+			class="block truncate text-base font-medium tracking-snug sm:text-md sm:font-normal {settled
+				? 'text-muted-foreground'
+				: 'text-ink-900'}"
+		>
+			{task.title}
+		</span>
+		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">{line}</span>
 	</span>
-	<span class="flex flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground">
+	<span class="hidden flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground sm:flex">
 		<LabelChips {labels} place="row" />
 		{#if task.date && showing.includes("due")}
 			<span class="hidden tabular-nums text-xs whitespace-nowrap text-muted-foreground sm:inline">

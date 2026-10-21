@@ -120,7 +120,7 @@
 	{/if}
 
 	<span
-		class="hidden w-15 flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900 sm:block"
+		class="hidden w-[var(--reference-width,7ch)] flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900 sm:block"
 		data-strong={cursor || selected}
 	>
 		{issue.reference}

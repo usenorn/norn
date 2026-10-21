@@ -19,7 +19,7 @@ async function onScreen(page: Page) {
 
 async function openComposer(page: Page) {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 	await expect(page.getByRole("dialog")).toBeVisible();
 
 	const writing = page.getByRole("textbox", { name: "Description" });
@@ -94,7 +94,7 @@ test.describe("the suggestions in an editor", () => {
 
 test("the placeholder is there before anybody clicks, and follows the caret", async ({ page }) => {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 	await expect(page.getByRole("dialog")).toBeVisible();
 
 	const shown = () =>

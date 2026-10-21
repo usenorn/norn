@@ -16,14 +16,14 @@ function offered(page: Page, title: string) {
 }
 
 async function raise(page: Page, title: string) {
-	await page.getByRole("button", { name: "New task" }).first().click();
+	await page.getByRole("button", { name: "New issue" }).first().click();
 	await page.getByRole("textbox", { name: "Issue title" }).fill(title);
 }
 
 async function leaveUnfinished(page: Page, title: string) {
 	await raise(page, title);
 	await page.keyboard.press("Escape");
-	await page.getByRole("button", { name: "New task" }).first().click();
+	await page.getByRole("button", { name: "New issue" }).first().click();
 	await expect(offered(page, title)).toBeVisible();
 }
 
@@ -57,7 +57,7 @@ test("creating an issue leaves nothing to resume", async ({ page }) => {
 
 	await expect(page.getByRole("link", { name: new RegExp(title) }).first()).toBeVisible();
 
-	await page.getByRole("button", { name: "New task" }).first().click();
+	await page.getByRole("button", { name: "New issue" }).first().click();
 
 	await expect(offered(page, anchor)).toBeVisible();
 	await expect(offered(page, title)).toHaveCount(0);
@@ -93,7 +93,7 @@ test("creating from a resumed draft removes that draft", async ({ page }) => {
 
 	await expect(page.getByRole("link", { name: new RegExp(title) }).first()).toBeVisible();
 
-	await page.getByRole("button", { name: "New task" }).first().click();
+	await page.getByRole("button", { name: "New issue" }).first().click();
 
 	await expect(offered(page, anchor)).toBeVisible();
 	await expect(offered(page, title)).toHaveCount(0);

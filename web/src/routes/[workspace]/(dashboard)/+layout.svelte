@@ -445,7 +445,7 @@
 				{@const Glyph = entry.icon}
 				{#if index === 2}
 					<div class="flex flex-1 items-center justify-center">
-						<Button size="touch" aria-label="New task" onclick={() => raising.raise()}>
+						<Button size="touch" aria-label="New issue" onclick={() => raising.raise()}>
 							<Plus aria-hidden="true" />
 						</Button>
 					</div>

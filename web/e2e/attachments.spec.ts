@@ -98,7 +98,7 @@ const screenshot = `async () => {
 
 test("a screenshot pasted into a new issue stays where the caret was", async ({ page }) => {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 
 	await page.getByRole("textbox", { name: "Issue title" }).fill("Pasted screenshot");
 	await page.getByRole("textbox", { name: "Description" }).click();
@@ -143,7 +143,7 @@ test("a screenshot pasted into a new issue stays where the caret was", async ({ 
 
 test("a file dropped on the editor inside the form is attached once", async ({ page }) => {
 	await page.goto(at("/my-tasks"));
-	await page.getByRole("button", { name: "New task" }).click();
+	await page.getByRole("button", { name: "New issue" }).click();
 	await page.getByRole("textbox", { name: "Description" }).click();
 
 	await page.evaluate(async (make) => {

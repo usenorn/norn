@@ -13,7 +13,7 @@ test.describe("My tasks", () => {
 		await expect(page).toHaveURL(new RegExp(`${fixture().slug}/inbox$`));
 
 		await page.goBack();
-		await page.getByRole("button", { name: "New task" }).click();
+		await page.getByRole("button", { name: "New issue" }).click();
 
 		const dialog = page.getByRole("dialog");
 
