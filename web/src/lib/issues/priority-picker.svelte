@@ -12,7 +12,7 @@
 				field: { trigger: fieldTrigger() },
 				row: {
 					trigger:
-						"inline-flex h-6 w-5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2",
+						"relative inline-flex h-6 w-5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5",
 				},
 				dialog: {
 					trigger: "",

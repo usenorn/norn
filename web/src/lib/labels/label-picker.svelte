@@ -13,7 +13,7 @@
 				field: { trigger: fieldTrigger({ class: "items-start" }), blank: "text-muted-foreground" },
 				row: {
 					trigger:
-						"inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2",
+						"relative inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5",
 					blank: "size-3.5 text-muted-foreground",
 					content: "w-49",
 				},

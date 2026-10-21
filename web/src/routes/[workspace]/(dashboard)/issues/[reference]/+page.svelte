@@ -1844,7 +1844,7 @@
 		<div class="flex min-w-0 flex-1 items-center gap-1.75">
 			<a
 				href={backToList}
-				class="text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="relative text-md whitespace-nowrap text-ink-600 motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:after:absolute pointer-coarse:after:-inset-3"
 			>
 				Issues
 			</a>

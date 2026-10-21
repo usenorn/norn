@@ -293,16 +293,16 @@
 			</Button>
 		</div>
 
-		<div class="flex h-8.5 items-center gap-2.5 border-t border-line-subtle pr-3 pl-3.5">
+		<div class="flex min-h-8.5 items-center gap-2.5 border-t border-line-subtle py-1 pr-3 pl-3.5 sm:py-0">
 			<div
-				class="flex min-w-0 gap-0.5 overflow-x-auto rounded-sm border border-line-default p-0.5"
+				class="scrollbar-none flex min-w-0 gap-0.5 overflow-x-auto rounded-sm border border-line-default p-0.5"
 			>
 				{#each sourceSlots as slot (slot.label)}
 					{#if slot.kind === "live"}
 						<a
 							href={sourcePath(slot.value)}
 							aria-current={tab === slot.value ? "page" : undefined}
-							class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 caption motion-control {tab ===
+							class="inline-flex h-8 flex-none sm:h-5.5 cursor-pointer items-center gap-1.5 rounded-xs px-2 caption motion-control {tab ===
 							slot.value
 								? 'bg-primary text-primary-foreground'
 								: 'text-ink-600 hover:bg-accent'}"
@@ -316,7 +316,7 @@
 							disabled
 							aria-label="{slot.label} — {unrecordedSource}"
 							title={unrecordedSource}
-							class="inline-flex h-5.5 flex-none items-center gap-1.5 rounded-xs px-2 caption text-muted-foreground opacity-60"
+							class="inline-flex h-8 flex-none sm:h-5.5 items-center gap-1.5 rounded-xs px-2 caption text-muted-foreground opacity-60"
 						>
 							{slot.label}
 							<span aria-hidden="true">—</span>

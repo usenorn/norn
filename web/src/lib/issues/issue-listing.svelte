@@ -1100,7 +1100,7 @@
 				type="button"
 				aria-label="Change status on {issue.reference}"
 				disabled={draftIDs.has(issue.id)}
-				class="inline-flex h-6 w-5.5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
+				class="relative inline-flex h-6 w-5.5 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5"
 			>
 				<StatusIcon category={issue.state.category} name={issue.state.name} />
 			</button>
@@ -1150,7 +1150,7 @@
 				type="button"
 				aria-label="Change assignee on {issue.reference}"
 				disabled={draftIDs.has(issue.id)}
-				class="inline-flex size-6 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2"
+				class="relative inline-flex size-6 cursor-pointer items-center justify-center rounded-sm hover:bg-paper-2 pointer-coarse:after:absolute pointer-coarse:after:-inset-2.5"
 			>
 				{#if held}
 					<PersonAvatar
@@ -1213,7 +1213,7 @@
 								role="tab"
 								aria-selected={data.tab === tab}
 								data-active={data.tab === tab}
-								class="relative inline-flex h-7.5 items-center gap-1.5 text-md font-medium whitespace-nowrap text-muted-foreground motion-control after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent after:motion-control hover:text-ink-900 hover:after:bg-line-strong data-[active=true]:text-ink-900 data-[active=true]:after:bg-primary"
+								class="relative inline-flex h-11 items-center gap-1.5 text-md font-medium whitespace-nowrap sm:h-7.5 text-muted-foreground motion-control after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent after:motion-control hover:text-ink-900 hover:after:bg-line-strong data-[active=true]:text-ink-900 data-[active=true]:after:bg-primary"
 							>
 								{tabLabels[tab]}
 								{#if counts}
@@ -1307,7 +1307,7 @@
 				<Button
 					variant="ghost"
 					size="sm"
-					class="shrink-0"
+					class={savable ? "shrink-0" : "hidden shrink-0 sm:inline-flex"}
 					disabled={!savable}
 					title={savable
 						? undefined
@@ -1484,7 +1484,7 @@
 								aria-expanded={!shut}
 								onclick={() =>
 									shut ? collapsed.delete(column.key) : collapsed.add(column.key)}
-								class="inline-flex h-6 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-accent"
+								class="relative inline-flex h-6 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-accent pointer-coarse:after:absolute pointer-coarse:after:-inset-y-2.5"
 							>
 								<ChevronDown
 									class="size-3.25 text-muted-foreground motion-control {shut

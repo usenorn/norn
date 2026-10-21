@@ -219,7 +219,7 @@
 					</span>
 				{/if}
 			</div>
-			<Button size="sm" onclick={() => raising.raise()}>
+			<Button size="sm" class="hidden sm:inline-flex" onclick={() => raising.raise()}>
 				<Plus aria-hidden="true" />
 				New issue
 			</Button>

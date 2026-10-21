@@ -473,7 +473,7 @@
 			<Target class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<a
 				href={projectsPath(slug)}
-				class="text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+				class="relative text-md font-medium tracking-snug whitespace-nowrap text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring pointer-coarse:after:absolute pointer-coarse:after:-inset-3"
 			>
 				Projects
 			</a>

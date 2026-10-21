@@ -128,14 +128,14 @@
 				<a
 					href={here}
 					aria-current={data.tab === "overview" ? "page" : undefined}
-					class="rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900"
+					class="inline-flex items-center rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900 pointer-coarse:min-h-10 pointer-coarse:px-3"
 				>
 					Overview
 				</a>
 				<a
 					href="{here}?tab=members"
 					aria-current={data.tab === "members" ? "page" : undefined}
-					class="rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900"
+					class="inline-flex items-center rounded-sm px-2 py-1 text-sm text-muted-foreground motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-accent aria-[current=page]:text-ink-900 pointer-coarse:min-h-10 pointer-coarse:px-3"
 				>
 					Members
 				</a>
