@@ -158,7 +158,7 @@
 	}
 
 	const flat = $derived(buckets.flatMap((bucket) => bucket.tasks));
-	const referenceWidth = $derived(Math.max(5, ...flat.map((task) => task.id.length)));
+	const referenceWidth = $derived(Math.max(5, ...flat.map((task) => task.id.length)) + 1);
 
 	$effect(() => {
 		rememberOrder(returnTo, flat.map((task) => task.id));
@@ -166,6 +166,7 @@
 
 	const cursor = listCursor(() => ({
 		rows: flat,
+		referenceOf: (task) => task.id,
 		open: (task) => void goto(issueHref(task.id)),
 	}));
 
@@ -208,7 +209,7 @@
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
 				<CircleDot class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-				<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">My tasks</h1>
+				<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">My tasks</h1>
 				{#if rows.kind === "ready"}
 					<span class="text-xs text-muted-foreground tabular-nums">
 						{total}{nextCursor ? "+" : ""}
@@ -300,6 +301,8 @@
 							href={issueHref(task.id)}
 							cursor={cursor.holds(task)}
 							shown={data.display.shown}
+							now={data.now}
+							timezone={data.workspace.timezone}
 						/>
 					{/each}
 				</section>

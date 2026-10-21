@@ -42,14 +42,11 @@ test.describe("My tasks", () => {
 		await expect(page.getByRole("link", { name: /Audit log export times out/ })).toBeVisible();
 	});
 
-	test("the grouping chosen in display options is remembered", async ({ page }) => {
+	test("the grouping chosen is remembered", async ({ page }) => {
 		await page.goto(at("/my-tasks"));
 
-		await expect(page.getByRole("button", { name: /Grouped by due date/ })).toBeVisible();
-
-		await page.getByRole("button", { name: "Display options" }).click();
-		await page.getByRole("button", { name: /Grouping/ }).click();
-		await page.getByRole("link", { name: "Status", exact: true }).click();
+		await page.getByRole("button", { name: /Grouped by due date/ }).click();
+		await page.getByRole("menuitem", { name: "Status", exact: true }).click();
 
 		await expect(page.getByRole("button", { name: /Grouped by status/ })).toBeVisible();
 

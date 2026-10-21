@@ -13,7 +13,7 @@ export type Task = {
 	priority: IssuePriority;
 	assignee: string | null;
 	assigneeAccountId: string | null;
-	date: string | null;
+	dueOn: string | null;
 	labels: TaskLabel[];
 	project: string;
 	cycle: string | null;

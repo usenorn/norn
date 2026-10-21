@@ -40,7 +40,7 @@
 	} = $props();
 
 	let open = $state(false);
-	let pane = $state<"root" | "grouping" | "ordering">("root");
+	let pane = $state<"root" | "ordering">("root");
 
 	const groupLink = $derived((grouping: Grouping) =>
 		linkWith({ group: grouping === defaults.grouping ? null : grouping })
@@ -81,7 +81,7 @@
 					<a href={groupLink(grouping)} {...props}>
 						<span class="flex-1">{groupingLabels[grouping]}</span>
 						{#if display.grouping === grouping}
-							<span class="font-mono text-2xs text-ink-600">✓</span>
+							<Check class="size-3.25 text-ink-900" aria-hidden="true" />
 						{/if}
 					</a>
 				{/snippet}
@@ -111,17 +111,6 @@
 			<div class="flex flex-col p-3">
 				<button
 					type="button"
-					onclick={() => (pane = "grouping")}
-					class="flex h-7.5 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-				>
-					<span class="text-md text-foreground">Grouping</span>
-					<span class="flex-1"></span>
-					<span class="text-sm text-muted-foreground">{groupingLabels[display.grouping]}</span>
-					<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
-				</button>
-
-				<button
-					type="button"
 					onclick={() => (pane = "ordering")}
 					class="flex h-7.5 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
 				>
@@ -144,18 +133,21 @@
 
 				<span class="-mx-3 my-2.5 h-px bg-line-subtle" aria-hidden="true"></span>
 
-				<span class="caption text-ink-600">
-					Display properties
+				<span class="caption px-1.5 text-ink-600">
+					Show on each row
 				</span>
-				<div class="flex flex-wrap gap-1.5 pt-2">
+				<div class="flex flex-col pt-1">
 					{#each rowProperties as property (property)}
-						<a
-							href={linkWith({ hide: hiddenParam(display.shown, property) })}
-							data-on={display.shown.includes(property)}
-							class="inline-flex h-5.5 items-center rounded-sm border border-line-default bg-card px-2 text-xs font-medium text-ink-600 motion-control hover:text-ink-900 data-[on=true]:border-primary data-[on=true]:bg-primary data-[on=true]:text-primary-foreground"
-						>
-							{rowPropertyLabels[property]}
-						</a>
+						<label class="flex h-7.5 items-center gap-2 px-1.5 text-md text-foreground">
+							<span class="flex-1">{rowPropertyLabels[property]}</span>
+							<Switch
+								checked={display.shown.includes(property)}
+								onCheckedChange={() =>
+									goto(linkWith({ hide: hiddenParam(display.shown, property) }), {
+										noScroll: true,
+									})}
+							/>
+						</label>
 					{/each}
 				</div>
 
@@ -173,38 +165,22 @@
 					class="flex h-7 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
 				>
 					<ArrowLeft class="size-3.25 text-muted-foreground" aria-hidden="true" />
-					<span class="text-sm text-muted-foreground">
-						{pane === "grouping" ? "Grouping" : "Ordering"}
-					</span>
+					<span class="text-sm text-muted-foreground">Ordering</span>
 				</button>
 
 				<span class="-mx-1.5 my-1 h-px bg-line-subtle" aria-hidden="true"></span>
 
-				{#if pane === "grouping"}
-					{#each groupings as grouping (grouping)}
-						<a
-							href={groupLink(grouping)}
-							class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
-						>
-							<span class="flex-1">{groupingLabels[grouping]}</span>
-							{#if display.grouping === grouping}
-								<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-							{/if}
-						</a>
-					{/each}
-				{:else}
-					{#each orderings as ordering (ordering)}
-						<a
-							href={orderLink(ordering)}
-							class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
-						>
-							<span class="flex-1">{orderingLabels[ordering]}</span>
-							{#if display.ordering === ordering}
-								<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-							{/if}
-						</a>
-					{/each}
-				{/if}
+				{#each orderings as ordering (ordering)}
+					<a
+						href={orderLink(ordering)}
+						class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
+					>
+						<span class="flex-1">{orderingLabels[ordering]}</span>
+						{#if display.ordering === ordering}
+							<Check class="size-3.25 text-ink-900" aria-hidden="true" />
+						{/if}
+					</a>
+				{/each}
 			</div>
 		{/if}
 	</Popover.Content>

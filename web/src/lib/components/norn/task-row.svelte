@@ -5,6 +5,8 @@
 	import StatusIcon from "./status-icon.svelte";
 	import LabelChips from "$lib/labels/label-chips.svelte";
 	import { cn } from "$lib/utils.js";
+	import { dueLabel, overdue } from "$lib/time";
+	import { finished } from "$lib/team/states";
 	import type { RowProperty } from "$lib/issues/display";
 	import type { Task } from "$lib/tasks/types";
 
@@ -18,6 +20,8 @@
 		ondragstart,
 		ondragend,
 		shown: showing = ["labels", "due"],
+		now = "",
+		timezone = "UTC",
 		class: className,
 	}: {
 		task: Task;
@@ -29,26 +33,24 @@
 		ondragstart?: (event: DragEvent) => void;
 		ondragend?: (event: DragEvent) => void;
 		shown?: readonly RowProperty[];
+		now?: string;
+		timezone?: string;
 		class?: string;
 	} = $props();
 
 	const labels = $derived(showing.includes("labels") ? task.labels : []);
-	const settled = $derived(
-		task.state.category === "complete" || task.state.category === "abandoned"
-	);
+	const settled = $derived(finished(task.state.category));
+	const due = $derived(showing.includes("due") && task.dueOn ? task.dueOn : undefined);
+	const late = $derived(!settled && overdue(due, now, timezone));
+	const dueLine = $derived(due ? dueLabel(due, now, timezone, settled) : "");
 	const line = $derived(
-		[
-			task.id,
-			task.date && showing.includes("due") ? task.date : "",
-			task.assignee?.split(" ")[0] ?? "",
-		]
-			.filter(Boolean)
-			.join(" · ")
+		[task.id, dueLine, task.assignee?.split(" ")[0] ?? ""].filter(Boolean).join(" · ")
 	);
 </script>
 
 <a
 	{href}
+	data-row-anchor
 	{draggable}
 	{ondragstart}
 	{ondragend}
@@ -63,14 +65,14 @@
 	)}
 >
 	<PriorityIcon priority={task.priority} class="size-icon-row order-last sm:order-none" />
-	<span class="order-first flex flex-none sm:order-none">
-		<StatusIcon category={task.state.category} name={task.state.name} />
-	</span>
 	<span
 		class="hidden w-[var(--reference-width,7ch)] flex-none font-mono text-xs text-muted-foreground data-[strong=true]:text-ink-900 sm:block"
 		data-strong={cursor || selected}
 	>
 		{task.id}
+	</span>
+	<span class="order-first flex flex-none sm:order-none">
+		<StatusIcon category={task.state.category} name={task.state.name} />
 	</span>
 	<span class="flex min-w-0 flex-1 flex-col gap-0.5 sm:block">
 		<span
@@ -84,9 +86,13 @@
 	</span>
 	<span class="hidden flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground sm:flex">
 		<LabelChips {labels} place="row" />
-		{#if task.date && showing.includes("due")}
-			<span class="hidden tabular-nums text-xs whitespace-nowrap text-muted-foreground sm:inline">
-				{task.date}
+		{#if due}
+			<span
+				class="hidden tabular-nums text-xs whitespace-nowrap sm:inline {late
+					? 'text-priority-urgent'
+					: 'text-muted-foreground'}"
+			>
+				{dueLine}
 			</span>
 		{/if}
 		{#if task.assignee}

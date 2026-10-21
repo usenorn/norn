@@ -217,7 +217,7 @@
 		new Map(members.map((member) => [member.accountId, member.displayName ?? ""]))
 	);
 	const flat = $derived(columns.flatMap((column) => column.issues));
-	const referenceWidth = $derived(Math.max(5, ...flat.map((issue) => issue.reference.length)));
+	const referenceWidth = $derived(Math.max(5, ...flat.map((issue) => issue.reference.length)) + 1);
 	const offsets = $derived.by(() => {
 		const at = new Map<string, number>();
 		let seen = 0;
@@ -907,6 +907,7 @@
 
 	const cursor = listCursor(() => ({
 		rows: flat,
+		referenceOf: (issue) => issue.reference,
 		open: (issue) => {
 			if (!draftIDs.has(issue.id)) void goto(issueHref(issue.reference));
 		},
@@ -1179,7 +1180,7 @@
 					class="hidden size-icon-toolbar shrink-0 text-muted-foreground sm:block"
 					aria-hidden="true"
 				/>
-				<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Issues</h1>
+				<h1 class="hidden text-md font-semibold tracking-snug whitespace-nowrap text-ink-900 sm:block">Issues</h1>
 
 				{#if applied.kind === "applied"}
 					<span class="flex min-w-0 shrink items-center gap-1.5">
@@ -1198,7 +1199,7 @@
 				{#if source}
 					<div
 						role="tablist"
-						class="scrollbar-none ml-1 flex min-w-0 items-center gap-3 overflow-x-auto pr-4 mask-r-from-[calc(100%-1rem)] sm:pr-0 sm:mask-none"
+						class="scrollbar-none flex min-w-0 items-center gap-3 overflow-x-auto pr-4 mask-r-from-[calc(100%-1rem)] sm:ml-1 sm:pr-0 sm:mask-none"
 						aria-label="Which issues"
 					>
 						{#each issueTabs as tab (tab)}
