@@ -1838,13 +1838,7 @@
 	<div
 		class="flex h-11 flex-none items-center gap-2 border-b border-line-default pr-2.5 pl-2.5"
 	>
-		<Button
-			variant="outline"
-			size="icon-touch"
-			class="sm:hidden"
-			href={backToList}
-			aria-label="Back to the list"
-		>
+		<Button variant="outline" size="icon-touch" href={backToList} aria-label="Back to the list">
 			<ChevronLeft aria-hidden="true" />
 		</Button>
 
