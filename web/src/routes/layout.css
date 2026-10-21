@@ -20,8 +20,8 @@
 	--ink-800: #d3d8e2;
 	--ink-700: #b6bcca;
 	--ink-600: #9aa1b2;
-	--ink-500: #7e8698;
-	--ink-400: #646c7e;
+	--ink-500: #878fa1;
+	--ink-400: #6e7689;
 	--ink-300: #4e5666;
 	--ink-200: #3a4150;
 
@@ -76,12 +76,12 @@
 	--syntax-token-punctuation: var(--ink-600);
 	--syntax-token-link: var(--cyan-500);
 
-	--line-subtle: #1c2028;
-	--line-default: #262b34;
+	--line-subtle: #1f232b;
+	--line-default: #282d37;
 	--line-strong: #384050;
 	--line-inverse: rgba(15, 17, 22, 0.18);
 
-	--surface-hover: rgba(232, 235, 242, 0.04);
+	--surface-hover: rgba(232, 235, 242, 0.05);
 	--surface-active: rgba(232, 235, 242, 0.08);
 	--surface-cursor: var(--paper-4);
 	--surface-selected: var(--paper-3);
@@ -161,9 +161,9 @@
 	--font-sans: 'Mona Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 	--font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-	--text-2xs: 10px;
+	--text-2xs: 11px;
 	--text-2xs--line-height: 1.25;
-	--text-xs: 11px;
+	--text-xs: 11.5px;
 	--text-xs--line-height: 1.25;
 	--text-sm: 12px;
 	--text-sm--line-height: 1.4;
