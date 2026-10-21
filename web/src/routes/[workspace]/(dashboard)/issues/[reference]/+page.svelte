@@ -1432,6 +1432,9 @@
 	const lastActivity = $derived(
 		activity.kind === "ready" ? (activity.events.at(-1)?.createdAt ?? null) : null
 	);
+	const issueLink = $derived(
+		issue ? `${page.url.host}${at(`/issues/${issue.reference}`)}` : ""
+	);
 	let linking = $state(false);
 
 	const showChildren = $derived((ready?.children.length ?? 0) > 0);
@@ -1861,6 +1864,14 @@
 				{/if}
 				<span class="text-sm text-text-disabled" aria-hidden="true">/</span>
 				<span class="font-mono text-sm tracking-wide text-ink-900">{issue.reference}</span>
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					aria-label="Copy the identifier"
+					onclick={() => copy(issue.reference, `Copied ${issue.reference}`)}
+				>
+					<Copy aria-hidden="true" />
+				</Button>
 			{/if}
 		</div>
 
@@ -2238,19 +2249,30 @@
 								</div>
 							</div>
 						{:else}
-							<button
-								type="button"
-								disabled={!canEdit}
-								onclick={() => startEditing("title")}
-								title={canEdit ? "Click to rename" : ""}
-								class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-							>
-								<h1
-									class="text-3xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
+							<div class="flex items-start gap-1">
+								<button
+									type="button"
+									disabled={!canEdit}
+									onclick={() => startEditing("title")}
+									title={canEdit ? "Click to rename" : ""}
+									class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
-									{issue.title}
-								</h1>
-							</button>
+									<h1
+										class="text-3xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
+									>
+										{issue.title}
+									</h1>
+								</button>
+								<Button
+									variant="ghost"
+									size="icon-xs"
+									aria-label="Copy the title"
+									class="mt-1.25"
+									onclick={() => copy(issue.title, "Copied the title")}
+								>
+									<Copy aria-hidden="true" />
+								</Button>
+							</div>
 						{/if}
 
 						<div class="flex flex-wrap items-center gap-2">
@@ -3313,6 +3335,20 @@
 						{/if}
 					</div>
 
+					<div class="flex min-h-7 items-center gap-2">
+						<span class="w-19.5 flex-none caption text-muted-foreground">Link</span>
+						<button
+							type="button"
+							aria-label="Copy the link to {issue.reference}"
+							title="Copy"
+							onclick={() =>
+								copy(`${page.url.origin}${at(`/issues/${issue.reference}`)}`, `Copied a link to ${issue.reference}`)}
+							class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 font-mono text-xs text-muted-foreground motion-control hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+						>
+							<span class="min-w-0 truncate">{issueLink}</span>
+							<Copy class="size-3 flex-none" aria-hidden="true" />
+						</button>
+					</div>
 				</div>
 			</aside>
 		</div>
