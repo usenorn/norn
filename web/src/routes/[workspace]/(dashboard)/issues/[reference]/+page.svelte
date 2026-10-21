@@ -1883,6 +1883,7 @@
 				variant="outline"
 				size="icon-sm"
 				aria-label={following ? "Stop following this issue" : "Follow this issue"}
+				title={following ? "You follow this issue. Click to stop." : "Follow this issue"}
 				aria-pressed={following}
 				class={following ? "bg-accent text-ink-900" : ""}
 				disabled={followWorking}
@@ -3251,7 +3252,7 @@
 						>
 							Created
 						</span>
-						<span class="tabular-nums text-xs text-muted-foreground">
+						<span class="tabular-nums text-md text-ink-600">
 							<time datetime={issue.createdAt}>{when(issue.createdAt)}</time>
 						</span>
 					</div>
@@ -3263,7 +3264,7 @@
 							>
 								Updated
 							</span>
-							<span class="tabular-nums text-xs text-muted-foreground">
+							<span class="tabular-nums text-md text-ink-600">
 								<time datetime={lastActivity}>{when(lastActivity)}</time>
 							</span>
 						</div>
@@ -3361,6 +3362,7 @@
 		now={data.now}
 		prefill={childPrefill ?? { teamId: issue.teamId, projectId: issue.projectId ?? "" }}
 		canCreateLabel={canCreateLabels(role)}
+		formId="new-sub-issue"
 		onsettled={settleUnder(filingUnder, data.workspace.id)}
 	/>
 

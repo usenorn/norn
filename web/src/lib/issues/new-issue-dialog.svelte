@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from "svelte";
+	import { tick, untrack } from "svelte";
 	import CalendarDays from "@lucide/svelte/icons/calendar-days";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import FileText from "@lucide/svelte/icons/file-text";
@@ -10,7 +10,7 @@
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import { api } from "$lib/api";
 	import { showToast } from "$lib/toast/toasts";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
+	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
 	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
 	import * as Dialog from "$lib/components/ui/dialog/index.js";
 	import * as Form from "$lib/components/ui/form/index.js";
@@ -85,6 +85,7 @@
 		now,
 		prefill,
 		canCreateLabel = false,
+		formId = "new-issue",
 		onraising,
 		onsettled,
 	}: {
@@ -100,6 +101,7 @@
 		now: string;
 		prefill?: NewIssuePrefill;
 		canCreateLabel?: boolean;
+		formId?: string;
 		onraising?: (key: string, draft: Issue) => void;
 		onsettled?: (outcome: CreationOutcome) => void | Promise<void>;
 	} = $props();
@@ -263,7 +265,7 @@
 	}
 
 	const form = superForm(defaults(zod4(newIssueSchema)), {
-		id: "new-issue",
+		id: untrack(() => formId),
 		SPA: true,
 		validators: zod4Client(newIssueSchema),
 		resetForm: false,
@@ -1243,9 +1245,7 @@
 									<PersonAvatar accountId={$formData.assigneeId} name={assignee} size="xs" />
 									{assignee}
 								{:else}
-									<Avatar.Root size="xs" variant="ghost">
-										<Avatar.Fallback>+</Avatar.Fallback>
-									</Avatar.Root>
+									<UnassignedAvatar />
 									Unassigned
 								{/if}
 							</Button>
@@ -1254,9 +1254,7 @@
 							{#if option.value}
 								<PersonAvatar accountId={option.value} name={option.label} size="xs" />
 							{:else}
-								<Avatar.Root size="xs" variant="ghost">
-									<Avatar.Fallback>+</Avatar.Fallback>
-								</Avatar.Root>
+								<UnassignedAvatar />
 							{/if}
 						{/snippet}
 					</PropertyPicker>
