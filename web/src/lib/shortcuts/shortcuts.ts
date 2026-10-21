@@ -50,8 +50,8 @@ const declared = [
 	{ id: "search", keys: ["mod+k"], label: "Search", group: "global" },
 	{
 		id: "search-find",
-		keys: ["mod+shift+f"],
-		label: "Search, even while typing",
+		keys: ["mod+f"],
+		label: "Search this workspace",
 		group: "global",
 		whileTyping: true,
 	},
