@@ -83,9 +83,9 @@
 			{task.title}
 		</span>
 		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">
-			<span class="font-mono">{task.id}</span>{#if dueLine}
-				· <span class={late ? "text-priority-urgent" : ""}>{dueLine}</span>{/if}{#if firstName}
-				· {firstName}{/if}
+			<span class="font-mono">{task.id}</span>{#if dueLine}{" · "}<span
+					class={late ? "text-priority-urgent" : ""}>{dueLine}</span
+				>{/if}{#if firstName}{" · "}{firstName}{/if}
 		</span>
 	</span>
 	<span class="hidden flex-none items-center justify-end gap-2.5 text-xs text-muted-foreground sm:flex">

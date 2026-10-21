@@ -162,9 +162,9 @@
 			</a>
 		{/if}
 		<span class="truncate tabular-nums text-2xs text-muted-foreground sm:hidden">
-			<span class="font-mono">{issue.reference}</span>{#if dueLine}
-				· <span class={late ? "text-priority-urgent" : ""}>{dueLine}</span>{/if}{#if firstName}
-				· {firstName}{/if}
+			<span class="font-mono">{issue.reference}</span>{#if dueLine}{" · "}<span
+					class={late ? "text-priority-urgent" : ""}>{dueLine}</span
+				>{/if}{#if firstName}{" · "}{firstName}{/if}
 		</span>
 	</span>
 
@@ -185,6 +185,11 @@
 		{#if issue.estimate}
 			<span class="hidden tabular-nums text-2xs text-muted-foreground sm:inline">
 				{issue.estimate}
+			</span>
+		{/if}
+		{#if issue.cycleNumber}
+			<span class="hidden tabular-nums text-2xs whitespace-nowrap text-muted-foreground lg:inline">
+				Cycle {issue.cycleNumber}
 			</span>
 		{/if}
 		{#if due}

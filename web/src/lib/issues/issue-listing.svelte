@@ -1036,6 +1036,9 @@
 	}
 
 	const filtered = $derived(facetCount(facets) > 0);
+	const savable = $derived(
+		filtered || data.layout === "board" || !atDefaults(display, surfaceDefaults.issues)
+	);
 </script>
 
 {#snippet dropGap(key: string, index: number)}
@@ -1300,8 +1303,17 @@
 				>
 					Manage views
 				</a>
-			{:else if filtered || data.layout === "board" || !atDefaults(display, surfaceDefaults.issues)}
-				<Button variant="ghost" size="sm" class="shrink-0" onclick={() => (saving = true)}>
+			{:else}
+				<Button
+					variant="ghost"
+					size="sm"
+					class="shrink-0"
+					disabled={!savable}
+					title={savable
+						? undefined
+						: "Filter or change the display first; this is already the default view"}
+					onclick={() => (saving = true)}
+				>
 					<Bookmark aria-hidden="true" />
 					Save as view
 				</Button>
@@ -1435,6 +1447,14 @@
 						{data.tab === "backlog"
 							? "Nothing is waiting to be picked up; everything else is under way or finished."
 							: "Nothing is in progress or waiting to start."}
+						{#if data.tab === "backlog" && counts.active > 0}
+							<a
+								href={linkWith({ tab: "active" })}
+								class="mt-1 block text-link underline-offset-2 hover:text-link-hover hover:underline"
+							>
+								See the {counts.active} active {counts.active === 1 ? "issue" : "issues"}
+							</a>
+						{/if}
 					{:else}
 						Raise the first one, and it starts in whichever state its team files new work into.
 					{/if}
