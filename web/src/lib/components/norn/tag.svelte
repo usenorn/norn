@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LabelDot from "$lib/labels/label-dot.svelte";
 	import { cn } from "$lib/utils.js";
 	import type { LabelColor } from "$lib/labels/labels";
 
@@ -7,23 +8,15 @@
 		color = "neutral",
 		class: className,
 	}: { name: string; color?: LabelColor; class?: string } = $props();
-
-	const tone = {
-		neutral: "border-b-label-neutral",
-		cyan: "border-b-label-cyan",
-		blue: "border-b-label-blue",
-		violet: "border-b-label-violet",
-		orchid: "border-b-label-orchid",
-		magenta: "border-b-label-magenta",
-	};
 </script>
 
 <span
+	title={name}
 	class={cn(
-		"inline-flex h-4.25 max-w-30 shrink-0 items-center truncate border-b-2 px-px text-xs font-medium text-ink-700",
-		tone[color],
+		"inline-flex max-w-36 min-w-0 shrink items-center gap-1.5 text-xs font-medium text-ink-700",
 		className
 	)}
 >
-	{name}
+	<LabelDot {color} class="size-1.75 flex-none" />
+	<span class="truncate">{name}</span>
 </span>

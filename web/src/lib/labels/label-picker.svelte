@@ -33,6 +33,14 @@
 				always: false,
 				class: { blank: "hidden opacity-0 group-hover/row:opacity-100 lg:inline-block" },
 			},
+			{
+				place: "row",
+				always: true,
+				class: {
+					blank:
+						"opacity-0 group-hover/card:opacity-100 group-focus-within/card:opacity-100",
+				},
+			},
 		],
 		defaultVariants: { place: "field", always: false },
 	});
@@ -199,7 +207,9 @@
 				{#if place === "field"}
 					<Tags class="size-icon-row text-muted-foreground" aria-hidden="true" />
 				{/if}
-				<LabelChips labels={shownChips} {place} />
+				{#if shownChips.length > 0}
+					<LabelChips labels={shownChips} place={place === "row" && always ? "card" : place} />
+				{/if}
 				{#if shownChips.length === 0}
 					{#if place === "field"}
 						<span class={styles.blank()}>Add labels</span>
