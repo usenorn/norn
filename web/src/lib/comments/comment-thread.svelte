@@ -324,7 +324,7 @@
 				<span class="caption text-ink-600">
 					No comments yet
 				</span>
-				<span class="text-md text-muted-foreground">
+				<span class="text-md leading-normal text-muted-foreground text-pretty">
 					Ask a question or leave what you found. Everyone watching this issue is notified.
 				</span>
 			</div>

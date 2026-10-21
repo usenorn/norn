@@ -47,7 +47,7 @@
 </script>
 
 {#snippet hint(entry: Hint)}
-	<span class="inline-flex h-4.5 shrink-0 items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
+	<span class="inline-flex h-4.5 shrink-0 items-center gap-1.5 text-sm whitespace-nowrap text-muted-foreground">
 		<Kbd keys={entry.keys} />{entry.label}
 	</span>
 {/snippet}
