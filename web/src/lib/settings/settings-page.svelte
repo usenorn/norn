@@ -50,7 +50,7 @@
 			</div>
 			<div class="flex min-w-0 flex-col gap-0.5">
 				<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-					<h1 class="text-md font-medium tracking-snug text-ink-900">{title}</h1>
+					<h1 class="text-md font-semibold tracking-snug text-ink-900">{title}</h1>
 					{#if meta}
 						<span class="tabular-nums text-2xs text-muted-foreground">{meta}</span>
 					{/if}

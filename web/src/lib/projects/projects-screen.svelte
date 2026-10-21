@@ -125,7 +125,7 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Target class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+			<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">
 				{team ? team.name : "Projects"}
 			</h1>
 			{#if team}

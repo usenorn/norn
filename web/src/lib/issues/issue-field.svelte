@@ -21,6 +21,7 @@
 		onpick,
 		control,
 		glyph,
+		mark,
 		value,
 	}: {
 		label: string;
@@ -33,13 +34,14 @@
 		onpick?: (value: string) => void;
 		control?: Snippet;
 		glyph?: Snippet;
+		mark?: Snippet<[PickerOption]>;
 		value: Snippet;
 	} = $props();
 </script>
 
-<div class="relative flex min-h-7 items-center gap-1.5">
+<div class="relative flex min-h-7 items-start gap-1.5 py-0.5">
 	<span
-		class="w-19.5 flex-none caption text-muted-foreground"
+		class="mt-1 w-19.5 flex-none caption text-muted-foreground"
 	>
 		{label}
 	</span>
@@ -53,6 +55,7 @@
 			{closeOnPick}
 			bind:open
 			{onpick}
+			{mark}
 		>
 			{#snippet trigger(props)}
 				<button

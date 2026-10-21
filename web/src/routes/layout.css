@@ -76,7 +76,7 @@
 	--syntax-token-punctuation: var(--ink-600);
 	--syntax-token-link: var(--cyan-500);
 
-	--line-subtle: #1f232b;
+	--line-subtle: #22262f;
 	--line-default: #282d37;
 	--line-strong: #384050;
 	--line-inverse: rgba(15, 17, 22, 0.18);
@@ -467,7 +467,8 @@
 		height: 10px;
 	}
 
-	::-webkit-scrollbar-track {
+	::-webkit-scrollbar-track,
+	::-webkit-scrollbar-corner {
 		background: transparent;
 	}
 

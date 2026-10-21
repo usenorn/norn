@@ -278,7 +278,7 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Zap class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Triage</h1>
+			<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">Triage</h1>
 			<span class="tabular-nums text-xs text-muted-foreground">{counts.all}</span>
 			{#if item}
 				<span class="h-3.5 w-px bg-line-default" aria-hidden="true"></span>
@@ -570,7 +570,7 @@
 									</div>
 									<p class="text-sm text-muted-foreground text-pretty">
 										{unsuggestedDuplicates} Mark one yourself with Duplicate
-										<Kbd keys="m" />.
+										<Kbd keys="M" />.
 									</p>
 								</div>
 							</div>
@@ -702,7 +702,7 @@
 					>
 						<Button size="sm" disabled={readOnly || working} onclick={() => open("accept")}>
 							Accept
-							<Kbd keys="a" tone="inverse" />
+							<Kbd keys="A" tone="inverse" />
 						</Button>
 						<Button
 							variant="secondary"
@@ -711,7 +711,7 @@
 							onclick={() => open("decline")}
 						>
 							Decline
-							<Kbd keys="d" />
+							<Kbd keys="D" />
 						</Button>
 						<Button
 							variant="ghost"
@@ -721,7 +721,7 @@
 						>
 							<GitBranch aria-hidden="true" />
 							Duplicate
-							<Kbd keys="m" />
+							<Kbd keys="M" />
 						</Button>
 
 						<DropdownMenu.Root>
@@ -748,7 +748,7 @@
 						<div class="flex-1"></div>
 
 						<span class="hidden items-center gap-1.5 text-xs text-muted-foreground sm:inline-flex">
-							<Kbd keys="j k" /> move through the queue
+							<Kbd keys="J K" /> move through the queue
 						</span>
 						<span class="tabular-nums text-xs text-muted-foreground">
 							{cursor.at + 1} of {shown.length}

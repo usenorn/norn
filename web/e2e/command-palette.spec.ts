@@ -97,7 +97,7 @@ test("a command shows its key only where the page handles it", async ({ page }) 
 	await selection.getByRole("combobox").fill(">assign");
 	await expect(
 		selection.getByRole("option", { name: /^Assign \S+ to…/ }).locator("kbd")
-	).toHaveText("a");
+	).toHaveText("A");
 
 	await page.keyboard.press("Escape");
 	await page.goto(at(`/issues/${fixture().issues[0].reference}`));

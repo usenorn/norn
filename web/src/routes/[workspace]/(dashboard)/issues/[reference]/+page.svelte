@@ -18,6 +18,7 @@
 	import Ellipsis from "@lucide/svelte/icons/ellipsis";
 	import Folder from "@lucide/svelte/icons/folder";
 	import GitBranch from "@lucide/svelte/icons/git-branch";
+	import Hash from "@lucide/svelte/icons/hash";
 	import CirclePause from "@lucide/svelte/icons/circle-pause";
 	import CirclePlay from "@lucide/svelte/icons/circle-play";
 	import Type from "@lucide/svelte/icons/type";
@@ -47,7 +48,7 @@
 	import StatusIcon from "$lib/components/norn/status-icon.svelte";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import IssueField from "$lib/issues/issue-field.svelte";
-	import PropertyPicker from "$lib/issues/property-picker.svelte";
+	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
 	import { MediaQuery } from "svelte/reactivity";
 	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
 	import DelegationField from "$lib/agents/delegation-field.svelte";
@@ -1257,10 +1258,11 @@
 	const railShown = new MediaQuery("min-width: 64rem", true);
 
 	const statusOptions = $derived(
-		(ready?.states ?? []).map((state) => ({
+		(ready?.states ?? []).map((state, index) => ({
 			value: state.id,
 			label: state.name,
 			checked: state.id === issue?.state.id,
+			hint: index < 6 ? String(index + 1) : undefined,
 		}))
 	);
 	const assigneeOptions = $derived([
@@ -1818,7 +1820,7 @@
 	<div
 		class="flex h-11 flex-none items-center gap-2 border-b border-line-default pr-2.5 pl-2.5"
 	>
-		<Button variant="outline" size="icon-sm" href={backToList} aria-label="Back to the list">
+		<Button variant="outline" size="icon-touch" href={backToList} aria-label="Back to the list">
 			<ChevronLeft aria-hidden="true" />
 		</Button>
 
@@ -1844,6 +1846,7 @@
 				<Button
 					variant="ghost"
 					size="icon-xs"
+					class="hidden sm:inline-flex"
 					aria-label="Copy the identifier"
 					onclick={() => copy(issue.reference, `Copied ${issue.reference}`)}
 				>
@@ -1856,7 +1859,7 @@
 			<span class="hidden tabular-nums text-xs text-muted-foreground sm:inline">
 				{neighbours.position + 1} of {neighbours.total}
 			</span>
-			<div class="flex gap-0.5">
+			<div class="hidden gap-0.5 sm:flex">
 				<Button
 					variant="outline"
 					size="icon-sm"
@@ -1881,7 +1884,7 @@
 		{#if issue}
 			<Button
 				variant="outline"
-				size="icon-sm"
+				size="icon-touch"
 				aria-label={following ? "Stop following this issue" : "Follow this issue"}
 				title={following ? "You follow this issue. Click to stop." : "Follow this issue"}
 				aria-pressed={following}
@@ -1899,7 +1902,7 @@
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
 					{#snippet child({ props })}
-						<Button {...props} variant="outline" size="icon-sm" aria-label="More on this issue">
+						<Button {...props} variant="outline" size="icon-touch" aria-label="More on this issue">
 							<Ellipsis aria-hidden="true" />
 						</Button>
 					{/snippet}
@@ -1910,6 +1913,10 @@
 					>
 						<Link2 aria-hidden="true" />
 						Copy link
+					</DropdownMenu.Item>
+					<DropdownMenu.Item onSelect={() => copy(issue.reference, `Copied ${issue.reference}`)}>
+						<Hash aria-hidden="true" />
+						Copy identifier
 					</DropdownMenu.Item>
 					<DropdownMenu.Item onSelect={() => copy(issue.title, "Copied the title")}>
 						<Type aria-hidden="true" />
@@ -1958,7 +1965,13 @@
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 
-			<Button variant="outline" size="icon-sm" href={backToList} aria-label="Close this issue">
+			<Button
+				variant="outline"
+				size="icon-sm"
+				class="hidden sm:inline-flex"
+				href={backToList}
+				aria-label="Close this issue"
+			>
 				<X aria-hidden="true" />
 			</Button>
 		{/if}
@@ -2263,6 +2276,7 @@
 									placeholder="Move to"
 									bind:open={stripStatus}
 									onpick={move}
+									mark={statusMark}
 								>
 									{#snippet trigger(props)}
 										<Button {...props} variant="property" size="property" aria-label="Status: change">
@@ -2330,7 +2344,7 @@
 								<h2 class="min-w-0 flex-1">
 									<Eyebrow rule class="text-ink-600">Description</Eyebrow>
 								</h2>
-								{#if editingField !== "description"}
+								{#if editingField !== "description" && issue.description.trim()}
 									<Button variant="ghost" size="sm" onclick={() => (showingHistory = true)}>
 										<History aria-hidden="true" />
 										History
@@ -2635,205 +2649,205 @@
 					/>
 
 					{#if showChildren}
-					<section class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Sub-issues
-								</Eyebrow>
-							</h2>
-							{#if ready.children.length > 0}
-								<span class="inline-flex items-center gap-1.75">
-									<span class="tabular-nums text-xs text-muted-foreground">
-										{ready.childProgress.complete}/{totalIssues(ready.childProgress)}
+						<section class="flex flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Sub-issues
+									</Eyebrow>
+								</h2>
+								{#if ready.children.length > 0}
+									<span class="inline-flex items-center gap-1.75">
+										<span class="tabular-nums text-xs text-muted-foreground">
+											{ready.childProgress.complete}/{totalIssues(ready.childProgress)}
+										</span>
+										<ProgressBar progress={ready.childProgress} label={false} class="w-14" />
 									</span>
-									<ProgressBar progress={ready.childProgress} label={false} class="w-14" />
-								</span>
-							{/if}
-							{#if canEdit}
-								<Button
-									variant="ghost"
-									size="icon-xs"
-									aria-label="Add a sub-issue"
-									onclick={addSubIssue}
-								>
-									<Plus aria-hidden="true" />
-								</Button>
-							{/if}
-						</div>
-						<IssueChildren
-							children={ready.children}
-							{at}
-							states={canEdit ? ready.states : []}
-							now={data.now}
-							timezone={data.workspace.timezone}
-							nameOf={nameOf}
-							{working}
-							onstate={moveChild}
-						/>
-					</section>
-					{/if}
-
-					{#if showLinks}
-					<section class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Links
-								</Eyebrow>
-							</h2>
-							{#if ready.relations.length === 0}
-								<Button variant="ghost" size="sm" onclick={() => (linking = false)}>
-									Cancel
-								</Button>
-							{/if}
-						</div>
-						<IssueRelations
-							{issue}
-							groups={ready.relations}
-							candidates={ready.candidates}
-							{at}
-							working={working || !canEdit}
-							onadd={addRelation}
-							onremove={removeRelation}
-						/>
-					</section>
-					{/if}
-
-					{#if showAttachments}
-					<section class="flex flex-col gap-1.5">
-						<div class="flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Attachments
-								</Eyebrow>
-							</h2>
-							{#if canEdit}
-								<span data-editing-region class="contents">
-									<AttachmentPicker
-										disabled={working}
-										label="Attach"
-										onfiles={(files) => begin("body", files)}
-									/>
-								</span>
-							{/if}
-						</div>
-
-						{#if attachmentFailure}
-							<Alert.Root variant="destructive">
-								<CircleX aria-hidden="true" />
-								<Alert.Title>That did not stick</Alert.Title>
-								<Alert.Description>{attachmentFailureMessage(attachmentFailure)}</Alert.Description>
-							</Alert.Root>
-						{/if}
-
-						<AttachmentList
-							panel={attachments}
-							working={working || !canEdit}
-							onremove={removeAttachment}
-						/>
-
-						{#if editingField !== "description"}
-							<UploadList
-								uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
-								oncancel={cancelUpload}
-								onretry={(taskId) => retryUpload("body", taskId)}
-								ondismiss={(taskId) => dismissUpload("body", taskId)}
-							/>
-						{/if}
-					</section>
-					{/if}
-
-					{#if showCodeLinks}
-					<section class="flex flex-col gap-0.5">
-						<div class="mb-1.5 flex items-center gap-2.5">
-							<h2 class="min-w-0 flex-1">
-								<Eyebrow rule class="text-ink-600">
-									Linked changes
-								</Eyebrow>
-							</h2>
-						</div>
-
-						{#if codeLinkFailure}
-							<Alert.Root variant="destructive">
-								<CircleX aria-hidden="true" />
-								<Alert.Title>That did not stick</Alert.Title>
-								<Alert.Description>{codeFailureMessage(codeLinkFailure)}</Alert.Description>
-							</Alert.Root>
-						{/if}
-
-						<CodeLinkPanel
-							links={codeLinks}
-							busy={unlinking}
-							onunlink={canEdit ? unlinkCode : undefined}
-						/>
-
-						{#if shipping.releases.length > 0 || shipping.deployments.length > 0}
-							<div class="flex flex-col gap-1 pt-1">
-								{#if shipping.releases.length > 0}
-									<p class="text-sm text-ink-900">
-										Shipped in
-										{#each shipping.releases as release, index (release.id)}{#if index > 0}, {/if}{#if release.url}<a
-												href={release.url}
-												target="_blank"
-												rel="noreferrer"
-												class="underline underline-offset-2">{releaseLabel(release)}</a
-											>{:else}{releaseLabel(release)}{/if}{/each}
-									</p>
 								{/if}
-								{#if shipping.deployments.length > 0}
-									<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-										{#each shipping.deployments as deployment (deployment.id)}
-											<li class:text-success={deployment.state === "succeeded"}
-												class:text-destructive={deployment.state === "failed"}>
-												{deploymentLabel(deployment)}
-											</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
-						{/if}
-
-						{#if mirrorConflicts.length > 0}
-							<div class="flex flex-col gap-2 rounded-md border border-warning/40 p-3">
-								<p class="text-sm text-ink-900">
-									An edit here and one on the platform landed together. Whichever moved last was
-									kept; the other is below so nothing is lost.
-								</p>
-								{#each mirrorConflicts as conflict (conflict.id)}
-									<div class="flex flex-col gap-0.5">
-										<p class="text-xs text-muted-foreground">
-											{conflict.field} · {conflictSummary(conflict)}
-										</p>
-										<pre class="overflow-x-auto rounded-sm bg-muted p-2 text-xs whitespace-pre-wrap text-ink-900">{conflict.discarded}</pre>
-									</div>
-								{/each}
-							</div>
-						{/if}
-
-						{#if branchName && !branchCopied}
-							<p class="pt-1 font-mono text-xs break-all text-ink-700 select-all">{branchName}</p>
-						{/if}
-
-						{#if automationSuppressed}
-							<div class="flex flex-wrap items-center gap-2 pt-1">
-								<p class="min-w-0 flex-1 text-xs text-muted-foreground text-pretty">
-									Git automation is paused. Source control still records what happens to the code
-									here; it just does not move this issue.
-								</p>
 								{#if canEdit}
 									<Button
 										variant="ghost"
-										size="sm"
-										disabled={togglingAutomation}
-										onclick={() => setAutomation(false)}
+										size="icon-xs"
+										aria-label="Add a sub-issue"
+										onclick={addSubIssue}
 									>
-										Resume
+										<Plus aria-hidden="true" />
 									</Button>
 								{/if}
 							</div>
-						{/if}
-					</section>
+							<IssueChildren
+								children={ready.children}
+								{at}
+								states={canEdit ? ready.states : []}
+								now={data.now}
+								timezone={data.workspace.timezone}
+								nameOf={nameOf}
+								{working}
+								onstate={moveChild}
+							/>
+						</section>
+					{/if}
+
+					{#if showLinks}
+						<section class="flex flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Links
+									</Eyebrow>
+								</h2>
+								{#if ready.relations.length === 0}
+									<Button variant="ghost" size="sm" onclick={() => (linking = false)}>
+										Cancel
+									</Button>
+								{/if}
+							</div>
+							<IssueRelations
+								{issue}
+								groups={ready.relations}
+								candidates={ready.candidates}
+								{at}
+								working={working || !canEdit}
+								onadd={addRelation}
+								onremove={removeRelation}
+							/>
+						</section>
+					{/if}
+
+					{#if showAttachments}
+						<section class="flex flex-col gap-1.5">
+							<div class="flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Attachments
+									</Eyebrow>
+								</h2>
+								{#if canEdit}
+									<span data-editing-region class="contents">
+										<AttachmentPicker
+											disabled={working}
+											label="Attach"
+											onfiles={(files) => begin("body", files)}
+										/>
+									</span>
+								{/if}
+							</div>
+
+							{#if attachmentFailure}
+								<Alert.Root variant="destructive">
+									<CircleX aria-hidden="true" />
+									<Alert.Title>That did not stick</Alert.Title>
+									<Alert.Description>{attachmentFailureMessage(attachmentFailure)}</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							<AttachmentList
+								panel={attachments}
+								working={working || !canEdit}
+								onremove={removeAttachment}
+							/>
+
+							{#if editingField !== "description"}
+								<UploadList
+									uploads={attachmentPreview?.bodyUploads ?? bodyUploads}
+									oncancel={cancelUpload}
+									onretry={(taskId) => retryUpload("body", taskId)}
+									ondismiss={(taskId) => dismissUpload("body", taskId)}
+								/>
+							{/if}
+						</section>
+					{/if}
+
+					{#if showCodeLinks}
+						<section class="flex flex-col gap-0.5">
+							<div class="mb-1.5 flex items-center gap-2.5">
+								<h2 class="min-w-0 flex-1">
+									<Eyebrow rule class="text-ink-600">
+										Linked changes
+									</Eyebrow>
+								</h2>
+							</div>
+
+							{#if codeLinkFailure}
+								<Alert.Root variant="destructive">
+									<CircleX aria-hidden="true" />
+									<Alert.Title>That did not stick</Alert.Title>
+									<Alert.Description>{codeFailureMessage(codeLinkFailure)}</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							<CodeLinkPanel
+								links={codeLinks}
+								busy={unlinking}
+								onunlink={canEdit ? unlinkCode : undefined}
+							/>
+
+							{#if shipping.releases.length > 0 || shipping.deployments.length > 0}
+								<div class="flex flex-col gap-1 pt-1">
+									{#if shipping.releases.length > 0}
+										<p class="text-sm text-ink-900">
+											Shipped in
+											{#each shipping.releases as release, index (release.id)}{#if index > 0}, {/if}{#if release.url}<a
+													href={release.url}
+													target="_blank"
+													rel="noreferrer"
+													class="underline underline-offset-2">{releaseLabel(release)}</a
+												>{:else}{releaseLabel(release)}{/if}{/each}
+										</p>
+									{/if}
+									{#if shipping.deployments.length > 0}
+										<ul class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+											{#each shipping.deployments as deployment (deployment.id)}
+												<li class:text-success={deployment.state === "succeeded"}
+													class:text-destructive={deployment.state === "failed"}>
+													{deploymentLabel(deployment)}
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								</div>
+							{/if}
+
+							{#if mirrorConflicts.length > 0}
+								<div class="flex flex-col gap-2 rounded-md border border-warning/40 p-3">
+									<p class="text-sm text-ink-900">
+										An edit here and one on the platform landed together. Whichever moved last was
+										kept; the other is below so nothing is lost.
+									</p>
+									{#each mirrorConflicts as conflict (conflict.id)}
+										<div class="flex flex-col gap-0.5">
+											<p class="text-xs text-muted-foreground">
+												{conflict.field} · {conflictSummary(conflict)}
+											</p>
+											<pre class="overflow-x-auto rounded-sm bg-muted p-2 text-xs whitespace-pre-wrap text-ink-900">{conflict.discarded}</pre>
+										</div>
+									{/each}
+								</div>
+							{/if}
+
+							{#if branchName && !branchCopied}
+								<p class="pt-1 font-mono text-xs break-all text-ink-700 select-all">{branchName}</p>
+							{/if}
+
+							{#if automationSuppressed}
+								<div class="flex flex-wrap items-center gap-2 pt-1">
+									<p class="min-w-0 flex-1 text-xs text-muted-foreground text-pretty">
+										Git automation is paused. Source control still records what happens to the code
+										here; it just does not move this issue.
+									</p>
+									{#if canEdit}
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={togglingAutomation}
+											onclick={() => setAutomation(false)}
+										>
+											Resume
+										</Button>
+									{/if}
+								</div>
+							{/if}
+						</section>
 					{/if}
 
 					<section class="flex flex-col gap-0.5">
@@ -2890,6 +2904,13 @@
 				</div>
 			</div>
 
+			{#snippet statusMark(option: PickerOption)}
+				{@const state = ready.states.find((each) => each.id === option.value)}
+				{#if state}
+					<StatusIcon category={state.category} decorative />
+				{/if}
+			{/snippet}
+
 			<aside
 				id="issue-properties"
 				aria-label="Issue properties"
@@ -2910,67 +2931,70 @@
 				/>
 
 				<div class="flex flex-col gap-0.75">
-					<IssueField
-						label="Status"
-						placeholder="Move to"
-						editable={canEdit}
-						bind:open={pickingStatus}
-						options={statusOptions}
-						onpick={move}
-					>
-						{#snippet glyph()}
-							<StatusIcon category={issue.state.category} decorative />
-						{/snippet}
-						{#snippet value()}
-							<span class="min-w-0 flex-1 truncate">{issue.state.name}</span>
-						{/snippet}
-					</IssueField>
+					<div class="hidden lg:contents">
+						<IssueField
+							label="Status"
+							placeholder="Move to"
+							editable={canEdit}
+							bind:open={pickingStatus}
+							options={statusOptions}
+							onpick={move}
+							mark={statusMark}
+						>
+							{#snippet glyph()}
+								<StatusIcon category={issue.state.category} decorative />
+							{/snippet}
+							{#snippet value()}
+								<span class="min-w-0 flex-1 truncate">{issue.state.name}</span>
+							{/snippet}
+						</IssueField>
 
-					<IssueField label="Priority" control={canEdit ? priorityControl : undefined}>
-						{#snippet glyph()}
-							<PriorityIcon priority={issue.priority} />
-						{/snippet}
-						{#snippet value()}
-							<span class="min-w-0 flex-1 truncate">{priorityLabel(issue.priority)}</span>
-						{/snippet}
-					</IssueField>
+						<IssueField label="Priority" control={canEdit ? priorityControl : undefined}>
+							{#snippet glyph()}
+								<PriorityIcon priority={issue.priority} />
+							{/snippet}
+							{#snippet value()}
+								<span class="min-w-0 flex-1 truncate">{priorityLabel(issue.priority)}</span>
+							{/snippet}
+						</IssueField>
 
-					{#snippet priorityControl()}
-						<PriorityPicker
-							chosen={issue.priority}
-							place="field"
-							bind:open={pickingPriority}
-							onchange={(priority) => setPriority(priority)}
-						/>
-					{/snippet}
+						{#snippet priorityControl()}
+							<PriorityPicker
+								chosen={issue.priority}
+								place="field"
+								bind:open={pickingPriority}
+								onchange={(priority) => setPriority(priority)}
+							/>
+						{/snippet}
 
-					<IssueField
-						label="Assignee"
-						placeholder="Assign to"
-						editable={canEdit}
-						bind:open={pickingAssignee}
-						options={assigneeOptions}
-						onpick={setAssignee}
-					>
-						{#snippet glyph()}
-							{#if assigneeName}
-								<PersonAvatar
-									accountId={issue?.assigneeAccountId ?? ""}
-									name={assigneeName}
-									size="xs"
-								/>
-							{:else}
-								<UserRound class="size-icon-row text-muted-foreground" aria-hidden="true" />
-							{/if}
-						{/snippet}
-						{#snippet value()}
-							<span
-								class="min-w-0 flex-1 truncate {assigneeName ? '' : 'text-muted-foreground'}"
-							>
-								{assigneeName || "Unassigned"}
-							</span>
-						{/snippet}
-					</IssueField>
+						<IssueField
+							label="Assignee"
+							placeholder="Assign to"
+							editable={canEdit}
+							bind:open={pickingAssignee}
+							options={assigneeOptions}
+							onpick={setAssignee}
+						>
+							{#snippet glyph()}
+								{#if assigneeName}
+									<PersonAvatar
+										accountId={issue?.assigneeAccountId ?? ""}
+										name={assigneeName}
+										size="xs"
+									/>
+								{:else}
+									<UserRound class="size-icon-row text-muted-foreground" aria-hidden="true" />
+								{/if}
+							{/snippet}
+							{#snippet value()}
+								<span
+									class="min-w-0 flex-1 truncate {assigneeName ? '' : 'text-muted-foreground'}"
+								>
+									{assigneeName || "Unassigned"}
+								</span>
+							{/snippet}
+						</IssueField>
+					</div>
 
 					<DelegationField
 						panel={delegation}
@@ -3205,7 +3229,10 @@
 							<Users class="size-icon-row text-muted-foreground" aria-hidden="true" />
 						{/snippet}
 						{#snippet value()}
-							<span class="min-w-0 flex-1 truncate">{issue.teamKey}</span>
+							<span class="min-w-0 flex-1 truncate">
+								{teams.find((team) => team.id === issue.teamId)?.name ?? issue.teamKey}
+								<span class="ml-1 font-mono text-xs text-muted-foreground">{issue.teamKey}</span>
+							</span>
 						{/snippet}
 					</IssueField>
 
@@ -3239,9 +3266,6 @@
 						{:else}
 							<span class="flex-1 truncate text-md text-muted-foreground">Nobody yet</span>
 						{/if}
-						<Button variant="ghost" size="sm" disabled={followWorking} onclick={toggleFollow}>
-							{following ? "Unsubscribe" : "Subscribe"}
-						</Button>
 					</div>
 
 					<span class="my-2.5 h-px bg-line-subtle"></span>
@@ -3316,7 +3340,16 @@
 			</div>
 		{:else}
 			<ShortcutBar
-				ids={["issue-step", "issue-status", "issue-priority", "issue-assignee", "issue-edit", "issue-back", "help"]}
+				ids={[
+					"issue-step",
+					"issue-status",
+					"issue-priority",
+					"issue-assignee",
+					"issue-labels",
+					"issue-edit",
+					"issue-back",
+					"help",
+				]}
 			>
 				{#snippet lead()}
 					<span class="font-mono text-xs text-muted-foreground">{issue.reference}</span>

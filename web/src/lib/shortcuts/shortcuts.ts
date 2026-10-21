@@ -47,11 +47,11 @@ export const shortcutGroupOrder: ShortcutGroup[] = [
 ];
 
 const declared = [
-	{ id: "search", keys: ["mod+k"], label: "Go anywhere", group: "global" },
+	{ id: "search", keys: ["mod+k"], label: "Search", group: "global" },
 	{
 		id: "search-find",
 		keys: ["mod+shift+f"],
-		label: "Search this workspace",
+		label: "Search, even while typing",
 		group: "global",
 		whileTyping: true,
 	},
@@ -83,7 +83,7 @@ const declared = [
 	{
 		id: "issue-step",
 		keys: ["j", "k"],
-		keysLabel: "j k",
+		keysLabel: "J K",
 		label: "Next or previous issue",
 		group: "issue",
 	},
@@ -142,19 +142,17 @@ const namedKeys: Record<string, string> = {
 export function displayKeys(binding: string, apple: boolean): string {
 	return binding
 		.split(" ")
-		.map((chord) => {
-			const shifted = chord.split("+").includes("shift");
-
-			return chord
+		.map((chord) =>
+			chord
 				.split("+")
 				.map((part) => {
 					if (part === "mod") return apple ? "⌘" : "Ctrl";
 					if (part === "shift") return "⇧";
 
-					return namedKeys[part] ?? (shifted ? part.toUpperCase() : part);
+					return namedKeys[part] ?? (part.length === 1 ? part.toUpperCase() : part);
 				})
-				.join(" ");
-		})
+				.join(" ")
+		)
 		.join(" ");
 }
 

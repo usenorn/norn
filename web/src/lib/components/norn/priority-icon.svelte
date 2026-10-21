@@ -40,7 +40,7 @@
 			aria-label={priorityLabel(priority)}
 		>
 			{#if priority === "none"}
-				<rect x="3" y="7.25" width="10" height="1.5" rx="0.75" fill={tone.none} />
+				<rect x="3" y="7.25" width="10" height="1.5" rx="0.75" fill="var(--priority-empty)" />
 			{:else}
 				{#each bars as bar, index (index)}
 					<rect

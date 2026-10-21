@@ -10,7 +10,7 @@
 			},
 		},
 		defaultVariants: {
-			blur: true,
+			blur: false,
 		},
 	});
 

@@ -110,7 +110,7 @@
 			{:else}
 				<Users class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			{/if}
-			<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+			<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">
 				{team ? team.name : "Team"}
 			</h1>
 			{#if team}

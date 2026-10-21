@@ -64,12 +64,12 @@
 			{#if team && entry}
 				{@render crumb(workspacePath(slug, "/settings/teams"), "Teams")}
 				{@render crumb(teamSettingsPath(slug, team.key), team.name)}
-				<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+				<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">
 					{entry.title}
 				</h1>
 			{:else if team}
 				{@render crumb(workspacePath(slug, "/settings/teams"), "Teams")}
-				<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">{team.name}</h1>
+				<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">{team.name}</h1>
 			{:else}
 				<a
 					href={workspacePath(slug, "/settings/teams")}

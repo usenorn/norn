@@ -479,7 +479,7 @@
 			</a>
 			{#if project}
 				<span class="text-md text-muted-foreground" aria-hidden="true">/</span>
-				<h1 class="min-w-0 truncate text-md font-medium tracking-snug text-ink-900">
+				<h1 class="min-w-0 truncate text-md font-semibold tracking-snug text-ink-900">
 					{project.name}
 				</h1>
 				<StandingBadge standing={projectStanding(project)} />

@@ -104,7 +104,7 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 items-center gap-2 pr-3 pl-4">
 			<Search class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Search</h1>
+			<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">Search</h1>
 		</div>
 	</div>
 

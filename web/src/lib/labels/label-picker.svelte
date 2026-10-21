@@ -10,7 +10,7 @@
 		},
 		variants: {
 			place: {
-				field: { trigger: fieldTrigger(), blank: "text-muted-foreground" },
+				field: { trigger: fieldTrigger({ class: "items-start" }), blank: "text-muted-foreground" },
 				row: {
 					trigger:
 						"inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2",
@@ -31,7 +31,10 @@
 			{
 				place: "row",
 				always: false,
-				class: { blank: "hidden opacity-0 group-hover/row:opacity-100 lg:inline-block" },
+				class: {
+					blank:
+						"hidden opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 lg:inline-block",
+				},
 			},
 			{
 				place: "row",

@@ -233,7 +233,7 @@
 	<div class="flex-none border-b border-line-default">
 		<div class="flex h-11 flex-wrap items-center gap-2 pr-3 pl-4">
 			<Inbox class="size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
-			<h1 class="text-md font-medium tracking-snug whitespace-nowrap text-ink-900">Inbox</h1>
+			<h1 class="text-md font-semibold tracking-snug whitespace-nowrap text-ink-900">Inbox</h1>
 			{#if unread !== undefined}
 				<span class="text-sm text-muted-foreground">
 					{unread === 0 ? "Nothing unread" : `${unread} unread`}
