@@ -105,6 +105,7 @@ function propertyLine(change: ActivityChange): string {
 	const field = fieldNames[change.field ?? ""] ?? change.field ?? "a property";
 
 	if (change.field === "description") return "Edited the description";
+	if (change.field === "labels") return labelsLine(change.fromValue, change.toValue);
 	if (change.fromValue && change.toValue) {
 		return `Changed ${field} from ${change.fromValue} to ${change.toValue}`;
 	}
@@ -112,6 +113,32 @@ function propertyLine(change: ActivityChange): string {
 	if (change.fromValue) return `Cleared ${field}, which was ${change.fromValue}`;
 
 	return `Changed ${field}`;
+}
+
+function labelNames(joined: string | undefined): string[] {
+	return (joined ?? "")
+		.split(", ")
+		.map((name) => name.trim())
+		.filter((name) => name !== "");
+}
+
+function labelPhrase(verb: string, names: string[]): string {
+	return `${verb} ${names.length === 1 ? "the label" : "the labels"} ${names.join(", ")}`;
+}
+
+function labelsLine(fromValue: string | undefined, toValue: string | undefined): string {
+	const before = labelNames(fromValue);
+	const after = labelNames(toValue);
+	const added = after.filter((name) => !before.includes(name));
+	const removed = before.filter((name) => !after.includes(name));
+
+	if (added.length > 0 && removed.length > 0) {
+		return `${labelPhrase("Added", added)} and ${labelPhrase("removed", removed)}`;
+	}
+	if (added.length > 0) return labelPhrase("Added", added);
+	if (removed.length > 0) return labelPhrase("Removed", removed);
+
+	return "Changed the labels";
 }
 
 export function actorLabel(event: ActivityEvent): string {
