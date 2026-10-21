@@ -17,7 +17,7 @@
 
 <article class="flex flex-col gap-8">
 	<header class="flex flex-col gap-2">
-		<h1 class="text-2xl font-medium tracking-title break-words text-ink-900">{roadmap.title}</h1>
+		<h1 class="text-2xl font-semibold tracking-title break-words text-ink-900">{roadmap.title}</h1>
 		{#if roadmap.description}
 			<p class="text-base leading-normal break-words whitespace-pre-line text-muted-foreground">
 				{roadmap.description}

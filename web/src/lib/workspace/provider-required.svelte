@@ -13,7 +13,7 @@
 		<div class="flex items-start gap-2">
 			<KeyRound class="mt-0.5 size-icon-toolbar shrink-0 text-muted-foreground" aria-hidden="true" />
 			<div class="flex flex-col gap-1.5">
-				<h1 class="text-xl font-medium tracking-title text-ink-900">
+				<h1 class="text-xl font-semibold tracking-title text-ink-900">
 					{workspace.name} signs in through your provider
 				</h1>
 				<p class="text-md leading-normal text-ink-600 text-pretty">

@@ -160,7 +160,7 @@
 				<h1
 					bind:this={heading}
 					tabindex="-1"
-					class="text-2xl font-medium tracking-title text-ink-900"
+					class="text-2xl font-semibold tracking-title text-ink-900"
 				>
 					{title}
 				</h1>

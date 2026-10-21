@@ -2050,7 +2050,7 @@
 												bind:this={titleField}
 												bind:value={$formData.title}
 												disabled={$submitting}
-												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-2xl leading-tight font-medium tracking-title text-ink-900 outline-none"
+												class="-mx-2.25 w-[calc(100%+1.125rem)] border-b-2 border-cyan-500 bg-transparent px-2.25 py-1.25 text-2xl leading-tight font-semibold tracking-title text-ink-900 outline-none"
 											/>
 										{/snippet}
 									</Form.Control>
@@ -2084,7 +2084,7 @@
 									class="-mx-2.25 -my-1.25 min-w-0 rounded-md px-2.25 py-1.25 text-left motion-control enabled:cursor-text enabled:hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
 									<h1
-										class="text-2xl leading-tight font-medium tracking-title text-ink-900 text-pretty"
+										class="text-2xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
 									>
 										{issue.title}
 									</h1>

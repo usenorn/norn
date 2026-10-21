@@ -241,7 +241,7 @@
 					{:else}
 						<div class="flex items-start gap-2">
 							<div class="flex min-w-0 flex-1 flex-col gap-1">
-								<h2 class="text-lg font-medium tracking-title text-ink-900">
+								<h2 class="text-lg font-semibold tracking-title text-ink-900">
 									{overview.team.name}
 								</h2>
 								<p class="text-sm leading-normal text-muted-foreground text-pretty">

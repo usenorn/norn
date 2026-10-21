@@ -164,7 +164,7 @@
 					<div class="flex items-start gap-2.5">
 						<ReportIcon class="mt-0.5 size-4.5 shrink-0 {report.tone}" aria-hidden="true" />
 						<div class="flex flex-col gap-1.5">
-							<h1 class="text-heading font-medium tracking-title text-ink-900">{report.title}</h1>
+							<h1 class="text-heading font-semibold tracking-title text-ink-900">{report.title}</h1>
 							<p class="text-md leading-normal text-ink-600 text-pretty">{report.body}</p>
 						</div>
 					</div>

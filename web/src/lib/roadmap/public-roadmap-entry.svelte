@@ -38,7 +38,7 @@
 			<span class="break-words">{roadmapTitle}</span>
 		</a>
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-			<h1 class="min-w-0 text-2xl font-medium tracking-title break-words text-ink-900">
+			<h1 class="min-w-0 text-2xl font-semibold tracking-title break-words text-ink-900">
 				{item.title}
 			</h1>
 			{#if item.status}

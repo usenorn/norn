@@ -479,7 +479,7 @@
 								</div>
 
 								<h2
-									class="text-xl leading-tight font-medium tracking-title text-ink-900 text-pretty"
+									class="text-xl leading-tight font-semibold tracking-title text-ink-900 text-pretty"
 								>
 									{item.title}
 								</h2>

@@ -363,7 +363,7 @@
 				{#if !allSent}
 					<Eyebrow>Step 4 of 4</Eyebrow>
 				{/if}
-				<h1 class="text-2xl font-medium tracking-title text-ink-900">{title}</h1>
+				<h1 class="text-2xl font-semibold tracking-title text-ink-900">{title}</h1>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">{lede}</p>
 			</div>
 
