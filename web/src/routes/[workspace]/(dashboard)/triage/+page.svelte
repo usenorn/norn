@@ -302,7 +302,7 @@
 						<a
 							href={sourcePath(slot.value)}
 							aria-current={tab === slot.value ? "page" : undefined}
-							class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {tab ===
+							class="inline-flex h-5.5 flex-none cursor-pointer items-center gap-1.5 rounded-xs px-2 caption motion-control {tab ===
 							slot.value
 								? 'bg-primary text-primary-foreground'
 								: 'text-ink-600 hover:bg-accent'}"
@@ -316,7 +316,7 @@
 							disabled
 							aria-label="{slot.label} — {unrecordedSource}"
 							title={unrecordedSource}
-							class="inline-flex h-5.5 flex-none items-center gap-1.5 rounded-xs px-2 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase opacity-60"
+							class="inline-flex h-5.5 flex-none items-center gap-1.5 rounded-xs px-2 caption text-muted-foreground opacity-60"
 						>
 							{slot.label}
 							<span aria-hidden="true">—</span>
@@ -327,7 +327,7 @@
 			</div>
 			<div class="flex-1"></div>
 			{#if readOnly}
-				<span class="inline-flex items-center gap-1.5 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+				<span class="inline-flex items-center gap-1.5 caption text-muted-foreground">
 					<Info class="size-3" aria-hidden="true" />
 					Read only
 				</span>
@@ -379,7 +379,7 @@
 		<div class="flex flex-1 flex-col items-center justify-center gap-5 p-10">
 			<div class="flex max-w-95 flex-col items-center gap-2.5 text-center">
 				<Zap class="size-4.5 text-muted-foreground" aria-hidden="true" />
-				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">Triage zero</span>
+				<span class="caption text-ink-600">Triage zero</span>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">
 					Reports from integrations, agents and people outside the team land here before anyone
 					commits to them.
@@ -433,7 +433,7 @@
 						</li>
 					{/each}
 				</ul>
-				<p class="px-3.5 py-3 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+				<p class="px-3.5 py-3 caption text-muted-foreground">
 					{shown.length} waiting
 				</p>
 			</div>
@@ -456,7 +456,7 @@
 							<div class="flex flex-col gap-2.5">
 								<div class="flex flex-wrap items-center gap-2">
 									<span
-										class="inline-flex items-center gap-1.5 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+										class="inline-flex items-center gap-1.5 caption text-ink-600"
 									>
 										{@render sourceMark(item.triageSource ?? "user")}
 										{sourceLabels[item.triageSource ?? "user"]}

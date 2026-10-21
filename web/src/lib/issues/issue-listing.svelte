@@ -1173,7 +1173,7 @@
 				{#if applied.kind === "applied"}
 					<span class="flex min-w-0 shrink items-center gap-1.5">
 						<span class="truncate text-md text-ink-900">{applied.view.name}</span>
-						<span class="shrink-0 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase">
+						<span class="shrink-0 caption text-ink-600">
 							{scopeOf(applied.view)}
 						</span>
 					</span>
@@ -1394,7 +1394,7 @@
 			</div>
 		{:else if board.kind === "empty" && filtered}
 			<div class="my-auto flex flex-col items-center gap-3 px-6 py-10 text-center">
-				<p class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+				<p class="caption text-ink-600">
 					No issues match these filters
 				</p>
 				<Button href={cleared} variant="secondary" size="sm">Clear filters</Button>
@@ -1451,7 +1451,7 @@
 								/>
 								{@render columnMark(column)}
 								<span
-									class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+									class="caption text-ink-600"
 								>
 									{column.name}
 								</span>
@@ -1523,7 +1523,7 @@
 							<div class="flex h-7 items-center gap-2 px-1">
 								{@render columnMark(column)}
 								<span
-									class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+									class="caption text-ink-600"
 								>
 									{column.name}
 								</span>
@@ -1571,7 +1571,7 @@
 
 							{#if column.issues.length === 0 && column.load.kind === "complete"}
 								<p
-									class="border-t border-dashed border-line-strong px-0.5 py-3 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase"
+									class="border-t border-dashed border-line-strong px-0.5 py-3 caption text-ink-600"
 								>
 									Nothing here
 								</p>

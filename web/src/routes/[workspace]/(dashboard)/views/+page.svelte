@@ -255,7 +255,7 @@
 								>
 									{view.name}
 								</a>
-								<span class="shrink-0 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase">
+								<span class="shrink-0 caption text-ink-600">
 									{scopeOf(view)}
 								</span>
 								<div class="flex shrink-0 items-center gap-1">

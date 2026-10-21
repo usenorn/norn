@@ -549,7 +549,7 @@
 								<Eyebrow>{section.group ? section.group.name : "Ungrouped"}</Eyebrow>
 								{#if section.group}
 									<span
-										class="rounded-full border border-line-default px-1.5 font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+										class="rounded-full border border-line-default px-1.5 text-xs font-medium text-muted-foreground"
 									>
 										one at a time
 									</span>

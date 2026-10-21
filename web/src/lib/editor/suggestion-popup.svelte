@@ -97,7 +97,7 @@
 				{#if group.label !== ""}
 					<li
 						role="presentation"
-						class="px-2 pt-1.5 pb-0.5 text-2xs font-medium tracking-wide text-muted-foreground uppercase"
+						class="px-2 pt-1.5 pb-0.5 caption text-muted-foreground"
 					>
 						{group.label}
 					</li>

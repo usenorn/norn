@@ -321,7 +321,7 @@
 
 		{#if thread.kind === "empty"}
 			<div class="flex flex-col gap-1.5 border-t border-line-subtle pt-5.5 pb-4.5">
-				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+				<span class="caption text-ink-600">
 					No comments yet
 				</span>
 				<span class="text-md text-muted-foreground">

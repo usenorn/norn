@@ -20,7 +20,7 @@
 
 <span
 	class={cn(
-		"inline-flex h-4.25 max-w-26 shrink-0 items-center truncate border-b-2 px-px font-mono text-2xs font-medium tracking-wide text-muted-foreground uppercase",
+		"inline-flex h-4.25 max-w-30 shrink-0 items-center truncate border-b-2 px-px text-xs font-medium text-ink-700",
 		tone[color],
 		className
 	)}

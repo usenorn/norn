@@ -495,7 +495,7 @@
 				<span class="ml-auto flex shrink-0 items-center gap-2">
 					{#if editing}
 						{#if unsaved}
-							<span class="font-mono text-2xs tracking-caps uppercase text-warning">Unsaved</span>
+							<span class="caption text-warning">Unsaved</span>
 						{/if}
 						<Button
 							variant="ghost"
@@ -579,7 +579,7 @@
 		>
 			<ScopeBar {progress} class="w-full max-w-105 sm:w-auto sm:flex-1" />
 			<span class="flex items-center gap-2">
-				<span class="font-mono text-2xs tracking-caps uppercase text-muted-foreground">Lead</span>
+				<span class="caption text-muted-foreground">Lead</span>
 				{#if project.leadName}
 					<PersonAvatar
 						accountId={project.leadAccountId ?? ""}
@@ -593,7 +593,7 @@
 			</span>
 			<span class="hidden h-3.5 w-px bg-line-default sm:block" aria-hidden="true"></span>
 			<span class="flex min-w-0 items-center gap-2">
-				<span class="font-mono text-2xs tracking-caps uppercase text-muted-foreground">Team</span>
+				<span class="caption text-muted-foreground">Team</span>
 				<span class="truncate font-mono text-xs text-muted-foreground">
 					{teamsLine(project, data.teams ?? [])}
 				</span>

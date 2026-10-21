@@ -122,7 +122,7 @@
 	<span class="flex w-full min-w-0 flex-col gap-1">
 		<span class="text-sm break-words text-ink-900">
 			{entry.title}
-			<span class="font-mono text-2xs text-muted-foreground uppercase">{entry.kind}</span>
+			<span class="caption text-muted-foreground">{entry.kind}</span>
 		</span>
 		{#if entry.fields.length > 0}
 			<span class="flex flex-col gap-1">

@@ -25,7 +25,7 @@
 
 <div class="relative flex min-h-7 items-start gap-1.5">
 	<span
-		class="mt-1 w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+		class="mt-1 w-19.5 flex-none caption text-muted-foreground"
 	>
 		Delegated
 	</span>

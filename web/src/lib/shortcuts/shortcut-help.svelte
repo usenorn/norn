@@ -40,7 +40,7 @@
 		<div class="flex max-h-[60dvh] flex-col gap-5 overflow-y-auto">
 			{#each groups as section (section.group)}
 				<section class="flex flex-col gap-1.5">
-					<h3 class="text-2xs font-medium tracking-wide text-muted-foreground uppercase">
+					<h3 class="caption text-muted-foreground">
 						{section.label}
 					</h3>
 					<ul class="flex flex-col">

@@ -158,7 +158,7 @@
 					<section class="flex flex-col" aria-label={kindLabels[group.kind]}>
 						<div class="flex h-7.5 items-center gap-2 border-b border-line-default">
 							<span
-								class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+								class="caption text-ink-600"
 							>
 								{kindLabels[group.kind]}
 							</span>

@@ -407,6 +407,14 @@
 	}
 }
 
+@utility caption {
+	font-family: var(--font-sans);
+	font-size: var(--text-sm);
+	line-height: var(--text-sm--line-height);
+	font-weight: var(--font-weight-medium);
+	letter-spacing: 0;
+}
+
 @utility label-rule {
 	&::after {
 		content: '';

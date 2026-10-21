@@ -250,7 +250,7 @@
 			</div>
 		{:else if rows.kind === "no_matches"}
 			<div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-				<p class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+				<p class="caption text-ink-600">
 					No tasks match these filters
 				</p>
 				<Button href={cleared} variant="secondary" size="sm">Clear filters</Button>
@@ -274,7 +274,7 @@
 						class="sticky top-0 z-1 flex h-7.5 items-center gap-2 border-b border-line-default bg-background pr-3 pl-3.5"
 					>
 						<span
-							class="font-mono text-2xs font-medium tracking-eyebrow uppercase {bucket.emphasis
+							class="caption {bucket.emphasis
 								? 'text-ink-900'
 								: 'text-ink-600'}"
 						>

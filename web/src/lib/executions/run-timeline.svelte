@@ -35,7 +35,7 @@
 					>
 						{atClock(event.occurredAt, timezone)}
 					</time>
-					<span class="w-16 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+					<span class="w-16 flex-none caption text-muted-foreground">
 						{eventLabel(event.kind)}
 					</span>
 					<span class="min-w-0 flex-1 text-xs leading-normal break-words text-ink-900 text-pretty">

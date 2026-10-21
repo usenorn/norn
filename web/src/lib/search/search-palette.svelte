@@ -472,7 +472,7 @@
 			<span class="font-mono text-xs text-muted-foreground">{option.hint}</span>
 		{/if}
 		{#if shownRun.kind === "running" && shownRun.entry === option.value}
-			<span class="font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">Running</span>
+			<span class="caption text-muted-foreground">Running</span>
 		{/if}
 	{/if}
 {/snippet}

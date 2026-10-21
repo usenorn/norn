@@ -1925,7 +1925,7 @@
 		<div class="flex flex-1 items-center justify-center p-10">
 			<div class="flex max-w-95 flex-col items-center gap-2.5 text-center">
 				<CircleX class="size-4 text-muted-foreground" aria-hidden="true" />
-				<span class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase">
+				<span class="caption text-ink-600">
 					{page.params.reference} is no longer available
 				</span>
 				<p class="text-md leading-normal text-muted-foreground text-pretty">
@@ -2609,7 +2609,7 @@
 										type="button"
 										aria-pressed={shown === choice.key}
 										onclick={() => (shown = choice.key as "all" | "comments")}
-										class="h-5 cursor-pointer rounded-xs px-2 font-mono text-2xs tracking-eyebrow uppercase motion-control {shown ===
+										class="h-5 cursor-pointer rounded-xs px-2 caption motion-control {shown ===
 										choice.key
 											? 'bg-primary text-primary-foreground'
 											: 'text-ink-600 hover:bg-accent'}"
@@ -2832,7 +2832,7 @@
 
 					<div class="relative flex min-h-7 items-center gap-1.5">
 						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+							class="w-19.5 flex-none caption text-muted-foreground"
 						>
 							Due
 						</span>
@@ -2978,7 +2978,7 @@
 
 					<div class="flex min-h-7 items-center gap-2">
 						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+							class="w-19.5 flex-none caption text-muted-foreground"
 						>
 							Watching
 						</span>
@@ -3013,7 +3013,7 @@
 
 					<div class="flex min-h-5.5 items-center gap-1.5">
 						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+							class="w-19.5 flex-none caption text-muted-foreground"
 						>
 							Created
 						</span>
@@ -3025,7 +3025,7 @@
 					{#if lastActivity}
 						<div class="flex min-h-5.5 items-center gap-1.5">
 							<span
-								class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+								class="w-19.5 flex-none caption text-muted-foreground"
 							>
 								Updated
 							</span>
@@ -3037,7 +3037,7 @@
 
 					<div class="flex min-h-5.5 items-center gap-1.5">
 						<span
-							class="w-19.5 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+							class="w-19.5 flex-none caption text-muted-foreground"
 						>
 							Link
 						</span>
@@ -3087,7 +3087,7 @@
 		<div
 			class="hidden h-7.5 flex-none items-center gap-4 border-t border-line-subtle px-3.5 lg:flex"
 		>
-			<span class="font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+			<span class="caption text-muted-foreground">
 				{issue.reference}
 			</span>
 			<div class="flex-1"></div>

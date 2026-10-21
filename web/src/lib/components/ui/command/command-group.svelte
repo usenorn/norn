@@ -25,7 +25,7 @@
 >
 	{#if heading}
 		<CommandPrimitive.GroupHeading
-			class="flex items-center gap-1.5 px-2 pt-1.5 pb-1 font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase"
+			class="flex items-center gap-1.5 px-2 pt-1.5 pb-1 caption text-ink-600"
 		>
 			{heading}
 			{#if meta}

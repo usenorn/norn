@@ -28,13 +28,13 @@
 	<table class="w-full min-w-90 border-collapse">
 		<thead>
 			<tr class="border-b border-line-default">
-				<th class="py-2 pr-3 text-left font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase">
+				<th class="py-2 pr-3 text-left caption text-ink-600">
 					Event
 				</th>
-				<th class="w-16 py-2 text-center font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase">
+				<th class="w-16 py-2 text-center caption text-ink-600">
 					Inbox
 				</th>
-				<th class="w-16 py-2 text-center font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase">
+				<th class="w-16 py-2 text-center caption text-ink-600">
 					Email
 				</th>
 			</tr>

@@ -113,7 +113,6 @@
 					disabled={busy}
 					placeholder="Label name"
 					bind:value={$formData.name}
-					class="font-mono tracking-caps uppercase"
 				/>
 			{/snippet}
 		</Form.Control>

@@ -329,7 +329,7 @@
 					</Form.Field>
 
 					<div class="flex flex-col gap-1">
-						<span class="font-mono text-2xs font-medium tracking-caps text-ink-600 uppercase">
+						<span class="caption text-ink-600">
 							Email
 						</span>
 						<Input value={invitation.kind === "create_account" ? invitation.email : ""} disabled />

@@ -53,7 +53,7 @@
 									class="-mx-1 flex h-row min-w-0 flex-1 items-center gap-2.25 rounded-sm px-1 motion-control hover:bg-accent"
 								>
 									<span
-										class="w-19 flex-none font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase"
+										class="w-19 flex-none caption text-muted-foreground"
 									>
 										{relationHeading(group.kind)}
 									</span>

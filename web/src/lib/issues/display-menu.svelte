@@ -144,7 +144,7 @@
 
 				<span class="-mx-3 my-2.5 h-px bg-line-subtle" aria-hidden="true"></span>
 
-				<span class="font-mono text-2xs font-medium tracking-eyebrow text-ink-600 uppercase">
+				<span class="caption text-ink-600">
 					Display properties
 				</span>
 				<div class="flex flex-wrap gap-1.5 pt-2">

@@ -135,7 +135,7 @@
 		<div class="flex items-center gap-2.5">
 			<h2 class="min-w-0 flex-1">
 				<span
-					class="font-mono text-xs tracking-eyebrow text-ink-600 uppercase"
+					class="caption text-ink-600"
 				>
 					Acceptance criteria
 				</span>

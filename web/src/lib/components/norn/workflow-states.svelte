@@ -329,14 +329,14 @@
 
 						{#if state.isDefault}
 							<span
-								class="shrink-0 rounded-sm bg-paper-2 px-1.5 py-0.5 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase"
+								class="shrink-0 rounded-sm bg-paper-2 px-1.5 py-0.5 text-xs font-medium text-ink-600"
 							>
 								Default
 							</span>
 						{/if}
 						{#if state.isCompletion}
 							<span
-								class="shrink-0 rounded-sm bg-paper-2 px-1.5 py-0.5 font-mono text-2xs tracking-eyebrow text-ink-600 uppercase"
+								class="shrink-0 rounded-sm bg-paper-2 px-1.5 py-0.5 text-xs font-medium text-ink-600"
 							>
 								Completion
 							</span>

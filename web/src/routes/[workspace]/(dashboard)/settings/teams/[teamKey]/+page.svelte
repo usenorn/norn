@@ -13,7 +13,7 @@
 <nav aria-label="Team settings" class="flex flex-col gap-6">
 	{#each teamSettingsGroups as group (group.label)}
 		<section class="flex flex-col gap-2">
-			<h2 class="font-mono text-2xs tracking-eyebrow text-muted-foreground uppercase">
+			<h2 class="caption text-muted-foreground">
 				{group.label}
 			</h2>
 			<ul class="flex flex-col rounded-lg border border-line-default">
