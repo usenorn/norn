@@ -36,7 +36,7 @@ test.describe("labels on the issue page", () => {
 
 		await page.goto(at(`/issues/${fixture().issues[3].reference}`));
 
-		const field = page.getByRole("button", { name: "Labels: change" });
+		const field = page.getByRole("button", { name: /^Labels:/ });
 
 		await field.click();
 		await page.getByRole("option", { name: first }).click();
@@ -49,8 +49,8 @@ test.describe("labels on the issue page", () => {
 		await page.waitForLoadState("networkidle");
 		await page.reload();
 
-		await expect(page.getByRole("button", { name: "Labels: change" })).toContainText(first);
-		await expect(page.getByRole("button", { name: "Labels: change" })).toContainText(second);
+		await expect(page.getByRole("button", { name: /^Labels:/ })).toContainText(first);
+		await expect(page.getByRole("button", { name: /^Labels:/ })).toContainText(second);
 	});
 
 	test("a label created from the picker lands on the issue with a colour", async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe("labels on the issue page", () => {
 
 		await page.goto(at(`/issues/${fixture().issues[4].reference}`));
 
-		const field = page.getByRole("button", { name: "Labels: change" });
+		const field = page.getByRole("button", { name: /^Labels:/ });
 
 		await field.click();
 		await page.getByPlaceholder("Add or create a label…").fill(name);
@@ -80,6 +80,6 @@ test.describe("labels on the issue page", () => {
 		await page.waitForLoadState("networkidle");
 		await page.reload();
 
-		await expect(page.getByRole("button", { name: "Labels: change" })).toContainText(name);
+		await expect(page.getByRole("button", { name: /^Labels:/ })).toContainText(name);
 	});
 });

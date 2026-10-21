@@ -16,6 +16,7 @@
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import * as Popover from "$lib/components/ui/popover/index.js";
+	import Kbd from "$lib/components/norn/kbd.svelte";
 	import { cn } from "$lib/utils.js";
 
 	let {
@@ -73,6 +74,8 @@
 			<Command.Input {placeholder} bind:value={search}>
 				{#if shortcut}
 					{@render shortcut()}
+				{:else}
+					<Kbd keys="Esc" />
 				{/if}
 			</Command.Input>
 			<Command.List>

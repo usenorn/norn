@@ -58,7 +58,7 @@
 		}))
 	);
 	const triggerLabel = $derived(
-		place === "row" && subject ? `Change priority on ${subject}` : "Priority: change"
+		place === "row" && subject ? `Change priority on ${subject}` : `Priority: ${priorityLabel(chosen)}`
 	);
 </script>
 
@@ -80,6 +80,7 @@
 				{...props}
 				type="button"
 				aria-label={triggerLabel}
+				data-property={place === "field" ? "Priority" : undefined}
 				{disabled}
 				class={styles.trigger()}
 			>

@@ -217,7 +217,7 @@ test.describe("cycles from the board", () => {
 		await runCycles(page);
 		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
 
-		const cycle = page.getByRole("button", { name: "Cycle: change" });
+		const cycle = page.getByRole("button", { name: /^Cycle:/ });
 
 		await expect(cycle).toContainText("No cycle");
 
@@ -238,7 +238,7 @@ test.describe("cycles from the board", () => {
 	test("Shift+C typed into a comment stays in the comment", async ({ page }) => {
 		await runCycles(page);
 		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-		await expect(page.getByRole("button", { name: "Cycle: change" })).toBeVisible();
+		await expect(page.getByRole("button", { name: /^Cycle:/ })).toBeVisible();
 
 		const comment = page.getByRole("textbox", { name: "Write a comment" });
 
@@ -251,8 +251,8 @@ test.describe("cycles from the board", () => {
 
 	test("an issue shows the cycle field only while its team runs cycles", async ({ page }) => {
 		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-		await expect(page.getByRole("button", { name: "Project: change" })).toBeVisible();
-		await expect(page.getByRole("button", { name: "Cycle: change" })).toHaveCount(0);
+		await expect(page.getByRole("button", { name: /^Project:/ })).toBeVisible();
+		await expect(page.getByRole("button", { name: /^Cycle:/ })).toHaveCount(0);
 
 		await page.keyboard.press("Shift+C");
 		await expect(page.getByRole("option", { name: "No cycle" })).toHaveCount(0);
@@ -266,6 +266,6 @@ test.describe("cycles from the board", () => {
 
 		await runCycles(page);
 		await page.reload();
-		await expect(page.getByRole("button", { name: "Cycle: change" })).toBeVisible();
+		await expect(page.getByRole("button", { name: /^Cycle:/ })).toBeVisible();
 	});
 });

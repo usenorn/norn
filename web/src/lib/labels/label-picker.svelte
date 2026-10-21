@@ -14,7 +14,7 @@
 				row: {
 					trigger:
 						"inline-flex h-6 min-w-5 cursor-pointer items-center gap-1.5 rounded-sm px-1 hover:bg-paper-2",
-					blank: "h-0.5 w-2 bg-line-strong",
+					blank: "size-3.5 text-muted-foreground",
 					content: "w-49",
 				},
 				dialog: {
@@ -56,7 +56,6 @@
 	import Tags from "@lucide/svelte/icons/tags";
 	import * as Command from "$lib/components/ui/command/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
 	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
 	import LabelChips from "./label-chips.svelte";
 	import LabelDot from "./label-dot.svelte";
@@ -119,7 +118,9 @@
 			!reachable.some((label) => label.name.toLowerCase() === wanted.toLowerCase())
 	);
 	const triggerLabel = $derived(
-		place === "row" && subject ? `Change labels on ${subject}` : "Labels: change"
+		place === "row" && subject
+			? `Change labels on ${subject}`
+			: `Labels: ${shownChips.map((label) => label.name).join(", ") || "none"}`
 	);
 
 	$effect(() => {
@@ -186,9 +187,6 @@
 	onpick={pick}
 	action={canCreate ? createRow : undefined}
 >
-	{#snippet shortcut()}
-		<Kbd keys="Esc" />
-	{/snippet}
 	{#snippet trigger(props)}
 		{#if place === "dialog"}
 			<Button {...props} variant="property" size="property" {disabled}>
@@ -204,6 +202,7 @@
 				{...props}
 				type="button"
 				aria-label={triggerLabel}
+				data-property={place === "field" ? "Labels" : undefined}
 				{disabled}
 				class={styles.trigger()}
 			>
@@ -217,7 +216,7 @@
 					{#if place === "field"}
 						<span class={styles.blank()}>Add labels</span>
 					{:else}
-						<span class={styles.blank()} aria-hidden="true"></span>
+						<Tags class={styles.blank()} aria-hidden="true" />
 					{/if}
 				{/if}
 			</button>

@@ -12,6 +12,7 @@
 
 	let {
 		label,
+		valueText,
 		options,
 		placeholder,
 		editable = true,
@@ -25,6 +26,7 @@
 		value,
 	}: {
 		label: string;
+		valueText?: string;
 		options?: PickerOption[];
 		placeholder?: string;
 		editable?: boolean;
@@ -61,7 +63,8 @@
 				<button
 					{...props}
 					type="button"
-					aria-label="{label}: change"
+					aria-label="{label}: {valueText ?? 'change'}"
+					data-property={label}
 					class={fieldTrigger()}
 				>
 					{@render glyph?.()}
