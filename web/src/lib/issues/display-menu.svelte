@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
-	import ChevronRight from "@lucide/svelte/icons/chevron-right";
-	import Settings from "@lucide/svelte/icons/settings";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
+	import SlidersHorizontal from "@lucide/svelte/icons/sliders-horizontal";
 	import * as Popover from "$lib/components/ui/popover/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { Switch } from "$lib/components/ui/switch/index.js";
@@ -40,7 +37,6 @@
 	} = $props();
 
 	let open = $state(false);
-	let pane = $state<"root" | "ordering">("root");
 
 	const groupLink = $derived((grouping: Grouping) =>
 		linkWith({ group: grouping === defaults.grouping ? null : grouping })
@@ -58,130 +54,82 @@
 			hide: rowProperties.filter((property) => !defaults.shown.includes(property)).join(",") || null,
 		})
 	);
-
-	$effect(() => {
-		if (!open) pane = "root";
-	});
 </script>
 
-<DropdownMenu.Root>
-	<DropdownMenu.Trigger>
-		{#snippet child({ props })}
-			<Button {...props} variant="ghost" size="sm" class="shrink-0">
-				Grouped by {groupingNouns[display.grouping]}
-				<ChevronDown aria-hidden="true" />
-			</Button>
-		{/snippet}
-	</DropdownMenu.Trigger>
-	<DropdownMenu.Content align="end">
-		<DropdownMenu.Label>Group by</DropdownMenu.Label>
-		{#each groupings as grouping (grouping)}
-			<DropdownMenu.Item>
-				{#snippet child({ props })}
-					<a href={groupLink(grouping)} {...props}>
-						<span class="flex-1">{groupingLabels[grouping]}</span>
-						{#if display.grouping === grouping}
-							<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-						{/if}
-					</a>
-				{/snippet}
-			</DropdownMenu.Item>
-		{/each}
-	</DropdownMenu.Content>
-</DropdownMenu.Root>
+{#snippet choice(href: string, label: string, chosen: boolean)}
+	<a
+		{href}
+		aria-current={chosen ? "true" : undefined}
+		class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+	>
+		<span class="flex-1">{label}</span>
+		{#if chosen}
+			<Check class="size-3.25 text-ink-900" aria-hidden="true" />
+		{/if}
+	</a>
+{/snippet}
 
 <Popover.Root bind:open>
 	<Popover.Trigger>
 		{#snippet child({ props })}
 			<Button
 				{...props}
-				variant="outline"
-				size="icon-sm"
-				aria-label="Display options"
-				class={atDefaults(display, defaults)
-					? ""
-					: "border-primary bg-primary text-primary-foreground hover:border-primary-active hover:bg-primary-active hover:text-primary-foreground"}
+				variant={atDefaults(display, defaults) ? "ghost" : "subtle"}
+				size="sm"
+				class="shrink-0"
 			>
-				<Settings class="size-icon-toolbar" aria-hidden="true" />
+				<SlidersHorizontal aria-hidden="true" />
+				Grouped by {groupingNouns[display.grouping]}
+				<ChevronDown aria-hidden="true" />
 			</Button>
 		{/snippet}
 	</Popover.Trigger>
-	<Popover.Content align="end" class="w-69">
-		{#if pane === "root"}
-			<div class="flex flex-col p-3">
-				<button
-					type="button"
-					onclick={() => (pane = "ordering")}
-					class="flex h-7.5 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
+	<Popover.Content align="end" class="w-69 p-1.5">
+		<div class="flex flex-col">
+			<span class="caption px-1.5 pt-1 pb-1 text-ink-600">Group by</span>
+			{#each groupings as grouping (grouping)}
+				{@render choice(groupLink(grouping), groupingLabels[grouping], display.grouping === grouping)}
+			{/each}
+
+			<span class="-mx-1.5 my-1.5 h-px bg-line-subtle" aria-hidden="true"></span>
+
+			<span class="caption px-1.5 pt-1 pb-1 text-ink-600">Order by</span>
+			{#each orderings as ordering (ordering)}
+				{@render choice(orderLink(ordering), orderingLabels[ordering], display.ordering === ordering)}
+			{/each}
+
+			<span class="-mx-1.5 my-1.5 h-px bg-line-subtle" aria-hidden="true"></span>
+
+			{#if emptyGroups}
+				<label class="flex h-7.5 items-center gap-2 px-1.5 text-md text-foreground">
+					<span class="flex-1">Show empty groups</span>
+					<Switch
+						checked={display.showEmpty}
+						onCheckedChange={() =>
+							goto(linkWith({ empty: display.showEmpty ? null : "1" }), { noScroll: true })}
+					/>
+				</label>
+			{/if}
+			{#each rowProperties as property (property)}
+				<label class="flex h-7.5 items-center gap-2 px-1.5 text-md text-foreground">
+					<span class="flex-1">Show {rowPropertyLabels[property].toLowerCase()}</span>
+					<Switch
+						checked={display.shown.includes(property)}
+						onCheckedChange={() =>
+							goto(linkWith({ hide: hiddenParam(display.shown, property) }), { noScroll: true })}
+					/>
+				</label>
+			{/each}
+
+			{#if !atDefaults(display, defaults)}
+				<span class="-mx-1.5 my-1.5 h-px bg-line-subtle" aria-hidden="true"></span>
+				<a
+					href={resetLink}
+					class="flex h-7 items-center rounded-sm px-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
 				>
-					<span class="text-md text-foreground">Ordering</span>
-					<span class="flex-1"></span>
-					<span class="text-sm text-muted-foreground">{orderingLabels[display.ordering]}</span>
-					<ChevronRight class="size-3.25 text-muted-foreground" aria-hidden="true" />
-				</button>
-
-				{#if emptyGroups}
-					<label class="flex h-7.5 items-center gap-2 px-1.5 text-md text-foreground">
-						<span class="flex-1">Show empty groups</span>
-						<Switch
-							checked={display.showEmpty}
-							onCheckedChange={() =>
-								goto(linkWith({ empty: display.showEmpty ? null : "1" }), { noScroll: true })}
-						/>
-					</label>
-				{/if}
-
-				<span class="-mx-3 my-2.5 h-px bg-line-subtle" aria-hidden="true"></span>
-
-				<span class="caption px-1.5 text-ink-600">
-					Show on each row
-				</span>
-				<div class="flex flex-col pt-1">
-					{#each rowProperties as property (property)}
-						<label class="flex h-7.5 items-center gap-2 px-1.5 text-md text-foreground">
-							<span class="flex-1">{rowPropertyLabels[property]}</span>
-							<Switch
-								checked={display.shown.includes(property)}
-								onCheckedChange={() =>
-									goto(linkWith({ hide: hiddenParam(display.shown, property) }), {
-										noScroll: true,
-									})}
-							/>
-						</label>
-					{/each}
-				</div>
-
-				<span class="-mx-3 mt-3 mb-2 h-px bg-line-subtle" aria-hidden="true"></span>
-
-				<a href={resetLink} class="text-sm text-muted-foreground hover:text-foreground">
 					Reset display
 				</a>
-			</div>
-		{:else}
-			<div class="flex flex-col p-1.5">
-				<button
-					type="button"
-					onclick={() => (pane = "root")}
-					class="flex h-7 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left hover:bg-accent"
-				>
-					<ArrowLeft class="size-3.25 text-muted-foreground" aria-hidden="true" />
-					<span class="text-sm text-muted-foreground">Ordering</span>
-				</button>
-
-				<span class="-mx-1.5 my-1 h-px bg-line-subtle" aria-hidden="true"></span>
-
-				{#each orderings as ordering (ordering)}
-					<a
-						href={orderLink(ordering)}
-						class="flex h-7 items-center gap-2 rounded-sm px-1.5 text-md text-foreground hover:bg-accent"
-					>
-						<span class="flex-1">{orderingLabels[ordering]}</span>
-						{#if display.ordering === ordering}
-							<Check class="size-3.25 text-ink-900" aria-hidden="true" />
-						{/if}
-					</a>
-				{/each}
-			</div>
-		{/if}
+			{/if}
+		</div>
 	</Popover.Content>
 </Popover.Root>

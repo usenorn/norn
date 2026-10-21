@@ -46,7 +46,7 @@ test.describe("My tasks", () => {
 		await page.goto(at("/my-tasks"));
 
 		await page.getByRole("button", { name: /Grouped by due date/ }).click();
-		await page.getByRole("menuitem", { name: "Status", exact: true }).click();
+		await page.getByRole("link", { name: "Status", exact: true }).click();
 
 		await expect(page.getByRole("button", { name: /Grouped by status/ })).toBeVisible();
 
@@ -54,7 +54,7 @@ test.describe("My tasks", () => {
 
 		await expect(page.getByRole("button", { name: /Grouped by status/ })).toBeVisible();
 
-		await page.getByRole("button", { name: "Display options" }).click();
+		await page.getByRole("button", { name: /Grouped by status/ }).click();
 		await page.getByRole("link", { name: "Reset display" }).click();
 
 		await expect(page.getByRole("button", { name: /Grouped by due date/ })).toBeVisible();
