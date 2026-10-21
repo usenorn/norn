@@ -18,7 +18,7 @@
 
 <div class="flex min-w-0 flex-col gap-0.5">
 	<div class="flex flex-wrap items-center gap-2">
-		<h2 {id} class="text-md font-medium tracking-snug text-ink-900">
+		<h2 {id} class="text-md font-semibold tracking-snug text-ink-900">
 			{title}
 			{#if count !== undefined}
 				<span class="tabular-nums text-xs text-muted-foreground">{count}</span>
