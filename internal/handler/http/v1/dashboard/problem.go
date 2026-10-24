@@ -820,6 +820,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrProjectHasDocs):
 		return projectConflictProblem(api.ProjectConflictProblemCodeProjectHasDocs, err), true
 
+	case errors.Is(err, entity.ErrProjectHasMemories):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectHasMemories, err), true
+
 	case errors.Is(err, entity.ErrCycleClosed):
 		return cycleConflictProblem(api.CycleConflictProblemCodeCycleClosed, err), true
 

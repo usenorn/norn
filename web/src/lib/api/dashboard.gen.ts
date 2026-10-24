@@ -7481,7 +7481,7 @@ export interface components {
         };
         ProjectConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents" | "project_has_docs";
+            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents" | "project_has_docs" | "project_has_memories";
         };
         RoadmapVisibility: {
             issueLists: boolean;

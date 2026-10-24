@@ -181,3 +181,75 @@ func TestAProjectADocIsSharedWithRefusesTheDeletion(t *testing.T) {
 		t.Fatal(failure)
 	}
 }
+
+func TestAProjectAMemoryIsSharedWithOrAppliesToRefusesTheDeletion(t *testing.T) {
+	for name, recordMemory := range map[string]string{
+		"shared with it": `INSERT INTO workspace_memories
+			(workspace_id, kind, statement, visibility, project_id, status, basis, source, effective_from)
+			VALUES ($1, 'decision', 'Ship weekly', 'project', $2, 'accepted', 'observation', 'person', current_date)`,
+		"applying to it": `INSERT INTO workspace_memories
+			(workspace_id, kind, statement, visibility, applies_project_id, status, basis, source, effective_from)
+			VALUES ($1, 'decision', 'Ship weekly', 'workspace', $2, 'accepted', 'observation', 'person', current_date)`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			client, cleanup := liveProjectRepository(t)
+			defer cleanup()
+
+			var failure error
+
+			err := client.WithTx(context.Background(), func(ctx context.Context) error {
+				workspaceID := uuid.New()
+
+				if _, err := client.Querier(ctx).ExecContext(
+					ctx,
+					"INSERT INTO workspaces (id, slug, name) VALUES ($1, $2, 'Memory deletion')",
+					workspaceID,
+					"memory-delete-"+workspaceID.String()[:8],
+				); err != nil {
+					failure = fmt.Errorf("lay deletion fixture: %w", err)
+
+					return errProjectRollback
+				}
+
+				projects := New(client)
+
+				project, err := projects.Create(ctx, entity.Project{
+					WorkspaceID: workspaceID,
+					Slug:        "platform",
+					Name:        "Platform",
+					State:       entity.ProjectStateActive,
+				})
+				if err != nil {
+					failure = fmt.Errorf("create project: %w", err)
+
+					return errProjectRollback
+				}
+
+				if _, err := client.Querier(ctx).ExecContext(
+					ctx,
+					recordMemory,
+					workspaceID,
+					project.ID,
+				); err != nil {
+					failure = fmt.Errorf("record a memory about the project: %w", err)
+
+					return errProjectRollback
+				}
+
+				if err := projects.Delete(ctx, project.ID); !errors.Is(err, entity.ErrProjectHasMemories) {
+					failure = fmt.Errorf("deleting a project a memory refers to returned %v, want ErrProjectHasMemories", err)
+				}
+
+				return errProjectRollback
+			})
+
+			if !errors.Is(err, errProjectRollback) {
+				t.Fatalf("fixture rollback: %v", err)
+			}
+
+			if failure != nil {
+				t.Fatal(failure)
+			}
+		})
+	}
+}

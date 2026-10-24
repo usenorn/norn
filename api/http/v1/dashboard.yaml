@@ -11704,6 +11704,7 @@ components:
                 - project_links_full
                 - project_has_scoped_agents
                 - project_has_docs
+                - project_has_memories
 
     RoadmapVisibility:
       type: object

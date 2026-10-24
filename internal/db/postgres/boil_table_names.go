@@ -86,6 +86,9 @@ var TableNames = struct {
 	WorkspaceLabelGroups                   string
 	WorkspaceLabels                        string
 	WorkspaceMemberships                   string
+	WorkspaceMemories                      string
+	WorkspaceMemoryEvidence                string
+	WorkspaceMemoryRevisions               string
 	WorkspaceNotificationDeliveries        string
 	WorkspaceNotificationDigests           string
 	WorkspaceNotificationEvents            string
@@ -218,6 +221,9 @@ var TableNames = struct {
 	WorkspaceLabelGroups:                   "workspace_label_groups",
 	WorkspaceLabels:                        "workspace_labels",
 	WorkspaceMemberships:                   "workspace_memberships",
+	WorkspaceMemories:                      "workspace_memories",
+	WorkspaceMemoryEvidence:                "workspace_memory_evidence",
+	WorkspaceMemoryRevisions:               "workspace_memory_revisions",
 	WorkspaceNotificationDeliveries:        "workspace_notification_deliveries",
 	WorkspaceNotificationDigests:           "workspace_notification_digests",
 	WorkspaceNotificationEvents:            "workspace_notification_events",

@@ -3805,6 +3805,7 @@ func (e PreviewProblemCode) Valid() bool {
 const (
 	ProjectConflictProblemCodeProjectArchived        ProjectConflictProblemCode = "project_archived"
 	ProjectConflictProblemCodeProjectHasDocs         ProjectConflictProblemCode = "project_has_docs"
+	ProjectConflictProblemCodeProjectHasMemories     ProjectConflictProblemCode = "project_has_memories"
 	ProjectConflictProblemCodeProjectHasScopedAgents ProjectConflictProblemCode = "project_has_scoped_agents"
 	ProjectConflictProblemCodeProjectLinksFull       ProjectConflictProblemCode = "project_links_full"
 	ProjectConflictProblemCodeProjectMemberExists    ProjectConflictProblemCode = "project_member_exists"
@@ -3819,6 +3820,8 @@ func (e ProjectConflictProblemCode) Valid() bool {
 	case ProjectConflictProblemCodeProjectArchived:
 		return true
 	case ProjectConflictProblemCodeProjectHasDocs:
+		return true
+	case ProjectConflictProblemCodeProjectHasMemories:
 		return true
 	case ProjectConflictProblemCodeProjectHasScopedAgents:
 		return true
