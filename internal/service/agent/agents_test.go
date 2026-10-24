@@ -988,7 +988,7 @@ func TestAViewerIsOfferedNothingItCouldNotAlreadyDo(t *testing.T) {
 		case entity.ActionRead:
 		case entity.ActionManage:
 			switch scope.Resource() {
-			case entity.ResourceSavedView, entity.ResourceComment, entity.ResourceNotification:
+			case entity.ResourceSavedView, entity.ResourceComment, entity.ResourceNotification, entity.ResourceKnowledge:
 			default:
 				t.Errorf("a viewer was offered %s, which it cannot do itself", scope)
 			}

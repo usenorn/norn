@@ -31,6 +31,8 @@ const (
 	InvitationRead       APIScope = "invitation:read"
 	IssueManage          APIScope = "issue:manage"
 	IssueRead            APIScope = "issue:read"
+	KnowledgeManage      APIScope = "knowledge:manage"
+	KnowledgeRead        APIScope = "knowledge:read"
 	LabelManage          APIScope = "label:manage"
 	LabelRead            APIScope = "label:read"
 	MembershipManage     APIScope = "membership:manage"
@@ -67,6 +69,10 @@ func (e APIScope) Valid() bool {
 	case IssueManage:
 		return true
 	case IssueRead:
+		return true
+	case KnowledgeManage:
+		return true
+	case KnowledgeRead:
 		return true
 	case LabelManage:
 		return true

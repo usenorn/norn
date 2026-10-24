@@ -8303,7 +8303,7 @@ export interface components {
             current: boolean;
         };
         /** @enum {string} */
-        APIScope: "workspace:read" | "workspace:update" | "membership:read" | "membership:manage" | "invitation:read" | "invitation:manage" | "team:read" | "team:manage" | "team_membership:read" | "team_membership:manage" | "issue:read" | "issue:manage" | "cycle:read" | "label:read" | "label:manage" | "project:read" | "project:manage" | "comment:read" | "comment:manage" | "notification:read" | "notification:manage" | "audit_log:read" | "roadmap:read" | "roadmap:manage";
+        APIScope: "workspace:read" | "workspace:update" | "membership:read" | "membership:manage" | "invitation:read" | "invitation:manage" | "team:read" | "team:manage" | "team_membership:read" | "team_membership:manage" | "issue:read" | "issue:manage" | "cycle:read" | "label:read" | "label:manage" | "project:read" | "project:manage" | "comment:read" | "comment:manage" | "notification:read" | "notification:manage" | "audit_log:read" | "roadmap:read" | "roadmap:manage" | "knowledge:read" | "knowledge:manage";
         APITokenGrant: {
             /** Format: uuid */
             workspaceId: string;

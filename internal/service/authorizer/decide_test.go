@@ -104,6 +104,7 @@ func TestAConcealingResourceReportsNotFoundRatherThanForbidden(t *testing.T) {
 	cases := map[entity.Resource]error{
 		entity.ResourceTeam:       entity.ErrTeamNotFound,
 		entity.ResourceIssue:      entity.ErrIssueNotFound,
+		entity.ResourceKnowledge:  entity.ErrKnowledgeNotFound,
 		entity.ResourceMembership: entity.ErrAccountForbidden,
 	}
 
