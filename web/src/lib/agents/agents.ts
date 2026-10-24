@@ -340,14 +340,6 @@ export function proposalSummary(proposal: AgentProposal): string {
 	}
 }
 
-export type DocVisibility = components["schemas"]["DocVisibility"];
-
-export const docAudienceLabels: Record<DocVisibility, string> = {
-	workspace: "Everybody in the workspace will be able to read it.",
-	project: "The project's members will be able to read it.",
-	personal: "Only its author will be able to read it.",
-};
-
 export function mcpServerUrl(origin: string): string {
 	return `${origin}/mcp`;
 }

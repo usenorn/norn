@@ -23,6 +23,20 @@ export function toneOf(index: number): string | null {
 	return tone ? `var(--syntax-${tone})` : null;
 }
 
+export const diffGutterTones: Record<DiffLineKind, string> = {
+	add: "bg-success/15 text-ink-600",
+	remove: "bg-destructive/15 text-ink-600",
+	context: "text-muted-foreground",
+};
+
+export const diffCodeTones: Record<DiffLineKind, string> = {
+	add: "bg-success/10 text-ink-900",
+	remove: "bg-destructive/10 text-ink-900",
+	context: "text-ink-900",
+};
+
+export const diffMarks: Record<DiffLineKind, string> = { add: "+", remove: "−", context: " " };
+
 export type DiffLine = {
 	kind: DiffLineKind;
 	text: string;
