@@ -138,6 +138,14 @@ var disclosedFailures = []disclosure{
 	},
 	{entity.ErrDocArchived, "doc_archived", "the doc is archived and takes no more edits"},
 	{
+		entity.ErrDocLinkExists, "doc_link_exists",
+		"the doc already links there; norn_get_doc lists what it links to",
+	},
+	{
+		entity.ErrDocLinkNotFound, "doc_link_not_found",
+		"the doc does not link there; norn_get_doc lists what it links to",
+	},
+	{
 		entity.ErrDocStale, "version_conflict",
 		"the doc changed since it was read; call norn_get_doc, apply the edit to what it says " +
 			"now, and retry with its version",

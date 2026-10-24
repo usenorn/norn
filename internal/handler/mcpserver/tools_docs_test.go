@@ -419,3 +419,35 @@ func TestUnlinkingADocRemovesTheLinkToTheNamedProject(t *testing.T) {
 		t.Fatalf("unlink doc refused: %s", refusalText(t, result))
 	}
 }
+
+func TestUnlinkingADocFromSomethingItDoesNotLinkToSaysSo(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+
+	h.docLinks.EXPECT().List(gomock.Any(), scene.workspace.ID, scene.doc.ID).Return([]entity.DocLink{}, nil)
+
+	result := callTool(t, h, "norn_unlink_doc", map[string]any{
+		"workspace": "acme",
+		"doc":       scene.doc.ID.String(),
+		"project":   "atlas",
+	})
+
+	expectRefusal(t, result, "doc_link_not_found", "norn_get_doc")
+}
+
+func TestLinkingADocTwiceSaysTheLinkIsAlreadyThere(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+
+	h.docLinks.EXPECT().
+		Link(gomock.Any(), scene.workspace.ID, scene.doc.ID, service.LinkDocInput{ProjectID: scene.project.ID}).
+		Return(entity.DocLink{}, entity.ErrDocLinkExists)
+
+	result := callTool(t, h, "norn_link_doc", map[string]any{
+		"workspace": "acme",
+		"doc":       scene.doc.ID.String(),
+		"project":   "atlas",
+	})
+
+	expectRefusal(t, result, "doc_link_exists", "norn_get_doc")
+}
