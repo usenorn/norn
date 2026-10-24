@@ -199,6 +199,12 @@ export type DocDetail =
 			readers: DocReaders;
 	  };
 
+export type DocEditing =
+	| { kind: "loading" }
+	| { kind: "unavailable" }
+	| { kind: "not_found" }
+	| { kind: "ready"; doc: Doc };
+
 export type DocChosen = { revision: DocRevision; before?: DocRevision } | { kind: "unavailable" };
 
 export type DocHistory =
