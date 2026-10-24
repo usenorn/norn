@@ -28,6 +28,7 @@ const (
 	DocFieldContent   = "content"
 	DocFieldParentID  = "parentId"
 	DocFieldProjectID = "projectId"
+	DocFieldSection   = "section"
 )
 
 var DocLimits = DocumentLimits{MaxDepth: 12, MaxNodes: 50000, MaxTextRunes: DocContentMaxLen}
@@ -40,6 +41,9 @@ var (
 	ErrDocParentCycle   = errors.New("doc cannot sit beneath itself")
 	ErrDocTreeTooDeep   = errors.New("doc tree nests deeper than this instance holds")
 	ErrDocCursorInvalid = errors.New("doc cursor is invalid")
+
+	ErrDocSectionNotFound  = errors.New("doc has no section under that heading")
+	ErrDocSectionAmbiguous = errors.New("doc has more than one section under that heading")
 )
 
 type DocStaleError struct {
