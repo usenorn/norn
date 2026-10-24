@@ -74,6 +74,10 @@ WHERE d.workspace_id = $1` + visibleToReader + `
           WHERE child.workspace_id = $1 AND below.depth < $12
       )
       SELECT id FROM below WHERE depth > 0))
+  AND ($13::uuid IS NULL OR EXISTS (
+      SELECT 1 FROM workspace_doc_links l WHERE l.doc_id = d.id AND l.issue_id = $13::uuid))
+  AND ($14::uuid IS NULL OR EXISTS (
+      SELECT 1 FROM workspace_doc_links l WHERE l.doc_id = d.id AND l.project_id = $14::uuid))
 ORDER BY d.updated_at DESC, d.id DESC
 LIMIT $9`
 
@@ -395,6 +399,8 @@ func (r *docRepository) List(
 		nullableID(filter.ProjectID),
 		nullableID(filter.WithinID),
 		entity.DocTreeMaxDepth,
+		nullableID(filter.LinkedIssueID),
+		nullableID(filter.LinkedProjectID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list docs: %w", err)

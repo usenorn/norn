@@ -501,3 +501,110 @@ func TestDocSearchNeverSurfacesWhatTheReaderMayNotSee(t *testing.T) {
 		return nil
 	})
 }
+
+const linkedIssueFixtureQuery = `
+WITH team AS (
+    INSERT INTO workspace_teams (workspace_id, key, name) VALUES ($1, 'DOC', 'Docs')
+    RETURNING id, workspace_id
+), state AS (
+    INSERT INTO workspace_workflow_states (workspace_id, team_id, name, category, position)
+    SELECT workspace_id, id, 'Todo', 'not_started', 1 FROM team
+    RETURNING id
+)
+INSERT INTO workspace_issues (workspace_id, team_id, number, title, state_id, reference_key, rank)
+SELECT team.workspace_id, team.id, 1, 'Write the handbook', state.id, 'DOC', 'n' FROM team, state
+RETURNING id`
+
+func TestDocsLinkedToAnIssueOrProjectListOnlyForTheirAudience(t *testing.T) {
+	withDocFixture(t, func(ctx context.Context, client *postgres.Client, fixture docFixture) error {
+		docs := New(client)
+		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
+		querier := client.Querier(ctx)
+
+		var issueID uuid.UUID
+		if err := querier.QueryRowContext(ctx, linkedIssueFixtureQuery, fixture.workspaceID).Scan(&issueID); err != nil {
+			return fmt.Errorf("lay issue: %w", err)
+		}
+
+		for index, draft := range []struct {
+			title    string
+			audience entity.KnowledgeAudience
+		}{
+			{title: "workspace", audience: entity.WorkspaceAudience()},
+			{title: "project", audience: entity.ProjectAudience(fixture.projectID)},
+			{title: "personal", audience: entity.PersonalAudience()},
+			{title: "archived", audience: entity.WorkspaceAudience()},
+			{title: "unlinked", audience: entity.WorkspaceAudience()},
+		} {
+			doc, err := createDoc(ctx, docs, draftDoc(fixture, draft.title, draft.audience, nil, at.Add(time.Duration(index)*time.Minute)))
+			if err != nil {
+				return fmt.Errorf("create %s doc: %w", draft.title, err)
+			}
+
+			if draft.title == "unlinked" {
+				continue
+			}
+
+			if _, err := querier.ExecContext(
+				ctx,
+				`INSERT INTO workspace_doc_links (workspace_id, doc_id, issue_id, project_id)
+				 VALUES ($1, $2, $3, NULL), ($1, $2, NULL, $4)`,
+				fixture.workspaceID, doc.ID, issueID, fixture.projectID,
+			); err != nil {
+				return fmt.Errorf("link %s doc: %w", draft.title, err)
+			}
+
+			if draft.title == "archived" {
+				archivedAt := at.Add(time.Hour)
+				doc.Status, doc.ArchivedAt, doc.Version, doc.UpdatedAt = entity.DocStatusArchived, &archivedAt, 2, archivedAt
+
+				if err := docs.Update(ctx, doc, 1); err != nil {
+					return fmt.Errorf("archive doc: %w", err)
+				}
+			}
+		}
+
+		for name, testCase := range map[string]struct {
+			reader repository.DocFilter
+			want   []string
+		}{
+			"an outsider to the project": {
+				reader: repository.DocFilter{},
+				want:   []string{"workspace"},
+			},
+			"a project member": {
+				reader: repository.DocFilter{ProjectIDs: []uuid.UUID{fixture.projectID}},
+				want:   []string{"project", "workspace"},
+			},
+			"the author acting personally": {
+				reader: repository.DocFilter{AllProjects: true, PersonalAuthorID: fixture.authorID},
+				want:   []string{"personal", "project", "workspace"},
+			},
+		} {
+			for target, filter := range map[string]repository.DocFilter{
+				"issue":   {LinkedIssueID: &issueID},
+				"project": {LinkedProjectID: &fixture.projectID},
+			} {
+				filter.AllProjects = testCase.reader.AllProjects
+				filter.ProjectIDs = testCase.reader.ProjectIDs
+				filter.PersonalAuthorID = testCase.reader.PersonalAuthorID
+
+				summaries, err := docs.List(ctx, fixture.workspaceID, filter, entity.DocPage{Limit: 10})
+				if err != nil {
+					return fmt.Errorf("%s on the %s: %w", name, target, err)
+				}
+
+				listed := make([]string, 0, len(summaries))
+				for _, summary := range summaries {
+					listed = append(listed, summary.Title)
+				}
+
+				if !slices.Equal(listed, testCase.want) {
+					return fmt.Errorf("%s on the %s listed %v, want %v", name, target, listed, testCase.want)
+				}
+			}
+		}
+
+		return nil
+	})
+}
