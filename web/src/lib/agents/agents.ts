@@ -99,6 +99,8 @@ export const agentPermissions = [
 	"comment:manage",
 	"notification:read",
 	"notification:manage",
+	"knowledge:read",
+	"knowledge:manage",
 ] as const satisfies readonly APIScope[];
 
 export type AgentPermission = (typeof agentPermissions)[number];
@@ -197,6 +199,8 @@ export const agentPermissionLabels: Record<string, string> = {
 	"comment:manage": "Leave comments",
 	"notification:read": "Read what it has been assigned or mentioned in",
 	"notification:manage": "Mark its own inbox as read",
+	"knowledge:read": "Read docs",
+	"knowledge:manage": "Write and edit docs",
 };
 
 export function reachSummary(agent: Agent, projectName?: string): string {
