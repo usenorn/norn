@@ -68,6 +68,7 @@ import (
 	cyclerepo "github.com/usenorn/norn/internal/repository/cycle"
 	directoryrepo "github.com/usenorn/norn/internal/repository/directory"
 	docrepo "github.com/usenorn/norn/internal/repository/doc"
+	doclinkrepo "github.com/usenorn/norn/internal/repository/doclink"
 	docrevisionrepo "github.com/usenorn/norn/internal/repository/docrevision"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
@@ -163,6 +164,7 @@ import (
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
 	docsvc "github.com/usenorn/norn/internal/service/doc"
+	doclinksvc "github.com/usenorn/norn/internal/service/doclink"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	executionservicesvc "github.com/usenorn/norn/internal/service/executionservice"
@@ -274,6 +276,7 @@ var baseSet = wire.NewSet(
 	projectrepo.Set,
 	roadmaprepo.Set,
 	docrepo.Set,
+	doclinkrepo.Set,
 	docrevisionrepo.Set,
 	attachmentrepo.Set,
 	blobgrantrepo.Set,
@@ -347,6 +350,7 @@ var baseSet = wire.NewSet(
 	projectsvc.Set,
 	roadmapsvc.Set,
 	docsvc.Set,
+	doclinksvc.Set,
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
 	issuedraftsvc.Set,

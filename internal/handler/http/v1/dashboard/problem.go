@@ -710,6 +710,7 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrRoadmapEntryNotFound),
 		errors.Is(err, entity.ErrDocNotFound),
 		errors.Is(err, entity.ErrDocRevisionNotFound),
+		errors.Is(err, entity.ErrDocLinkNotFound),
 		errors.Is(err, entity.ErrKnowledgeNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
 		errors.Is(err, entity.ErrIssueCommentNotFound),
@@ -741,6 +742,9 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrDocTreeTooDeep):
 		return docConflict(api.DocTreeTooDeep, err, nil), true
+
+	case errors.Is(err, entity.ErrDocLinkExists):
+		return docConflict(api.DocLinkExists, err, nil), true
 
 	case errors.Is(err, entity.ErrKnowledgeNotEditable):
 		return knowledgeForbidden(api.KnowledgeNotEditable, err), true
@@ -2266,6 +2270,26 @@ func (r problemResponse) VisitGetWorkspaceDocRevisionResponse(w http.ResponseWri
 }
 
 func (r problemResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceDocLinksResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceIssueDocsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceProjectDocsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

@@ -1822,6 +1822,7 @@ func (e DirectoryUnlicensedProblemCode) Valid() bool {
 const (
 	DocArchived    DocConflictProblemCode = "doc_archived"
 	DocHasChildren DocConflictProblemCode = "doc_has_children"
+	DocLinkExists  DocConflictProblemCode = "doc_link_exists"
 	DocParentCycle DocConflictProblemCode = "doc_parent_cycle"
 	DocStale       DocConflictProblemCode = "doc_stale"
 	DocTreeTooDeep DocConflictProblemCode = "doc_tree_too_deep"
@@ -1834,11 +1835,31 @@ func (e DocConflictProblemCode) Valid() bool {
 		return true
 	case DocHasChildren:
 		return true
+	case DocLinkExists:
+		return true
 	case DocParentCycle:
 		return true
 	case DocStale:
 		return true
 	case DocTreeTooDeep:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocLinkTarget.
+const (
+	DocLinkTargetIssue   DocLinkTarget = "issue"
+	DocLinkTargetProject DocLinkTarget = "project"
+)
+
+// Valid indicates whether the value is a known member of the DocLinkTarget enum.
+func (e DocLinkTarget) Valid() bool {
+	switch e {
+	case DocLinkTargetIssue:
+		return true
+	case DocLinkTargetProject:
 		return true
 	default:
 		return false
@@ -7266,6 +7287,45 @@ type DocConflictProblem struct {
 // DocConflictProblemCode defines model for DocConflictProblem.Code.
 type DocConflictProblemCode string
 
+// DocLink defines model for DocLink.
+type DocLink struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	Id        openapi_types.UUID `json:"id"`
+	Issue     *DocLinkedIssue    `json:"issue,omitempty"`
+	Project   *DocLinkedProject  `json:"project,omitempty"`
+	Target    DocLinkTarget      `json:"target"`
+}
+
+// DocLinkList defines model for DocLinkList.
+type DocLinkList struct {
+	Links []DocLink `json:"links"`
+}
+
+// DocLinkTarget defines model for DocLinkTarget.
+type DocLinkTarget string
+
+// DocLinkedIssue defines model for DocLinkedIssue.
+type DocLinkedIssue struct {
+	Id        openapi_types.UUID  `json:"id"`
+	Reference string              `json:"reference"`
+	State     DocLinkedIssueState `json:"state"`
+	Title     string              `json:"title"`
+}
+
+// DocLinkedIssueState defines model for DocLinkedIssueState.
+type DocLinkedIssueState struct {
+	Category StateCategory `json:"category"`
+	Name     string        `json:"name"`
+}
+
+// DocLinkedProject defines model for DocLinkedProject.
+type DocLinkedProject struct {
+	Archived bool               `json:"archived"`
+	Id       openapi_types.UUID `json:"id"`
+	Name     string             `json:"name"`
+	Slug     string             `json:"slug"`
+}
+
 // DocPage defines model for DocPage.
 type DocPage struct {
 	Docs       []DocSummary `json:"docs"`
@@ -8787,9 +8847,20 @@ type LicenceReport struct {
 // LicenceStatus defines model for LicenceStatus.
 type LicenceStatus string
 
+// LinkDocRequest Exactly one of issueId and projectId.
+type LinkDocRequest struct {
+	IssueId   *openapi_types.UUID `json:"issueId,omitempty"`
+	ProjectId *openapi_types.UUID `json:"projectId,omitempty"`
+}
+
 // LinkIssueCodeRequest defines model for LinkIssueCodeRequest.
 type LinkIssueCodeRequest struct {
 	Url string `json:"url"`
+}
+
+// LinkedDocList defines model for LinkedDocList.
+type LinkedDocList struct {
+	Docs []DocSummary `json:"docs"`
 }
 
 // MapSCMIdentityRequest defines model for MapSCMIdentityRequest.
@@ -12029,6 +12100,9 @@ type CreateWorkspaceDocJSONRequestBody = CreateDocRequest
 // UpdateWorkspaceDocJSONRequestBody defines body for UpdateWorkspaceDoc for application/json ContentType.
 type UpdateWorkspaceDocJSONRequestBody = UpdateDocRequest
 
+// LinkWorkspaceDocJSONRequestBody defines body for LinkWorkspaceDoc for application/json ContentType.
+type LinkWorkspaceDocJSONRequestBody = LinkDocRequest
+
 // MoveWorkspaceDocJSONRequestBody defines body for MoveWorkspaceDoc for application/json ContentType.
 type MoveWorkspaceDocJSONRequestBody = MoveDocRequest
 
@@ -13573,6 +13647,30 @@ type ClientInterface interface {
 	// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
 	UpdateWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body UpdateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListWorkspaceDocLinks List the issues and projects a doc links to, as far as the caller may see them
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/links (the `ListWorkspaceDocLinks` operationId).
+	ListWorkspaceDocLinks(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LinkWorkspaceDocWithBody Link a doc to an issue or a project
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+	LinkWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LinkWorkspaceDoc Link a doc to an issue or a project
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+	LinkWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body LinkWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnlinkWorkspaceDoc Remove a link from a doc
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId}/links/{linkId} (the `UnlinkWorkspaceDoc` operationId).
+	UnlinkWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// MoveWorkspaceDocWithBody Place a doc beneath another doc, or at the top of the tree
 	//
 	// Takes any type of body and a specified content type.
@@ -14361,6 +14459,13 @@ type ClientInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
 	RestoreWorkspaceIssueDescriptionRevision(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListWorkspaceIssueDocs List the docs linking to an issue that the caller may read
+	//
+	// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/docs (the `ListWorkspaceIssueDocs` operationId).
+	ListWorkspaceIssueDocs(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/executions (the `ListWorkspaceIssueExecutions` operationId).
@@ -14818,6 +14923,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/projects/{projectId}/archive (the `ArchiveWorkspaceProject` operationId).
 	ArchiveWorkspaceProject(ctx context.Context, workspaceId WorkspaceId, projectId ProjectId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceProjectDocs List the docs linking to a project that the caller may read
+	//
+	// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/projects/{projectId}/docs (the `ListWorkspaceProjectDocs` operationId).
+	ListWorkspaceProjectDocs(ctx context.Context, workspaceId WorkspaceId, projectId ProjectId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceProjectLinks Read the links pinned to this project, in the order they were added
 	//
@@ -18708,6 +18820,70 @@ func (c *Client) UpdateWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId
 	return c.Client.Do(req)
 }
 
+// ListWorkspaceDocLinks List the issues and projects a doc links to, as far as the caller may see them
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/links (the `ListWorkspaceDocLinks` operationId).
+func (c *Client) ListWorkspaceDocLinks(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceDocLinksRequest(c.Server, workspaceId, docId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// LinkWorkspaceDocWithBody Link a doc to an issue or a project
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+func (c *Client) LinkWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLinkWorkspaceDocRequestWithBody(c.Server, workspaceId, docId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// LinkWorkspaceDoc Link a doc to an issue or a project
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+func (c *Client) LinkWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body LinkWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLinkWorkspaceDocRequest(c.Server, workspaceId, docId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnlinkWorkspaceDoc Remove a link from a doc
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId}/links/{linkId} (the `UnlinkWorkspaceDoc` operationId).
+func (c *Client) UnlinkWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnlinkWorkspaceDocRequest(c.Server, workspaceId, docId, linkId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // MoveWorkspaceDocWithBody Place a doc beneath another doc, or at the top of the tree
 //
 // Takes any type of body and a specified content type.
@@ -20696,6 +20872,23 @@ func (c *Client) RestoreWorkspaceIssueDescriptionRevision(ctx context.Context, w
 	return c.Client.Do(req)
 }
 
+// ListWorkspaceIssueDocs List the docs linking to an issue that the caller may read
+//
+// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/docs (the `ListWorkspaceIssueDocs` operationId).
+func (c *Client) ListWorkspaceIssueDocs(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceIssueDocsRequest(c.Server, workspaceId, issueId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 //
 // Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/executions (the `ListWorkspaceIssueExecutions` operationId).
@@ -21884,6 +22077,23 @@ func (c *Client) ListWorkspaceProjectActivity(ctx context.Context, workspaceId W
 // Corresponds with POST /workspaces/{workspaceId}/projects/{projectId}/archive (the `ArchiveWorkspaceProject` operationId).
 func (c *Client) ArchiveWorkspaceProject(ctx context.Context, workspaceId WorkspaceId, projectId ProjectId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewArchiveWorkspaceProjectRequest(c.Server, workspaceId, projectId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceProjectDocs List the docs linking to a project that the caller may read
+//
+// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+//
+// Corresponds with GET /workspaces/{workspaceId}/projects/{projectId}/docs (the `ListWorkspaceProjectDocs` operationId).
+func (c *Client) ListWorkspaceProjectDocs(ctx context.Context, workspaceId WorkspaceId, projectId ProjectId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceProjectDocsRequest(c.Server, workspaceId, projectId)
 	if err != nil {
 		return nil, err
 	}
@@ -30073,6 +30283,149 @@ func NewUpdateWorkspaceDocRequestWithBody(server string, workspaceId WorkspaceId
 	return req, nil
 }
 
+// NewListWorkspaceDocLinksRequest constructs an http.Request for the ListWorkspaceDocLinks method
+func NewListWorkspaceDocLinksRequest(server string, workspaceId WorkspaceId, docId DocId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/links", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewLinkWorkspaceDocRequest calls the generic LinkWorkspaceDoc builder with application/json body
+func NewLinkWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId, body LinkWorkspaceDocJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewLinkWorkspaceDocRequestWithBody(server, workspaceId, docId, "application/json", bodyReader)
+}
+
+// NewLinkWorkspaceDocRequestWithBody constructs an http.Request for the LinkWorkspaceDoc method, with any body, and a specified content type
+func NewLinkWorkspaceDocRequestWithBody(server string, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/links", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnlinkWorkspaceDocRequest constructs an http.Request for the UnlinkWorkspaceDoc method
+func NewUnlinkWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "linkId", linkId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/links/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewMoveWorkspaceDocRequest calls the generic MoveWorkspaceDoc builder with application/json body
 func NewMoveWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId, body MoveWorkspaceDocJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -34731,6 +35084,47 @@ func NewRestoreWorkspaceIssueDescriptionRevisionRequestWithBody(server string, w
 	return req, nil
 }
 
+// NewListWorkspaceIssueDocsRequest constructs an http.Request for the ListWorkspaceIssueDocs method
+func NewListWorkspaceIssueDocsRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "issueId", issueId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/issues/%s/docs", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceIssueExecutionsRequest constructs an http.Request for the ListWorkspaceIssueExecutions method
 func NewListWorkspaceIssueExecutionsRequest(server string, workspaceId WorkspaceId, issueId IssueId) (*http.Request, error) {
 	var err error
@@ -37407,6 +37801,47 @@ func NewArchiveWorkspaceProjectRequest(server string, workspaceId WorkspaceId, p
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListWorkspaceProjectDocsRequest constructs an http.Request for the ListWorkspaceProjectDocs method
+func NewListWorkspaceProjectDocsRequest(server string, workspaceId WorkspaceId, projectId ProjectId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "projectId", projectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/projects/%s/docs", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -44467,6 +44902,34 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
 	UpdateWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body UpdateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWorkspaceDocResponse, error)
 
+	// ListWorkspaceDocLinksWithResponse List the issues and projects a doc links to, as far as the caller may see them
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/links (the `ListWorkspaceDocLinks` operationId).
+	ListWorkspaceDocLinksWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*ListWorkspaceDocLinksResponse, error)
+
+	// LinkWorkspaceDocWithBodyWithResponse Link a doc to an issue or a project
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+	LinkWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LinkWorkspaceDocResponse, error)
+
+	// LinkWorkspaceDocWithResponse Link a doc to an issue or a project
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+	LinkWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body LinkWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*LinkWorkspaceDocResponse, error)
+
+	// UnlinkWorkspaceDocWithResponse Remove a link from a doc
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId}/links/{linkId} (the `UnlinkWorkspaceDoc` operationId).
+	UnlinkWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnlinkWorkspaceDocResponse, error)
+
 	// MoveWorkspaceDocWithBodyWithResponse Place a doc beneath another doc, or at the top of the tree
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -45373,6 +45836,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore (the `RestoreWorkspaceIssueDescriptionRevision` operationId).
 	RestoreWorkspaceIssueDescriptionRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId, body RestoreWorkspaceIssueDescriptionRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*RestoreWorkspaceIssueDescriptionRevisionResponse, error)
 
+	// ListWorkspaceIssueDocsWithResponse List the docs linking to an issue that the caller may read
+	//
+	// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/docs (the `ListWorkspaceIssueDocs` operationId).
+	ListWorkspaceIssueDocsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDocsResponse, error)
+
 	// ListWorkspaceIssueExecutionsWithResponse Every run this issue has had, newest attempt first
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -45892,6 +46364,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/projects/{projectId}/archive (the `ArchiveWorkspaceProject` operationId).
 	ArchiveWorkspaceProjectWithResponse(ctx context.Context, workspaceId WorkspaceId, projectId ProjectId, reqEditors ...RequestEditorFn) (*ArchiveWorkspaceProjectResponse, error)
+
+	// ListWorkspaceProjectDocsWithResponse List the docs linking to a project that the caller may read
+	//
+	// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/projects/{projectId}/docs (the `ListWorkspaceProjectDocs` operationId).
+	ListWorkspaceProjectDocsWithResponse(ctx context.Context, workspaceId WorkspaceId, projectId ProjectId, reqEditors ...RequestEditorFn) (*ListWorkspaceProjectDocsResponse, error)
 
 	// ListWorkspaceProjectLinksWithResponse Read the links pinned to this project, in the order they were added
 	//
@@ -56082,6 +56563,227 @@ func (r UpdateWorkspaceDocResponse) ContentType() string {
 	return ""
 }
 
+type ListWorkspaceDocLinksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DocLinkList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceDocLinksResponse) GetJSON200() *DocLinkList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceDocLinksResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceDocLinksResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceDocLinksResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceDocLinksResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceDocLinksResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceDocLinksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceDocLinksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceDocLinksResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type LinkWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *DocLink
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r LinkWorkspaceDocResponse) GetJSON201() *DocLink {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r LinkWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r LinkWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r LinkWorkspaceDocResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r LinkWorkspaceDocResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r LinkWorkspaceDocResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r LinkWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r LinkWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r LinkWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LinkWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r LinkWorkspaceDocResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnlinkWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r UnlinkWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r UnlinkWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r UnlinkWorkspaceDocResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r UnlinkWorkspaceDocResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r UnlinkWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r UnlinkWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnlinkWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnlinkWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnlinkWorkspaceDocResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type MoveWorkspaceDocResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -62769,6 +63471,75 @@ func (r RestoreWorkspaceIssueDescriptionRevisionResponse) ContentType() string {
 	return ""
 }
 
+type ListWorkspaceIssueDocsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LinkedDocList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceIssueDocsResponse) GetJSON200() *LinkedDocList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceIssueDocsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceIssueDocsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceIssueDocsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceIssueDocsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceIssueDocsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceIssueDocsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceIssueDocsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceIssueDocsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceIssueExecutionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -66673,6 +67444,75 @@ func (r ArchiveWorkspaceProjectResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ArchiveWorkspaceProjectResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceProjectDocsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *LinkedDocList
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceProjectDocsResponse) GetJSON200() *LinkedDocList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceProjectDocsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceProjectDocsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceProjectDocsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceProjectDocsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceProjectDocsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceProjectDocsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceProjectDocsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceProjectDocsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -78058,6 +78898,58 @@ func (c *ClientWithResponses) UpdateWorkspaceDocWithResponse(ctx context.Context
 	return ParseUpdateWorkspaceDocResponse(rsp)
 }
 
+// ListWorkspaceDocLinksWithResponse List the issues and projects a doc links to, as far as the caller may see them
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/links (the `ListWorkspaceDocLinks` operationId).
+func (c *ClientWithResponses) ListWorkspaceDocLinksWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*ListWorkspaceDocLinksResponse, error) {
+	rsp, err := c.ListWorkspaceDocLinks(ctx, workspaceId, docId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceDocLinksResponse(rsp)
+}
+
+// LinkWorkspaceDocWithBodyWithResponse Link a doc to an issue or a project
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+func (c *ClientWithResponses) LinkWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LinkWorkspaceDocResponse, error) {
+	rsp, err := c.LinkWorkspaceDocWithBody(ctx, workspaceId, docId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLinkWorkspaceDocResponse(rsp)
+}
+
+// LinkWorkspaceDocWithResponse Link a doc to an issue or a project
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/links (the `LinkWorkspaceDoc` operationId).
+func (c *ClientWithResponses) LinkWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body LinkWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*LinkWorkspaceDocResponse, error) {
+	rsp, err := c.LinkWorkspaceDoc(ctx, workspaceId, docId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLinkWorkspaceDocResponse(rsp)
+}
+
+// UnlinkWorkspaceDocWithResponse Remove a link from a doc
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId}/links/{linkId} (the `UnlinkWorkspaceDoc` operationId).
+func (c *ClientWithResponses) UnlinkWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnlinkWorkspaceDocResponse, error) {
+	rsp, err := c.UnlinkWorkspaceDoc(ctx, workspaceId, docId, linkId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnlinkWorkspaceDocResponse(rsp)
+}
+
 // MoveWorkspaceDocWithBodyWithResponse Place a doc beneath another doc, or at the top of the tree
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -79684,6 +80576,21 @@ func (c *ClientWithResponses) RestoreWorkspaceIssueDescriptionRevisionWithRespon
 	return ParseRestoreWorkspaceIssueDescriptionRevisionResponse(rsp)
 }
 
+// ListWorkspaceIssueDocsWithResponse List the docs linking to an issue that the caller may read
+//
+// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/issues/{issueId}/docs (the `ListWorkspaceIssueDocs` operationId).
+func (c *ClientWithResponses) ListWorkspaceIssueDocsWithResponse(ctx context.Context, workspaceId WorkspaceId, issueId IssueId, reqEditors ...RequestEditorFn) (*ListWorkspaceIssueDocsResponse, error) {
+	rsp, err := c.ListWorkspaceIssueDocs(ctx, workspaceId, issueId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceIssueDocsResponse(rsp)
+}
+
 // ListWorkspaceIssueExecutionsWithResponse Every run this issue has had, newest attempt first
 //
 // Returns a wrapper object for the known response body format(s).
@@ -80646,6 +81553,21 @@ func (c *ClientWithResponses) ArchiveWorkspaceProjectWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseArchiveWorkspaceProjectResponse(rsp)
+}
+
+// ListWorkspaceProjectDocsWithResponse List the docs linking to a project that the caller may read
+//
+// A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/projects/{projectId}/docs (the `ListWorkspaceProjectDocs` operationId).
+func (c *ClientWithResponses) ListWorkspaceProjectDocsWithResponse(ctx context.Context, workspaceId WorkspaceId, projectId ProjectId, reqEditors ...RequestEditorFn) (*ListWorkspaceProjectDocsResponse, error) {
+	rsp, err := c.ListWorkspaceProjectDocs(ctx, workspaceId, projectId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceProjectDocsResponse(rsp)
 }
 
 // ListWorkspaceProjectLinksWithResponse Read the links pinned to this project, in the order they were added
@@ -90059,6 +90981,185 @@ func ParseUpdateWorkspaceDocResponse(rsp *http.Response) (*UpdateWorkspaceDocRes
 	return response, nil
 }
 
+// ParseListWorkspaceDocLinksResponse parses an HTTP response from a ListWorkspaceDocLinksWithResponse call
+func ParseListWorkspaceDocLinksResponse(rsp *http.Response) (*ListWorkspaceDocLinksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceDocLinksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DocLinkList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseLinkWorkspaceDocResponse parses an HTTP response from a LinkWorkspaceDocWithResponse call
+func ParseLinkWorkspaceDocResponse(rsp *http.Response) (*LinkWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LinkWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest DocLink
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnlinkWorkspaceDocResponse parses an HTTP response from a UnlinkWorkspaceDocWithResponse call
+func ParseUnlinkWorkspaceDocResponse(rsp *http.Response) (*UnlinkWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnlinkWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseMoveWorkspaceDocResponse parses an HTTP response from a MoveWorkspaceDocWithResponse call
 func ParseMoveWorkspaceDocResponse(rsp *http.Response) (*MoveWorkspaceDocResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -95447,6 +96548,60 @@ func ParseRestoreWorkspaceIssueDescriptionRevisionResponse(rsp *http.Response) (
 	return response, nil
 }
 
+// ParseListWorkspaceIssueDocsResponse parses an HTTP response from a ListWorkspaceIssueDocsWithResponse call
+func ParseListWorkspaceIssueDocsResponse(rsp *http.Response) (*ListWorkspaceIssueDocsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceIssueDocsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LinkedDocList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceIssueExecutionsResponse parses an HTTP response from a ListWorkspaceIssueExecutionsWithResponse call
 func ParseListWorkspaceIssueExecutionsResponse(rsp *http.Response) (*ListWorkspaceIssueExecutionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -98591,6 +99746,60 @@ func ParseArchiveWorkspaceProjectResponse(rsp *http.Response) (*ArchiveWorkspace
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceProjectDocsResponse parses an HTTP response from a ListWorkspaceProjectDocsWithResponse call
+func ParseListWorkspaceProjectDocsResponse(rsp *http.Response) (*ListWorkspaceProjectDocsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceProjectDocsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest LinkedDocList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -106228,6 +107437,15 @@ type ServerInterface interface {
 	// UpdateWorkspaceDoc Change a doc's title or content against the version it was read at
 	// (PATCH /workspaces/{workspaceId}/docs/{docId})
 	UpdateWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
+	// ListWorkspaceDocLinks List the issues and projects a doc links to, as far as the caller may see them
+	// (GET /workspaces/{workspaceId}/docs/{docId}/links)
+	ListWorkspaceDocLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
+	// LinkWorkspaceDoc Link a doc to an issue or a project
+	// (POST /workspaces/{workspaceId}/docs/{docId}/links)
+	LinkWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
+	// UnlinkWorkspaceDoc Remove a link from a doc
+	// (DELETE /workspaces/{workspaceId}/docs/{docId}/links/{linkId})
+	UnlinkWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID)
 	// MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
 	// (POST /workspaces/{workspaceId}/docs/{docId}/move)
 	MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
@@ -106498,6 +107716,9 @@ type ServerInterface interface {
 	// RestoreWorkspaceIssueDescriptionRevision Put back what the description said, as a new revision
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore)
 	RestoreWorkspaceIssueDescriptionRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId, revisionId RevisionId)
+	// ListWorkspaceIssueDocs List the docs linking to an issue that the caller may read
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/docs)
+	ListWorkspaceIssueDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 	ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId)
@@ -106657,6 +107878,9 @@ type ServerInterface interface {
 	// ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
 	// (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
 	ArchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
+	// ListWorkspaceProjectDocs List the docs linking to a project that the caller may read
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/docs)
+	ListWorkspaceProjectDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
 	// ListWorkspaceProjectLinks Read the links pinned to this project, in the order they were added
 	// (GET /workspaces/{workspaceId}/projects/{projectId}/links)
 	ListWorkspaceProjectLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId)
@@ -107812,6 +109036,24 @@ func (_ Unimplemented) UpdateWorkspaceDoc(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceDocLinks List the issues and projects a doc links to, as far as the caller may see them
+// (GET /workspaces/{workspaceId}/docs/{docId}/links)
+func (_ Unimplemented) ListWorkspaceDocLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// LinkWorkspaceDoc Link a doc to an issue or a project
+// (POST /workspaces/{workspaceId}/docs/{docId}/links)
+func (_ Unimplemented) LinkWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UnlinkWorkspaceDoc Remove a link from a doc
+// (DELETE /workspaces/{workspaceId}/docs/{docId}/links/{linkId})
+func (_ Unimplemented) UnlinkWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
 // (POST /workspaces/{workspaceId}/docs/{docId}/move)
 func (_ Unimplemented) MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
@@ -108352,6 +109594,12 @@ func (_ Unimplemented) RestoreWorkspaceIssueDescriptionRevision(w http.ResponseW
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceIssueDocs List the docs linking to an issue that the caller may read
+// (GET /workspaces/{workspaceId}/issues/{issueId}/docs)
+func (_ Unimplemented) ListWorkspaceIssueDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 // (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 func (_ Unimplemented) ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
@@ -108667,6 +109915,12 @@ func (_ Unimplemented) ListWorkspaceProjectActivity(w http.ResponseWriter, r *ht
 // ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
 // (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
 func (_ Unimplemented) ArchiveWorkspaceProject(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceProjectDocs List the docs linking to a project that the caller may read
+// (GET /workspaces/{workspaceId}/projects/{projectId}/docs)
+func (_ Unimplemented) ListWorkspaceProjectDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -113143,6 +114397,120 @@ func (siw *ServerInterfaceWrapper) UpdateWorkspaceDoc(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceDocLinks operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceDocLinks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceDocLinks(w, r, workspaceId, docId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LinkWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) LinkWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LinkWorkspaceDoc(w, r, workspaceId, docId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnlinkWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) UnlinkWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "linkId" -------------
+	var linkId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "linkId", chi.URLParam(r, "linkId"), &linkId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "linkId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnlinkWorkspaceDoc(w, r, workspaceId, docId, linkId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // MoveWorkspaceDoc operation middleware
 func (siw *ServerInterfaceWrapper) MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
 
@@ -116759,6 +118127,41 @@ func (siw *ServerInterfaceWrapper) RestoreWorkspaceIssueDescriptionRevision(w ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceIssueDocs operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceIssueDocs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "issueId" -------------
+	var issueId IssueId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "issueId", chi.URLParam(r, "issueId"), &issueId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issueId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceIssueDocs(w, r, workspaceId, issueId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceIssueExecutions operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request) {
 
@@ -118757,6 +120160,41 @@ func (siw *ServerInterfaceWrapper) ArchiveWorkspaceProject(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ArchiveWorkspaceProject(w, r, workspaceId, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceProjectDocs operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceProjectDocs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "projectId" -------------
+	var projectId ProjectId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "projectId", chi.URLParam(r, "projectId"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceProjectDocs(w, r, workspaceId, projectId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -123953,6 +125391,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore", wrapper.RestoreWorkspaceDocRevision)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/links", wrapper.ListWorkspaceDocLinks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/links", wrapper.LinkWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/links/{linkId}", wrapper.UnlinkWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/issues/{issueId}/docs", wrapper.ListWorkspaceIssueDocs)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/docs", wrapper.ListWorkspaceProjectDocs)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/roadmap", wrapper.GetWorkspaceRoadmap)
@@ -135587,6 +137040,297 @@ func (response UpdateWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitUpd
 	return err
 }
 
+type ListWorkspaceDocLinksRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+}
+
+type ListWorkspaceDocLinksResponseObject interface {
+	VisitListWorkspaceDocLinksResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceDocLinks200JSONResponse DocLinkList
+
+func (response ListWorkspaceDocLinks200JSONResponse) VisitListWorkspaceDocLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocLinks401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDocLinks401ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocLinks403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDocLinks403ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocLinks404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDocLinks404ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocLinks500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDocLinks500ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocLinksResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	Body        *LinkWorkspaceDocJSONRequestBody
+}
+
+type LinkWorkspaceDocResponseObject interface {
+	VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type LinkWorkspaceDoc201JSONResponse DocLink
+
+func (response LinkWorkspaceDoc201JSONResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceDoc404ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceDoc404ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceDoc409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response LinkWorkspaceDoc409ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceDoc422ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceDoc422ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LinkWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response LinkWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitLinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId        `json:"workspaceId"`
+	DocId       DocId              `json:"docId"`
+	LinkId      openapi_types.UUID `json:"linkId"`
+}
+
+type UnlinkWorkspaceDocResponseObject interface {
+	VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type UnlinkWorkspaceDoc204Response struct {
+}
+
+func (response UnlinkWorkspaceDoc204Response) VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnlinkWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceDoc404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceDoc404ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceDoc409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response UnlinkWorkspaceDoc409ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlinkWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlinkWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitUnlinkWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type MoveWorkspaceDocRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	DocId       DocId       `json:"docId"`
@@ -144211,6 +145955,89 @@ func (response RestoreWorkspaceIssueDescriptionRevision500ApplicationProblemPlus
 	return err
 }
 
+type ListWorkspaceIssueDocsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	IssueId     IssueId     `json:"issueId"`
+}
+
+type ListWorkspaceIssueDocsResponseObject interface {
+	VisitListWorkspaceIssueDocsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceIssueDocs200JSONResponse LinkedDocList
+
+func (response ListWorkspaceIssueDocs200JSONResponse) VisitListWorkspaceIssueDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDocs401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDocs401ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDocs403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceIssueDocs403ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDocs404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDocs404ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceIssueDocs500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceIssueDocs500ApplicationProblemPlusJSONResponse) VisitListWorkspaceIssueDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceIssueExecutionsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	IssueId     IssueId     `json:"issueId"`
@@ -149242,6 +151069,89 @@ func (response ArchiveWorkspaceProject409ApplicationProblemPlusJSONResponse) Vis
 type ArchiveWorkspaceProject500ApplicationProblemPlusJSONResponse Problem
 
 func (response ArchiveWorkspaceProject500ApplicationProblemPlusJSONResponse) VisitArchiveWorkspaceProjectResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectDocsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	ProjectId   ProjectId   `json:"projectId"`
+}
+
+type ListWorkspaceProjectDocsResponseObject interface {
+	VisitListWorkspaceProjectDocsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceProjectDocs200JSONResponse LinkedDocList
+
+func (response ListWorkspaceProjectDocs200JSONResponse) VisitListWorkspaceProjectDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectDocs401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectDocs401ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectDocs403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceProjectDocs403ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectDocs404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectDocs404ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceProjectDocs500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceProjectDocs500ApplicationProblemPlusJSONResponse) VisitListWorkspaceProjectDocsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -161126,6 +163036,15 @@ type StrictServerInterface interface {
 	// UpdateWorkspaceDoc Change a doc's title or content against the version it was read at
 	// (PATCH /workspaces/{workspaceId}/docs/{docId})
 	UpdateWorkspaceDoc(ctx context.Context, request UpdateWorkspaceDocRequestObject) (UpdateWorkspaceDocResponseObject, error)
+	// ListWorkspaceDocLinks List the issues and projects a doc links to, as far as the caller may see them
+	// (GET /workspaces/{workspaceId}/docs/{docId}/links)
+	ListWorkspaceDocLinks(ctx context.Context, request ListWorkspaceDocLinksRequestObject) (ListWorkspaceDocLinksResponseObject, error)
+	// LinkWorkspaceDoc Link a doc to an issue or a project
+	// (POST /workspaces/{workspaceId}/docs/{docId}/links)
+	LinkWorkspaceDoc(ctx context.Context, request LinkWorkspaceDocRequestObject) (LinkWorkspaceDocResponseObject, error)
+	// UnlinkWorkspaceDoc Remove a link from a doc
+	// (DELETE /workspaces/{workspaceId}/docs/{docId}/links/{linkId})
+	UnlinkWorkspaceDoc(ctx context.Context, request UnlinkWorkspaceDocRequestObject) (UnlinkWorkspaceDocResponseObject, error)
 	// MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
 	// (POST /workspaces/{workspaceId}/docs/{docId}/move)
 	MoveWorkspaceDoc(ctx context.Context, request MoveWorkspaceDocRequestObject) (MoveWorkspaceDocResponseObject, error)
@@ -161396,6 +163315,9 @@ type StrictServerInterface interface {
 	// RestoreWorkspaceIssueDescriptionRevision Put back what the description said, as a new revision
 	// (POST /workspaces/{workspaceId}/issues/{issueId}/description/revisions/{revisionId}/restore)
 	RestoreWorkspaceIssueDescriptionRevision(ctx context.Context, request RestoreWorkspaceIssueDescriptionRevisionRequestObject) (RestoreWorkspaceIssueDescriptionRevisionResponseObject, error)
+	// ListWorkspaceIssueDocs List the docs linking to an issue that the caller may read
+	// (GET /workspaces/{workspaceId}/issues/{issueId}/docs)
+	ListWorkspaceIssueDocs(ctx context.Context, request ListWorkspaceIssueDocsRequestObject) (ListWorkspaceIssueDocsResponseObject, error)
 	// ListWorkspaceIssueExecutions Every run this issue has had, newest attempt first
 	// (GET /workspaces/{workspaceId}/issues/{issueId}/executions)
 	ListWorkspaceIssueExecutions(ctx context.Context, request ListWorkspaceIssueExecutionsRequestObject) (ListWorkspaceIssueExecutionsResponseObject, error)
@@ -161555,6 +163477,9 @@ type StrictServerInterface interface {
 	// ArchiveWorkspaceProject Archive a completed or cancelled project, keeping it retrievable
 	// (POST /workspaces/{workspaceId}/projects/{projectId}/archive)
 	ArchiveWorkspaceProject(ctx context.Context, request ArchiveWorkspaceProjectRequestObject) (ArchiveWorkspaceProjectResponseObject, error)
+	// ListWorkspaceProjectDocs List the docs linking to a project that the caller may read
+	// (GET /workspaces/{workspaceId}/projects/{projectId}/docs)
+	ListWorkspaceProjectDocs(ctx context.Context, request ListWorkspaceProjectDocsRequestObject) (ListWorkspaceProjectDocsResponseObject, error)
 	// ListWorkspaceProjectLinks Read the links pinned to this project, in the order they were added
 	// (GET /workspaces/{workspaceId}/projects/{projectId}/links)
 	ListWorkspaceProjectLinks(ctx context.Context, request ListWorkspaceProjectLinksRequestObject) (ListWorkspaceProjectLinksResponseObject, error)
@@ -165640,6 +167565,95 @@ func (sh *strictHandler) UpdateWorkspaceDoc(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// ListWorkspaceDocLinks operation middleware
+func (sh *strictHandler) ListWorkspaceDocLinks(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	var request ListWorkspaceDocLinksRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceDocLinks(ctx, request.(ListWorkspaceDocLinksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceDocLinks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceDocLinksResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceDocLinksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LinkWorkspaceDoc operation middleware
+func (sh *strictHandler) LinkWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	var request LinkWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+
+	var body LinkWorkspaceDocJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LinkWorkspaceDoc(ctx, request.(LinkWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LinkWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LinkWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitLinkWorkspaceDocResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnlinkWorkspaceDoc operation middleware
+func (sh *strictHandler) UnlinkWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, linkId openapi_types.UUID) {
+	var request UnlinkWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+	request.LinkId = linkId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnlinkWorkspaceDoc(ctx, request.(UnlinkWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnlinkWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnlinkWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitUnlinkWorkspaceDocResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // MoveWorkspaceDoc operation middleware
 func (sh *strictHandler) MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
 	var request MoveWorkspaceDocRequestObject
@@ -168313,6 +170327,33 @@ func (sh *strictHandler) RestoreWorkspaceIssueDescriptionRevision(w http.Respons
 	}
 }
 
+// ListWorkspaceIssueDocs operation middleware
+func (sh *strictHandler) ListWorkspaceIssueDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
+	var request ListWorkspaceIssueDocsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.IssueId = issueId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceIssueDocs(ctx, request.(ListWorkspaceIssueDocsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceIssueDocs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceIssueDocsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceIssueDocsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListWorkspaceIssueExecutions operation middleware
 func (sh *strictHandler) ListWorkspaceIssueExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, issueId IssueId) {
 	var request ListWorkspaceIssueExecutionsRequestObject
@@ -169888,6 +171929,33 @@ func (sh *strictHandler) ArchiveWorkspaceProject(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ArchiveWorkspaceProjectResponseObject); ok {
 		if err := validResponse.VisitArchiveWorkspaceProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceProjectDocs operation middleware
+func (sh *strictHandler) ListWorkspaceProjectDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, projectId ProjectId) {
+	var request ListWorkspaceProjectDocsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceProjectDocs(ctx, request.(ListWorkspaceProjectDocsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceProjectDocs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceProjectDocsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceProjectDocsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
