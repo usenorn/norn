@@ -191,7 +191,7 @@ export type DocReaders =
 
 export type DocLinks = { kind: "ready"; links: DocLink[] } | { kind: "unavailable" };
 
-export type LinkedDocs = { kind: "ready"; docs: DocSummary[] } | { kind: "unavailable" };
+export type DocBacklinks = { kind: "ready"; docs: DocSummary[] } | { kind: "unavailable" };
 
 export type DocDetail =
 	| { kind: "loading" }

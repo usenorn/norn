@@ -21,7 +21,7 @@ import type {
 } from "$lib/source-control/source-control";
 import type { WorkflowState } from "$lib/team/states";
 import { readIssueDocs } from "$lib/docs/docs.server";
-import type { LinkedDocs } from "$lib/docs/docs";
+import type { DocBacklinks } from "$lib/docs/docs";
 import type { PageServerLoad } from "./$types";
 
 export type Member = components["schemas"]["Membership"];
@@ -62,7 +62,7 @@ export type IssueDetail =
 			right: DecisionRight;
 			mirrorConflicts: MirrorConflict[];
 			shipping: IssueShipping;
-			docs: LinkedDocs;
+			docs: DocBacklinks;
 	  }
 	| { kind: "unavailable" };
 

@@ -10,7 +10,7 @@ import {
 	type DocLinks,
 	type DocReaders,
 	type DocSummary,
-	type LinkedDocs,
+	type DocBacklinks,
 } from "./docs";
 
 export type DocRead = { kind: "ready"; doc: Doc } | { kind: "not_found" } | { kind: "unavailable" };
@@ -109,7 +109,11 @@ export async function readDocLinks(api: Client<paths>, workspaceId: string, docI
 	return data ? { kind: "ready", links: data.links } : { kind: "unavailable" };
 }
 
-export async function readIssueDocs(api: Client<paths>, workspaceId: string, issueId: string): Promise<LinkedDocs> {
+export async function readIssueDocs(
+	api: Client<paths>,
+	workspaceId: string,
+	issueId: string
+): Promise<DocBacklinks> {
 	const { data } = await api.GET("/workspaces/{workspaceId}/issues/{issueId}/docs", {
 		params: { path: { workspaceId, issueId } },
 	});
@@ -121,7 +125,7 @@ export async function readProjectDocs(
 	api: Client<paths>,
 	workspaceId: string,
 	projectId: string
-): Promise<LinkedDocs> {
+): Promise<DocBacklinks> {
 	const { data } = await api.GET("/workspaces/{workspaceId}/projects/{projectId}/docs", {
 		params: { path: { workspaceId, projectId } },
 	});

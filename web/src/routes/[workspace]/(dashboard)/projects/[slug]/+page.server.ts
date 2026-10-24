@@ -3,6 +3,7 @@ import { keys } from "$lib/api/keys";
 import { listed } from "$lib/api/listed";
 import { issuePageSize } from "$lib/issues/filter";
 import type { ProjectDetail } from "$lib/projects/projects";
+import { readProjectDocs } from "$lib/docs/docs.server";
 import { projectPreviewStates } from "./preview";
 import type { components } from "$lib/api/dashboard.gen";
 import type { ActivityFeed } from "$lib/activity/activity";
@@ -49,7 +50,7 @@ export const load: PageServerLoad = async ({
 
 	const path = { workspaceId: workspace.id, projectId: project.id };
 
-	const [members, updates, issues, activity, progress, links] = await Promise.all([
+	const [members, updates, issues, activity, progress, links, docs] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/members", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/status", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues", {
@@ -67,6 +68,7 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/links", {
 			params: { path: { workspaceId: workspace.id, projectId: project.id } },
 		}),
+		readProjectDocs(locals.api, workspace.id, project.id),
 	]);
 
 	return {
@@ -75,6 +77,7 @@ export const load: PageServerLoad = async ({
 			project,
 			members: members.data ?? [],
 			links: links.data ?? [],
+			docs,
 			updates: updates.data ?? [],
 			rows: listed(
 				issues.data && {

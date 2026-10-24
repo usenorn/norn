@@ -2,14 +2,14 @@
 	import FileText from "@lucide/svelte/icons/file-text";
 	import type { Project } from "$lib/projects/projects";
 	import LinkRow from "./link-row.svelte";
-	import { docPath, docVisibilityLabels, projectName, type LinkedDocs } from "./docs";
+	import { docPath, docVisibilityLabels, projectName, type DocBacklinks } from "./docs";
 
 	let {
 		docs,
 		workspace,
 		projects,
 	}: {
-		docs: LinkedDocs;
+		docs: DocBacklinks;
 		workspace: string;
 		projects: Project[];
 	} = $props();
