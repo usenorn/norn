@@ -13,6 +13,7 @@ import (
 
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
+	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	docsvc "github.com/usenorn/norn/internal/service/doc"
 )
 
@@ -128,5 +129,49 @@ func TestADocReadsOutWithItsAudienceAndContent(t *testing.T) {
 
 	if contributors, ok := body["contributorIds"].([]any); !ok || len(contributors) != 0 {
 		t.Fatalf("contributorIds = %v, want an empty list rather than null", body["contributorIds"])
+	}
+}
+
+func TestAHeldDocEditReadsOutBesideTheDocAsItIsNow(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	agents := agentsvc.NewMockAgents(ctrl)
+	routes := newEdge(ctrl, edgeServices{agents: agents})
+	workspaceID, docID := uuid.New(), uuid.New()
+
+	agents.EXPECT().Waiting(gomock.Any(), workspaceID).Return([]service.WaitingProposal{{
+		Proposal: entity.AgentProposal{
+			ID:          uuid.New(),
+			WorkspaceID: workspaceID,
+			AgentID:     uuid.New(),
+			DocID:       docID,
+			Action:      entity.AgentActionDocEdit,
+			Status:      entity.AgentProposalPending,
+			Change: entity.AgentChange{
+				ExpectedVersion: 2,
+				Doc:             &entity.AgentDocChange{Title: "Runbook", Markdown: "Pin the sha tag."},
+			},
+		},
+		Doc: entity.Doc{DocSummary: entity.DocSummary{ID: docID, Title: "Runbook"}, Markdown: "Push the tag."},
+	}}, nil)
+
+	request := httptest.NewRequest(http.MethodGet, "/workspaces/"+workspaceID.String()+"/agent-proposals", nil)
+	recorder := httptest.NewRecorder()
+	routes.ServeHTTP(recorder, request)
+
+	var proposals []map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &proposals); err != nil || len(proposals) != 1 {
+		t.Fatalf("decode proposals: %v (%s)", err, recorder.Body.String())
+	}
+
+	proposal := proposals[0]
+	held, _ := proposal["held"].(map[string]any)
+
+	if proposal["docId"] != docID.String() || proposal["markdown"] != "Pin the sha tag." ||
+		proposal["action"] != "doc_edit" || held["markdown"] != "Push the tag." {
+		t.Fatalf("the held doc edit reads out as %v", proposal)
+	}
+
+	if _, hasTeam := proposal["teamId"]; hasTeam {
+		t.Fatalf("a doc proposal claims a team: %v", proposal)
 	}
 }

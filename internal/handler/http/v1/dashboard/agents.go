@@ -334,6 +334,41 @@ func (h *handler) SetTeamAgentSettings(
 	return api.SetTeamAgentSettings200JSONResponse(agentSettingsDTO(settings)), nil
 }
 
+func (h *handler) GetWorkspaceAgentSettings(
+	ctx context.Context,
+	request api.GetWorkspaceAgentSettingsRequestObject,
+) (api.GetWorkspaceAgentSettingsResponseObject, error) {
+	settings, err := h.agents.WorkspaceSettings(ctx, request.WorkspaceId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceAgentSettings200JSONResponse(workspaceAgentSettingsDTO(settings)), nil
+}
+
+func (h *handler) SetWorkspaceAgentSettings(
+	ctx context.Context,
+	request api.SetWorkspaceAgentSettingsRequestObject,
+) (api.SetWorkspaceAgentSettingsResponseObject, error) {
+	settings, err := h.agents.ConfigureWorkspace(ctx, service.ConfigureWorkspaceAgentsInput{
+		WorkspaceID:   request.WorkspaceId,
+		HoldDocWrites: entity.AgentHold(request.Body.HoldDocWrites),
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceAgentSettings200JSONResponse(workspaceAgentSettingsDTO(settings)), nil
+}
+
 func (h *handler) ListWorkspaceAgentProposals(
 	ctx context.Context,
 	request api.ListWorkspaceAgentProposalsRequestObject,

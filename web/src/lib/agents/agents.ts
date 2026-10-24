@@ -54,6 +54,8 @@ export const actionLabels: Record<AgentAction, string> = {
 	state_change: "Change the state",
 	issue_edit: "Edit the issue",
 	issue_create: "Raise an issue",
+	doc_create: "Write a doc",
+	doc_edit: "Edit a doc",
 };
 
 export const agentIcons = [
@@ -326,8 +328,20 @@ export function proposalSummary(proposal: AgentProposal): string {
 			return proposal.title
 				? `“${proposal.title}”${proposal.teamKey ? ` on ${proposal.teamKey}` : ""}`
 				: "a new issue";
+		case "doc_create":
+			return proposal.title ? `“${proposal.title}”` : "a new doc";
+		case "doc_edit":
+			return proposal.title ? `“${proposal.title}”` : "a doc";
 	}
 }
+
+export type DocVisibility = components["schemas"]["DocVisibility"];
+
+export const docAudienceLabels: Record<DocVisibility, string> = {
+	workspace: "Everybody in the workspace will be able to read it.",
+	project: "The project's members will be able to read it.",
+	personal: "Only its author will be able to read it.",
+};
 
 export function mcpServerUrl(origin: string): string {
 	return `${origin}/mcp`;

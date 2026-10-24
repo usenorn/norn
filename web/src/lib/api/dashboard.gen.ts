@@ -1708,6 +1708,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agent-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which agent writes this workspace holds for a person to approve, beyond any team's rules */
+        get: operations["getWorkspaceAgentSettings"];
+        /** Choose which agent writes this workspace holds */
+        put: operations["setWorkspaceAgentSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agent-proposals": {
         parameters: {
             query?: never;
@@ -8515,8 +8533,11 @@ export interface components {
             holdIssueEdits: components["schemas"]["AgentHold"];
             holdIssueCreation: components["schemas"]["AgentHold"];
         };
+        WorkspaceAgentSettings: {
+            holdDocWrites: components["schemas"]["AgentHold"];
+        };
         /** @enum {string} */
-        AgentAction: "comment" | "state_change" | "issue_edit" | "issue_create";
+        AgentAction: "comment" | "state_change" | "issue_edit" | "issue_create" | "doc_create" | "doc_edit";
         /** @enum {string} */
         AgentProposalStatus: "pending" | "rejected" | "applied" | "failed";
         ApproveAgentProposalRequest: {
@@ -8539,8 +8560,19 @@ export interface components {
              * @description Absent on a held issue creation, where the issue does not exist yet
              */
             issueId?: string;
-            /** Format: uuid */
-            teamId: string;
+            /**
+             * Format: uuid
+             * @description Absent on a held doc write, which a workspace holds rather than a team
+             */
+            teamId?: string;
+            /**
+             * Format: uuid
+             * @description The doc a held doc edit would change; absent on a held doc creation
+             */
+            docId?: string;
+            /** @description The whole doc a held doc write would leave behind */
+            markdown?: string;
+            docAudience?: components["schemas"]["DocAudience"];
             action: components["schemas"]["AgentAction"];
             status: components["schemas"]["AgentProposalStatus"];
             body?: string;
@@ -8582,6 +8614,8 @@ export interface components {
             description?: string;
             stateName?: string;
             priority?: components["schemas"]["IssuePriority"];
+            /** @description What a doc says now, beside the whole doc a held doc edit would leave */
+            markdown?: string;
         };
         AgentUnusableProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -14308,6 +14342,61 @@ export interface operations {
             401: components["responses"]["Problem"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceAgentSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The workspace's settings, holding nothing when it has never configured agents */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAgentSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceAgentSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceAgentSettings"];
+            };
+        };
+        responses: {
+            /** @description The saved settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAgentSettings"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

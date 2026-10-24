@@ -2472,6 +2472,44 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agent-settings:
+    get:
+      tags: [agents]
+      operationId: getWorkspaceAgentSettings
+      summary: Which agent writes this workspace holds for a person to approve, beyond any team's rules
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: The workspace's settings, holding nothing when it has never configured agents
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAgentSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [agents]
+      operationId: setWorkspaceAgentSettings
+      summary: Choose which agent writes this workspace holds
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkspaceAgentSettings' }
+      responses:
+        '200':
+          description: The saved settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAgentSettings' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/agent-proposals:
     get:
       tags: [agents]
@@ -13275,9 +13313,15 @@ components:
         holdIssueEdits: { $ref: '#/components/schemas/AgentHold' }
         holdIssueCreation: { $ref: '#/components/schemas/AgentHold' }
 
+    WorkspaceAgentSettings:
+      type: object
+      required: [holdDocWrites]
+      properties:
+        holdDocWrites: { $ref: '#/components/schemas/AgentHold' }
+
     AgentAction:
       type: string
-      enum: [comment, state_change, issue_edit, issue_create]
+      enum: [comment, state_change, issue_edit, issue_create, doc_create, doc_edit]
 
     AgentProposalStatus:
       type: string
@@ -13300,7 +13344,7 @@ components:
 
     AgentProposal:
       type: object
-      required: [id, agentId, agentName, teamId, action, status, createdAt]
+      required: [id, agentId, agentName, action, status, createdAt]
       properties:
         id: { type: string, format: uuid }
         agentId: { type: string, format: uuid }
@@ -13309,7 +13353,19 @@ components:
           type: string
           format: uuid
           description: Absent on a held issue creation, where the issue does not exist yet
-        teamId: { type: string, format: uuid }
+        teamId:
+          type: string
+          format: uuid
+          description: Absent on a held doc write, which a workspace holds rather than a team
+        docId:
+          type: string
+          format: uuid
+          description: The doc a held doc edit would change; absent on a held doc creation
+        markdown:
+          type: string
+          description: The whole doc a held doc write would leave behind
+        docAudience:
+          $ref: '#/components/schemas/DocAudience'
         action: { $ref: '#/components/schemas/AgentAction' }
         status: { $ref: '#/components/schemas/AgentProposalStatus' }
         body: { type: string }
@@ -13363,6 +13419,9 @@ components:
         description: { type: string }
         stateName: { type: string }
         priority: { $ref: '#/components/schemas/IssuePriority' }
+        markdown:
+          type: string
+          description: What a doc says now, beside the whole doc a held doc edit would leave
 
     AgentUnusableProblem:
       allOf:

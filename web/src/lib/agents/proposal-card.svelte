@@ -6,13 +6,14 @@
 	import { onDateAndTime } from "$lib/time";
 	import { workspacePath } from "$lib/workspace/navigation";
 	import AgentReasoning from "./agent-reasoning.svelte";
+	import ProposalComparison from "./proposal-comparison.svelte";
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
-	import Markdown from "$lib/issues/markdown.svelte";
 	import { priorityLabel } from "$lib/issues/issues";
 	import {
 		actionLabels,
 		changePartLabels,
+		docAudienceLabels,
 		proposalSummary,
 		type AgentProposal,
 		type ChangePart,
@@ -148,6 +149,22 @@
 		</div>
 	{/if}
 
+	{#if proposal.markdown !== undefined}
+		<div class="flex flex-col gap-2">
+			<Eyebrow class="text-ink-600">What it would write</Eyebrow>
+			<ProposalComparison
+				now={held?.markdown ?? ""}
+				proposed={proposal.markdown}
+				empty={proposal.action === "doc_create" ? "No doc yet." : "Nothing written."}
+			/>
+			{#if proposal.docAudience}
+				<p class="text-xs leading-normal text-muted-foreground text-pretty">
+					{docAudienceLabels[proposal.docAudience.visibility]}
+				</p>
+			{/if}
+		</div>
+	{/if}
+
 	{#if parts.length > 0}
 		<div class="flex flex-col gap-2">
 			<Eyebrow class="text-ink-600">What it would change</Eyebrow>
@@ -165,24 +182,11 @@
 						</div>
 
 						{#if part === "description"}
-							<div class="grid gap-2 sm:grid-cols-2">
-								<div class="flex min-w-0 flex-col gap-0.5">
-									<Eyebrow class="text-ink-600">Now</Eyebrow>
-									<div class="max-h-48 min-w-0 overflow-y-auto rounded-sm bg-paper-2 p-2">
-										{#if standing(part)}
-											<Markdown source={standing(part)} />
-										{:else}
-											<span class="text-sm text-muted-foreground">No description.</span>
-										{/if}
-									</div>
-								</div>
-								<div class="flex min-w-0 flex-col gap-0.5">
-									<Eyebrow class="text-ink-600">Proposed</Eyebrow>
-									<div class="max-h-48 min-w-0 overflow-y-auto rounded-sm bg-paper-2 p-2">
-										<Markdown source={proposed(part)} />
-									</div>
-								</div>
-							</div>
+							<ProposalComparison
+								now={standing(part)}
+								proposed={proposed(part)}
+								empty="No description."
+							/>
 						{:else if proposed(part)}
 							<p class="text-sm leading-normal text-ink-900 text-pretty">
 								{#if standing(part)}

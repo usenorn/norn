@@ -107,6 +107,44 @@ export const approvalsPreviewStates: Record<string, ApprovalsPreview> = import.m
 					],
 				},
 			},
+			held_doc: {
+				queue: {
+					kind: "ready",
+					proposals: [
+						{
+							id: "00000000-0000-4000-8000-000000000b06",
+							agentId: "00000000-0000-4000-8000-0000000009c1",
+							agentName: "docs-bot",
+							docId: "00000000-0000-4000-8000-000000000e01",
+							action: "doc_edit",
+							status: "pending",
+							title: "Deploy runbook",
+							markdown:
+								"## Deploy\n\nPin the image to its sha tag, then sync.\n\n## Rollback\n\nSync the previous sha tag.",
+							held: {
+								title: "Deploy runbook",
+								markdown:
+									"## Deploy\n\nPush the tag and sync.\n\n## Rollback\n\nSync the previous sha tag.",
+							},
+							createdAt: "2026-10-24T13:05:00Z",
+						},
+						{
+							id: "00000000-0000-4000-8000-000000000b07",
+							agentId: "00000000-0000-4000-8000-0000000009c1",
+							agentName: "docs-bot",
+							action: "doc_create",
+							status: "pending",
+							title: "Checkout outage postmortem",
+							markdown: "## Timeline\n\nCheckout returned 502s for twelve minutes.",
+							docAudience: {
+								visibility: "project",
+								projectId: "00000000-0000-4000-8000-000000000e02",
+							},
+							createdAt: "2026-10-24T12:50:00Z",
+						},
+					],
+				},
+			},
 			forbidden: { queue: { kind: "forbidden" } },
 			unavailable: { queue: { kind: "unavailable" } },
 		}
