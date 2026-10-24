@@ -39,6 +39,7 @@ type WorkspaceDoc struct {
 	Version         int         `boil:"version" json:"version" toml:"version" yaml:"version"`
 	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt       time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SearchDocument  null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
 
 	R *workspaceDocR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceDocL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -59,6 +60,7 @@ var WorkspaceDocColumns = struct {
 	Version         string
 	CreatedAt       string
 	UpdatedAt       string
+	SearchDocument  string
 }{
 	ID:              "id",
 	WorkspaceID:     "workspace_id",
@@ -74,6 +76,7 @@ var WorkspaceDocColumns = struct {
 	Version:         "version",
 	CreatedAt:       "created_at",
 	UpdatedAt:       "updated_at",
+	SearchDocument:  "search_document",
 }
 
 var WorkspaceDocTableColumns = struct {
@@ -91,6 +94,7 @@ var WorkspaceDocTableColumns = struct {
 	Version         string
 	CreatedAt       string
 	UpdatedAt       string
+	SearchDocument  string
 }{
 	ID:              "workspace_docs.id",
 	WorkspaceID:     "workspace_docs.workspace_id",
@@ -106,6 +110,7 @@ var WorkspaceDocTableColumns = struct {
 	Version:         "workspace_docs.version",
 	CreatedAt:       "workspace_docs.created_at",
 	UpdatedAt:       "workspace_docs.updated_at",
+	SearchDocument:  "workspace_docs.search_document",
 }
 
 // Generated where
@@ -125,6 +130,7 @@ var WorkspaceDocWhere = struct {
 	Version         whereHelperint
 	CreatedAt       whereHelpertime_Time
 	UpdatedAt       whereHelpertime_Time
+	SearchDocument  whereHelpernull_String
 }{
 	ID:              whereHelperstring{field: "\"workspace_docs\".\"id\""},
 	WorkspaceID:     whereHelperstring{field: "\"workspace_docs\".\"workspace_id\""},
@@ -140,6 +146,7 @@ var WorkspaceDocWhere = struct {
 	Version:         whereHelperint{field: "\"workspace_docs\".\"version\""},
 	CreatedAt:       whereHelpertime_Time{field: "\"workspace_docs\".\"created_at\""},
 	UpdatedAt:       whereHelpertime_Time{field: "\"workspace_docs\".\"updated_at\""},
+	SearchDocument:  whereHelpernull_String{field: "\"workspace_docs\".\"search_document\""},
 }
 
 // WorkspaceDocRels is where relationship names are stored.
@@ -198,11 +205,11 @@ func (r *workspaceDocR) GetWorkspace() *Workspace {
 type workspaceDocL struct{}
 
 var (
-	workspaceDocAllColumns            = []string{"id", "workspace_id", "parent_id", "title", "content", "markdown", "visibility", "project_id", "author_account_id", "status", "archived_at", "version", "created_at", "updated_at"}
+	workspaceDocAllColumns            = []string{"id", "workspace_id", "parent_id", "title", "content", "markdown", "visibility", "project_id", "author_account_id", "status", "archived_at", "version", "created_at", "updated_at", "search_document"}
 	workspaceDocColumnsWithoutDefault = []string{"workspace_id", "title", "content", "visibility"}
-	workspaceDocColumnsWithDefault    = []string{"id", "parent_id", "markdown", "project_id", "author_account_id", "status", "archived_at", "version", "created_at", "updated_at"}
+	workspaceDocColumnsWithDefault    = []string{"id", "parent_id", "markdown", "project_id", "author_account_id", "status", "archived_at", "version", "created_at", "updated_at", "search_document"}
 	workspaceDocPrimaryKeyColumns     = []string{"id"}
-	workspaceDocGeneratedColumns      = []string{}
+	workspaceDocGeneratedColumns      = []string{"search_document"}
 )
 
 type (
@@ -981,6 +988,7 @@ func (o *WorkspaceDoc) Insert(ctx context.Context, exec boil.ContextExecutor, co
 			workspaceDocColumnsWithoutDefault,
 			nzDefaults,
 		)
+		wl = strmangle.SetComplement(wl, workspaceDocGeneratedColumns)
 
 		cache.valueMapping, err = queries.BindMapping(workspaceDocType, workspaceDocMapping, wl)
 		if err != nil {
@@ -1057,6 +1065,7 @@ func (o *WorkspaceDoc) Update(ctx context.Context, exec boil.ContextExecutor, co
 			workspaceDocAllColumns,
 			workspaceDocPrimaryKeyColumns,
 		)
+		wl = strmangle.SetComplement(wl, workspaceDocGeneratedColumns)
 
 		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
@@ -1234,6 +1243,9 @@ func (o *WorkspaceDoc) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 			workspaceDocAllColumns,
 			workspaceDocPrimaryKeyColumns,
 		)
+
+		insert = strmangle.SetComplement(insert, workspaceDocGeneratedColumns)
+		update = strmangle.SetComplement(update, workspaceDocGeneratedColumns)
 
 		if updateOnConflict && len(update) == 0 {
 			return errors.New("dbpostgres: unable to upsert workspace_docs, could not build update column list")

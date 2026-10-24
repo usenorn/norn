@@ -137,6 +137,7 @@ var WorkspaceWhere = struct {
 // WorkspaceRels is where relationship names are stored.
 var WorkspaceRels = struct {
 	DefaultTeam                        string
+	WorkspaceAgentSetting              string
 	WorkspaceAiProvider                string
 	WorkspaceAuthPolicy                string
 	WorkspaceDirectoryConnection       string
@@ -195,6 +196,7 @@ var WorkspaceRels = struct {
 	WorkspaceTelegramBots              string
 }{
 	DefaultTeam:                        "DefaultTeam",
+	WorkspaceAgentSetting:              "WorkspaceAgentSetting",
 	WorkspaceAiProvider:                "WorkspaceAiProvider",
 	WorkspaceAuthPolicy:                "WorkspaceAuthPolicy",
 	WorkspaceDirectoryConnection:       "WorkspaceDirectoryConnection",
@@ -256,6 +258,7 @@ var WorkspaceRels = struct {
 // workspaceR is where relationships are stored.
 type workspaceR struct {
 	DefaultTeam                        *WorkspaceTeam                         `boil:"DefaultTeam" json:"DefaultTeam" toml:"DefaultTeam" yaml:"DefaultTeam"`
+	WorkspaceAgentSetting              *WorkspaceAgentSetting                 `boil:"WorkspaceAgentSetting" json:"WorkspaceAgentSetting" toml:"WorkspaceAgentSetting" yaml:"WorkspaceAgentSetting"`
 	WorkspaceAiProvider                *WorkspaceAiProvider                   `boil:"WorkspaceAiProvider" json:"WorkspaceAiProvider" toml:"WorkspaceAiProvider" yaml:"WorkspaceAiProvider"`
 	WorkspaceAuthPolicy                *WorkspaceAuthPolicy                   `boil:"WorkspaceAuthPolicy" json:"WorkspaceAuthPolicy" toml:"WorkspaceAuthPolicy" yaml:"WorkspaceAuthPolicy"`
 	WorkspaceDirectoryConnection       *WorkspaceDirectoryConnection          `boil:"WorkspaceDirectoryConnection" json:"WorkspaceDirectoryConnection" toml:"WorkspaceDirectoryConnection" yaml:"WorkspaceDirectoryConnection"`
@@ -333,6 +336,22 @@ func (r *workspaceR) GetDefaultTeam() *WorkspaceTeam {
 	}
 
 	return r.DefaultTeam
+}
+
+func (o *Workspace) GetWorkspaceAgentSetting() *WorkspaceAgentSetting {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceAgentSetting()
+}
+
+func (r *workspaceR) GetWorkspaceAgentSetting() *WorkspaceAgentSetting {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceAgentSetting
 }
 
 func (o *Workspace) GetWorkspaceAiProvider() *WorkspaceAiProvider {
@@ -1558,6 +1577,17 @@ func (o *Workspace) DefaultTeam(mods ...qm.QueryMod) workspaceTeamQuery {
 	return WorkspaceTeams(queryMods...)
 }
 
+// WorkspaceAgentSetting pointed to by the foreign key.
+func (o *Workspace) WorkspaceAgentSetting(mods ...qm.QueryMod) workspaceAgentSettingQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"workspace_id\" = ?", o.ID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return WorkspaceAgentSettings(queryMods...)
+}
+
 // WorkspaceAiProvider pointed to by the foreign key.
 func (o *Workspace) WorkspaceAiProvider(mods ...qm.QueryMod) workspaceAiProviderQuery {
 	queryMods := []qm.QueryMod{
@@ -2437,6 +2467,123 @@ func (workspaceL) LoadDefaultTeam(ctx context.Context, e boil.ContextExecutor, s
 					foreign.R = &workspaceTeamR{}
 				}
 				foreign.R.DefaultTeamWorkspaces = append(foreign.R.DefaultTeamWorkspaces, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceAgentSetting allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-1 relationship.
+func (workspaceL) LoadWorkspaceAgentSetting(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_agent_settings`),
+		qm.WhereIn(`workspace_agent_settings.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load WorkspaceAgentSetting")
+	}
+
+	var resultSlice []*WorkspaceAgentSetting
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice WorkspaceAgentSetting")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for workspace_agent_settings")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_agent_settings")
+	}
+
+	if len(workspaceAgentSettingAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.WorkspaceAgentSetting = foreign
+		if foreign.R == nil {
+			foreign.R = &workspaceAgentSettingR{}
+		}
+		foreign.R.Workspace = object
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceAgentSetting = foreign
+				if foreign.R == nil {
+					foreign.R = &workspaceAgentSettingR{}
+				}
+				foreign.R.Workspace = local
 				break
 			}
 		}
@@ -8877,6 +9024,56 @@ func (o *Workspace) RemoveDefaultTeam(ctx context.Context, exec boil.ContextExec
 		}
 		related.R.DefaultTeamWorkspaces = related.R.DefaultTeamWorkspaces[:ln-1]
 		break
+	}
+	return nil
+}
+
+// SetWorkspaceAgentSetting of the workspace to the related item.
+// Sets o.R.WorkspaceAgentSetting to related.
+// Adds o to related.R.Workspace.
+func (o *Workspace) SetWorkspaceAgentSetting(ctx context.Context, exec boil.ContextExecutor, insert bool, related *WorkspaceAgentSetting) error {
+	var err error
+
+	if insert {
+		related.WorkspaceID = o.ID
+
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	} else {
+		updateQuery := fmt.Sprintf(
+			"UPDATE \"workspace_agent_settings\" SET %s WHERE %s",
+			strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+			strmangle.WhereClause("\"", "\"", 2, workspaceAgentSettingPrimaryKeyColumns),
+		)
+		values := []any{o.ID, related.WorkspaceID}
+
+		if boil.IsDebug(ctx) {
+			writer := boil.DebugWriterFrom(ctx)
+			fmt.Fprintln(writer, updateQuery)
+			fmt.Fprintln(writer, values)
+		}
+		if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+			return errors.Wrap(err, "failed to update foreign table")
+		}
+
+		related.WorkspaceID = o.ID
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceAgentSetting: related,
+		}
+	} else {
+		o.R.WorkspaceAgentSetting = related
+	}
+
+	if related.R == nil {
+		related.R = &workspaceAgentSettingR{
+			Workspace: o,
+		}
+	} else {
+		related.R.Workspace = o
 	}
 	return nil
 }
