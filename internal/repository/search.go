@@ -17,6 +17,13 @@ type SearchRequest struct {
 	Kinds       []entity.SearchKind
 	Limit       int
 	Scope       entity.TeamScope
+	Audience    SearchAudience
+}
+
+type SearchAudience struct {
+	AllProjects      bool
+	ProjectIDs       []uuid.UUID
+	PersonalAuthorID uuid.UUID
 }
 
 type Search interface {

@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"slices"
 	"strings"
@@ -151,6 +152,44 @@ WHERE m.workspace_id = $1
   AND ($3 <> '' OR $4 <> '')
   AND position(lower($3) IN lower(a.display_name)) > 0` + bounded
 
+const docAudience = `
+  AND (d.visibility = 'workspace'
+       OR (d.visibility = 'project' AND ($7::boolean IS TRUE OR d.project_id = ANY($8::uuid[])))
+       OR (d.visibility = 'personal' AND d.author_account_id = $9::uuid))`
+
+const docTerms = `(CASE WHEN $3 <> '' THEN websearch_to_tsquery('english', $3) ELSE ''::tsquery END ||
+        CASE WHEN $4 <> '' THEN to_tsquery('simple', $4 || ':*') ELSE ''::tsquery END)`
+
+const docResults = `
+WITH candidates AS (
+SELECT 'doc' AS kind,
+       d.id::text AS id,
+       '' AS issue_id,
+       d.title,
+       d.markdown,
+       '' AS reference,
+       '' AS team_key,
+       '' AS slug,
+       d.status,
+       ` + titleWeighted + ` AS title_hit,
+       lower(d.title) = lower($10) AS exact_title,
+       ts_rank_cd(%[1]s, ` + docTerms + `) AS rank,
+       d.updated_at
+FROM workspace_docs d
+JOIN workspace_memberships m ON m.workspace_id = d.workspace_id AND m.account_id = $2
+WHERE d.workspace_id = $1
+  AND d.status = 'active'` + docAudience + documentMatches + `
+LIMIT $5
+)
+SELECT kind, id, issue_id, title,
+       ts_headline('english', markdown, ` + docTerms + `, $11) AS excerpt,
+       reference, team_key, slug, status, title_hit, updated_at
+FROM candidates
+ORDER BY exact_title DESC, title_hit DESC, rank DESC, updated_at DESC, id DESC
+LIMIT $6`
+
+const docPassage = `StartSel="", StopSel="", MaxFragments=2, MaxWords=24, MinWords=8, FragmentDelimiter=" … "`
+
 const fuzzyIssueResults = `
 SELECT 'issue' AS kind,
        i.id::text AS id,
@@ -184,29 +223,50 @@ func New(db *postgres.Client) repository.Search {
 	return &searchRepository{db: db}
 }
 
-func statementFor(kind entity.SearchKind) (string, bool) {
+type binding int
+
+const (
+	bindsWorkspace binding = iota
+	bindsTeamScope
+	bindsAudience
+)
+
+func statementFor(kind entity.SearchKind) (string, binding) {
 	switch kind {
 	case entity.SearchKindComment:
-		return fmt.Sprintf(commentResults, "c.search_document"), true
+		return fmt.Sprintf(commentResults, "c.search_document"), bindsTeamScope
 	case entity.SearchKindProject:
-		return fmt.Sprintf(projectResults, "p.search_document"), false
+		return fmt.Sprintf(projectResults, "p.search_document"), bindsWorkspace
 	case entity.SearchKindTeam:
-		return teamResults, true
+		return teamResults, bindsTeamScope
 	case entity.SearchKindPerson:
-		return personResults, false
+		return personResults, bindsWorkspace
+	case entity.SearchKindDoc:
+		return fmt.Sprintf(docResults, "d.search_document"), bindsAudience
 	default:
-		return fmt.Sprintf(issueResults, "i.search_document"), true
+		return fmt.Sprintf(issueResults, "i.search_document"), bindsTeamScope
 	}
 }
 
 func teamIDs(scope entity.TeamScope) []string {
-	ids := make([]string, 0, len(scope.TeamIDs))
+	return idStrings(scope.TeamIDs)
+}
 
-	for _, id := range scope.TeamIDs {
-		ids = append(ids, id.String())
+func idStrings(ids []uuid.UUID) []string {
+	found := make([]string, 0, len(ids))
+
+	for _, id := range ids {
+		found = append(found, id.String())
 	}
 
-	return ids
+	return found
+}
+
+func personalAuthor(audience repository.SearchAudience) sql.NullString {
+	return sql.NullString{
+		String: audience.PersonalAuthorID.String(),
+		Valid:  audience.PersonalAuthorID != uuid.Nil,
+	}
 }
 
 func (r *searchRepository) Search(
@@ -220,7 +280,7 @@ func (r *searchRepository) Search(
 			continue
 		}
 
-		statement, scoped := statementFor(kind)
+		statement, binds := statementFor(kind)
 
 		args := []any{
 			request.WorkspaceID.String(), request.AccountID.String(),
@@ -228,8 +288,15 @@ func (r *searchRepository) Search(
 			entity.SearchCandidateCap, request.Limit + 1,
 		}
 
-		if scoped {
+		switch binds {
+		case bindsTeamScope:
 			args = append(args, request.Scope.AllTeams, teamIDs(request.Scope))
+		case bindsAudience:
+			args = append(args,
+				request.Audience.AllProjects, idStrings(request.Audience.ProjectIDs),
+				personalAuthor(request.Audience), request.Query.Raw, docPassage,
+			)
+		case bindsWorkspace:
 		}
 
 		results, err := r.query(ctx, statement, args...)
