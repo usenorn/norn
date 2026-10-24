@@ -10,6 +10,46 @@ export const docPreviewStates: Record<string, DocPreview> = import.meta.env.DEV
 			ready: {
 				detail: {
 					kind: "ready",
+					links: {
+						kind: "ready",
+						links: [
+							{
+								id: "00000000-0000-4000-8000-000000000d01",
+								target: "issue",
+								issue: {
+									id: "00000000-0000-4000-8000-000000000e01",
+									reference: "OPS-214",
+									title: "Page the secondary when the primary does not acknowledge",
+									state: { name: "In progress", category: "active" },
+								},
+								createdAt: "2026-10-20T09:00:00Z",
+							},
+							{
+								id: "00000000-0000-4000-8000-000000000d02",
+								target: "project",
+								project: {
+									id: "00000000-0000-4000-8000-000000000801",
+									slug: "on-call-rotation",
+									name: "On-call rotation",
+									archived: false,
+								},
+								createdAt: "2026-10-20T09:05:00Z",
+							},
+						],
+					},
+					candidates: [
+						{
+							id: "00000000-0000-4000-8000-000000000e02",
+							reference: "OPS-219",
+							title: "Write the escalation policy down",
+							state: {
+								id: "00000000-0000-4000-8000-000000000f01",
+								name: "Todo",
+								category: "not_started",
+								position: 1,
+							},
+						},
+					],
 					doc: {
 						id: "00000000-0000-4000-8000-000000000a01",
 						title: "On-call runbook",
@@ -50,6 +90,8 @@ export const docPreviewStates: Record<string, DocPreview> = import.meta.env.DEV
 			read_only: {
 				detail: {
 					kind: "ready",
+					links: { kind: "ready", links: [] },
+					candidates: [],
 					doc: {
 						id: "00000000-0000-4000-8000-000000000a01",
 						title: "On-call runbook",
@@ -69,9 +111,35 @@ export const docPreviewStates: Record<string, DocPreview> = import.meta.env.DEV
 					readers: { kind: "unavailable" },
 				},
 			},
+			links_unavailable: {
+				detail: {
+					kind: "ready",
+					links: { kind: "unavailable" },
+					candidates: [],
+					doc: {
+						id: "00000000-0000-4000-8000-000000000a01",
+						title: "On-call runbook",
+						audience: { visibility: "workspace" },
+						authorAccountId: "00000000-0000-4000-8000-000000000201",
+						authorName: "Rae Okafor",
+						status: "active",
+						version: 4,
+						createdAt: "2026-09-01T09:00:00Z",
+						updatedAt: "2026-10-20T09:00:00Z",
+						markdown: "## When the pager goes\n\nAcknowledge within five minutes, then open the incident channel.",
+						content: { type: "doc", content: [] },
+						contributorIds: [],
+						viewer: { canEdit: true, canShare: true },
+					},
+					agents: [],
+					readers: { kind: "unavailable" },
+				},
+			},
 			agent_edited: {
 				detail: {
 					kind: "ready",
+					links: { kind: "ready", links: [] },
+					candidates: [],
 					doc: {
 						id: "00000000-0000-4000-8000-000000000a03",
 						title: "Checkout rebuild decisions",
@@ -124,6 +192,8 @@ export const docPreviewStates: Record<string, DocPreview> = import.meta.env.DEV
 			personal: {
 				detail: {
 					kind: "ready",
+					links: { kind: "ready", links: [] },
+					candidates: [],
 					doc: {
 						id: "00000000-0000-4000-8000-000000000a04",
 						title: "Interview notes",
@@ -146,6 +216,8 @@ export const docPreviewStates: Record<string, DocPreview> = import.meta.env.DEV
 			archived: {
 				detail: {
 					kind: "ready",
+					links: { kind: "ready", links: [] },
+					candidates: [],
 					doc: {
 						id: "00000000-0000-4000-8000-000000000a05",
 						title: "Old deploy checklist",

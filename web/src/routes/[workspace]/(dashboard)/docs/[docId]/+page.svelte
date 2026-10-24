@@ -13,13 +13,15 @@
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import { api } from "$lib/api";
-	import { attempt, unknownLine } from "$lib/api/attempt";
+	import { attempt, unknownLine, type ApiResult } from "$lib/api/attempt";
 	import { keys } from "$lib/api/keys";
 	import * as Alert from "$lib/components/ui/alert/index.js";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
+	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
 	import Pill from "$lib/components/norn/pill.svelte";
+	import DocLinks from "$lib/docs/doc-links.svelte";
 	import DocsHeader from "$lib/docs/docs-header.svelte";
 	import RevisionByline from "$lib/docs/revision-byline.svelte";
 	import ShareDialog from "$lib/docs/share-dialog.svelte";
@@ -62,6 +64,7 @@
 	let archiving = $state(false);
 	let moving = $state(false);
 	let moveOpen = $state(false);
+	let linking = $state(false);
 
 	afterNavigate(() => {
 		sharing = false;
@@ -129,6 +132,49 @@
 		}
 
 		showFailure(outcome.kind === "unknown" ? unknownLine : docFailureMessage(readDocFailure(outcome.problem)));
+	}
+
+	async function relink(run: () => Promise<ApiResult<unknown>>) {
+		if (!doc || linking) return;
+
+		linking = true;
+
+		const outcome = await attempt({ run });
+
+		linking = false;
+
+		if (outcome.kind === "done") {
+			await invalidate(keys.doc(doc.id));
+
+			return;
+		}
+
+		showFailure(outcome.kind === "unknown" ? unknownLine : docFailureMessage(readDocFailure(outcome.problem)));
+	}
+
+	function link(target: { issueId: string } | { projectId: string }) {
+		if (!doc) return;
+
+		const docId = doc.id;
+
+		void relink(() =>
+			api.POST("/workspaces/{workspaceId}/docs/{docId}/links", {
+				params: { path: { workspaceId: data.workspace.id, docId } },
+				body: target,
+			})
+		);
+	}
+
+	function unlink(linkId: string) {
+		if (!doc) return;
+
+		const docId = doc.id;
+
+		void relink(() =>
+			api.DELETE("/workspaces/{workspaceId}/docs/{docId}/links/{linkId}", {
+				params: { path: { workspaceId: data.workspace.id, docId, linkId } },
+			})
+		);
 	}
 </script>
 
@@ -280,6 +326,22 @@
 					{/if}
 				</div>
 			{/if}
+
+			<section class="flex flex-col gap-1.5">
+				<h2>
+					<Eyebrow rule class="text-ink-600">Linked</Eyebrow>
+				</h2>
+				<DocLinks
+					links={ready.links}
+					candidates={ready.candidates}
+					projects={data.reachable}
+					workspace={slug}
+					{editable}
+					working={linking}
+					onlink={link}
+					onunlink={unlink}
+				/>
+			</section>
 		{/if}
 	</article>
 </div>

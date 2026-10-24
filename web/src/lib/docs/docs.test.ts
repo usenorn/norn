@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { Project } from "$lib/projects/projects";
-import { ancestry, descendants, docTree, readDocFailure, revisionAuthor, type DocSummary } from "./docs";
+import type { IssueCandidate } from "$lib/issues/issues";
+import {
+	ancestry,
+	descendants,
+	docTree,
+	readDocFailure,
+	revisionAuthor,
+	unlinkedIssues,
+	unlinkedProjects,
+	type DocLink,
+	type DocSummary,
+} from "./docs";
 
 function summary(id: string, title: string, audience: DocSummary["audience"], parentId?: string): DocSummary {
 	return {
@@ -71,6 +82,10 @@ describe("readDocFailure", () => {
 		expect(readDocFailure({ status: 409, code: "doc_stale", version: 4 })).toEqual({ kind: "stale", version: 4 });
 	});
 
+	it("names a link the doc already holds", () => {
+		expect(readDocFailure({ status: 409, code: "doc_link_exists" })).toEqual({ kind: "link_exists" });
+	});
+
 	it("tells a refused edit from a refused reshare", () => {
 		expect(readDocFailure({ status: 403, code: "forbidden", reason: "knowledge_not_editable" }).kind).toBe(
 			"not_editable"
@@ -109,5 +124,34 @@ describe("revisionAuthor", () => {
 
 		expect(revisionAuthor(revision, [{ id: "g1", name: "Scribe" }] as never)).toBe("Scribe for Rae Okafor");
 		expect(revisionAuthor(revision, [])).toBe("An agent for Rae Okafor");
+	});
+});
+
+describe("unlinked choices", () => {
+	const links: DocLink[] = [
+		{
+			id: "l1",
+			target: "issue",
+			issue: { id: "i1", reference: "OPS-1", title: "Linked", state: { name: "Todo", category: "not_started" } },
+			createdAt: "2026-10-01T09:00:00Z",
+		},
+		{
+			id: "l2",
+			target: "project",
+			project: { id: "p1", slug: "checkout", name: "Checkout rebuild", archived: false },
+			createdAt: "2026-10-01T09:00:00Z",
+		},
+	];
+
+	it("offers only the issues the doc does not already link to", () => {
+		const candidates = [{ id: "i1" }, { id: "i2" }] as IssueCandidate[];
+
+		expect(unlinkedIssues(links, candidates).map((candidate) => candidate.id)).toEqual(["i2"]);
+	});
+
+	it("offers only the projects the doc does not already link to", () => {
+		const offered = unlinkedProjects(links, [...projects, { id: "p2", name: "Billing" }] as Project[]);
+
+		expect(offered.map((project) => project.id)).toEqual(["p2"]);
 	});
 });

@@ -1,5 +1,6 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { Agent } from "$lib/agents/agents";
+import type { IssueCandidate } from "$lib/issues/issues";
 import type { Project } from "$lib/projects/projects";
 import { workspacePath } from "$lib/workspace/navigation";
 
@@ -11,6 +12,7 @@ export type DocRevision = components["schemas"]["DocRevision"];
 export type DocRevisionSummary = components["schemas"]["DocRevisionSummary"];
 export type DocRevisionAction = components["schemas"]["DocRevisionAction"];
 export type DocRevisionSource = components["schemas"]["DocRevisionSource"];
+export type DocLink = components["schemas"]["DocLink"];
 
 export const docTreePageSize = 200;
 export const docTreePagesMax = 10;
@@ -187,6 +189,10 @@ export type DocReaders =
 	| { kind: "people"; people: { accountId: string; name: string }[]; more: boolean }
 	| { kind: "unavailable" };
 
+export type DocLinks = { kind: "ready"; links: DocLink[] } | { kind: "unavailable" };
+
+export type LinkedDocs = { kind: "ready"; docs: DocSummary[] } | { kind: "unavailable" };
+
 export type DocDetail =
 	| { kind: "loading" }
 	| { kind: "unavailable" }
@@ -197,7 +203,21 @@ export type DocDetail =
 			latest?: DocRevisionSummary;
 			agents: Agent[];
 			readers: DocReaders;
+			links: DocLinks;
+			candidates: IssueCandidate[];
 	  };
+
+export function unlinkedIssues(links: DocLink[], candidates: IssueCandidate[]): IssueCandidate[] {
+	const linked = new Set(links.flatMap((link) => (link.issue ? [link.issue.id] : [])));
+
+	return candidates.filter((candidate) => !linked.has(candidate.id));
+}
+
+export function unlinkedProjects(links: DocLink[], projects: Project[]): Project[] {
+	const linked = new Set(links.flatMap((link) => (link.project ? [link.project.id] : [])));
+
+	return projects.filter((project) => !linked.has(project.id));
+}
 
 export type DocEditing =
 	| { kind: "loading" }
@@ -226,6 +246,7 @@ export type DocFailure =
 	| { kind: "has_children" }
 	| { kind: "cycle" }
 	| { kind: "too_deep" }
+	| { kind: "link_exists" }
 	| { kind: "not_editable" }
 	| { kind: "not_shareable" }
 	| { kind: "not_found" }
@@ -238,6 +259,7 @@ const conflictKinds: Record<string, DocFailure["kind"]> = {
 	doc_has_children: "has_children",
 	doc_parent_cycle: "cycle",
 	doc_tree_too_deep: "too_deep",
+	doc_link_exists: "link_exists",
 };
 
 const forbiddenKinds: Record<string, DocFailure["kind"]> = {
@@ -283,6 +305,7 @@ const failureMessages: Record<DocFailure["kind"], string> = {
 	has_children: "Docs are still filed under this one. Move or archive them first.",
 	cycle: "A doc cannot be filed under itself, or under anything already beneath it.",
 	too_deep: "That would nest docs more than ten levels deep. Pick somewhere shallower.",
+	link_exists: "This doc already links there.",
 	not_editable: "You can read this doc, but only its author, its contributors, and its maintainers can change it.",
 	not_shareable: "You cannot share this doc with that audience. Only its author or a maintainer can change who reads it.",
 	not_found: "That doc is gone, or it is not shared with you.",
