@@ -17,6 +17,7 @@ export function destinations(workspace: string): Destination[] {
 		{ id: "go-triage", label: "Triage", href: at("/triage") },
 		{ id: "go-issues", label: "Issues", href: at("/issues") },
 		{ id: "go-projects", label: "Projects", href: at("/projects") },
+		{ id: "go-docs", label: "Docs", href: at("/docs") },
 		{ id: "go-settings", label: "Settings", href: at("/settings") },
 	];
 }

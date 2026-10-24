@@ -89,9 +89,11 @@
 	import PriorityPicker from "$lib/issues/priority-picker.svelte";
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import Editor from "$lib/editor/editor.svelte";
+	import EditConflict from "$lib/editor/edit-conflict.svelte";
+	import SaveStatus from "$lib/editor/save-status.svelte";
 	import CriteriaPanel from "$lib/issues/criteria-panel.svelte";
 	import DescriptionHistory from "$lib/issues/description-history.svelte";
-	import { Autosave, saveLine, type SaveOutcome } from "$lib/editor/autosave.svelte";
+	import { Autosave, type SaveOutcome } from "$lib/editor/autosave.svelte";
 	import {
 		asDocument,
 		documentEmpty,
@@ -2421,63 +2423,18 @@
 									/>
 
 									{#if describedConflict}
-										<div class="flex flex-col gap-2 rounded-md border border-line-strong p-2.5">
-											<p class="text-sm text-ink-900">
-												Somebody saved a different description while you were writing. Neither
-												has been thrown away.
-											</p>
-											<div class="grid gap-2.5 sm:grid-cols-2">
-												<div class="flex min-w-0 flex-col gap-1">
-													<Eyebrow class="text-ink-600">Yours</Eyebrow>
-													<div
-														class="max-h-40 min-w-0 overflow-y-auto rounded-sm border border-line-subtle p-2"
-													>
-														<Editor
-															document={describedConflict.mine}
-															workspaceId={data.workspace.id}
-															workspace={data.workspace.slug}
-															disabled
-															minHeight="min-h-0"
-															label="The description you wrote"
-														/>
-													</div>
-												</div>
-												<div class="flex min-w-0 flex-col gap-1">
-													<Eyebrow class="text-ink-600">Theirs</Eyebrow>
-													<div
-														class="max-h-40 min-w-0 overflow-y-auto rounded-sm border border-line-subtle p-2"
-													>
-														<Editor
-															document={describedConflict.theirs}
-															workspaceId={data.workspace.id}
-															workspace={data.workspace.slug}
-															disabled
-															minHeight="min-h-0"
-															label="The description that was saved"
-														/>
-													</div>
-												</div>
-											</div>
-											<div class="flex flex-wrap items-center gap-2">
-												<Button
-													type="button"
-													size="sm"
-													disabled={$submitting}
-													onclick={keepMine}
-												>
-													Keep mine
-												</Button>
-												<Button
-													type="button"
-													variant="secondary"
-													size="sm"
-													disabled={$submitting}
-													onclick={takeTheirs}
-												>
-													Take theirs
-												</Button>
-											</div>
-										</div>
+										<EditConflict
+											mine={describedConflict.mine}
+											theirs={describedConflict.theirs}
+											workspaceId={data.workspace.id}
+											workspace={data.workspace.slug}
+											summary="Somebody saved a different description while you were writing. Neither has been thrown away."
+											mineLabel="The description you wrote"
+											theirsLabel="The description that was saved"
+											busy={$submitting}
+											onkeep={keepMine}
+											ontake={takeTheirs}
+										/>
 									{/if}
 
 									<div class="flex flex-wrap items-center gap-2">
@@ -2497,29 +2454,7 @@
 											<Kbd keys="⌘ ↵" /> save
 										</span>
 										<span class="flex-1"></span>
-										{#if saveLine(describeSaver.state)}
-											<span
-												class="text-xs {describeSaver.state.kind === 'saved'
-													? 'text-muted-foreground'
-													: describeSaver.state.kind === 'waiting' ||
-														  describeSaver.state.kind === 'saving'
-														? 'text-muted-foreground'
-														: 'text-destructive'}"
-												aria-live="polite"
-											>
-												{saveLine(describeSaver.state)}
-											</span>
-										{/if}
-										{#if describeSaver.state.kind === "failed" || describeSaver.state.kind === "unknown"}
-											<Button
-												type="button"
-												variant="secondary"
-												size="sm"
-												onclick={() => void describeSaver.flush()}
-											>
-												Try again
-											</Button>
-										{/if}
+										<SaveStatus standing={describeSaver.state} onretry={() => void describeSaver.flush()} />
 									</div>
 								</div>
 							{:else if issue.description.trim() || unsaved}

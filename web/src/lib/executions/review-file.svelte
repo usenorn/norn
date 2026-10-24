@@ -10,6 +10,9 @@
 	import ReviewThread from "./review-thread.svelte";
 	import {
 		anchorOf,
+		diffCodeTones,
+		diffGutterTones,
+		diffMarks,
 		fileStatusLabel,
 		hunkExcerpt,
 		sameAnchor,
@@ -79,17 +82,6 @@
 	const status = $derived(fileStatusLabel(file));
 	const rows = $derived(layout === "split" && shown ? splitRows(shown.hunks) : []);
 
-	const gutter = {
-		add: "bg-success/15 text-ink-600",
-		remove: "bg-destructive/15 text-ink-600",
-		context: "text-muted-foreground",
-	};
-	const code = {
-		add: "bg-success/10 text-ink-900",
-		remove: "bg-destructive/10 text-ink-900",
-		context: "text-ink-900",
-	};
-	const marks = { add: "+", remove: "−", context: " " };
 
 	function threadsOn(line: DiffLine | undefined): Thread[] {
 		if (!line) return [];
@@ -302,15 +294,15 @@
 								</tr>
 								{#each hunk.lines as line, lineIndex (lineIndex)}
 									<tr class="group/line">
-										<td class="relative w-10 min-w-10 px-2 text-right select-none {gutter[line.kind]}">
+										<td class="relative w-10 min-w-10 px-2 text-right select-none {diffGutterTones[line.kind]}">
 											{@render commentButton(line)}
 											{line.oldLine ?? ""}
 										</td>
-										<td class="w-10 min-w-10 px-2 text-right select-none {gutter[line.kind]}">
+										<td class="w-10 min-w-10 px-2 text-right select-none {diffGutterTones[line.kind]}">
 											{line.newLine ?? ""}
 										</td>
-										<td class="px-2 whitespace-pre {code[line.kind]}"
-											><span class="select-none text-muted-foreground">{marks[line.kind]}</span>{@render source(line)}</td
+										<td class="px-2 whitespace-pre {diffCodeTones[line.kind]}"
+											><span class="select-none text-muted-foreground">{diffMarks[line.kind]}</span>{@render source(line)}</td
 										>
 									</tr>
 									{@render discussion(threadsOn(line), line, 3)}
@@ -339,7 +331,7 @@
 								{:else}
 									<tr class="group/line">
 										<td
-											class="relative px-2 text-right select-none {row.left ? gutter[row.left.kind] : 'bg-paper-1'}"
+											class="relative px-2 text-right select-none {row.left ? diffGutterTones[row.left.kind] : 'bg-paper-1'}"
 										>
 											{#if row.left && row.left.kind === "remove"}
 												{@render commentButton(row.left)}
@@ -348,11 +340,11 @@
 										</td>
 										<td
 											class="px-2 break-all whitespace-pre-wrap {row.left
-												? code[row.left.kind]
+												? diffCodeTones[row.left.kind]
 												: 'bg-paper-1'}">{@render source(row.left)}</td
 										>
 										<td
-											class="relative px-2 text-right select-none {row.right ? gutter[row.right.kind] : 'bg-paper-1'}"
+											class="relative px-2 text-right select-none {row.right ? diffGutterTones[row.right.kind] : 'bg-paper-1'}"
 										>
 											{#if row.right}
 												{@render commentButton(row.right)}
@@ -361,7 +353,7 @@
 										</td>
 										<td
 											class="px-2 break-all whitespace-pre-wrap {row.right
-												? code[row.right.kind]
+												? diffCodeTones[row.right.kind]
 												: 'bg-paper-1'}">{@render source(row.right)}</td
 										>
 									</tr>

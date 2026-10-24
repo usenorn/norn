@@ -63,6 +63,7 @@ const declared = [
 	{ id: "go-triage", keys: ["g t"], label: "Triage", group: "navigation" },
 	{ id: "go-issues", keys: ["g i"], label: "Issues", group: "navigation" },
 	{ id: "go-projects", keys: ["g p"], label: "Projects", group: "navigation" },
+	{ id: "go-docs", keys: ["g d"], label: "Docs", group: "navigation" },
 	{ id: "go-settings", keys: ["g s"], label: "Settings", group: "navigation" },
 
 	{ id: "cursor-down", keys: ["j", "arrowdown"], label: "Move down", group: "list" },

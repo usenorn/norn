@@ -3436,6 +3436,7 @@ func docDTO(doc entity.Doc) api.Doc {
 		Markdown:        doc.Markdown,
 		Content:         docContentDTO(doc.Content),
 		ContributorIds:  contributors,
+		Viewer:          api.DocViewer{CanEdit: doc.Viewer.Edits, CanShare: doc.Viewer.Reshares},
 	}
 }
 

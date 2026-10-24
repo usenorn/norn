@@ -14,6 +14,7 @@
 		glyphEngaged,
 		active = false,
 		expanded = false,
+		size = "row",
 		ontoggle,
 		action,
 		children,
@@ -27,6 +28,7 @@
 		glyphEngaged?: IconNode;
 		active?: boolean;
 		expanded?: boolean;
+		size?: "row" | "touch";
 		ontoggle: () => void;
 		action?: Snippet;
 		children: Snippet;
@@ -38,18 +40,19 @@
 	data-slot="sidebar-row"
 	data-active={active}
 	class={cn(
-		"relative isolate flex h-6.75 items-center gap-0.5 rounded-xs pr-1 motion-control hover:bg-accent data-[active=true]:rule-inset data-[active=true]:bg-accent",
+		"relative isolate flex items-center gap-0.5 pr-1 motion-control hover:bg-accent data-[active=true]:rule-inset data-[active=true]:bg-accent",
+		size === "touch" ? "h-11 rounded-sm" : "h-6.75 rounded-xs",
 		className
 	)}
 >
-	<SidebarItem {href} {label} {icon} {glyph} {glyphEngaged} {active} stretched class="min-w-0" />
+	<SidebarItem {href} {label} {icon} {glyph} {glyphEngaged} {active} {size} stretched class="min-w-0" />
 	<button
 		type="button"
 		onclick={ontoggle}
 		aria-expanded={expanded}
 		aria-controls={id}
 		aria-label="{expanded ? 'Collapse' : 'Expand'} {label}"
-		class="relative z-1 flex size-5 shrink-0 items-center justify-center rounded-xs text-ink-600 motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+		class="relative z-1 flex shrink-0 items-center justify-center rounded-xs text-ink-600 {size === 'touch' ? 'size-9' : 'size-5'} motion-control hover:bg-accent hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
 	>
 		<MorphIcon
 			icon={expanded ? ChevronDown : ChevronRight}

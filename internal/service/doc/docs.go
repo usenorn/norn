@@ -144,7 +144,7 @@ func (s *docsService) Create(
 		return entity.Doc{}, err
 	}
 
-	return created, nil
+	return created.ViewedBy(decision.Reader), nil
 }
 
 func (s *docsService) Get(ctx context.Context, workspaceID, docID uuid.UUID) (entity.Doc, error) {
@@ -153,11 +153,12 @@ func (s *docsService) Get(ctx context.Context, workspaceID, docID uuid.UUID) (en
 		return entity.Doc{}, err
 	}
 
-	if _, err := s.knowledge.Read(ctx, doc.Access()); err != nil {
+	decision, err := s.knowledge.Read(ctx, doc.Access())
+	if err != nil {
 		return entity.Doc{}, concealed(err)
 	}
 
-	return doc, nil
+	return doc.ViewedBy(decision.Reader), nil
 }
 
 func (s *docsService) List(
@@ -589,7 +590,10 @@ func (s *docsService) revise(
 	authorize authorization,
 	apply alteration,
 ) (entity.Doc, error) {
-	var revised entity.Doc
+	var (
+		revised entity.Doc
+		reader  entity.KnowledgeReader
+	)
 
 	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		doc, err := s.docs.LockByID(ctx, workspaceID, docID)
@@ -601,6 +605,8 @@ func (s *docsService) revise(
 		if err != nil {
 			return concealed(err)
 		}
+
+		reader = decision.Reader
 
 		if err := doc.Expect(expectedVersion); err != nil {
 			return err
@@ -632,7 +638,7 @@ func (s *docsService) revise(
 		return entity.Doc{}, err
 	}
 
-	return revised, nil
+	return revised.ViewedBy(reader), nil
 }
 
 func (s *docsService) record(

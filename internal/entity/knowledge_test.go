@@ -78,16 +78,18 @@ func TestKnowledgeIsReadAndChangedOnlyByItsAudience(t *testing.T) {
 	}
 
 	cases := []struct {
-		name   string
-		reader entity.KnowledgeReader
-		sees   []string
-		edits  []string
+		name     string
+		reader   entity.KnowledgeReader
+		sees     []string
+		edits    []string
+		reshares []string
 	}{
 		{
-			name:   "the author",
-			reader: withProjects(world.reader(person(world.author), entity.MembershipRoleMember), project...),
-			sees:   []string{"personal", "project", "workspace"},
-			edits:  []string{"personal", "project", "workspace"},
+			name:     "the author",
+			reader:   withProjects(world.reader(person(world.author), entity.MembershipRoleMember), project...),
+			sees:     []string{"personal", "project", "workspace"},
+			edits:    []string{"personal", "project", "workspace"},
+			reshares: []string{"personal", "project", "workspace"},
 		},
 		{
 			name:   "a contributor on the project",
@@ -113,8 +115,9 @@ func TestKnowledgeIsReadAndChangedOnlyByItsAudience(t *testing.T) {
 
 				return reader
 			}(),
-			sees:  []string{"project", "workspace"},
-			edits: []string{"project"},
+			sees:     []string{"project", "workspace"},
+			edits:    []string{"project"},
+			reshares: []string{"project"},
 		},
 		{
 			name: "an admin off the project",
@@ -124,8 +127,9 @@ func TestKnowledgeIsReadAndChangedOnlyByItsAudience(t *testing.T) {
 
 				return reader
 			}(),
-			sees:  []string{"project", "workspace"},
-			edits: []string{"project", "workspace"},
+			sees:     []string{"project", "workspace"},
+			edits:    []string{"project", "workspace"},
+			reshares: []string{"project", "workspace"},
 		},
 		{
 			name: "the author's personal agent",
@@ -133,8 +137,9 @@ func TestKnowledgeIsReadAndChangedOnlyByItsAudience(t *testing.T) {
 				world.reader(agentActing(world.author, entity.AgentScopeMember, nil), entity.MembershipRoleMember),
 				project...,
 			),
-			sees:  []string{"personal", "project", "workspace"},
-			edits: []string{"personal", "project", "workspace"},
+			sees:     []string{"personal", "project", "workspace"},
+			edits:    []string{"personal", "project", "workspace"},
+			reshares: []string{"personal", "project", "workspace"},
 		},
 		{
 			name:   "another member's personal agent",
@@ -175,6 +180,7 @@ func TestKnowledgeIsReadAndChangedOnlyByItsAudience(t *testing.T) {
 			item := world.items[string(visibility)]
 			sees := slices.Contains(tc.sees, string(visibility))
 			edits := slices.Contains(tc.edits, string(visibility))
+			reshares := slices.Contains(tc.reshares, string(visibility))
 
 			if got := tc.reader.Sees(item); got != sees {
 				t.Errorf("%s sees %s knowledge = %v, want %v", tc.name, visibility, got, sees)
@@ -182,6 +188,10 @@ func TestKnowledgeIsReadAndChangedOnlyByItsAudience(t *testing.T) {
 
 			if got := tc.reader.Edits(item); got != edits {
 				t.Errorf("%s edits %s knowledge = %v, want %v", tc.name, visibility, got, edits)
+			}
+
+			if got := tc.reader.Reshares(item); got != reshares {
+				t.Errorf("%s reshares %s knowledge = %v, want %v", tc.name, visibility, got, reshares)
 			}
 
 			readErr := tc.reader.Read(item)

@@ -10,10 +10,10 @@
 	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import { Label } from "$lib/components/ui/label/index.js";
 	import { priorityLabel } from "$lib/issues/issues";
+	import { docAudienceLabels } from "$lib/docs/docs";
 	import {
 		actionLabels,
 		changePartLabels,
-		docAudienceLabels,
 		proposalSummary,
 		type AgentProposal,
 		type ChangePart,

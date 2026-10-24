@@ -7237,6 +7237,9 @@ type Doc struct {
 	Title          string               `json:"title"`
 	UpdatedAt      time.Time            `json:"updatedAt"`
 	Version        int32                `json:"version"`
+
+	// Viewer What the caller may do with this doc under the permission model.
+	Viewer DocViewer `json:"viewer"`
 }
 
 // DocAudience defines model for DocAudience.
@@ -7341,6 +7344,12 @@ type DocSummary struct {
 	Title           string              `json:"title"`
 	UpdatedAt       time.Time           `json:"updatedAt"`
 	Version         int32               `json:"version"`
+}
+
+// DocViewer What the caller may do with this doc under the permission model.
+type DocViewer struct {
+	CanEdit  bool `json:"canEdit"`
+	CanShare bool `json:"canShare"`
 }
 
 // DocVisibility defines model for DocVisibility.

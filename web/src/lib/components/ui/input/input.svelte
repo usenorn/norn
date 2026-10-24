@@ -8,6 +8,7 @@
 				default:
 					"border-input hover:border-ink-400 hover:bg-accent focus-visible:border-ring focus-visible:bg-accent focus-visible:rule-under aria-invalid:border-destructive aria-invalid:[--rule-under-color:var(--destructive)]",
 				seamless: "border-transparent",
+				title: "h-auto border-transparent p-0 text-xl font-medium tracking-snug",
 			},
 		},
 		defaultVariants: { variant: "default" },

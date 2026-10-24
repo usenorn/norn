@@ -1110,11 +1110,10 @@
 									{...props}
 									bind:ref={titleField}
 									bind:value={$formData.title}
-									variant="seamless"
+									variant="title"
 									placeholder="Issue title"
 									disabled={busy || Boolean(raised)}
 									onkeydown={submitOnMeta}
-									class="h-auto p-0 text-xl font-medium tracking-snug"
 								/>
 							{/snippet}
 						</Form.Control>
