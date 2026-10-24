@@ -48,6 +48,7 @@ func NewTools(
 	searches service.Searches,
 	sourceControl service.SourceControl,
 	docs service.Docs,
+	docLinks service.DocLinks,
 ) (*Tools, error) {
 	set := &toolset{
 		issues:         issues,
@@ -64,6 +65,7 @@ func NewTools(
 		searches:       searches,
 		sourceControl:  sourceControl,
 		docs:           docs,
+		docLinks:       docLinks,
 	}
 
 	tools := &Tools{byName: map[string]hostedTool{}}

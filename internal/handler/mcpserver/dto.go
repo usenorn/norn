@@ -491,6 +491,46 @@ func docSummaryDTOFrom(summary entity.DocSummary) docSummaryDTO {
 	return dto
 }
 
+type linkedProjectDTO struct {
+	ID   string `json:"id"`
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+}
+
+type docLinkDTO struct {
+	ID      string            `json:"id"`
+	Target  string            `json:"target"`
+	Issue   *relatedIssueDTO  `json:"issue,omitempty"`
+	Project *linkedProjectDTO `json:"project,omitempty"`
+}
+
+func docLinkDTOFrom(link entity.DocLink) docLinkDTO {
+	dto := docLinkDTO{ID: link.ID.String(), Target: string(link.Target)}
+
+	switch link.Target {
+	case entity.DocLinkTargetIssue:
+		dto.Issue = &relatedIssueDTO{
+			ID:        link.Issue.ID.String(),
+			Reference: link.Issue.Reference(),
+			Title:     link.Issue.Title,
+			State: stateRef{
+				ID:       link.Issue.State.ID.String(),
+				Name:     link.Issue.State.Name,
+				Category: string(link.Issue.State.Category),
+			},
+			Status: string(link.Issue.Status),
+		}
+	case entity.DocLinkTargetProject:
+		dto.Project = &linkedProjectDTO{
+			ID:   link.Project.ID.String(),
+			Slug: link.Project.Slug,
+			Name: link.Project.Name,
+		}
+	}
+
+	return dto
+}
+
 func docDTOFrom(doc entity.Doc) docDTO {
 	return docDTO{docSummaryDTO: docSummaryDTOFrom(doc.DocSummary), Markdown: doc.Markdown}
 }

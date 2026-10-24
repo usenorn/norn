@@ -47,6 +47,7 @@ type toolset struct {
 	searches       service.Searches
 	sourceControl  service.SourceControl
 	docs           service.Docs
+	docLinks       service.DocLinks
 }
 
 type Edge struct {
@@ -91,6 +92,7 @@ func (t *toolset) register(tools *Tools) {
 	additive := false
 	create := &mcp.ToolAnnotations{DestructiveHint: &additive}
 	update := &mcp.ToolAnnotations{DestructiveHint: &additive, IdempotentHint: true}
+	destructive := true
 
 	add(tools, &mcp.Tool{
 		Name: "norn_list_workspaces",
@@ -156,8 +158,8 @@ func (t *toolset) register(tools *Tools) {
 
 	add(tools, &mcp.Tool{
 		Name: "norn_get_doc",
-		Description: "Read one doc as Markdown with its audience, author and version. The " +
-			"version is the expected_version for norn_edit_doc.",
+		Description: "Read one doc as Markdown with its audience, author and version, and the " +
+			"issues and projects it links to. The version is the expected_version for norn_edit_doc.",
 		Annotations: read,
 	}, t.getDoc)
 
@@ -176,6 +178,19 @@ func (t *toolset) register(tools *Tools) {
 			"current version rather than overwriting their change.",
 		Annotations: update,
 	}, t.editDoc)
+
+	add(tools, &mcp.Tool{
+		Name: "norn_link_doc",
+		Description: "Link a doc to an issue or a project, so the issue or project page lists it " +
+			"for everyone allowed to read the doc. Only someone who may edit the doc can link it.",
+		Annotations: create,
+	}, t.linkDoc)
+
+	add(tools, &mcp.Tool{
+		Name:        "norn_unlink_doc",
+		Description: "Remove a doc's link to an issue or a project.",
+		Annotations: &mcp.ToolAnnotations{DestructiveHint: &destructive},
+	}, t.unlinkDoc)
 
 	add(tools, &mcp.Tool{
 		Name: "norn_list_projects",
@@ -265,8 +280,6 @@ func (t *toolset) register(tools *Tools) {
 			"that still has open sub-issues needs acknowledge_open_children.",
 		Annotations: update,
 	}, t.changeIssueState)
-
-	destructive := true
 
 	add(tools, &mcp.Tool{
 		Name: "norn_set_issue_status",

@@ -49,8 +49,24 @@ type editDocInput struct {
 	Section         *string `json:"section,omitempty" jsonschema:"the exact text of a heading; replaces that heading and everything beneath it up to the next heading of the same or a higher level"`
 }
 
+type linkDocInput struct {
+	Workspace string `json:"workspace" jsonschema:"the workspace slug or id"`
+	Doc       string `json:"doc" jsonschema:"the doc id"`
+	Issue     string `json:"issue,omitempty" jsonschema:"the issue reference like ENG-42, or its id; name an issue or a project, not both"`
+	Project   string `json:"project,omitempty" jsonschema:"the project slug or id; name an issue or a project, not both"`
+}
+
 type docOutput struct {
 	Doc docDTO `json:"doc"`
+}
+
+type linkedDocOutput struct {
+	Doc   docDTO       `json:"doc"`
+	Links []docLinkDTO `json:"links"`
+}
+
+type docLinkOutput struct {
+	Link docLinkDTO `json:"link"`
 }
 
 type docListOutput struct {
@@ -142,23 +158,134 @@ func (t *toolset) getDoc(
 	ctx context.Context,
 	_ *mcp.CallToolRequest,
 	input getDocInput,
-) (*mcp.CallToolResult, docOutput, error) {
+) (*mcp.CallToolResult, linkedDocOutput, error) {
 	workspace, err := t.resolveWorkspace(ctx, input.Workspace)
 	if err != nil {
-		return nil, docOutput{}, toolFailure(ctx, err)
+		return nil, linkedDocOutput{}, toolFailure(ctx, err)
 	}
 
 	docID, err := docReference(input.Doc)
 	if err != nil {
-		return nil, docOutput{}, toolFailure(ctx, err)
+		return nil, linkedDocOutput{}, toolFailure(ctx, err)
 	}
 
 	doc, err := t.docs.Get(ctx, workspace.ID, docID)
 	if err != nil {
-		return nil, docOutput{}, toolFailure(ctx, err)
+		return nil, linkedDocOutput{}, toolFailure(ctx, err)
 	}
 
-	return nil, docOutput{Doc: docDTOFrom(doc)}, nil
+	links, err := t.docLinks.List(ctx, workspace.ID, docID)
+	if err != nil {
+		return nil, linkedDocOutput{}, toolFailure(ctx, err)
+	}
+
+	output := linkedDocOutput{Doc: docDTOFrom(doc), Links: make([]docLinkDTO, 0, len(links))}
+
+	for _, link := range links {
+		output.Links = append(output.Links, docLinkDTOFrom(link))
+	}
+
+	return nil, output, nil
+}
+
+func (t *toolset) linkTarget(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	input linkDocInput,
+) (service.LinkDocInput, error) {
+	var target service.LinkDocInput
+
+	if strings.TrimSpace(input.Issue) != "" {
+		issue, err := t.resolveIssue(ctx, workspaceID, input.Issue)
+		if err != nil {
+			return service.LinkDocInput{}, err
+		}
+
+		target.IssueID = issue.ID
+	}
+
+	if strings.TrimSpace(input.Project) != "" {
+		project, err := t.resolveProject(ctx, workspaceID, input.Project)
+		if err != nil {
+			return service.LinkDocInput{}, err
+		}
+
+		target.ProjectID = project.Project.ID
+	}
+
+	if _, err := entity.DocLinkTargetOf(target.IssueID, target.ProjectID); err != nil {
+		return service.LinkDocInput{}, refusal("invalid_input", "name an issue or a project to link, not both")
+	}
+
+	return target, nil
+}
+
+func (t *toolset) linkDoc(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input linkDocInput,
+) (*mcp.CallToolResult, docLinkOutput, error) {
+	workspace, err := t.resolveWorkspace(ctx, input.Workspace)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	docID, err := docReference(input.Doc)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	target, err := t.linkTarget(ctx, workspace.ID, input)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	link, err := t.docLinks.Link(ctx, workspace.ID, docID, target)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	return nil, docLinkOutput{Link: docLinkDTOFrom(link)}, nil
+}
+
+func (t *toolset) unlinkDoc(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input linkDocInput,
+) (*mcp.CallToolResult, docLinkOutput, error) {
+	workspace, err := t.resolveWorkspace(ctx, input.Workspace)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	docID, err := docReference(input.Doc)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	target, err := t.linkTarget(ctx, workspace.ID, input)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	links, err := t.docLinks.List(ctx, workspace.ID, docID)
+	if err != nil {
+		return nil, docLinkOutput{}, toolFailure(ctx, err)
+	}
+
+	for _, link := range links {
+		if link.Issue.ID != target.IssueID || link.Project.ID != target.ProjectID {
+			continue
+		}
+
+		if err := t.docLinks.Unlink(ctx, workspace.ID, docID, link.ID); err != nil {
+			return nil, docLinkOutput{}, toolFailure(ctx, err)
+		}
+
+		return nil, docLinkOutput{Link: docLinkDTOFrom(link)}, nil
+	}
+
+	return nil, docLinkOutput{}, toolFailure(ctx, entity.ErrDocLinkNotFound)
 }
 
 func (t *toolset) createDoc(
