@@ -3869,7 +3869,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Find issues, comments, projects, teams and people by typing words */
+        /** Find issues, comments, projects, teams, people and docs by typing words */
         get: operations["searchWorkspace"];
         put?: never;
         post?: never;
@@ -10328,7 +10328,7 @@ export interface components {
             updatedAt: string;
         };
         /** @enum {string} */
-        SearchKind: "issue" | "comment" | "project" | "team" | "person";
+        SearchKind: "issue" | "comment" | "project" | "team" | "person" | "doc";
     };
     responses: {
         /** @description A problem occurred */

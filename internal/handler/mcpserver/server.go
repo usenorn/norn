@@ -132,8 +132,8 @@ func (t *toolset) register(tools *Tools) {
 
 	add(tools, &mcp.Tool{
 		Name: "norn_search",
-		Description: "Full-text search across issues, comments, projects, teams, and people " +
-			"in one workspace.",
+		Description: "Full-text search across issues, comments, projects, teams, people, and the docs " +
+			"you can read in one workspace.",
 		Annotations: read,
 	}, t.search)
 

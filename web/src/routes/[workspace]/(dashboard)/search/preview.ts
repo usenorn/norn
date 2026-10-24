@@ -79,6 +79,21 @@ export const searchPreviewStates: Record<string, SearchPreview> = import.meta.en
 							],
 						},
 						{
+							kind: "doc",
+							more: false,
+							results: [
+								{
+									kind: "doc",
+									id: "00000000-0000-4000-8000-0000000000c1",
+									title: "Payments retry runbook",
+									excerpt: "When a charge times out, wait for the retry before refunding by hand",
+									status: "active",
+									titleHit: true,
+									updatedAt: "2026-08-03T14:20:00Z",
+								},
+							],
+						},
+						{
 							kind: "person",
 							more: false,
 							results: [

@@ -4371,6 +4371,7 @@ func (e SavedViewSharing) Valid() bool {
 // Defines values for SearchKind.
 const (
 	SearchKindComment SearchKind = "comment"
+	SearchKindDoc     SearchKind = "doc"
 	SearchKindIssue   SearchKind = "issue"
 	SearchKindPerson  SearchKind = "person"
 	SearchKindProject SearchKind = "project"
@@ -4381,6 +4382,8 @@ const (
 func (e SearchKind) Valid() bool {
 	switch e {
 	case SearchKindComment:
+		return true
+	case SearchKindDoc:
 		return true
 	case SearchKindIssue:
 		return true
@@ -15077,7 +15080,7 @@ type ClientInterface interface {
 	// Corresponds with PATCH /workspaces/{workspaceId}/saved-views/{savedViewId} (the `UpdateWorkspaceSavedView` operationId).
 	UpdateWorkspaceSavedView(ctx context.Context, workspaceId WorkspaceId, savedViewId SavedViewId, body UpdateWorkspaceSavedViewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+	// SearchWorkspace Find issues, comments, projects, teams, people and docs by typing words
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/search (the `SearchWorkspace` operationId).
 	SearchWorkspace(ctx context.Context, workspaceId WorkspaceId, params *SearchWorkspaceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -22572,7 +22575,7 @@ func (c *Client) UpdateWorkspaceSavedView(ctx context.Context, workspaceId Works
 	return c.Client.Do(req)
 }
 
-// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+// SearchWorkspace Find issues, comments, projects, teams, people and docs by typing words
 //
 // Corresponds with GET /workspaces/{workspaceId}/search (the `SearchWorkspace` operationId).
 func (c *Client) SearchWorkspace(ctx context.Context, workspaceId WorkspaceId, params *SearchWorkspaceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -46191,7 +46194,7 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PATCH /workspaces/{workspaceId}/saved-views/{savedViewId} (the `UpdateWorkspaceSavedView` operationId).
 	UpdateWorkspaceSavedViewWithResponse(ctx context.Context, workspaceId WorkspaceId, savedViewId SavedViewId, body UpdateWorkspaceSavedViewJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWorkspaceSavedViewResponse, error)
 
-	// SearchWorkspaceWithResponse Find issues, comments, projects, teams and people by typing words
+	// SearchWorkspaceWithResponse Find issues, comments, projects, teams, people and docs by typing words
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -81198,7 +81201,7 @@ func (c *ClientWithResponses) UpdateWorkspaceSavedViewWithResponse(ctx context.C
 	return ParseUpdateWorkspaceSavedViewResponse(rsp)
 }
 
-// SearchWorkspaceWithResponse Find issues, comments, projects, teams and people by typing words
+// SearchWorkspaceWithResponse Find issues, comments, projects, teams, people and docs by typing words
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -106738,7 +106741,7 @@ type ServerInterface interface {
 	// UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
 	// (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
 	UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, savedViewId SavedViewId)
-	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+	// SearchWorkspace Find issues, comments, projects, teams, people and docs by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams)
 	// ResolveSkillSource List the skills a repository, skills.sh page, or install command points at
@@ -108844,7 +108847,7 @@ func (_ Unimplemented) UpdateWorkspaceSavedView(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+// SearchWorkspace Find issues, comments, projects, teams, people and docs by typing words
 // (GET /workspaces/{workspaceId}/search)
 func (_ Unimplemented) SearchWorkspace(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params SearchWorkspaceParams) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -161636,7 +161639,7 @@ type StrictServerInterface interface {
 	// UpdateWorkspaceSavedView Rename a view, re-scope who it is shared with, or replace what it asks for
 	// (PATCH /workspaces/{workspaceId}/saved-views/{savedViewId})
 	UpdateWorkspaceSavedView(ctx context.Context, request UpdateWorkspaceSavedViewRequestObject) (UpdateWorkspaceSavedViewResponseObject, error)
-	// SearchWorkspace Find issues, comments, projects, teams and people by typing words
+	// SearchWorkspace Find issues, comments, projects, teams, people and docs by typing words
 	// (GET /workspaces/{workspaceId}/search)
 	SearchWorkspace(ctx context.Context, request SearchWorkspaceRequestObject) (SearchWorkspaceResponseObject, error)
 	// ResolveSkillSource List the skills a repository, skills.sh page, or install command points at

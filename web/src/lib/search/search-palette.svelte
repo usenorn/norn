@@ -5,6 +5,7 @@
 	import ChevronLeft from "@lucide/svelte/icons/chevron-left";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
+	import FileText from "@lucide/svelte/icons/file-text";
 	import CommandIcon from "@lucide/svelte/icons/command";
 	import Info from "@lucide/svelte/icons/info";
 	import Layers from "@lucide/svelte/icons/layers";
@@ -145,6 +146,7 @@
 		project: Layers,
 		team: Users,
 		person: UserRound,
+		doc: FileText,
 	};
 
 	const scope = $derived(preview?.scope ?? targets.scope);
