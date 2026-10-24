@@ -1,0 +1,261 @@
+package memory
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/usenorn/norn/internal/config"
+	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/postgres"
+	"github.com/usenorn/norn/internal/repository"
+)
+
+var errMemoryRollback = errors.New("roll the memory fixture back")
+
+const memoryFixtureQuery = `
+WITH workspace AS (
+    INSERT INTO workspaces (id, slug, name) VALUES ($1, $2, 'Memory fixture')
+    RETURNING id
+), author AS (
+    INSERT INTO accounts (id, status, kind, email, display_name, timezone)
+    VALUES ($3, 'active', 'person', $4, 'Rae', 'UTC')
+    RETURNING id
+), project AS (
+    INSERT INTO workspace_projects (workspace_id, slug, name)
+    SELECT id, 'platform', 'Platform' FROM workspace
+    RETURNING id
+), doc AS (
+    INSERT INTO workspace_docs (id, workspace_id, title, content, visibility, author_account_id)
+    SELECT $5, workspace.id, 'Storage notes', '{"type":"doc"}', 'personal', author.id FROM workspace, author
+    RETURNING id, workspace_id
+), revision AS (
+    INSERT INTO workspace_doc_revisions (id, workspace_id, doc_id, version, action, title, content, visibility, source)
+    SELECT $6, workspace_id, id, 1, 'created', 'Storage notes', '{"type":"doc"}', 'personal', 'person' FROM doc
+    RETURNING id
+)
+SELECT project.id FROM project, revision`
+
+type memoryFixture struct {
+	workspaceID, authorID, projectID, docID, docRevisionID uuid.UUID
+}
+
+func withMemoryFixture(
+	t *testing.T,
+	run func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error,
+) {
+	t.Helper()
+
+	dsn := strings.TrimSpace(os.Getenv("NORN_POSTGRES_DSN"))
+	if dsn == "" {
+		t.Skip("NORN_POSTGRES_DSN is unset, so there is no database to test")
+	}
+
+	client, cleanup, err := postgres.New(config.Postgres{
+		DSN:             dsn,
+		MaxConns:        2,
+		MinConns:        1,
+		MaxConnLifetime: time.Hour,
+		MaxConnIdleTime: 30 * time.Minute,
+		ConnectTimeout:  10 * time.Second,
+	})
+	if err != nil {
+		t.Fatalf("connect to postgres: %v", err)
+	}
+	defer cleanup()
+
+	var failure error
+
+	err = client.WithTx(context.Background(), func(ctx context.Context) error {
+		fixture := memoryFixture{
+			workspaceID:   uuid.New(),
+			authorID:      uuid.New(),
+			docID:         uuid.New(),
+			docRevisionID: uuid.New(),
+		}
+
+		if err := client.Querier(ctx).QueryRowContext(
+			ctx,
+			memoryFixtureQuery,
+			fixture.workspaceID,
+			"memories-"+fixture.workspaceID.String()[:8],
+			fixture.authorID,
+			fixture.authorID.String()+"@example.test",
+			fixture.docID,
+			fixture.docRevisionID,
+		).Scan(&fixture.projectID); err != nil {
+			failure = fmt.Errorf("lay memory fixture: %w", err)
+
+			return errMemoryRollback
+		}
+
+		failure = run(ctx, client, fixture)
+
+		return errMemoryRollback
+	})
+	if !errors.Is(err, errMemoryRollback) {
+		t.Fatalf("transaction: %v", err)
+	}
+
+	if failure != nil {
+		t.Fatal(failure)
+	}
+}
+
+func draftMemory(fixture memoryFixture, statement string, audience entity.KnowledgeAudience, at time.Time) entity.Memory {
+	return entity.Memory{
+		ID:            uuid.New(),
+		WorkspaceID:   fixture.workspaceID,
+		Kind:          entity.MemoryKindConstraint,
+		Statement:     statement,
+		Conditions:    "local prototypes only",
+		Audience:      audience,
+		Status:        entity.MemoryStatusAccepted,
+		Basis:         entity.MemoryBasisObservation,
+		AuthorID:      fixture.authorID,
+		By:            entity.KnowledgeAttribution{AccountID: fixture.authorID, Source: entity.RevisionSourcePerson},
+		EffectiveFrom: entity.MemoryDay(at),
+		Version:       1,
+		CreatedAt:     at,
+		UpdatedAt:     at,
+	}
+}
+
+func TestAMemoryReadsBackWithItsEvidenceAndRefusesAStaleWrite(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := New(client)
+		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
+		until := entity.MemoryDay(at.AddDate(0, 3, 0))
+		agentID := uuid.New()
+
+		draft := draftMemory(fixture, "Use SQLite", entity.ProjectAudience(fixture.projectID), at)
+		draft.Applicability = entity.KnowledgeApplicability{ProjectID: &fixture.projectID, Component: "storage"}
+		draft.EffectiveUntil = &until
+		draft.By.AgentID = &agentID
+		draft.Evidence = []entity.MemoryEvidence{
+			{Kind: entity.MemoryEvidenceExcerpt, Excerpt: "the build broke on SQLite"},
+			{Kind: entity.MemoryEvidenceDocRevision, DocID: &fixture.docID, DocRevisionID: &fixture.docRevisionID},
+		}
+
+		if err := memories.Create(ctx, draft); err != nil {
+			return fmt.Errorf("create memory: %w", err)
+		}
+
+		created, err := memories.GetByID(ctx, fixture.workspaceID, draft.ID)
+		if err != nil {
+			return fmt.Errorf("read memory: %w", err)
+		}
+
+		if created.Statement != "Use SQLite" || created.Applicability.Component != "storage" ||
+			created.Applicability.ProjectID == nil || *created.Applicability.ProjectID != fixture.projectID {
+			return fmt.Errorf("memory read back as %+v", created)
+		}
+
+		if created.EffectiveUntil == nil || !created.EffectiveUntil.Equal(until) || !created.EffectiveFrom.Equal(entity.MemoryDay(at)) {
+			return fmt.Errorf("effective dates read back as %v to %v", created.EffectiveFrom, created.EffectiveUntil)
+		}
+
+		if created.By.AgentID == nil || *created.By.AgentID != agentID || created.AuthorName != "Rae" {
+			return fmt.Errorf("provenance read back as %+v by %q", created.By, created.AuthorName)
+		}
+
+		if len(created.Evidence) != 2 || created.Evidence[0].Excerpt != "the build broke on SQLite" {
+			return fmt.Errorf("evidence read back as %+v", created.Evidence)
+		}
+
+		cited := created.Evidence[1]
+		if cited.DocAudience.Visibility != entity.KnowledgeVisibilityPersonal || cited.DocAuthorID != fixture.authorID {
+			return fmt.Errorf("a cited doc revision lost its doc's audience: %+v", cited)
+		}
+
+		corrected := created
+		corrected.Version, corrected.Statement = 2, "Use SQLite for local prototypes"
+		corrected.Evidence = created.Evidence[1:]
+
+		if err := memories.Update(ctx, corrected, 1); err != nil {
+			return fmt.Errorf("correct memory: %w", err)
+		}
+
+		if err := memories.Update(ctx, corrected, 1); !errors.Is(err, entity.ErrMemoryStale) {
+			return fmt.Errorf("a write against version 1 after version 2 got %v, want ErrMemoryStale", err)
+		}
+
+		read, err := memories.GetByID(ctx, fixture.workspaceID, draft.ID)
+		if err != nil {
+			return fmt.Errorf("re-read memory: %w", err)
+		}
+
+		if read.Version != 2 || len(read.Evidence) != 1 || read.Evidence[0].Kind != entity.MemoryEvidenceDocRevision {
+			return fmt.Errorf("the correction read back as version %d with evidence %+v", read.Version, read.Evidence)
+		}
+
+		return nil
+	})
+}
+
+func TestTheMemoryListHonoursTheReaderAndItsFilters(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := New(client)
+		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
+
+		shared := draftMemory(fixture, "Ship weekly", entity.WorkspaceAudience(), at)
+		project := draftMemory(fixture, "Freeze on Fridays", entity.ProjectAudience(fixture.projectID), at.Add(time.Minute))
+		personal := draftMemory(fixture, "I prefer tabs", entity.PersonalAudience(), at.Add(2*time.Minute))
+		personal.Kind = entity.MemoryKindPreference
+		proposed := draftMemory(fixture, "Cache everything", entity.WorkspaceAudience(), at.Add(3*time.Minute))
+		proposed.Status = entity.MemoryStatusProposed
+
+		for _, memory := range []entity.Memory{shared, project, personal, proposed} {
+			if err := memories.Create(ctx, memory); err != nil {
+				return fmt.Errorf("create %q: %w", memory.Statement, err)
+			}
+		}
+
+		page := entity.MemoryPage{Limit: 10}
+		preference := entity.MemoryKindPreference
+
+		for name, testCase := range map[string]struct {
+			filter repository.MemoryFilter
+			want   []string
+		}{
+			"a stranger to the project": {
+				filter: repository.MemoryFilter{},
+				want:   []string{"Cache everything", "Ship weekly"},
+			},
+			"the author on the project": {
+				filter: repository.MemoryFilter{ProjectIDs: []uuid.UUID{fixture.projectID}, PersonalAuthorID: fixture.authorID},
+				want:   []string{"Cache everything", "I prefer tabs", "Freeze on Fridays", "Ship weekly"},
+			},
+			"accepted only": {
+				filter: repository.MemoryFilter{AllProjects: true, Statuses: []entity.MemoryStatus{entity.MemoryStatusAccepted}},
+				want:   []string{"Freeze on Fridays", "Ship weekly"},
+			},
+			"preferences only": {
+				filter: repository.MemoryFilter{Kind: &preference, PersonalAuthorID: fixture.authorID},
+				want:   []string{"I prefer tabs"},
+			},
+		} {
+			listed, err := memories.List(ctx, fixture.workspaceID, testCase.filter, page)
+			if err != nil {
+				return fmt.Errorf("%s: list: %w", name, err)
+			}
+
+			got := make([]string, 0, len(listed))
+			for _, memory := range listed {
+				got = append(got, memory.Statement)
+			}
+
+			if strings.Join(got, "|") != strings.Join(testCase.want, "|") {
+				return fmt.Errorf("%s: listed %v, want %v", name, got, testCase.want)
+			}
+		}
+
+		return nil
+	})
+}
