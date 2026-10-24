@@ -647,7 +647,7 @@ func (s *docsService) record(
 	action entity.DocRevisionAction,
 	decision entity.KnowledgeDecision,
 ) (entity.Doc, error) {
-	if err := s.revisions.Record(ctx, doc.Revision(action, entity.DocAttributionOf(decision))); err != nil {
+	if err := s.revisions.Record(ctx, doc.Revision(action, entity.KnowledgeAttributionOf(decision))); err != nil {
 		return entity.Doc{}, err
 	}
 

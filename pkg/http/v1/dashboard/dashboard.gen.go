@@ -3606,6 +3606,153 @@ func (e MembershipSource) Valid() bool {
 	}
 }
 
+// Defines values for MemoryBasis.
+const (
+	Inference   MemoryBasis = "inference"
+	Observation MemoryBasis = "observation"
+)
+
+// Valid indicates whether the value is a known member of the MemoryBasis enum.
+func (e MemoryBasis) Valid() bool {
+	switch e {
+	case Inference:
+		return true
+	case Observation:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryConflictProblemCode.
+const (
+	MemoryClosed            MemoryConflictProblemCode = "memory_closed"
+	MemoryStale             MemoryConflictProblemCode = "memory_stale"
+	MemoryTransitionInvalid MemoryConflictProblemCode = "memory_transition_invalid"
+)
+
+// Valid indicates whether the value is a known member of the MemoryConflictProblemCode enum.
+func (e MemoryConflictProblemCode) Valid() bool {
+	switch e {
+	case MemoryClosed:
+		return true
+	case MemoryStale:
+		return true
+	case MemoryTransitionInvalid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryEvidenceKind.
+const (
+	MemoryEvidenceKindComment     MemoryEvidenceKind = "comment"
+	MemoryEvidenceKindDocRevision MemoryEvidenceKind = "doc_revision"
+	MemoryEvidenceKindExcerpt     MemoryEvidenceKind = "excerpt"
+	MemoryEvidenceKindIssue       MemoryEvidenceKind = "issue"
+)
+
+// Valid indicates whether the value is a known member of the MemoryEvidenceKind enum.
+func (e MemoryEvidenceKind) Valid() bool {
+	switch e {
+	case MemoryEvidenceKindComment:
+		return true
+	case MemoryEvidenceKindDocRevision:
+		return true
+	case MemoryEvidenceKindExcerpt:
+		return true
+	case MemoryEvidenceKindIssue:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryKind.
+const (
+	MemoryKindConstraint MemoryKind = "constraint"
+	MemoryKindDecision   MemoryKind = "decision"
+	MemoryKindLesson     MemoryKind = "lesson"
+	MemoryKindPreference MemoryKind = "preference"
+)
+
+// Valid indicates whether the value is a known member of the MemoryKind enum.
+func (e MemoryKind) Valid() bool {
+	switch e {
+	case MemoryKindConstraint:
+		return true
+	case MemoryKindDecision:
+		return true
+	case MemoryKindLesson:
+		return true
+	case MemoryKindPreference:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryRevisionAction.
+const (
+	MemoryRevisionActionAccepted   MemoryRevisionAction = "accepted"
+	MemoryRevisionActionCorrected  MemoryRevisionAction = "corrected"
+	MemoryRevisionActionCreated    MemoryRevisionAction = "created"
+	MemoryRevisionActionDisputed   MemoryRevisionAction = "disputed"
+	MemoryRevisionActionReshared   MemoryRevisionAction = "reshared"
+	MemoryRevisionActionSuperseded MemoryRevisionAction = "superseded"
+	MemoryRevisionActionWithdrawn  MemoryRevisionAction = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the MemoryRevisionAction enum.
+func (e MemoryRevisionAction) Valid() bool {
+	switch e {
+	case MemoryRevisionActionAccepted:
+		return true
+	case MemoryRevisionActionCorrected:
+		return true
+	case MemoryRevisionActionCreated:
+		return true
+	case MemoryRevisionActionDisputed:
+		return true
+	case MemoryRevisionActionReshared:
+		return true
+	case MemoryRevisionActionSuperseded:
+		return true
+	case MemoryRevisionActionWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryStatus.
+const (
+	MemoryStatusAccepted   MemoryStatus = "accepted"
+	MemoryStatusDisputed   MemoryStatus = "disputed"
+	MemoryStatusProposed   MemoryStatus = "proposed"
+	MemoryStatusSuperseded MemoryStatus = "superseded"
+	MemoryStatusWithdrawn  MemoryStatus = "withdrawn"
+)
+
+// Valid indicates whether the value is a known member of the MemoryStatus enum.
+func (e MemoryStatus) Valid() bool {
+	switch e {
+	case MemoryStatusAccepted:
+		return true
+	case MemoryStatusDisputed:
+		return true
+	case MemoryStatusProposed:
+		return true
+	case MemoryStatusSuperseded:
+		return true
+	case MemoryStatusWithdrawn:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MirrorConflictWinner.
 const (
 	MirrorConflictWinnerNorn   MirrorConflictWinner = "norn"
@@ -3805,6 +3952,7 @@ func (e PreviewProblemCode) Valid() bool {
 const (
 	ProjectConflictProblemCodeProjectArchived        ProjectConflictProblemCode = "project_archived"
 	ProjectConflictProblemCodeProjectHasDocs         ProjectConflictProblemCode = "project_has_docs"
+	ProjectConflictProblemCodeProjectHasMemories     ProjectConflictProblemCode = "project_has_memories"
 	ProjectConflictProblemCodeProjectHasScopedAgents ProjectConflictProblemCode = "project_has_scoped_agents"
 	ProjectConflictProblemCodeProjectLinksFull       ProjectConflictProblemCode = "project_links_full"
 	ProjectConflictProblemCodeProjectMemberExists    ProjectConflictProblemCode = "project_member_exists"
@@ -3819,6 +3967,8 @@ func (e ProjectConflictProblemCode) Valid() bool {
 	case ProjectConflictProblemCodeProjectArchived:
 		return true
 	case ProjectConflictProblemCodeProjectHasDocs:
+		return true
+	case ProjectConflictProblemCodeProjectHasMemories:
 		return true
 	case ProjectConflictProblemCodeProjectHasScopedAgents:
 		return true
@@ -6765,6 +6915,29 @@ type ConnectSourceControlRequest struct {
 	Token    *string               `json:"token,omitempty"`
 }
 
+// CorrectMemoryRequest defines model for CorrectMemoryRequest.
+type CorrectMemoryRequest struct {
+	// AppliesTo Where the memory applies. It never decides who may read it.
+	AppliesTo *MemoryApplicability `json:"appliesTo,omitempty"`
+
+	// Basis Whether the memory records what was directly observed or what an agent inferred.
+	Basis *MemoryBasis `json:"basis,omitempty"`
+
+	// Conditions When the memory holds, such as "local prototypes only".
+	Conditions *string `json:"conditions,omitempty"`
+
+	// EffectiveFrom The day the memory starts to hold. Leave it out for the day it is recorded.
+	EffectiveFrom *openapi_types.Date `json:"effectiveFrom,omitempty"`
+
+	// EffectiveUntil The last day the memory holds. Leave it out when it holds until replaced.
+	EffectiveUntil  *openapi_types.Date `json:"effectiveUntil,omitempty"`
+	Evidence        *[]MemoryEvidence   `json:"evidence,omitempty"`
+	ExpectedVersion int32               `json:"expectedVersion"`
+	Kind            MemoryKind          `json:"kind"`
+	Rationale       *string             `json:"rationale,omitempty"`
+	Statement       string              `json:"statement"`
+}
+
 // CreateAgentTelegramLinkRequest defines model for CreateAgentTelegramLinkRequest.
 type CreateAgentTelegramLinkRequest struct {
 	Purpose TelegramLinkPurpose `json:"purpose"`
@@ -6834,6 +7007,29 @@ type CreateLabelRequest struct {
 	GroupId     *openapi_types.UUID `json:"groupId,omitempty"`
 	Name        string              `json:"name"`
 	TeamId      *openapi_types.UUID `json:"teamId,omitempty"`
+}
+
+// CreateMemoryRequest defines model for CreateMemoryRequest.
+type CreateMemoryRequest struct {
+	// AppliesTo Where the memory applies. It never decides who may read it.
+	AppliesTo *MemoryApplicability `json:"appliesTo,omitempty"`
+	Audience  DocAudience          `json:"audience"`
+
+	// Basis Whether the memory records what was directly observed or what an agent inferred.
+	Basis *MemoryBasis `json:"basis,omitempty"`
+
+	// Conditions When the memory holds, such as "local prototypes only".
+	Conditions *string `json:"conditions,omitempty"`
+
+	// EffectiveFrom The day the memory starts to hold. Leave it out for the day it is recorded.
+	EffectiveFrom *openapi_types.Date `json:"effectiveFrom,omitempty"`
+
+	// EffectiveUntil The last day the memory holds. Leave it out when it holds until replaced.
+	EffectiveUntil *openapi_types.Date `json:"effectiveUntil,omitempty"`
+	Evidence       *[]MemoryEvidence   `json:"evidence,omitempty"`
+	Kind           MemoryKind          `json:"kind"`
+	Rationale      *string             `json:"rationale,omitempty"`
+	Statement      string              `json:"statement"`
 }
 
 // CreateProjectRequest defines model for CreateProjectRequest.
@@ -8976,6 +9172,179 @@ type MembershipRole string
 // MembershipSource defines model for MembershipSource.
 type MembershipSource string
 
+// Memory defines model for Memory.
+type Memory struct {
+	AgentId *openapi_types.UUID `json:"agentId,omitempty"`
+
+	// AppliesTo Where the memory applies. It never decides who may read it.
+	AppliesTo       MemoryApplicability `json:"appliesTo"`
+	Audience        DocAudience         `json:"audience"`
+	AuthorAccountId *openapi_types.UUID `json:"authorAccountId,omitempty"`
+	AuthorName      *string             `json:"authorName,omitempty"`
+
+	// Basis Whether the memory records what was directly observed or what an agent inferred.
+	Basis          MemoryBasis          `json:"basis"`
+	Conditions     string               `json:"conditions"`
+	ConnectionId   *openapi_types.UUID  `json:"connectionId,omitempty"`
+	ContributorIds []openapi_types.UUID `json:"contributorIds"`
+
+	// CreatedAt When the memory was recorded.
+	CreatedAt      time.Time           `json:"createdAt"`
+	EffectiveFrom  openapi_types.Date  `json:"effectiveFrom"`
+	EffectiveUntil *openapi_types.Date `json:"effectiveUntil,omitempty"`
+	Evidence       []MemoryEvidence    `json:"evidence"`
+	Id             openapi_types.UUID  `json:"id"`
+	Kind           MemoryKind          `json:"kind"`
+	Rationale      string              `json:"rationale"`
+
+	// Source Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
+	Source         DocRevisionSource   `json:"source"`
+	Statement      string              `json:"statement"`
+	Status         MemoryStatus        `json:"status"`
+	SupersededById *openapi_types.UUID `json:"supersededById,omitempty"`
+	SupersedesId   *openapi_types.UUID `json:"supersedesId,omitempty"`
+	UpdatedAt      time.Time           `json:"updatedAt"`
+	Version        int32               `json:"version"`
+
+	// Viewer What the caller may do with this doc under the permission model.
+	Viewer DocViewer `json:"viewer"`
+}
+
+// MemoryApplicability Where the memory applies. It never decides who may read it.
+type MemoryApplicability struct {
+	Component *string `json:"component,omitempty"`
+
+	// ProjectId The project the memory applies to. Leave it out for the whole workspace.
+	ProjectId *openapi_types.UUID `json:"projectId,omitempty"`
+}
+
+// MemoryBasis Whether the memory records what was directly observed or what an agent inferred.
+type MemoryBasis string
+
+// MemoryConflictProblem defines model for MemoryConflictProblem.
+type MemoryConflictProblem struct {
+	Code     MemoryConflictProblemCode `json:"code"`
+	Detail   *string                   `json:"detail,omitempty"`
+	Errors   *[]FieldError             `json:"errors,omitempty"`
+	Instance *string                   `json:"instance,omitempty"`
+	Status   int32                     `json:"status"`
+	Title    string                    `json:"title"`
+	Type     string                    `json:"type"`
+
+	// Version The version the memory is at now, when the write was against an older one.
+	Version *int32 `json:"version,omitempty"`
+}
+
+// MemoryConflictProblemCode defines model for MemoryConflictProblem.Code.
+type MemoryConflictProblemCode string
+
+// MemoryContent defines model for MemoryContent.
+type MemoryContent struct {
+	// AppliesTo Where the memory applies. It never decides who may read it.
+	AppliesTo *MemoryApplicability `json:"appliesTo,omitempty"`
+
+	// Basis Whether the memory records what was directly observed or what an agent inferred.
+	Basis *MemoryBasis `json:"basis,omitempty"`
+
+	// Conditions When the memory holds, such as "local prototypes only".
+	Conditions *string `json:"conditions,omitempty"`
+
+	// EffectiveFrom The day the memory starts to hold. Leave it out for the day it is recorded.
+	EffectiveFrom *openapi_types.Date `json:"effectiveFrom,omitempty"`
+
+	// EffectiveUntil The last day the memory holds. Leave it out when it holds until replaced.
+	EffectiveUntil *openapi_types.Date `json:"effectiveUntil,omitempty"`
+	Evidence       *[]MemoryEvidence   `json:"evidence,omitempty"`
+	Kind           MemoryKind          `json:"kind"`
+	Rationale      *string             `json:"rationale,omitempty"`
+	Statement      string              `json:"statement"`
+}
+
+// MemoryEvidence One source the memory cites. An issue names issueId, a comment names commentId and is answered with its issue, a doc revision names docId and docRevisionId, and an excerpt carries the pasted text. A source the caller may not read is left out of the response.
+type MemoryEvidence struct {
+	CommentId     *openapi_types.UUID `json:"commentId,omitempty"`
+	DocId         *openapi_types.UUID `json:"docId,omitempty"`
+	DocRevisionId *openapi_types.UUID `json:"docRevisionId,omitempty"`
+	Excerpt       *string             `json:"excerpt,omitempty"`
+	IssueId       *openapi_types.UUID `json:"issueId,omitempty"`
+	Kind          MemoryEvidenceKind  `json:"kind"`
+}
+
+// MemoryEvidenceKind defines model for MemoryEvidenceKind.
+type MemoryEvidenceKind string
+
+// MemoryKind defines model for MemoryKind.
+type MemoryKind string
+
+// MemoryPage defines model for MemoryPage.
+type MemoryPage struct {
+	Memories   []Memory `json:"memories"`
+	NextCursor *string  `json:"nextCursor,omitempty"`
+}
+
+// MemoryRevision defines model for MemoryRevision.
+type MemoryRevision struct {
+	AccountId   *openapi_types.UUID  `json:"accountId,omitempty"`
+	AccountName *string              `json:"accountName,omitempty"`
+	Action      MemoryRevisionAction `json:"action"`
+	AgentId     *openapi_types.UUID  `json:"agentId,omitempty"`
+
+	// AppliesTo Where the memory applies. It never decides who may read it.
+	AppliesTo MemoryApplicability `json:"appliesTo"`
+	Audience  DocAudience         `json:"audience"`
+
+	// Basis Whether the memory records what was directly observed or what an agent inferred.
+	Basis          MemoryBasis         `json:"basis"`
+	Conditions     string              `json:"conditions"`
+	ConnectionId   *openapi_types.UUID `json:"connectionId,omitempty"`
+	CreatedAt      time.Time           `json:"createdAt"`
+	EffectiveFrom  openapi_types.Date  `json:"effectiveFrom"`
+	EffectiveUntil *openapi_types.Date `json:"effectiveUntil,omitempty"`
+	Evidence       []MemoryEvidence    `json:"evidence"`
+	Id             openapi_types.UUID  `json:"id"`
+	Kind           MemoryKind          `json:"kind"`
+	MemoryId       openapi_types.UUID  `json:"memoryId"`
+	Rationale      string              `json:"rationale"`
+
+	// Source Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
+	Source    DocRevisionSource `json:"source"`
+	Statement string            `json:"statement"`
+	Status    MemoryStatus      `json:"status"`
+	Version   int32             `json:"version"`
+}
+
+// MemoryRevisionAction defines model for MemoryRevisionAction.
+type MemoryRevisionAction string
+
+// MemoryRevisionPage defines model for MemoryRevisionPage.
+type MemoryRevisionPage struct {
+	NextCursor *string                 `json:"nextCursor,omitempty"`
+	Revisions  []MemoryRevisionSummary `json:"revisions"`
+}
+
+// MemoryRevisionSummary defines model for MemoryRevisionSummary.
+type MemoryRevisionSummary struct {
+	AccountId    *openapi_types.UUID  `json:"accountId,omitempty"`
+	AccountName  *string              `json:"accountName,omitempty"`
+	Action       MemoryRevisionAction `json:"action"`
+	AgentId      *openapi_types.UUID  `json:"agentId,omitempty"`
+	ConnectionId *openapi_types.UUID  `json:"connectionId,omitempty"`
+	CreatedAt    time.Time            `json:"createdAt"`
+	Id           openapi_types.UUID   `json:"id"`
+	MemoryId     openapi_types.UUID   `json:"memoryId"`
+
+	// Source Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
+	Source    DocRevisionSource `json:"source"`
+	Statement string            `json:"statement"`
+	Status    MemoryStatus      `json:"status"`
+
+	// Version The version of the memory this revision made.
+	Version int32 `json:"version"`
+}
+
+// MemoryStatus defines model for MemoryStatus.
+type MemoryStatus string
+
 // MentionTarget defines model for MentionTarget.
 type MentionTarget struct {
 	AccountId *openapi_types.UUID `json:"accountId,omitempty"`
@@ -10255,6 +10624,12 @@ type ShareDocRequest struct {
 	ExpectedVersion int32       `json:"expectedVersion"`
 }
 
+// ShareMemoryRequest defines model for ShareMemoryRequest.
+type ShareMemoryRequest struct {
+	Audience        DocAudience `json:"audience"`
+	ExpectedVersion int32       `json:"expectedVersion"`
+}
+
 // SharePreviewRequest defines model for SharePreviewRequest.
 type SharePreviewRequest struct {
 	// LifetimeSeconds How long the link lives. Left out, it lives for the instance default.
@@ -10648,6 +11023,13 @@ type SubmitReviewRequest struct {
 	Heads   []ReviewHead           `json:"heads"`
 	Summary *string                `json:"summary,omitempty"`
 	Verdict ExecutionReviewVerdict `json:"verdict"`
+}
+
+// SupersedeMemoryRequest defines model for SupersedeMemoryRequest.
+type SupersedeMemoryRequest struct {
+	// ExpectedVersion The version of the memory being replaced.
+	ExpectedVersion int32               `json:"expectedVersion"`
+	Replacement     CreateMemoryRequest `json:"replacement"`
 }
 
 // SuppressIssueAutomationRequest defines model for SuppressIssueAutomationRequest.
@@ -11092,6 +11474,11 @@ type WebhookSigningUnavailableProblemCode string
 // WeekDay defines model for WeekDay.
 type WeekDay string
 
+// WithdrawMemoryRequest defines model for WithdrawMemoryRequest.
+type WithdrawMemoryRequest struct {
+	ExpectedVersion int32 `json:"expectedVersion"`
+}
+
 // WorkflowState defines model for WorkflowState.
 type WorkflowState struct {
 	Category     StateCategory      `json:"category"`
@@ -11380,6 +11767,9 @@ type LabelId = openapi_types.UUID
 // MemberKindFilter defines model for MemberKindFilter.
 type MemberKindFilter = []AccountKind
 
+// MemoryId defines model for MemoryId.
+type MemoryId = openapi_types.UUID
+
 // NotificationSubjectId defines model for NotificationSubjectId.
 type NotificationSubjectId = openapi_types.UUID
 
@@ -11556,6 +11946,9 @@ type LabelConflict = LabelConflictProblem
 
 // MembershipConflict defines model for MembershipConflict.
 type MembershipConflict = MembershipConflictProblem
+
+// MemoryConflict defines model for MemoryConflict.
+type MemoryConflict = MemoryConflictProblem
 
 // PasswordResetLinkExpired defines model for PasswordResetLinkExpired.
 type PasswordResetLinkExpired = ResetLinkExpiredProblem
@@ -11854,6 +12247,29 @@ type ListWorkspaceMembersParams struct {
 // RemoveWorkspaceMemberParams defines parameters for RemoveWorkspaceMember.
 type RemoveWorkspaceMemberParams struct {
 	ReassignTo *openapi_types.UUID `form:"reassignTo,omitempty" json:"reassignTo,omitempty"`
+}
+
+// ListWorkspaceMemoriesParams defines parameters for ListWorkspaceMemories.
+type ListWorkspaceMemoriesParams struct {
+	Kind *MemoryKind `form:"kind,omitempty" json:"kind,omitempty"`
+
+	// Status Only memories in one of these statuses.
+	Status *[]MemoryStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// ProjectId Only the memories that apply to this project.
+	ProjectId *openapi_types.UUID `form:"projectId,omitempty" json:"projectId,omitempty"`
+
+	// Component Only the memories tagged with this component.
+	Component *string `form:"component,omitempty" json:"component,omitempty"`
+	Limit     *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor    *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWorkspaceMemoryRevisionsParams defines parameters for ListWorkspaceMemoryRevisions.
+type ListWorkspaceMemoryRevisionsParams struct {
+	// Limit How many revisions to return, newest first.
+	Limit  *RevisionLimit `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string        `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // ListWorkspaceNotificationsParams defines parameters for ListWorkspaceNotifications.
@@ -12249,6 +12665,21 @@ type ChangeWorkspaceMemberRoleJSONRequestBody = ChangeMemberRoleRequest
 
 // SetWorkspaceMemberAuditAccessJSONRequestBody defines body for SetWorkspaceMemberAuditAccess for application/json ContentType.
 type SetWorkspaceMemberAuditAccessJSONRequestBody = SetAuditAccessRequest
+
+// CreateWorkspaceMemoryJSONRequestBody defines body for CreateWorkspaceMemory for application/json ContentType.
+type CreateWorkspaceMemoryJSONRequestBody = CreateMemoryRequest
+
+// CorrectWorkspaceMemoryJSONRequestBody defines body for CorrectWorkspaceMemory for application/json ContentType.
+type CorrectWorkspaceMemoryJSONRequestBody = CorrectMemoryRequest
+
+// ShareWorkspaceMemoryJSONRequestBody defines body for ShareWorkspaceMemory for application/json ContentType.
+type ShareWorkspaceMemoryJSONRequestBody = ShareMemoryRequest
+
+// SupersedeWorkspaceMemoryJSONRequestBody defines body for SupersedeWorkspaceMemory for application/json ContentType.
+type SupersedeWorkspaceMemoryJSONRequestBody = SupersedeMemoryRequest
+
+// WithdrawWorkspaceMemoryJSONRequestBody defines body for WithdrawWorkspaceMemory for application/json ContentType.
+type WithdrawWorkspaceMemoryJSONRequestBody = WithdrawMemoryRequest
 
 // SetWorkspaceNotificationSettingsJSONRequestBody defines body for SetWorkspaceNotificationSettings for application/json ContentType.
 type SetWorkspaceNotificationSettingsJSONRequestBody = NotificationPreferences
@@ -14822,6 +15253,108 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/members/{accountId}/removal (the `PreviewWorkspaceMemberRemoval` operationId).
 	PreviewWorkspaceMemberRemoval(ctx context.Context, workspaceId WorkspaceId, accountId AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceMemories List the memories this caller may read, most recently changed first
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories (the `ListWorkspaceMemories` operationId).
+	ListWorkspaceMemories(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceMemoriesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWorkspaceMemoryWithBody Record a memory for an audience
+	//
+	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+	CreateWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWorkspaceMemory Record a memory for an audience
+	//
+	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+	CreateWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceMemory Read a memory
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId} (the `GetWorkspaceMemory` operationId).
+	GetWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CorrectWorkspaceMemoryWithBody Correct what a memory says against the version it was read at
+	//
+	// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+	CorrectWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CorrectWorkspaceMemory Correct what a memory says against the version it was read at
+	//
+	// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+	CorrectWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions (the `ListWorkspaceMemoryRevisions` operationId).
+	ListWorkspaceMemoryRevisions(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, params *ListWorkspaceMemoryRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceMemoryRevision Read a memory as one revision left it
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId} (the `GetWorkspaceMemoryRevision` operationId).
+	GetWorkspaceMemoryRevision(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ShareWorkspaceMemoryWithBody Change who may read a memory
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+	ShareWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ShareWorkspaceMemory Change who may read a memory
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+	ShareWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ShareWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SupersedeWorkspaceMemoryWithBody Record a memory that replaces this one
+	//
+	// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+	SupersedeWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SupersedeWorkspaceMemory Record a memory that replaces this one
+	//
+	// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+	SupersedeWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body SupersedeWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// WithdrawWorkspaceMemoryWithBody Withdraw a memory, keeping its history
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+	WithdrawWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// WithdrawWorkspaceMemory Withdraw a memory, keeping its history
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+	WithdrawWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body WithdrawWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWorkspaceNotificationSettings Read which events reach you and through which channel
 	//
@@ -21806,6 +22339,248 @@ func (c *Client) SetWorkspaceMemberAuditAccess(ctx context.Context, workspaceId 
 // Corresponds with GET /workspaces/{workspaceId}/members/{accountId}/removal (the `PreviewWorkspaceMemberRemoval` operationId).
 func (c *Client) PreviewWorkspaceMemberRemoval(ctx context.Context, workspaceId WorkspaceId, accountId AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPreviewWorkspaceMemberRemovalRequest(c.Server, workspaceId, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceMemories List the memories this caller may read, most recently changed first
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories (the `ListWorkspaceMemories` operationId).
+func (c *Client) ListWorkspaceMemories(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceMemoriesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceMemoriesRequest(c.Server, workspaceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateWorkspaceMemoryWithBody Record a memory for an audience
+//
+// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+func (c *Client) CreateWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWorkspaceMemoryRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateWorkspaceMemory Record a memory for an audience
+//
+// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+func (c *Client) CreateWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWorkspaceMemoryRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceMemory Read a memory
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId} (the `GetWorkspaceMemory` operationId).
+func (c *Client) GetWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceMemoryRequest(c.Server, workspaceId, memoryId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CorrectWorkspaceMemoryWithBody Correct what a memory says against the version it was read at
+//
+// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+func (c *Client) CorrectWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCorrectWorkspaceMemoryRequestWithBody(c.Server, workspaceId, memoryId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CorrectWorkspaceMemory Correct what a memory says against the version it was read at
+//
+// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+func (c *Client) CorrectWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCorrectWorkspaceMemoryRequest(c.Server, workspaceId, memoryId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions (the `ListWorkspaceMemoryRevisions` operationId).
+func (c *Client) ListWorkspaceMemoryRevisions(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, params *ListWorkspaceMemoryRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceMemoryRevisionsRequest(c.Server, workspaceId, memoryId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceMemoryRevision Read a memory as one revision left it
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId} (the `GetWorkspaceMemoryRevision` operationId).
+func (c *Client) GetWorkspaceMemoryRevision(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceMemoryRevisionRequest(c.Server, workspaceId, memoryId, revisionId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ShareWorkspaceMemoryWithBody Change who may read a memory
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+func (c *Client) ShareWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewShareWorkspaceMemoryRequestWithBody(c.Server, workspaceId, memoryId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ShareWorkspaceMemory Change who may read a memory
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+func (c *Client) ShareWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ShareWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewShareWorkspaceMemoryRequest(c.Server, workspaceId, memoryId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SupersedeWorkspaceMemoryWithBody Record a memory that replaces this one
+//
+// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+func (c *Client) SupersedeWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSupersedeWorkspaceMemoryRequestWithBody(c.Server, workspaceId, memoryId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SupersedeWorkspaceMemory Record a memory that replaces this one
+//
+// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+func (c *Client) SupersedeWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body SupersedeWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSupersedeWorkspaceMemoryRequest(c.Server, workspaceId, memoryId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// WithdrawWorkspaceMemoryWithBody Withdraw a memory, keeping its history
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+func (c *Client) WithdrawWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewWithdrawWorkspaceMemoryRequestWithBody(c.Server, workspaceId, memoryId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// WithdrawWorkspaceMemory Withdraw a memory, keeping its history
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+func (c *Client) WithdrawWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body WithdrawWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewWithdrawWorkspaceMemoryRequest(c.Server, workspaceId, memoryId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -37086,6 +37861,559 @@ func NewPreviewWorkspaceMemberRemovalRequest(server string, workspaceId Workspac
 	return req, nil
 }
 
+// NewListWorkspaceMemoriesRequest constructs an http.Request for the ListWorkspaceMemories method
+func NewListWorkspaceMemoriesRequest(server string, workspaceId WorkspaceId, params *ListWorkspaceMemoriesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Kind != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "kind", *params.Kind, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "status", *params.Status, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ProjectId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "projectId", *params.ProjectId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Component != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "component", *params.Component, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateWorkspaceMemoryRequest calls the generic CreateWorkspaceMemory builder with application/json body
+func NewCreateWorkspaceMemoryRequest(server string, workspaceId WorkspaceId, body CreateWorkspaceMemoryJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateWorkspaceMemoryRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewCreateWorkspaceMemoryRequestWithBody constructs an http.Request for the CreateWorkspaceMemory method, with any body, and a specified content type
+func NewCreateWorkspaceMemoryRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetWorkspaceMemoryRequest constructs an http.Request for the GetWorkspaceMemory method
+func NewGetWorkspaceMemoryRequest(server string, workspaceId WorkspaceId, memoryId MemoryId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCorrectWorkspaceMemoryRequest calls the generic CorrectWorkspaceMemory builder with application/json body
+func NewCorrectWorkspaceMemoryRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCorrectWorkspaceMemoryRequestWithBody(server, workspaceId, memoryId, "application/json", bodyReader)
+}
+
+// NewCorrectWorkspaceMemoryRequestWithBody constructs an http.Request for the CorrectWorkspaceMemory method, with any body, and a specified content type
+func NewCorrectWorkspaceMemoryRequestWithBody(server string, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListWorkspaceMemoryRevisionsRequest constructs an http.Request for the ListWorkspaceMemoryRevisions method
+func NewListWorkspaceMemoryRevisionsRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, params *ListWorkspaceMemoryRevisionsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/revisions", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceMemoryRevisionRequest constructs an http.Request for the GetWorkspaceMemoryRevision method
+func NewGetWorkspaceMemoryRevisionRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "revisionId", revisionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/revisions/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewShareWorkspaceMemoryRequest calls the generic ShareWorkspaceMemory builder with application/json body
+func NewShareWorkspaceMemoryRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, body ShareWorkspaceMemoryJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewShareWorkspaceMemoryRequestWithBody(server, workspaceId, memoryId, "application/json", bodyReader)
+}
+
+// NewShareWorkspaceMemoryRequestWithBody constructs an http.Request for the ShareWorkspaceMemory method, with any body, and a specified content type
+func NewShareWorkspaceMemoryRequestWithBody(server string, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/share", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSupersedeWorkspaceMemoryRequest calls the generic SupersedeWorkspaceMemory builder with application/json body
+func NewSupersedeWorkspaceMemoryRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, body SupersedeWorkspaceMemoryJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSupersedeWorkspaceMemoryRequestWithBody(server, workspaceId, memoryId, "application/json", bodyReader)
+}
+
+// NewSupersedeWorkspaceMemoryRequestWithBody constructs an http.Request for the SupersedeWorkspaceMemory method, with any body, and a specified content type
+func NewSupersedeWorkspaceMemoryRequestWithBody(server string, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/supersede", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewWithdrawWorkspaceMemoryRequest calls the generic WithdrawWorkspaceMemory builder with application/json body
+func NewWithdrawWorkspaceMemoryRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, body WithdrawWorkspaceMemoryJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewWithdrawWorkspaceMemoryRequestWithBody(server, workspaceId, memoryId, "application/json", bodyReader)
+}
+
+// NewWithdrawWorkspaceMemoryRequestWithBody constructs an http.Request for the WithdrawWorkspaceMemory method, with any body, and a specified content type
+func NewWithdrawWorkspaceMemoryRequestWithBody(server string, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/withdraw", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetWorkspaceNotificationSettingsRequest constructs an http.Request for the GetWorkspaceNotificationSettings method
 func NewGetWorkspaceNotificationSettingsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
 	var err error
@@ -46245,6 +47573,116 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/members/{accountId}/removal (the `PreviewWorkspaceMemberRemoval` operationId).
 	PreviewWorkspaceMemberRemovalWithResponse(ctx context.Context, workspaceId WorkspaceId, accountId AccountId, reqEditors ...RequestEditorFn) (*PreviewWorkspaceMemberRemovalResponse, error)
+
+	// ListWorkspaceMemoriesWithResponse List the memories this caller may read, most recently changed first
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories (the `ListWorkspaceMemories` operationId).
+	ListWorkspaceMemoriesWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceMemoriesParams, reqEditors ...RequestEditorFn) (*ListWorkspaceMemoriesResponse, error)
+
+	// CreateWorkspaceMemoryWithBodyWithResponse Record a memory for an audience
+	//
+	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+	CreateWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWorkspaceMemoryResponse, error)
+
+	// CreateWorkspaceMemoryWithResponse Record a memory for an audience
+	//
+	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+	CreateWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWorkspaceMemoryResponse, error)
+
+	// GetWorkspaceMemoryWithResponse Read a memory
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId} (the `GetWorkspaceMemory` operationId).
+	GetWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*GetWorkspaceMemoryResponse, error)
+
+	// CorrectWorkspaceMemoryWithBodyWithResponse Correct what a memory says against the version it was read at
+	//
+	// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+	CorrectWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CorrectWorkspaceMemoryResponse, error)
+
+	// CorrectWorkspaceMemoryWithResponse Correct what a memory says against the version it was read at
+	//
+	// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+	CorrectWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*CorrectWorkspaceMemoryResponse, error)
+
+	// ListWorkspaceMemoryRevisionsWithResponse Read every change made to a memory, newest first
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions (the `ListWorkspaceMemoryRevisions` operationId).
+	ListWorkspaceMemoryRevisionsWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, params *ListWorkspaceMemoryRevisionsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceMemoryRevisionsResponse, error)
+
+	// GetWorkspaceMemoryRevisionWithResponse Read a memory as one revision left it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId} (the `GetWorkspaceMemoryRevision` operationId).
+	GetWorkspaceMemoryRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*GetWorkspaceMemoryRevisionResponse, error)
+
+	// ShareWorkspaceMemoryWithBodyWithResponse Change who may read a memory
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+	ShareWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ShareWorkspaceMemoryResponse, error)
+
+	// ShareWorkspaceMemoryWithResponse Change who may read a memory
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+	ShareWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ShareWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*ShareWorkspaceMemoryResponse, error)
+
+	// SupersedeWorkspaceMemoryWithBodyWithResponse Record a memory that replaces this one
+	//
+	// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+	SupersedeWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SupersedeWorkspaceMemoryResponse, error)
+
+	// SupersedeWorkspaceMemoryWithResponse Record a memory that replaces this one
+	//
+	// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+	SupersedeWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body SupersedeWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*SupersedeWorkspaceMemoryResponse, error)
+
+	// WithdrawWorkspaceMemoryWithBodyWithResponse Withdraw a memory, keeping its history
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+	WithdrawWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*WithdrawWorkspaceMemoryResponse, error)
+
+	// WithdrawWorkspaceMemoryWithResponse Withdraw a memory, keeping its history
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+	WithdrawWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body WithdrawWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*WithdrawWorkspaceMemoryResponse, error)
 
 	// GetWorkspaceNotificationSettingsWithResponse Read which events reach you and through which channel
 	//
@@ -66560,6 +67998,683 @@ func (r PreviewWorkspaceMemberRemovalResponse) ContentType() string {
 	return ""
 }
 
+type ListWorkspaceMemoriesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *MemoryPage
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceMemoriesResponse) GetJSON200() *MemoryPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceMemoriesResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceMemoriesResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ListWorkspaceMemoriesResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceMemoriesResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceMemoriesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceMemoriesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceMemoriesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceMemoriesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateWorkspaceMemoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Memory
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateWorkspaceMemoryResponse) GetJSON201() *Memory {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r CreateWorkspaceMemoryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r CreateWorkspaceMemoryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CreateWorkspaceMemoryResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r CreateWorkspaceMemoryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateWorkspaceMemoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateWorkspaceMemoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateWorkspaceMemoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceMemoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Memory
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceMemoryResponse) GetJSON200() *Memory {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceMemoryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceMemoryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceMemoryResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceMemoryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceMemoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceMemoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceMemoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CorrectWorkspaceMemoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Memory
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *MemoryConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r CorrectWorkspaceMemoryResponse) GetJSON200() *Memory {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r CorrectWorkspaceMemoryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r CorrectWorkspaceMemoryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r CorrectWorkspaceMemoryResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r CorrectWorkspaceMemoryResponse) GetApplicationproblemJSON409() *MemoryConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CorrectWorkspaceMemoryResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r CorrectWorkspaceMemoryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r CorrectWorkspaceMemoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CorrectWorkspaceMemoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CorrectWorkspaceMemoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CorrectWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceMemoryRevisionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *MemoryRevisionPage
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceMemoryRevisionsResponse) GetJSON200() *MemoryRevisionPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceMemoryRevisionsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceMemoryRevisionsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceMemoryRevisionsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ListWorkspaceMemoryRevisionsResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceMemoryRevisionsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceMemoryRevisionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceMemoryRevisionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceMemoryRevisionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceMemoryRevisionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceMemoryRevisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *MemoryRevision
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceMemoryRevisionResponse) GetJSON200() *MemoryRevision {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceMemoryRevisionResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceMemoryRevisionResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceMemoryRevisionResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceMemoryRevisionResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceMemoryRevisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceMemoryRevisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceMemoryRevisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceMemoryRevisionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ShareWorkspaceMemoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Memory
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *MemoryConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ShareWorkspaceMemoryResponse) GetJSON200() *Memory {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ShareWorkspaceMemoryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ShareWorkspaceMemoryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ShareWorkspaceMemoryResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ShareWorkspaceMemoryResponse) GetApplicationproblemJSON409() *MemoryConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ShareWorkspaceMemoryResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ShareWorkspaceMemoryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ShareWorkspaceMemoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ShareWorkspaceMemoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ShareWorkspaceMemoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ShareWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SupersedeWorkspaceMemoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Memory
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *MemoryConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r SupersedeWorkspaceMemoryResponse) GetJSON201() *Memory {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SupersedeWorkspaceMemoryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SupersedeWorkspaceMemoryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SupersedeWorkspaceMemoryResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SupersedeWorkspaceMemoryResponse) GetApplicationproblemJSON409() *MemoryConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SupersedeWorkspaceMemoryResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SupersedeWorkspaceMemoryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SupersedeWorkspaceMemoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SupersedeWorkspaceMemoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SupersedeWorkspaceMemoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SupersedeWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type WithdrawWorkspaceMemoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Memory
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *MemoryConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r WithdrawWorkspaceMemoryResponse) GetJSON200() *Memory {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r WithdrawWorkspaceMemoryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r WithdrawWorkspaceMemoryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r WithdrawWorkspaceMemoryResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r WithdrawWorkspaceMemoryResponse) GetApplicationproblemJSON409() *MemoryConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r WithdrawWorkspaceMemoryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r WithdrawWorkspaceMemoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r WithdrawWorkspaceMemoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r WithdrawWorkspaceMemoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r WithdrawWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetWorkspaceNotificationSettingsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -81332,6 +83447,200 @@ func (c *ClientWithResponses) PreviewWorkspaceMemberRemovalWithResponse(ctx cont
 		return nil, err
 	}
 	return ParsePreviewWorkspaceMemberRemovalResponse(rsp)
+}
+
+// ListWorkspaceMemoriesWithResponse List the memories this caller may read, most recently changed first
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories (the `ListWorkspaceMemories` operationId).
+func (c *ClientWithResponses) ListWorkspaceMemoriesWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceMemoriesParams, reqEditors ...RequestEditorFn) (*ListWorkspaceMemoriesResponse, error) {
+	rsp, err := c.ListWorkspaceMemories(ctx, workspaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceMemoriesResponse(rsp)
+}
+
+// CreateWorkspaceMemoryWithBodyWithResponse Record a memory for an audience
+//
+// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+func (c *ClientWithResponses) CreateWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWorkspaceMemoryResponse, error) {
+	rsp, err := c.CreateWorkspaceMemoryWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWorkspaceMemoryResponse(rsp)
+}
+
+// CreateWorkspaceMemoryWithResponse Record a memory for an audience
+//
+// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories (the `CreateWorkspaceMemory` operationId).
+func (c *ClientWithResponses) CreateWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWorkspaceMemoryResponse, error) {
+	rsp, err := c.CreateWorkspaceMemory(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWorkspaceMemoryResponse(rsp)
+}
+
+// GetWorkspaceMemoryWithResponse Read a memory
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId} (the `GetWorkspaceMemory` operationId).
+func (c *ClientWithResponses) GetWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*GetWorkspaceMemoryResponse, error) {
+	rsp, err := c.GetWorkspaceMemory(ctx, workspaceId, memoryId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceMemoryResponse(rsp)
+}
+
+// CorrectWorkspaceMemoryWithBodyWithResponse Correct what a memory says against the version it was read at
+//
+// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+func (c *ClientWithResponses) CorrectWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CorrectWorkspaceMemoryResponse, error) {
+	rsp, err := c.CorrectWorkspaceMemoryWithBody(ctx, workspaceId, memoryId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCorrectWorkspaceMemoryResponse(rsp)
+}
+
+// CorrectWorkspaceMemoryWithResponse Correct what a memory says against the version it was read at
+//
+// A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
+func (c *ClientWithResponses) CorrectWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*CorrectWorkspaceMemoryResponse, error) {
+	rsp, err := c.CorrectWorkspaceMemory(ctx, workspaceId, memoryId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCorrectWorkspaceMemoryResponse(rsp)
+}
+
+// ListWorkspaceMemoryRevisionsWithResponse Read every change made to a memory, newest first
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions (the `ListWorkspaceMemoryRevisions` operationId).
+func (c *ClientWithResponses) ListWorkspaceMemoryRevisionsWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, params *ListWorkspaceMemoryRevisionsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceMemoryRevisionsResponse, error) {
+	rsp, err := c.ListWorkspaceMemoryRevisions(ctx, workspaceId, memoryId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceMemoryRevisionsResponse(rsp)
+}
+
+// GetWorkspaceMemoryRevisionWithResponse Read a memory as one revision left it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId} (the `GetWorkspaceMemoryRevision` operationId).
+func (c *ClientWithResponses) GetWorkspaceMemoryRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*GetWorkspaceMemoryRevisionResponse, error) {
+	rsp, err := c.GetWorkspaceMemoryRevision(ctx, workspaceId, memoryId, revisionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceMemoryRevisionResponse(rsp)
+}
+
+// ShareWorkspaceMemoryWithBodyWithResponse Change who may read a memory
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+func (c *ClientWithResponses) ShareWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ShareWorkspaceMemoryResponse, error) {
+	rsp, err := c.ShareWorkspaceMemoryWithBody(ctx, workspaceId, memoryId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseShareWorkspaceMemoryResponse(rsp)
+}
+
+// ShareWorkspaceMemoryWithResponse Change who may read a memory
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/share (the `ShareWorkspaceMemory` operationId).
+func (c *ClientWithResponses) ShareWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ShareWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*ShareWorkspaceMemoryResponse, error) {
+	rsp, err := c.ShareWorkspaceMemory(ctx, workspaceId, memoryId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseShareWorkspaceMemoryResponse(rsp)
+}
+
+// SupersedeWorkspaceMemoryWithBodyWithResponse Record a memory that replaces this one
+//
+// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+func (c *ClientWithResponses) SupersedeWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SupersedeWorkspaceMemoryResponse, error) {
+	rsp, err := c.SupersedeWorkspaceMemoryWithBody(ctx, workspaceId, memoryId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSupersedeWorkspaceMemoryResponse(rsp)
+}
+
+// SupersedeWorkspaceMemoryWithResponse Record a memory that replaces this one
+//
+// An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/supersede (the `SupersedeWorkspaceMemory` operationId).
+func (c *ClientWithResponses) SupersedeWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body SupersedeWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*SupersedeWorkspaceMemoryResponse, error) {
+	rsp, err := c.SupersedeWorkspaceMemory(ctx, workspaceId, memoryId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSupersedeWorkspaceMemoryResponse(rsp)
+}
+
+// WithdrawWorkspaceMemoryWithBodyWithResponse Withdraw a memory, keeping its history
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+func (c *ClientWithResponses) WithdrawWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*WithdrawWorkspaceMemoryResponse, error) {
+	rsp, err := c.WithdrawWorkspaceMemoryWithBody(ctx, workspaceId, memoryId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseWithdrawWorkspaceMemoryResponse(rsp)
+}
+
+// WithdrawWorkspaceMemoryWithResponse Withdraw a memory, keeping its history
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw (the `WithdrawWorkspaceMemory` operationId).
+func (c *ClientWithResponses) WithdrawWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body WithdrawWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*WithdrawWorkspaceMemoryResponse, error) {
+	rsp, err := c.WithdrawWorkspaceMemory(ctx, workspaceId, memoryId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseWithdrawWorkspaceMemoryResponse(rsp)
 }
 
 // GetWorkspaceNotificationSettingsWithResponse Read which events reach you and through which channel
@@ -99052,6 +101361,548 @@ func ParsePreviewWorkspaceMemberRemovalResponse(rsp *http.Response) (*PreviewWor
 	return response, nil
 }
 
+// ParseListWorkspaceMemoriesResponse parses an HTTP response from a ListWorkspaceMemoriesWithResponse call
+func ParseListWorkspaceMemoriesResponse(rsp *http.Response) (*ListWorkspaceMemoriesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceMemoriesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MemoryPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateWorkspaceMemoryResponse parses an HTTP response from a CreateWorkspaceMemoryWithResponse call
+func ParseCreateWorkspaceMemoryResponse(rsp *http.Response) (*CreateWorkspaceMemoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateWorkspaceMemoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Memory
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceMemoryResponse parses an HTTP response from a GetWorkspaceMemoryWithResponse call
+func ParseGetWorkspaceMemoryResponse(rsp *http.Response) (*GetWorkspaceMemoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceMemoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Memory
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCorrectWorkspaceMemoryResponse parses an HTTP response from a CorrectWorkspaceMemoryWithResponse call
+func ParseCorrectWorkspaceMemoryResponse(rsp *http.Response) (*CorrectWorkspaceMemoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CorrectWorkspaceMemoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Memory
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest MemoryConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceMemoryRevisionsResponse parses an HTTP response from a ListWorkspaceMemoryRevisionsWithResponse call
+func ParseListWorkspaceMemoryRevisionsResponse(rsp *http.Response) (*ListWorkspaceMemoryRevisionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceMemoryRevisionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MemoryRevisionPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceMemoryRevisionResponse parses an HTTP response from a GetWorkspaceMemoryRevisionWithResponse call
+func ParseGetWorkspaceMemoryRevisionResponse(rsp *http.Response) (*GetWorkspaceMemoryRevisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceMemoryRevisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MemoryRevision
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseShareWorkspaceMemoryResponse parses an HTTP response from a ShareWorkspaceMemoryWithResponse call
+func ParseShareWorkspaceMemoryResponse(rsp *http.Response) (*ShareWorkspaceMemoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ShareWorkspaceMemoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Memory
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest MemoryConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSupersedeWorkspaceMemoryResponse parses an HTTP response from a SupersedeWorkspaceMemoryWithResponse call
+func ParseSupersedeWorkspaceMemoryResponse(rsp *http.Response) (*SupersedeWorkspaceMemoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SupersedeWorkspaceMemoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Memory
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest MemoryConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseWithdrawWorkspaceMemoryResponse parses an HTTP response from a WithdrawWorkspaceMemoryWithResponse call
+func ParseWithdrawWorkspaceMemoryResponse(rsp *http.Response) (*WithdrawWorkspaceMemoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &WithdrawWorkspaceMemoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Memory
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest MemoryConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetWorkspaceNotificationSettingsResponse parses an HTTP response from a GetWorkspaceNotificationSettingsWithResponse call
 func ParseGetWorkspaceNotificationSettingsResponse(rsp *http.Response) (*GetWorkspaceNotificationSettingsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -107839,6 +110690,33 @@ type ServerInterface interface {
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId)
+	// ListWorkspaceMemories List the memories this caller may read, most recently changed first
+	// (GET /workspaces/{workspaceId}/memories)
+	ListWorkspaceMemories(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMemoriesParams)
+	// CreateWorkspaceMemory Record a memory for an audience
+	// (POST /workspaces/{workspaceId}/memories)
+	CreateWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// GetWorkspaceMemory Read a memory
+	// (GET /workspaces/{workspaceId}/memories/{memoryId})
+	GetWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
+	// CorrectWorkspaceMemory Correct what a memory says against the version it was read at
+	// (PUT /workspaces/{workspaceId}/memories/{memoryId})
+	CorrectWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
+	// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
+	// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions)
+	ListWorkspaceMemoryRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId, params ListWorkspaceMemoryRevisionsParams)
+	// GetWorkspaceMemoryRevision Read a memory as one revision left it
+	// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId})
+	GetWorkspaceMemoryRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId)
+	// ShareWorkspaceMemory Change who may read a memory
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/share)
+	ShareWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
+	// SupersedeWorkspaceMemory Record a memory that replaces this one
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/supersede)
+	SupersedeWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
+	// WithdrawWorkspaceMemory Withdraw a memory, keeping its history
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw)
+	WithdrawWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
 	// GetWorkspaceNotificationSettings Read which events reach you and through which channel
 	// (GET /workspaces/{workspaceId}/notification-settings)
 	GetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -109837,6 +112715,60 @@ func (_ Unimplemented) SetWorkspaceMemberAuditAccess(w http.ResponseWriter, r *h
 // PreviewWorkspaceMemberRemoval Report what removing this member would affect
 // (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 func (_ Unimplemented) PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, accountId AccountId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceMemories List the memories this caller may read, most recently changed first
+// (GET /workspaces/{workspaceId}/memories)
+func (_ Unimplemented) ListWorkspaceMemories(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMemoriesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateWorkspaceMemory Record a memory for an audience
+// (POST /workspaces/{workspaceId}/memories)
+func (_ Unimplemented) CreateWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceMemory Read a memory
+// (GET /workspaces/{workspaceId}/memories/{memoryId})
+func (_ Unimplemented) GetWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CorrectWorkspaceMemory Correct what a memory says against the version it was read at
+// (PUT /workspaces/{workspaceId}/memories/{memoryId})
+func (_ Unimplemented) CorrectWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
+// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions)
+func (_ Unimplemented) ListWorkspaceMemoryRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId, params ListWorkspaceMemoryRevisionsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceMemoryRevision Read a memory as one revision left it
+// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId})
+func (_ Unimplemented) GetWorkspaceMemoryRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ShareWorkspaceMemory Change who may read a memory
+// (POST /workspaces/{workspaceId}/memories/{memoryId}/share)
+func (_ Unimplemented) ShareWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SupersedeWorkspaceMemory Record a memory that replaces this one
+// (POST /workspaces/{workspaceId}/memories/{memoryId}/supersede)
+func (_ Unimplemented) SupersedeWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// WithdrawWorkspaceMemory Withdraw a memory, keeping its history
+// (POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw)
+func (_ Unimplemented) WithdrawWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -119611,6 +122543,422 @@ func (siw *ServerInterfaceWrapper) PreviewWorkspaceMemberRemoval(w http.Response
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceMemories operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceMemories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceMemoriesParams
+
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", r.URL.Query(), &params.Kind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "kind"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "projectId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "projectId", r.URL.Query(), &params.ProjectId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "projectId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "projectId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "component" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "component", r.URL.Query(), &params.Component, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "component"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "component", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceMemories(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkspaceMemory operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkspaceMemory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkspaceMemory(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceMemory operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceMemory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceMemory(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CorrectWorkspaceMemory operation middleware
+func (siw *ServerInterfaceWrapper) CorrectWorkspaceMemory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CorrectWorkspaceMemory(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceMemoryRevisions operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceMemoryRevisions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceMemoryRevisionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceMemoryRevisions(w, r, workspaceId, memoryId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceMemoryRevision operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceMemoryRevision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "revisionId" -------------
+	var revisionId RevisionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "revisionId", chi.URLParam(r, "revisionId"), &revisionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "revisionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceMemoryRevision(w, r, workspaceId, memoryId, revisionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ShareWorkspaceMemory operation middleware
+func (siw *ServerInterfaceWrapper) ShareWorkspaceMemory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ShareWorkspaceMemory(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SupersedeWorkspaceMemory operation middleware
+func (siw *ServerInterfaceWrapper) SupersedeWorkspaceMemory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SupersedeWorkspaceMemory(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// WithdrawWorkspaceMemory operation middleware
+func (siw *ServerInterfaceWrapper) WithdrawWorkspaceMemory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.WithdrawWorkspaceMemory(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetWorkspaceNotificationSettings operation middleware
 func (siw *ServerInterfaceWrapper) GetWorkspaceNotificationSettings(w http.ResponseWriter, r *http.Request) {
 
@@ -125408,6 +128756,33 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/docs", wrapper.ListWorkspaceProjectDocs)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/memories", wrapper.ListWorkspaceMemories)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories", wrapper.CreateWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}", wrapper.GetWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}", wrapper.CorrectWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/supersede", wrapper.SupersedeWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/withdraw", wrapper.WithdrawWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/share", wrapper.ShareWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/revisions", wrapper.ListWorkspaceMemoryRevisions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId}", wrapper.GetWorkspaceMemoryRevision)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/roadmap", wrapper.GetWorkspaceRoadmap)
 	})
 	r.Group(func(r chi.Router) {
@@ -125899,6 +129274,8 @@ type IssueConflictApplicationProblemPlusJSONResponse IssueConflictProblem
 type LabelConflictApplicationProblemPlusJSONResponse LabelConflictProblem
 
 type MembershipConflictApplicationProblemPlusJSONResponse MembershipConflictProblem
+
+type MemoryConflictApplicationProblemPlusJSONResponse MemoryConflictProblem
 
 type PasswordResetLinkExpiredApplicationProblemPlusJSONResponse ResetLinkExpiredProblem
 
@@ -149974,6 +153351,879 @@ func (response PreviewWorkspaceMemberRemoval500ApplicationProblemPlusJSONRespons
 	return err
 }
 
+type ListWorkspaceMemoriesRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceMemoriesParams
+}
+
+type ListWorkspaceMemoriesResponseObject interface {
+	VisitListWorkspaceMemoriesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceMemories200JSONResponse MemoryPage
+
+func (response ListWorkspaceMemories200JSONResponse) VisitListWorkspaceMemoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemories401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceMemories401ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemories403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceMemories403ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemories422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceMemories422ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemories500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceMemories500ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceMemoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *CreateWorkspaceMemoryJSONRequestBody
+}
+
+type CreateWorkspaceMemoryResponseObject interface {
+	VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkspaceMemory201JSONResponse Memory
+
+func (response CreateWorkspaceMemory201JSONResponse) VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceMemory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceMemory401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceMemory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceMemory403ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceMemory422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceMemory422ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+}
+
+type GetWorkspaceMemoryResponseObject interface {
+	VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceMemory200JSONResponse Memory
+
+func (response GetWorkspaceMemory200JSONResponse) VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceMemory401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceMemory403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemory404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceMemory404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CorrectWorkspaceMemoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	Body        *CorrectWorkspaceMemoryJSONRequestBody
+}
+
+type CorrectWorkspaceMemoryResponseObject interface {
+	VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error
+}
+
+type CorrectWorkspaceMemory200JSONResponse Memory
+
+func (response CorrectWorkspaceMemory200JSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CorrectWorkspaceMemory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CorrectWorkspaceMemory401ApplicationProblemPlusJSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CorrectWorkspaceMemory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CorrectWorkspaceMemory403ApplicationProblemPlusJSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CorrectWorkspaceMemory404ApplicationProblemPlusJSONResponse Problem
+
+func (response CorrectWorkspaceMemory404ApplicationProblemPlusJSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CorrectWorkspaceMemory409ApplicationProblemPlusJSONResponse struct {
+	MemoryConflictApplicationProblemPlusJSONResponse
+}
+
+func (response CorrectWorkspaceMemory409ApplicationProblemPlusJSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CorrectWorkspaceMemory422ApplicationProblemPlusJSONResponse Problem
+
+func (response CorrectWorkspaceMemory422ApplicationProblemPlusJSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CorrectWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
+
+func (response CorrectWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemoryRevisionsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	Params      ListWorkspaceMemoryRevisionsParams
+}
+
+type ListWorkspaceMemoryRevisionsResponseObject interface {
+	VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceMemoryRevisions200JSONResponse MemoryRevisionPage
+
+func (response ListWorkspaceMemoryRevisions200JSONResponse) VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemoryRevisions401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceMemoryRevisions401ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemoryRevisions403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceMemoryRevisions403ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemoryRevisions404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceMemoryRevisions404ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemoryRevisions422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceMemoryRevisions422ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceMemoryRevisions500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceMemoryRevisions500ApplicationProblemPlusJSONResponse) VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRevisionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	RevisionId  RevisionId  `json:"revisionId"`
+}
+
+type GetWorkspaceMemoryRevisionResponseObject interface {
+	VisitGetWorkspaceMemoryRevisionResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceMemoryRevision200JSONResponse MemoryRevision
+
+func (response GetWorkspaceMemoryRevision200JSONResponse) VisitGetWorkspaceMemoryRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRevision401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceMemoryRevision401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRevision403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceMemoryRevision403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRevision404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceMemoryRevision404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRevision500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceMemoryRevision500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceMemoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	Body        *ShareWorkspaceMemoryJSONRequestBody
+}
+
+type ShareWorkspaceMemoryResponseObject interface {
+	VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error
+}
+
+type ShareWorkspaceMemory200JSONResponse Memory
+
+func (response ShareWorkspaceMemory200JSONResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceMemory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ShareWorkspaceMemory401ApplicationProblemPlusJSONResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceMemory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ShareWorkspaceMemory403ApplicationProblemPlusJSONResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceMemory404ApplicationProblemPlusJSONResponse Problem
+
+func (response ShareWorkspaceMemory404ApplicationProblemPlusJSONResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceMemory409ApplicationProblemPlusJSONResponse struct {
+	MemoryConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ShareWorkspaceMemory409ApplicationProblemPlusJSONResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceMemory422ApplicationProblemPlusJSONResponse Problem
+
+func (response ShareWorkspaceMemory422ApplicationProblemPlusJSONResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
+
+func (response ShareWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SupersedeWorkspaceMemoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	Body        *SupersedeWorkspaceMemoryJSONRequestBody
+}
+
+type SupersedeWorkspaceMemoryResponseObject interface {
+	VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error
+}
+
+type SupersedeWorkspaceMemory201JSONResponse Memory
+
+func (response SupersedeWorkspaceMemory201JSONResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SupersedeWorkspaceMemory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SupersedeWorkspaceMemory401ApplicationProblemPlusJSONResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SupersedeWorkspaceMemory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SupersedeWorkspaceMemory403ApplicationProblemPlusJSONResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SupersedeWorkspaceMemory404ApplicationProblemPlusJSONResponse Problem
+
+func (response SupersedeWorkspaceMemory404ApplicationProblemPlusJSONResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SupersedeWorkspaceMemory409ApplicationProblemPlusJSONResponse struct {
+	MemoryConflictApplicationProblemPlusJSONResponse
+}
+
+func (response SupersedeWorkspaceMemory409ApplicationProblemPlusJSONResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SupersedeWorkspaceMemory422ApplicationProblemPlusJSONResponse Problem
+
+func (response SupersedeWorkspaceMemory422ApplicationProblemPlusJSONResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SupersedeWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
+
+func (response SupersedeWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawWorkspaceMemoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	Body        *WithdrawWorkspaceMemoryJSONRequestBody
+}
+
+type WithdrawWorkspaceMemoryResponseObject interface {
+	VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error
+}
+
+type WithdrawWorkspaceMemory200JSONResponse Memory
+
+func (response WithdrawWorkspaceMemory200JSONResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawWorkspaceMemory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response WithdrawWorkspaceMemory401ApplicationProblemPlusJSONResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawWorkspaceMemory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response WithdrawWorkspaceMemory403ApplicationProblemPlusJSONResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawWorkspaceMemory404ApplicationProblemPlusJSONResponse Problem
+
+func (response WithdrawWorkspaceMemory404ApplicationProblemPlusJSONResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawWorkspaceMemory409ApplicationProblemPlusJSONResponse struct {
+	MemoryConflictApplicationProblemPlusJSONResponse
+}
+
+func (response WithdrawWorkspaceMemory409ApplicationProblemPlusJSONResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
+
+func (response WithdrawWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetWorkspaceNotificationSettingsRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -163438,6 +167688,33 @@ type StrictServerInterface interface {
 	// PreviewWorkspaceMemberRemoval Report what removing this member would affect
 	// (GET /workspaces/{workspaceId}/members/{accountId}/removal)
 	PreviewWorkspaceMemberRemoval(ctx context.Context, request PreviewWorkspaceMemberRemovalRequestObject) (PreviewWorkspaceMemberRemovalResponseObject, error)
+	// ListWorkspaceMemories List the memories this caller may read, most recently changed first
+	// (GET /workspaces/{workspaceId}/memories)
+	ListWorkspaceMemories(ctx context.Context, request ListWorkspaceMemoriesRequestObject) (ListWorkspaceMemoriesResponseObject, error)
+	// CreateWorkspaceMemory Record a memory for an audience
+	// (POST /workspaces/{workspaceId}/memories)
+	CreateWorkspaceMemory(ctx context.Context, request CreateWorkspaceMemoryRequestObject) (CreateWorkspaceMemoryResponseObject, error)
+	// GetWorkspaceMemory Read a memory
+	// (GET /workspaces/{workspaceId}/memories/{memoryId})
+	GetWorkspaceMemory(ctx context.Context, request GetWorkspaceMemoryRequestObject) (GetWorkspaceMemoryResponseObject, error)
+	// CorrectWorkspaceMemory Correct what a memory says against the version it was read at
+	// (PUT /workspaces/{workspaceId}/memories/{memoryId})
+	CorrectWorkspaceMemory(ctx context.Context, request CorrectWorkspaceMemoryRequestObject) (CorrectWorkspaceMemoryResponseObject, error)
+	// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
+	// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions)
+	ListWorkspaceMemoryRevisions(ctx context.Context, request ListWorkspaceMemoryRevisionsRequestObject) (ListWorkspaceMemoryRevisionsResponseObject, error)
+	// GetWorkspaceMemoryRevision Read a memory as one revision left it
+	// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId})
+	GetWorkspaceMemoryRevision(ctx context.Context, request GetWorkspaceMemoryRevisionRequestObject) (GetWorkspaceMemoryRevisionResponseObject, error)
+	// ShareWorkspaceMemory Change who may read a memory
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/share)
+	ShareWorkspaceMemory(ctx context.Context, request ShareWorkspaceMemoryRequestObject) (ShareWorkspaceMemoryResponseObject, error)
+	// SupersedeWorkspaceMemory Record a memory that replaces this one
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/supersede)
+	SupersedeWorkspaceMemory(ctx context.Context, request SupersedeWorkspaceMemoryRequestObject) (SupersedeWorkspaceMemoryResponseObject, error)
+	// WithdrawWorkspaceMemory Withdraw a memory, keeping its history
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/withdraw)
+	WithdrawWorkspaceMemory(ctx context.Context, request WithdrawWorkspaceMemoryRequestObject) (WithdrawWorkspaceMemoryResponseObject, error)
 	// GetWorkspaceNotificationSettings Read which events reach you and through which channel
 	// (GET /workspaces/{workspaceId}/notification-settings)
 	GetWorkspaceNotificationSettings(ctx context.Context, request GetWorkspaceNotificationSettingsRequestObject) (GetWorkspaceNotificationSettingsResponseObject, error)
@@ -171551,6 +175828,285 @@ func (sh *strictHandler) PreviewWorkspaceMemberRemoval(w http.ResponseWriter, r 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewWorkspaceMemberRemovalResponseObject); ok {
 		if err := validResponse.VisitPreviewWorkspaceMemberRemovalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceMemories operation middleware
+func (sh *strictHandler) ListWorkspaceMemories(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceMemoriesParams) {
+	var request ListWorkspaceMemoriesRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceMemories(ctx, request.(ListWorkspaceMemoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceMemories")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceMemoriesResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceMemoriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkspaceMemory operation middleware
+func (sh *strictHandler) CreateWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request CreateWorkspaceMemoryRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body CreateWorkspaceMemoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkspaceMemory(ctx, request.(CreateWorkspaceMemoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkspaceMemory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkspaceMemoryResponseObject); ok {
+		if err := validResponse.VisitCreateWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceMemory operation middleware
+func (sh *strictHandler) GetWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request GetWorkspaceMemoryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceMemory(ctx, request.(GetWorkspaceMemoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceMemory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceMemoryResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CorrectWorkspaceMemory operation middleware
+func (sh *strictHandler) CorrectWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request CorrectWorkspaceMemoryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	var body CorrectWorkspaceMemoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CorrectWorkspaceMemory(ctx, request.(CorrectWorkspaceMemoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CorrectWorkspaceMemory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CorrectWorkspaceMemoryResponseObject); ok {
+		if err := validResponse.VisitCorrectWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceMemoryRevisions operation middleware
+func (sh *strictHandler) ListWorkspaceMemoryRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId, params ListWorkspaceMemoryRevisionsParams) {
+	var request ListWorkspaceMemoryRevisionsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceMemoryRevisions(ctx, request.(ListWorkspaceMemoryRevisionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceMemoryRevisions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceMemoryRevisionsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceMemoryRevisionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceMemoryRevision operation middleware
+func (sh *strictHandler) GetWorkspaceMemoryRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId, revisionId RevisionId) {
+	var request GetWorkspaceMemoryRevisionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+	request.RevisionId = revisionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceMemoryRevision(ctx, request.(GetWorkspaceMemoryRevisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceMemoryRevision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceMemoryRevisionResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceMemoryRevisionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ShareWorkspaceMemory operation middleware
+func (sh *strictHandler) ShareWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request ShareWorkspaceMemoryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	var body ShareWorkspaceMemoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ShareWorkspaceMemory(ctx, request.(ShareWorkspaceMemoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ShareWorkspaceMemory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ShareWorkspaceMemoryResponseObject); ok {
+		if err := validResponse.VisitShareWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SupersedeWorkspaceMemory operation middleware
+func (sh *strictHandler) SupersedeWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request SupersedeWorkspaceMemoryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	var body SupersedeWorkspaceMemoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SupersedeWorkspaceMemory(ctx, request.(SupersedeWorkspaceMemoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SupersedeWorkspaceMemory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SupersedeWorkspaceMemoryResponseObject); ok {
+		if err := validResponse.VisitSupersedeWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// WithdrawWorkspaceMemory operation middleware
+func (sh *strictHandler) WithdrawWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request WithdrawWorkspaceMemoryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	var body WithdrawWorkspaceMemoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.WithdrawWorkspaceMemory(ctx, request.(WithdrawWorkspaceMemoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "WithdrawWorkspaceMemory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(WithdrawWorkspaceMemoryResponseObject); ok {
+		if err := validResponse.VisitWithdrawWorkspaceMemoryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

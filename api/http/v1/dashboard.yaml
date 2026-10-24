@@ -40,6 +40,7 @@ tags:
   - name: executions
   - name: previews
   - name: docs
+  - name: memories
   - name: roadmaps
   - name: public-roadmaps
 
@@ -5574,6 +5575,248 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/memories:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [memories]
+      operationId: listWorkspaceMemories
+      summary: List the memories this caller may read, most recently changed first
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/MemoryKind' }
+        - name: status
+          in: query
+          required: false
+          description: Only memories in one of these statuses.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/MemoryStatus' }
+        - name: projectId
+          in: query
+          required: false
+          description: Only the memories that apply to this project.
+          schema: { type: string, format: uuid }
+        - name: component
+          in: query
+          required: false
+          description: Only the memories tagged with this component.
+          schema: { type: string, maxLength: 100 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 50 }
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of memories
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemoryPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [memories]
+      operationId: createWorkspaceMemory
+      summary: Record a memory for an audience
+      description: >-
+        A personal memory is accepted as soon as it is recorded. A shared memory recorded by an
+        agent starts as a proposal.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateMemoryRequest' }
+      responses:
+        '201':
+          description: The memory as recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    get:
+      tags: [memories]
+      operationId: getWorkspaceMemory
+      summary: Read a memory
+      responses:
+        '200':
+          description: The memory
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [memories]
+      operationId: correctWorkspaceMemory
+      summary: Correct what a memory says against the version it was read at
+      description: >-
+        A correction replaces the memory's content and keeps its history. A new and independent
+        fact is a separate memory, and a fact that replaces this one supersedes it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorrectMemoryRequest' }
+      responses:
+        '200':
+          description: The memory after the correction
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/supersede:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    post:
+      tags: [memories]
+      operationId: supersedeWorkspaceMemory
+      summary: Record a memory that replaces this one
+      description: >-
+        An accepted replacement moves this memory to superseded without deleting it. A replacement
+        that starts as a proposal records the link and leaves this memory standing until the
+        proposal is accepted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SupersedeMemoryRequest' }
+      responses:
+        '201':
+          description: The replacing memory as recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/withdraw:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    post:
+      tags: [memories]
+      operationId: withdrawWorkspaceMemory
+      summary: Withdraw a memory, keeping its history
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WithdrawMemoryRequest' }
+      responses:
+        '200':
+          description: The withdrawn memory
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/share:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    post:
+      tags: [memories]
+      operationId: shareWorkspaceMemory
+      summary: Change who may read a memory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShareMemoryRequest' }
+      responses:
+        '200':
+          description: The memory with its new audience
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/revisions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    get:
+      tags: [memories]
+      operationId: listWorkspaceMemoryRevisions
+      summary: Read every change made to a memory, newest first
+      parameters:
+        - $ref: '#/components/parameters/RevisionLimit'
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of the memory's history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemoryRevisionPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+      - $ref: '#/components/parameters/RevisionId'
+    get:
+      tags: [memories]
+      operationId: getWorkspaceMemoryRevision
+      summary: Read a memory as one revision left it
+      responses:
+        '200':
+          description: The revision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemoryRevision' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/roadmap:
     get:
       tags: [roadmaps]
@@ -8694,6 +8937,12 @@ components:
       required: true
       schema: { type: string, format: uuid }
 
+    MemoryId:
+      name: memoryId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
     RevisionId:
       name: revisionId
       in: path
@@ -9076,6 +9325,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/DocConflictProblem' }
+
+    MemoryConflict:
+      description: The memory refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/MemoryConflictProblem' }
 
     RoadmapConflict:
       description: The roadmap refuses the change
@@ -11704,6 +11959,7 @@ components:
                 - project_links_full
                 - project_has_scoped_agents
                 - project_has_docs
+                - project_has_memories
 
     RoadmapVisibility:
       type: object
@@ -12220,6 +12476,270 @@ components:
               type: integer
               format: int32
               description: The version the doc is at now, when the write was against an older one.
+
+    MemoryKind:
+      type: string
+      enum: [decision, constraint, lesson, preference]
+
+    MemoryStatus:
+      type: string
+      enum: [proposed, accepted, disputed, superseded, withdrawn]
+
+    MemoryBasis:
+      type: string
+      description: Whether the memory records what was directly observed or what an agent inferred.
+      enum: [observation, inference]
+
+    MemoryEvidenceKind:
+      type: string
+      enum: [issue, comment, doc_revision, excerpt]
+
+    MemoryEvidence:
+      type: object
+      description: >-
+        One source the memory cites. An issue names issueId, a comment names commentId and is
+        answered with its issue, a doc revision names docId and docRevisionId, and an excerpt
+        carries the pasted text. A source the caller may not read is left out of the response.
+      required: [kind]
+      properties:
+        kind: { $ref: '#/components/schemas/MemoryEvidenceKind' }
+        issueId: { type: string, format: uuid }
+        commentId: { type: string, format: uuid }
+        docId: { type: string, format: uuid }
+        docRevisionId: { type: string, format: uuid }
+        excerpt: { type: string, maxLength: 2000 }
+
+    MemoryApplicability:
+      type: object
+      description: Where the memory applies. It never decides who may read it.
+      properties:
+        projectId:
+          type: string
+          format: uuid
+          description: The project the memory applies to. Leave it out for the whole workspace.
+        component: { type: string, maxLength: 100 }
+
+    MemoryContent:
+      type: object
+      required: [kind, statement]
+      properties:
+        kind: { $ref: '#/components/schemas/MemoryKind' }
+        statement: { type: string, minLength: 1, maxLength: 500 }
+        rationale: { type: string, maxLength: 4000 }
+        conditions:
+          type: string
+          maxLength: 4000
+          description: When the memory holds, such as "local prototypes only".
+        appliesTo: { $ref: '#/components/schemas/MemoryApplicability' }
+        basis: { $ref: '#/components/schemas/MemoryBasis' }
+        evidence:
+          type: array
+          maxItems: 20
+          items: { $ref: '#/components/schemas/MemoryEvidence' }
+        effectiveFrom:
+          type: string
+          format: date
+          description: The day the memory starts to hold. Leave it out for the day it is recorded.
+        effectiveUntil:
+          type: string
+          format: date
+          description: The last day the memory holds. Leave it out when it holds until replaced.
+
+    Memory:
+      type: object
+      required:
+        - id
+        - kind
+        - statement
+        - rationale
+        - conditions
+        - audience
+        - appliesTo
+        - status
+        - basis
+        - evidence
+        - source
+        - effectiveFrom
+        - version
+        - contributorIds
+        - viewer
+        - createdAt
+        - updatedAt
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: '#/components/schemas/MemoryKind' }
+        statement: { type: string }
+        rationale: { type: string }
+        conditions: { type: string }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+        appliesTo: { $ref: '#/components/schemas/MemoryApplicability' }
+        status: { $ref: '#/components/schemas/MemoryStatus' }
+        basis: { $ref: '#/components/schemas/MemoryBasis' }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/MemoryEvidence' }
+        authorAccountId: { type: string, format: uuid }
+        authorName: { type: string }
+        agentId: { type: string, format: uuid }
+        connectionId: { type: string, format: uuid }
+        source: { $ref: '#/components/schemas/DocRevisionSource' }
+        effectiveFrom: { type: string, format: date }
+        effectiveUntil: { type: string, format: date }
+        supersedesId: { type: string, format: uuid }
+        supersededById: { type: string, format: uuid }
+        version: { type: integer, format: int32 }
+        contributorIds:
+          type: array
+          items: { type: string, format: uuid }
+        viewer: { $ref: '#/components/schemas/DocViewer' }
+        createdAt:
+          type: string
+          format: date-time
+          description: When the memory was recorded.
+        updatedAt: { type: string, format: date-time }
+
+    MemoryPage:
+      type: object
+      required: [memories]
+      properties:
+        memories:
+          type: array
+          items: { $ref: '#/components/schemas/Memory' }
+        nextCursor: { type: string }
+
+    CreateMemoryRequest:
+      allOf:
+        - $ref: '#/components/schemas/MemoryContent'
+        - type: object
+          required: [audience]
+          properties:
+            audience: { $ref: '#/components/schemas/DocAudience' }
+
+    CorrectMemoryRequest:
+      allOf:
+        - $ref: '#/components/schemas/MemoryContent'
+        - type: object
+          required: [expectedVersion]
+          properties:
+            expectedVersion: { type: integer, format: int32, minimum: 1 }
+
+    SupersedeMemoryRequest:
+      type: object
+      required: [expectedVersion, replacement]
+      properties:
+        expectedVersion:
+          type: integer
+          format: int32
+          minimum: 1
+          description: The version of the memory being replaced.
+        replacement: { $ref: '#/components/schemas/CreateMemoryRequest' }
+
+    WithdrawMemoryRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+
+    ShareMemoryRequest:
+      type: object
+      required: [expectedVersion, audience]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+
+    MemoryRevisionAction:
+      type: string
+      enum: [created, corrected, reshared, accepted, disputed, superseded, withdrawn]
+
+    MemoryRevisionSummary:
+      type: object
+      required: [id, memoryId, version, action, status, statement, source, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        memoryId: { type: string, format: uuid }
+        version:
+          type: integer
+          format: int32
+          description: The version of the memory this revision made.
+        action: { $ref: '#/components/schemas/MemoryRevisionAction' }
+        status: { $ref: '#/components/schemas/MemoryStatus' }
+        statement: { type: string }
+        accountId: { type: string, format: uuid }
+        accountName: { type: string }
+        agentId: { type: string, format: uuid }
+        connectionId: { type: string, format: uuid }
+        source: { $ref: '#/components/schemas/DocRevisionSource' }
+        createdAt: { type: string, format: date-time }
+
+    MemoryRevision:
+      type: object
+      required:
+        - id
+        - memoryId
+        - version
+        - action
+        - status
+        - statement
+        - source
+        - createdAt
+        - kind
+        - rationale
+        - conditions
+        - audience
+        - appliesTo
+        - basis
+        - evidence
+        - effectiveFrom
+      properties:
+        id: { type: string, format: uuid }
+        memoryId: { type: string, format: uuid }
+        version: { type: integer, format: int32 }
+        action: { $ref: '#/components/schemas/MemoryRevisionAction' }
+        status: { $ref: '#/components/schemas/MemoryStatus' }
+        statement: { type: string }
+        accountId: { type: string, format: uuid }
+        accountName: { type: string }
+        agentId: { type: string, format: uuid }
+        connectionId: { type: string, format: uuid }
+        source: { $ref: '#/components/schemas/DocRevisionSource' }
+        createdAt: { type: string, format: date-time }
+        kind: { $ref: '#/components/schemas/MemoryKind' }
+        rationale: { type: string }
+        conditions: { type: string }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+        appliesTo: { $ref: '#/components/schemas/MemoryApplicability' }
+        basis: { $ref: '#/components/schemas/MemoryBasis' }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/MemoryEvidence' }
+        effectiveFrom: { type: string, format: date }
+        effectiveUntil: { type: string, format: date }
+
+    MemoryRevisionPage:
+      type: object
+      required: [revisions]
+      properties:
+        revisions:
+          type: array
+          items: { $ref: '#/components/schemas/MemoryRevisionSummary' }
+        nextCursor: { type: string }
+
+    MemoryConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - memory_stale
+                - memory_closed
+                - memory_transition_invalid
+            version:
+              type: integer
+              format: int32
+              description: The version the memory is at now, when the write was against an older one.
 
     RoadmapConflictProblem:
       allOf:

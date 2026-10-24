@@ -183,6 +183,7 @@ var WorkspaceRels = struct {
 	WorkspaceLabelGroups               string
 	WorkspaceLabels                    string
 	WorkspaceMemberships               string
+	WorkspaceMemories                  string
 	WorkspaceNotificationEvents        string
 	WorkspaceProjects                  string
 	WorkspaceRequestKeys               string
@@ -242,6 +243,7 @@ var WorkspaceRels = struct {
 	WorkspaceLabelGroups:               "WorkspaceLabelGroups",
 	WorkspaceLabels:                    "WorkspaceLabels",
 	WorkspaceMemberships:               "WorkspaceMemberships",
+	WorkspaceMemories:                  "WorkspaceMemories",
 	WorkspaceNotificationEvents:        "WorkspaceNotificationEvents",
 	WorkspaceProjects:                  "WorkspaceProjects",
 	WorkspaceRequestKeys:               "WorkspaceRequestKeys",
@@ -304,6 +306,7 @@ type workspaceR struct {
 	WorkspaceLabelGroups               WorkspaceLabelGroupSlice               `boil:"WorkspaceLabelGroups" json:"WorkspaceLabelGroups" toml:"WorkspaceLabelGroups" yaml:"WorkspaceLabelGroups"`
 	WorkspaceLabels                    WorkspaceLabelSlice                    `boil:"WorkspaceLabels" json:"WorkspaceLabels" toml:"WorkspaceLabels" yaml:"WorkspaceLabels"`
 	WorkspaceMemberships               WorkspaceMembershipSlice               `boil:"WorkspaceMemberships" json:"WorkspaceMemberships" toml:"WorkspaceMemberships" yaml:"WorkspaceMemberships"`
+	WorkspaceMemories                  WorkspaceMemorySlice                   `boil:"WorkspaceMemories" json:"WorkspaceMemories" toml:"WorkspaceMemories" yaml:"WorkspaceMemories"`
 	WorkspaceNotificationEvents        WorkspaceNotificationEventSlice        `boil:"WorkspaceNotificationEvents" json:"WorkspaceNotificationEvents" toml:"WorkspaceNotificationEvents" yaml:"WorkspaceNotificationEvents"`
 	WorkspaceProjects                  WorkspaceProjectSlice                  `boil:"WorkspaceProjects" json:"WorkspaceProjects" toml:"WorkspaceProjects" yaml:"WorkspaceProjects"`
 	WorkspaceRequestKeys               WorkspaceRequestKeySlice               `boil:"WorkspaceRequestKeys" json:"WorkspaceRequestKeys" toml:"WorkspaceRequestKeys" yaml:"WorkspaceRequestKeys"`
@@ -1072,6 +1075,22 @@ func (r *workspaceR) GetWorkspaceMemberships() WorkspaceMembershipSlice {
 	}
 
 	return r.WorkspaceMemberships
+}
+
+func (o *Workspace) GetWorkspaceMemories() WorkspaceMemorySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceMemories()
+}
+
+func (r *workspaceR) GetWorkspaceMemories() WorkspaceMemorySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceMemories
 }
 
 func (o *Workspace) GetWorkspaceNotificationEvents() WorkspaceNotificationEventSlice {
@@ -2195,6 +2214,20 @@ func (o *Workspace) WorkspaceMemberships(mods ...qm.QueryMod) workspaceMembershi
 	)
 
 	return WorkspaceMemberships(queryMods...)
+}
+
+// WorkspaceMemories retrieves all the workspace_memory's WorkspaceMemories with an executor.
+func (o *Workspace) WorkspaceMemories(mods ...qm.QueryMod) workspaceMemoryQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_memories\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceMemories(queryMods...)
 }
 
 // WorkspaceNotificationEvents retrieves all the workspace_notification_event's WorkspaceNotificationEvents with an executor.
@@ -7705,6 +7738,119 @@ func (workspaceL) LoadWorkspaceMemberships(ctx context.Context, e boil.ContextEx
 	return nil
 }
 
+// LoadWorkspaceMemories allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceMemories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_memories`),
+		qm.WhereIn(`workspace_memories.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_memories")
+	}
+
+	var resultSlice []*WorkspaceMemory
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_memories")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_memories")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_memories")
+	}
+
+	if len(workspaceMemoryAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceMemories = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceMemoryR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceMemories = append(local.R.WorkspaceMemories, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceMemoryR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadWorkspaceNotificationEvents allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (workspaceL) LoadWorkspaceNotificationEvents(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
@@ -11433,6 +11579,59 @@ func (o *Workspace) AddWorkspaceMemberships(ctx context.Context, exec boil.Conte
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceMembershipR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceMemories adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceMemories.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceMemories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceMemory) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_memories\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceMemoryPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceMemories: related,
+		}
+	} else {
+		o.R.WorkspaceMemories = append(o.R.WorkspaceMemories, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceMemoryR{
 				Workspace: o,
 			}
 		} else {

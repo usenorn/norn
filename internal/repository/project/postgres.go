@@ -22,6 +22,8 @@ const (
 	projectTeamsTeamFkey = "workspace_project_teams_team_fkey"
 	agentProjectFkey     = "workspace_agents_project_fkey"
 	docProjectFkey       = "workspace_docs_project_fkey"
+	memoryProjectFkey    = "workspace_memories_project_fkey"
+	memoryAppliesFkey    = "workspace_memories_applies_project_fkey"
 	slugUniqueIndex      = "workspace_projects_slug_key"
 	archiveCheck         = "workspace_projects_archive_check"
 	checkViolationCode   = "23514"
@@ -576,6 +578,8 @@ func (r *projectRepository) Delete(ctx context.Context, projectID uuid.UUID) err
 				return entity.ErrProjectHasScopedAgents
 			case docProjectFkey:
 				return entity.ErrProjectHasDocs
+			case memoryProjectFkey, memoryAppliesFkey:
+				return entity.ErrProjectHasMemories
 			}
 		}
 

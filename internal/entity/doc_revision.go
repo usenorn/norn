@@ -46,24 +46,6 @@ func (a DocRevisionAction) Valid() bool {
 	return slices.Contains(DocRevisionActions(), a)
 }
 
-type DocAttribution struct {
-	AccountID    uuid.UUID
-	AgentID      *uuid.UUID
-	ConnectionID *uuid.UUID
-	Source       RevisionSource
-}
-
-func DocAttributionOf(decision KnowledgeDecision) DocAttribution {
-	actor := decision.Decision.Actor
-
-	return DocAttribution{
-		AccountID:    decision.Reader.Identity.Principal,
-		AgentID:      actor.AgentID,
-		ConnectionID: actor.ConnectionID,
-		Source:       RevisionSourceOf(actor.Kind, "", nil),
-	}
-}
-
 type DocRevisionSummary struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
@@ -73,7 +55,7 @@ type DocRevisionSummary struct {
 	Title       string
 	ParentID    *uuid.UUID
 	Audience    KnowledgeAudience
-	By          DocAttribution
+	By          KnowledgeAttribution
 	AccountName string
 	CreatedAt   time.Time
 }
@@ -84,7 +66,7 @@ type DocRevision struct {
 	Markdown string
 }
 
-func (d Doc) Revision(action DocRevisionAction, by DocAttribution) DocRevision {
+func (d Doc) Revision(action DocRevisionAction, by KnowledgeAttribution) DocRevision {
 	if action == DocRevisionRestored {
 		by.Source = RevisionSourceRestore
 	}

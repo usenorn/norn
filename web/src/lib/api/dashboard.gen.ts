@@ -3609,6 +3609,157 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/memories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the memories this caller may read, most recently changed first */
+        get: operations["listWorkspaceMemories"];
+        put?: never;
+        /**
+         * Record a memory for an audience
+         * @description A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+         */
+        post: operations["createWorkspaceMemory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        /** Read a memory */
+        get: operations["getWorkspaceMemory"];
+        /**
+         * Correct what a memory says against the version it was read at
+         * @description A correction replaces the memory's content and keeps its history. A new and independent fact is a separate memory, and a fact that replaces this one supersedes it.
+         */
+        put: operations["correctWorkspaceMemory"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/supersede": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a memory that replaces this one
+         * @description An accepted replacement moves this memory to superseded without deleting it. A replacement that starts as a proposal records the link and leaves this memory standing until the proposal is accepted.
+         */
+        post: operations["supersedeWorkspaceMemory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a memory, keeping its history */
+        post: operations["withdrawWorkspaceMemory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change who may read a memory */
+        post: operations["shareWorkspaceMemory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        /** Read every change made to a memory, newest first */
+        get: operations["listWorkspaceMemoryRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/revisions/{revisionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        /** Read a memory as one revision left it */
+        get: operations["getWorkspaceMemoryRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/roadmap": {
         parameters: {
             query?: never;
@@ -7481,7 +7632,7 @@ export interface components {
         };
         ProjectConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents" | "project_has_docs";
+            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents" | "project_has_docs" | "project_has_memories";
         };
         RoadmapVisibility: {
             issueLists: boolean;
@@ -7867,6 +8018,198 @@ export interface components {
             /**
              * Format: int32
              * @description The version the doc is at now, when the write was against an older one.
+             */
+            version?: number;
+        };
+        /** @enum {string} */
+        MemoryKind: "decision" | "constraint" | "lesson" | "preference";
+        /** @enum {string} */
+        MemoryStatus: "proposed" | "accepted" | "disputed" | "superseded" | "withdrawn";
+        /**
+         * @description Whether the memory records what was directly observed or what an agent inferred.
+         * @enum {string}
+         */
+        MemoryBasis: "observation" | "inference";
+        /** @enum {string} */
+        MemoryEvidenceKind: "issue" | "comment" | "doc_revision" | "excerpt";
+        /** @description One source the memory cites. An issue names issueId, a comment names commentId and is answered with its issue, a doc revision names docId and docRevisionId, and an excerpt carries the pasted text. A source the caller may not read is left out of the response. */
+        MemoryEvidence: {
+            kind: components["schemas"]["MemoryEvidenceKind"];
+            /** Format: uuid */
+            issueId?: string;
+            /** Format: uuid */
+            commentId?: string;
+            /** Format: uuid */
+            docId?: string;
+            /** Format: uuid */
+            docRevisionId?: string;
+            excerpt?: string;
+        };
+        /** @description Where the memory applies. It never decides who may read it. */
+        MemoryApplicability: {
+            /**
+             * Format: uuid
+             * @description The project the memory applies to. Leave it out for the whole workspace.
+             */
+            projectId?: string;
+            component?: string;
+        };
+        MemoryContent: {
+            kind: components["schemas"]["MemoryKind"];
+            statement: string;
+            rationale?: string;
+            /** @description When the memory holds, such as "local prototypes only". */
+            conditions?: string;
+            appliesTo?: components["schemas"]["MemoryApplicability"];
+            basis?: components["schemas"]["MemoryBasis"];
+            evidence?: components["schemas"]["MemoryEvidence"][];
+            /**
+             * Format: date
+             * @description The day the memory starts to hold. Leave it out for the day it is recorded.
+             */
+            effectiveFrom?: string;
+            /**
+             * Format: date
+             * @description The last day the memory holds. Leave it out when it holds until replaced.
+             */
+            effectiveUntil?: string;
+        };
+        Memory: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["MemoryKind"];
+            statement: string;
+            rationale: string;
+            conditions: string;
+            audience: components["schemas"]["DocAudience"];
+            appliesTo: components["schemas"]["MemoryApplicability"];
+            status: components["schemas"]["MemoryStatus"];
+            basis: components["schemas"]["MemoryBasis"];
+            evidence: components["schemas"]["MemoryEvidence"][];
+            /** Format: uuid */
+            authorAccountId?: string;
+            authorName?: string;
+            /** Format: uuid */
+            agentId?: string;
+            /** Format: uuid */
+            connectionId?: string;
+            source: components["schemas"]["DocRevisionSource"];
+            /** Format: date */
+            effectiveFrom: string;
+            /** Format: date */
+            effectiveUntil?: string;
+            /** Format: uuid */
+            supersedesId?: string;
+            /** Format: uuid */
+            supersededById?: string;
+            /** Format: int32 */
+            version: number;
+            contributorIds: string[];
+            viewer: components["schemas"]["DocViewer"];
+            /**
+             * Format: date-time
+             * @description When the memory was recorded.
+             */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MemoryPage: {
+            memories: components["schemas"]["Memory"][];
+            nextCursor?: string;
+        };
+        CreateMemoryRequest: components["schemas"]["MemoryContent"] & {
+            audience: components["schemas"]["DocAudience"];
+        };
+        CorrectMemoryRequest: components["schemas"]["MemoryContent"] & {
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        SupersedeMemoryRequest: {
+            /**
+             * Format: int32
+             * @description The version of the memory being replaced.
+             */
+            expectedVersion: number;
+            replacement: components["schemas"]["CreateMemoryRequest"];
+        };
+        WithdrawMemoryRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        ShareMemoryRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            audience: components["schemas"]["DocAudience"];
+        };
+        /** @enum {string} */
+        MemoryRevisionAction: "created" | "corrected" | "reshared" | "accepted" | "disputed" | "superseded" | "withdrawn";
+        MemoryRevisionSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memoryId: string;
+            /**
+             * Format: int32
+             * @description The version of the memory this revision made.
+             */
+            version: number;
+            action: components["schemas"]["MemoryRevisionAction"];
+            status: components["schemas"]["MemoryStatus"];
+            statement: string;
+            /** Format: uuid */
+            accountId?: string;
+            accountName?: string;
+            /** Format: uuid */
+            agentId?: string;
+            /** Format: uuid */
+            connectionId?: string;
+            source: components["schemas"]["DocRevisionSource"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        MemoryRevision: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            memoryId: string;
+            /** Format: int32 */
+            version: number;
+            action: components["schemas"]["MemoryRevisionAction"];
+            status: components["schemas"]["MemoryStatus"];
+            statement: string;
+            /** Format: uuid */
+            accountId?: string;
+            accountName?: string;
+            /** Format: uuid */
+            agentId?: string;
+            /** Format: uuid */
+            connectionId?: string;
+            source: components["schemas"]["DocRevisionSource"];
+            /** Format: date-time */
+            createdAt: string;
+            kind: components["schemas"]["MemoryKind"];
+            rationale: string;
+            conditions: string;
+            audience: components["schemas"]["DocAudience"];
+            appliesTo: components["schemas"]["MemoryApplicability"];
+            basis: components["schemas"]["MemoryBasis"];
+            evidence: components["schemas"]["MemoryEvidence"][];
+            /** Format: date */
+            effectiveFrom: string;
+            /** Format: date */
+            effectiveUntil?: string;
+        };
+        MemoryRevisionPage: {
+            revisions: components["schemas"]["MemoryRevisionSummary"][];
+            nextCursor?: string;
+        };
+        MemoryConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "memory_stale" | "memory_closed" | "memory_transition_invalid";
+            /**
+             * Format: int32
+             * @description The version the memory is at now, when the write was against an older one.
              */
             version?: number;
         };
@@ -10693,6 +11036,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["DocConflictProblem"];
             };
         };
+        /** @description The memory refuses the change */
+        MemoryConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["MemoryConflictProblem"];
+            };
+        };
         /** @description The roadmap refuses the change */
         RoadmapConflict: {
             headers: {
@@ -11025,6 +11377,7 @@ export interface components {
         DraftId: string;
         EvidenceId: string;
         DocId: string;
+        MemoryId: string;
         RevisionId: string;
         /** @description How many revisions to return, newest first. */
         RevisionLimit: number;
@@ -18643,6 +18996,290 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LinkedDocList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceMemories: {
+        parameters: {
+            query?: {
+                kind?: components["schemas"]["MemoryKind"];
+                /** @description Only memories in one of these statuses. */
+                status?: components["schemas"]["MemoryStatus"][];
+                /** @description Only the memories that apply to this project. */
+                projectId?: string;
+                /** @description Only the memories tagged with this component. */
+                component?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The memory as recorded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The memory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    correctWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The memory after the correction */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    supersedeWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupersedeMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The replacing memory as recorded */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    withdrawWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WithdrawMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The withdrawn memory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    shareWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The memory with its new audience */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceMemoryRevisions: {
+        parameters: {
+            query?: {
+                /** @description How many revisions to return, newest first. */
+                limit?: components["parameters"]["RevisionLimit"];
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the memory's history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryRevisionPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceMemoryRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The revision */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryRevision"];
                 };
             };
             401: components["responses"]["Problem"];

@@ -52,6 +52,7 @@ type handler struct {
 	publicRoadmaps    service.PublicRoadmaps
 	docs              service.Docs
 	docLinks          service.DocLinks
+	memories          service.Memories
 	savedViews        service.SavedViews
 	triages           service.Triages
 	intakes           service.Intakes
@@ -112,6 +113,7 @@ func New(
 	publicRoadmaps service.PublicRoadmaps,
 	docs service.Docs,
 	docLinks service.DocLinks,
+	memories service.Memories,
 	savedViews service.SavedViews,
 	triages service.Triages,
 	intakes service.Intakes,
@@ -171,6 +173,7 @@ func New(
 		publicRoadmaps:    publicRoadmaps,
 		docs:              docs,
 		docLinks:          docLinks,
+		memories:          memories,
 		savedViews:        savedViews,
 		triages:           triages,
 		intakes:           intakes,

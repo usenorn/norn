@@ -127,6 +127,13 @@ func problemFor(err error) (problemResponse, bool) {
 		return docConflict(api.DocStale, err, &version), true
 	}
 
+	var staleMemory entity.MemoryStaleError
+	if errors.As(err, &staleMemory) {
+		version := int32(staleMemory.Version)
+
+		return memoryConflict(api.MemoryStale, err, &version), true
+	}
+
 	var outOfReach entity.RoadmapUnreachableError
 	if errors.As(err, &outOfReach) {
 		entryID := outOfReach.EntryID
@@ -711,6 +718,8 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrDocNotFound),
 		errors.Is(err, entity.ErrDocRevisionNotFound),
 		errors.Is(err, entity.ErrDocLinkNotFound),
+		errors.Is(err, entity.ErrMemoryNotFound),
+		errors.Is(err, entity.ErrMemoryRevisionNotFound),
 		errors.Is(err, entity.ErrKnowledgeNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
 		errors.Is(err, entity.ErrIssueCommentNotFound),
@@ -733,6 +742,12 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrDocArchived):
 		return docConflict(api.DocArchived, err, nil), true
+
+	case errors.Is(err, entity.ErrMemoryClosed):
+		return memoryConflict(api.MemoryClosed, err, nil), true
+
+	case errors.Is(err, entity.ErrMemoryTransitionInvalid):
+		return memoryConflict(api.MemoryTransitionInvalid, err, nil), true
 
 	case errors.Is(err, entity.ErrDocHasChildren):
 		return docConflict(api.DocHasChildren, err, nil), true
@@ -762,6 +777,8 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrNotificationCursorInvalid),
 		errors.Is(err, entity.ErrDocCursorInvalid),
 		errors.Is(err, entity.ErrDocRevisionCursorInvalid),
+		errors.Is(err, entity.ErrMemoryCursorInvalid),
+		errors.Is(err, entity.ErrMemoryRevisionCursorInvalid),
 		errors.Is(err, entity.ErrSearchQueryEmpty),
 		errors.Is(err, entity.ErrSearchKindUnknown):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
@@ -819,6 +836,9 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrProjectHasDocs):
 		return projectConflictProblem(api.ProjectConflictProblemCodeProjectHasDocs, err), true
+
+	case errors.Is(err, entity.ErrProjectHasMemories):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectHasMemories, err), true
 
 	case errors.Is(err, entity.ErrCycleClosed):
 		return cycleConflictProblem(api.CycleConflictProblemCodeCycleClosed, err), true
@@ -2627,6 +2647,23 @@ func roadmapConflict(
 	return problemResponse{status: http.StatusConflict, body: body}
 }
 
+func memoryConflict(code api.MemoryConflictProblemCode, err error, version *int32) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.MemoryConflictProblem{
+			Code:     code,
+			Version:  version,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
 func docConflict(code api.DocConflictProblemCode, err error, version *int32) problemResponse {
 	base := baseProblem(http.StatusConflict, err.Error())
 
@@ -3228,5 +3265,41 @@ func (r problemResponse) VisitDismissWorkspaceIssueQuestionResponse(w http.Respo
 }
 
 func (r problemResponse) VisitListWorkspaceExecutionQuestionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceMemoriesResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitShareWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceMemoryRevisionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceMemoryRevisionResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

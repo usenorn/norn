@@ -38,6 +38,7 @@ var (
 	ErrProjectLinksFull          = errors.New("project already holds the most links it may")
 	ErrProjectHasScopedAgents    = errors.New("project still has agents scoped to it")
 	ErrProjectHasDocs            = errors.New("project still has docs shared with it")
+	ErrProjectHasMemories        = errors.New("project still has memories shared with it or applying to it")
 )
 
 var projectSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)

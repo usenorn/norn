@@ -3505,3 +3505,203 @@ func docHistoryDTO(history service.DocHistory) api.DocRevisionPage {
 
 	return api.DocRevisionPage{Revisions: revisions, NextCursor: nilIfEmpty(history.NextCursor)}
 }
+
+func createMemoryInputOf(body api.CreateMemoryRequest) service.CreateMemoryInput {
+	return service.CreateMemoryInput{
+		MemoryContent: memoryContentOf(api.MemoryContent{
+			Kind:           body.Kind,
+			Statement:      body.Statement,
+			Rationale:      body.Rationale,
+			Conditions:     body.Conditions,
+			AppliesTo:      body.AppliesTo,
+			Basis:          body.Basis,
+			Evidence:       body.Evidence,
+			EffectiveFrom:  body.EffectiveFrom,
+			EffectiveUntil: body.EffectiveUntil,
+		}),
+		Audience: docAudienceOf(body.Audience),
+	}
+}
+
+func memoryContentOf(body api.MemoryContent) service.MemoryContent {
+	content := service.MemoryContent{
+		Kind:      entity.MemoryKind(body.Kind),
+		Statement: body.Statement,
+	}
+
+	if body.Rationale != nil {
+		content.Rationale = *body.Rationale
+	}
+
+	if body.Conditions != nil {
+		content.Conditions = *body.Conditions
+	}
+
+	if body.AppliesTo != nil {
+		content.Applicability.ProjectID = body.AppliesTo.ProjectId
+
+		if body.AppliesTo.Component != nil {
+			content.Applicability.Component = *body.AppliesTo.Component
+		}
+	}
+
+	if body.Basis != nil {
+		content.Basis = entity.MemoryBasis(*body.Basis)
+	}
+
+	if body.Evidence != nil {
+		for _, evidence := range *body.Evidence {
+			cited := entity.MemoryEvidence{
+				Kind:          entity.MemoryEvidenceKind(evidence.Kind),
+				IssueID:       evidence.IssueId,
+				CommentID:     evidence.CommentId,
+				DocID:         evidence.DocId,
+				DocRevisionID: evidence.DocRevisionId,
+			}
+
+			if evidence.Excerpt != nil {
+				cited.Excerpt = *evidence.Excerpt
+			}
+
+			content.Evidence = append(content.Evidence, cited)
+		}
+	}
+
+	if body.EffectiveFrom != nil {
+		content.EffectiveFrom = &body.EffectiveFrom.Time
+	}
+
+	if body.EffectiveUntil != nil {
+		content.EffectiveUntil = &body.EffectiveUntil.Time
+	}
+
+	return content
+}
+
+func memoryApplicabilityDTO(applicability entity.KnowledgeApplicability) api.MemoryApplicability {
+	return api.MemoryApplicability{
+		ProjectId: applicability.ProjectID,
+		Component: nilIfEmpty(applicability.Component),
+	}
+}
+
+func memoryEvidenceDTOs(cited []entity.MemoryEvidence) []api.MemoryEvidence {
+	evidence := make([]api.MemoryEvidence, 0, len(cited))
+	for _, source := range cited {
+		evidence = append(evidence, api.MemoryEvidence{
+			Kind:          api.MemoryEvidenceKind(source.Kind),
+			IssueId:       source.IssueID,
+			CommentId:     source.CommentID,
+			DocId:         source.DocID,
+			DocRevisionId: source.DocRevisionID,
+			Excerpt:       nilIfEmpty(source.Excerpt),
+		})
+	}
+
+	return evidence
+}
+
+func memoryDayDTO(day *time.Time) *openapi_types.Date {
+	if day == nil {
+		return nil
+	}
+
+	return &openapi_types.Date{Time: *day}
+}
+
+func memoryDTO(memory entity.Memory) api.Memory {
+	contributors := memory.ContributorIDs
+	if contributors == nil {
+		contributors = []uuid.UUID{}
+	}
+
+	return api.Memory{
+		Id:              memory.ID,
+		Kind:            api.MemoryKind(memory.Kind),
+		Statement:       memory.Statement,
+		Rationale:       memory.Rationale,
+		Conditions:      memory.Conditions,
+		Audience:        docAudienceDTO(memory.Audience),
+		AppliesTo:       memoryApplicabilityDTO(memory.Applicability),
+		Status:          api.MemoryStatus(memory.Status),
+		Basis:           api.MemoryBasis(memory.Basis),
+		Evidence:        memoryEvidenceDTOs(memory.Evidence),
+		AuthorAccountId: optionalUUIDDTO(memory.AuthorID),
+		AuthorName:      nilIfEmpty(memory.AuthorName),
+		AgentId:         memory.By.AgentID,
+		ConnectionId:    memory.By.ConnectionID,
+		Source:          api.DocRevisionSource(memory.By.Source),
+		EffectiveFrom:   openapi_types.Date{Time: memory.EffectiveFrom},
+		EffectiveUntil:  memoryDayDTO(memory.EffectiveUntil),
+		SupersedesId:    memory.SupersedesID,
+		SupersededById:  memory.SupersededByID,
+		Version:         int32(memory.Version),
+		ContributorIds:  contributors,
+		Viewer:          api.DocViewer{CanEdit: memory.Viewer.Edits, CanShare: memory.Viewer.Reshares},
+		CreatedAt:       memory.CreatedAt,
+		UpdatedAt:       memory.UpdatedAt,
+	}
+}
+
+func memoryPageDTO(list service.MemoryList) api.MemoryPage {
+	memories := make([]api.Memory, 0, len(list.Memories))
+	for _, memory := range list.Memories {
+		memories = append(memories, memoryDTO(memory))
+	}
+
+	return api.MemoryPage{Memories: memories, NextCursor: nilIfEmpty(list.NextCursor)}
+}
+
+func memoryRevisionSummaryDTO(summary entity.MemoryRevisionSummary) api.MemoryRevisionSummary {
+	return api.MemoryRevisionSummary{
+		Id:           summary.ID,
+		MemoryId:     summary.MemoryID,
+		Version:      int32(summary.Version),
+		Action:       api.MemoryRevisionAction(summary.Action),
+		Status:       api.MemoryStatus(summary.Status),
+		Statement:    summary.Statement,
+		AccountId:    optionalUUIDDTO(summary.By.AccountID),
+		AccountName:  nilIfEmpty(summary.AccountName),
+		AgentId:      summary.By.AgentID,
+		ConnectionId: summary.By.ConnectionID,
+		Source:       api.DocRevisionSource(summary.By.Source),
+		CreatedAt:    summary.CreatedAt,
+	}
+}
+
+func memoryRevisionDTO(revision entity.MemoryRevision) api.MemoryRevision {
+	summary := memoryRevisionSummaryDTO(revision.MemoryRevisionSummary)
+
+	return api.MemoryRevision{
+		Id:             summary.Id,
+		MemoryId:       summary.MemoryId,
+		Version:        summary.Version,
+		Action:         summary.Action,
+		Status:         summary.Status,
+		Statement:      summary.Statement,
+		AccountId:      summary.AccountId,
+		AccountName:    summary.AccountName,
+		AgentId:        summary.AgentId,
+		ConnectionId:   summary.ConnectionId,
+		Source:         summary.Source,
+		CreatedAt:      summary.CreatedAt,
+		Kind:           api.MemoryKind(revision.Kind),
+		Rationale:      revision.Rationale,
+		Conditions:     revision.Conditions,
+		Audience:       docAudienceDTO(revision.Audience),
+		AppliesTo:      memoryApplicabilityDTO(revision.Applicability),
+		Basis:          api.MemoryBasis(revision.Basis),
+		Evidence:       memoryEvidenceDTOs(revision.Evidence),
+		EffectiveFrom:  openapi_types.Date{Time: revision.EffectiveFrom},
+		EffectiveUntil: memoryDayDTO(revision.EffectiveUntil),
+	}
+}
+
+func memoryHistoryDTO(history service.MemoryHistory) api.MemoryRevisionPage {
+	revisions := make([]api.MemoryRevisionSummary, 0, len(history.Revisions))
+	for _, summary := range history.Revisions {
+		revisions = append(revisions, memoryRevisionSummaryDTO(summary))
+	}
+
+	return api.MemoryRevisionPage{Revisions: revisions, NextCursor: nilIfEmpty(history.NextCursor)}
+}

@@ -102,6 +102,8 @@ import (
 	mcpregistryrepo "github.com/usenorn/norn/internal/repository/mcpregistry"
 	mcpthrottlerepo "github.com/usenorn/norn/internal/repository/mcpthrottle"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
+	memoryrepo "github.com/usenorn/norn/internal/repository/memory"
+	memoryrevisionrepo "github.com/usenorn/norn/internal/repository/memoryrevision"
 	nornapirepo "github.com/usenorn/norn/internal/repository/nornapi"
 	notificationrepo "github.com/usenorn/norn/internal/repository/notification"
 	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
@@ -186,6 +188,7 @@ import (
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
+	memorysvc "github.com/usenorn/norn/internal/service/memory"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	previewsvc "github.com/usenorn/norn/internal/service/preview"
 	previewgatewaysvc "github.com/usenorn/norn/internal/service/previewgateway"
@@ -278,6 +281,8 @@ var baseSet = wire.NewSet(
 	docrepo.Set,
 	doclinkrepo.Set,
 	docrevisionrepo.Set,
+	memoryrepo.Set,
+	memoryrevisionrepo.Set,
 	attachmentrepo.Set,
 	blobgrantrepo.Set,
 	issuecommentrepo.Set,
@@ -351,6 +356,7 @@ var baseSet = wire.NewSet(
 	roadmapsvc.Set,
 	docsvc.Set,
 	doclinksvc.Set,
+	memorysvc.Set,
 	attachmentsvc.Set,
 	issuecommentsvc.Set,
 	issuedraftsvc.Set,
