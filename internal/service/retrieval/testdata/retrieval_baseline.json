@@ -1,0 +1,94 @@
+{
+  "hybrid": {
+    "applicability": {
+      "questions": 2,
+      "recallAt5": 1,
+      "mrr": 1,
+      "ndcgAt10": 1
+    },
+    "exact": {
+      "questions": 3,
+      "recallAt5": 1,
+      "mrr": 1,
+      "ndcgAt10": 1
+    },
+    "no_evidence": {
+      "questions": 2,
+      "recallAt5": 0,
+      "mrr": 0,
+      "ndcgAt10": 0,
+      "emptyRate": 1
+    },
+    "overall": {
+      "questions": 20,
+      "recallAt5": 1,
+      "mrr": 0.9074,
+      "ndcgAt10": 0.9312,
+      "emptyRate": 1
+    },
+    "paraphrase": {
+      "questions": 8,
+      "recallAt5": 1,
+      "mrr": 0.8542,
+      "ndcgAt10": 0.8914
+    },
+    "restricted": {
+      "questions": 2,
+      "recallAt5": 1,
+      "mrr": 1,
+      "ndcgAt10": 1
+    },
+    "superseded": {
+      "questions": 3,
+      "recallAt5": 1,
+      "mrr": 0.8333,
+      "ndcgAt10": 0.877
+    }
+  },
+  "lexical": {
+    "applicability": {
+      "questions": 2,
+      "recallAt5": 1,
+      "mrr": 1,
+      "ndcgAt10": 1
+    },
+    "exact": {
+      "questions": 3,
+      "recallAt5": 1,
+      "mrr": 1,
+      "ndcgAt10": 1
+    },
+    "no_evidence": {
+      "questions": 2,
+      "recallAt5": 0,
+      "mrr": 0,
+      "ndcgAt10": 0,
+      "emptyRate": 1
+    },
+    "overall": {
+      "questions": 20,
+      "recallAt5": 0.7222,
+      "mrr": 0.6019,
+      "ndcgAt10": 0.6329,
+      "emptyRate": 1
+    },
+    "paraphrase": {
+      "questions": 8,
+      "recallAt5": 0.375,
+      "mrr": 0.2292,
+      "ndcgAt10": 0.2664
+    },
+    "restricted": {
+      "questions": 2,
+      "recallAt5": 1,
+      "mrr": 1,
+      "ndcgAt10": 1
+    },
+    "superseded": {
+      "questions": 3,
+      "recallAt5": 1,
+      "mrr": 0.6667,
+      "ndcgAt10": 0.754
+    }
+  }
+}
