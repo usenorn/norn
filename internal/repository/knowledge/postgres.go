@@ -88,7 +88,7 @@ SELECT c.id, c.doc_id, c.title, c.heading,
        CASE WHEN c.body = '' THEN '' ELSE ts_headline('english', c.body, q.terms, '` + passageExcerpt + `') END,
        c.position, c.visibility, c.project_id, c.author_id, c.updated_at, c.exact
 FROM candidates c, q
-ORDER BY c.exact DESC, c.rank DESC, c.updated_at DESC, c.id
+ORDER BY c.exact DESC, c.rank DESC, c.updated_at DESC, c.doc_id, c.position
 LIMIT $10`
 
 var semanticPassagesQuery = `
@@ -96,7 +96,7 @@ SELECT` + passageColumns + passageSource + `
 JOIN workspace_knowledge_embeddings e
   ON e.workspace_id = p.workspace_id AND e.content_hash = p.content_hash AND e.model = $6` + passageFilters + `
   AND 1 - (e.embedding <=> $7::vector) >= $8
-ORDER BY e.embedding <=> $7::vector, p.id
+ORDER BY e.embedding <=> $7::vector, p.doc_id, p.position
 LIMIT $9`
 
 type knowledgeRepository struct {

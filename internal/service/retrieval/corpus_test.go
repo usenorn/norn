@@ -205,6 +205,10 @@ type corpusWorld struct {
 	now         time.Time
 }
 
+func corpusID(kind, key string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceOID, []byte("norn-retrieval-corpus/"+kind+"/"+key))
+}
+
 func (w corpusWorld) day(offset int) time.Time {
 	return entity.MemoryDay(w.now.AddDate(0, 0, offset))
 }
@@ -724,6 +728,7 @@ func layMemories(ctx context.Context, client *postgres.Client, world *corpusWorl
 		}
 
 		memory := world.memory(laid, at)
+		memory.ID = corpusID("memory", laid.Key)
 
 		if err := store.Create(ctx, memory); err != nil {
 			return fmt.Errorf("create memory %s: %w", laid.Key, err)
@@ -845,7 +850,7 @@ func layDoc(ctx context.Context, client *postgres.Client, world *corpusWorld, la
 		status, archivedAt = string(entity.DocStatusArchived), world.now
 	}
 
-	docID := uuid.New()
+	docID := corpusID("doc", laid.Key)
 
 	if _, err := client.Querier(ctx).ExecContext(
 		ctx, corpusDocQuery,

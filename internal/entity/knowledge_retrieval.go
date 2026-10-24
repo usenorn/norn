@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -110,6 +111,14 @@ func (h KnowledgeHit) Exact() bool {
 	return slices.Contains(h.Matches, KnowledgeMatchExact)
 }
 
+func (h KnowledgeHit) order() string {
+	if h.Passage != nil {
+		return fmt.Sprintf("%s/%s/%08d", h.Kind, h.Passage.DocID, h.Passage.Position)
+	}
+
+	return fmt.Sprintf("%s/%s", h.Kind, h.ID)
+}
+
 type KnowledgeScope struct {
 	Kinds       []KnowledgeSubjectKind
 	MemoryKinds []MemoryKind
@@ -190,11 +199,7 @@ func FuseKnowledge(limit int, lanes ...KnowledgeLane) []KnowledgeHit {
 			return cmp.Compare(b.Score, a.Score)
 		}
 
-		if a.Kind != b.Kind {
-			return cmp.Compare(a.Kind, b.Kind)
-		}
-
-		return cmp.Compare(a.ID.String(), b.ID.String())
+		return cmp.Compare(a.order(), b.order())
 	})
 
 	if len(fused) > limit {

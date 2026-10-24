@@ -22,8 +22,8 @@
     "overall": {
       "questions": 20,
       "recallAt5": 1,
-      "mrr": 0.9074,
-      "ndcgAt10": 0.9312,
+      "mrr": 0.9352,
+      "ndcgAt10": 0.9517,
       "emptyRate": 1
     },
     "paraphrase": {
@@ -41,8 +41,8 @@
     "superseded": {
       "questions": 3,
       "recallAt5": 1,
-      "mrr": 0.8333,
-      "ndcgAt10": 0.877
+      "mrr": 1,
+      "ndcgAt10": 1
     }
   },
   "lexical": {
@@ -68,15 +68,15 @@
     "overall": {
       "questions": 20,
       "recallAt5": 0.7222,
-      "mrr": 0.6019,
-      "ndcgAt10": 0.6329,
+      "mrr": 0.625,
+      "ndcgAt10": 0.6496,
       "emptyRate": 1
     },
     "paraphrase": {
       "questions": 8,
       "recallAt5": 0.375,
-      "mrr": 0.2292,
-      "ndcgAt10": 0.2664
+      "mrr": 0.2188,
+      "ndcgAt10": 0.2577
     },
     "restricted": {
       "questions": 2,
@@ -87,8 +87,8 @@
     "superseded": {
       "questions": 3,
       "recallAt5": 1,
-      "mrr": 0.6667,
-      "ndcgAt10": 0.754
+      "mrr": 0.8333,
+      "ndcgAt10": 0.877
     }
   }
 }
