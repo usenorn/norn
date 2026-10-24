@@ -177,6 +177,7 @@ import (
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	issuetemplatesvc "github.com/usenorn/norn/internal/service/issuetemplate"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
+	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
@@ -356,6 +357,7 @@ var baseSet = wire.NewSet(
 	runnerchannelsvc.Set,
 	notificationsvc.Set,
 	savedviewsvc.Set,
+	knowledgeauthorizersvc.Set,
 	eventsvc.Set,
 	searchsvc.Set,
 	triagesvc.Set,

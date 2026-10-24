@@ -160,6 +160,11 @@ func (i KnowledgeIdentity) Widens() bool {
 	return !i.Shared && i.Publishes()
 }
 
+type KnowledgeDecision struct {
+	Decision Decision
+	Reader   KnowledgeReader
+}
+
 type KnowledgeReader struct {
 	WorkspaceID   uuid.UUID
 	Identity      KnowledgeIdentity
