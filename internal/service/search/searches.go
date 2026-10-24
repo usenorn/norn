@@ -236,12 +236,9 @@ func (s *searchesService) reachDocs(ctx context.Context, request *repository.Sea
 	reader := decision.Reader
 
 	request.Audience = repository.SearchAudience{
-		AllProjects: reader.AllProjects,
-		ProjectIDs:  reader.ProjectIDs,
-	}
-
-	if reader.Identity.Personal {
-		request.Audience.PersonalAuthorID = reader.Identity.Principal
+		AllProjects:      reader.AllProjects,
+		ProjectIDs:       reader.ProjectIDs,
+		PersonalAuthorID: reader.PersonalAuthor(),
 	}
 
 	return nil

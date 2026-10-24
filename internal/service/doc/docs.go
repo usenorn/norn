@@ -202,7 +202,7 @@ func (s *docsService) List(
 		WithinID:         input.WithinID,
 		AllProjects:      reader.AllProjects,
 		ProjectIDs:       reader.ProjectIDs,
-		PersonalAuthorID: personalAuthor(reader),
+		PersonalAuthorID: reader.PersonalAuthor(),
 	}
 
 	summaries, err := s.docs.List(ctx, workspaceID, filter, page.Lookahead())
@@ -251,7 +251,7 @@ func (s *docsService) Search(
 		Limit:            searchLimit(input.Limit),
 		AllProjects:      reader.AllProjects,
 		ProjectIDs:       reader.ProjectIDs,
-		PersonalAuthorID: personalAuthor(reader),
+		PersonalAuthorID: reader.PersonalAuthor(),
 	})
 	if err != nil {
 		return nil, err
@@ -277,14 +277,6 @@ func searchLimit(requested int) int {
 	default:
 		return requested
 	}
-}
-
-func personalAuthor(reader entity.KnowledgeReader) uuid.UUID {
-	if reader.Identity.Personal {
-		return reader.Identity.Principal
-	}
-
-	return uuid.Nil
 }
 
 func (s *docsService) Update(

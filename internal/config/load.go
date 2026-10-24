@@ -594,6 +594,14 @@ func validateKnowledge(cfg Knowledge, server HTTP) error {
 		)
 	}
 
+	if cfg.SemanticMinSimilarity <= 0 || cfg.SemanticMinSimilarity >= 1 {
+		return fmt.Errorf(
+			"knowledge.semantic_min_similarity (%g) must lie between 0 and 1; at 0 every vector is a match "+
+				"and a question with no answer still returns something",
+			cfg.SemanticMinSimilarity,
+		)
+	}
+
 	return nil
 }
 
@@ -1049,6 +1057,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("agent_hosting.max_tool_result_bytes", 32<<10)
 	v.SetDefault("knowledge.refresh_sweep_schedule", "*/5 * * * *")
 	v.SetDefault("knowledge.query_timeout", 5*time.Second)
+	v.SetDefault("knowledge.semantic_min_similarity", 0.3)
 
 	v.SetDefault("telegram.endpoint", "https://api.telegram.org")
 	v.SetDefault("telegram.request_timeout", 10*time.Second)

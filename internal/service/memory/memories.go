@@ -442,7 +442,7 @@ func (s *memoriesService) List(
 		Component:        strings.TrimSpace(input.Component),
 		AllProjects:      reader.AllProjects,
 		ProjectIDs:       reader.ProjectIDs,
-		PersonalAuthorID: personalAuthor(reader),
+		PersonalAuthorID: reader.PersonalAuthor(),
 	}
 
 	memories, err := s.memories.List(ctx, workspaceID, filter, page.Lookahead())
@@ -472,14 +472,6 @@ func (s *memoriesService) List(
 	}
 
 	return list, nil
-}
-
-func personalAuthor(reader entity.KnowledgeReader) uuid.UUID {
-	if reader.Identity.Personal {
-		return reader.Identity.Principal
-	}
-
-	return uuid.Nil
 }
 
 func (s *memoriesService) Correct(

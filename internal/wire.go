@@ -197,6 +197,7 @@ import (
 	previewgatewaysvc "github.com/usenorn/norn/internal/service/previewgateway"
 	previewproxysvc "github.com/usenorn/norn/internal/service/previewproxy"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
+	retrievalsvc "github.com/usenorn/norn/internal/service/retrieval"
 	roadmapsvc "github.com/usenorn/norn/internal/service/roadmap"
 	runnersvc "github.com/usenorn/norn/internal/service/runner"
 	runnerchannelsvc "github.com/usenorn/norn/internal/service/runnerchannel"
@@ -382,6 +383,7 @@ var baseSet = wire.NewSet(
 	savedviewsvc.Set,
 	knowledgeauthorizersvc.Set,
 	knowledgeindexsvc.Set,
+	retrievalsvc.Set,
 	eventsvc.Set,
 	searchsvc.Set,
 	triagesvc.Set,

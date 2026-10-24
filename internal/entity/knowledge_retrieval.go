@@ -22,7 +22,6 @@ const (
 	KnowledgeFieldQuery      = "query"
 	KnowledgeFieldKinds      = "kinds"
 	KnowledgeFieldMemoryKind = "memoryKinds"
-	KnowledgeFieldLimit      = "limit"
 )
 
 var ErrKnowledgeCursorInvalid = errors.New("knowledge cursor is invalid")
