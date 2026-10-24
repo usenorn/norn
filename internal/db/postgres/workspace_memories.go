@@ -47,6 +47,8 @@ type WorkspaceMemory struct {
 	Version          int         `boil:"version" json:"version" toml:"version" yaml:"version"`
 	CreatedAt        time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt        time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	SearchDocument   null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
+	ContentHash      []byte      `boil:"content_hash" json:"content_hash" toml:"content_hash" yaml:"content_hash"`
 
 	R *workspaceMemoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMemoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -76,6 +78,8 @@ var WorkspaceMemoryColumns = struct {
 	Version          string
 	CreatedAt        string
 	UpdatedAt        string
+	SearchDocument   string
+	ContentHash      string
 }{
 	ID:               "id",
 	WorkspaceID:      "workspace_id",
@@ -100,6 +104,8 @@ var WorkspaceMemoryColumns = struct {
 	Version:          "version",
 	CreatedAt:        "created_at",
 	UpdatedAt:        "updated_at",
+	SearchDocument:   "search_document",
+	ContentHash:      "content_hash",
 }
 
 var WorkspaceMemoryTableColumns = struct {
@@ -126,6 +132,8 @@ var WorkspaceMemoryTableColumns = struct {
 	Version          string
 	CreatedAt        string
 	UpdatedAt        string
+	SearchDocument   string
+	ContentHash      string
 }{
 	ID:               "workspace_memories.id",
 	WorkspaceID:      "workspace_memories.workspace_id",
@@ -150,6 +158,8 @@ var WorkspaceMemoryTableColumns = struct {
 	Version:          "workspace_memories.version",
 	CreatedAt:        "workspace_memories.created_at",
 	UpdatedAt:        "workspace_memories.updated_at",
+	SearchDocument:   "workspace_memories.search_document",
+	ContentHash:      "workspace_memories.content_hash",
 }
 
 // Generated where
@@ -178,6 +188,8 @@ var WorkspaceMemoryWhere = struct {
 	Version          whereHelperint
 	CreatedAt        whereHelpertime_Time
 	UpdatedAt        whereHelpertime_Time
+	SearchDocument   whereHelpernull_String
+	ContentHash      whereHelper__byte
 }{
 	ID:               whereHelperstring{field: "\"workspace_memories\".\"id\""},
 	WorkspaceID:      whereHelperstring{field: "\"workspace_memories\".\"workspace_id\""},
@@ -202,6 +214,8 @@ var WorkspaceMemoryWhere = struct {
 	Version:          whereHelperint{field: "\"workspace_memories\".\"version\""},
 	CreatedAt:        whereHelpertime_Time{field: "\"workspace_memories\".\"created_at\""},
 	UpdatedAt:        whereHelpertime_Time{field: "\"workspace_memories\".\"updated_at\""},
+	SearchDocument:   whereHelpernull_String{field: "\"workspace_memories\".\"search_document\""},
+	ContentHash:      whereHelper__byte{field: "\"workspace_memories\".\"content_hash\""},
 }
 
 // WorkspaceMemoryRels is where relationship names are stored.
@@ -260,11 +274,11 @@ func (r *workspaceMemoryR) GetWorkspace() *Workspace {
 type workspaceMemoryL struct{}
 
 var (
-	workspaceMemoryAllColumns            = []string{"id", "workspace_id", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "author_account_id", "agent_id", "connection_id", "source", "effective_from", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at"}
+	workspaceMemoryAllColumns            = []string{"id", "workspace_id", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "author_account_id", "agent_id", "connection_id", "source", "effective_from", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash"}
 	workspaceMemoryColumnsWithoutDefault = []string{"workspace_id", "kind", "statement", "visibility", "status", "basis", "source", "effective_from"}
-	workspaceMemoryColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "author_account_id", "agent_id", "connection_id", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at"}
+	workspaceMemoryColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "author_account_id", "agent_id", "connection_id", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash"}
 	workspaceMemoryPrimaryKeyColumns     = []string{"id"}
-	workspaceMemoryGeneratedColumns      = []string{}
+	workspaceMemoryGeneratedColumns      = []string{"search_document", "content_hash"}
 )
 
 type (
@@ -1043,6 +1057,7 @@ func (o *WorkspaceMemory) Insert(ctx context.Context, exec boil.ContextExecutor,
 			workspaceMemoryColumnsWithoutDefault,
 			nzDefaults,
 		)
+		wl = strmangle.SetComplement(wl, workspaceMemoryGeneratedColumns)
 
 		cache.valueMapping, err = queries.BindMapping(workspaceMemoryType, workspaceMemoryMapping, wl)
 		if err != nil {
@@ -1119,6 +1134,7 @@ func (o *WorkspaceMemory) Update(ctx context.Context, exec boil.ContextExecutor,
 			workspaceMemoryAllColumns,
 			workspaceMemoryPrimaryKeyColumns,
 		)
+		wl = strmangle.SetComplement(wl, workspaceMemoryGeneratedColumns)
 
 		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
@@ -1296,6 +1312,9 @@ func (o *WorkspaceMemory) Upsert(ctx context.Context, exec boil.ContextExecutor,
 			workspaceMemoryAllColumns,
 			workspaceMemoryPrimaryKeyColumns,
 		)
+
+		insert = strmangle.SetComplement(insert, workspaceMemoryGeneratedColumns)
+		update = strmangle.SetComplement(update, workspaceMemoryGeneratedColumns)
 
 		if updateOnConflict && len(update) == 0 {
 			return errors.New("dbpostgres: unable to upsert workspace_memories, could not build update column list")

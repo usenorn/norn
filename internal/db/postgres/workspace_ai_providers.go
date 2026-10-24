@@ -36,6 +36,7 @@ type WorkspaceAiProvider struct {
 	Failure             string    `boil:"failure" json:"failure" toml:"failure" yaml:"failure"`
 	CreatedAt           time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt           time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	EmbeddingModel      string    `boil:"embedding_model" json:"embedding_model" toml:"embedding_model" yaml:"embedding_model"`
 
 	R *workspaceAiProviderR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceAiProviderL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +55,7 @@ var WorkspaceAiProviderColumns = struct {
 	Failure             string
 	CreatedAt           string
 	UpdatedAt           string
+	EmbeddingModel      string
 }{
 	WorkspaceID:         "workspace_id",
 	Provider:            "provider",
@@ -67,6 +69,7 @@ var WorkspaceAiProviderColumns = struct {
 	Failure:             "failure",
 	CreatedAt:           "created_at",
 	UpdatedAt:           "updated_at",
+	EmbeddingModel:      "embedding_model",
 }
 
 var WorkspaceAiProviderTableColumns = struct {
@@ -82,6 +85,7 @@ var WorkspaceAiProviderTableColumns = struct {
 	Failure             string
 	CreatedAt           string
 	UpdatedAt           string
+	EmbeddingModel      string
 }{
 	WorkspaceID:         "workspace_ai_providers.workspace_id",
 	Provider:            "workspace_ai_providers.provider",
@@ -95,6 +99,7 @@ var WorkspaceAiProviderTableColumns = struct {
 	Failure:             "workspace_ai_providers.failure",
 	CreatedAt:           "workspace_ai_providers.created_at",
 	UpdatedAt:           "workspace_ai_providers.updated_at",
+	EmbeddingModel:      "workspace_ai_providers.embedding_model",
 }
 
 // Generated where
@@ -112,6 +117,7 @@ var WorkspaceAiProviderWhere = struct {
 	Failure             whereHelperstring
 	CreatedAt           whereHelpertime_Time
 	UpdatedAt           whereHelpertime_Time
+	EmbeddingModel      whereHelperstring
 }{
 	WorkspaceID:         whereHelperstring{field: "\"workspace_ai_providers\".\"workspace_id\""},
 	Provider:            whereHelperstring{field: "\"workspace_ai_providers\".\"provider\""},
@@ -125,6 +131,7 @@ var WorkspaceAiProviderWhere = struct {
 	Failure:             whereHelperstring{field: "\"workspace_ai_providers\".\"failure\""},
 	CreatedAt:           whereHelpertime_Time{field: "\"workspace_ai_providers\".\"created_at\""},
 	UpdatedAt:           whereHelpertime_Time{field: "\"workspace_ai_providers\".\"updated_at\""},
+	EmbeddingModel:      whereHelperstring{field: "\"workspace_ai_providers\".\"embedding_model\""},
 }
 
 // WorkspaceAiProviderRels is where relationship names are stored.
@@ -164,9 +171,9 @@ func (r *workspaceAiProviderR) GetWorkspace() *Workspace {
 type workspaceAiProviderL struct{}
 
 var (
-	workspaceAiProviderAllColumns            = []string{"workspace_id", "provider", "base_url", "allow_private_address", "api_key_sealed", "api_key_hint", "default_model", "verified_at", "failed_at", "failure", "created_at", "updated_at"}
+	workspaceAiProviderAllColumns            = []string{"workspace_id", "provider", "base_url", "allow_private_address", "api_key_sealed", "api_key_hint", "default_model", "verified_at", "failed_at", "failure", "created_at", "updated_at", "embedding_model"}
 	workspaceAiProviderColumnsWithoutDefault = []string{"workspace_id", "provider", "api_key_sealed"}
-	workspaceAiProviderColumnsWithDefault    = []string{"base_url", "allow_private_address", "api_key_hint", "default_model", "verified_at", "failed_at", "failure", "created_at", "updated_at"}
+	workspaceAiProviderColumnsWithDefault    = []string{"base_url", "allow_private_address", "api_key_hint", "default_model", "verified_at", "failed_at", "failure", "created_at", "updated_at", "embedding_model"}
 	workspaceAiProviderPrimaryKeyColumns     = []string{"workspace_id"}
 	workspaceAiProviderGeneratedColumns      = []string{}
 )

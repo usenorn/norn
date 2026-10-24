@@ -18,6 +18,7 @@ blacklist = [
   "workspace_import_mappings",
   "workspace_import_ledger",
   "workspace_import_report_lines",
+  "workspace_knowledge_embeddings",
 ]
 host = "127.0.0.1"
 port = 5433
