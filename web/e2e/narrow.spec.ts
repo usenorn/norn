@@ -1,7 +1,7 @@
 import { devices, expect, test } from "@playwright/test";
 import { at, fixture } from "./fixture";
 
-const screens = ["/my-tasks", "/inbox", "/projects", "/projects/billing", "/reviews"];
+const screens = ["/my-tasks", "/inbox", "/projects", "/projects/billing", "/reviews", "/docs", "/docs/new"];
 
 const widths = [
 	{ name: "360px", width: 360, height: 760 },
