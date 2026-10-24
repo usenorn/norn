@@ -52,6 +52,49 @@ func (s *agentsService) Configure(
 	})
 }
 
+func (s *agentsService) WorkspaceSettings(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+) (entity.WorkspaceAgentSettings, error) {
+	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceKnowledge,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+	}); err != nil {
+		return entity.WorkspaceAgentSettings{}, err
+	}
+
+	return s.workspace.Settings(ctx, workspaceID)
+}
+
+func (s *agentsService) ConfigureWorkspace(
+	ctx context.Context,
+	input service.ConfigureWorkspaceAgentsInput,
+) (entity.WorkspaceAgentSettings, error) {
+	if _, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceWorkspace,
+		Action:      entity.ActionManage,
+		WorkspaceID: input.WorkspaceID,
+	}); err != nil {
+		return entity.WorkspaceAgentSettings{}, err
+	}
+
+	if err := entity.NewValidationError(
+		entity.ValidateAgentHold("holdDocWrites", input.HoldDocWrites),
+	); err != nil {
+		return entity.WorkspaceAgentSettings{}, err
+	}
+
+	return s.workspace.Upsert(ctx, entity.WorkspaceAgentSettings{
+		WorkspaceID:   input.WorkspaceID,
+		HoldDocWrites: input.HoldDocWrites,
+	})
+}
+
+func covers(scope entity.TeamScope, proposal entity.AgentProposal) bool {
+	return proposal.TeamID == uuid.Nil || scope.Covers(proposal.TeamID)
+}
+
 func (s *agentsService) scopedTeam(
 	ctx context.Context,
 	workspaceID, teamID uuid.UUID,
@@ -105,7 +148,7 @@ func (s *agentsService) Waiting(
 	reachable := make([]service.WaitingProposal, 0, len(waiting))
 
 	for _, proposal := range waiting {
-		if !decision.Scope.Covers(proposal.TeamID) {
+		if !covers(decision.Scope, proposal) {
 			continue
 		}
 
@@ -121,8 +164,14 @@ func (s *agentsService) context(
 ) service.WaitingProposal {
 	waiting := service.WaitingProposal{Proposal: proposal}
 
-	if team, err := s.teams.GetByID(ctx, proposal.TeamID); err == nil {
-		waiting.Team = team
+	if proposal.DocID != uuid.Nil {
+		waiting.Doc = s.heldDoc(ctx, proposal)
+	}
+
+	if proposal.TeamID != uuid.Nil {
+		if team, err := s.teams.GetByID(ctx, proposal.TeamID); err == nil {
+			waiting.Team = team
+		}
 	}
 
 	if proposal.IssueID == uuid.Nil {
@@ -147,6 +196,22 @@ func (s *agentsService) context(
 	waiting.State = s.targetState(ctx, issue, proposal)
 
 	return waiting
+}
+
+func (s *agentsService) heldDoc(ctx context.Context, proposal entity.AgentProposal) entity.Doc {
+	doc, err := s.docs.Get(ctx, proposal.WorkspaceID, proposal.DocID)
+	if err != nil {
+		logging.From(ctx).WarnContext(
+			ctx,
+			"reading the doc a held proposal belongs to failed, so the approver sees less of it",
+			"proposal_id", proposal.ID.String(),
+			"error", err.Error(),
+		)
+
+		return entity.Doc{}
+	}
+
+	return doc
 }
 
 func (s *agentsService) unanswered(
@@ -199,6 +264,13 @@ func (s *agentsService) Approve(
 	decision, proposal, err := s.decidable(ctx, workspaceID, proposalID)
 	if err != nil {
 		return entity.AgentProposal{}, err
+	}
+
+	if proposal.Action.OnDoc() && len(accepted) > 0 {
+		return entity.AgentProposal{}, entity.NewValidationError(entity.FieldError{
+			Field: "accept",
+			Code:  entity.ValidationCodeUnsupportedValue,
+		})
 	}
 
 	agent, err := s.agents.GetByID(ctx, workspaceID, proposal.AgentID)
@@ -315,7 +387,7 @@ func (s *agentsService) decidable(
 		return entity.Decision{}, entity.AgentProposal{}, err
 	}
 
-	if !decision.Scope.Covers(proposal.TeamID) {
+	if !covers(decision.Scope, proposal) {
 		return entity.Decision{}, entity.AgentProposal{}, entity.ErrAgentProposalNotFound
 	}
 
@@ -378,9 +450,37 @@ func (s *agentsService) apply(
 		)
 
 		return err
+	case entity.AgentActionDocCreate, entity.AgentActionDocEdit:
+		return s.applyDoc(acting, proposal)
 	default:
 		return entity.ErrAgentProposalNotFound
 	}
+}
+
+func (s *agentsService) applyDoc(acting context.Context, proposal entity.AgentProposal) error {
+	change := proposal.Change.Doc
+	if change == nil {
+		return entity.ErrAgentProposalNotFound
+	}
+
+	if proposal.Action == entity.AgentActionDocCreate {
+		_, err := s.docs.Create(acting, proposal.WorkspaceID, service.CreateDocInput{
+			Title:    change.Title,
+			Markdown: change.Markdown,
+			ParentID: change.ParentID,
+			Audience: change.Audience(),
+		})
+
+		return err
+	}
+
+	_, err := s.docs.Update(acting, proposal.WorkspaceID, proposal.DocID, service.UpdateDocInput{
+		ExpectedVersion: proposal.Change.ExpectedVersion,
+		Title:           &change.Title,
+		Markdown:        &change.Markdown,
+	})
+
+	return err
 }
 
 func creationFrom(proposal entity.AgentProposal) service.CreateIssueInput {
