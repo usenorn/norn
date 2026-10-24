@@ -10,12 +10,22 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
+	agentrepo "github.com/usenorn/norn/internal/repository/agent"
+	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
+	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	docrepo "github.com/usenorn/norn/internal/repository/doc"
 	docrevisionrepo "github.com/usenorn/norn/internal/repository/docrevision"
+	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
+	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
+	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
+	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 	docsvc "github.com/usenorn/norn/internal/service/doc"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 )
@@ -27,6 +37,10 @@ type harness struct {
 	knowledge  *knowledgeauthorizersvc.MockKnowledgeAuthorizer
 	transactor *transactorrepo.MockTransactor
 	service    service.Docs
+
+	holdDocWrites entity.AgentHold
+	agentID       uuid.UUID
+	proposed      []entity.AgentProposal
 
 	workspaceID uuid.UUID
 	projectID   uuid.UUID
@@ -56,7 +70,41 @@ func newHarness(t *testing.T) *harness {
 		stored:      map[uuid.UUID]entity.Doc{},
 	}
 
-	h.service = docsvc.New(h.docs, h.revisions, h.projects, h.knowledge, h.transactor)
+	workspaceSettings := workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl)
+	agents := agentrepo.NewMockAgent(ctrl)
+	proposals := agentproposalrepo.NewMockAgentProposal(ctrl)
+
+	h.holdDocWrites, h.agentID = entity.AgentHoldNever, uuid.New()
+
+	workspaceSettings.EXPECT().Settings(gomock.Any(), h.workspaceID).
+		DoAndReturn(func(context.Context, uuid.UUID) (entity.WorkspaceAgentSettings, error) {
+			return entity.WorkspaceAgentSettings{WorkspaceID: h.workspaceID, HoldDocWrites: h.holdDocWrites}, nil
+		}).
+		AnyTimes()
+	agents.EXPECT().GetByAccountID(gomock.Any(), gomock.Any()).
+		Return(entity.Agent{ID: h.agentID}, nil).
+		AnyTimes()
+	proposals.EXPECT().Create(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, proposal entity.AgentProposal) (entity.AgentProposal, error) {
+			proposal.ID = uuid.New()
+			h.proposed = append(h.proposed, proposal)
+
+			return proposal, nil
+		}).
+		AnyTimes()
+
+	gate := agenthold.New(
+		agentsettingrepo.NewMockAgentSetting(ctrl),
+		workspaceSettings,
+		proposals,
+		agents,
+		workflowstaterepo.NewMockWorkflowState(ctrl),
+		issuedelegationrepo.NewMockIssueDelegation(ctrl),
+		issuequestionrepo.NewMockIssueQuestion(ctrl),
+		notificationeventrepo.NewMockNotificationEvent(ctrl),
+	)
+
+	h.service = docsvc.New(h.docs, h.revisions, h.projects, h.knowledge, gate, h.transactor)
 
 	h.transactor.EXPECT().
 		WithTx(gomock.Any(), gomock.Any()).
@@ -793,5 +841,99 @@ func TestListingBeneathAnUnseenDocLooksLikeNoDocAtAll(t *testing.T) {
 	filter := h.listed[len(h.listed)-1]
 	if !sameID(filter.WithinID, &shared.ID) || !sameID(filter.ProjectID, &h.projectID) {
 		t.Fatalf("the listing lost its subtree or project: %+v", filter)
+	}
+}
+
+func TestAnAgentDocWriteWaitsForAPersonWhenTheWorkspaceHoldsDocWrites(t *testing.T) {
+	h := newHarness(t)
+	agent := entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()}
+	h.actAs(agent, entity.MembershipRoleMember)
+	ctx := identity.WithActor(context.Background(), agent)
+
+	doc, err := h.service.Create(ctx, h.workspaceID, service.CreateDocInput{
+		Title:    "Runbook",
+		Markdown: "## Deploy\n\nPush the tag.\n\n## Rollback\n\nRevert the tag.\n",
+		Audience: entity.WorkspaceAudience(),
+	})
+	if err != nil {
+		t.Fatalf("a workspace that holds nothing held the agent's doc: %v", err)
+	}
+
+	h.holdDocWrites = entity.AgentHoldAlways
+
+	_, err = h.service.Update(ctx, h.workspaceID, doc.ID, service.UpdateDocInput{
+		ExpectedVersion: 1,
+		Section:         text("Deploy"),
+		Markdown:        text("## Deploy\n\nPin the sha tag.\n"),
+	})
+
+	var held entity.AgentActionHeldError
+	if !errors.As(err, &held) {
+		t.Fatalf("the agent's edit got %v, want it held", err)
+	}
+
+	if current := h.stored[doc.ID]; current.Version != 1 || len(h.recorded) != 1 {
+		t.Fatalf("the held edit was written anyway: version %d, %d revisions", current.Version, len(h.recorded))
+	}
+
+	edit := h.proposed[len(h.proposed)-1]
+	if edit.ID != held.ProposalID || edit.Action != entity.AgentActionDocEdit || edit.DocID != doc.ID ||
+		edit.AgentID != h.agentID || edit.Change.ExpectedVersion != 1 || edit.Change.Doc == nil {
+		t.Fatalf("the proposal does not describe the held edit: %+v", edit)
+	}
+
+	if want := "## Deploy\n\nPin the sha tag.\n\n## Rollback\n\nRevert the tag."; edit.Change.Doc.Markdown != want {
+		t.Fatalf("the proposal holds\n%s\nwant the whole doc with the section applied\n%s", edit.Change.Doc.Markdown, want)
+	}
+
+	_, err = h.service.Create(ctx, h.workspaceID, service.CreateDocInput{
+		Title:    "Postmortem",
+		Markdown: "What happened.",
+		Audience: entity.ProjectAudience(h.projectID),
+		ParentID: &doc.ID,
+	})
+	if !errors.As(err, &held) || len(h.stored) != 1 {
+		t.Fatalf("the agent's new doc got %v with %d docs stored, want it held and nothing stored", err, len(h.stored))
+	}
+
+	creation := h.proposed[len(h.proposed)-1]
+	if creation.Action != entity.AgentActionDocCreate || creation.DocID != uuid.Nil ||
+		creation.Change.Doc.Title != "Postmortem" || !sameID(creation.Change.Doc.ParentID, &doc.ID) ||
+		creation.Change.Doc.Audience() != entity.ProjectAudience(h.projectID) {
+		t.Fatalf("the proposal does not describe the held doc: %+v %+v", creation, creation.Change.Doc)
+	}
+
+	approved, err := h.service.Update(identity.WithApproval(ctx, uuid.New()), h.workspaceID, doc.ID, service.UpdateDocInput{
+		ExpectedVersion: 1,
+		Markdown:        text(edit.Change.Doc.Markdown),
+	})
+	if err != nil || approved.Version != 2 {
+		t.Fatalf("the approved replay got version %d (%v), want it written", approved.Version, err)
+	}
+
+	if len(h.proposed) != 2 {
+		t.Fatalf("the approved replay was held again: %d proposals", len(h.proposed))
+	}
+}
+
+func TestAPersonsDocWriteIsNeverHeld(t *testing.T) {
+	h := newHarness(t)
+	h.holdDocWrites = entity.AgentHoldAlways
+	ctx := identity.WithActor(context.Background(), h.actor)
+
+	doc, err := h.service.Create(ctx, h.workspaceID, service.CreateDocInput{
+		Title:    "Runbook",
+		Markdown: "Body.",
+		Audience: entity.WorkspaceAudience(),
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	if _, err := h.service.Update(ctx, h.workspaceID, doc.ID, service.UpdateDocInput{
+		ExpectedVersion: 1,
+		Markdown:        text("Better body."),
+	}); err != nil || len(h.proposed) != 0 {
+		t.Fatalf("a person's edit got %v with %d proposals", err, len(h.proposed))
 	}
 }

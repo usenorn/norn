@@ -16,7 +16,7 @@ import (
 
 const proposalColumns = `
 	p.id, p.workspace_id, p.agent_id, coalesce(a.name, ''),
-	coalesce(p.issue_id::text, ''), p.team_id,
+	coalesce(p.issue_id::text, ''), coalesce(p.team_id::text, ''), coalesce(p.doc_id::text, ''),
 	p.action, p.change, p.reasoning, p.status, coalesce(p.decided_by_account_id::text, ''),
 	p.decided_at, coalesce(p.failure, ''), p.created_at, p.updated_at
 	FROM workspace_agent_proposals p
@@ -24,9 +24,9 @@ const proposalColumns = `
 
 const insertProposalQuery = `
 	INSERT INTO workspace_agent_proposals (
-	    id, workspace_id, agent_id, issue_id, team_id, action, change, reasoning
+	    id, workspace_id, agent_id, issue_id, team_id, doc_id, action, change, reasoning
 	)
-	VALUES ($1, $2, $3, nullif($4, '')::uuid, $5, $6, $7, $8)`
+	VALUES ($1, $2, $3, nullif($4, '')::uuid, nullif($5, '')::uuid, nullif($6, '')::uuid, $7, $8, $9)`
 
 const rewriteProposalQuery = `
 	UPDATE workspace_agent_proposals
@@ -100,8 +100,9 @@ func (r *agentProposalRepository) Create(
 		proposal.ID.String(),
 		proposal.WorkspaceID.String(),
 		proposal.AgentID.String(),
-		issueReference(proposal.IssueID),
-		proposal.TeamID.String(),
+		optionalReference(proposal.IssueID),
+		optionalReference(proposal.TeamID),
+		optionalReference(proposal.DocID),
 		string(proposal.Action),
 		change,
 		reasoning,
@@ -112,12 +113,12 @@ func (r *agentProposalRepository) Create(
 	return r.GetByID(ctx, proposal.WorkspaceID, proposal.ID)
 }
 
-func issueReference(issueID uuid.UUID) string {
-	if issueID == uuid.Nil {
+func optionalReference(id uuid.UUID) string {
+	if id == uuid.Nil {
 		return ""
 	}
 
-	return issueID.String()
+	return id.String()
 }
 
 func (r *agentProposalRepository) GetByID(
@@ -229,7 +230,7 @@ func (r *agentProposalRepository) many(
 		var (
 			rawID, rawWorkspace, rawAgent string
 			agentName                     string
-			rawIssue, rawTeam             string
+			rawIssue, rawTeam, rawDoc     string
 			action, status, decidedBy     string
 			change, reasoning             []byte
 			decidedAt                     sql.NullTime
@@ -238,7 +239,7 @@ func (r *agentProposalRepository) many(
 		)
 
 		if err := rows.Scan(
-			&rawID, &rawWorkspace, &rawAgent, &agentName, &rawIssue, &rawTeam,
+			&rawID, &rawWorkspace, &rawAgent, &agentName, &rawIssue, &rawTeam, &rawDoc,
 			&action, &change, &reasoning, &status, &decidedBy,
 			&decidedAt, &failure, &createdAt, &updatedAt,
 		); err != nil {
@@ -258,7 +259,6 @@ func (r *agentProposalRepository) many(
 			&proposal.ID:          rawID,
 			&proposal.WorkspaceID: rawWorkspace,
 			&proposal.AgentID:     rawAgent,
-			&proposal.TeamID:      rawTeam,
 		} {
 			parsed, err := uuid.Parse(raw)
 			if err != nil {
@@ -268,13 +268,21 @@ func (r *agentProposalRepository) many(
 			*target = parsed
 		}
 
-		if rawIssue != "" {
-			issueID, err := uuid.Parse(rawIssue)
-			if err != nil {
-				return nil, fmt.Errorf("parse agent proposal issue id: %w", err)
+		for target, raw := range map[*uuid.UUID]string{
+			&proposal.IssueID: rawIssue,
+			&proposal.TeamID:  rawTeam,
+			&proposal.DocID:   rawDoc,
+		} {
+			if raw == "" {
+				continue
 			}
 
-			proposal.IssueID = issueID
+			parsed, err := uuid.Parse(raw)
+			if err != nil {
+				return nil, fmt.Errorf("parse agent proposal subject: %w", err)
+			}
+
+			*target = parsed
 		}
 
 		if err := json.Unmarshal(change, &proposal.Change); err != nil {

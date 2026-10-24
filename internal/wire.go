@@ -145,6 +145,7 @@ import (
 	webhooksenderrepo "github.com/usenorn/norn/internal/repository/webhooksender"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
+	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
@@ -294,6 +295,7 @@ var baseSet = wire.NewSet(
 	agentrepo.Set,
 	agentproposalrepo.Set,
 	agentsettingrepo.Set,
+	workspaceagentsettingrepo.Set,
 	agentthrottlerepo.Set,
 	apitokenrepo.Set,
 	auditrepo.Set,

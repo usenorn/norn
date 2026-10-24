@@ -25,6 +25,7 @@ import (
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
+	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -88,6 +89,7 @@ func newHarness(t *testing.T) *harness {
 		silentEmitter(ctrl), h.followers,
 		agenthold.New(
 			agentsettingrepo.NewMockAgentSetting(ctrl),
+			workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
 			agentproposalrepo.NewMockAgentProposal(ctrl),
 			agentrepo.NewMockAgent(ctrl),
 			workflowstaterepo.NewMockWorkflowState(ctrl),

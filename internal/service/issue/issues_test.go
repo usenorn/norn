@@ -36,6 +36,7 @@ import (
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
+	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -168,6 +169,7 @@ func newHarness(t *testing.T) *harness {
 		h.jobs,
 		agenthold.New(
 			h.settings,
+			workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
 			h.proposals,
 			h.agents,
 			h.states,
