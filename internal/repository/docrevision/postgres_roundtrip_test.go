@@ -116,7 +116,7 @@ func recordAndReadRevisions(ctx context.Context, client *postgres.Client) error 
 			Markdown: content.Markdown(),
 		}
 
-		revision := doc.Revision(entity.DocRevisionEdited, entity.DocAttribution{
+		revision := doc.Revision(entity.DocRevisionEdited, entity.KnowledgeAttribution{
 			AccountID:    authorID,
 			AgentID:      &agentID,
 			ConnectionID: &connectionID,

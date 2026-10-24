@@ -171,7 +171,7 @@ func TestARevisionRecordsWhoChangedTheDocAndHow(t *testing.T) {
 				Reader:   entity.KnowledgeReader{Identity: entity.KnowledgeIdentityOf(testCase.actor, entity.MembershipRoleMember)},
 			}
 
-			by := entity.DocAttributionOf(decision)
+			by := entity.KnowledgeAttributionOf(decision)
 
 			if by.AccountID != testCase.principal || by.Source != testCase.source {
 				t.Fatalf("attribution %+v, want account %s and source %s", by, testCase.principal, testCase.source)
@@ -198,7 +198,7 @@ func TestARestoredRevisionIsAttributedAsARestore(t *testing.T) {
 		},
 		Markdown: "Steps.",
 	}
-	by := entity.DocAttribution{AccountID: uuid.New(), Source: entity.RevisionSourceAgent}
+	by := entity.KnowledgeAttribution{AccountID: uuid.New(), Source: entity.RevisionSourceAgent}
 
 	edited := doc.Revision(entity.DocRevisionEdited, by)
 	restored := doc.Revision(entity.DocRevisionRestored, by)

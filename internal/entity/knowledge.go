@@ -160,6 +160,24 @@ func (i KnowledgeIdentity) Widens() bool {
 	return !i.Shared && i.Publishes()
 }
 
+type KnowledgeAttribution struct {
+	AccountID    uuid.UUID
+	AgentID      *uuid.UUID
+	ConnectionID *uuid.UUID
+	Source       RevisionSource
+}
+
+func KnowledgeAttributionOf(decision KnowledgeDecision) KnowledgeAttribution {
+	actor := decision.Decision.Actor
+
+	return KnowledgeAttribution{
+		AccountID:    decision.Reader.Identity.Principal,
+		AgentID:      actor.AgentID,
+		ConnectionID: actor.ConnectionID,
+		Source:       RevisionSourceOf(actor.Kind, "", nil),
+	}
+}
+
 type KnowledgeDecision struct {
 	Decision Decision
 	Reader   KnowledgeReader
