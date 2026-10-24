@@ -90,9 +90,10 @@
 	import IssueChildren from "$lib/issues/issue-children.svelte";
 	import Editor from "$lib/editor/editor.svelte";
 	import EditConflict from "$lib/editor/edit-conflict.svelte";
+	import SaveStatus from "$lib/editor/save-status.svelte";
 	import CriteriaPanel from "$lib/issues/criteria-panel.svelte";
 	import DescriptionHistory from "$lib/issues/description-history.svelte";
-	import { Autosave, saveLine, type SaveOutcome } from "$lib/editor/autosave.svelte";
+	import { Autosave, type SaveOutcome } from "$lib/editor/autosave.svelte";
 	import {
 		asDocument,
 		documentEmpty,
@@ -2453,29 +2454,7 @@
 											<Kbd keys="⌘ ↵" /> save
 										</span>
 										<span class="flex-1"></span>
-										{#if saveLine(describeSaver.state)}
-											<span
-												class="text-xs {describeSaver.state.kind === 'saved'
-													? 'text-muted-foreground'
-													: describeSaver.state.kind === 'waiting' ||
-														  describeSaver.state.kind === 'saving'
-														? 'text-muted-foreground'
-														: 'text-destructive'}"
-												aria-live="polite"
-											>
-												{saveLine(describeSaver.state)}
-											</span>
-										{/if}
-										{#if describeSaver.state.kind === "failed" || describeSaver.state.kind === "unknown"}
-											<Button
-												type="button"
-												variant="secondary"
-												size="sm"
-												onclick={() => void describeSaver.flush()}
-											>
-												Try again
-											</Button>
-										{/if}
+										<SaveStatus standing={describeSaver.state} onretry={() => void describeSaver.flush()} />
 									</div>
 								</div>
 							{:else if issue.description.trim() || unsaved}
