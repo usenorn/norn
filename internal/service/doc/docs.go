@@ -51,8 +51,17 @@ func concealed(err error) error {
 
 func described(markdown string, content *entity.Document) (string, entity.Document, error) {
 	markdown, document, err := entity.DescribedWithin(entity.DocLimits, markdown, content)
-	if err != nil {
-		return "", entity.Document{}, err
+	switch {
+	case errors.Is(err, entity.ErrDocumentTooLarge), errors.Is(err, entity.ErrDocumentTooDeep):
+		return "", entity.Document{}, entity.NewValidationError(entity.FieldError{
+			Field: entity.DocFieldContent,
+			Code:  entity.ValidationCodeTooLong,
+		})
+	case err != nil:
+		return "", entity.Document{}, entity.NewValidationError(entity.FieldError{
+			Field: entity.DocFieldContent,
+			Code:  entity.ValidationCodeMalformed,
+		})
 	}
 
 	if err := entity.NewValidationError(entity.ValidateDocContent(entity.DocFieldContent, markdown)); err != nil {

@@ -39,6 +39,7 @@ tags:
   - name: codebases
   - name: executions
   - name: previews
+  - name: docs
   - name: roadmaps
   - name: public-roadmaps
 
@@ -5185,6 +5186,251 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/docs:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [docs]
+      operationId: listWorkspaceDocs
+      summary: List the active docs this caller may read, most recently changed first
+      parameters:
+        - name: parentId
+          in: query
+          required: false
+          description: Only the docs directly beneath this doc.
+          schema: { type: string, format: uuid }
+        - name: root
+          in: query
+          required: false
+          description: Only the docs at the top of the tree.
+          schema: { type: boolean }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 50 }
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of docs
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [docs]
+      operationId: createWorkspaceDoc
+      summary: Write a doc for an audience, optionally beneath another doc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateDocRequest' }
+      responses:
+        '201':
+          description: The doc as written
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/docs/{docId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+    get:
+      tags: [docs]
+      operationId: getWorkspaceDoc
+      summary: Read a doc
+      responses:
+        '200':
+          description: The doc
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [docs]
+      operationId: updateWorkspaceDoc
+      summary: Change a doc's title or content against the version it was read at
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateDocRequest' }
+      responses:
+        '200':
+          description: The doc after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [docs]
+      operationId: deleteWorkspaceDoc
+      summary: Archive a doc, keeping its history
+      parameters:
+        - name: expectedVersion
+          in: query
+          required: true
+          schema: { type: integer, format: int32, minimum: 1 }
+      responses:
+        '200':
+          description: The archived doc
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/docs/{docId}/move:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+    post:
+      tags: [docs]
+      operationId: moveWorkspaceDoc
+      summary: Place a doc beneath another doc, or at the top of the tree
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MoveDocRequest' }
+      responses:
+        '200':
+          description: The doc in its new place
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/docs/{docId}/share:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+    post:
+      tags: [docs]
+      operationId: shareWorkspaceDoc
+      summary: Change who may read a doc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShareDocRequest' }
+      responses:
+        '200':
+          description: The doc with its new audience
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/docs/{docId}/revisions:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+    get:
+      tags: [docs]
+      operationId: listWorkspaceDocRevisions
+      summary: Read every change made to a doc, newest first
+      parameters:
+        - $ref: '#/components/parameters/RevisionLimit'
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: A page of the doc's history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocRevisionPage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+      - $ref: '#/components/parameters/RevisionId'
+    get:
+      tags: [docs]
+      operationId: getWorkspaceDocRevision
+      summary: Read a doc as one revision left it
+      responses:
+        '200':
+          description: The revision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocRevision' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+      - $ref: '#/components/parameters/RevisionId'
+    post:
+      tags: [docs]
+      operationId: restoreWorkspaceDocRevision
+      summary: Put back a revision's title and content, as a new revision
+      description: >-
+        Restoring writes the old title and content forward rather than rewinding to them, so what
+        they replaced stays in the history. Where the doc sits and who may read it are left as
+        they are.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RestoreDocRevisionRequest' }
+      responses:
+        '200':
+          description: The doc as it now reads
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Doc' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/roadmap:
     get:
       tags: [roadmaps]
@@ -8299,6 +8545,12 @@ components:
       required: true
       schema: { type: string, format: uuid }
 
+    DocId:
+      name: docId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
     RevisionId:
       name: revisionId
       in: path
@@ -8675,6 +8927,12 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/ProjectConflictProblem' }
+
+    DocConflict:
+      description: The doc refuses the change
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/DocConflictProblem' }
 
     RoadmapConflict:
       description: The roadmap refuses the change
@@ -11561,6 +11819,192 @@ components:
       properties:
         expectedVersion: { type: integer, format: int32, minimum: 1 }
         content: { $ref: '#/components/schemas/RoadmapEntryContent' }
+
+    DocVisibility:
+      type: string
+      enum: [personal, project, workspace]
+
+    DocAudience:
+      type: object
+      required: [visibility]
+      properties:
+        visibility: { $ref: '#/components/schemas/DocVisibility' }
+        projectId:
+          type: string
+          format: uuid
+          description: The project whose members may read the doc, when the visibility is project.
+
+    DocStatus:
+      type: string
+      enum: [active, archived]
+
+    DocSummary:
+      type: object
+      required: [id, title, audience, status, version, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        parentId: { type: string, format: uuid }
+        title: { type: string }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+        authorAccountId: { type: string, format: uuid }
+        authorName: { type: string }
+        status: { $ref: '#/components/schemas/DocStatus' }
+        archivedAt: { type: string, format: date-time }
+        version: { type: integer, format: int32 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Doc:
+      type: object
+      required: [id, title, audience, status, version, createdAt, updatedAt, markdown, content, contributorIds]
+      properties:
+        id: { type: string, format: uuid }
+        parentId: { type: string, format: uuid }
+        title: { type: string }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+        authorAccountId: { type: string, format: uuid }
+        authorName: { type: string }
+        status: { $ref: '#/components/schemas/DocStatus' }
+        archivedAt: { type: string, format: date-time }
+        version: { type: integer, format: int32 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        markdown: { type: string }
+        content: { $ref: '#/components/schemas/Document' }
+        contributorIds:
+          type: array
+          items: { type: string, format: uuid }
+
+    DocPage:
+      type: object
+      required: [docs]
+      properties:
+        docs:
+          type: array
+          items: { $ref: '#/components/schemas/DocSummary' }
+        nextCursor: { type: string }
+
+    CreateDocRequest:
+      type: object
+      required: [title, audience]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 200 }
+        markdown: { type: string }
+        content: { $ref: '#/components/schemas/Document' }
+        parentId: { type: string, format: uuid }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+
+    UpdateDocRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        markdown: { type: string }
+        content: { $ref: '#/components/schemas/Document' }
+
+    MoveDocRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        parentId:
+          type: string
+          format: uuid
+          description: The doc to sit beneath. Leave it out to move the doc to the top of the tree.
+
+    ShareDocRequest:
+      type: object
+      required: [expectedVersion, audience]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+
+    RestoreDocRevisionRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+
+    DocRevisionAction:
+      type: string
+      enum: [created, edited, moved, reshared, restored, archived]
+
+    DocRevisionSource:
+      type: string
+      description: >-
+        Who made the change. It names the actor rather than the person who allowed it, and a
+        restore is its own source so a put-back reads as one.
+      enum: [person, agent, import, intake, restore]
+
+    DocRevisionSummary:
+      type: object
+      required: [id, docId, version, action, title, audience, source, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        docId: { type: string, format: uuid }
+        version:
+          type: integer
+          format: int32
+          description: The version of the doc this revision made.
+        action: { $ref: '#/components/schemas/DocRevisionAction' }
+        title: { type: string }
+        parentId: { type: string, format: uuid }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+        accountId: { type: string, format: uuid }
+        accountName: { type: string }
+        agentId: { type: string, format: uuid }
+        connectionId: { type: string, format: uuid }
+        source: { $ref: '#/components/schemas/DocRevisionSource' }
+        createdAt: { type: string, format: date-time }
+
+    DocRevision:
+      type: object
+      required: [id, docId, version, action, title, audience, source, createdAt, markdown, content]
+      properties:
+        id: { type: string, format: uuid }
+        docId: { type: string, format: uuid }
+        version: { type: integer, format: int32 }
+        action: { $ref: '#/components/schemas/DocRevisionAction' }
+        title: { type: string }
+        parentId: { type: string, format: uuid }
+        audience: { $ref: '#/components/schemas/DocAudience' }
+        accountId: { type: string, format: uuid }
+        accountName: { type: string }
+        agentId: { type: string, format: uuid }
+        connectionId: { type: string, format: uuid }
+        source: { $ref: '#/components/schemas/DocRevisionSource' }
+        createdAt: { type: string, format: date-time }
+        markdown: { type: string }
+        content: { $ref: '#/components/schemas/Document' }
+
+    DocRevisionPage:
+      type: object
+      required: [revisions]
+      properties:
+        revisions:
+          type: array
+          items: { $ref: '#/components/schemas/DocRevisionSummary' }
+        nextCursor: { type: string }
+
+    DocConflictProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum:
+                - doc_stale
+                - doc_archived
+                - doc_has_children
+                - doc_parent_cycle
+                - doc_tree_too_deep
+            version:
+              type: integer
+              format: int32
+              description: The version the doc is at now, when the write was against an older one.
 
     RoadmapConflictProblem:
       allOf:
@@ -14634,6 +15078,8 @@ components:
                 - token_permission_missing
                 - token_workspace_mismatch
                 - instance_admin_required
+                - knowledge_not_editable
+                - knowledge_not_shareable
 
     SignUpClosedProblem:
       allOf:

@@ -50,6 +50,7 @@ type handler struct {
 	projects          service.Projects
 	roadmaps          service.Roadmaps
 	publicRoadmaps    service.PublicRoadmaps
+	docs              service.Docs
 	savedViews        service.SavedViews
 	triages           service.Triages
 	intakes           service.Intakes
@@ -108,6 +109,7 @@ func New(
 	projects service.Projects,
 	roadmaps service.Roadmaps,
 	publicRoadmaps service.PublicRoadmaps,
+	docs service.Docs,
 	savedViews service.SavedViews,
 	triages service.Triages,
 	intakes service.Intakes,
@@ -165,6 +167,7 @@ func New(
 		projects:          projects,
 		roadmaps:          roadmaps,
 		publicRoadmaps:    publicRoadmaps,
+		docs:              docs,
 		savedViews:        savedViews,
 		triages:           triages,
 		intakes:           intakes,

@@ -1812,15 +1812,138 @@ func (e DirectoryUnlicensedProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for DocConflictProblemCode.
+const (
+	DocArchived    DocConflictProblemCode = "doc_archived"
+	DocHasChildren DocConflictProblemCode = "doc_has_children"
+	DocParentCycle DocConflictProblemCode = "doc_parent_cycle"
+	DocStale       DocConflictProblemCode = "doc_stale"
+	DocTreeTooDeep DocConflictProblemCode = "doc_tree_too_deep"
+)
+
+// Valid indicates whether the value is a known member of the DocConflictProblemCode enum.
+func (e DocConflictProblemCode) Valid() bool {
+	switch e {
+	case DocArchived:
+		return true
+	case DocHasChildren:
+		return true
+	case DocParentCycle:
+		return true
+	case DocStale:
+		return true
+	case DocTreeTooDeep:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocRevisionAction.
+const (
+	DocRevisionActionArchived DocRevisionAction = "archived"
+	DocRevisionActionCreated  DocRevisionAction = "created"
+	DocRevisionActionEdited   DocRevisionAction = "edited"
+	DocRevisionActionMoved    DocRevisionAction = "moved"
+	DocRevisionActionReshared DocRevisionAction = "reshared"
+	DocRevisionActionRestored DocRevisionAction = "restored"
+)
+
+// Valid indicates whether the value is a known member of the DocRevisionAction enum.
+func (e DocRevisionAction) Valid() bool {
+	switch e {
+	case DocRevisionActionArchived:
+		return true
+	case DocRevisionActionCreated:
+		return true
+	case DocRevisionActionEdited:
+		return true
+	case DocRevisionActionMoved:
+		return true
+	case DocRevisionActionReshared:
+		return true
+	case DocRevisionActionRestored:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocRevisionSource.
+const (
+	DocRevisionSourceAgent   DocRevisionSource = "agent"
+	DocRevisionSourceImport  DocRevisionSource = "import"
+	DocRevisionSourceIntake  DocRevisionSource = "intake"
+	DocRevisionSourcePerson  DocRevisionSource = "person"
+	DocRevisionSourceRestore DocRevisionSource = "restore"
+)
+
+// Valid indicates whether the value is a known member of the DocRevisionSource enum.
+func (e DocRevisionSource) Valid() bool {
+	switch e {
+	case DocRevisionSourceAgent:
+		return true
+	case DocRevisionSourceImport:
+		return true
+	case DocRevisionSourceIntake:
+		return true
+	case DocRevisionSourcePerson:
+		return true
+	case DocRevisionSourceRestore:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocStatus.
+const (
+	DocStatusActive   DocStatus = "active"
+	DocStatusArchived DocStatus = "archived"
+)
+
+// Valid indicates whether the value is a known member of the DocStatus enum.
+func (e DocStatus) Valid() bool {
+	switch e {
+	case DocStatusActive:
+		return true
+	case DocStatusArchived:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DocVisibility.
+const (
+	DocVisibilityPersonal  DocVisibility = "personal"
+	DocVisibilityProject   DocVisibility = "project"
+	DocVisibilityWorkspace DocVisibility = "workspace"
+)
+
+// Valid indicates whether the value is a known member of the DocVisibility enum.
+func (e DocVisibility) Valid() bool {
+	switch e {
+	case DocVisibilityPersonal:
+		return true
+	case DocVisibilityProject:
+		return true
+	case DocVisibilityWorkspace:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DocumentType.
 const (
-	Doc DocumentType = "doc"
+	DocumentTypeDoc DocumentType = "doc"
 )
 
 // Valid indicates whether the value is a known member of the DocumentType enum.
 func (e DocumentType) Valid() bool {
 	switch e {
-	case Doc:
+	case DocumentTypeDoc:
 		return true
 	default:
 		return false
@@ -2347,6 +2470,8 @@ func (e ForbiddenProblemCode) Valid() bool {
 const (
 	AuthMethodNotPermitted ForbiddenProblemReason = "auth_method_not_permitted"
 	InstanceAdminRequired  ForbiddenProblemReason = "instance_admin_required"
+	KnowledgeNotEditable   ForbiddenProblemReason = "knowledge_not_editable"
+	KnowledgeNotShareable  ForbiddenProblemReason = "knowledge_not_shareable"
 	RoleLacksAction        ForbiddenProblemReason = "role_lacks_action"
 	TokenPermissionMissing ForbiddenProblemReason = "token_permission_missing"
 	TokenWorkspaceMismatch ForbiddenProblemReason = "token_workspace_mismatch"
@@ -2358,6 +2483,10 @@ func (e ForbiddenProblemReason) Valid() bool {
 	case AuthMethodNotPermitted:
 		return true
 	case InstanceAdminRequired:
+		return true
+	case KnowledgeNotEditable:
+		return true
+	case KnowledgeNotShareable:
 		return true
 	case RoleLacksAction:
 		return true
@@ -6599,6 +6728,17 @@ type CreateAgentTelegramLinkRequest struct {
 	Purpose TelegramLinkPurpose `json:"purpose"`
 }
 
+// CreateDocRequest defines model for CreateDocRequest.
+type CreateDocRequest struct {
+	Audience DocAudience `json:"audience"`
+
+	// Content The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	Content  *Document           `json:"content,omitempty"`
+	Markdown *string             `json:"markdown,omitempty"`
+	ParentId *openapi_types.UUID `json:"parentId,omitempty"`
+	Title    string              `json:"title"`
+}
+
 // CreateImportRequest defines model for CreateImportRequest.
 type CreateImportRequest struct {
 	SourceKind  string  `json:"sourceKind"`
@@ -7057,6 +7197,133 @@ type DirectoryUnlicensedProblemCode string
 type DiscoverOidcRequest struct {
 	Issuer string `json:"issuer"`
 }
+
+// Doc defines model for Doc.
+type Doc struct {
+	ArchivedAt      *time.Time          `json:"archivedAt,omitempty"`
+	Audience        DocAudience         `json:"audience"`
+	AuthorAccountId *openapi_types.UUID `json:"authorAccountId,omitempty"`
+	AuthorName      *string             `json:"authorName,omitempty"`
+
+	// Content The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	Content        Document             `json:"content"`
+	ContributorIds []openapi_types.UUID `json:"contributorIds"`
+	CreatedAt      time.Time            `json:"createdAt"`
+	Id             openapi_types.UUID   `json:"id"`
+	Markdown       string               `json:"markdown"`
+	ParentId       *openapi_types.UUID  `json:"parentId,omitempty"`
+	Status         DocStatus            `json:"status"`
+	Title          string               `json:"title"`
+	UpdatedAt      time.Time            `json:"updatedAt"`
+	Version        int32                `json:"version"`
+}
+
+// DocAudience defines model for DocAudience.
+type DocAudience struct {
+	// ProjectId The project whose members may read the doc, when the visibility is project.
+	ProjectId  *openapi_types.UUID `json:"projectId,omitempty"`
+	Visibility DocVisibility       `json:"visibility"`
+}
+
+// DocConflictProblem defines model for DocConflictProblem.
+type DocConflictProblem struct {
+	Code     DocConflictProblemCode `json:"code"`
+	Detail   *string                `json:"detail,omitempty"`
+	Errors   *[]FieldError          `json:"errors,omitempty"`
+	Instance *string                `json:"instance,omitempty"`
+	Status   int32                  `json:"status"`
+	Title    string                 `json:"title"`
+	Type     string                 `json:"type"`
+
+	// Version The version the doc is at now, when the write was against an older one.
+	Version *int32 `json:"version,omitempty"`
+}
+
+// DocConflictProblemCode defines model for DocConflictProblem.Code.
+type DocConflictProblemCode string
+
+// DocPage defines model for DocPage.
+type DocPage struct {
+	Docs       []DocSummary `json:"docs"`
+	NextCursor *string      `json:"nextCursor,omitempty"`
+}
+
+// DocRevision defines model for DocRevision.
+type DocRevision struct {
+	AccountId    *openapi_types.UUID `json:"accountId,omitempty"`
+	AccountName  *string             `json:"accountName,omitempty"`
+	Action       DocRevisionAction   `json:"action"`
+	AgentId      *openapi_types.UUID `json:"agentId,omitempty"`
+	Audience     DocAudience         `json:"audience"`
+	ConnectionId *openapi_types.UUID `json:"connectionId,omitempty"`
+
+	// Content The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	Content   Document            `json:"content"`
+	CreatedAt time.Time           `json:"createdAt"`
+	DocId     openapi_types.UUID  `json:"docId"`
+	Id        openapi_types.UUID  `json:"id"`
+	Markdown  string              `json:"markdown"`
+	ParentId  *openapi_types.UUID `json:"parentId,omitempty"`
+
+	// Source Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
+	Source  DocRevisionSource `json:"source"`
+	Title   string            `json:"title"`
+	Version int32             `json:"version"`
+}
+
+// DocRevisionAction defines model for DocRevisionAction.
+type DocRevisionAction string
+
+// DocRevisionPage defines model for DocRevisionPage.
+type DocRevisionPage struct {
+	NextCursor *string              `json:"nextCursor,omitempty"`
+	Revisions  []DocRevisionSummary `json:"revisions"`
+}
+
+// DocRevisionSource Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
+type DocRevisionSource string
+
+// DocRevisionSummary defines model for DocRevisionSummary.
+type DocRevisionSummary struct {
+	AccountId    *openapi_types.UUID `json:"accountId,omitempty"`
+	AccountName  *string             `json:"accountName,omitempty"`
+	Action       DocRevisionAction   `json:"action"`
+	AgentId      *openapi_types.UUID `json:"agentId,omitempty"`
+	Audience     DocAudience         `json:"audience"`
+	ConnectionId *openapi_types.UUID `json:"connectionId,omitempty"`
+	CreatedAt    time.Time           `json:"createdAt"`
+	DocId        openapi_types.UUID  `json:"docId"`
+	Id           openapi_types.UUID  `json:"id"`
+	ParentId     *openapi_types.UUID `json:"parentId,omitempty"`
+
+	// Source Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
+	Source DocRevisionSource `json:"source"`
+	Title  string            `json:"title"`
+
+	// Version The version of the doc this revision made.
+	Version int32 `json:"version"`
+}
+
+// DocStatus defines model for DocStatus.
+type DocStatus string
+
+// DocSummary defines model for DocSummary.
+type DocSummary struct {
+	ArchivedAt      *time.Time          `json:"archivedAt,omitempty"`
+	Audience        DocAudience         `json:"audience"`
+	AuthorAccountId *openapi_types.UUID `json:"authorAccountId,omitempty"`
+	AuthorName      *string             `json:"authorName,omitempty"`
+	CreatedAt       time.Time           `json:"createdAt"`
+	Id              openapi_types.UUID  `json:"id"`
+	ParentId        *openapi_types.UUID `json:"parentId,omitempty"`
+	Status          DocStatus           `json:"status"`
+	Title           string              `json:"title"`
+	UpdatedAt       time.Time           `json:"updatedAt"`
+	Version         int32               `json:"version"`
+}
+
+// DocVisibility defines model for DocVisibility.
+type DocVisibility string
 
 // Document The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
 type Document struct {
@@ -8676,6 +8943,14 @@ type MirrorIssueRequest struct {
 	RepositoryId openapi_types.UUID `json:"repositoryId"`
 }
 
+// MoveDocRequest defines model for MoveDocRequest.
+type MoveDocRequest struct {
+	ExpectedVersion int32 `json:"expectedVersion"`
+
+	// ParentId The doc to sit beneath. Leave it out to move the doc to the top of the tree.
+	ParentId *openapi_types.UUID `json:"parentId,omitempty"`
+}
+
 // MoveIssueRequest defines model for MoveIssueRequest.
 type MoveIssueRequest struct {
 	AcknowledgeLabelLoss *bool              `json:"acknowledgeLabelLoss,omitempty"`
@@ -9116,6 +9391,11 @@ type ResolveReviewCommentRequest struct {
 
 // RestoreDescriptionRequest defines model for RestoreDescriptionRequest.
 type RestoreDescriptionRequest struct {
+	ExpectedVersion int32 `json:"expectedVersion"`
+}
+
+// RestoreDocRevisionRequest defines model for RestoreDocRevisionRequest.
+type RestoreDocRevisionRequest struct {
 	ExpectedVersion int32 `json:"expectedVersion"`
 }
 
@@ -9868,6 +10148,12 @@ type SetWorkspaceSamlConnectionRequest struct {
 	Provisioning      *bool                 `json:"provisioning,omitempty"`
 }
 
+// ShareDocRequest defines model for ShareDocRequest.
+type ShareDocRequest struct {
+	Audience        DocAudience `json:"audience"`
+	ExpectedVersion int32       `json:"expectedVersion"`
+}
+
 // SharePreviewRequest defines model for SharePreviewRequest.
 type SharePreviewRequest struct {
 	// LifetimeSeconds How long the link lives. Left out, it lives for the instance default.
@@ -10434,6 +10720,15 @@ type TriageSource string
 // TriageState Absent when the issue never went through triage.
 type TriageState string
 
+// UpdateDocRequest defines model for UpdateDocRequest.
+type UpdateDocRequest struct {
+	// Content The authoritative form of a description or a comment body: the same shape the editor holds, so text travels from the caret to storage without being translated on the way. The markdown alongside it is rendered from this and is never read back, so send this whenever the text was written in an editor and send markdown when it was not.
+	Content         *Document `json:"content,omitempty"`
+	ExpectedVersion int32     `json:"expectedVersion"`
+	Markdown        *string   `json:"markdown,omitempty"`
+	Title           *string   `json:"title,omitempty"`
+}
+
 // UpdateIssueRequest defines model for UpdateIssueRequest.
 type UpdateIssueRequest struct {
 	// AcknowledgeOpenChildren Complete this issue even though children of it are still open
@@ -10939,6 +11234,9 @@ type DirectoryCursor = time.Time
 // DirectoryLimit defines model for DirectoryLimit.
 type DirectoryLimit = int32
 
+// DocId defines model for DocId.
+type DocId = openapi_types.UUID
+
 // DraftId defines model for DraftId.
 type DraftId = openapi_types.UUID
 
@@ -11106,6 +11404,9 @@ type CycleConflict = CycleConflictProblem
 
 // DirectoryUnlicensed defines model for DirectoryUnlicensed.
 type DirectoryUnlicensed = DirectoryUnlicensedProblem
+
+// DocConflict defines model for DocConflict.
+type DocConflict = DocConflictProblem
 
 // EnforcementRefused defines model for EnforcementRefused.
 type EnforcementRefused = EnforcementRefusedProblem
@@ -11297,6 +11598,29 @@ type ListWorkspaceCyclesParams struct {
 type ListWorkspaceDirectoryRunsParams struct {
 	Limit  *DirectoryLimit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *DirectoryCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWorkspaceDocsParams defines parameters for ListWorkspaceDocs.
+type ListWorkspaceDocsParams struct {
+	// ParentId Only the docs directly beneath this doc.
+	ParentId *openapi_types.UUID `form:"parentId,omitempty" json:"parentId,omitempty"`
+
+	// Root Only the docs at the top of the tree.
+	Root   *bool   `form:"root,omitempty" json:"root,omitempty"`
+	Limit  *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// DeleteWorkspaceDocParams defines parameters for DeleteWorkspaceDoc.
+type DeleteWorkspaceDocParams struct {
+	ExpectedVersion int32 `form:"expectedVersion" json:"expectedVersion"`
+}
+
+// ListWorkspaceDocRevisionsParams defines parameters for ListWorkspaceDocRevisions.
+type ListWorkspaceDocRevisionsParams struct {
+	// Limit How many revisions to return, newest first.
+	Limit  *RevisionLimit `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string        `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // ListWorkspaceExecutionsParams defines parameters for ListWorkspaceExecutions.
@@ -11659,6 +11983,21 @@ type SetWorkspaceDecisionChannelJSONRequestBody = DecisionChannelSetting
 
 // ConfigureWorkspaceDirectoryJSONRequestBody defines body for ConfigureWorkspaceDirectory for application/json ContentType.
 type ConfigureWorkspaceDirectoryJSONRequestBody = ConfigureDirectoryRequest
+
+// CreateWorkspaceDocJSONRequestBody defines body for CreateWorkspaceDoc for application/json ContentType.
+type CreateWorkspaceDocJSONRequestBody = CreateDocRequest
+
+// UpdateWorkspaceDocJSONRequestBody defines body for UpdateWorkspaceDoc for application/json ContentType.
+type UpdateWorkspaceDocJSONRequestBody = UpdateDocRequest
+
+// MoveWorkspaceDocJSONRequestBody defines body for MoveWorkspaceDoc for application/json ContentType.
+type MoveWorkspaceDocJSONRequestBody = MoveDocRequest
+
+// RestoreWorkspaceDocRevisionJSONRequestBody defines body for RestoreWorkspaceDocRevision for application/json ContentType.
+type RestoreWorkspaceDocRevisionJSONRequestBody = RestoreDocRevisionRequest
+
+// ShareWorkspaceDocJSONRequestBody defines body for ShareWorkspaceDoc for application/json ContentType.
+type ShareWorkspaceDocJSONRequestBody = ShareDocRequest
 
 // CancelWorkspaceExecutionJSONRequestBody defines body for CancelWorkspaceExecution for application/json ContentType.
 type CancelWorkspaceExecutionJSONRequestBody = CancelExecutionRequest
@@ -13132,6 +13471,105 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/directory/token (the `RotateWorkspaceDirectoryToken` operationId).
 	RotateWorkspaceDirectoryToken(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceDocs List the active docs this caller may read, most recently changed first
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs (the `ListWorkspaceDocs` operationId).
+	ListWorkspaceDocs(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceDocsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWorkspaceDocWithBody Write a doc for an audience, optionally beneath another doc
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+	CreateWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWorkspaceDoc Write a doc for an audience, optionally beneath another doc
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+	CreateWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteWorkspaceDoc Archive a doc, keeping its history
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId} (the `DeleteWorkspaceDoc` operationId).
+	DeleteWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *DeleteWorkspaceDocParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceDoc Read a doc
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId} (the `GetWorkspaceDoc` operationId).
+	GetWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateWorkspaceDocWithBody Change a doc's title or content against the version it was read at
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+	UpdateWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateWorkspaceDoc Change a doc's title or content against the version it was read at
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+	UpdateWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body UpdateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MoveWorkspaceDocWithBody Place a doc beneath another doc, or at the top of the tree
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+	MoveWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+	MoveWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body MoveWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWorkspaceDocRevisions Read every change made to a doc, newest first
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions (the `ListWorkspaceDocRevisions` operationId).
+	ListWorkspaceDocRevisions(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *ListWorkspaceDocRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceDocRevision Read a doc as one revision left it
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId} (the `GetWorkspaceDocRevision` operationId).
+	GetWorkspaceDocRevision(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RestoreWorkspaceDocRevisionWithBody Put back a revision's title and content, as a new revision
+	//
+	// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+	RestoreWorkspaceDocRevisionWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RestoreWorkspaceDocRevision Put back a revision's title and content, as a new revision
+	//
+	// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+	RestoreWorkspaceDocRevision(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, body RestoreWorkspaceDocRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ShareWorkspaceDocWithBody Change who may read a doc
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+	ShareWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ShareWorkspaceDoc Change who may read a doc
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+	ShareWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body ShareWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceExecutions The runs in this workspace, most recently finished first
 	//
@@ -18040,6 +18478,255 @@ func (c *Client) ListWorkspaceDirectoryChanges(ctx context.Context, workspaceId 
 // Corresponds with POST /workspaces/{workspaceId}/directory/token (the `RotateWorkspaceDirectoryToken` operationId).
 func (c *Client) RotateWorkspaceDirectoryToken(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRotateWorkspaceDirectoryTokenRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceDocs List the active docs this caller may read, most recently changed first
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs (the `ListWorkspaceDocs` operationId).
+func (c *Client) ListWorkspaceDocs(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceDocsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceDocsRequest(c.Server, workspaceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateWorkspaceDocWithBody Write a doc for an audience, optionally beneath another doc
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+func (c *Client) CreateWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWorkspaceDocRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateWorkspaceDoc Write a doc for an audience, optionally beneath another doc
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+func (c *Client) CreateWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWorkspaceDocRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteWorkspaceDoc Archive a doc, keeping its history
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId} (the `DeleteWorkspaceDoc` operationId).
+func (c *Client) DeleteWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *DeleteWorkspaceDocParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWorkspaceDocRequest(c.Server, workspaceId, docId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceDoc Read a doc
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId} (the `GetWorkspaceDoc` operationId).
+func (c *Client) GetWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceDocRequest(c.Server, workspaceId, docId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateWorkspaceDocWithBody Change a doc's title or content against the version it was read at
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+func (c *Client) UpdateWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateWorkspaceDocRequestWithBody(c.Server, workspaceId, docId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateWorkspaceDoc Change a doc's title or content against the version it was read at
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+func (c *Client) UpdateWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body UpdateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateWorkspaceDocRequest(c.Server, workspaceId, docId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MoveWorkspaceDocWithBody Place a doc beneath another doc, or at the top of the tree
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+func (c *Client) MoveWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMoveWorkspaceDocRequestWithBody(c.Server, workspaceId, docId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+func (c *Client) MoveWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body MoveWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMoveWorkspaceDocRequest(c.Server, workspaceId, docId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListWorkspaceDocRevisions Read every change made to a doc, newest first
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions (the `ListWorkspaceDocRevisions` operationId).
+func (c *Client) ListWorkspaceDocRevisions(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *ListWorkspaceDocRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceDocRevisionsRequest(c.Server, workspaceId, docId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceDocRevision Read a doc as one revision left it
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId} (the `GetWorkspaceDocRevision` operationId).
+func (c *Client) GetWorkspaceDocRevision(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceDocRevisionRequest(c.Server, workspaceId, docId, revisionId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RestoreWorkspaceDocRevisionWithBody Put back a revision's title and content, as a new revision
+//
+// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+func (c *Client) RestoreWorkspaceDocRevisionWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRestoreWorkspaceDocRevisionRequestWithBody(c.Server, workspaceId, docId, revisionId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RestoreWorkspaceDocRevision Put back a revision's title and content, as a new revision
+//
+// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+func (c *Client) RestoreWorkspaceDocRevision(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, body RestoreWorkspaceDocRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRestoreWorkspaceDocRevisionRequest(c.Server, workspaceId, docId, revisionId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ShareWorkspaceDocWithBody Change who may read a doc
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+func (c *Client) ShareWorkspaceDocWithBody(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewShareWorkspaceDocRequestWithBody(c.Server, workspaceId, docId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ShareWorkspaceDoc Change who may read a doc
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+func (c *Client) ShareWorkspaceDoc(ctx context.Context, workspaceId WorkspaceId, docId DocId, body ShareWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewShareWorkspaceDocRequest(c.Server, workspaceId, docId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -28891,6 +29578,606 @@ func NewRotateWorkspaceDirectoryTokenRequest(server string, workspaceId Workspac
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewListWorkspaceDocsRequest constructs an http.Request for the ListWorkspaceDocs method
+func NewListWorkspaceDocsRequest(server string, workspaceId WorkspaceId, params *ListWorkspaceDocsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.ParentId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "parentId", *params.ParentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Root != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "root", *params.Root, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateWorkspaceDocRequest calls the generic CreateWorkspaceDoc builder with application/json body
+func NewCreateWorkspaceDocRequest(server string, workspaceId WorkspaceId, body CreateWorkspaceDocJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateWorkspaceDocRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewCreateWorkspaceDocRequestWithBody constructs an http.Request for the CreateWorkspaceDoc method, with any body, and a specified content type
+func NewCreateWorkspaceDocRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteWorkspaceDocRequest constructs an http.Request for the DeleteWorkspaceDoc method
+func NewDeleteWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId, params *DeleteWorkspaceDocParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "expectedVersion", params.ExpectedVersion, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceDocRequest constructs an http.Request for the GetWorkspaceDoc method
+func NewGetWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateWorkspaceDocRequest calls the generic UpdateWorkspaceDoc builder with application/json body
+func NewUpdateWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId, body UpdateWorkspaceDocJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateWorkspaceDocRequestWithBody(server, workspaceId, docId, "application/json", bodyReader)
+}
+
+// NewUpdateWorkspaceDocRequestWithBody constructs an http.Request for the UpdateWorkspaceDoc method, with any body, and a specified content type
+func NewUpdateWorkspaceDocRequestWithBody(server string, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewMoveWorkspaceDocRequest calls the generic MoveWorkspaceDoc builder with application/json body
+func NewMoveWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId, body MoveWorkspaceDocJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMoveWorkspaceDocRequestWithBody(server, workspaceId, docId, "application/json", bodyReader)
+}
+
+// NewMoveWorkspaceDocRequestWithBody constructs an http.Request for the MoveWorkspaceDoc method, with any body, and a specified content type
+func NewMoveWorkspaceDocRequestWithBody(server string, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/move", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListWorkspaceDocRevisionsRequest constructs an http.Request for the ListWorkspaceDocRevisions method
+func NewListWorkspaceDocRevisionsRequest(server string, workspaceId WorkspaceId, docId DocId, params *ListWorkspaceDocRevisionsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/revisions", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceDocRevisionRequest constructs an http.Request for the GetWorkspaceDocRevision method
+func NewGetWorkspaceDocRevisionRequest(server string, workspaceId WorkspaceId, docId DocId, revisionId RevisionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "revisionId", revisionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/revisions/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRestoreWorkspaceDocRevisionRequest calls the generic RestoreWorkspaceDocRevision builder with application/json body
+func NewRestoreWorkspaceDocRevisionRequest(server string, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, body RestoreWorkspaceDocRevisionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRestoreWorkspaceDocRevisionRequestWithBody(server, workspaceId, docId, revisionId, "application/json", bodyReader)
+}
+
+// NewRestoreWorkspaceDocRevisionRequestWithBody constructs an http.Request for the RestoreWorkspaceDocRevision method, with any body, and a specified content type
+func NewRestoreWorkspaceDocRevisionRequestWithBody(server string, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "revisionId", revisionId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/revisions/%s/restore", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewShareWorkspaceDocRequest calls the generic ShareWorkspaceDoc builder with application/json body
+func NewShareWorkspaceDocRequest(server string, workspaceId WorkspaceId, docId DocId, body ShareWorkspaceDocJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewShareWorkspaceDocRequestWithBody(server, workspaceId, docId, "application/json", bodyReader)
+}
+
+// NewShareWorkspaceDocRequestWithBody constructs an http.Request for the ShareWorkspaceDoc method, with any body, and a specified content type
+func NewShareWorkspaceDocRequestWithBody(server string, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "docId", docId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/docs/%s/share", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -42922,6 +44209,115 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/directory/token (the `RotateWorkspaceDirectoryToken` operationId).
 	RotateWorkspaceDirectoryTokenWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*RotateWorkspaceDirectoryTokenResponse, error)
 
+	// ListWorkspaceDocsWithResponse List the active docs this caller may read, most recently changed first
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs (the `ListWorkspaceDocs` operationId).
+	ListWorkspaceDocsWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceDocsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceDocsResponse, error)
+
+	// CreateWorkspaceDocWithBodyWithResponse Write a doc for an audience, optionally beneath another doc
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+	CreateWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWorkspaceDocResponse, error)
+
+	// CreateWorkspaceDocWithResponse Write a doc for an audience, optionally beneath another doc
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+	CreateWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWorkspaceDocResponse, error)
+
+	// DeleteWorkspaceDocWithResponse Archive a doc, keeping its history
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId} (the `DeleteWorkspaceDoc` operationId).
+	DeleteWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *DeleteWorkspaceDocParams, reqEditors ...RequestEditorFn) (*DeleteWorkspaceDocResponse, error)
+
+	// GetWorkspaceDocWithResponse Read a doc
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId} (the `GetWorkspaceDoc` operationId).
+	GetWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*GetWorkspaceDocResponse, error)
+
+	// UpdateWorkspaceDocWithBodyWithResponse Change a doc's title or content against the version it was read at
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+	UpdateWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWorkspaceDocResponse, error)
+
+	// UpdateWorkspaceDocWithResponse Change a doc's title or content against the version it was read at
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+	UpdateWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body UpdateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWorkspaceDocResponse, error)
+
+	// MoveWorkspaceDocWithBodyWithResponse Place a doc beneath another doc, or at the top of the tree
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+	MoveWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MoveWorkspaceDocResponse, error)
+
+	// MoveWorkspaceDocWithResponse Place a doc beneath another doc, or at the top of the tree
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+	MoveWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body MoveWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*MoveWorkspaceDocResponse, error)
+
+	// ListWorkspaceDocRevisionsWithResponse Read every change made to a doc, newest first
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions (the `ListWorkspaceDocRevisions` operationId).
+	ListWorkspaceDocRevisionsWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *ListWorkspaceDocRevisionsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceDocRevisionsResponse, error)
+
+	// GetWorkspaceDocRevisionWithResponse Read a doc as one revision left it
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId} (the `GetWorkspaceDocRevision` operationId).
+	GetWorkspaceDocRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*GetWorkspaceDocRevisionResponse, error)
+
+	// RestoreWorkspaceDocRevisionWithBodyWithResponse Put back a revision's title and content, as a new revision
+	//
+	// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+	RestoreWorkspaceDocRevisionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RestoreWorkspaceDocRevisionResponse, error)
+
+	// RestoreWorkspaceDocRevisionWithResponse Put back a revision's title and content, as a new revision
+	//
+	// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+	RestoreWorkspaceDocRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, body RestoreWorkspaceDocRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*RestoreWorkspaceDocRevisionResponse, error)
+
+	// ShareWorkspaceDocWithBodyWithResponse Change who may read a doc
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+	ShareWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ShareWorkspaceDocResponse, error)
+
+	// ShareWorkspaceDocWithResponse Change who may read a doc
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+	ShareWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body ShareWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*ShareWorkspaceDocResponse, error)
+
 	// ListWorkspaceExecutionsWithResponse The runs in this workspace, most recently finished first
 	//
 	// Only runs on issues the caller may read. Pass state to narrow it, which is how the review queue asks for the runs waiting for somebody.
@@ -53967,6 +55363,766 @@ func (r RotateWorkspaceDirectoryTokenResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RotateWorkspaceDirectoryTokenResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceDocsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DocPage
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceDocsResponse) GetJSON200() *DocPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceDocsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceDocsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ListWorkspaceDocsResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceDocsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceDocsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceDocsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceDocsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceDocsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Doc
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateWorkspaceDocResponse) GetJSON201() *Doc {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r CreateWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r CreateWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r CreateWorkspaceDocResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CreateWorkspaceDocResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r CreateWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateWorkspaceDocResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Doc
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DeleteWorkspaceDocResponse) GetJSON200() *Doc {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r DeleteWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r DeleteWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r DeleteWorkspaceDocResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r DeleteWorkspaceDocResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DeleteWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteWorkspaceDocResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Doc
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceDocResponse) GetJSON200() *Doc {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceDocResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceDocResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Doc
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateWorkspaceDocResponse) GetJSON200() *Doc {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r UpdateWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r UpdateWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r UpdateWorkspaceDocResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r UpdateWorkspaceDocResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r UpdateWorkspaceDocResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r UpdateWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateWorkspaceDocResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type MoveWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Doc
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r MoveWorkspaceDocResponse) GetJSON200() *Doc {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r MoveWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r MoveWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r MoveWorkspaceDocResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r MoveWorkspaceDocResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r MoveWorkspaceDocResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r MoveWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r MoveWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MoveWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MoveWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MoveWorkspaceDocResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListWorkspaceDocRevisionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DocRevisionPage
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceDocRevisionsResponse) GetJSON200() *DocRevisionPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceDocRevisionsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceDocRevisionsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ListWorkspaceDocRevisionsResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ListWorkspaceDocRevisionsResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceDocRevisionsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceDocRevisionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceDocRevisionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceDocRevisionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceDocRevisionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceDocRevisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DocRevision
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceDocRevisionResponse) GetJSON200() *DocRevision {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceDocRevisionResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceDocRevisionResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceDocRevisionResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceDocRevisionResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceDocRevisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceDocRevisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceDocRevisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceDocRevisionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RestoreWorkspaceDocRevisionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Doc
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RestoreWorkspaceDocRevisionResponse) GetJSON200() *Doc {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RestoreWorkspaceDocRevisionResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RestoreWorkspaceDocRevisionResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RestoreWorkspaceDocRevisionResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r RestoreWorkspaceDocRevisionResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RestoreWorkspaceDocRevisionResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RestoreWorkspaceDocRevisionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RestoreWorkspaceDocRevisionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RestoreWorkspaceDocRevisionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RestoreWorkspaceDocRevisionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ShareWorkspaceDocResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Doc
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *DocConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ShareWorkspaceDocResponse) GetJSON200() *Doc {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ShareWorkspaceDocResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ShareWorkspaceDocResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ShareWorkspaceDocResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ShareWorkspaceDocResponse) GetApplicationproblemJSON409() *DocConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ShareWorkspaceDocResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ShareWorkspaceDocResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ShareWorkspaceDocResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ShareWorkspaceDocResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ShareWorkspaceDocResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ShareWorkspaceDocResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -75432,6 +77588,205 @@ func (c *ClientWithResponses) RotateWorkspaceDirectoryTokenWithResponse(ctx cont
 	return ParseRotateWorkspaceDirectoryTokenResponse(rsp)
 }
 
+// ListWorkspaceDocsWithResponse List the active docs this caller may read, most recently changed first
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs (the `ListWorkspaceDocs` operationId).
+func (c *ClientWithResponses) ListWorkspaceDocsWithResponse(ctx context.Context, workspaceId WorkspaceId, params *ListWorkspaceDocsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceDocsResponse, error) {
+	rsp, err := c.ListWorkspaceDocs(ctx, workspaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceDocsResponse(rsp)
+}
+
+// CreateWorkspaceDocWithBodyWithResponse Write a doc for an audience, optionally beneath another doc
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+func (c *ClientWithResponses) CreateWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateWorkspaceDocResponse, error) {
+	rsp, err := c.CreateWorkspaceDocWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWorkspaceDocResponse(rsp)
+}
+
+// CreateWorkspaceDocWithResponse Write a doc for an audience, optionally beneath another doc
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs (the `CreateWorkspaceDoc` operationId).
+func (c *ClientWithResponses) CreateWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, body CreateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateWorkspaceDocResponse, error) {
+	rsp, err := c.CreateWorkspaceDoc(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWorkspaceDocResponse(rsp)
+}
+
+// DeleteWorkspaceDocWithResponse Archive a doc, keeping its history
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/docs/{docId} (the `DeleteWorkspaceDoc` operationId).
+func (c *ClientWithResponses) DeleteWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *DeleteWorkspaceDocParams, reqEditors ...RequestEditorFn) (*DeleteWorkspaceDocResponse, error) {
+	rsp, err := c.DeleteWorkspaceDoc(ctx, workspaceId, docId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteWorkspaceDocResponse(rsp)
+}
+
+// GetWorkspaceDocWithResponse Read a doc
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId} (the `GetWorkspaceDoc` operationId).
+func (c *ClientWithResponses) GetWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, reqEditors ...RequestEditorFn) (*GetWorkspaceDocResponse, error) {
+	rsp, err := c.GetWorkspaceDoc(ctx, workspaceId, docId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceDocResponse(rsp)
+}
+
+// UpdateWorkspaceDocWithBodyWithResponse Change a doc's title or content against the version it was read at
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+func (c *ClientWithResponses) UpdateWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWorkspaceDocResponse, error) {
+	rsp, err := c.UpdateWorkspaceDocWithBody(ctx, workspaceId, docId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateWorkspaceDocResponse(rsp)
+}
+
+// UpdateWorkspaceDocWithResponse Change a doc's title or content against the version it was read at
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /workspaces/{workspaceId}/docs/{docId} (the `UpdateWorkspaceDoc` operationId).
+func (c *ClientWithResponses) UpdateWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body UpdateWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWorkspaceDocResponse, error) {
+	rsp, err := c.UpdateWorkspaceDoc(ctx, workspaceId, docId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateWorkspaceDocResponse(rsp)
+}
+
+// MoveWorkspaceDocWithBodyWithResponse Place a doc beneath another doc, or at the top of the tree
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+func (c *ClientWithResponses) MoveWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MoveWorkspaceDocResponse, error) {
+	rsp, err := c.MoveWorkspaceDocWithBody(ctx, workspaceId, docId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMoveWorkspaceDocResponse(rsp)
+}
+
+// MoveWorkspaceDocWithResponse Place a doc beneath another doc, or at the top of the tree
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/move (the `MoveWorkspaceDoc` operationId).
+func (c *ClientWithResponses) MoveWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body MoveWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*MoveWorkspaceDocResponse, error) {
+	rsp, err := c.MoveWorkspaceDoc(ctx, workspaceId, docId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMoveWorkspaceDocResponse(rsp)
+}
+
+// ListWorkspaceDocRevisionsWithResponse Read every change made to a doc, newest first
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions (the `ListWorkspaceDocRevisions` operationId).
+func (c *ClientWithResponses) ListWorkspaceDocRevisionsWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, params *ListWorkspaceDocRevisionsParams, reqEditors ...RequestEditorFn) (*ListWorkspaceDocRevisionsResponse, error) {
+	rsp, err := c.ListWorkspaceDocRevisions(ctx, workspaceId, docId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceDocRevisionsResponse(rsp)
+}
+
+// GetWorkspaceDocRevisionWithResponse Read a doc as one revision left it
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId} (the `GetWorkspaceDocRevision` operationId).
+func (c *ClientWithResponses) GetWorkspaceDocRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, reqEditors ...RequestEditorFn) (*GetWorkspaceDocRevisionResponse, error) {
+	rsp, err := c.GetWorkspaceDocRevision(ctx, workspaceId, docId, revisionId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceDocRevisionResponse(rsp)
+}
+
+// RestoreWorkspaceDocRevisionWithBodyWithResponse Put back a revision's title and content, as a new revision
+//
+// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+func (c *ClientWithResponses) RestoreWorkspaceDocRevisionWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RestoreWorkspaceDocRevisionResponse, error) {
+	rsp, err := c.RestoreWorkspaceDocRevisionWithBody(ctx, workspaceId, docId, revisionId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRestoreWorkspaceDocRevisionResponse(rsp)
+}
+
+// RestoreWorkspaceDocRevisionWithResponse Put back a revision's title and content, as a new revision
+//
+// Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore (the `RestoreWorkspaceDocRevision` operationId).
+func (c *ClientWithResponses) RestoreWorkspaceDocRevisionWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, revisionId RevisionId, body RestoreWorkspaceDocRevisionJSONRequestBody, reqEditors ...RequestEditorFn) (*RestoreWorkspaceDocRevisionResponse, error) {
+	rsp, err := c.RestoreWorkspaceDocRevision(ctx, workspaceId, docId, revisionId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRestoreWorkspaceDocRevisionResponse(rsp)
+}
+
+// ShareWorkspaceDocWithBodyWithResponse Change who may read a doc
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+func (c *ClientWithResponses) ShareWorkspaceDocWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ShareWorkspaceDocResponse, error) {
+	rsp, err := c.ShareWorkspaceDocWithBody(ctx, workspaceId, docId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseShareWorkspaceDocResponse(rsp)
+}
+
+// ShareWorkspaceDocWithResponse Change who may read a doc
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/docs/{docId}/share (the `ShareWorkspaceDoc` operationId).
+func (c *ClientWithResponses) ShareWorkspaceDocWithResponse(ctx context.Context, workspaceId WorkspaceId, docId DocId, body ShareWorkspaceDocJSONRequestBody, reqEditors ...RequestEditorFn) (*ShareWorkspaceDocResponse, error) {
+	rsp, err := c.ShareWorkspaceDoc(ctx, workspaceId, docId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseShareWorkspaceDocResponse(rsp)
+}
+
 // ListWorkspaceExecutionsWithResponse The runs in this workspace, most recently finished first
 //
 // Only runs on issues the caller may read. Pass state to narrow it, which is how the review queue asks for the runs waiting for somebody.
@@ -86920,6 +89275,616 @@ func ParseRotateWorkspaceDirectoryTokenResponse(rsp *http.Response) (*RotateWork
 			return nil, err
 		}
 		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceDocsResponse parses an HTTP response from a ListWorkspaceDocsWithResponse call
+func ParseListWorkspaceDocsResponse(rsp *http.Response) (*ListWorkspaceDocsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceDocsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DocPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateWorkspaceDocResponse parses an HTTP response from a CreateWorkspaceDocWithResponse call
+func ParseCreateWorkspaceDocResponse(rsp *http.Response) (*CreateWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Doc
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteWorkspaceDocResponse parses an HTTP response from a DeleteWorkspaceDocWithResponse call
+func ParseDeleteWorkspaceDocResponse(rsp *http.Response) (*DeleteWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Doc
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceDocResponse parses an HTTP response from a GetWorkspaceDocWithResponse call
+func ParseGetWorkspaceDocResponse(rsp *http.Response) (*GetWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Doc
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateWorkspaceDocResponse parses an HTTP response from a UpdateWorkspaceDocWithResponse call
+func ParseUpdateWorkspaceDocResponse(rsp *http.Response) (*UpdateWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Doc
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMoveWorkspaceDocResponse parses an HTTP response from a MoveWorkspaceDocWithResponse call
+func ParseMoveWorkspaceDocResponse(rsp *http.Response) (*MoveWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MoveWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Doc
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWorkspaceDocRevisionsResponse parses an HTTP response from a ListWorkspaceDocRevisionsWithResponse call
+func ParseListWorkspaceDocRevisionsResponse(rsp *http.Response) (*ListWorkspaceDocRevisionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceDocRevisionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DocRevisionPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceDocRevisionResponse parses an HTTP response from a GetWorkspaceDocRevisionWithResponse call
+func ParseGetWorkspaceDocRevisionResponse(rsp *http.Response) (*GetWorkspaceDocRevisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceDocRevisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DocRevision
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRestoreWorkspaceDocRevisionResponse parses an HTTP response from a RestoreWorkspaceDocRevisionWithResponse call
+func ParseRestoreWorkspaceDocRevisionResponse(rsp *http.Response) (*RestoreWorkspaceDocRevisionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RestoreWorkspaceDocRevisionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Doc
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseShareWorkspaceDocResponse parses an HTTP response from a ShareWorkspaceDocWithResponse call
+func ParseShareWorkspaceDocResponse(rsp *http.Response) (*ShareWorkspaceDocResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ShareWorkspaceDocResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Doc
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest DocConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
 
 	}
 
@@ -102762,6 +105727,36 @@ type ServerInterface interface {
 	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 	// (POST /workspaces/{workspaceId}/directory/token)
 	RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceDocs List the active docs this caller may read, most recently changed first
+	// (GET /workspaces/{workspaceId}/docs)
+	ListWorkspaceDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceDocsParams)
+	// CreateWorkspaceDoc Write a doc for an audience, optionally beneath another doc
+	// (POST /workspaces/{workspaceId}/docs)
+	CreateWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// DeleteWorkspaceDoc Archive a doc, keeping its history
+	// (DELETE /workspaces/{workspaceId}/docs/{docId})
+	DeleteWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, params DeleteWorkspaceDocParams)
+	// GetWorkspaceDoc Read a doc
+	// (GET /workspaces/{workspaceId}/docs/{docId})
+	GetWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
+	// UpdateWorkspaceDoc Change a doc's title or content against the version it was read at
+	// (PATCH /workspaces/{workspaceId}/docs/{docId})
+	UpdateWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
+	// MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
+	// (POST /workspaces/{workspaceId}/docs/{docId}/move)
+	MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
+	// ListWorkspaceDocRevisions Read every change made to a doc, newest first
+	// (GET /workspaces/{workspaceId}/docs/{docId}/revisions)
+	ListWorkspaceDocRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, params ListWorkspaceDocRevisionsParams)
+	// GetWorkspaceDocRevision Read a doc as one revision left it
+	// (GET /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId})
+	GetWorkspaceDocRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, revisionId RevisionId)
+	// RestoreWorkspaceDocRevision Put back a revision's title and content, as a new revision
+	// (POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore)
+	RestoreWorkspaceDocRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, revisionId RevisionId)
+	// ShareWorkspaceDoc Change who may read a doc
+	// (POST /workspaces/{workspaceId}/docs/{docId}/share)
+	ShareWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId)
 	// ListWorkspaceExecutions The runs in this workspace, most recently finished first
 	// (GET /workspaces/{workspaceId}/executions)
 	ListWorkspaceExecutions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceExecutionsParams)
@@ -104286,6 +107281,66 @@ func (_ Unimplemented) ListWorkspaceDirectoryChanges(w http.ResponseWriter, r *h
 // RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 // (POST /workspaces/{workspaceId}/directory/token)
 func (_ Unimplemented) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceDocs List the active docs this caller may read, most recently changed first
+// (GET /workspaces/{workspaceId}/docs)
+func (_ Unimplemented) ListWorkspaceDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceDocsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateWorkspaceDoc Write a doc for an audience, optionally beneath another doc
+// (POST /workspaces/{workspaceId}/docs)
+func (_ Unimplemented) CreateWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DeleteWorkspaceDoc Archive a doc, keeping its history
+// (DELETE /workspaces/{workspaceId}/docs/{docId})
+func (_ Unimplemented) DeleteWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, params DeleteWorkspaceDocParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceDoc Read a doc
+// (GET /workspaces/{workspaceId}/docs/{docId})
+func (_ Unimplemented) GetWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// UpdateWorkspaceDoc Change a doc's title or content against the version it was read at
+// (PATCH /workspaces/{workspaceId}/docs/{docId})
+func (_ Unimplemented) UpdateWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
+// (POST /workspaces/{workspaceId}/docs/{docId}/move)
+func (_ Unimplemented) MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ListWorkspaceDocRevisions Read every change made to a doc, newest first
+// (GET /workspaces/{workspaceId}/docs/{docId}/revisions)
+func (_ Unimplemented) ListWorkspaceDocRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, params ListWorkspaceDocRevisionsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceDocRevision Read a doc as one revision left it
+// (GET /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId})
+func (_ Unimplemented) GetWorkspaceDocRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, revisionId RevisionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RestoreWorkspaceDocRevision Put back a revision's title and content, as a new revision
+// (POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore)
+func (_ Unimplemented) RestoreWorkspaceDocRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, revisionId RevisionId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ShareWorkspaceDoc Change who may read a doc
+// (POST /workspaces/{workspaceId}/docs/{docId}/share)
+func (_ Unimplemented) ShareWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -109301,6 +112356,456 @@ func (siw *ServerInterfaceWrapper) RotateWorkspaceDirectoryToken(w http.Response
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RotateWorkspaceDirectoryToken(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceDocs operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceDocs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceDocsParams
+
+	// ------------- Optional query parameter "parentId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "parentId", r.URL.Query(), &params.ParentId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "parentId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "parentId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "root" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "root", r.URL.Query(), &params.Root, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "root"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "root", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceDocs(w, r, workspaceId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkspaceDoc(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteWorkspaceDocParams
+
+	// ------------- Required query parameter "expectedVersion" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "expectedVersion", r.URL.Query(), &params.ExpectedVersion, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expectedVersion"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expectedVersion", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceDoc(w, r, workspaceId, docId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceDoc(w, r, workspaceId, docId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWorkspaceDoc(w, r, workspaceId, docId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MoveWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MoveWorkspaceDoc(w, r, workspaceId, docId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkspaceDocRevisions operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceDocRevisions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWorkspaceDocRevisionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: "int32"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceDocRevisions(w, r, workspaceId, docId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceDocRevision operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceDocRevision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "revisionId" -------------
+	var revisionId RevisionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "revisionId", chi.URLParam(r, "revisionId"), &revisionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "revisionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceDocRevision(w, r, workspaceId, docId, revisionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RestoreWorkspaceDocRevision operation middleware
+func (siw *ServerInterfaceWrapper) RestoreWorkspaceDocRevision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "revisionId" -------------
+	var revisionId RevisionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "revisionId", chi.URLParam(r, "revisionId"), &revisionId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "revisionId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestoreWorkspaceDocRevision(w, r, workspaceId, docId, revisionId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ShareWorkspaceDoc operation middleware
+func (siw *ServerInterfaceWrapper) ShareWorkspaceDoc(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "docId" -------------
+	var docId DocId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "docId", chi.URLParam(r, "docId"), &docId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ShareWorkspaceDoc(w, r, workspaceId, docId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -119864,6 +123369,36 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/projects/{projectId}/status", wrapper.PostWorkspaceProjectStatus)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/docs", wrapper.ListWorkspaceDocs)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/docs", wrapper.CreateWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}", wrapper.DeleteWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}", wrapper.GetWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}", wrapper.UpdateWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/move", wrapper.MoveWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/share", wrapper.ShareWorkspaceDoc)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/revisions", wrapper.ListWorkspaceDocRevisions)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}", wrapper.GetWorkspaceDocRevision)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore", wrapper.RestoreWorkspaceDocRevision)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/roadmap", wrapper.GetWorkspaceRoadmap)
 	})
 	r.Group(func(r chi.Router) {
@@ -120310,6 +123845,8 @@ type CommentConflictApplicationProblemPlusJSONResponse CommentConflictProblem
 type CycleConflictApplicationProblemPlusJSONResponse CycleConflictProblem
 
 type DirectoryUnlicensedApplicationProblemPlusJSONResponse DirectoryUnlicensedProblem
+
+type DocConflictApplicationProblemPlusJSONResponse DocConflictProblem
 
 type EnforcementRefusedApplicationProblemPlusJSONResponse EnforcementRefusedProblem
 
@@ -130860,6 +134397,996 @@ func (response RotateWorkspaceDirectoryToken503ApplicationProblemPlusJSONRespons
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Params      ListWorkspaceDocsParams
+}
+
+type ListWorkspaceDocsResponseObject interface {
+	VisitListWorkspaceDocsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceDocs200JSONResponse DocPage
+
+func (response ListWorkspaceDocs200JSONResponse) VisitListWorkspaceDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocs401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDocs401ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocs403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDocs403ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocs422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDocs422ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocs500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDocs500ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *CreateWorkspaceDocJSONRequestBody
+}
+
+type CreateWorkspaceDocResponseObject interface {
+	VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkspaceDoc201JSONResponse Doc
+
+func (response CreateWorkspaceDoc201JSONResponse) VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceDoc409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response CreateWorkspaceDoc409ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceDoc422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceDoc422ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	Params      DeleteWorkspaceDocParams
+}
+
+type DeleteWorkspaceDocResponseObject interface {
+	VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceDoc200JSONResponse Doc
+
+func (response DeleteWorkspaceDoc200JSONResponse) VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceDoc404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceDoc404ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceDoc409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteWorkspaceDoc409ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+}
+
+type GetWorkspaceDocResponseObject interface {
+	VisitGetWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceDoc200JSONResponse Doc
+
+func (response GetWorkspaceDoc200JSONResponse) VisitGetWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDoc404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDoc404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	Body        *UpdateWorkspaceDocJSONRequestBody
+}
+
+type UpdateWorkspaceDocResponseObject interface {
+	VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type UpdateWorkspaceDoc200JSONResponse Doc
+
+func (response UpdateWorkspaceDoc200JSONResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceDoc404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceDoc404ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceDoc409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateWorkspaceDoc409ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceDoc422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceDoc422ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	Body        *MoveWorkspaceDocJSONRequestBody
+}
+
+type MoveWorkspaceDocResponseObject interface {
+	VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type MoveWorkspaceDoc200JSONResponse Doc
+
+func (response MoveWorkspaceDoc200JSONResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MoveWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response MoveWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveWorkspaceDoc404ApplicationProblemPlusJSONResponse Problem
+
+func (response MoveWorkspaceDoc404ApplicationProblemPlusJSONResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveWorkspaceDoc409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response MoveWorkspaceDoc409ApplicationProblemPlusJSONResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveWorkspaceDoc422ApplicationProblemPlusJSONResponse Problem
+
+func (response MoveWorkspaceDoc422ApplicationProblemPlusJSONResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response MoveWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocRevisionsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	Params      ListWorkspaceDocRevisionsParams
+}
+
+type ListWorkspaceDocRevisionsResponseObject interface {
+	VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceDocRevisions200JSONResponse DocRevisionPage
+
+func (response ListWorkspaceDocRevisions200JSONResponse) VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocRevisions401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDocRevisions401ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocRevisions403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDocRevisions403ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocRevisions404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDocRevisions404ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocRevisions422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDocRevisions422ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDocRevisions500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDocRevisions500ApplicationProblemPlusJSONResponse) VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDocRevisionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	RevisionId  RevisionId  `json:"revisionId"`
+}
+
+type GetWorkspaceDocRevisionResponseObject interface {
+	VisitGetWorkspaceDocRevisionResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceDocRevision200JSONResponse DocRevision
+
+func (response GetWorkspaceDocRevision200JSONResponse) VisitGetWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDocRevision401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDocRevision401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDocRevision403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceDocRevision403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDocRevision404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDocRevision404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceDocRevision500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceDocRevision500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceDocRevisionRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	RevisionId  RevisionId  `json:"revisionId"`
+	Body        *RestoreWorkspaceDocRevisionJSONRequestBody
+}
+
+type RestoreWorkspaceDocRevisionResponseObject interface {
+	VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error
+}
+
+type RestoreWorkspaceDocRevision200JSONResponse Doc
+
+func (response RestoreWorkspaceDocRevision200JSONResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceDocRevision401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RestoreWorkspaceDocRevision401ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceDocRevision403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RestoreWorkspaceDocRevision403ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceDocRevision404ApplicationProblemPlusJSONResponse Problem
+
+func (response RestoreWorkspaceDocRevision404ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceDocRevision409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response RestoreWorkspaceDocRevision409ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreWorkspaceDocRevision500ApplicationProblemPlusJSONResponse Problem
+
+func (response RestoreWorkspaceDocRevision500ApplicationProblemPlusJSONResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceDocRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DocId       DocId       `json:"docId"`
+	Body        *ShareWorkspaceDocJSONRequestBody
+}
+
+type ShareWorkspaceDocResponseObject interface {
+	VisitShareWorkspaceDocResponse(w http.ResponseWriter) error
+}
+
+type ShareWorkspaceDoc200JSONResponse Doc
+
+func (response ShareWorkspaceDoc200JSONResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceDoc401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ShareWorkspaceDoc401ApplicationProblemPlusJSONResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceDoc403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ShareWorkspaceDoc403ApplicationProblemPlusJSONResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceDoc404ApplicationProblemPlusJSONResponse Problem
+
+func (response ShareWorkspaceDoc404ApplicationProblemPlusJSONResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceDoc409ApplicationProblemPlusJSONResponse struct {
+	DocConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ShareWorkspaceDoc409ApplicationProblemPlusJSONResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceDoc422ApplicationProblemPlusJSONResponse Problem
+
+func (response ShareWorkspaceDoc422ApplicationProblemPlusJSONResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ShareWorkspaceDoc500ApplicationProblemPlusJSONResponse Problem
+
+func (response ShareWorkspaceDoc500ApplicationProblemPlusJSONResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -155871,6 +160398,36 @@ type StrictServerInterface interface {
 	// RotateWorkspaceDirectoryToken Replace the credential, ending the old one at once
 	// (POST /workspaces/{workspaceId}/directory/token)
 	RotateWorkspaceDirectoryToken(ctx context.Context, request RotateWorkspaceDirectoryTokenRequestObject) (RotateWorkspaceDirectoryTokenResponseObject, error)
+	// ListWorkspaceDocs List the active docs this caller may read, most recently changed first
+	// (GET /workspaces/{workspaceId}/docs)
+	ListWorkspaceDocs(ctx context.Context, request ListWorkspaceDocsRequestObject) (ListWorkspaceDocsResponseObject, error)
+	// CreateWorkspaceDoc Write a doc for an audience, optionally beneath another doc
+	// (POST /workspaces/{workspaceId}/docs)
+	CreateWorkspaceDoc(ctx context.Context, request CreateWorkspaceDocRequestObject) (CreateWorkspaceDocResponseObject, error)
+	// DeleteWorkspaceDoc Archive a doc, keeping its history
+	// (DELETE /workspaces/{workspaceId}/docs/{docId})
+	DeleteWorkspaceDoc(ctx context.Context, request DeleteWorkspaceDocRequestObject) (DeleteWorkspaceDocResponseObject, error)
+	// GetWorkspaceDoc Read a doc
+	// (GET /workspaces/{workspaceId}/docs/{docId})
+	GetWorkspaceDoc(ctx context.Context, request GetWorkspaceDocRequestObject) (GetWorkspaceDocResponseObject, error)
+	// UpdateWorkspaceDoc Change a doc's title or content against the version it was read at
+	// (PATCH /workspaces/{workspaceId}/docs/{docId})
+	UpdateWorkspaceDoc(ctx context.Context, request UpdateWorkspaceDocRequestObject) (UpdateWorkspaceDocResponseObject, error)
+	// MoveWorkspaceDoc Place a doc beneath another doc, or at the top of the tree
+	// (POST /workspaces/{workspaceId}/docs/{docId}/move)
+	MoveWorkspaceDoc(ctx context.Context, request MoveWorkspaceDocRequestObject) (MoveWorkspaceDocResponseObject, error)
+	// ListWorkspaceDocRevisions Read every change made to a doc, newest first
+	// (GET /workspaces/{workspaceId}/docs/{docId}/revisions)
+	ListWorkspaceDocRevisions(ctx context.Context, request ListWorkspaceDocRevisionsRequestObject) (ListWorkspaceDocRevisionsResponseObject, error)
+	// GetWorkspaceDocRevision Read a doc as one revision left it
+	// (GET /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId})
+	GetWorkspaceDocRevision(ctx context.Context, request GetWorkspaceDocRevisionRequestObject) (GetWorkspaceDocRevisionResponseObject, error)
+	// RestoreWorkspaceDocRevision Put back a revision's title and content, as a new revision
+	// (POST /workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore)
+	RestoreWorkspaceDocRevision(ctx context.Context, request RestoreWorkspaceDocRevisionRequestObject) (RestoreWorkspaceDocRevisionResponseObject, error)
+	// ShareWorkspaceDoc Change who may read a doc
+	// (POST /workspaces/{workspaceId}/docs/{docId}/share)
+	ShareWorkspaceDoc(ctx context.Context, request ShareWorkspaceDocRequestObject) (ShareWorkspaceDocResponseObject, error)
 	// ListWorkspaceExecutions The runs in this workspace, most recently finished first
 	// (GET /workspaces/{workspaceId}/executions)
 	ListWorkspaceExecutions(ctx context.Context, request ListWorkspaceExecutionsRequestObject) (ListWorkspaceExecutionsResponseObject, error)
@@ -160155,6 +164712,314 @@ func (sh *strictHandler) RotateWorkspaceDirectoryToken(w http.ResponseWriter, r 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RotateWorkspaceDirectoryTokenResponseObject); ok {
 		if err := validResponse.VisitRotateWorkspaceDirectoryTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceDocs operation middleware
+func (sh *strictHandler) ListWorkspaceDocs(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, params ListWorkspaceDocsParams) {
+	var request ListWorkspaceDocsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceDocs(ctx, request.(ListWorkspaceDocsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceDocs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceDocsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceDocsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkspaceDoc operation middleware
+func (sh *strictHandler) CreateWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request CreateWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body CreateWorkspaceDocJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkspaceDoc(ctx, request.(CreateWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitCreateWorkspaceDocResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceDoc operation middleware
+func (sh *strictHandler) DeleteWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, params DeleteWorkspaceDocParams) {
+	var request DeleteWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceDoc(ctx, request.(DeleteWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceDocResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceDoc operation middleware
+func (sh *strictHandler) GetWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	var request GetWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceDoc(ctx, request.(GetWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceDocResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateWorkspaceDoc operation middleware
+func (sh *strictHandler) UpdateWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	var request UpdateWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+
+	var body UpdateWorkspaceDocJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateWorkspaceDoc(ctx, request.(UpdateWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitUpdateWorkspaceDocResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MoveWorkspaceDoc operation middleware
+func (sh *strictHandler) MoveWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	var request MoveWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+
+	var body MoveWorkspaceDocJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MoveWorkspaceDoc(ctx, request.(MoveWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MoveWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MoveWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitMoveWorkspaceDocResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceDocRevisions operation middleware
+func (sh *strictHandler) ListWorkspaceDocRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, params ListWorkspaceDocRevisionsParams) {
+	var request ListWorkspaceDocRevisionsRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceDocRevisions(ctx, request.(ListWorkspaceDocRevisionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceDocRevisions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceDocRevisionsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceDocRevisionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceDocRevision operation middleware
+func (sh *strictHandler) GetWorkspaceDocRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, revisionId RevisionId) {
+	var request GetWorkspaceDocRevisionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+	request.RevisionId = revisionId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceDocRevision(ctx, request.(GetWorkspaceDocRevisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceDocRevision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceDocRevisionResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceDocRevisionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RestoreWorkspaceDocRevision operation middleware
+func (sh *strictHandler) RestoreWorkspaceDocRevision(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId, revisionId RevisionId) {
+	var request RestoreWorkspaceDocRevisionRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+	request.RevisionId = revisionId
+
+	var body RestoreWorkspaceDocRevisionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreWorkspaceDocRevision(ctx, request.(RestoreWorkspaceDocRevisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreWorkspaceDocRevision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RestoreWorkspaceDocRevisionResponseObject); ok {
+		if err := validResponse.VisitRestoreWorkspaceDocRevisionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ShareWorkspaceDoc operation middleware
+func (sh *strictHandler) ShareWorkspaceDoc(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, docId DocId) {
+	var request ShareWorkspaceDocRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DocId = docId
+
+	var body ShareWorkspaceDocJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ShareWorkspaceDoc(ctx, request.(ShareWorkspaceDocRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ShareWorkspaceDoc")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ShareWorkspaceDocResponseObject); ok {
+		if err := validResponse.VisitShareWorkspaceDocResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
