@@ -270,3 +270,33 @@ func assertFieldError(t *testing.T, err error, field, code string) {
 
 	t.Fatalf("got %v, want %s on %s", validation, code, field)
 }
+
+func TestAMemoryRestatesAnotherOnlyWhenEveryContentFieldAgrees(t *testing.T) {
+	issueID := uuid.New()
+	until := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	for name, testCase := range map[string]struct {
+		alter func(*entity.Memory)
+		want  bool
+	}{
+		"the same memory":        {alter: func(*entity.Memory) {}, want: true},
+		"its status alone moved": {alter: func(m *entity.Memory) { m.Status = entity.MemoryStatusDisputed }, want: true},
+		"another statement":      {alter: func(m *entity.Memory) { m.Statement = "Use Postgres" }, want: false},
+		"another component":      {alter: func(m *entity.Memory) { m.Applicability.Component = "billing" }, want: false},
+		"an end date":            {alter: func(m *entity.Memory) { m.EffectiveUntil = &until }, want: false},
+		"another basis":          {alter: func(m *entity.Memory) { m.Basis = entity.MemoryBasisInference }, want: false},
+		"evidence cited": {alter: func(m *entity.Memory) {
+			m.Evidence = []entity.MemoryEvidence{{Kind: entity.MemoryEvidenceIssue, IssueID: &issueID}}
+		}, want: false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			memory := validMemory()
+			changed := validMemory()
+			testCase.alter(&changed)
+
+			if got := changed.Restates(memory); got != testCase.want {
+				t.Fatalf("restates = %v, want %v", got, testCase.want)
+			}
+		})
+	}
+}

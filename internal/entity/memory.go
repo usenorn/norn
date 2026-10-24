@@ -235,6 +235,27 @@ func (m *Memory) SupersededBy(replacementID uuid.UUID) error {
 	return nil
 }
 
+func (m Memory) Restates(other Memory) bool {
+	return m.Kind == other.Kind &&
+		m.Statement == other.Statement &&
+		m.Rationale == other.Rationale &&
+		m.Conditions == other.Conditions &&
+		sameID(m.Applicability.ProjectID, other.Applicability.ProjectID) &&
+		m.Applicability.Component == other.Applicability.Component &&
+		m.Basis == other.Basis &&
+		m.EffectiveFrom.Equal(other.EffectiveFrom) &&
+		sameDay(m.EffectiveUntil, other.EffectiveUntil) &&
+		slices.EqualFunc(m.Evidence, other.Evidence, MemoryEvidence.Cites)
+}
+
+func sameDay(a, b *time.Time) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+
+	return a.Equal(*b)
+}
+
 func (m Memory) Cursor() MemoryCursor {
 	return MemoryCursor{UpdatedAt: m.UpdatedAt, MemoryID: m.ID}
 }

@@ -1,13 +1,10 @@
 package entity
 
 import (
-	"errors"
 	"slices"
 
 	"github.com/google/uuid"
 )
-
-var ErrMemoryEvidenceNotFound = errors.New("memory evidence not found")
 
 type MemoryEvidenceKind string
 
@@ -88,4 +85,21 @@ func (e MemoryEvidence) SeenBy(reader KnowledgeReader, visibleIssues []uuid.UUID
 	default:
 		return true
 	}
+}
+
+func (e MemoryEvidence) Cites(other MemoryEvidence) bool {
+	return e.Kind == other.Kind &&
+		sameID(e.IssueID, other.IssueID) &&
+		sameID(e.CommentID, other.CommentID) &&
+		sameID(e.DocID, other.DocID) &&
+		sameID(e.DocRevisionID, other.DocRevisionID) &&
+		e.Excerpt == other.Excerpt
+}
+
+func sameID(a, b *uuid.UUID) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+
+	return *a == *b
 }
