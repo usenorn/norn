@@ -20,9 +20,10 @@ export const kindLabels: Record<SearchKind, string> = {
 	project: "Projects",
 	team: "Teams",
 	person: "People",
+	doc: "Docs",
 };
 
-export const kindOrder: SearchKind[] = ["issue", "comment", "project", "team", "person"];
+export const kindOrder: SearchKind[] = ["issue", "comment", "project", "doc", "team", "person"];
 
 export function listingFor(results: SearchResults | undefined): SearchListing {
 	if (!results) return { kind: "unavailable" };
@@ -51,6 +52,8 @@ export function resultPath(workspace: string, result: SearchResult): string {
 			return `/${workspace}/teams/${result.teamKey ?? result.id}`;
 		case "person":
 			return `/${workspace}/settings/members?q=${encodeURIComponent(result.title)}`;
+		case "doc":
+			return `/${workspace}/docs/${result.id}`;
 		default:
 			return `/${workspace}/issues/${result.reference ?? result.id}`;
 	}

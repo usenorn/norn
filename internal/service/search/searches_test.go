@@ -14,6 +14,7 @@ import (
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
 )
 
@@ -21,11 +22,16 @@ type harness struct {
 	search     *searchrepo.MockSearch
 	issues     *issuerepo.MockIssue
 	authorizer *authorizersvc.MockAuthorizer
+	knowledge  *knowledgeauthorizersvc.MockKnowledgeAuthorizer
 	transactor *transactorrepo.MockTransactor
 	service    service.Searches
 
 	workspaceID uuid.UUID
 	accountID   uuid.UUID
+
+	reader      entity.KnowledgeReader
+	readerErr   error
+	readerCalls int
 }
 
 func newHarness(t *testing.T) *harness {
@@ -37,12 +43,28 @@ func newHarness(t *testing.T) *harness {
 		search:      searchrepo.NewMockSearch(ctrl),
 		issues:      issuerepo.NewMockIssue(ctrl),
 		authorizer:  authorizersvc.NewMockAuthorizer(ctrl),
+		knowledge:   knowledgeauthorizersvc.NewMockKnowledgeAuthorizer(ctrl),
 		transactor:  transactorrepo.NewMockTransactor(ctrl),
 		workspaceID: uuid.New(),
 		accountID:   uuid.New(),
 	}
 
-	h.service = searchsvc.New(h.search, h.issues, h.authorizer, h.transactor)
+	h.reader = entity.KnowledgeReader{
+		WorkspaceID: h.workspaceID,
+		Identity:    entity.KnowledgeIdentity{Principal: h.accountID, Personal: true, Role: entity.MembershipRoleMember},
+		ProjectIDs:  []uuid.UUID{},
+	}
+
+	h.service = searchsvc.New(h.search, h.issues, h.authorizer, h.knowledge, h.transactor)
+
+	h.knowledge.EXPECT().
+		Reader(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, uuid.UUID) (entity.KnowledgeDecision, error) {
+			h.readerCalls++
+
+			return entity.KnowledgeDecision{Reader: h.reader}, h.readerErr
+		}).
+		AnyTimes()
 
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
@@ -275,7 +297,12 @@ func TestSearchCarriesTheNarrowedTeamScopeToTheRepository(t *testing.T) {
 			})}, nil
 		})
 
-	searches := searchsvc.New(searchRepo, issuerepo.NewMockIssue(ctrl), authorizer, transactor)
+	knowledge := knowledgeauthorizersvc.NewMockKnowledgeAuthorizer(ctrl)
+	knowledge.EXPECT().
+		Reader(gomock.Any(), workspaceID).
+		Return(entity.KnowledgeDecision{Reader: entity.KnowledgeReader{WorkspaceID: workspaceID}}, nil)
+
+	searches := searchsvc.New(searchRepo, issuerepo.NewMockIssue(ctrl), authorizer, knowledge, transactor)
 
 	if _, err := searches.Search(context.Background(), workspaceID, service.SearchInput{
 		Query: "payments",

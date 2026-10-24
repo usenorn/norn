@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/google/uuid"
 
@@ -15,6 +16,7 @@ type searchesService struct {
 	search     repository.Search
 	issues     repository.Issue
 	authorizer service.Authorizer
+	knowledge  service.KnowledgeAuthorizer
 	transactor repository.Transactor
 }
 
@@ -22,12 +24,14 @@ func New(
 	search repository.Search,
 	issues repository.Issue,
 	authorizer service.Authorizer,
+	knowledge service.KnowledgeAuthorizer,
 	transactor repository.Transactor,
 ) service.Searches {
 	return &searchesService{
 		search:     search,
 		issues:     issues,
 		authorizer: authorizer,
+		knowledge:  knowledge,
 		transactor: transactor,
 	}
 }
@@ -60,6 +64,10 @@ func (s *searchesService) Search(
 		Kinds:       kinds(input.Kinds),
 		Limit:       limit(input.Limit),
 		Scope:       decision.Scope,
+	}
+
+	if err := s.reachDocs(ctx, &request); err != nil {
+		return entity.SearchResults{}, err
 	}
 
 	groups, err := s.search.Search(ctx, request)
@@ -203,6 +211,40 @@ func pin(groups []entity.SearchGroup, hits []entity.SearchResult) []entity.Searc
 		Kind:    entity.SearchKindIssue,
 		Results: hits,
 	}}, groups...)
+}
+
+func (s *searchesService) reachDocs(ctx context.Context, request *repository.SearchRequest) error {
+	if !slices.Contains(request.Kinds, entity.SearchKindDoc) {
+		return nil
+	}
+
+	decision, err := s.knowledge.Reader(ctx, request.WorkspaceID)
+
+	var denied entity.AccessDeniedError
+	if errors.As(err, &denied) {
+		request.Kinds = slices.DeleteFunc(request.Kinds, func(kind entity.SearchKind) bool {
+			return kind == entity.SearchKindDoc
+		})
+
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	reader := decision.Reader
+
+	request.Audience = repository.SearchAudience{
+		AllProjects: reader.AllProjects,
+		ProjectIDs:  reader.ProjectIDs,
+	}
+
+	if reader.Identity.Personal {
+		request.Audience.PersonalAuthorID = reader.Identity.Principal
+	}
+
+	return nil
 }
 
 func kinds(requested []entity.SearchKind) []entity.SearchKind {

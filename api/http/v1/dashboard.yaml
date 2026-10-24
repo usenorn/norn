@@ -6028,7 +6028,7 @@ paths:
     get:
       tags: [search]
       operationId: searchWorkspace
-      summary: Find issues, comments, projects, teams and people by typing words
+      summary: Find issues, comments, projects, teams, people and docs by typing words
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
         - name: q
@@ -16192,4 +16192,4 @@ components:
 
     SearchKind:
       type: string
-      enum: [issue, comment, project, team, person]
+      enum: [issue, comment, project, team, person, doc]

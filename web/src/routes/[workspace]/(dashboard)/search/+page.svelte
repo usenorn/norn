@@ -2,6 +2,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
+	import FileText from "@lucide/svelte/icons/file-text";
 	import Layers from "@lucide/svelte/icons/layers";
 	import MessageSquare from "@lucide/svelte/icons/message-square";
 	import Search from "@lucide/svelte/icons/search";
@@ -56,6 +57,7 @@
 		project: Layers,
 		team: Users,
 		person: UserRound,
+		doc: FileText,
 	};
 
 	function type(value: string) {
@@ -115,7 +117,7 @@
 			<Input
 				type="search"
 				value={typed}
-				placeholder="Search issues, comments, projects, teams and people…"
+				placeholder="Search issues, comments, projects, docs, teams and people…"
 				aria-label="Search this workspace"
 				oninput={(event) => type(event.currentTarget.value)}
 				onkeydown={steer}

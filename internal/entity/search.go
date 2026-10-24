@@ -40,6 +40,7 @@ const (
 	SearchKindProject SearchKind = "project"
 	SearchKindTeam    SearchKind = "team"
 	SearchKindPerson  SearchKind = "person"
+	SearchKindDoc     SearchKind = "doc"
 )
 
 func SearchKinds() []SearchKind {
@@ -49,6 +50,7 @@ func SearchKinds() []SearchKind {
 		SearchKindProject,
 		SearchKindTeam,
 		SearchKindPerson,
+		SearchKindDoc,
 	}
 }
 

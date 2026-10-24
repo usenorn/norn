@@ -544,7 +544,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	notificationSetting := notificationsetting.New(postgresClient)
 	notifications := notification2.New(repositoryNotification, notificationEvent, issueFollower, notificationSetting, repositoryIssue, issueComment, teamMember, repositoryWorkspace, repositoryMailer, serviceEvents, serviceAuthorizer, app)
 	repositorySearch := search.New(postgresClient)
-	searches := search2.New(repositorySearch, repositoryIssue, serviceAuthorizer, postgresClient)
+	searches := search2.New(repositorySearch, repositoryIssue, serviceAuthorizer, knowledgeAuthorizer, postgresClient)
 	configAudit := config.NewAudit(configConfig)
 	auditLog := audit2.NewReader(repositoryAudit, repositoryMembership, serviceAuthorizer, serviceAudit, serviceLicensing, configAudit)
 	repositoryDirectory := directory.New(postgresClient)
@@ -1031,7 +1031,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	docs := doc2.New(repositoryDoc, docRevision, repositoryProject, knowledgeAuthorizer, gate, client)
 	agents := agent2.New(repositoryAgent, agentSetting, workspaceAgentSetting, agentProposal, repositoryAccount, repositoryMembership, repositoryProject, projectMember, apiToken, repositoryTeam, repositoryActivity, workflowState, issues, issueComments, docs, issueQuestion, serviceAuthorizer, client, serviceAudit)
 	repositorySearch := search.New(client)
-	searches := search2.New(repositorySearch, repositoryIssue, serviceAuthorizer, client)
+	searches := search2.New(repositorySearch, repositoryIssue, serviceAuthorizer, knowledgeAuthorizer, client)
 	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, serviceCycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs)
 	if err != nil {
 		cleanup8()

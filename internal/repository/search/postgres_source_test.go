@@ -25,9 +25,9 @@ func TestEveryTeamOwnedLaneHonoursTheActorsNarrowedScope(t *testing.T) {
 	for _, kind := range []entity.SearchKind{
 		entity.SearchKindIssue, entity.SearchKindComment, entity.SearchKindTeam,
 	} {
-		statement, scoped := statementFor(kind)
+		statement, binds := statementFor(kind)
 
-		if !scoped {
+		if binds != bindsTeamScope {
 			t.Errorf(
 				"%s is not marked scoped, so its query never receives the actor's team scope and "+
 					"a narrowed credential would search beyond the teams it was granted",
@@ -91,6 +91,7 @@ func TestNothingArchivedOrDeletedIsSearchable(t *testing.T) {
 		"comment":           {"i.status = 'active'", "t.status = 'active'", "c.deleted_at IS NULL"},
 		"project":           {"p.archived_at IS NULL"},
 		"team":              {"t.status = 'active'"},
+		"doc":               {"d.status = 'active'"},
 		"fuzzyIssueResults": {"i.status = 'active'", "t.status = 'active'"},
 	} {
 		query := statements(t)[name]
@@ -105,6 +106,46 @@ func TestNothingArchivedOrDeletedIsSearchable(t *testing.T) {
 				)
 			}
 		}
+	}
+}
+
+func TestADocIsFilteredByItsAudienceBeforeAnythingIsRankedOrExcerpted(t *testing.T) {
+	statement, binds := statementFor(entity.SearchKindDoc)
+
+	if binds != bindsAudience {
+		t.Fatal("the doc lane is not bound to the reader's audience, so it would search every doc in the workspace")
+	}
+
+	candidates := statement[:strings.Index(statement, "LIMIT $5")]
+
+	for _, rule := range []string{
+		"d.visibility = 'workspace'",
+		"d.project_id = ANY($8::uuid[])",
+		"d.author_account_id = $9::uuid",
+	} {
+		if !strings.Contains(candidates, rule) {
+			t.Errorf(
+				"the doc candidates are missing %q. Filtering after the candidate cap lets a doc the "+
+					"reader cannot see take a slot, decide whether the group has more, and shape "+
+					"which visible docs make the cut; the outsider's results then depend on it.",
+				rule,
+			)
+		}
+	}
+
+	if strings.Contains(candidates, "ts_headline") {
+		t.Error("the doc excerpt is built for every candidate rather than only the rows returned")
+	}
+}
+
+func TestAnExactDocTitleOutranksEveryOtherMatch(t *testing.T) {
+	statement, _ := statementFor(entity.SearchKindDoc)
+
+	if !strings.Contains(statement, "ORDER BY exact_title DESC, title_hit DESC") {
+		t.Fatal(
+			"an exact title is not the first sort key. Someone typing a runbook's full name wants " +
+				"that runbook, not the most recently edited doc that mentions the same words.",
+		)
 	}
 }
 
@@ -167,7 +208,7 @@ func TestTheSearchersTextIsAlwaysBoundNeverInterpolated(t *testing.T) {
 }
 
 func TestTheCandidateSetIsBoundedBeforeItIsSorted(t *testing.T) {
-	for _, name := range []string{"issue", "comment", "project", "team", "person"} {
+	for _, name := range []string{"issue", "comment", "project", "team", "person", "doc"} {
 		query := statements(t)[name]
 
 		if !strings.Contains(query, "WITH candidates AS (") {
@@ -176,7 +217,7 @@ func TestTheCandidateSetIsBoundedBeforeItIsSorted(t *testing.T) {
 			continue
 		}
 
-		if strings.Index(query, "LIMIT $5") > strings.Index(query, "ORDER BY title_hit") {
+		if strings.Index(query, "LIMIT $5") > strings.LastIndex(query, "ORDER BY") {
 			t.Errorf(
 				"%s sorts before it bounds. GIN cannot return rows in order, so an unbounded "+
 					"match set is sorted in full on every keystroke, and work_mem is 4MB.",
