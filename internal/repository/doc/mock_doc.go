@@ -59,12 +59,11 @@ func (mr *MockDocMockRecorder) Ancestry(ctx, workspaceID, docID any) *gomock.Cal
 }
 
 // Create mocks base method.
-func (m *MockDoc) Create(ctx context.Context, doc entity.Doc) (entity.Doc, error) {
+func (m *MockDoc) Create(ctx context.Context, doc entity.Doc) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, doc)
-	ret0, _ := ret[0].(entity.Doc)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Create indicates an expected call of Create.
@@ -149,12 +148,11 @@ func (mr *MockDocMockRecorder) SubtreeHeight(ctx, workspaceID, docID any) *gomoc
 }
 
 // Update mocks base method.
-func (m *MockDoc) Update(ctx context.Context, doc entity.Doc, expectedVersion int) (entity.Doc, error) {
+func (m *MockDoc) Update(ctx context.Context, doc entity.Doc, expectedVersion int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", ctx, doc, expectedVersion)
-	ret0, _ := ret[0].(entity.Doc)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Update indicates an expected call of Update.

@@ -23,6 +23,13 @@ const (
 	docCursorIDLen = 36
 )
 
+const (
+	DocFieldTitle     = "title"
+	DocFieldContent   = "content"
+	DocFieldParentID  = "parentId"
+	DocFieldProjectID = "projectId"
+)
+
 var DocLimits = DocumentLimits{MaxDepth: 12, MaxNodes: 50000, MaxTextRunes: DocContentMaxLen}
 
 var (

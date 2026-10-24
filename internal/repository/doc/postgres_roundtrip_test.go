@@ -120,12 +120,20 @@ func draftDoc(fixture docFixture, title string, audience entity.KnowledgeAudienc
 	}
 }
 
+func createDoc(ctx context.Context, docs repository.Doc, draft entity.Doc) (entity.Doc, error) {
+	if err := docs.Create(ctx, draft); err != nil {
+		return entity.Doc{}, err
+	}
+
+	return docs.GetByID(ctx, draft.WorkspaceID, draft.ID)
+}
+
 func TestADocReadsBackAsItWasWrittenAndRefusesAStaleWrite(t *testing.T) {
 	withDocFixture(t, func(ctx context.Context, client *postgres.Client, fixture docFixture) error {
 		docs := New(client)
 		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
 
-		created, err := docs.Create(ctx, draftDoc(fixture, "Release checklist", entity.ProjectAudience(fixture.projectID), nil, at))
+		created, err := createDoc(ctx, docs, draftDoc(fixture, "Release checklist", entity.ProjectAudience(fixture.projectID), nil, at))
 		if err != nil {
 			return fmt.Errorf("create doc: %w", err)
 		}
@@ -151,9 +159,13 @@ func TestADocReadsBackAsItWasWrittenAndRefusesAStaleWrite(t *testing.T) {
 		edited.Version = 2
 		edited.UpdatedAt = at.Add(time.Minute)
 
-		written, err := docs.Update(ctx, edited, created.Version)
-		if err != nil {
+		if err := docs.Update(ctx, edited, created.Version); err != nil {
 			return fmt.Errorf("update doc: %w", err)
+		}
+
+		written, err := docs.GetByID(ctx, fixture.workspaceID, created.ID)
+		if err != nil {
+			return fmt.Errorf("read updated doc: %w", err)
 		}
 
 		if written.Title != edited.Title || written.Version != 2 || written.Audience != entity.WorkspaceAudience() {
@@ -165,7 +177,7 @@ func TestADocReadsBackAsItWasWrittenAndRefusesAStaleWrite(t *testing.T) {
 		}
 
 		edited.Version = 3
-		if _, err := docs.Update(ctx, edited, created.Version); !errors.Is(err, entity.ErrDocStale) {
+		if err := docs.Update(ctx, edited, created.Version); !errors.Is(err, entity.ErrDocStale) {
 			return fmt.Errorf("a write against version 1 of a version-2 doc returned %v, want ErrDocStale", err)
 		}
 
@@ -200,7 +212,7 @@ func TestDocsListOnlyWhatTheReaderMaySee(t *testing.T) {
 				parentID = &id
 			}
 
-			doc, err := docs.Create(ctx, draftDoc(fixture, draft.title, draft.audience, parentID, at.Add(time.Duration(index)*time.Minute)))
+			doc, err := createDoc(ctx, docs, draftDoc(fixture, draft.title, draft.audience, parentID, at.Add(time.Duration(index)*time.Minute)))
 			if err != nil {
 				return fmt.Errorf("create %s doc: %w", draft.title, err)
 			}
@@ -212,7 +224,7 @@ func TestDocsListOnlyWhatTheReaderMaySee(t *testing.T) {
 		archivedAt := at.Add(time.Hour)
 		archived.Status, archived.ArchivedAt, archived.Version, archived.UpdatedAt = entity.DocStatusArchived, &archivedAt, 2, archivedAt
 
-		if _, err := docs.Update(ctx, archived, 1); err != nil {
+		if err := docs.Update(ctx, archived, 1); err != nil {
 			return fmt.Errorf("archive doc: %w", err)
 		}
 
@@ -299,17 +311,17 @@ func TestADocTreeKnowsItsAncestryAndItsHeight(t *testing.T) {
 		docs := New(client)
 		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
 
-		root, err := docs.Create(ctx, draftDoc(fixture, "root", entity.WorkspaceAudience(), nil, at))
+		root, err := createDoc(ctx, docs, draftDoc(fixture, "root", entity.WorkspaceAudience(), nil, at))
 		if err != nil {
 			return fmt.Errorf("create root: %w", err)
 		}
 
-		middle, err := docs.Create(ctx, draftDoc(fixture, "middle", entity.WorkspaceAudience(), &root.ID, at))
+		middle, err := createDoc(ctx, docs, draftDoc(fixture, "middle", entity.WorkspaceAudience(), &root.ID, at))
 		if err != nil {
 			return fmt.Errorf("create middle: %w", err)
 		}
 
-		leaf, err := docs.Create(ctx, draftDoc(fixture, "leaf", entity.WorkspaceAudience(), &middle.ID, at))
+		leaf, err := createDoc(ctx, docs, draftDoc(fixture, "leaf", entity.WorkspaceAudience(), &middle.ID, at))
 		if err != nil {
 			return fmt.Errorf("create leaf: %w", err)
 		}
@@ -338,7 +350,7 @@ func TestADocTreeKnowsItsAncestryAndItsHeight(t *testing.T) {
 		archivedAt := at.Add(time.Hour)
 		leaf.Status, leaf.ArchivedAt, leaf.Version, leaf.UpdatedAt = entity.DocStatusArchived, &archivedAt, 2, archivedAt
 
-		if _, err := docs.Update(ctx, leaf, 1); err != nil {
+		if err := docs.Update(ctx, leaf, 1); err != nil {
 			return fmt.Errorf("archive leaf: %w", err)
 		}
 

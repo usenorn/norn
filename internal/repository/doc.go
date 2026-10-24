@@ -19,10 +19,10 @@ type DocFilter struct {
 }
 
 type Doc interface {
-	Create(ctx context.Context, doc entity.Doc) (entity.Doc, error)
+	Create(ctx context.Context, doc entity.Doc) error
 	GetByID(ctx context.Context, workspaceID, docID uuid.UUID) (entity.Doc, error)
 	LockByID(ctx context.Context, workspaceID, docID uuid.UUID) (entity.Doc, error)
-	Update(ctx context.Context, doc entity.Doc, expectedVersion int) (entity.Doc, error)
+	Update(ctx context.Context, doc entity.Doc, expectedVersion int) error
 	List(ctx context.Context, workspaceID uuid.UUID, filter DocFilter, page entity.DocPage) ([]entity.DocSummary, error)
 	Ancestry(ctx context.Context, workspaceID, docID uuid.UUID) ([]uuid.UUID, error)
 	SubtreeHeight(ctx context.Context, workspaceID, docID uuid.UUID) (int, error)

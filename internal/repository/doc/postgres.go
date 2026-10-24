@@ -266,17 +266,17 @@ func New(db *postgres.Client) repository.Doc {
 	return &docRepository{db: db}
 }
 
-func (r *docRepository) Create(ctx context.Context, doc entity.Doc) (entity.Doc, error) {
+func (r *docRepository) Create(ctx context.Context, doc entity.Doc) error {
 	model, err := docToModel(doc)
 	if err != nil {
-		return entity.Doc{}, err
+		return err
 	}
 
 	if err := model.Insert(ctx, r.db.Querier(ctx), boil.Infer()); err != nil {
-		return entity.Doc{}, fmt.Errorf("insert doc: %w", err)
+		return fmt.Errorf("insert doc: %w", err)
 	}
 
-	return r.find(ctx, docByIDQuery, doc.WorkspaceID, doc.ID)
+	return nil
 }
 
 func (r *docRepository) GetByID(ctx context.Context, workspaceID, docID uuid.UUID) (entity.Doc, error) {
@@ -300,10 +300,10 @@ func (r *docRepository) find(ctx context.Context, query string, workspaceID, doc
 	return doc, nil
 }
 
-func (r *docRepository) Update(ctx context.Context, doc entity.Doc, expectedVersion int) (entity.Doc, error) {
+func (r *docRepository) Update(ctx context.Context, doc entity.Doc, expectedVersion int) error {
 	model, err := docToModel(doc)
 	if err != nil {
-		return entity.Doc{}, err
+		return err
 	}
 
 	updated, err := dbpostgres.WorkspaceDocs(
@@ -323,14 +323,14 @@ func (r *docRepository) Update(ctx context.Context, doc entity.Doc, expectedVers
 		dbpostgres.WorkspaceDocColumns.UpdatedAt:  model.UpdatedAt,
 	})
 	if err != nil {
-		return entity.Doc{}, fmt.Errorf("update doc: %w", err)
+		return fmt.Errorf("update doc: %w", err)
 	}
 
 	if updated == 0 {
-		return entity.Doc{}, entity.ErrDocStale
+		return entity.ErrDocStale
 	}
 
-	return r.find(ctx, docByIDQuery, doc.WorkspaceID, doc.ID)
+	return nil
 }
 
 func (r *docRepository) List(
