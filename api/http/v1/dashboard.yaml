@@ -11302,6 +11302,7 @@ components:
                 - project_member_exists
                 - project_links_full
                 - project_has_scoped_agents
+                - project_has_docs
 
     RoadmapVisibility:
       type: object

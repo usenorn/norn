@@ -115,3 +115,69 @@ func TestAnAgentScopedBetweenTheCheckAndTheDeleteStillRefusesTheDeletion(t *test
 		t.Fatal(failure)
 	}
 }
+
+func TestAProjectADocIsSharedWithRefusesTheDeletion(t *testing.T) {
+	client, cleanup := liveProjectRepository(t)
+	defer cleanup()
+
+	var failure error
+
+	err := client.WithTx(context.Background(), func(ctx context.Context) error {
+		workspaceID := uuid.New()
+
+		if _, err := client.Querier(ctx).ExecContext(
+			ctx,
+			"INSERT INTO workspaces (id, slug, name) VALUES ($1, $2, 'Shared deletion')",
+			workspaceID,
+			"shared-delete-"+workspaceID.String()[:8],
+		); err != nil {
+			failure = fmt.Errorf("lay deletion fixture: %w", err)
+
+			return errProjectRollback
+		}
+
+		projects := New(client)
+
+		shared, err := projects.Create(ctx, entity.Project{
+			WorkspaceID: workspaceID,
+			Slug:        "handbook",
+			Name:        "Handbook",
+			State:       entity.ProjectStateActive,
+		})
+		if err != nil {
+			failure = fmt.Errorf("create project: %w", err)
+
+			return errProjectRollback
+		}
+
+		if _, err := client.Querier(ctx).ExecContext(
+			ctx,
+			`INSERT INTO workspace_docs (workspace_id, title, content, visibility, project_id)
+			 VALUES ($1, 'Release checklist', '{"type":"doc"}', 'project', $2)`,
+			workspaceID,
+			shared.ID,
+		); err != nil {
+			failure = fmt.Errorf("share a doc with the project: %w", err)
+
+			return errProjectRollback
+		}
+
+		if err := projects.Delete(ctx, shared.ID); !errors.Is(err, entity.ErrProjectHasDocs) {
+			failure = fmt.Errorf(
+				"deleting a project a doc is shared with returned %v, want ErrProjectHasDocs. "+
+					"The doc would be left with an audience nobody can belong to",
+				err,
+			)
+		}
+
+		return errProjectRollback
+	})
+
+	if !errors.Is(err, errProjectRollback) {
+		t.Fatalf("fixture rollback: %v", err)
+	}
+
+	if failure != nil {
+		t.Fatal(failure)
+	}
+}

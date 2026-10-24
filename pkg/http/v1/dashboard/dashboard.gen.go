@@ -3648,6 +3648,7 @@ func (e PreviewProblemCode) Valid() bool {
 // Defines values for ProjectConflictProblemCode.
 const (
 	ProjectConflictProblemCodeProjectArchived        ProjectConflictProblemCode = "project_archived"
+	ProjectConflictProblemCodeProjectHasDocs         ProjectConflictProblemCode = "project_has_docs"
 	ProjectConflictProblemCodeProjectHasScopedAgents ProjectConflictProblemCode = "project_has_scoped_agents"
 	ProjectConflictProblemCodeProjectLinksFull       ProjectConflictProblemCode = "project_links_full"
 	ProjectConflictProblemCodeProjectMemberExists    ProjectConflictProblemCode = "project_member_exists"
@@ -3660,6 +3661,8 @@ const (
 func (e ProjectConflictProblemCode) Valid() bool {
 	switch e {
 	case ProjectConflictProblemCodeProjectArchived:
+		return true
+	case ProjectConflictProblemCodeProjectHasDocs:
 		return true
 	case ProjectConflictProblemCodeProjectHasScopedAgents:
 		return true
