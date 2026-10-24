@@ -327,7 +327,7 @@ func TestAMalformedEndpointIsRefusedBeforeAnythingIsSent(t *testing.T) {
 
 func TestACloudWorkspaceCannotReachAPrivateNetwork(t *testing.T) {
 	h := newHarness(t)
-	h.service = aiprovidersvc.New(h.connections, h.models, h.authorizer, h.audit, config.Instance{})
+	h.service = aiprovidersvc.New(h.connections, h.models, h.authorizer, h.audit, h.indexes, config.Instance{})
 	workspaceID := h.workspace(entity.MembershipRoleAdmin)
 	h.offered["sk-gateway"] = []string{"llama-4-scout"}
 
@@ -416,5 +416,35 @@ func TestAnUnchangedEmbeddingModelIsNotProvedAgain(t *testing.T) {
 
 	if h.store[workspaceID].connection.EmbeddingModel != "text-embedding-3-small" {
 		t.Error("changing the default model cleared the embedding model")
+	}
+}
+
+func TestOnlyAChangeThatMovesTheEmbeddingsSchedulesARefresh(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := h.workspace(entity.MembershipRoleAdmin)
+	h.configured(workspaceID, "sk-live", "gpt-6-luna")
+	h.offered["sk-live"] = []string{"gpt-6-luna", "gpt-6-sol"}
+	h.embedder["sk-live"] = []string{"text-embedding-3-small"}
+
+	steps := []struct {
+		name  string
+		input entity.AIProviderInput
+		want  int
+	}{
+		{"choosing an embedding model", entity.AIProviderInput{DefaultModel: "gpt-6-luna", EmbeddingModel: "text-embedding-3-small"}, 1},
+		{"changing only the default model", entity.AIProviderInput{DefaultModel: "gpt-6-sol", EmbeddingModel: "text-embedding-3-small"}, 1},
+		{"clearing the embedding model", entity.AIProviderInput{DefaultModel: "gpt-6-sol"}, 2},
+	}
+
+	for _, step := range steps {
+		step.input.Provider = entity.AIProviderOpenAI
+
+		if _, err := h.service.Configure(context.Background(), workspaceID, step.input); err != nil {
+			t.Fatalf("%s: %v", step.name, err)
+		}
+
+		if len(h.scheduled) != step.want {
+			t.Fatalf("after %s: %d refreshes scheduled, want %d", step.name, len(h.scheduled), step.want)
+		}
 	}
 }

@@ -42,6 +42,8 @@ const (
 	TaskTypeTelegramDecision        = "telegram:decision"
 	TaskTypeTelegramSettlement      = "telegram:settlement"
 	TaskTypeTelegramSweep           = "telegram:retention_sweep"
+	TaskTypeKnowledgeRefresh        = "knowledge:refresh"
+	TaskTypeKnowledgeSweep          = "knowledge:sweep"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
@@ -121,6 +123,10 @@ type SCMDeliveryPayload struct {
 
 type IntakeDeliveryPayload struct {
 	DeliveryID uuid.UUID
+}
+
+type KnowledgeRefreshPayload struct {
+	WorkspaceID uuid.UUID
 }
 
 type TelegramUpdatePayload struct {

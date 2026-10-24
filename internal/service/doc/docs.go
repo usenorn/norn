@@ -18,8 +18,10 @@ import (
 type docsService struct {
 	docs       repository.Doc
 	revisions  repository.DocRevision
+	passages   repository.DocPassage
 	projects   repository.Project
 	knowledge  service.KnowledgeAuthorizer
+	indexes    service.KnowledgeIndexes
 	gate       *agenthold.Gate
 	transactor repository.Transactor
 }
@@ -27,16 +29,20 @@ type docsService struct {
 func New(
 	docs repository.Doc,
 	revisions repository.DocRevision,
+	passages repository.DocPassage,
 	projects repository.Project,
 	knowledge service.KnowledgeAuthorizer,
+	indexes service.KnowledgeIndexes,
 	gate *agenthold.Gate,
 	transactor repository.Transactor,
 ) service.Docs {
 	return &docsService{
 		docs:       docs,
 		revisions:  revisions,
+		passages:   passages,
 		projects:   projects,
 		knowledge:  knowledge,
+		indexes:    indexes,
 		gate:       gate,
 		transactor: transactor,
 	}
@@ -650,6 +656,12 @@ func (s *docsService) record(
 	if err := s.revisions.Record(ctx, doc.Revision(action, entity.KnowledgeAttributionOf(decision))); err != nil {
 		return entity.Doc{}, err
 	}
+
+	if err := s.passages.Replace(ctx, doc); err != nil {
+		return entity.Doc{}, err
+	}
+
+	s.indexes.Schedule(ctx, doc.WorkspaceID)
 
 	return s.docs.GetByID(ctx, doc.WorkspaceID, doc.ID)
 }

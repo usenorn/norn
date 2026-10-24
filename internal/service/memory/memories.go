@@ -24,6 +24,7 @@ type memoriesService struct {
 	docRevisions repository.DocRevision
 	knowledge    service.KnowledgeAuthorizer
 	authorizer   service.Authorizer
+	indexes      service.KnowledgeIndexes
 	transactor   repository.Transactor
 }
 
@@ -37,6 +38,7 @@ func New(
 	docRevisions repository.DocRevision,
 	knowledge service.KnowledgeAuthorizer,
 	authorizer service.Authorizer,
+	indexes service.KnowledgeIndexes,
 	transactor repository.Transactor,
 ) service.Memories {
 	return &memoriesService{
@@ -49,6 +51,7 @@ func New(
 		docRevisions: docRevisions,
 		knowledge:    knowledge,
 		authorizer:   authorizer,
+		indexes:      indexes,
 		transactor:   transactor,
 	}
 }
@@ -685,6 +688,8 @@ func (s *memoriesService) record(
 	if err := s.revisions.Record(ctx, memory.Revision(action, entity.KnowledgeAttributionOf(decision))); err != nil {
 		return entity.Memory{}, err
 	}
+
+	s.indexes.Schedule(ctx, memory.WorkspaceID)
 
 	return s.memories.GetByID(ctx, memory.WorkspaceID, memory.ID)
 }

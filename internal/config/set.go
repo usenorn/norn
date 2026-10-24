@@ -34,6 +34,7 @@ var Set = wire.NewSet(
 	NewLinear,
 	NewOpenAI,
 	NewAgentHosting,
+	NewKnowledge,
 	NewTelegram,
 	NewAgentTooling,
 	NewSourceControl,

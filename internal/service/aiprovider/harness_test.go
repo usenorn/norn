@@ -17,6 +17,7 @@ import (
 	aiprovidersvc "github.com/usenorn/norn/internal/service/aiprovider"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
 )
 
 type stored struct {
@@ -34,16 +35,18 @@ type harness struct {
 	models      *aimodelrepo.MockAIModel
 	authorizer  *authorizersvc.MockAuthorizer
 	audit       *auditsvc.MockAudit
+	indexes     *knowledgeindexsvc.MockKnowledgeIndexes
 	service     service.AIProviders
 
-	roles    map[uuid.UUID]entity.MembershipRole
-	store    map[uuid.UUID]stored
-	offered  map[string][]string
-	embedder map[string][]string
-	listed   []entity.AIProviderEndpoint
-	probed   []probe
-	embedded []string
-	audited  []entity.AuditEntry
+	roles     map[uuid.UUID]entity.MembershipRole
+	store     map[uuid.UUID]stored
+	offered   map[string][]string
+	embedder  map[string][]string
+	listed    []entity.AIProviderEndpoint
+	probed    []probe
+	embedded  []string
+	audited   []entity.AuditEntry
+	scheduled []uuid.UUID
 }
 
 func newHarness(t *testing.T) *harness {
@@ -201,7 +204,14 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
-	h.service = aiprovidersvc.New(h.connections, h.models, h.authorizer, h.audit, config.Instance{SelfHosted: true})
+	h.indexes = knowledgeindexsvc.NewMockKnowledgeIndexes(ctrl)
+	h.indexes.EXPECT().Schedule(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, workspaceID uuid.UUID) { h.scheduled = append(h.scheduled, workspaceID) }).
+		AnyTimes()
+
+	h.service = aiprovidersvc.New(
+		h.connections, h.models, h.authorizer, h.audit, h.indexes, config.Instance{SelfHosted: true},
+	)
 
 	return h
 }

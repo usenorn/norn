@@ -172,6 +172,10 @@ func validate(cfg Config) error {
 		return err
 	}
 
+	if err := validateKnowledge(cfg.Knowledge, cfg.HTTP); err != nil {
+		return err
+	}
+
 	if err := validateTelegram(cfg.Telegram); err != nil {
 		return err
 	}
@@ -576,6 +580,18 @@ func validateAgentHosting(cfg AgentHosting, server HTTP) error {
 
 	if cfg.MaxToolResultBytes <= 0 {
 		return fmt.Errorf("agent_hosting.max_tool_result_bytes (%d) must be positive", cfg.MaxToolResultBytes)
+	}
+
+	return nil
+}
+
+func validateKnowledge(cfg Knowledge, server HTTP) error {
+	if cfg.QueryTimeout <= 0 || cfg.QueryTimeout >= server.RequestTimeout {
+		return fmt.Errorf(
+			"knowledge.query_timeout (%s) must be positive and shorter than http.request_timeout (%s); "+
+				"embedding a question must leave the request time to fall back to word matching",
+			cfg.QueryTimeout, server.RequestTimeout,
+		)
 	}
 
 	return nil
@@ -1031,6 +1047,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("agent_hosting.max_output_tokens", 16384)
 	v.SetDefault("agent_hosting.max_total_tokens", 200000)
 	v.SetDefault("agent_hosting.max_tool_result_bytes", 32<<10)
+	v.SetDefault("knowledge.refresh_sweep_schedule", "*/5 * * * *")
+	v.SetDefault("knowledge.query_timeout", 5*time.Second)
 
 	v.SetDefault("telegram.endpoint", "https://api.telegram.org")
 	v.SetDefault("telegram.request_timeout", 10*time.Second)

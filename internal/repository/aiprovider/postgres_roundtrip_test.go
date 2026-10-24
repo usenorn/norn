@@ -191,8 +191,8 @@ func TestTheRecordedOutcomeFollowsTheLatestTestAndClearsOnChange(t *testing.T) {
 		gateway := entity.AIProviderEndpoint{BaseURL: "http://10.0.4.12:8000/v1", AllowPrivateAddress: true}
 
 		changed, err := providers.Update(ctx, entity.AIProviderConnection{
-			WorkspaceID:  workspaceID,
-			Provider:     entity.AIProviderOpenAI,
+			WorkspaceID:    workspaceID,
+			Provider:       entity.AIProviderOpenAI,
 			Endpoint:       gateway,
 			DefaultModel:   "gpt-6-sol",
 			EmbeddingModel: "text-embedding-3-small",

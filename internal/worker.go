@@ -31,6 +31,7 @@ type Worker struct {
 	executions    config.Executions
 	questions     config.Questions
 	telegram      config.Telegram
+	knowledge     config.Knowledge
 	server        *taskqueue.Server
 	scheduler     *taskqueue.Scheduler
 	inspector     *taskqueue.Inspector
@@ -73,6 +74,8 @@ func NewServeMux(
 	telegramDecision *job.TelegramDecisionHandler,
 	telegramSettlement *job.TelegramSettlementHandler,
 	telegramSweep *job.TelegramSweepHandler,
+	knowledgeRefresh *job.KnowledgeRefreshHandler,
+	knowledgeSweep *job.KnowledgeSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -109,6 +112,8 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeTelegramDecision, telegramDecision)
 	mux.Handle(entity.TaskTypeTelegramSettlement, telegramSettlement)
 	mux.Handle(entity.TaskTypeTelegramSweep, telegramSweep)
+	mux.Handle(entity.TaskTypeKnowledgeRefresh, knowledgeRefresh)
+	mux.Handle(entity.TaskTypeKnowledgeSweep, knowledgeSweep)
 
 	return mux
 }
@@ -127,6 +132,7 @@ func NewWorker(
 	executions config.Executions,
 	questions config.Questions,
 	telegram config.Telegram,
+	knowledge config.Knowledge,
 	server *taskqueue.Server,
 	scheduler *taskqueue.Scheduler,
 	inspector *taskqueue.Inspector,
@@ -147,6 +153,7 @@ func NewWorker(
 		executions:    executions,
 		questions:     questions,
 		telegram:      telegram,
+		knowledge:     knowledge,
 		server:        server,
 		scheduler:     scheduler,
 		inspector:     inspector,
@@ -268,6 +275,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueSCM),
 	); err != nil {
 		return fmt.Errorf("register source control reconcile: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.knowledge.RefreshSweepSchedule,
+		asynq.NewTask(entity.TaskTypeKnowledgeSweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register knowledge refresh sweep: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

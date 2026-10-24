@@ -25,6 +25,7 @@ type providers struct {
 	models      repository.AIModel
 	authorizer  service.Authorizer
 	audit       service.Audit
+	indexes     service.KnowledgeIndexes
 	instance    config.Instance
 }
 
@@ -33,6 +34,7 @@ func New(
 	models repository.AIModel,
 	authorizer service.Authorizer,
 	audit service.Audit,
+	indexes service.KnowledgeIndexes,
 	instance config.Instance,
 ) service.AIProviders {
 	return &providers{
@@ -40,6 +42,7 @@ func New(
 		models:      models,
 		authorizer:  authorizer,
 		audit:       audit,
+		indexes:     indexes,
 		instance:    instance,
 	}
 }
@@ -171,6 +174,10 @@ func (s *providers) Configure(
 		return entity.AIProviderConnection{}, err
 	}
 
+	if embeddingChanged || (saved.Embeds() && (keyChanged || endpointChanged)) {
+		s.indexes.Schedule(ctx, workspaceID)
+	}
+
 	if !configured {
 		s.record(ctx, saved, entity.AuditAIProviderConfigured)
 
@@ -258,6 +265,10 @@ func (s *providers) Remove(ctx context.Context, workspaceID uuid.UUID) error {
 
 	if err := s.connections.Delete(ctx, workspaceID); err != nil {
 		return err
+	}
+
+	if connection.Embeds() {
+		s.indexes.Schedule(ctx, workspaceID)
 	}
 
 	s.record(ctx, connection, entity.AuditAIProviderRemoved)

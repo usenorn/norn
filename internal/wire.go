@@ -69,6 +69,7 @@ import (
 	directoryrepo "github.com/usenorn/norn/internal/repository/directory"
 	docrepo "github.com/usenorn/norn/internal/repository/doc"
 	doclinkrepo "github.com/usenorn/norn/internal/repository/doclink"
+	docpassagerepo "github.com/usenorn/norn/internal/repository/docpassage"
 	docrevisionrepo "github.com/usenorn/norn/internal/repository/docrevision"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
@@ -95,6 +96,7 @@ import (
 	issuerevisionrepo "github.com/usenorn/norn/internal/repository/issuerevision"
 	issuetemplaterepo "github.com/usenorn/norn/internal/repository/issuetemplate"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
+	knowledgerepo "github.com/usenorn/norn/internal/repository/knowledge"
 	labelrepo "github.com/usenorn/norn/internal/repository/label"
 	labelgrouprepo "github.com/usenorn/norn/internal/repository/labelgroup"
 	mailerrepo "github.com/usenorn/norn/internal/repository/mailer"
@@ -186,6 +188,7 @@ import (
 	issuetemplatesvc "github.com/usenorn/norn/internal/service/issuetemplate"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	memorysvc "github.com/usenorn/norn/internal/service/memory"
@@ -283,6 +286,8 @@ var baseSet = wire.NewSet(
 	docrevisionrepo.Set,
 	memoryrepo.Set,
 	memoryrevisionrepo.Set,
+	docpassagerepo.Set,
+	knowledgerepo.Set,
 	attachmentrepo.Set,
 	blobgrantrepo.Set,
 	issuecommentrepo.Set,
@@ -376,6 +381,7 @@ var baseSet = wire.NewSet(
 	notificationsvc.Set,
 	savedviewsvc.Set,
 	knowledgeauthorizersvc.Set,
+	knowledgeindexsvc.Set,
 	eventsvc.Set,
 	searchsvc.Set,
 	triagesvc.Set,
