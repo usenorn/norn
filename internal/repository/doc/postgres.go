@@ -175,9 +175,11 @@ func (row *summaryRow) fill(summary *entity.DocSummary) error {
 
 	summary.Audience = entity.KnowledgeAudience{Visibility: entity.KnowledgeVisibility(row.visibility), ProjectID: projectID}
 	summary.Status = entity.DocStatus(row.status)
+	summary.CreatedAt = summary.CreatedAt.UTC()
+	summary.UpdatedAt = summary.UpdatedAt.UTC()
 
 	if row.archivedAt.Valid {
-		archivedAt := row.archivedAt.Time
+		archivedAt := row.archivedAt.Time.UTC()
 		summary.ArchivedAt = &archivedAt
 	}
 

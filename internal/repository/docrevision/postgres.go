@@ -141,6 +141,7 @@ func (row *summaryRow) fill(summary *entity.DocRevisionSummary) error {
 	summary.Action = entity.DocRevisionAction(row.action)
 	summary.Audience = entity.KnowledgeAudience{Visibility: entity.KnowledgeVisibility(row.visibility), ProjectID: projectID}
 	summary.By.Source = entity.RevisionSource(row.source)
+	summary.CreatedAt = summary.CreatedAt.UTC()
 
 	return nil
 }

@@ -168,7 +168,8 @@ func TestADocReadsBackAsItWasWrittenAndRefusesAStaleWrite(t *testing.T) {
 			return fmt.Errorf("read updated doc: %w", err)
 		}
 
-		if written.Title != edited.Title || written.Version != 2 || written.Audience != entity.WorkspaceAudience() {
+		if written.Title != edited.Title || written.Version != 2 || written.Audience != entity.WorkspaceAudience() ||
+			written.UpdatedAt.Location() != time.UTC || !written.UpdatedAt.Equal(edited.UpdatedAt) {
 			return fmt.Errorf("the update did not land: %+v", written)
 		}
 
