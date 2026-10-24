@@ -1,6 +1,7 @@
 import type { components } from "$lib/api/dashboard.gen";
 import type { ActivityFeed } from "$lib/activity/activity";
 import type { Listed } from "$lib/api/listed";
+import type { DocBacklinks } from "$lib/docs/docs";
 import type { Issue } from "$lib/issues/issues";
 import type { StateCategory } from "$lib/team/states";
 import type { Team } from "$lib/team/teams";
@@ -84,6 +85,7 @@ export type ProjectDetail =
 			project: Project;
 			members: ProjectMember[];
 			links: ProjectLink[];
+			docs: DocBacklinks;
 			updates: ProjectStatusUpdate[];
 			rows: Listed<Issue>;
 			activity: ActivityFeed;

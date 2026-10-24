@@ -23,6 +23,8 @@
 	import { Input } from "$lib/components/ui/input/index.js";
 	import { Textarea } from "$lib/components/ui/textarea/index.js";
 	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import LinkedDocs from "$lib/docs/linked-docs.svelte";
+	import { docsPath, type DocBacklinks } from "$lib/docs/docs";
 	import IssueRow from "$lib/components/norn/issue-row.svelte";
 	import { cn } from "$lib/utils.js";
 	import ProjectDetailsForm from "$lib/projects/project-details-form.svelte";
@@ -82,6 +84,7 @@
 
 	const ready = $derived(detail.kind === "ready" ? detail : null);
 	const project = $derived(ready?.project ?? null);
+	const linkedDocs = $derived<DocBacklinks>(ready ? ready.docs : { kind: "unavailable" });
 	const settled = $derived(
 		project
 			? project.archived || project.state === "completed" || project.state === "cancelled"
@@ -977,6 +980,20 @@
 								</Button>
 							{/if}
 						</div>
+					{/if}
+				</section>
+
+				<section class="flex flex-col gap-2">
+					<div class="flex items-baseline justify-between gap-2">
+						<Eyebrow class="text-ink-600">Docs</Eyebrow>
+						<Button variant="ghost" size="sm" href={docsPath(slug)}>All docs</Button>
+					</div>
+					{#if linkedDocs.kind === "ready" && linkedDocs.docs.length === 0}
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							No docs link to {project.name} yet. Link one from the doc itself.
+						</p>
+					{:else}
+						<LinkedDocs docs={linkedDocs} workspace={slug} projects={data.projects} />
 					{/if}
 				</section>
 

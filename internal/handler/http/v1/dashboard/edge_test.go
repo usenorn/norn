@@ -20,8 +20,9 @@ import (
 	codebasesvc "github.com/usenorn/norn/internal/service/codebase"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	delegationsvc "github.com/usenorn/norn/internal/service/delegation"
-	docsvc "github.com/usenorn/norn/internal/service/doc"
 	directorysvc "github.com/usenorn/norn/internal/service/directory"
+	docsvc "github.com/usenorn/norn/internal/service/doc"
+	doclinksvc "github.com/usenorn/norn/internal/service/doclink"
 	executionsvc "github.com/usenorn/norn/internal/service/execution"
 	executionservicesvc "github.com/usenorn/norn/internal/service/executionservice"
 	executionuploadsvc "github.com/usenorn/norn/internal/service/executionupload"
@@ -66,6 +67,7 @@ type edgeServices struct {
 	roadmaps          service.Roadmaps
 	publicRoadmaps    service.PublicRoadmaps
 	docs              service.Docs
+	docLinks          service.DocLinks
 	agents            service.Agents
 	hostedAgents      service.HostedAgents
 	telegramBots      service.TelegramBots
@@ -102,6 +104,10 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 
 	if services.docs == nil {
 		services.docs = docsvc.NewMockDocs(ctrl)
+	}
+
+	if services.docLinks == nil {
+		services.docLinks = doclinksvc.NewMockDocLinks(ctrl)
 	}
 
 	if services.agents == nil {
@@ -151,6 +157,7 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		services.roadmaps,
 		services.publicRoadmaps,
 		services.docs,
+		services.docLinks,
 		savedviewsvc.NewMockSavedViews(ctrl),
 		triagesvc.NewMockTriages(ctrl),
 		intakesvc.NewMockIntakes(ctrl),

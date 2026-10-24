@@ -44,6 +44,7 @@ var TableNames = struct {
 	WorkspaceCycleScopeChanges             string
 	WorkspaceCycles                        string
 	WorkspaceDirectoryConnections          string
+	WorkspaceDocLinks                      string
 	WorkspaceDocRevisions                  string
 	WorkspaceDocs                          string
 	WorkspaceExecutionArtifacts            string
@@ -175,6 +176,7 @@ var TableNames = struct {
 	WorkspaceCycleScopeChanges:             "workspace_cycle_scope_changes",
 	WorkspaceCycles:                        "workspace_cycles",
 	WorkspaceDirectoryConnections:          "workspace_directory_connections",
+	WorkspaceDocLinks:                      "workspace_doc_links",
 	WorkspaceDocRevisions:                  "workspace_doc_revisions",
 	WorkspaceDocs:                          "workspace_docs",
 	WorkspaceExecutionArtifacts:            "workspace_execution_artifacts",

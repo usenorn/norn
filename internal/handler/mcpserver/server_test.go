@@ -19,6 +19,7 @@ import (
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	cyclesvc "github.com/usenorn/norn/internal/service/cycle"
 	docsvc "github.com/usenorn/norn/internal/service/doc"
+	doclinksvc "github.com/usenorn/norn/internal/service/doclink"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
 	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
@@ -65,6 +66,7 @@ type harness struct {
 	labels        *labelsvc.MockLabels
 	sourceControl *scmsvc.MockSourceControl
 	docs          *docsvc.MockDocs
+	docLinks      *doclinksvc.MockDocLinks
 	tools         *mcpserver.Tools
 	edge          *mcpserver.Edge
 	actor         entity.Actor
@@ -87,6 +89,7 @@ func newHarness(t *testing.T) *harness {
 		labels:        labelsvc.NewMockLabels(ctrl),
 		sourceControl: scmsvc.NewMockSourceControl(ctrl),
 		docs:          docsvc.NewMockDocs(ctrl),
+		docLinks:      doclinksvc.NewMockDocLinks(ctrl),
 		actor: entity.Actor{
 			Kind:      entity.ActorKindToken,
 			AccountID: uuid.New(),
@@ -109,6 +112,7 @@ func newHarness(t *testing.T) *harness {
 		searchsvc.NewMockSearches(ctrl),
 		h.sourceControl,
 		h.docs,
+		h.docLinks,
 	)
 	if err != nil {
 		t.Fatalf("NewTools: %v", err)
@@ -228,6 +232,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_get_doc",
 		"norn_create_doc",
 		"norn_edit_doc",
+		"norn_link_doc",
+		"norn_unlink_doc",
 		"norn_list_projects",
 		"norn_create_project",
 		"norn_update_project",
@@ -253,8 +259,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 30 {
-		t.Errorf("registered %d tools, want 30", len(tools.Tools))
+	if len(tools.Tools) != 32 {
+		t.Errorf("registered %d tools, want 32", len(tools.Tools))
 	}
 }
 
@@ -425,6 +431,7 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 		searchsvc.NewMockSearches(ctrl),
 		scmsvc.NewMockSourceControl(ctrl),
 		docsvc.NewMockDocs(ctrl),
+		doclinksvc.NewMockDocLinks(ctrl),
 	)
 	if err != nil {
 		t.Fatalf("NewTools: %v", err)

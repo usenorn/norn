@@ -5469,6 +5469,111 @@ paths:
         '409': { $ref: '#/components/responses/DocConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/docs/{docId}/links:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+    get:
+      tags: [docs]
+      operationId: listWorkspaceDocLinks
+      summary: List the issues and projects a doc links to, as far as the caller may see them
+      responses:
+        '200':
+          description: The doc's links
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocLinkList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [docs]
+      operationId: linkWorkspaceDoc
+      summary: Link a doc to an issue or a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LinkDocRequest' }
+      responses:
+        '201':
+          description: The link as made
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocLink' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/docs/{docId}/links/{linkId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DocId'
+      - name: linkId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [docs]
+      operationId: unlinkWorkspaceDoc
+      summary: Remove a link from a doc
+      responses:
+        '204':
+          description: The link was removed
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/DocConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/issues/{issueId}/docs:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IssueId'
+    get:
+      tags: [docs]
+      operationId: listWorkspaceIssueDocs
+      summary: List the docs linking to an issue that the caller may read
+      description: >-
+        A doc outside the caller's audience is left out entirely, so neither its title nor the
+        number of linked docs gives it away.
+      responses:
+        '200':
+          description: The linked docs the caller may read
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LinkedDocList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/projects/{projectId}/docs:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/ProjectId'
+    get:
+      tags: [docs]
+      operationId: listWorkspaceProjectDocs
+      summary: List the docs linking to a project that the caller may read
+      description: >-
+        A doc outside the caller's audience is left out entirely, so neither its title nor the
+        number of linked docs gives it away.
+      responses:
+        '200':
+          description: The linked docs the caller may read
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LinkedDocList' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/roadmap:
     get:
       tags: [roadmaps]
@@ -11931,6 +12036,68 @@ components:
           items: { $ref: '#/components/schemas/DocSummary' }
         nextCursor: { type: string }
 
+    DocLinkTarget:
+      type: string
+      enum: [issue, project]
+
+    DocLinkedIssue:
+      type: object
+      required: [id, reference, title, state]
+      properties:
+        id: { type: string, format: uuid }
+        reference: { type: string }
+        title: { type: string }
+        state: { $ref: '#/components/schemas/DocLinkedIssueState' }
+
+    DocLinkedIssueState:
+      type: object
+      required: [name, category]
+      properties:
+        name: { type: string }
+        category: { $ref: '#/components/schemas/StateCategory' }
+
+    DocLinkedProject:
+      type: object
+      required: [id, slug, name, archived]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        archived: { type: boolean }
+
+    DocLink:
+      type: object
+      required: [id, target, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        target: { $ref: '#/components/schemas/DocLinkTarget' }
+        issue: { $ref: '#/components/schemas/DocLinkedIssue' }
+        project: { $ref: '#/components/schemas/DocLinkedProject' }
+        createdAt: { type: string, format: date-time }
+
+    DocLinkList:
+      type: object
+      required: [links]
+      properties:
+        links:
+          type: array
+          items: { $ref: '#/components/schemas/DocLink' }
+
+    LinkDocRequest:
+      type: object
+      description: Exactly one of issueId and projectId.
+      properties:
+        issueId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+
+    LinkedDocList:
+      type: object
+      required: [docs]
+      properties:
+        docs:
+          type: array
+          items: { $ref: '#/components/schemas/DocSummary' }
+
     CreateDocRequest:
       type: object
       required: [title, audience]
@@ -12048,6 +12215,7 @@ components:
                 - doc_has_children
                 - doc_parent_cycle
                 - doc_tree_too_deep
+                - doc_link_exists
             version:
               type: integer
               format: int32

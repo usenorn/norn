@@ -7,8 +7,10 @@ import {
 	docTreePagesMax,
 	type Doc,
 	type DocAudience,
+	type DocLinks,
 	type DocReaders,
 	type DocSummary,
+	type DocBacklinks,
 } from "./docs";
 
 export type DocRead = { kind: "ready"; doc: Doc } | { kind: "not_found" } | { kind: "unavailable" };
@@ -97,4 +99,36 @@ export async function readReaders(
 			};
 		}
 	}
+}
+
+export async function readDocLinks(api: Client<paths>, workspaceId: string, docId: string): Promise<DocLinks> {
+	const { data } = await api.GET("/workspaces/{workspaceId}/docs/{docId}/links", {
+		params: { path: { workspaceId, docId } },
+	});
+
+	return data ? { kind: "ready", links: data.links } : { kind: "unavailable" };
+}
+
+export async function readIssueDocs(
+	api: Client<paths>,
+	workspaceId: string,
+	issueId: string
+): Promise<DocBacklinks> {
+	const { data } = await api.GET("/workspaces/{workspaceId}/issues/{issueId}/docs", {
+		params: { path: { workspaceId, issueId } },
+	});
+
+	return data ? { kind: "ready", docs: data.docs } : { kind: "unavailable" };
+}
+
+export async function readProjectDocs(
+	api: Client<paths>,
+	workspaceId: string,
+	projectId: string
+): Promise<DocBacklinks> {
+	const { data } = await api.GET("/workspaces/{workspaceId}/projects/{projectId}/docs", {
+		params: { path: { workspaceId, projectId } },
+	});
+
+	return data ? { kind: "ready", docs: data.docs } : { kind: "unavailable" };
 }

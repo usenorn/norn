@@ -73,6 +73,14 @@ func TestReadingADocReturnsItsMarkdownWithTheVersionToEditAgainst(t *testing.T) 
 	scene := docSceneFor(h)
 
 	h.docs.EXPECT().Get(gomock.Any(), scene.workspace.ID, scene.doc.ID).Return(scene.doc, nil)
+	h.docLinks.EXPECT().List(gomock.Any(), scene.workspace.ID, scene.doc.ID).Return([]entity.DocLink{
+		{
+			ID:     uuid.New(),
+			Target: entity.DocLinkTargetIssue,
+			Issue:  entity.Issue{ID: uuid.New(), ReferenceKey: "ENG", Number: 42, Title: "Ship the tag"},
+		},
+		{ID: uuid.New(), Target: entity.DocLinkTargetProject, Project: scene.project},
+	}, nil)
 
 	result := callTool(t, h, "norn_get_doc", map[string]any{
 		"workspace": "acme",
@@ -94,8 +102,22 @@ func TestReadingADocReturnsItsMarkdownWithTheVersionToEditAgainst(t *testing.T) 
 				ProjectID  string `json:"projectId"`
 			} `json:"audience"`
 		} `json:"doc"`
+		Links []struct {
+			Target string `json:"target"`
+			Issue  *struct {
+				Reference string `json:"reference"`
+			} `json:"issue"`
+			Project *struct {
+				Slug string `json:"slug"`
+			} `json:"project"`
+		} `json:"links"`
 	}
 	structured(t, result.StructuredContent, &output)
+
+	if len(output.Links) != 2 || output.Links[0].Issue == nil || output.Links[0].Issue.Reference != "ENG-42" ||
+		output.Links[1].Project == nil || output.Links[1].Project.Slug != "atlas" || output.Links[1].Issue != nil {
+		t.Fatalf("the doc's links read out as %+v", output.Links)
+	}
 
 	if output.Doc.Markdown != scene.doc.Markdown || output.Doc.Version != 4 ||
 		output.Doc.AuthorID != scene.doc.AuthorID.String() || output.Doc.Author != "Rae" ||
@@ -324,4 +346,108 @@ func TestTheServerInstructionsCountDocsAsWorkspaceData(t *testing.T) {
 	if instructions := h.session(t).InitializeResult().Instructions; !strings.Contains(instructions, "doc titles and bodies") {
 		t.Fatal("the server instructions do not tell an agent that doc text is data, not instructions")
 	}
+}
+
+func TestLinkingADocResolvesTheIssueReferenceItWasGiven(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+	issue := entity.Issue{ID: uuid.New(), ReferenceKey: "ENG", Number: 42, Title: "Ship the tag"}
+
+	h.issues.EXPECT().GetByReference(gomock.Any(), scene.workspace.ID, "ENG-42").Return(issue, nil)
+	h.docLinks.EXPECT().
+		Link(gomock.Any(), scene.workspace.ID, scene.doc.ID, service.LinkDocInput{IssueID: issue.ID}).
+		Return(entity.DocLink{ID: uuid.New(), Target: entity.DocLinkTargetIssue, Issue: issue}, nil)
+
+	result := callTool(t, h, "norn_link_doc", map[string]any{
+		"workspace": "acme",
+		"doc":       scene.doc.ID.String(),
+		"issue":     "eng-42",
+	})
+	if result.IsError {
+		t.Fatalf("link doc refused: %s", refusalText(t, result))
+	}
+
+	var output struct {
+		Link struct {
+			Target string `json:"target"`
+			Issue  struct {
+				Reference string `json:"reference"`
+			} `json:"issue"`
+		} `json:"link"`
+	}
+	structured(t, result.StructuredContent, &output)
+
+	if output.Link.Target != "issue" || output.Link.Issue.Reference != "ENG-42" {
+		t.Fatalf("the link read out as %+v", output.Link)
+	}
+}
+
+func TestADocLinksToAnIssueOrAProjectNotBoth(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+
+	h.issues.EXPECT().GetByReference(gomock.Any(), scene.workspace.ID, "ENG-42").
+		Return(entity.Issue{ID: uuid.New()}, nil)
+
+	result := callTool(t, h, "norn_link_doc", map[string]any{
+		"workspace": "acme",
+		"doc":       scene.doc.ID.String(),
+		"issue":     "ENG-42",
+		"project":   "atlas",
+	})
+
+	expectRefusal(t, result, "invalid_input", "not both")
+}
+
+func TestUnlinkingADocRemovesTheLinkToTheNamedProject(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+	linkID := uuid.New()
+
+	h.docLinks.EXPECT().List(gomock.Any(), scene.workspace.ID, scene.doc.ID).Return([]entity.DocLink{
+		{ID: uuid.New(), Target: entity.DocLinkTargetIssue, Issue: entity.Issue{ID: uuid.New()}},
+		{ID: linkID, Target: entity.DocLinkTargetProject, Project: scene.project},
+	}, nil)
+	h.docLinks.EXPECT().Unlink(gomock.Any(), scene.workspace.ID, scene.doc.ID, linkID).Return(nil)
+
+	result := callTool(t, h, "norn_unlink_doc", map[string]any{
+		"workspace": "acme",
+		"doc":       scene.doc.ID.String(),
+		"project":   "atlas",
+	})
+	if result.IsError {
+		t.Fatalf("unlink doc refused: %s", refusalText(t, result))
+	}
+}
+
+func TestUnlinkingADocFromSomethingItDoesNotLinkToSaysSo(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+
+	h.docLinks.EXPECT().List(gomock.Any(), scene.workspace.ID, scene.doc.ID).Return([]entity.DocLink{}, nil)
+
+	result := callTool(t, h, "norn_unlink_doc", map[string]any{
+		"workspace": "acme",
+		"doc":       scene.doc.ID.String(),
+		"project":   "atlas",
+	})
+
+	expectRefusal(t, result, "doc_link_not_found", "norn_get_doc")
+}
+
+func TestLinkingADocTwiceSaysTheLinkIsAlreadyThere(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+
+	h.docLinks.EXPECT().
+		Link(gomock.Any(), scene.workspace.ID, scene.doc.ID, service.LinkDocInput{ProjectID: scene.project.ID}).
+		Return(entity.DocLink{}, entity.ErrDocLinkExists)
+
+	result := callTool(t, h, "norn_link_doc", map[string]any{
+		"workspace": "acme",
+		"doc":       scene.doc.ID.String(),
+		"project":   "atlas",
+	})
+
+	expectRefusal(t, result, "doc_link_exists", "norn_get_doc")
 }

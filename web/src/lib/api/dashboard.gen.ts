@@ -3521,6 +3521,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/docs/{docId}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        /** List the issues and projects a doc links to, as far as the caller may see them */
+        get: operations["listWorkspaceDocLinks"];
+        put?: never;
+        /** Link a doc to an issue or a project */
+        post: operations["linkWorkspaceDoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/docs/{docId}/links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+                linkId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a link from a doc */
+        delete: operations["unlinkWorkspaceDoc"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/issues/{issueId}/docs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the docs linking to an issue that the caller may read
+         * @description A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+         */
+        get: operations["listWorkspaceIssueDocs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/projects/{projectId}/docs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the docs linking to a project that the caller may read
+         * @description A doc outside the caller's audience is left out entirely, so neither its title nor the number of linked docs gives it away.
+         */
+        get: operations["listWorkspaceProjectDocs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/roadmap": {
         parameters: {
             query?: never;
@@ -7636,6 +7724,48 @@ export interface components {
             docs: components["schemas"]["DocSummary"][];
             nextCursor?: string;
         };
+        /** @enum {string} */
+        DocLinkTarget: "issue" | "project";
+        DocLinkedIssue: {
+            /** Format: uuid */
+            id: string;
+            reference: string;
+            title: string;
+            state: components["schemas"]["DocLinkedIssueState"];
+        };
+        DocLinkedIssueState: {
+            name: string;
+            category: components["schemas"]["StateCategory"];
+        };
+        DocLinkedProject: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            archived: boolean;
+        };
+        DocLink: {
+            /** Format: uuid */
+            id: string;
+            target: components["schemas"]["DocLinkTarget"];
+            issue?: components["schemas"]["DocLinkedIssue"];
+            project?: components["schemas"]["DocLinkedProject"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        DocLinkList: {
+            links: components["schemas"]["DocLink"][];
+        };
+        /** @description Exactly one of issueId and projectId. */
+        LinkDocRequest: {
+            /** Format: uuid */
+            issueId?: string;
+            /** Format: uuid */
+            projectId?: string;
+        };
+        LinkedDocList: {
+            docs: components["schemas"]["DocSummary"][];
+        };
         CreateDocRequest: {
             title: string;
             markdown?: string;
@@ -7733,7 +7863,7 @@ export interface components {
         };
         DocConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "doc_stale" | "doc_archived" | "doc_has_children" | "doc_parent_cycle" | "doc_tree_too_deep";
+            code: "doc_stale" | "doc_archived" | "doc_has_children" | "doc_parent_cycle" | "doc_tree_too_deep" | "doc_link_exists";
             /**
              * Format: int32
              * @description The version the doc is at now, when the write was against an older one.
@@ -18377,6 +18507,147 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["DocConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceDocLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The doc's links */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocLinkList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    linkWorkspaceDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkDocRequest"];
+            };
+        };
+        responses: {
+            /** @description The link as made */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocLink"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["DocConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    unlinkWorkspaceDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+                linkId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link was removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["DocConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceIssueDocs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                issueId: components["parameters"]["IssueId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The linked docs the caller may read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedDocList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceProjectDocs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                projectId: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The linked docs the caller may read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedDocList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

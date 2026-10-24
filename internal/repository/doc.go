@@ -15,6 +15,8 @@ type DocFilter struct {
 	Root             bool
 	ProjectID        *uuid.UUID
 	WithinID         *uuid.UUID
+	LinkedIssueID    *uuid.UUID
+	LinkedProjectID  *uuid.UUID
 	AllProjects      bool
 	ProjectIDs       []uuid.UUID
 	PersonalAuthorID uuid.UUID
