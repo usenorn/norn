@@ -55,21 +55,42 @@ WHERE m.id = $1 AND m.workspace_id = $2`
 const lockMemoryQuery = memoryByIDQuery + `
 FOR UPDATE OF m`
 
-const listMemoriesQuery = `
-SELECT` + memoryColumns + `
+const visibleMemories = `
 FROM workspace_memories m
 LEFT JOIN accounts a ON a.id = m.author_account_id
 WHERE m.workspace_id = $1
   AND (m.visibility = 'workspace'
        OR (m.visibility = 'project' AND ($2::boolean IS TRUE OR m.project_id = ANY($3::uuid[])))
-       OR (m.visibility = 'personal' AND m.author_account_id = $4::uuid))
-  AND ($5::timestamptz IS NULL OR (m.updated_at, m.id) < ($5::timestamptz, $6::uuid))
-  AND ($8::text IS NULL OR m.kind = $8::text)
-  AND (cardinality($9::text[]) = 0 OR m.status = ANY($9::text[]))
-  AND ($10::uuid IS NULL OR m.applies_project_id = $10::uuid)
-  AND ($11::text = '' OR m.component = $11::text)
+       OR (m.visibility = 'personal' AND m.author_account_id = $4::uuid))`
+
+const filteredMemories = `
+  AND (cardinality($%[1]d::text[]) = 0 OR m.kind = ANY($%[1]d::text[]))
+  AND (cardinality($%[2]d::text[]) = 0 OR m.status = ANY($%[2]d::text[]))
+  AND ($%[3]d::uuid IS NULL OR m.applies_project_id = $%[3]d::uuid
+       OR ($%[5]d::boolean AND m.applies_project_id IS NULL))
+  AND ($%[4]d::text = '' OR m.component = $%[4]d::text OR ($%[5]d::boolean AND m.component = ''))
+  AND ($%[6]d::date IS NULL
+       OR (m.effective_from <= $%[6]d::date AND (m.effective_until IS NULL OR m.effective_until >= $%[6]d::date)))`
+
+var listMemoriesQuery = `
+SELECT` + memoryColumns + visibleMemories + `
+  AND ($5::timestamptz IS NULL OR (m.updated_at, m.id) < ($5::timestamptz, $6::uuid))` +
+	fmt.Sprintf(filteredMemories, 8, 9, 10, 11, 12, 13) + `
 ORDER BY m.updated_at DESC, m.id DESC
 LIMIT $7`
+
+var enumerateMemoriesQuery = `
+SELECT` + memoryColumns + visibleMemories + `
+  AND ($5::uuid IS NULL OR m.id > $5::uuid)` +
+	fmt.Sprintf(filteredMemories, 7, 8, 9, 10, 11, 12) + `
+ORDER BY m.id
+LIMIT $6`
+
+const memoriesByIDsQuery = `
+SELECT` + memoryColumns + `
+FROM workspace_memories m
+LEFT JOIN accounts a ON a.id = m.author_account_id
+WHERE m.workspace_id = $1 AND m.id = ANY($2::uuid[])`
 
 const evidenceQuery = `
 SELECT e.memory_id,
@@ -439,7 +460,6 @@ func (r *memoryRepository) List(
 	var (
 		after   sql.NullTime
 		afterID sql.NullString
-		kind    sql.NullString
 	)
 
 	if page.Cursor != nil {
@@ -447,8 +467,57 @@ func (r *memoryRepository) List(
 		afterID = sql.NullString{String: page.Cursor.MemoryID.String(), Valid: true}
 	}
 
-	if filter.Kind != nil {
-		kind = sql.NullString{String: string(*filter.Kind), Valid: true}
+	args := append(visibleArgs(workspaceID, filter), after, afterID, page.Limit)
+
+	memories, err := r.query(ctx, "list memories", listMemoriesQuery, append(args, filterArgs(filter)...)...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.attachEvidence(ctx, memories); err != nil {
+		return nil, err
+	}
+
+	return memories, nil
+}
+
+func (r *memoryRepository) ListByIDs(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	memoryIDs []uuid.UUID,
+) ([]entity.Memory, error) {
+	if len(memoryIDs) == 0 {
+		return nil, nil
+	}
+
+	return r.query(ctx, "list memories by id", memoriesByIDsQuery, workspaceID.String(), idStrings(memoryIDs))
+}
+
+func (r *memoryRepository) Enumerate(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	filter repository.MemoryFilter,
+	after *uuid.UUID,
+	limit int,
+) ([]entity.Memory, error) {
+	args := append(visibleArgs(workspaceID, filter), nullableID(after), limit)
+
+	return r.query(ctx, "enumerate memories", enumerateMemoriesQuery, append(args, filterArgs(filter)...)...)
+}
+
+func visibleArgs(workspaceID uuid.UUID, filter repository.MemoryFilter) []any {
+	return []any{
+		workspaceID.String(),
+		filter.AllProjects,
+		idStrings(filter.ProjectIDs),
+		nullableAuthor(filter.PersonalAuthorID),
+	}
+}
+
+func filterArgs(filter repository.MemoryFilter) []any {
+	kinds := make([]string, 0, len(filter.Kinds))
+	for _, kind := range filter.Kinds {
+		kinds = append(kinds, string(kind))
 	}
 
 	statuses := make([]string, 0, len(filter.Statuses))
@@ -456,23 +525,25 @@ func (r *memoryRepository) List(
 		statuses = append(statuses, string(status))
 	}
 
-	rows, err := r.db.Querier(ctx).QueryContext(
-		ctx,
-		listMemoriesQuery,
-		workspaceID.String(),
-		filter.AllProjects,
-		idStrings(filter.ProjectIDs),
-		nullableAuthor(filter.PersonalAuthorID),
-		after,
-		afterID,
-		page.Limit,
-		kind,
+	var on sql.NullTime
+	if filter.InEffectOn != nil {
+		on = sql.NullTime{Time: *filter.InEffectOn, Valid: true}
+	}
+
+	return []any{
+		kinds,
 		statuses,
 		nullableID(filter.AppliesProjectID),
 		filter.Component,
-	)
+		filter.WorkspaceWide,
+		on,
+	}
+}
+
+func (r *memoryRepository) query(ctx context.Context, action, statement string, args ...any) ([]entity.Memory, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(ctx, statement, args...)
 	if err != nil {
-		return nil, fmt.Errorf("list memories: %w", err)
+		return nil, fmt.Errorf("%s: %w", action, err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -489,10 +560,6 @@ func (r *memoryRepository) List(
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("read memories: %w", err)
-	}
-
-	if err := r.attachEvidence(ctx, memories); err != nil {
-		return nil, err
 	}
 
 	return memories, nil

@@ -430,8 +430,13 @@ func (s *memoriesService) List(
 	}
 
 	reader := decision.Reader
+	var kinds []entity.MemoryKind
+	if input.Kind != nil {
+		kinds = []entity.MemoryKind{*input.Kind}
+	}
+
 	filter := repository.MemoryFilter{
-		Kind:             input.Kind,
+		Kinds:            kinds,
 		Statuses:         input.Statuses,
 		AppliesProjectID: input.ProjectID,
 		Component:        strings.TrimSpace(input.Component),

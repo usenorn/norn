@@ -2,4 +2,4 @@ package knowledge
 
 import "github.com/goforj/wire"
 
-var Set = wire.NewSet(NewEmbeddings)
+var Set = wire.NewSet(New, NewEmbeddings)

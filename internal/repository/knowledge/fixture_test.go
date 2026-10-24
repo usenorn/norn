@@ -125,14 +125,6 @@ func withKnowledgeFixture(
 	}
 }
 
-func nullable(id uuid.UUID) any {
-	if id == uuid.Nil {
-		return nil
-	}
-
-	return id
-}
-
 func (f knowledgeFixture) memory(ctx context.Context, client *postgres.Client, memory fixtureMemory) (uuid.UUID, error) {
 	if memory.id == uuid.Nil {
 		memory.id = uuid.New()
