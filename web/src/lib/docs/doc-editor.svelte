@@ -36,7 +36,7 @@
 	// svelte-ignore state_referenced_locally
 	let content = $state.raw<Document>(withParagraph(asDocument(doc.content)));
 	// svelte-ignore state_referenced_locally
-	let base = $state.raw<Written>({ title: doc.title, content: asDocument(doc.content) });
+	let base = $state.raw<Written>({ title: doc.title, content });
 	// svelte-ignore state_referenced_locally
 	let version = $state(doc.version);
 	let conflicted = $state.raw<Document | null>(null);
@@ -117,7 +117,7 @@
 	}
 
 	function keepMine() {
-		base = { title: doc.title, content: asDocument(doc.content) };
+		base = { title: doc.title, content: withParagraph(asDocument(doc.content)) };
 		version = doc.version;
 		conflicted = null;
 		autosave.rest();
@@ -125,9 +125,9 @@
 	}
 
 	function takeTheirs() {
-		const theirs = asDocument(doc.content);
+		const theirs = withParagraph(asDocument(doc.content));
 
-		content = withParagraph(theirs);
+		content = theirs;
 		$titleData.title = doc.title;
 		base = { title: doc.title, content: theirs };
 		version = doc.version;
@@ -199,7 +199,7 @@
 		bind:document={content}
 		{workspaceId}
 		{workspace}
-		label="Doc"
+		label="Doc text"
 		placeholder="Write, or type / for blocks…"
 		minHeight="min-h-80"
 		disabled={Boolean(conflict)}
