@@ -1,4 +1,9 @@
-import type { AgentFailure, AgentListing, APIScope } from "$lib/agents/agents";
+import type {
+	AgentFailure,
+	AgentListing,
+	APIScope,
+	WorkspaceAgentSettings,
+} from "$lib/agents/agents";
 import type { Project } from "$lib/projects/projects";
 import type { Team } from "$lib/team/teams";
 
@@ -10,12 +15,19 @@ export type AgentsPreview = {
 	busy?: boolean;
 	failure?: AgentFailure;
 	grantable?: APIScope[] | null;
+	docHolds?: WorkspaceAgentSettings | null;
 };
 
 export const agentsPreviewStates: Record<string, AgentsPreview> = import.meta.env.DEV
 	? {
 			loading: { listing: { kind: "loading" } },
 			empty: { listing: { kind: "empty" } },
+			holding_docs: {
+				listing: { kind: "empty" },
+				mayOpenToWorkspace: true,
+				docHolds: { holdDocWrites: "always" },
+			},
+			holds_unreadable: { listing: { kind: "empty" }, docHolds: null },
 			member_empty: {
 				listing: { kind: "empty" },
 				grantable: [

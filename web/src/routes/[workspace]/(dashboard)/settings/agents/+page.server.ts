@@ -29,10 +29,12 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 
 	const path = { workspaceId: workspace.id };
 
-	const [agents, grants] = await Promise.all([
+	const [agents, grants, holds] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/agents", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/agents/grantable-scopes", { params: { path } }),
+		locals.api.GET("/workspaces/{workspaceId}/agent-settings", { params: { path } }),
 	]);
+	const docHolds = holds.data ?? null;
 	const reachable = (teams ?? []).filter((team) => team.status === "active");
 	const grantable = grants.data?.scopes ?? null;
 	const mayOpenToWorkspace =
@@ -46,6 +48,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 			projects: scopable,
 			mayOpenToWorkspace,
 			grantable,
+			docHolds,
 			listing: {
 				kind: agents.error.status === 403 ? "forbidden" : "unavailable",
 			} as AgentListing,
@@ -59,6 +62,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 			projects: scopable,
 			mayOpenToWorkspace,
 			grantable,
+			docHolds,
 			listing: { kind: "empty" } as AgentListing,
 		};
 	}
@@ -69,6 +73,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 		projects: scopable,
 		mayOpenToWorkspace,
 		grantable,
+		docHolds,
 		listing: { kind: "ready", agents: agents.data } as AgentListing,
 	};
 };
