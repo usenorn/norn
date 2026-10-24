@@ -3360,3 +3360,125 @@ func publicRoadmapDTO(roadmap entity.PublicRoadmap) api.PublicRoadmap {
 
 	return dto
 }
+
+func docAudienceDTO(audience entity.KnowledgeAudience) api.DocAudience {
+	return api.DocAudience{
+		Visibility: api.DocVisibility(audience.Visibility),
+		ProjectId:  optionalUUIDDTO(audience.ProjectID),
+	}
+}
+
+func docAudienceOf(audience api.DocAudience) entity.KnowledgeAudience {
+	converted := entity.KnowledgeAudience{Visibility: entity.KnowledgeVisibility(audience.Visibility)}
+
+	if audience.ProjectId != nil {
+		converted.ProjectID = *audience.ProjectId
+	}
+
+	return converted
+}
+
+func docSummaryDTO(summary entity.DocSummary) api.DocSummary {
+	return api.DocSummary{
+		Id:              summary.ID,
+		ParentId:        summary.ParentID,
+		Title:           summary.Title,
+		Audience:        docAudienceDTO(summary.Audience),
+		AuthorAccountId: optionalUUIDDTO(summary.AuthorID),
+		AuthorName:      nilIfEmpty(summary.AuthorName),
+		Status:          api.DocStatus(summary.Status),
+		ArchivedAt:      summary.ArchivedAt,
+		Version:         int32(summary.Version),
+		CreatedAt:       summary.CreatedAt,
+		UpdatedAt:       summary.UpdatedAt,
+	}
+}
+
+func docDTO(doc entity.Doc) api.Doc {
+	summary := docSummaryDTO(doc.DocSummary)
+	contributors := make([]uuid.UUID, 0, len(doc.ContributorIDs))
+	contributors = append(contributors, doc.ContributorIDs...)
+
+	return api.Doc{
+		Id:              summary.Id,
+		ParentId:        summary.ParentId,
+		Title:           summary.Title,
+		Audience:        summary.Audience,
+		AuthorAccountId: summary.AuthorAccountId,
+		AuthorName:      summary.AuthorName,
+		Status:          summary.Status,
+		ArchivedAt:      summary.ArchivedAt,
+		Version:         summary.Version,
+		CreatedAt:       summary.CreatedAt,
+		UpdatedAt:       summary.UpdatedAt,
+		Markdown:        doc.Markdown,
+		Content:         docContentDTO(doc.Content),
+		ContributorIds:  contributors,
+	}
+}
+
+func docContentDTO(content entity.Document) api.Document {
+	if document := documentDTO(content); document != nil {
+		return *document
+	}
+
+	return api.Document{Type: api.DocumentType(entity.DocumentType)}
+}
+
+func docPageDTO(list service.DocList) api.DocPage {
+	docs := make([]api.DocSummary, 0, len(list.Docs))
+	for _, summary := range list.Docs {
+		docs = append(docs, docSummaryDTO(summary))
+	}
+
+	return api.DocPage{Docs: docs, NextCursor: nilIfEmpty(list.NextCursor)}
+}
+
+func docRevisionSummaryDTO(summary entity.DocRevisionSummary) api.DocRevisionSummary {
+	return api.DocRevisionSummary{
+		Id:           summary.ID,
+		DocId:        summary.DocID,
+		Version:      int32(summary.Version),
+		Action:       api.DocRevisionAction(summary.Action),
+		Title:        summary.Title,
+		ParentId:     summary.ParentID,
+		Audience:     docAudienceDTO(summary.Audience),
+		AccountId:    optionalUUIDDTO(summary.By.AccountID),
+		AccountName:  nilIfEmpty(summary.AccountName),
+		AgentId:      summary.By.AgentID,
+		ConnectionId: summary.By.ConnectionID,
+		Source:       api.DocRevisionSource(summary.By.Source),
+		CreatedAt:    summary.CreatedAt,
+	}
+}
+
+func docRevisionDTO(revision entity.DocRevision) api.DocRevision {
+	summary := docRevisionSummaryDTO(revision.DocRevisionSummary)
+
+	return api.DocRevision{
+		Id:           summary.Id,
+		DocId:        summary.DocId,
+		Version:      summary.Version,
+		Action:       summary.Action,
+		Title:        summary.Title,
+		ParentId:     summary.ParentId,
+		Audience:     summary.Audience,
+		AccountId:    summary.AccountId,
+		AccountName:  summary.AccountName,
+		AgentId:      summary.AgentId,
+		ConnectionId: summary.ConnectionId,
+		Source:       summary.Source,
+		CreatedAt:    summary.CreatedAt,
+		Markdown:     revision.Markdown,
+		Content:      docContentDTO(revision.Content),
+	}
+}
+
+func docHistoryDTO(history service.DocHistory) api.DocRevisionPage {
+	revisions := make([]api.DocRevisionSummary, 0, len(history.Revisions))
+	for _, summary := range history.Revisions {
+		revisions = append(revisions, docRevisionSummaryDTO(summary))
+	}
+
+	return api.DocRevisionPage{Revisions: revisions, NextCursor: nilIfEmpty(history.NextCursor)}
+}

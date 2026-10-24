@@ -120,6 +120,13 @@ func problemFor(err error) (problemResponse, bool) {
 		}), true
 	}
 
+	var staleDoc entity.DocStaleError
+	if errors.As(err, &staleDoc) {
+		version := int32(staleDoc.Version)
+
+		return docConflict(api.DocStale, err, &version), true
+	}
+
 	var outOfReach entity.RoadmapUnreachableError
 	if errors.As(err, &outOfReach) {
 		entryID := outOfReach.EntryID
@@ -701,6 +708,9 @@ func problemFor(err error) (problemResponse, bool) {
 		errors.Is(err, entity.ErrProjectLinkNotFound),
 		errors.Is(err, entity.ErrRoadmapNotFound),
 		errors.Is(err, entity.ErrRoadmapEntryNotFound),
+		errors.Is(err, entity.ErrDocNotFound),
+		errors.Is(err, entity.ErrDocRevisionNotFound),
+		errors.Is(err, entity.ErrKnowledgeNotFound),
 		errors.Is(err, entity.ErrSavedViewNotFound),
 		errors.Is(err, entity.ErrIssueCommentNotFound),
 		errors.Is(err, entity.ErrAttachmentNotFound),
@@ -720,6 +730,24 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrRoadmapReviewChanged):
 		return roadmapConflict(api.RoadmapReviewChanged, err, nil), true
 
+	case errors.Is(err, entity.ErrDocArchived):
+		return docConflict(api.DocArchived, err, nil), true
+
+	case errors.Is(err, entity.ErrDocHasChildren):
+		return docConflict(api.DocHasChildren, err, nil), true
+
+	case errors.Is(err, entity.ErrDocParentCycle):
+		return docConflict(api.DocParentCycle, err, nil), true
+
+	case errors.Is(err, entity.ErrDocTreeTooDeep):
+		return docConflict(api.DocTreeTooDeep, err, nil), true
+
+	case errors.Is(err, entity.ErrKnowledgeNotEditable):
+		return knowledgeForbidden(api.KnowledgeNotEditable, err), true
+
+	case errors.Is(err, entity.ErrKnowledgeNotShareable):
+		return knowledgeForbidden(api.KnowledgeNotShareable, err), true
+
 	case errors.Is(err, entity.ErrIntakeDomainUnset):
 		return intakeConflict(api.IntakeDomainUnset, err), true
 
@@ -728,6 +756,8 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrSnoozeNotInFuture),
 		errors.Is(err, entity.ErrNotificationCursorInvalid),
+		errors.Is(err, entity.ErrDocCursorInvalid),
+		errors.Is(err, entity.ErrDocRevisionCursorInvalid),
 		errors.Is(err, entity.ErrSearchQueryEmpty),
 		errors.Is(err, entity.ErrSearchKindUnknown):
 		return newProblem(http.StatusUnprocessableEntity, err.Error()), true
@@ -782,6 +812,9 @@ func problemFor(err error) (problemResponse, bool) {
 
 	case errors.Is(err, entity.ErrProjectHasScopedAgents):
 		return projectConflictProblem(api.ProjectConflictProblemCodeProjectHasScopedAgents, err), true
+
+	case errors.Is(err, entity.ErrProjectHasDocs):
+		return projectConflictProblem(api.ProjectConflictProblemCodeProjectHasDocs, err), true
 
 	case errors.Is(err, entity.ErrCycleClosed):
 		return cycleConflictProblem(api.CycleConflictProblemCodeCycleClosed, err), true
@@ -2188,6 +2221,46 @@ func (r problemResponse) VisitDeleteWorkspaceRoadmapEntryResponse(w http.Respons
 	return r.write(w)
 }
 
+func (r problemResponse) VisitListWorkspaceDocsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitCreateWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitUpdateWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDeleteWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitMoveWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitShareWorkspaceDocResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitListWorkspaceDocRevisionsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRestoreWorkspaceDocRevisionResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitRefreshWorkspaceRoadmapEntryResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
@@ -2520,6 +2593,40 @@ func roadmapConflict(
 	}
 
 	return problemResponse{status: http.StatusConflict, body: body}
+}
+
+func docConflict(code api.DocConflictProblemCode, err error, version *int32) problemResponse {
+	base := baseProblem(http.StatusConflict, err.Error())
+
+	return problemResponse{
+		status: http.StatusConflict,
+		body: api.DocConflictProblem{
+			Code:     code,
+			Version:  version,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
+}
+
+func knowledgeForbidden(reason api.ForbiddenProblemReason, err error) problemResponse {
+	base := baseProblem(http.StatusForbidden, err.Error())
+
+	return problemResponse{
+		status: http.StatusForbidden,
+		body: api.ForbiddenProblem{
+			Code:     api.ForbiddenProblemCodeForbidden,
+			Reason:   &reason,
+			Detail:   base.Detail,
+			Instance: base.Instance,
+			Status:   base.Status,
+			Title:    base.Title,
+			Type:     base.Type,
+		},
+	}
 }
 
 func cycleConflictProblem(code api.CycleConflictProblemCode, err error) problemResponse {

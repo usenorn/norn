@@ -96,6 +96,7 @@ export type ProjectFailure =
 	| { kind: "not_finished" }
 	| { kind: "member_exists" }
 	| { kind: "has_scoped_agents" }
+	| { kind: "has_docs" }
 	| { kind: "invalid"; fields: string[] }
 	| { kind: "forbidden" }
 	| { kind: "unavailable" };
@@ -108,6 +109,8 @@ const failureMessages: Record<ProjectFailure["kind"], string> = {
 	member_exists: "They are already on this project.",
 	has_scoped_agents:
 		"Agents are scoped to this project, so deleting it would leave them without one. Change their scope on the agent's settings page first.",
+	has_docs:
+		"Docs are shared with this project, so deleting it would leave them without an audience. Share them elsewhere first.",
 	invalid: "Check the highlighted fields and try again.",
 	forbidden: "Only the project lead or a workspace administrator can change this project.",
 	unavailable: "Something went wrong and nothing changed. Wait a moment and try again.",
@@ -124,6 +127,7 @@ const conflictKinds: Record<string, ProjectFailure["kind"]> = {
 	project_not_finished: "not_finished",
 	project_member_exists: "member_exists",
 	project_has_scoped_agents: "has_scoped_agents",
+	project_has_docs: "has_docs",
 };
 
 export function readProjectFailure(problem: unknown): ProjectFailure {

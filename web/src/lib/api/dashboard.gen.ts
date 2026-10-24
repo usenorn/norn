@@ -3356,6 +3356,153 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/docs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the active docs this caller may read, most recently changed first */
+        get: operations["listWorkspaceDocs"];
+        put?: never;
+        /** Write a doc for an audience, optionally beneath another doc */
+        post: operations["createWorkspaceDoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/docs/{docId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        /** Read a doc */
+        get: operations["getWorkspaceDoc"];
+        put?: never;
+        post?: never;
+        /** Archive a doc, keeping its history */
+        delete: operations["deleteWorkspaceDoc"];
+        options?: never;
+        head?: never;
+        /** Change a doc's title or content against the version it was read at */
+        patch: operations["updateWorkspaceDoc"];
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/docs/{docId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Place a doc beneath another doc, or at the top of the tree */
+        post: operations["moveWorkspaceDoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/docs/{docId}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change who may read a doc */
+        post: operations["shareWorkspaceDoc"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/docs/{docId}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        /** Read every change made to a doc, newest first */
+        get: operations["listWorkspaceDocRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        /** Read a doc as one revision left it */
+        get: operations["getWorkspaceDocRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/docs/{docId}/revisions/{revisionId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put back a revision's title and content, as a new revision
+         * @description Restoring writes the old title and content forward rather than rewinding to them, so what they replaced stays in the history. Where the doc sits and who may read it are left as they are.
+         */
+        post: operations["restoreWorkspaceDocRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/roadmap": {
         parameters: {
             query?: never;
@@ -7228,7 +7375,7 @@ export interface components {
         };
         ProjectConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents";
+            code: "project_slug_taken" | "project_archived" | "project_not_archived" | "project_not_finished" | "project_member_exists" | "project_links_full" | "project_has_scoped_agents" | "project_has_docs";
         };
         RoadmapVisibility: {
             issueLists: boolean;
@@ -7405,6 +7552,169 @@ export interface components {
             /** Format: int32 */
             expectedVersion: number;
             content: components["schemas"]["RoadmapEntryContent"];
+        };
+        /** @enum {string} */
+        DocVisibility: "personal" | "project" | "workspace";
+        DocAudience: {
+            visibility: components["schemas"]["DocVisibility"];
+            /**
+             * Format: uuid
+             * @description The project whose members may read the doc, when the visibility is project.
+             */
+            projectId?: string;
+        };
+        /** @enum {string} */
+        DocStatus: "active" | "archived";
+        DocSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId?: string;
+            title: string;
+            audience: components["schemas"]["DocAudience"];
+            /** Format: uuid */
+            authorAccountId?: string;
+            authorName?: string;
+            status: components["schemas"]["DocStatus"];
+            /** Format: date-time */
+            archivedAt?: string;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        Doc: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId?: string;
+            title: string;
+            audience: components["schemas"]["DocAudience"];
+            /** Format: uuid */
+            authorAccountId?: string;
+            authorName?: string;
+            status: components["schemas"]["DocStatus"];
+            /** Format: date-time */
+            archivedAt?: string;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            markdown: string;
+            content: components["schemas"]["Document"];
+            contributorIds: string[];
+        };
+        DocPage: {
+            docs: components["schemas"]["DocSummary"][];
+            nextCursor?: string;
+        };
+        CreateDocRequest: {
+            title: string;
+            markdown?: string;
+            content?: components["schemas"]["Document"];
+            /** Format: uuid */
+            parentId?: string;
+            audience: components["schemas"]["DocAudience"];
+        };
+        UpdateDocRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            title?: string;
+            markdown?: string;
+            content?: components["schemas"]["Document"];
+        };
+        MoveDocRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            /**
+             * Format: uuid
+             * @description The doc to sit beneath. Leave it out to move the doc to the top of the tree.
+             */
+            parentId?: string;
+        };
+        ShareDocRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            audience: components["schemas"]["DocAudience"];
+        };
+        RestoreDocRevisionRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        /** @enum {string} */
+        DocRevisionAction: "created" | "edited" | "moved" | "reshared" | "restored" | "archived";
+        /**
+         * @description Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
+         * @enum {string}
+         */
+        DocRevisionSource: "person" | "agent" | "import" | "intake" | "restore";
+        DocRevisionSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            docId: string;
+            /**
+             * Format: int32
+             * @description The version of the doc this revision made.
+             */
+            version: number;
+            action: components["schemas"]["DocRevisionAction"];
+            title: string;
+            /** Format: uuid */
+            parentId?: string;
+            audience: components["schemas"]["DocAudience"];
+            /** Format: uuid */
+            accountId?: string;
+            accountName?: string;
+            /** Format: uuid */
+            agentId?: string;
+            /** Format: uuid */
+            connectionId?: string;
+            source: components["schemas"]["DocRevisionSource"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        DocRevision: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            docId: string;
+            /** Format: int32 */
+            version: number;
+            action: components["schemas"]["DocRevisionAction"];
+            title: string;
+            /** Format: uuid */
+            parentId?: string;
+            audience: components["schemas"]["DocAudience"];
+            /** Format: uuid */
+            accountId?: string;
+            accountName?: string;
+            /** Format: uuid */
+            agentId?: string;
+            /** Format: uuid */
+            connectionId?: string;
+            source: components["schemas"]["DocRevisionSource"];
+            /** Format: date-time */
+            createdAt: string;
+            markdown: string;
+            content: components["schemas"]["Document"];
+        };
+        DocRevisionPage: {
+            revisions: components["schemas"]["DocRevisionSummary"][];
+            nextCursor?: string;
+        };
+        DocConflictProblem: components["schemas"]["Problem"] & {
+            /** @enum {string} */
+            code: "doc_stale" | "doc_archived" | "doc_has_children" | "doc_parent_cycle" | "doc_tree_too_deep";
+            /**
+             * Format: int32
+             * @description The version the doc is at now, when the write was against an older one.
+             */
+            version?: number;
         };
         RoadmapConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -9289,7 +9599,7 @@ export interface components {
             /** @enum {string} */
             code: "forbidden";
             /** @enum {string} */
-            reason?: "role_lacks_action" | "auth_method_not_permitted" | "token_permission_missing" | "token_workspace_mismatch" | "instance_admin_required";
+            reason?: "role_lacks_action" | "auth_method_not_permitted" | "token_permission_missing" | "token_workspace_mismatch" | "instance_admin_required" | "knowledge_not_editable" | "knowledge_not_shareable";
         };
         SignUpClosedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -10204,6 +10514,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProjectConflictProblem"];
             };
         };
+        /** @description The doc refuses the change */
+        DocConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["DocConflictProblem"];
+            };
+        };
         /** @description The roadmap refuses the change */
         RoadmapConflict: {
             headers: {
@@ -10535,6 +10854,7 @@ export interface components {
         TemplateTeamId: string;
         DraftId: string;
         EvidenceId: string;
+        DocId: string;
         RevisionId: string;
         /** @description How many revisions to return, newest first. */
         RevisionLimit: number;
@@ -17649,6 +17969,319 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["ProjectConflict"];
             422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceDocs: {
+        parameters: {
+            query?: {
+                /** @description Only the docs directly beneath this doc. */
+                parentId?: string;
+                /** @description Only the docs at the top of the tree. */
+                root?: boolean;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of docs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    createWorkspaceDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocRequest"];
+            };
+        };
+        responses: {
+            /** @description The doc as written */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Doc"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["DocConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The doc */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Doc"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    deleteWorkspaceDoc: {
+        parameters: {
+            query: {
+                expectedVersion: number;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The archived doc */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Doc"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["DocConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    updateWorkspaceDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocRequest"];
+            };
+        };
+        responses: {
+            /** @description The doc after the change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Doc"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["DocConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    moveWorkspaceDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveDocRequest"];
+            };
+        };
+        responses: {
+            /** @description The doc in its new place */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Doc"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["DocConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    shareWorkspaceDoc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShareDocRequest"];
+            };
+        };
+        responses: {
+            /** @description The doc with its new audience */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Doc"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["DocConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceDocRevisions: {
+        parameters: {
+            query?: {
+                /** @description How many revisions to return, newest first. */
+                limit?: components["parameters"]["RevisionLimit"];
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the doc's history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocRevisionPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceDocRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The revision */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocRevision"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    restoreWorkspaceDocRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                docId: components["parameters"]["DocId"];
+                revisionId: components["parameters"]["RevisionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreDocRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The doc as it now reads */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Doc"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["DocConflict"];
             500: components["responses"]["Problem"];
         };
     };

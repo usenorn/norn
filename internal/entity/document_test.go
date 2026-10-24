@@ -1,6 +1,7 @@
 package entity_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,7 +40,7 @@ func TestWhatSomebodyWroteSurvivesTheRoundTrip(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			document := entity.DocumentFromMarkdown(written)
 
-			if err := entity.ValidateDocument(document); err != nil {
+			if err := entity.ValidateDocument(document, entity.IssueDocumentLimits); err != nil {
 				t.Fatalf("the document this instance produced is one it refuses: %v", err)
 			}
 
@@ -111,7 +112,7 @@ func TestADocumentSaysWhoItAddresses(t *testing.T) {
 func TestADocumentRefusesWhatItCannotRender(t *testing.T) {
 	unknown := entity.NewDocument(entity.Node{Type: "marquee"})
 
-	if err := entity.ValidateDocument(unknown); err == nil {
+	if err := entity.ValidateDocument(unknown, entity.IssueDocumentLimits); err == nil {
 		t.Fatal(
 			"a block this instance cannot draw was accepted. It would be stored, read back and " +
 				"silently vanish from the description.",
@@ -121,13 +122,40 @@ func TestADocumentRefusesWhatItCannotRender(t *testing.T) {
 	deep := entity.Node{Type: entity.NodeBlockquote}
 	nested := &deep
 
-	for range entity.DocumentMaxDepth + 2 {
+	for range entity.IssueDocumentLimits.MaxDepth + 2 {
 		nested.Content = []entity.Node{{Type: entity.NodeBlockquote}}
 		nested = &nested.Content[0]
 	}
 
-	if err := entity.ValidateDocument(entity.NewDocument(deep)); err == nil {
+	if err := entity.ValidateDocument(entity.NewDocument(deep), entity.IssueDocumentLimits); err == nil {
 		t.Fatal("a document nested past the limit was accepted, and every read walks it recursively")
+	}
+}
+
+func TestADocumentIsHeldToTheLimitsItIsValidatedAgainst(t *testing.T) {
+	limits := entity.DocumentLimits{MaxDepth: 4, MaxNodes: 10, MaxTextRunes: 5}
+	wider := entity.DocumentLimits{MaxDepth: 4, MaxNodes: 10, MaxTextRunes: 50}
+
+	long := entity.NewDocument(entity.Node{
+		Type:    entity.NodeParagraph,
+		Content: []entity.Node{{Type: entity.NodeText, Text: "ёжики в тумане"}},
+	})
+
+	if err := entity.ValidateDocument(long, limits); !errors.Is(err, entity.ErrDocumentTooLarge) {
+		t.Fatalf("text past the rune limit was not refused as too large: %v", err)
+	}
+
+	if err := entity.ValidateDocument(long, wider); err != nil {
+		t.Fatalf("the same text was refused under limits that hold it: %v", err)
+	}
+
+	crowded := entity.NewDocument(make([]entity.Node, wider.MaxNodes+1)...)
+	for index := range crowded.Content {
+		crowded.Content[index] = entity.Node{Type: entity.NodeHorizontalRule}
+	}
+
+	if err := entity.ValidateDocument(crowded, wider); !errors.Is(err, entity.ErrDocumentTooLarge) {
+		t.Fatalf("a document past the node limit was not refused as too large: %v", err)
 	}
 }
 
@@ -174,7 +202,7 @@ func TestADescriptionWrittenInProductionSurvivesTheRoundTrip(t *testing.T) {
 	given := strings.TrimRight(string(written), "\n")
 	document := entity.DocumentFromMarkdown(given)
 
-	if err := entity.ValidateDocument(document); err != nil {
+	if err := entity.ValidateDocument(document, entity.IssueDocumentLimits); err != nil {
 		t.Fatalf("a description already in the workspace produced a document this instance refuses: %v", err)
 	}
 
