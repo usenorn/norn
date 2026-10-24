@@ -25,6 +25,7 @@ var TableNames = struct {
 	WorkspaceAgentMCPServerAttachments     string
 	WorkspaceAgentMCPServers               string
 	WorkspaceAgentProposals                string
+	WorkspaceAgentSettings                 string
 	WorkspaceAgentSkillAttachments         string
 	WorkspaceAgentSkills                   string
 	WorkspaceAgents                        string
@@ -155,6 +156,7 @@ var TableNames = struct {
 	WorkspaceAgentMCPServerAttachments:     "workspace_agent_mcp_server_attachments",
 	WorkspaceAgentMCPServers:               "workspace_agent_mcp_servers",
 	WorkspaceAgentProposals:                "workspace_agent_proposals",
+	WorkspaceAgentSettings:                 "workspace_agent_settings",
 	WorkspaceAgentSkillAttachments:         "workspace_agent_skill_attachments",
 	WorkspaceAgentSkills:                   "workspace_agent_skills",
 	WorkspaceAgents:                        "workspace_agents",

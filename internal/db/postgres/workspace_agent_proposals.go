@@ -29,7 +29,7 @@ type WorkspaceAgentProposal struct {
 	WorkspaceID        string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
 	AgentID            string      `boil:"agent_id" json:"agent_id" toml:"agent_id" yaml:"agent_id"`
 	IssueID            null.String `boil:"issue_id" json:"issue_id,omitempty" toml:"issue_id" yaml:"issue_id,omitempty"`
-	TeamID             string      `boil:"team_id" json:"team_id" toml:"team_id" yaml:"team_id"`
+	TeamID             null.String `boil:"team_id" json:"team_id,omitempty" toml:"team_id" yaml:"team_id,omitempty"`
 	Action             string      `boil:"action" json:"action" toml:"action" yaml:"action"`
 	Change             types.JSON  `boil:"change" json:"change" toml:"change" yaml:"change"`
 	Status             string      `boil:"status" json:"status" toml:"status" yaml:"status"`
@@ -39,6 +39,7 @@ type WorkspaceAgentProposal struct {
 	CreatedAt          time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt          time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	Reasoning          types.JSON  `boil:"reasoning" json:"reasoning" toml:"reasoning" yaml:"reasoning"`
+	DocID              null.String `boil:"doc_id" json:"doc_id,omitempty" toml:"doc_id" yaml:"doc_id,omitempty"`
 
 	R *workspaceAgentProposalR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceAgentProposalL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -59,6 +60,7 @@ var WorkspaceAgentProposalColumns = struct {
 	CreatedAt          string
 	UpdatedAt          string
 	Reasoning          string
+	DocID              string
 }{
 	ID:                 "id",
 	WorkspaceID:        "workspace_id",
@@ -74,6 +76,7 @@ var WorkspaceAgentProposalColumns = struct {
 	CreatedAt:          "created_at",
 	UpdatedAt:          "updated_at",
 	Reasoning:          "reasoning",
+	DocID:              "doc_id",
 }
 
 var WorkspaceAgentProposalTableColumns = struct {
@@ -91,6 +94,7 @@ var WorkspaceAgentProposalTableColumns = struct {
 	CreatedAt          string
 	UpdatedAt          string
 	Reasoning          string
+	DocID              string
 }{
 	ID:                 "workspace_agent_proposals.id",
 	WorkspaceID:        "workspace_agent_proposals.workspace_id",
@@ -106,6 +110,7 @@ var WorkspaceAgentProposalTableColumns = struct {
 	CreatedAt:          "workspace_agent_proposals.created_at",
 	UpdatedAt:          "workspace_agent_proposals.updated_at",
 	Reasoning:          "workspace_agent_proposals.reasoning",
+	DocID:              "workspace_agent_proposals.doc_id",
 }
 
 // Generated where
@@ -136,7 +141,7 @@ var WorkspaceAgentProposalWhere = struct {
 	WorkspaceID        whereHelperstring
 	AgentID            whereHelperstring
 	IssueID            whereHelpernull_String
-	TeamID             whereHelperstring
+	TeamID             whereHelpernull_String
 	Action             whereHelperstring
 	Change             whereHelpertypes_JSON
 	Status             whereHelperstring
@@ -146,12 +151,13 @@ var WorkspaceAgentProposalWhere = struct {
 	CreatedAt          whereHelpertime_Time
 	UpdatedAt          whereHelpertime_Time
 	Reasoning          whereHelpertypes_JSON
+	DocID              whereHelpernull_String
 }{
 	ID:                 whereHelperstring{field: "\"workspace_agent_proposals\".\"id\""},
 	WorkspaceID:        whereHelperstring{field: "\"workspace_agent_proposals\".\"workspace_id\""},
 	AgentID:            whereHelperstring{field: "\"workspace_agent_proposals\".\"agent_id\""},
 	IssueID:            whereHelpernull_String{field: "\"workspace_agent_proposals\".\"issue_id\""},
-	TeamID:             whereHelperstring{field: "\"workspace_agent_proposals\".\"team_id\""},
+	TeamID:             whereHelpernull_String{field: "\"workspace_agent_proposals\".\"team_id\""},
 	Action:             whereHelperstring{field: "\"workspace_agent_proposals\".\"action\""},
 	Change:             whereHelpertypes_JSON{field: "\"workspace_agent_proposals\".\"change\""},
 	Status:             whereHelperstring{field: "\"workspace_agent_proposals\".\"status\""},
@@ -161,6 +167,7 @@ var WorkspaceAgentProposalWhere = struct {
 	CreatedAt:          whereHelpertime_Time{field: "\"workspace_agent_proposals\".\"created_at\""},
 	UpdatedAt:          whereHelpertime_Time{field: "\"workspace_agent_proposals\".\"updated_at\""},
 	Reasoning:          whereHelpertypes_JSON{field: "\"workspace_agent_proposals\".\"reasoning\""},
+	DocID:              whereHelpernull_String{field: "\"workspace_agent_proposals\".\"doc_id\""},
 }
 
 // WorkspaceAgentProposalRels is where relationship names are stored.
@@ -257,9 +264,9 @@ func (r *workspaceAgentProposalR) GetWorkspace() *Workspace {
 type workspaceAgentProposalL struct{}
 
 var (
-	workspaceAgentProposalAllColumns            = []string{"id", "workspace_id", "agent_id", "issue_id", "team_id", "action", "change", "status", "decided_by_account_id", "decided_at", "failure", "created_at", "updated_at", "reasoning"}
-	workspaceAgentProposalColumnsWithoutDefault = []string{"workspace_id", "agent_id", "team_id", "action", "change"}
-	workspaceAgentProposalColumnsWithDefault    = []string{"id", "issue_id", "status", "decided_by_account_id", "decided_at", "failure", "created_at", "updated_at", "reasoning"}
+	workspaceAgentProposalAllColumns            = []string{"id", "workspace_id", "agent_id", "issue_id", "team_id", "action", "change", "status", "decided_by_account_id", "decided_at", "failure", "created_at", "updated_at", "reasoning", "doc_id"}
+	workspaceAgentProposalColumnsWithoutDefault = []string{"workspace_id", "agent_id", "action", "change"}
+	workspaceAgentProposalColumnsWithDefault    = []string{"id", "issue_id", "team_id", "status", "decided_by_account_id", "decided_at", "failure", "created_at", "updated_at", "reasoning", "doc_id"}
 	workspaceAgentProposalPrimaryKeyColumns     = []string{"id"}
 	workspaceAgentProposalGeneratedColumns      = []string{}
 )

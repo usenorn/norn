@@ -97,7 +97,8 @@
 			class="mx-auto flex w-full max-w-160 flex-col gap-5 px-4 py-6 pb-[calc(--spacing(10)+env(safe-area-inset-bottom))]"
 		>
 			<p class="text-sm leading-normal text-muted-foreground text-pretty">
-				These teams hold some of what an agent does until a person agrees. Approving applies the
+				Teams, and the workspace for its docs, hold some of what an agent does until a person
+				agrees. Approving applies the
 				change as the agent, so the record still says which one did it.
 			</p>
 

@@ -27,6 +27,7 @@ import (
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
+	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -130,7 +131,7 @@ func newAdvanceHarness(t *testing.T) *advanceHarness {
 		h.labels,
 		h.agents,
 		agenthold.New(
-			h.settings, h.proposals, h.agents, h.states, h.delegations, h.questions, h.notify,
+			h.settings, workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl), h.proposals, h.agents, h.states, h.delegations, h.questions, h.notify,
 		),
 		h.releases,
 		h.deployments,

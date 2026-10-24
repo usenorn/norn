@@ -27,6 +27,8 @@ type Agents interface {
 
 	Settings(ctx context.Context, workspaceID, teamID uuid.UUID) (entity.AgentSettings, error)
 	Configure(ctx context.Context, input ConfigureAgentInput) (entity.AgentSettings, error)
+	WorkspaceSettings(ctx context.Context, workspaceID uuid.UUID) (entity.WorkspaceAgentSettings, error)
+	ConfigureWorkspace(ctx context.Context, input ConfigureWorkspaceAgentsInput) (entity.WorkspaceAgentSettings, error)
 
 	Waiting(ctx context.Context, workspaceID uuid.UUID) ([]WaitingProposal, error)
 	Approve(ctx context.Context, workspaceID, proposalID uuid.UUID, accepted []entity.ChangePart) (entity.AgentProposal, error)
@@ -37,6 +39,7 @@ type WaitingProposal struct {
 	Proposal  entity.AgentProposal
 	Team      entity.Team
 	Issue     entity.Issue
+	Doc       entity.Doc
 	Questions []entity.IssueQuestion
 	State     entity.WorkflowState
 }

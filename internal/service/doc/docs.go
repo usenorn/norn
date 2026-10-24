@@ -9,8 +9,10 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/pkg/identity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
+	"github.com/usenorn/norn/internal/service/agenthold"
 )
 
 type docsService struct {
@@ -18,6 +20,7 @@ type docsService struct {
 	revisions  repository.DocRevision
 	projects   repository.Project
 	knowledge  service.KnowledgeAuthorizer
+	gate       *agenthold.Gate
 	transactor repository.Transactor
 }
 
@@ -26,6 +29,7 @@ func New(
 	revisions repository.DocRevision,
 	projects repository.Project,
 	knowledge service.KnowledgeAuthorizer,
+	gate *agenthold.Gate,
 	transactor repository.Transactor,
 ) service.Docs {
 	return &docsService{
@@ -33,6 +37,7 @@ func New(
 		revisions:  revisions,
 		projects:   projects,
 		knowledge:  knowledge,
+		gate:       gate,
 		transactor: transactor,
 	}
 }
@@ -112,6 +117,12 @@ func (s *docsService) Create(
 		Markdown: markdown,
 	}
 
+	if mayBeHeld(ctx) {
+		if err := s.holdCreation(ctx, decision, doc); err != nil {
+			return entity.Doc{}, err
+		}
+	}
+
 	var created entity.Doc
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
@@ -170,16 +181,21 @@ func (s *docsService) List(
 		page.Cursor = &cursor
 	}
 
-	reader := decision.Reader
-	filter := repository.DocFilter{
-		ParentID:    input.ParentID,
-		Root:        input.Root,
-		AllProjects: reader.AllProjects,
-		ProjectIDs:  reader.ProjectIDs,
+	if input.WithinID != nil {
+		if _, err := s.Get(ctx, workspaceID, *input.WithinID); err != nil {
+			return service.DocList{}, err
+		}
 	}
 
-	if reader.Identity.Personal {
-		filter.PersonalAuthorID = reader.Identity.Principal
+	reader := decision.Reader
+	filter := repository.DocFilter{
+		ParentID:         input.ParentID,
+		Root:             input.Root,
+		ProjectID:        input.ProjectID,
+		WithinID:         input.WithinID,
+		AllProjects:      reader.AllProjects,
+		ProjectIDs:       reader.ProjectIDs,
+		PersonalAuthorID: personalAuthor(reader),
 	}
 
 	summaries, err := s.docs.List(ctx, workspaceID, filter, page.Lookahead())
@@ -205,6 +221,65 @@ func (s *docsService) List(
 	return list, nil
 }
 
+func (s *docsService) Search(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	input service.SearchDocsInput,
+) ([]entity.DocMatch, error) {
+	query := entity.ParseSearchQuery(input.Query)
+	if query.Stemmed == "" && query.Prefix == "" {
+		return nil, entity.ErrSearchQueryEmpty
+	}
+
+	decision, err := s.knowledge.Reader(ctx, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	reader := decision.Reader
+
+	matches, err := s.docs.Search(ctx, workspaceID, repository.DocSearch{
+		Query:            query,
+		ProjectID:        input.ProjectID,
+		Limit:            searchLimit(input.Limit),
+		AllProjects:      reader.AllProjects,
+		ProjectIDs:       reader.ProjectIDs,
+		PersonalAuthorID: personalAuthor(reader),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make([]entity.DocMatch, 0, len(matches))
+
+	for _, match := range matches {
+		if reader.Sees(match.Access()) {
+			seen = append(seen, match)
+		}
+	}
+
+	return seen, nil
+}
+
+func searchLimit(requested int) int {
+	switch {
+	case requested <= 0:
+		return entity.DocSearchDefaultSize
+	case requested > entity.DocSearchMaxSize:
+		return entity.DocSearchMaxSize
+	default:
+		return requested
+	}
+}
+
+func personalAuthor(reader entity.KnowledgeReader) uuid.UUID {
+	if reader.Identity.Personal {
+		return reader.Identity.Principal
+	}
+
+	return uuid.Nil
+}
+
 func (s *docsService) Update(
 	ctx context.Context,
 	workspaceID, docID uuid.UUID,
@@ -214,6 +289,13 @@ func (s *docsService) Update(
 		if err := entity.NewValidationError(entity.ValidateDocTitle(entity.DocFieldTitle, *input.Title)); err != nil {
 			return entity.Doc{}, err
 		}
+	}
+
+	if input.Section != nil && input.Markdown == nil {
+		return entity.Doc{}, entity.NewValidationError(entity.FieldError{
+			Field: entity.DocFieldContent,
+			Code:  entity.ValidationCodeRequired,
+		})
 	}
 
 	var (
@@ -235,22 +317,120 @@ func (s *docsService) Update(
 		}
 	}
 
-	return s.revise(ctx, workspaceID, docID, input.ExpectedVersion, entity.DocRevisionEdited, s.change,
-		func(_ context.Context, doc *entity.Doc, _ entity.KnowledgeDecision) (bool, error) {
-			changed := false
+	edit := func(_ context.Context, doc *entity.Doc, _ entity.KnowledgeDecision) (bool, error) {
+		changed := false
 
-			if input.Title != nil && strings.TrimSpace(*input.Title) != doc.Title {
-				doc.Title = strings.TrimSpace(*input.Title)
-				changed = true
+		if input.Title != nil && strings.TrimSpace(*input.Title) != doc.Title {
+			doc.Title = strings.TrimSpace(*input.Title)
+			changed = true
+		}
+
+		written, writtenMarkdown := content, markdown
+
+		if input.Section != nil {
+			replaced, err := doc.Content.ReplaceSection(*input.Section, content)
+			if err != nil {
+				return false, err
 			}
 
-			if rewrites && markdown != doc.Markdown {
-				doc.Content, doc.Markdown = content, markdown
-				changed = true
+			if writtenMarkdown, written, err = described("", &replaced); err != nil {
+				return false, err
 			}
+		}
 
-			return changed, nil
-		})
+		if rewrites && writtenMarkdown != doc.Markdown {
+			doc.Content, doc.Markdown = written, writtenMarkdown
+			changed = true
+		}
+
+		return changed, nil
+	}
+
+	if mayBeHeld(ctx) {
+		if err := s.holdEdit(ctx, workspaceID, docID, input.ExpectedVersion, edit); err != nil {
+			return entity.Doc{}, err
+		}
+	}
+
+	return s.revise(ctx, workspaceID, docID, input.ExpectedVersion, entity.DocRevisionEdited, s.change, edit)
+}
+
+func mayBeHeld(ctx context.Context) bool {
+	actor, ok := identity.Actor(ctx)
+
+	return ok && actor.Kind == entity.ActorKindAgent && !identity.Approved(ctx)
+}
+
+func (s *docsService) holdCreation(ctx context.Context, decision entity.KnowledgeDecision, doc entity.Doc) error {
+	if doc.ParentID != nil {
+		if err := s.placeBeneath(ctx, decision.Reader, doc.ID, *doc.ParentID, 0); err != nil {
+			return err
+		}
+	}
+
+	change := entity.AgentDocChange{
+		Title:      doc.Title,
+		Markdown:   doc.Markdown,
+		ParentID:   doc.ParentID,
+		Visibility: doc.Audience.Visibility,
+	}
+
+	if doc.Audience.Visibility == entity.KnowledgeVisibilityProject {
+		change.ProjectID = &doc.Audience.ProjectID
+	}
+
+	proposal, held, err := s.gate.HoldDoc(
+		ctx, decision.Decision, doc.WorkspaceID, uuid.Nil, entity.AgentActionDocCreate, change, 0,
+	)
+	if err != nil {
+		return err
+	}
+
+	if held {
+		return entity.AgentActionHeldError{ProposalID: proposal.ID}
+	}
+
+	return nil
+}
+
+func (s *docsService) holdEdit(
+	ctx context.Context,
+	workspaceID, docID uuid.UUID,
+	expectedVersion int,
+	apply alteration,
+) error {
+	doc, err := s.docs.GetByID(ctx, workspaceID, docID)
+	if err != nil {
+		return err
+	}
+
+	decision, err := s.change(ctx, doc)
+	if err != nil {
+		return concealed(err)
+	}
+
+	if err := doc.Expect(expectedVersion); err != nil {
+		return err
+	}
+
+	changed, err := apply(ctx, &doc, decision)
+	if err != nil || !changed {
+		return err
+	}
+
+	proposal, held, err := s.gate.HoldDoc(
+		ctx, decision.Decision, workspaceID, docID, entity.AgentActionDocEdit,
+		entity.AgentDocChange{Title: doc.Title, Markdown: doc.Markdown}, expectedVersion,
+	)
+	if err != nil {
+		return err
+	}
+
+	if held {
+		return entity.AgentActionHeldError{ProposalID: proposal.ID}
+	}
+
+	return nil
 }
 
 func (s *docsService) Move(

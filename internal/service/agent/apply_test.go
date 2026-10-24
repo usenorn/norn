@@ -2,6 +2,7 @@ package agent_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -189,5 +190,176 @@ func TestApprovingAHeldCreationFilesTheIssueTheAgentAsked(t *testing.T) {
 
 	if len(filed.LabelIDs) != 1 || filed.LabelIDs[0] != labelID {
 		t.Errorf("labels = %v, want the one the agent chose", filed.LabelIDs)
+	}
+}
+
+func TestApprovingAHeldDocEditWritesTheWholeDocAgainstTheVersionTheAgentRead(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID, docID := uuid.New(), uuid.New()
+
+	held := entity.AgentProposal{
+		ID:          uuid.New(),
+		WorkspaceID: h.workspaceID,
+		AgentID:     agentID,
+		DocID:       docID,
+		Action:      entity.AgentActionDocEdit,
+		Status:      entity.AgentProposalPending,
+		Change: entity.AgentChange{
+			ExpectedVersion: 3,
+			Doc:             &entity.AgentDocChange{Title: "Runbook", Markdown: "## Deploy\n\nPin the sha tag."},
+		},
+	}
+
+	h.proposals.EXPECT().GetByID(gomock.Any(), h.workspaceID, held.ID).Return(held, nil).AnyTimes()
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{ID: agentID, WorkspaceID: h.workspaceID, AccountID: uuid.New(), Status: entity.AgentStatusActive}, nil)
+	h.proposals.EXPECT().
+		Settle(gomock.Any(), held.ID, entity.AgentProposalApplied, h.adminID, gomock.Any(), "").
+		Return(nil)
+
+	var applied service.UpdateDocInput
+
+	h.docs.EXPECT().Update(gomock.Any(), h.workspaceID, docID, gomock.Any()).
+		DoAndReturn(func(ctx context.Context, _, _ uuid.UUID, input service.UpdateDocInput) (entity.Doc, error) {
+			applied = input
+
+			actor, _ := identity.Actor(ctx)
+			if _, approved := identity.Approver(ctx); !approved || actor.Kind != entity.ActorKindAgent {
+				t.Error("the replayed doc edit is not the agent's write carrying an approval")
+			}
+
+			return entity.Doc{}, nil
+		})
+
+	if _, err := h.service.Approve(context.Background(), h.workspaceID, held.ID, nil); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+
+	if applied.ExpectedVersion != 3 || applied.Markdown == nil || *applied.Markdown != held.Change.Doc.Markdown ||
+		applied.Title == nil || *applied.Title != "Runbook" || applied.Section != nil {
+		t.Fatalf("the replay is not a full replace against version 3: %+v", applied)
+	}
+}
+
+func TestApprovingAHeldDocCreationFilesTheDocWhereTheAgentAsked(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	agentID, parentID, projectID := uuid.New(), uuid.New(), uuid.New()
+
+	held := entity.AgentProposal{
+		ID:          uuid.New(),
+		WorkspaceID: h.workspaceID,
+		AgentID:     agentID,
+		Action:      entity.AgentActionDocCreate,
+		Status:      entity.AgentProposalPending,
+		Change: entity.AgentChange{Doc: &entity.AgentDocChange{
+			Title:      "Postmortem",
+			Markdown:   "What happened.",
+			ParentID:   &parentID,
+			Visibility: entity.KnowledgeVisibilityProject,
+			ProjectID:  &projectID,
+		}},
+	}
+
+	h.proposals.EXPECT().GetByID(gomock.Any(), h.workspaceID, held.ID).Return(held, nil).AnyTimes()
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agentID).
+		Return(entity.Agent{ID: agentID, WorkspaceID: h.workspaceID, AccountID: uuid.New(), Status: entity.AgentStatusActive}, nil)
+	h.proposals.EXPECT().
+		Settle(gomock.Any(), held.ID, entity.AgentProposalApplied, h.adminID, gomock.Any(), "").
+		Return(nil)
+
+	var created service.CreateDocInput
+
+	h.docs.EXPECT().Create(gomock.Any(), h.workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, input service.CreateDocInput) (entity.Doc, error) {
+			created = input
+
+			return entity.Doc{}, nil
+		})
+
+	if _, err := h.service.Approve(context.Background(), h.workspaceID, held.ID, nil); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+
+	if created.Title != "Postmortem" || created.Markdown != "What happened." ||
+		created.ParentID == nil || *created.ParentID != parentID ||
+		created.Audience != entity.ProjectAudience(projectID) {
+		t.Fatalf("the approved doc is not the one the agent asked for: %+v", created)
+	}
+}
+
+func TestAHeldDocWriteIsTakenWholeOrNotAtAll(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	held := entity.AgentProposal{
+		ID:          uuid.New(),
+		WorkspaceID: h.workspaceID,
+		AgentID:     uuid.New(),
+		DocID:       uuid.New(),
+		Action:      entity.AgentActionDocEdit,
+		Status:      entity.AgentProposalPending,
+		Change:      entity.AgentChange{ExpectedVersion: 1, Doc: &entity.AgentDocChange{Title: "Runbook"}},
+	}
+
+	h.proposals.EXPECT().GetByID(gomock.Any(), h.workspaceID, held.ID).Return(held, nil).AnyTimes()
+
+	var invalid entity.ValidationError
+	if _, err := h.service.Approve(
+		context.Background(), h.workspaceID, held.ID, []entity.ChangePart{entity.ChangePartTitle},
+	); !errors.As(err, &invalid) {
+		t.Fatalf("taking part of a doc write got %v, want it refused", err)
+	}
+}
+
+func TestADocProposalWaitsBesideTheDocAsItIsNow(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+	docID := uuid.New()
+
+	held := entity.AgentProposal{
+		ID:          uuid.New(),
+		WorkspaceID: h.workspaceID,
+		AgentID:     uuid.New(),
+		DocID:       docID,
+		Action:      entity.AgentActionDocEdit,
+		Status:      entity.AgentProposalPending,
+		Change:      entity.AgentChange{ExpectedVersion: 1, Doc: &entity.AgentDocChange{Title: "Runbook", Markdown: "New."}},
+	}
+
+	h.proposals.EXPECT().ListWaiting(gomock.Any(), h.workspaceID, gomock.Any()).Return([]entity.AgentProposal{held}, nil)
+	h.docs.EXPECT().Get(gomock.Any(), h.workspaceID, docID).
+		Return(entity.Doc{DocSummary: entity.DocSummary{ID: docID, Title: "Runbook"}, Markdown: "Old."}, nil)
+
+	waiting, err := h.service.Waiting(context.Background(), h.workspaceID)
+	if err != nil {
+		t.Fatalf("waiting: %v", err)
+	}
+
+	if len(waiting) != 1 || waiting[0].Doc.Markdown != "Old." || waiting[0].Team.ID != uuid.Nil {
+		t.Fatalf("a doc proposal without a team was not shown beside its doc: %+v", waiting)
+	}
+}
+
+func TestAWorkspaceSaysWhetherItHoldsDocWritesOnlyInWordsItKnows(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	var invalid entity.ValidationError
+	if _, err := h.service.ConfigureWorkspace(context.Background(), service.ConfigureWorkspaceAgentsInput{
+		WorkspaceID:   h.workspaceID,
+		HoldDocWrites: "sometimes",
+	}); !errors.As(err, &invalid) {
+		t.Fatalf("an unknown hold got %v", err)
+	}
+
+	h.workspace.EXPECT().
+		Upsert(gomock.Any(), entity.WorkspaceAgentSettings{WorkspaceID: h.workspaceID, HoldDocWrites: entity.AgentHoldAlways}).
+		DoAndReturn(func(_ context.Context, settings entity.WorkspaceAgentSettings) (entity.WorkspaceAgentSettings, error) {
+			return settings, nil
+		})
+
+	saved, err := h.service.ConfigureWorkspace(context.Background(), service.ConfigureWorkspaceAgentsInput{
+		WorkspaceID:   h.workspaceID,
+		HoldDocWrites: entity.AgentHoldAlways,
+	})
+	if err != nil || saved.HoldDocWrites != entity.AgentHoldAlways {
+		t.Fatalf("configure: %+v, %v", saved, err)
 	}
 }

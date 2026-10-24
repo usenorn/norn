@@ -3,6 +3,7 @@ import type { components, operations } from "$lib/api/dashboard.gen";
 export type Agent = components["schemas"]["Agent"];
 export type WorkspaceAgent = components["schemas"]["WorkspaceAgent"];
 export type AgentSettings = components["schemas"]["AgentSettings"];
+export type WorkspaceAgentSettings = components["schemas"]["WorkspaceAgentSettings"];
 export type AgentProposal = components["schemas"]["AgentProposal"];
 export type AgentAction = components["schemas"]["AgentAction"];
 export type APIScope = components["schemas"]["APIScope"];
@@ -54,6 +55,8 @@ export const actionLabels: Record<AgentAction, string> = {
 	state_change: "Change the state",
 	issue_edit: "Edit the issue",
 	issue_create: "Raise an issue",
+	doc_create: "Write a doc",
+	doc_edit: "Edit a doc",
 };
 
 export const agentIcons = [
@@ -96,6 +99,8 @@ export const agentPermissions = [
 	"comment:manage",
 	"notification:read",
 	"notification:manage",
+	"knowledge:read",
+	"knowledge:manage",
 ] as const satisfies readonly APIScope[];
 
 export type AgentPermission = (typeof agentPermissions)[number];
@@ -194,6 +199,8 @@ export const agentPermissionLabels: Record<string, string> = {
 	"comment:manage": "Leave comments",
 	"notification:read": "Read what it has been assigned or mentioned in",
 	"notification:manage": "Mark its own inbox as read",
+	"knowledge:read": "Read docs",
+	"knowledge:manage": "Write and edit docs",
 };
 
 export function reachSummary(agent: Agent, projectName?: string): string {
@@ -326,8 +333,20 @@ export function proposalSummary(proposal: AgentProposal): string {
 			return proposal.title
 				? `“${proposal.title}”${proposal.teamKey ? ` on ${proposal.teamKey}` : ""}`
 				: "a new issue";
+		case "doc_create":
+			return proposal.title ? `“${proposal.title}”` : "a new doc";
+		case "doc_edit":
+			return proposal.title ? `“${proposal.title}”` : "a doc";
 	}
 }
+
+export type DocVisibility = components["schemas"]["DocVisibility"];
+
+export const docAudienceLabels: Record<DocVisibility, string> = {
+	workspace: "Everybody in the workspace will be able to read it.",
+	project: "The project's members will be able to read it.",
+	personal: "Only its author will be able to read it.",
+};
 
 export function mcpServerUrl(origin: string): string {
 	return `${origin}/mcp`;

@@ -22,6 +22,7 @@
 	import AgentIdentity from "$lib/agents/agent-identity.svelte";
 	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
 	import RegisterAgentDialog from "$lib/agents/register-agent-dialog.svelte";
+	import WorkspaceAgentHolds from "$lib/agents/workspace-agent-holds.svelte";
 	import Tag from "$lib/components/norn/tag.svelte";
 	import { api } from "$lib/api";
 	import { keys } from "$lib/api/keys";
@@ -93,6 +94,7 @@
 	const grantable = $derived(preview?.grantable ?? data.grantable);
 	const projects = $derived(preview?.projects ?? data.projects);
 	const mayOpenToWorkspace = $derived(preview?.mayOpenToWorkspace ?? data.mayOpenToWorkspace);
+	const docHolds = $derived(preview?.docHolds !== undefined ? preview.docHolds : data.docHolds);
 	const projectNames = $derived(new Map(projects.map((project) => [project.id, project.name])));
 	const allAgents = $derived(
 		listing.kind === "ready" || listing.kind === "registered" ? listing.agents : []
@@ -547,6 +549,8 @@
 						{/if}
 					</section>
 				{/if}
+
+				<WorkspaceAgentHolds {workspace} settings={docHolds} locked={!mayOpenToWorkspace} />
 			{/if}
 </SettingsPage>
 

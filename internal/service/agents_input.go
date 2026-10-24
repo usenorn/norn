@@ -57,6 +57,11 @@ type SetAgentInstructionsInput struct {
 	Instructions string
 }
 
+type ConfigureWorkspaceAgentsInput struct {
+	WorkspaceID   uuid.UUID
+	HoldDocWrites entity.AgentHold
+}
+
 type ConfigureAgentInput struct {
 	WorkspaceID       uuid.UUID
 	TeamID            uuid.UUID

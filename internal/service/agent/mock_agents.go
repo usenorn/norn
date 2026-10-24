@@ -103,6 +103,21 @@ func (mr *MockAgentsMockRecorder) Configure(ctx, input any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockAgents)(nil).Configure), ctx, input)
 }
 
+// ConfigureWorkspace mocks base method.
+func (m *MockAgents) ConfigureWorkspace(ctx context.Context, input service.ConfigureWorkspaceAgentsInput) (entity.WorkspaceAgentSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigureWorkspace", ctx, input)
+	ret0, _ := ret[0].(entity.WorkspaceAgentSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConfigureWorkspace indicates an expected call of ConfigureWorkspace.
+func (mr *MockAgentsMockRecorder) ConfigureWorkspace(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureWorkspace", reflect.TypeOf((*MockAgents)(nil).ConfigureWorkspace), ctx, input)
+}
+
 // Delegatable mocks base method.
 func (m *MockAgents) Delegatable(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Agent, error) {
 	m.ctrl.T.Helper()
@@ -310,4 +325,19 @@ func (m *MockAgents) Waiting(ctx context.Context, workspaceID uuid.UUID) ([]serv
 func (mr *MockAgentsMockRecorder) Waiting(ctx, workspaceID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Waiting", reflect.TypeOf((*MockAgents)(nil).Waiting), ctx, workspaceID)
+}
+
+// WorkspaceSettings mocks base method.
+func (m *MockAgents) WorkspaceSettings(ctx context.Context, workspaceID uuid.UUID) (entity.WorkspaceAgentSettings, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkspaceSettings", ctx, workspaceID)
+	ret0, _ := ret[0].(entity.WorkspaceAgentSettings)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkspaceSettings indicates an expected call of WorkspaceSettings.
+func (mr *MockAgentsMockRecorder) WorkspaceSettings(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkspaceSettings", reflect.TypeOf((*MockAgents)(nil).WorkspaceSettings), ctx, workspaceID)
 }

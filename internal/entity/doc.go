@@ -20,6 +20,9 @@ const (
 	DocPageDefaultSize = 50
 	DocPageMaxSize     = 200
 
+	DocSearchDefaultSize = 10
+	DocSearchMaxSize     = 25
+
 	docCursorIDLen = 36
 )
 
@@ -28,6 +31,7 @@ const (
 	DocFieldContent   = "content"
 	DocFieldParentID  = "parentId"
 	DocFieldProjectID = "projectId"
+	DocFieldSection   = "section"
 )
 
 var DocLimits = DocumentLimits{MaxDepth: 12, MaxNodes: 50000, MaxTextRunes: DocContentMaxLen}
@@ -40,6 +44,9 @@ var (
 	ErrDocParentCycle   = errors.New("doc cannot sit beneath itself")
 	ErrDocTreeTooDeep   = errors.New("doc tree nests deeper than this instance holds")
 	ErrDocCursorInvalid = errors.New("doc cursor is invalid")
+
+	ErrDocSectionNotFound  = errors.New("doc has no section under that heading")
+	ErrDocSectionAmbiguous = errors.New("doc has more than one section under that heading")
 )
 
 type DocStaleError struct {
@@ -82,6 +89,11 @@ type DocSummary struct {
 	Version     int
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+type DocMatch struct {
+	DocSummary
+	Excerpt string
 }
 
 type Doc struct {

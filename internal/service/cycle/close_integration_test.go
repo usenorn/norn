@@ -44,6 +44,7 @@ import (
 	triagerepo "github.com/usenorn/norn/internal/repository/triage"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
+	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	"github.com/usenorn/norn/internal/service"
 	"github.com/usenorn/norn/internal/service/agenthold"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
@@ -529,6 +530,7 @@ func liveIssues(t *testing.T, client *postgres.Client, world *live) service.Issu
 		jobs,
 		agenthold.New(
 			agentsettingrepo.New(client),
+			workspaceagentsettingrepo.New(client),
 			agentproposalrepo.New(client),
 			agentrepo.New(client),
 			workflowstaterepo.New(client),

@@ -23,6 +23,8 @@ const (
 	AgentActionStateChange AgentAction = "state_change"
 	AgentActionIssueEdit   AgentAction = "issue_edit"
 	AgentActionIssueCreate AgentAction = "issue_create"
+	AgentActionDocCreate   AgentAction = "doc_create"
+	AgentActionDocEdit     AgentAction = "doc_edit"
 )
 
 func AgentActions() []AgentAction {
@@ -31,7 +33,13 @@ func AgentActions() []AgentAction {
 		AgentActionStateChange,
 		AgentActionIssueEdit,
 		AgentActionIssueCreate,
+		AgentActionDocCreate,
+		AgentActionDocEdit,
 	}
+}
+
+func (a AgentAction) OnDoc() bool {
+	return a == AgentActionDocCreate || a == AgentActionDocEdit
 }
 
 func (a AgentAction) Valid() bool {
@@ -112,6 +120,25 @@ func (s AgentSettings) Normalised() AgentSettings {
 	return s
 }
 
+type WorkspaceAgentSettings struct {
+	WorkspaceID   uuid.UUID
+	HoldDocWrites AgentHold
+}
+
+func (s WorkspaceAgentSettings) Holds(action AgentAction) AgentHold {
+	if !action.OnDoc() {
+		return AgentHoldNever
+	}
+
+	return normalisedHold(s.HoldDocWrites)
+}
+
+func (s WorkspaceAgentSettings) Normalised() WorkspaceAgentSettings {
+	s.HoldDocWrites = normalisedHold(s.HoldDocWrites)
+
+	return s
+}
+
 func normalisedHold(hold AgentHold) AgentHold {
 	if !hold.Valid() {
 		return AgentHoldNever
@@ -126,6 +153,8 @@ func (a AgentAction) Scopes() APIScopeSet {
 		return APIScopeSet{NewAPIScope(ResourceComment, ActionManage)}
 	case AgentActionStateChange, AgentActionIssueEdit, AgentActionIssueCreate:
 		return APIScopeSet{NewAPIScope(ResourceIssue, ActionManage)}
+	case AgentActionDocCreate, AgentActionDocEdit:
+		return APIScopeSet{NewAPIScope(ResourceKnowledge, ActionManage)}
 	default:
 		return APIScopeSet{}
 	}
@@ -178,19 +207,37 @@ func (s AgentProposalStatus) CanTransitionTo(target AgentProposalStatus) bool {
 }
 
 type AgentChange struct {
-	ExpectedVersion int            `json:"expectedVersion,omitempty"`
-	Body            string         `json:"body,omitempty"`
-	StateID         *uuid.UUID     `json:"stateId,omitempty"`
-	Title           *string        `json:"title,omitempty"`
-	Description     *string        `json:"description,omitempty"`
-	Priority        *IssuePriority `json:"priority,omitempty"`
-	AssigneeID      *uuid.UUID     `json:"assigneeId,omitempty"`
-	Estimate        *int           `json:"estimate,omitempty"`
-	DueOn           *string        `json:"dueOn,omitempty"`
-	CycleID         *uuid.UUID     `json:"cycleId,omitempty"`
-	ProjectID       *uuid.UUID     `json:"projectId,omitempty"`
-	Clear           []string       `json:"clear,omitempty"`
-	LabelIDs        []uuid.UUID    `json:"labelIds,omitempty"`
+	ExpectedVersion int             `json:"expectedVersion,omitempty"`
+	Body            string          `json:"body,omitempty"`
+	StateID         *uuid.UUID      `json:"stateId,omitempty"`
+	Title           *string         `json:"title,omitempty"`
+	Description     *string         `json:"description,omitempty"`
+	Priority        *IssuePriority  `json:"priority,omitempty"`
+	AssigneeID      *uuid.UUID      `json:"assigneeId,omitempty"`
+	Estimate        *int            `json:"estimate,omitempty"`
+	DueOn           *string         `json:"dueOn,omitempty"`
+	CycleID         *uuid.UUID      `json:"cycleId,omitempty"`
+	ProjectID       *uuid.UUID      `json:"projectId,omitempty"`
+	Clear           []string        `json:"clear,omitempty"`
+	LabelIDs        []uuid.UUID     `json:"labelIds,omitempty"`
+	Doc             *AgentDocChange `json:"doc,omitempty"`
+}
+
+type AgentDocChange struct {
+	Title      string              `json:"title"`
+	Markdown   string              `json:"markdown"`
+	ParentID   *uuid.UUID          `json:"parentId,omitempty"`
+	Visibility KnowledgeVisibility `json:"visibility,omitempty"`
+	ProjectID  *uuid.UUID          `json:"projectId,omitempty"`
+}
+
+func (c AgentDocChange) Audience() KnowledgeAudience {
+	audience := KnowledgeAudience{Visibility: c.Visibility}
+	if c.ProjectID != nil {
+		audience.ProjectID = *c.ProjectID
+	}
+
+	return audience
 }
 
 const (
@@ -246,6 +293,7 @@ type AgentProposal struct {
 	AgentName   string
 	IssueID     uuid.UUID
 	TeamID      uuid.UUID
+	DocID       uuid.UUID
 	Action      AgentAction
 	Change      AgentChange
 	Reasoning   AgentReasoning

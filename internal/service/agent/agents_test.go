@@ -24,10 +24,12 @@ import (
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
+	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	"github.com/usenorn/norn/internal/service"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	auditsvc "github.com/usenorn/norn/internal/service/audit"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
+	docsvc "github.com/usenorn/norn/internal/service/doc"
 	issuesvc "github.com/usenorn/norn/internal/service/issue"
 )
 
@@ -41,6 +43,8 @@ type harness struct {
 	proposals      *agentproposalrepo.MockAgentProposal
 	questions      *questionrepo.MockIssueQuestion
 	issues         *issuesvc.MockIssues
+	docs           *docsvc.MockDocs
+	workspace      *workspaceagentsettingrepo.MockWorkspaceAgentSetting
 	authorizer     *authorizersvc.MockAuthorizer
 	service        service.Agents
 	recorded       []entity.AuditEntry
@@ -64,6 +68,8 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		proposals:      agentproposalrepo.NewMockAgentProposal(ctrl),
 		questions:      questionrepo.NewMockIssueQuestion(ctrl),
 		issues:         issuesvc.NewMockIssues(ctrl),
+		docs:           docsvc.NewMockDocs(ctrl),
+		workspace:      workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
 		authorizer:     authorizersvc.NewMockAuthorizer(ctrl),
 		workspaceID:    uuid.New(),
 		adminID:        uuid.New(),
@@ -99,6 +105,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 	h.service = agentsvc.New(
 		h.agents,
 		agentsettingrepo.NewMockAgentSetting(ctrl),
+		h.workspace,
 		h.proposals,
 		h.accounts,
 		h.members,
@@ -110,6 +117,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 		workflowstaterepo.NewMockWorkflowState(ctrl),
 		h.issues,
 		(service.IssueComments)(nil),
+		h.docs,
 		h.questions,
 		h.authorizer,
 		transactor,
@@ -639,6 +647,7 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 	svc := agentsvc.New(
 		agentrepo.NewMockAgent(ctrl),
 		agentsettingrepo.NewMockAgentSetting(ctrl),
+		workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
 		agentproposalrepo.NewMockAgentProposal(ctrl),
 		accountrepo.NewMockAccount(ctrl),
 		membershiprepo.NewMockMembership(ctrl),
@@ -650,6 +659,7 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 		workflowstaterepo.NewMockWorkflowState(ctrl),
 		(service.Issues)(nil),
 		(service.IssueComments)(nil),
+		docsvc.NewMockDocs(ctrl),
 		questionrepo.NewMockIssueQuestion(ctrl),
 		authorizer,
 		transactorrepo.NewMockTransactor(ctrl),
@@ -1015,6 +1025,7 @@ func TestAnAgentsOwnCredentialCannotAskWhatItMayGrant(t *testing.T) {
 	_, err := agentsvc.New(
 		h.agents,
 		agentsettingrepo.NewMockAgentSetting(ctrl),
+		workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
 		h.proposals,
 		h.accounts,
 		h.members,
@@ -1026,6 +1037,7 @@ func TestAnAgentsOwnCredentialCannotAskWhatItMayGrant(t *testing.T) {
 		workflowstaterepo.NewMockWorkflowState(ctrl),
 		h.issues,
 		(service.IssueComments)(nil),
+		docsvc.NewMockDocs(ctrl),
 		h.questions,
 		authorizer,
 		transactorrepo.NewMockTransactor(ctrl),

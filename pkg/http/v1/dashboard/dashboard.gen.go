@@ -351,6 +351,8 @@ func (e AddAgentSkillRequestKind) Valid() bool {
 // Defines values for AgentAction.
 const (
 	AgentActionComment     AgentAction = "comment"
+	AgentActionDocCreate   AgentAction = "doc_create"
+	AgentActionDocEdit     AgentAction = "doc_edit"
 	AgentActionIssueCreate AgentAction = "issue_create"
 	AgentActionIssueEdit   AgentAction = "issue_edit"
 	AgentActionStateChange AgentAction = "state_change"
@@ -360,6 +362,10 @@ const (
 func (e AgentAction) Valid() bool {
 	switch e {
 	case AgentActionComment:
+		return true
+	case AgentActionDocCreate:
+		return true
+	case AgentActionDocEdit:
 		return true
 	case AgentActionIssueCreate:
 		return true
@@ -6055,9 +6061,13 @@ type AgentProposal struct {
 	DecidedAt          *time.Time          `json:"decidedAt,omitempty"`
 	DecidedByAccountId *openapi_types.UUID `json:"decidedByAccountId,omitempty"`
 	Description        *string             `json:"description,omitempty"`
-	DueOn              *openapi_types.Date `json:"dueOn,omitempty"`
-	Estimate           *int32              `json:"estimate,omitempty"`
-	Failure            *string             `json:"failure,omitempty"`
+	DocAudience        *DocAudience        `json:"docAudience,omitempty"`
+
+	// DocId The doc a held doc edit would change; absent on a held doc creation
+	DocId    *openapi_types.UUID `json:"docId,omitempty"`
+	DueOn    *openapi_types.Date `json:"dueOn,omitempty"`
+	Estimate *int32              `json:"estimate,omitempty"`
+	Failure  *string             `json:"failure,omitempty"`
 
 	// Held What the issue says now, beside what the proposal would make it say. Approving without this is approving text nobody read.
 	Held *AgentProposalHeld `json:"held,omitempty"`
@@ -6069,6 +6079,9 @@ type AgentProposal struct {
 	// IssueReference So an approver can open the issue the proposal is about
 	IssueReference *string `json:"issueReference,omitempty"`
 	IssueTitle     *string `json:"issueTitle,omitempty"`
+
+	// Markdown The whole doc a held doc write would leave behind
+	Markdown *string `json:"markdown,omitempty"`
 
 	// Parts What this proposal actually asks to change, so an approver is shown the four things it proposes rather than the ten it could have.
 	Parts    *[]ChangePart  `json:"parts,omitempty"`
@@ -6084,7 +6097,9 @@ type AgentProposal struct {
 	// StateName The state a state change would move the issue to
 	StateName *string             `json:"stateName,omitempty"`
 	Status    AgentProposalStatus `json:"status"`
-	TeamId    openapi_types.UUID  `json:"teamId"`
+
+	// TeamId Absent on a held doc write, which a workspace holds rather than a team
+	TeamId *openapi_types.UUID `json:"teamId,omitempty"`
 
 	// TeamKey The team a held issue creation would file its issue on
 	TeamKey *string `json:"teamKey,omitempty"`
@@ -6093,10 +6108,13 @@ type AgentProposal struct {
 
 // AgentProposalHeld What the issue says now, beside what the proposal would make it say. Approving without this is approving text nobody read.
 type AgentProposalHeld struct {
-	Description *string        `json:"description,omitempty"`
-	Priority    *IssuePriority `json:"priority,omitempty"`
-	StateName   *string        `json:"stateName,omitempty"`
-	Title       *string        `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+
+	// Markdown What a doc says now, beside the whole doc a held doc edit would leave
+	Markdown  *string        `json:"markdown,omitempty"`
+	Priority  *IssuePriority `json:"priority,omitempty"`
+	StateName *string        `json:"stateName,omitempty"`
+	Title     *string        `json:"title,omitempty"`
 }
 
 // AgentProposalStatus defines model for AgentProposalStatus.
@@ -11049,6 +11067,12 @@ type WorkspaceAgent struct {
 	OwnerName        string         `json:"ownerName"`
 }
 
+// WorkspaceAgentSettings defines model for WorkspaceAgentSettings.
+type WorkspaceAgentSettings struct {
+	// HoldDocWrites Whether a write of this kind waits for a person.
+	HoldDocWrites AgentHold `json:"holdDocWrites"`
+}
+
 // WorkspaceAiProvider The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it.
 type WorkspaceAiProvider struct {
 	AllowPrivateAddress bool               `json:"allowPrivateAddress"`
@@ -11935,6 +11959,9 @@ type ConnectAgentMcpServerJSONRequestBody = ConnectAgentMcpServerRequest
 
 // ApproveWorkspaceAgentProposalJSONRequestBody defines body for ApproveWorkspaceAgentProposal for application/json ContentType.
 type ApproveWorkspaceAgentProposalJSONRequestBody = ApproveAgentProposalRequest
+
+// SetWorkspaceAgentSettingsJSONRequestBody defines body for SetWorkspaceAgentSettings for application/json ContentType.
+type SetWorkspaceAgentSettingsJSONRequestBody = WorkspaceAgentSettings
 
 // RewriteAgentSkillJSONRequestBody defines body for RewriteAgentSkill for application/json ContentType.
 type RewriteAgentSkillJSONRequestBody = RewriteAgentSkillRequest
@@ -12999,6 +13026,25 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject (the `RejectWorkspaceAgentProposal` operationId).
 	RejectWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceAgentSettings Which agent writes this workspace holds for a person to approve, beyond any team's rules
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agent-settings (the `GetWorkspaceAgentSettings` operationId).
+	GetWorkspaceAgentSettings(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentSettingsWithBody Choose which agent writes this workspace holds
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+	SetWorkspaceAgentSettingsWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentSettings Choose which agent writes this workspace holds
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+	SetWorkspaceAgentSettings(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
 	//
@@ -17266,6 +17312,55 @@ func (c *Client) ApproveWorkspaceAgentProposal(ctx context.Context, workspaceId 
 // Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject (the `RejectWorkspaceAgentProposal` operationId).
 func (c *Client) RejectWorkspaceAgentProposal(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRejectWorkspaceAgentProposalRequest(c.Server, workspaceId, proposalId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceAgentSettings Which agent writes this workspace holds for a person to approve, beyond any team's rules
+//
+// Corresponds with GET /workspaces/{workspaceId}/agent-settings (the `GetWorkspaceAgentSettings` operationId).
+func (c *Client) GetWorkspaceAgentSettings(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceAgentSettingsRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentSettingsWithBody Choose which agent writes this workspace holds
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+func (c *Client) SetWorkspaceAgentSettingsWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentSettingsRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentSettings Choose which agent writes this workspace holds
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+func (c *Client) SetWorkspaceAgentSettings(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentSettingsRequest(c.Server, workspaceId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -26883,6 +26978,87 @@ func NewRejectWorkspaceAgentProposalRequest(server string, workspaceId Workspace
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetWorkspaceAgentSettingsRequest constructs an http.Request for the GetWorkspaceAgentSettings method
+func NewGetWorkspaceAgentSettingsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-settings", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetWorkspaceAgentSettingsRequest calls the generic SetWorkspaceAgentSettings builder with application/json body
+func NewSetWorkspaceAgentSettingsRequest(server string, workspaceId WorkspaceId, body SetWorkspaceAgentSettingsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceAgentSettingsRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceAgentSettingsRequestWithBody constructs an http.Request for the SetWorkspaceAgentSettings method, with any body, and a specified content type
+func NewSetWorkspaceAgentSettingsRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agent-settings", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -43653,6 +43829,27 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject (the `RejectWorkspaceAgentProposal` operationId).
 	RejectWorkspaceAgentProposalWithResponse(ctx context.Context, workspaceId WorkspaceId, proposalId ProposalId, reqEditors ...RequestEditorFn) (*RejectWorkspaceAgentProposalResponse, error)
 
+	// GetWorkspaceAgentSettingsWithResponse Which agent writes this workspace holds for a person to approve, beyond any team's rules
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/agent-settings (the `GetWorkspaceAgentSettings` operationId).
+	GetWorkspaceAgentSettingsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceAgentSettingsResponse, error)
+
+	// SetWorkspaceAgentSettingsWithBodyWithResponse Choose which agent writes this workspace holds
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+	SetWorkspaceAgentSettingsWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentSettingsResponse, error)
+
+	// SetWorkspaceAgentSettingsWithResponse Choose which agent writes this workspace holds
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+	SetWorkspaceAgentSettingsWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentSettingsResponse, error)
+
 	// DeleteAgentSkillWithResponse Delete a skill, taking it from every agent that uses it
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -51171,6 +51368,137 @@ func (r RejectWorkspaceAgentProposalResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RejectWorkspaceAgentProposalResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceAgentSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAgentSettings
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceAgentSettingsResponse) GetJSON200() *WorkspaceAgentSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceAgentSettingsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceAgentSettingsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceAgentSettingsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceAgentSettingsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceAgentSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceAgentSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceAgentSettingsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceAgentSettingsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAgentSettings
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceAgentSettingsResponse) GetJSON200() *WorkspaceAgentSettings {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceAgentSettingsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceAgentSettingsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceAgentSettingsResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceAgentSettingsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceAgentSettingsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceAgentSettingsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceAgentSettingsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceAgentSettingsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76588,6 +76916,45 @@ func (c *ClientWithResponses) RejectWorkspaceAgentProposalWithResponse(ctx conte
 	return ParseRejectWorkspaceAgentProposalResponse(rsp)
 }
 
+// GetWorkspaceAgentSettingsWithResponse Which agent writes this workspace holds for a person to approve, beyond any team's rules
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/agent-settings (the `GetWorkspaceAgentSettings` operationId).
+func (c *ClientWithResponses) GetWorkspaceAgentSettingsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceAgentSettingsResponse, error) {
+	rsp, err := c.GetWorkspaceAgentSettings(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceAgentSettingsResponse(rsp)
+}
+
+// SetWorkspaceAgentSettingsWithBodyWithResponse Choose which agent writes this workspace holds
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentSettingsWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentSettingsResponse, error) {
+	rsp, err := c.SetWorkspaceAgentSettingsWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentSettingsResponse(rsp)
+}
+
+// SetWorkspaceAgentSettingsWithResponse Choose which agent writes this workspace holds
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agent-settings (the `SetWorkspaceAgentSettings` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentSettingsWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAgentSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentSettingsResponse, error) {
+	rsp, err := c.SetWorkspaceAgentSettings(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentSettingsResponse(rsp)
+}
+
 // DeleteAgentSkillWithResponse Delete a skill, taking it from every agent that uses it
 //
 // Returns a wrapper object for the known response body format(s).
@@ -85898,6 +86265,107 @@ func ParseRejectWorkspaceAgentProposalResponse(rsp *http.Response) (*RejectWorks
 			return nil, err
 		}
 		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceAgentSettingsResponse parses an HTTP response from a GetWorkspaceAgentSettingsWithResponse call
+func ParseGetWorkspaceAgentSettingsResponse(rsp *http.Response) (*GetWorkspaceAgentSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceAgentSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAgentSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceAgentSettingsResponse parses an HTTP response from a SetWorkspaceAgentSettingsWithResponse call
+func ParseSetWorkspaceAgentSettingsResponse(rsp *http.Response) (*SetWorkspaceAgentSettingsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceAgentSettingsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAgentSettings
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -105553,6 +106021,12 @@ type ServerInterface interface {
 	// RejectWorkspaceAgentProposal Refuse a held agent action so nothing is applied
 	// (POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject)
 	RejectWorkspaceAgentProposal(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, proposalId ProposalId)
+	// GetWorkspaceAgentSettings Which agent writes this workspace holds for a person to approve, beyond any team's rules
+	// (GET /workspaces/{workspaceId}/agent-settings)
+	GetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// SetWorkspaceAgentSettings Choose which agent writes this workspace holds
+	// (PUT /workspaces/{workspaceId}/agent-settings)
+	SetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
 	// (DELETE /workspaces/{workspaceId}/agent-skills/{skillId})
 	DeleteAgentSkill(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, skillId AgentSkillId)
@@ -106933,6 +107407,18 @@ func (_ Unimplemented) ApproveWorkspaceAgentProposal(w http.ResponseWriter, r *h
 // RejectWorkspaceAgentProposal Refuse a held agent action so nothing is applied
 // (POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject)
 func (_ Unimplemented) RejectWorkspaceAgentProposal(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, proposalId ProposalId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceAgentSettings Which agent writes this workspace holds for a person to approve, beyond any team's rules
+// (GET /workspaces/{workspaceId}/agent-settings)
+func (_ Unimplemented) GetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceAgentSettings Choose which agent writes this workspace holds
+// (PUT /workspaces/{workspaceId}/agent-settings)
+func (_ Unimplemented) SetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -110285,6 +110771,58 @@ func (siw *ServerInterfaceWrapper) RejectWorkspaceAgentProposal(w http.ResponseW
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RejectWorkspaceAgentProposal(w, r, workspaceId, proposalId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceAgentSettings operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceAgentSettings(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceAgentSettings operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceAgentSettings(w, r, workspaceId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -122997,6 +123535,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/teams/{teamId}/agent-settings", wrapper.SetTeamAgentSettings)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agent-settings", wrapper.GetWorkspaceAgentSettings)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agent-settings", wrapper.SetWorkspaceAgentSettings)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspaces/{workspaceId}/agent-proposals", wrapper.ListWorkspaceAgentProposals)
 	})
 	r.Group(func(r chi.Router) {
@@ -129023,6 +129567,157 @@ func (response RejectWorkspaceAgentProposal409ApplicationProblemPlusJSONResponse
 type RejectWorkspaceAgentProposal500ApplicationProblemPlusJSONResponse Problem
 
 func (response RejectWorkspaceAgentProposal500ApplicationProblemPlusJSONResponse) VisitRejectWorkspaceAgentProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type GetWorkspaceAgentSettingsResponseObject interface {
+	VisitGetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceAgentSettings200JSONResponse WorkspaceAgentSettings
+
+func (response GetWorkspaceAgentSettings200JSONResponse) VisitGetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAgentSettings401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceAgentSettings403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceAgentSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceAgentSettings500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentSettingsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *SetWorkspaceAgentSettingsJSONRequestBody
+}
+
+type SetWorkspaceAgentSettingsResponseObject interface {
+	VisitSetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceAgentSettings200JSONResponse WorkspaceAgentSettings
+
+func (response SetWorkspaceAgentSettings200JSONResponse) VisitSetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentSettings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentSettings401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentSettings403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentSettings403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentSettings422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentSettings422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentSettings500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentSettings500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -160224,6 +160919,12 @@ type StrictServerInterface interface {
 	// RejectWorkspaceAgentProposal Refuse a held agent action so nothing is applied
 	// (POST /workspaces/{workspaceId}/agent-proposals/{proposalId}/reject)
 	RejectWorkspaceAgentProposal(ctx context.Context, request RejectWorkspaceAgentProposalRequestObject) (RejectWorkspaceAgentProposalResponseObject, error)
+	// GetWorkspaceAgentSettings Which agent writes this workspace holds for a person to approve, beyond any team's rules
+	// (GET /workspaces/{workspaceId}/agent-settings)
+	GetWorkspaceAgentSettings(ctx context.Context, request GetWorkspaceAgentSettingsRequestObject) (GetWorkspaceAgentSettingsResponseObject, error)
+	// SetWorkspaceAgentSettings Choose which agent writes this workspace holds
+	// (PUT /workspaces/{workspaceId}/agent-settings)
+	SetWorkspaceAgentSettings(ctx context.Context, request SetWorkspaceAgentSettingsRequestObject) (SetWorkspaceAgentSettingsResponseObject, error)
 	// DeleteAgentSkill Delete a skill, taking it from every agent that uses it
 	// (DELETE /workspaces/{workspaceId}/agent-skills/{skillId})
 	DeleteAgentSkill(ctx context.Context, request DeleteAgentSkillRequestObject) (DeleteAgentSkillResponseObject, error)
@@ -163047,6 +163748,65 @@ func (sh *strictHandler) RejectWorkspaceAgentProposal(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RejectWorkspaceAgentProposalResponseObject); ok {
 		if err := validResponse.VisitRejectWorkspaceAgentProposalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceAgentSettings operation middleware
+func (sh *strictHandler) GetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request GetWorkspaceAgentSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceAgentSettings(ctx, request.(GetWorkspaceAgentSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceAgentSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceAgentSettingsResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceAgentSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceAgentSettings operation middleware
+func (sh *strictHandler) SetWorkspaceAgentSettings(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request SetWorkspaceAgentSettingsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body SetWorkspaceAgentSettingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceAgentSettings(ctx, request.(SetWorkspaceAgentSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceAgentSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceAgentSettingsResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceAgentSettingsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -23,6 +23,7 @@ type UpdateDocInput struct {
 	Title           *string
 	Markdown        *string
 	Content         *entity.Document
+	Section         *string
 }
 
 type MoveDocInput struct {
@@ -36,10 +37,18 @@ type ReshareDocInput struct {
 }
 
 type ListDocsInput struct {
-	ParentID *uuid.UUID
-	Root     bool
-	Cursor   string
-	Limit    int
+	ParentID  *uuid.UUID
+	Root      bool
+	ProjectID *uuid.UUID
+	WithinID  *uuid.UUID
+	Cursor    string
+	Limit     int
+}
+
+type SearchDocsInput struct {
+	Query     string
+	ProjectID *uuid.UUID
+	Limit     int
 }
 
 type DocList struct {
@@ -61,6 +70,7 @@ type Docs interface {
 	Create(ctx context.Context, workspaceID uuid.UUID, input CreateDocInput) (entity.Doc, error)
 	Get(ctx context.Context, workspaceID, docID uuid.UUID) (entity.Doc, error)
 	List(ctx context.Context, workspaceID uuid.UUID, input ListDocsInput) (DocList, error)
+	Search(ctx context.Context, workspaceID uuid.UUID, input SearchDocsInput) ([]entity.DocMatch, error)
 	Update(ctx context.Context, workspaceID, docID uuid.UUID, input UpdateDocInput) (entity.Doc, error)
 	Move(ctx context.Context, workspaceID, docID uuid.UUID, input MoveDocInput) (entity.Doc, error)
 	Reshare(ctx context.Context, workspaceID, docID uuid.UUID, input ReshareDocInput) (entity.Doc, error)

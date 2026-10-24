@@ -1691,6 +1691,10 @@ func agentSettingsDTO(settings entity.AgentSettings) api.AgentSettings {
 	}
 }
 
+func workspaceAgentSettingsDTO(settings entity.WorkspaceAgentSettings) api.WorkspaceAgentSettings {
+	return api.WorkspaceAgentSettings{HoldDocWrites: api.AgentHold(settings.HoldDocWrites)}
+}
+
 func issueDelegationDTO(delegation entity.IssueDelegation) api.IssueDelegation {
 	dto := api.IssueDelegation{
 		Id:             delegation.ID,
@@ -1732,7 +1736,8 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 		Id:        proposal.ID,
 		AgentId:   proposal.AgentID,
 		AgentName: proposal.AgentName,
-		TeamId:    proposal.TeamID,
+		TeamId:    optionalUUIDDTO(proposal.TeamID),
+		DocId:     optionalUUIDDTO(proposal.DocID),
 		Action:    api.AgentAction(proposal.Action),
 		Status:    api.AgentProposalStatus(proposal.Status),
 		CreatedAt: proposal.CreatedAt,
@@ -1747,6 +1752,16 @@ func agentProposalDTO(proposal entity.AgentProposal) api.AgentProposal {
 	dto.StateId = proposal.Change.StateID
 	dto.Title = proposal.Change.Title
 	dto.Description = proposal.Change.Description
+
+	if held := proposal.Change.Doc; held != nil {
+		dto.Title = &held.Title
+		dto.Markdown = &held.Markdown
+
+		if proposal.Action == entity.AgentActionDocCreate {
+			audience := docAudienceDTO(held.Audience())
+			dto.DocAudience = &audience
+		}
+	}
 
 	if proposal.Change.Priority != nil {
 		priority := api.IssuePriority(*proposal.Change.Priority)
@@ -1847,6 +1862,13 @@ func waitingProposalDTO(waiting service.WaitingProposal) api.AgentProposal {
 		}
 
 		dto.Held = &held
+	}
+
+	if waiting.Doc.ID != uuid.Nil {
+		dto.Held = &api.AgentProposalHeld{
+			Title:    nilIfEmpty(waiting.Doc.Title),
+			Markdown: &waiting.Doc.Markdown,
+		}
 	}
 
 	if len(waiting.Questions) > 0 {

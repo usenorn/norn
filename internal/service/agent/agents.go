@@ -15,6 +15,7 @@ import (
 type agentsService struct {
 	agents      repository.Agent
 	settings    repository.AgentSetting
+	workspace   repository.WorkspaceAgentSetting
 	proposals   repository.AgentProposal
 	accounts    repository.Account
 	memberships repository.Membership
@@ -26,6 +27,7 @@ type agentsService struct {
 	states      repository.WorkflowState
 	issues      service.Issues
 	comments    service.IssueComments
+	docs        service.Docs
 	questions   repository.IssueQuestion
 	authorizer  service.Authorizer
 	transactor  repository.Transactor
@@ -35,6 +37,7 @@ type agentsService struct {
 func New(
 	agents repository.Agent,
 	settings repository.AgentSetting,
+	workspace repository.WorkspaceAgentSetting,
 	proposals repository.AgentProposal,
 	accounts repository.Account,
 	memberships repository.Membership,
@@ -46,6 +49,7 @@ func New(
 	states repository.WorkflowState,
 	issues service.Issues,
 	comments service.IssueComments,
+	docs service.Docs,
 	questions repository.IssueQuestion,
 	authorizer service.Authorizer,
 	transactor repository.Transactor,
@@ -54,6 +58,7 @@ func New(
 	return &agentsService{
 		agents:      agents,
 		settings:    settings,
+		workspace:   workspace,
 		proposals:   proposals,
 		accounts:    accounts,
 		memberships: memberships,
@@ -65,6 +70,7 @@ func New(
 		states:      states,
 		issues:      issues,
 		comments:    comments,
+		docs:        docs,
 		questions:   questions,
 		authorizer:  authorizer,
 		transactor:  transactor,

@@ -178,6 +178,21 @@ func (mr *MockDocsMockRecorder) Revisions(ctx, workspaceID, docID, input any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revisions", reflect.TypeOf((*MockDocs)(nil).Revisions), ctx, workspaceID, docID, input)
 }
 
+// Search mocks base method.
+func (m *MockDocs) Search(ctx context.Context, workspaceID uuid.UUID, input service.SearchDocsInput) ([]entity.DocMatch, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, workspaceID, input)
+	ret0, _ := ret[0].([]entity.DocMatch)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockDocsMockRecorder) Search(ctx, workspaceID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDocs)(nil).Search), ctx, workspaceID, input)
+}
+
 // Update mocks base method.
 func (m *MockDocs) Update(ctx context.Context, workspaceID, docID uuid.UUID, input service.UpdateDocInput) (entity.Doc, error) {
 	m.ctrl.T.Helper()

@@ -1813,6 +1813,14 @@ func (r problemResponse) VisitSetTeamAgentSettingsResponse(w http.ResponseWriter
 	return r.write(w)
 }
 
+func (r problemResponse) VisitGetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitSetWorkspaceAgentSettingsResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitListWorkspaceAgentProposalsResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

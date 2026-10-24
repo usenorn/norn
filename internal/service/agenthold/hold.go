@@ -12,6 +12,7 @@ import (
 
 type Gate struct {
 	settings    repository.AgentSetting
+	workspace   repository.WorkspaceAgentSetting
 	proposals   repository.AgentProposal
 	agents      repository.Agent
 	states      repository.WorkflowState
@@ -22,6 +23,7 @@ type Gate struct {
 
 func New(
 	settings repository.AgentSetting,
+	workspace repository.WorkspaceAgentSetting,
 	proposals repository.AgentProposal,
 	agents repository.Agent,
 	states repository.WorkflowState,
@@ -31,6 +33,7 @@ func New(
 ) *Gate {
 	return &Gate{
 		settings:    settings,
+		workspace:   workspace,
 		proposals:   proposals,
 		agents:      agents,
 		states:      states,
@@ -160,6 +163,46 @@ func (g *Gate) HoldCreation(
 		Action:      entity.AgentActionIssueCreate,
 		Change:      change,
 		Reasoning:   reasoning,
+	})
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	return held, true, nil
+}
+
+func (g *Gate) HoldDoc(
+	ctx context.Context,
+	decision entity.Decision,
+	workspaceID, docID uuid.UUID,
+	action entity.AgentAction,
+	change entity.AgentDocChange,
+	expectedVersion int,
+) (entity.AgentProposal, bool, error) {
+	if decision.Actor.Kind != entity.ActorKindAgent || identity.Approved(ctx) || !action.OnDoc() {
+		return entity.AgentProposal{}, false, nil
+	}
+
+	configured, err := g.workspace.Settings(ctx, workspaceID)
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	if configured.Holds(action) == entity.AgentHoldNever {
+		return entity.AgentProposal{}, false, nil
+	}
+
+	agent, err := g.agents.GetByAccountID(ctx, decision.Actor.AccountID)
+	if err != nil {
+		return entity.AgentProposal{}, false, err
+	}
+
+	held, err := g.proposals.Create(ctx, entity.AgentProposal{
+		WorkspaceID: workspaceID,
+		AgentID:     agent.ID,
+		DocID:       docID,
+		Action:      action,
+		Change:      entity.AgentChange{ExpectedVersion: expectedVersion, Doc: &change},
 	})
 	if err != nil {
 		return entity.AgentProposal{}, false, err

@@ -440,3 +440,33 @@ func TestAProjectScopeWithoutAProjectIsRefused(t *testing.T) {
 		t.Errorf("a project scope carrying its project was refused: %v", fields)
 	}
 }
+
+func TestAWorkspaceThatHoldsDocWritesHoldsOnlyDocWrites(t *testing.T) {
+	settings := entity.WorkspaceAgentSettings{HoldDocWrites: entity.AgentHoldAlways}
+
+	for _, action := range []entity.AgentAction{entity.AgentActionDocCreate, entity.AgentActionDocEdit} {
+		if settings.Holds(action) != entity.AgentHoldAlways {
+			t.Errorf("%q was let through although the workspace holds doc writes", action)
+		}
+	}
+
+	for _, action := range []entity.AgentAction{entity.AgentActionComment, entity.AgentActionIssueEdit} {
+		if settings.Holds(action) != entity.AgentHoldNever {
+			t.Errorf("%q was held by a workspace setting that only speaks for docs", action)
+		}
+	}
+
+	if unconfigured := (entity.WorkspaceAgentSettings{}).Normalised(); unconfigured.HoldDocWrites != entity.AgentHoldNever {
+		t.Fatal("an unconfigured workspace does not read back as holding nothing")
+	}
+}
+
+func TestAnApprovedDocWriteReplaysWithKnowledgeScopeOnly(t *testing.T) {
+	want := entity.NewAPIScope(entity.ResourceKnowledge, entity.ActionManage)
+
+	for _, action := range []entity.AgentAction{entity.AgentActionDocCreate, entity.AgentActionDocEdit} {
+		if scopes := action.Scopes(); len(scopes) != 1 || scopes[0] != want {
+			t.Errorf("%q replays with %v, want only %v", action, scopes, want)
+		}
+	}
+}
