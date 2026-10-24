@@ -170,16 +170,21 @@ func (s *docsService) List(
 		page.Cursor = &cursor
 	}
 
-	reader := decision.Reader
-	filter := repository.DocFilter{
-		ParentID:    input.ParentID,
-		Root:        input.Root,
-		AllProjects: reader.AllProjects,
-		ProjectIDs:  reader.ProjectIDs,
+	if input.WithinID != nil {
+		if _, err := s.Get(ctx, workspaceID, *input.WithinID); err != nil {
+			return service.DocList{}, err
+		}
 	}
 
-	if reader.Identity.Personal {
-		filter.PersonalAuthorID = reader.Identity.Principal
+	reader := decision.Reader
+	filter := repository.DocFilter{
+		ParentID:         input.ParentID,
+		Root:             input.Root,
+		ProjectID:        input.ProjectID,
+		WithinID:         input.WithinID,
+		AllProjects:      reader.AllProjects,
+		ProjectIDs:       reader.ProjectIDs,
+		PersonalAuthorID: personalAuthor(reader),
 	}
 
 	summaries, err := s.docs.List(ctx, workspaceID, filter, page.Lookahead())
@@ -205,6 +210,65 @@ func (s *docsService) List(
 	return list, nil
 }
 
+func (s *docsService) Search(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	input service.SearchDocsInput,
+) ([]entity.DocMatch, error) {
+	query := entity.ParseSearchQuery(input.Query)
+	if query.Stemmed == "" && query.Prefix == "" {
+		return nil, entity.ErrSearchQueryEmpty
+	}
+
+	decision, err := s.knowledge.Reader(ctx, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	reader := decision.Reader
+
+	matches, err := s.docs.Search(ctx, workspaceID, repository.DocSearch{
+		Query:            query,
+		ProjectID:        input.ProjectID,
+		Limit:            searchLimit(input.Limit),
+		AllProjects:      reader.AllProjects,
+		ProjectIDs:       reader.ProjectIDs,
+		PersonalAuthorID: personalAuthor(reader),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make([]entity.DocMatch, 0, len(matches))
+
+	for _, match := range matches {
+		if reader.Sees(match.Access()) {
+			seen = append(seen, match)
+		}
+	}
+
+	return seen, nil
+}
+
+func searchLimit(requested int) int {
+	switch {
+	case requested <= 0:
+		return entity.DocSearchDefaultSize
+	case requested > entity.DocSearchMaxSize:
+		return entity.DocSearchMaxSize
+	default:
+		return requested
+	}
+}
+
+func personalAuthor(reader entity.KnowledgeReader) uuid.UUID {
+	if reader.Identity.Personal {
+		return reader.Identity.Principal
+	}
+
+	return uuid.Nil
+}
+
 func (s *docsService) Update(
 	ctx context.Context,
 	workspaceID, docID uuid.UUID,
@@ -214,6 +278,13 @@ func (s *docsService) Update(
 		if err := entity.NewValidationError(entity.ValidateDocTitle(entity.DocFieldTitle, *input.Title)); err != nil {
 			return entity.Doc{}, err
 		}
+	}
+
+	if input.Section != nil && input.Markdown == nil {
+		return entity.Doc{}, entity.NewValidationError(entity.FieldError{
+			Field: entity.DocFieldContent,
+			Code:  entity.ValidationCodeRequired,
+		})
 	}
 
 	var (
@@ -242,6 +313,17 @@ func (s *docsService) Update(
 			if input.Title != nil && strings.TrimSpace(*input.Title) != doc.Title {
 				doc.Title = strings.TrimSpace(*input.Title)
 				changed = true
+			}
+
+			if input.Section != nil {
+				replaced, err := doc.Content.ReplaceSection(*input.Section, content)
+				if err != nil {
+					return false, err
+				}
+
+				if markdown, content, err = described("", &replaced); err != nil {
+					return false, err
+				}
 			}
 
 			if rewrites && markdown != doc.Markdown {

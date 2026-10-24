@@ -366,3 +366,138 @@ func TestADocTreeKnowsItsAncestryAndItsHeight(t *testing.T) {
 		return nil
 	})
 }
+
+func TestDocsListWithinAProjectOrBeneathADocAtAnyDepth(t *testing.T) {
+	withDocFixture(t, func(ctx context.Context, client *postgres.Client, fixture docFixture) error {
+		docs := New(client)
+		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
+
+		root, err := createDoc(ctx, docs, draftDoc(fixture, "root", entity.WorkspaceAudience(), nil, at))
+		if err != nil {
+			return fmt.Errorf("create root: %w", err)
+		}
+
+		middle, err := createDoc(ctx, docs, draftDoc(fixture, "middle", entity.ProjectAudience(fixture.projectID), &root.ID, at.Add(time.Minute)))
+		if err != nil {
+			return fmt.Errorf("create middle: %w", err)
+		}
+
+		if _, err := createDoc(ctx, docs, draftDoc(fixture, "leaf", entity.WorkspaceAudience(), &middle.ID, at.Add(2*time.Minute))); err != nil {
+			return fmt.Errorf("create leaf: %w", err)
+		}
+
+		if _, err := createDoc(ctx, docs, draftDoc(fixture, "elsewhere", entity.WorkspaceAudience(), nil, at.Add(3*time.Minute))); err != nil {
+			return fmt.Errorf("create elsewhere: %w", err)
+		}
+
+		for name, testCase := range map[string]struct {
+			filter repository.DocFilter
+			want   []string
+		}{
+			"within the project": {
+				filter: repository.DocFilter{ProjectID: &fixture.projectID, AllProjects: true},
+				want:   []string{"middle"},
+			},
+			"beneath the root at every depth": {
+				filter: repository.DocFilter{WithinID: &root.ID, AllProjects: true},
+				want:   []string{"leaf", "middle"},
+			},
+			"beneath the root for an outsider to the project": {
+				filter: repository.DocFilter{WithinID: &root.ID},
+				want:   []string{"leaf"},
+			},
+		} {
+			summaries, err := docs.List(ctx, fixture.workspaceID, testCase.filter, entity.DocPage{Limit: 10})
+			if err != nil {
+				return fmt.Errorf("%s: list docs: %w", name, err)
+			}
+
+			listed := make([]string, 0, len(summaries))
+			for _, summary := range summaries {
+				listed = append(listed, summary.Title)
+			}
+
+			if !slices.Equal(listed, testCase.want) {
+				return fmt.Errorf("%s: listed %v, want %v", name, listed, testCase.want)
+			}
+		}
+
+		return nil
+	})
+}
+
+func TestDocSearchNeverSurfacesWhatTheReaderMayNotSee(t *testing.T) {
+	withDocFixture(t, func(ctx context.Context, client *postgres.Client, fixture docFixture) error {
+		docs := New(client)
+		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
+
+		for index, draft := range []struct {
+			title    string
+			audience entity.KnowledgeAudience
+		}{
+			{title: "Onboarding guide", audience: entity.WorkspaceAudience()},
+			{title: "Onboarding roadmap", audience: entity.ProjectAudience(fixture.projectID)},
+			{title: "Onboarding salaries", audience: entity.PersonalAudience()},
+			{title: "Release checklist", audience: entity.WorkspaceAudience()},
+		} {
+			if _, err := createDoc(ctx, docs, draftDoc(fixture, draft.title, draft.audience, nil, at.Add(time.Duration(index)*time.Minute))); err != nil {
+				return fmt.Errorf("create %s: %w", draft.title, err)
+			}
+		}
+
+		query := entity.ParseSearchQuery("onboarding")
+
+		for name, testCase := range map[string]struct {
+			search repository.DocSearch
+			want   []string
+		}{
+			"an outsider to the project and to the author": {
+				search: repository.DocSearch{Query: query, Limit: 10, PersonalAuthorID: uuid.New()},
+				want:   []string{"Onboarding guide"},
+			},
+			"a project member": {
+				search: repository.DocSearch{Query: query, Limit: 10, ProjectIDs: []uuid.UUID{fixture.projectID}},
+				want:   []string{"Onboarding guide", "Onboarding roadmap"},
+			},
+			"the author acting personally": {
+				search: repository.DocSearch{Query: query, Limit: 10, AllProjects: true, PersonalAuthorID: fixture.authorID},
+				want:   []string{"Onboarding guide", "Onboarding roadmap", "Onboarding salaries"},
+			},
+			"narrowed to the project": {
+				search: repository.DocSearch{Query: query, Limit: 10, AllProjects: true, ProjectID: &fixture.projectID},
+				want:   []string{"Onboarding roadmap"},
+			},
+			"a prefix while typing": {
+				search: repository.DocSearch{Query: entity.ParseSearchQuery("check"), Limit: 10},
+				want:   []string{"Release checklist"},
+			},
+		} {
+			matches, err := docs.Search(ctx, fixture.workspaceID, testCase.search)
+			if err != nil {
+				return fmt.Errorf("%s: search docs: %w", name, err)
+			}
+
+			found := make([]string, 0, len(matches))
+			for _, match := range matches {
+				found = append(found, match.Title)
+			}
+
+			slices.Sort(found)
+
+			if !slices.Equal(found, testCase.want) {
+				return fmt.Errorf("%s: found %v, want %v", name, found, testCase.want)
+			}
+		}
+
+		matches, err := docs.Search(ctx, fixture.workspaceID, repository.DocSearch{Query: query, Limit: 10})
+		if err != nil {
+			return fmt.Errorf("search for an excerpt: %w", err)
+		}
+
+		if len(matches) != 1 || !strings.Contains(matches[0].Excerpt, "**Onboarding**") {
+			return fmt.Errorf("the excerpt does not mark the match: %+v", matches)
+		}
+
+		return nil
+	})
+}

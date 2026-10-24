@@ -36,6 +36,7 @@ type harness struct {
 	stored      map[uuid.UUID]entity.Doc
 	recorded    []entity.DocRevision
 	listed      []repository.DocFilter
+	searched    []repository.DocSearch
 }
 
 func newHarness(t *testing.T) *harness {
@@ -178,6 +179,18 @@ func (h *harness) store() {
 			}
 
 			return summaries, nil
+		}).
+		AnyTimes()
+	h.docs.EXPECT().Search(gomock.Any(), h.workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, search repository.DocSearch) ([]entity.DocMatch, error) {
+			h.searched = append(h.searched, search)
+
+			matches := make([]entity.DocMatch, 0, len(h.stored))
+			for _, doc := range h.stored {
+				matches = append(matches, entity.DocMatch{DocSummary: doc.DocSummary, Excerpt: doc.Markdown})
+			}
+
+			return matches, nil
 		}).
 		AnyTimes()
 	h.docs.EXPECT().Ancestry(gomock.Any(), h.workspaceID, gomock.Any()).
@@ -667,4 +680,118 @@ func sameID(got, want *uuid.UUID) bool {
 	}
 
 	return *got == *want
+}
+
+func TestASectionEditRewritesThatSectionAndLeavesTheRest(t *testing.T) {
+	h := newHarness(t)
+
+	doc, err := h.service.Create(context.Background(), h.workspaceID, service.CreateDocInput{
+		Title:    "Runbook",
+		Markdown: "## Deploy\n\nPush the tag.\n\n## Rollback\n\nRevert the tag.\n",
+		Audience: entity.WorkspaceAudience(),
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	edited, err := h.service.Update(context.Background(), h.workspaceID, doc.ID, service.UpdateDocInput{
+		ExpectedVersion: 1,
+		Section:         text("Deploy"),
+		Markdown:        text("## Deploy\n\nPin the sha tag.\n"),
+	})
+	if err != nil {
+		t.Fatalf("section edit: %v", err)
+	}
+
+	if want := "## Deploy\n\nPin the sha tag.\n\n## Rollback\n\nRevert the tag."; edited.Markdown != want || edited.Version != 2 {
+		t.Fatalf("the section edit produced version %d:\n%s\nwant\n%s", edited.Version, edited.Markdown, want)
+	}
+
+	_, err = h.service.Update(context.Background(), h.workspaceID, doc.ID, service.UpdateDocInput{
+		ExpectedVersion: 1,
+		Section:         text("Rollback"),
+		Markdown:        text("## Rollback\n\nDo nothing.\n"),
+	})
+
+	var stale entity.DocStaleError
+	if !errors.As(err, &stale) || stale.Version != 2 {
+		t.Fatalf("a section edit against version 1 got %v, want a stale error naming 2", err)
+	}
+
+	if _, err := h.service.Update(context.Background(), h.workspaceID, doc.ID, service.UpdateDocInput{
+		ExpectedVersion: 2,
+		Section:         text("Monitoring"),
+		Markdown:        text("## Monitoring\n"),
+	}); !errors.Is(err, entity.ErrDocSectionNotFound) {
+		t.Fatalf("a section nobody wrote got %v", err)
+	}
+
+	var invalid entity.ValidationError
+	if _, err := h.service.Update(context.Background(), h.workspaceID, doc.ID, service.UpdateDocInput{
+		ExpectedVersion: 2,
+		Section:         text("Deploy"),
+	}); !errors.As(err, &invalid) {
+		t.Fatalf("a section edit with nothing to write got %v", err)
+	}
+
+	if len(h.recorded) != 2 {
+		t.Fatalf("refused section edits left revisions behind: %d", len(h.recorded))
+	}
+}
+
+func TestSearchingAsksThePermissionModelWhoIsReading(t *testing.T) {
+	h := newHarness(t)
+	h.create(t, "Shared", entity.WorkspaceAudience(), nil)
+	h.create(t, "Mine", entity.PersonalAudience(), nil)
+
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, entity.MembershipRoleMember)
+
+	matches, err := h.service.Search(context.Background(), h.workspaceID, service.SearchDocsInput{
+		Query:     "body",
+		ProjectID: &h.projectID,
+		Limit:     entity.DocSearchMaxSize + 10,
+	})
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+
+	search := h.searched[len(h.searched)-1]
+	if search.PersonalAuthorID != h.reader.Identity.Principal ||
+		!slices.Equal(search.ProjectIDs, h.reader.ProjectIDs) ||
+		!sameID(search.ProjectID, &h.projectID) ||
+		search.Limit != entity.DocSearchMaxSize {
+		t.Fatalf("the search did not carry the reader's reach and bounds: %+v", search)
+	}
+
+	if len(matches) != 1 || matches[0].Title != "Shared" {
+		t.Fatalf("somebody else's personal doc slipped through the search: %+v", matches)
+	}
+
+	if _, err := h.service.Search(context.Background(), h.workspaceID, service.SearchDocsInput{Query: "  "}); !errors.Is(err, entity.ErrSearchQueryEmpty) {
+		t.Fatalf("a blank query got %v", err)
+	}
+}
+
+func TestListingBeneathAnUnseenDocLooksLikeNoDocAtAll(t *testing.T) {
+	h := newHarness(t)
+	hidden := h.create(t, "Mine", entity.PersonalAudience(), nil)
+	shared := h.create(t, "Shared", entity.WorkspaceAudience(), nil)
+
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, entity.MembershipRoleMember)
+
+	if _, err := h.service.List(context.Background(), h.workspaceID, service.ListDocsInput{WithinID: &hidden.ID}); !errors.Is(err, entity.ErrDocNotFound) {
+		t.Fatalf("listing beneath somebody else's personal doc got %v", err)
+	}
+
+	if _, err := h.service.List(context.Background(), h.workspaceID, service.ListDocsInput{
+		WithinID:  &shared.ID,
+		ProjectID: &h.projectID,
+	}); err != nil {
+		t.Fatalf("listing beneath a shared doc: %v", err)
+	}
+
+	filter := h.listed[len(h.listed)-1]
+	if !sameID(filter.WithinID, &shared.ID) || !sameID(filter.ProjectID, &h.projectID) {
+		t.Fatalf("the listing lost its subtree or project: %+v", filter)
+	}
 }

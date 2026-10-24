@@ -49,20 +49,49 @@ WHERE d.id = $1 AND d.workspace_id = $2`
 const lockDocQuery = docByIDQuery + `
 FOR UPDATE OF d`
 
+const visibleToReader = `
+  AND d.status = 'active'
+  AND (d.visibility = 'workspace'
+       OR (d.visibility = 'project' AND ($2::boolean IS TRUE OR d.project_id = ANY($3::uuid[])))
+       OR (d.visibility = 'personal' AND d.author_account_id = $4::uuid))`
+
 const listDocsQuery = `
 SELECT` + summaryColumns + `
 FROM workspace_docs d
 LEFT JOIN accounts a ON a.id = d.author_account_id
-WHERE d.workspace_id = $1
-  AND d.status = 'active'
-  AND (d.visibility = 'workspace'
-       OR (d.visibility = 'project' AND ($2::boolean IS TRUE OR d.project_id = ANY($3::uuid[])))
-       OR (d.visibility = 'personal' AND d.author_account_id = $4::uuid))
+WHERE d.workspace_id = $1` + visibleToReader + `
   AND ($5::uuid IS NULL OR d.parent_id = $5::uuid)
   AND ($6::boolean IS FALSE OR d.parent_id IS NULL)
   AND ($7::timestamptz IS NULL OR (d.updated_at, d.id) < ($7::timestamptz, $8::uuid))
+  AND ($10::uuid IS NULL OR d.project_id = $10::uuid)
+  AND ($11::uuid IS NULL OR d.id IN (
+      WITH RECURSIVE below (id, depth) AS (
+          SELECT id, 0 FROM workspace_docs WHERE id = $11::uuid AND workspace_id = $1
+          UNION ALL
+          SELECT child.id, below.depth + 1
+          FROM workspace_docs child
+          JOIN below ON child.parent_id = below.id
+          WHERE child.workspace_id = $1 AND below.depth < $12
+      )
+      SELECT id FROM below WHERE depth > 0))
 ORDER BY d.updated_at DESC, d.id DESC
 LIMIT $9`
+
+const docQueryTerms = `(websearch_to_tsquery('english', $5) ||
+       coalesce(to_tsquery('simple', nullif($6, '') || ':*'), ''::tsquery))`
+
+const searchDocsQuery = `
+SELECT` + summaryColumns + `,
+       ts_headline('english', d.markdown, ` + docQueryTerms + `, $9)
+FROM workspace_docs d
+LEFT JOIN accounts a ON a.id = d.author_account_id
+WHERE d.workspace_id = $1` + visibleToReader + `
+  AND d.search_document @@ ` + docQueryTerms + `
+  AND ($7::uuid IS NULL OR d.project_id = $7::uuid)
+ORDER BY ts_rank_cd(d.search_document, ` + docQueryTerms + `) DESC, d.updated_at DESC, d.id DESC
+LIMIT $8`
+
+const excerptOptions = "StartSel=**, StopSel=**, MaxFragments=2, MaxWords=24, MinWords=8, FragmentDelimiter= … "
 
 const ancestryQuery = `
 WITH RECURSIVE ancestry (id, parent_id, depth) AS (
@@ -341,21 +370,10 @@ func (r *docRepository) List(
 	filter repository.DocFilter,
 	page entity.DocPage,
 ) ([]entity.DocSummary, error) {
-	projectIDs := make([]string, 0, len(filter.ProjectIDs))
-	for _, projectID := range filter.ProjectIDs {
-		projectIDs = append(projectIDs, projectID.String())
-	}
-
 	var (
-		after    sql.NullTime
-		afterID  sql.NullString
-		personal = sql.NullString{String: filter.PersonalAuthorID.String(), Valid: filter.PersonalAuthorID != uuid.Nil}
-		parent   sql.NullString
+		after   sql.NullTime
+		afterID sql.NullString
 	)
-
-	if filter.ParentID != nil {
-		parent = sql.NullString{String: filter.ParentID.String(), Valid: true}
-	}
 
 	if page.Cursor != nil {
 		after = sql.NullTime{Time: page.Cursor.UpdatedAt, Valid: true}
@@ -367,13 +385,16 @@ func (r *docRepository) List(
 		listDocsQuery,
 		workspaceID.String(),
 		filter.AllProjects,
-		projectIDs,
-		personal,
-		parent,
+		idStrings(filter.ProjectIDs),
+		nullableAuthor(filter.PersonalAuthorID),
+		nullableID(filter.ParentID),
 		filter.Root,
 		after,
 		afterID,
 		page.Limit,
+		nullableID(filter.ProjectID),
+		nullableID(filter.WithinID),
+		entity.DocTreeMaxDepth,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list docs: %w", err)
@@ -396,6 +417,77 @@ func (r *docRepository) List(
 	}
 
 	return summaries, nil
+}
+
+func (r *docRepository) Search(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	search repository.DocSearch,
+) ([]entity.DocMatch, error) {
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx,
+		searchDocsQuery,
+		workspaceID.String(),
+		search.AllProjects,
+		idStrings(search.ProjectIDs),
+		nullableAuthor(search.PersonalAuthorID),
+		search.Query.Stemmed,
+		search.Query.Prefix,
+		nullableID(search.ProjectID),
+		search.Limit,
+		excerptOptions,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("search docs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var matches []entity.DocMatch
+
+	for rows.Next() {
+		var (
+			match entity.DocMatch
+			raw   summaryRow
+		)
+
+		if err := rows.Scan(append(raw.targets(&match.DocSummary), &match.Excerpt)...); err != nil {
+			return nil, fmt.Errorf("scan doc match: %w", err)
+		}
+
+		if err := raw.fill(&match.DocSummary); err != nil {
+			return nil, err
+		}
+
+		match.Excerpt = strings.TrimSpace(match.Excerpt)
+		matches = append(matches, match)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read doc matches: %w", err)
+	}
+
+	return matches, nil
+}
+
+func idStrings(ids []uuid.UUID) []string {
+	strs := make([]string, 0, len(ids))
+	for _, id := range ids {
+		strs = append(strs, id.String())
+	}
+
+	return strs
+}
+
+func nullableID(id *uuid.UUID) sql.NullString {
+	if id == nil {
+		return sql.NullString{}
+	}
+
+	return sql.NullString{String: id.String(), Valid: true}
+}
+
+func nullableAuthor(authorID uuid.UUID) sql.NullString {
+	return sql.NullString{String: authorID.String(), Valid: authorID != uuid.Nil}
 }
 
 func (r *docRepository) Ancestry(ctx context.Context, workspaceID, docID uuid.UUID) ([]uuid.UUID, error) {

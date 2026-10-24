@@ -132,6 +132,21 @@ func (mr *MockDocMockRecorder) LockByID(ctx, workspaceID, docID any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockDoc)(nil).LockByID), ctx, workspaceID, docID)
 }
 
+// Search mocks base method.
+func (m *MockDoc) Search(ctx context.Context, workspaceID uuid.UUID, search repository.DocSearch) ([]entity.DocMatch, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, workspaceID, search)
+	ret0, _ := ret[0].([]entity.DocMatch)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockDocMockRecorder) Search(ctx, workspaceID, search any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDoc)(nil).Search), ctx, workspaceID, search)
+}
+
 // SubtreeHeight mocks base method.
 func (m *MockDoc) SubtreeHeight(ctx context.Context, workspaceID, docID uuid.UUID) (int, error) {
 	m.ctrl.T.Helper()

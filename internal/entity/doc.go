@@ -20,6 +20,9 @@ const (
 	DocPageDefaultSize = 50
 	DocPageMaxSize     = 200
 
+	DocSearchDefaultSize = 10
+	DocSearchMaxSize     = 25
+
 	docCursorIDLen = 36
 )
 
@@ -86,6 +89,11 @@ type DocSummary struct {
 	Version     int
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+type DocMatch struct {
+	DocSummary
+	Excerpt string
 }
 
 type Doc struct {
