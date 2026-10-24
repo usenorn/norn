@@ -64,20 +64,24 @@ func DocAttributionOf(decision KnowledgeDecision) DocAttribution {
 	}
 }
 
-type DocRevision struct {
+type DocRevisionSummary struct {
 	ID          uuid.UUID
 	WorkspaceID uuid.UUID
 	DocID       uuid.UUID
 	Version     int
 	Action      DocRevisionAction
 	Title       string
-	Content     Document
-	Markdown    string
 	ParentID    *uuid.UUID
 	Audience    KnowledgeAudience
 	By          DocAttribution
 	AccountName string
 	CreatedAt   time.Time
+}
+
+type DocRevision struct {
+	DocRevisionSummary
+	Content  Document
+	Markdown string
 }
 
 func (d Doc) Revision(action DocRevisionAction, by DocAttribution) DocRevision {
@@ -86,22 +90,24 @@ func (d Doc) Revision(action DocRevisionAction, by DocAttribution) DocRevision {
 	}
 
 	return DocRevision{
-		ID:          uuid.New(),
-		WorkspaceID: d.WorkspaceID,
-		DocID:       d.ID,
-		Version:     d.Version,
-		Action:      action,
-		Title:       d.Title,
-		Content:     d.Content,
-		Markdown:    d.Markdown,
-		ParentID:    d.ParentID,
-		Audience:    d.Audience,
-		By:          by,
-		CreatedAt:   d.UpdatedAt,
+		DocRevisionSummary: DocRevisionSummary{
+			ID:          uuid.New(),
+			WorkspaceID: d.WorkspaceID,
+			DocID:       d.ID,
+			Version:     d.Version,
+			Action:      action,
+			Title:       d.Title,
+			ParentID:    d.ParentID,
+			Audience:    d.Audience,
+			By:          by,
+			CreatedAt:   d.UpdatedAt,
+		},
+		Content:  d.Content,
+		Markdown: d.Markdown,
 	}
 }
 
-func (r DocRevision) Cursor() DocRevisionCursor {
+func (r DocRevisionSummary) Cursor() DocRevisionCursor {
 	return DocRevisionCursor{Version: r.Version}
 }
 

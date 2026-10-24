@@ -56,7 +56,7 @@ func TestDocContentHoldsMoreThanAnIssueDescription(t *testing.T) {
 }
 
 func TestAStaleDocVersionIsRefusedBeforeAnythingElse(t *testing.T) {
-	doc := entity.Doc{Version: 4, Status: entity.DocStatusArchived}
+	doc := entity.DocSummary{Version: 4, Status: entity.DocStatusArchived}
 
 	var stale entity.DocStaleError
 	if err := doc.Expect(3); !errors.As(err, &stale) || stale.Version != 4 || !errors.Is(err, entity.ErrDocStale) {
@@ -106,9 +106,11 @@ func TestADocIsPlacedOnlyWhereTheTreeHoldsIt(t *testing.T) {
 func TestADocIsJudgedByItsOwnAudience(t *testing.T) {
 	projectID := uuid.New()
 	doc := entity.Doc{
-		WorkspaceID:    uuid.New(),
-		AuthorID:       uuid.New(),
-		Audience:       entity.ProjectAudience(projectID),
+		DocSummary: entity.DocSummary{
+			WorkspaceID: uuid.New(),
+			AuthorID:    uuid.New(),
+			Audience:    entity.ProjectAudience(projectID),
+		},
 		ContributorIDs: []uuid.UUID{uuid.New()},
 	}
 
@@ -185,14 +187,16 @@ func TestARevisionRecordsWhoChangedTheDocAndHow(t *testing.T) {
 func TestARestoredRevisionIsAttributedAsARestore(t *testing.T) {
 	parent := uuid.New()
 	doc := entity.Doc{
-		ID:          uuid.New(),
-		WorkspaceID: uuid.New(),
-		ParentID:    &parent,
-		Title:       "Runbook",
-		Markdown:    "Steps.",
-		Audience:    entity.WorkspaceAudience(),
-		Version:     7,
-		UpdatedAt:   time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC),
+		DocSummary: entity.DocSummary{
+			ID:          uuid.New(),
+			WorkspaceID: uuid.New(),
+			ParentID:    &parent,
+			Title:       "Runbook",
+			Audience:    entity.WorkspaceAudience(),
+			Version:     7,
+			UpdatedAt:   time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC),
+		},
+		Markdown: "Steps.",
 	}
 	by := entity.DocAttribution{AccountID: uuid.New(), Source: entity.RevisionSourceAgent}
 

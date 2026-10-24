@@ -62,58 +62,68 @@ func (s DocStatus) Valid() bool {
 	return slices.Contains(DocStatuses(), s)
 }
 
-type Doc struct {
-	ID             uuid.UUID
-	WorkspaceID    uuid.UUID
-	ParentID       *uuid.UUID
-	Title          string
-	Content        Document
-	Markdown       string
-	Audience       KnowledgeAudience
-	AuthorID       uuid.UUID
-	AuthorName     string
-	ContributorIDs []uuid.UUID
-	Status         DocStatus
-	ArchivedAt     *time.Time
-	Version        int
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+type DocSummary struct {
+	ID          uuid.UUID
+	WorkspaceID uuid.UUID
+	ParentID    *uuid.UUID
+	Title       string
+	Audience    KnowledgeAudience
+	AuthorID    uuid.UUID
+	AuthorName  string
+	Status      DocStatus
+	ArchivedAt  *time.Time
+	Version     int
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-func (d Doc) Access() KnowledgeAccess {
+type Doc struct {
+	DocSummary
+	Content        Document
+	Markdown       string
+	ContributorIDs []uuid.UUID
+}
+
+func (s DocSummary) Access() KnowledgeAccess {
 	access := KnowledgeAccess{
-		WorkspaceID:    d.WorkspaceID,
-		AuthorID:       d.AuthorID,
-		Audience:       d.Audience,
-		ContributorIDs: d.ContributorIDs,
+		WorkspaceID: s.WorkspaceID,
+		AuthorID:    s.AuthorID,
+		Audience:    s.Audience,
 	}
 
-	if d.Audience.Visibility == KnowledgeVisibilityProject {
-		projectID := d.Audience.ProjectID
+	if s.Audience.Visibility == KnowledgeVisibilityProject {
+		projectID := s.Audience.ProjectID
 		access.Applicability.ProjectID = &projectID
 	}
 
 	return access
 }
 
-func (d Doc) Archived() bool {
-	return d.Status == DocStatusArchived
+func (d Doc) Access() KnowledgeAccess {
+	access := d.DocSummary.Access()
+	access.ContributorIDs = d.ContributorIDs
+
+	return access
 }
 
-func (d Doc) Expect(version int) error {
-	if d.Version != version {
-		return DocStaleError{Version: d.Version}
+func (s DocSummary) Archived() bool {
+	return s.Status == DocStatusArchived
+}
+
+func (s DocSummary) Expect(version int) error {
+	if s.Version != version {
+		return DocStaleError{Version: s.Version}
 	}
 
-	if d.Archived() {
+	if s.Archived() {
 		return ErrDocArchived
 	}
 
 	return nil
 }
 
-func (d Doc) Cursor() DocCursor {
-	return DocCursor{UpdatedAt: d.UpdatedAt, DocID: d.ID}
+func (s DocSummary) Cursor() DocCursor {
+	return DocCursor{UpdatedAt: s.UpdatedAt, DocID: s.ID}
 }
 
 func ValidateDocPlacement(docID uuid.UUID, parentAncestry []uuid.UUID, subtreeHeight int) error {
