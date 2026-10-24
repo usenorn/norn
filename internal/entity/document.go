@@ -5,16 +5,20 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
 
-const (
-	DocumentType         = "doc"
-	DocumentMaxDepth     = 8
-	DocumentMaxNodes     = 5000
-	DocumentMaxTextRunes = IssueDescriptionMaxLen
-)
+const DocumentType = "doc"
+
+type DocumentLimits struct {
+	MaxDepth     int
+	MaxNodes     int
+	MaxTextRunes int
+}
+
+var IssueDocumentLimits = DocumentLimits{MaxDepth: 8, MaxNodes: 5000, MaxTextRunes: IssueDescriptionMaxLen}
 
 var (
 	ErrDocumentMalformed = errors.New("document is not in the shape this instance understands")
@@ -89,13 +93,17 @@ type Mark struct {
 }
 
 func Described(markdown string, document *Document) (string, Document, error) {
+	return DescribedWithin(IssueDocumentLimits, markdown, document)
+}
+
+func DescribedWithin(limits DocumentLimits, markdown string, document *Document) (string, Document, error) {
 	if document == nil {
 		parsed := DocumentFromMarkdown(markdown)
 
 		return parsed.Markdown(), parsed, nil
 	}
 
-	if err := ValidateDocument(*document); err != nil {
+	if err := ValidateDocument(*document, limits); err != nil {
 		return "", Document{}, err
 	}
 
@@ -132,50 +140,56 @@ func DecodeDocument(raw []byte) (Document, error) {
 	return decoded, nil
 }
 
-func ValidateDocument(document Document) error {
+func ValidateDocument(document Document, limits DocumentLimits) error {
 	if document.Type != DocumentType {
 		return ErrDocumentMalformed
 	}
 
-	counted, err := walkDocument(document.Content, 1)
+	size, err := walkDocument(document.Content, 1, limits)
 	if err != nil {
 		return err
 	}
 
-	if counted > DocumentMaxNodes {
+	if size.nodes > limits.MaxNodes || size.textRunes > limits.MaxTextRunes {
 		return ErrDocumentTooLarge
 	}
 
 	return nil
 }
 
-func walkDocument(nodes []Node, depth int) (int, error) {
-	if depth > DocumentMaxDepth {
-		return 0, ErrDocumentTooDeep
+type documentSize struct {
+	nodes     int
+	textRunes int
+}
+
+func walkDocument(nodes []Node, depth int, limits DocumentLimits) (documentSize, error) {
+	if depth > limits.MaxDepth {
+		return documentSize{}, ErrDocumentTooDeep
 	}
 
-	counted := len(nodes)
+	size := documentSize{nodes: len(nodes)}
 
 	for _, node := range nodes {
 		if !slices.Contains(DocumentNodes(), node.Type) {
-			return 0, ErrDocumentMalformed
+			return documentSize{}, ErrDocumentMalformed
 		}
 
 		for _, mark := range node.Marks {
 			if !slices.Contains(DocumentMarks(), mark.Type) {
-				return 0, ErrDocumentMalformed
+				return documentSize{}, ErrDocumentMalformed
 			}
 		}
 
-		nested, err := walkDocument(node.Content, depth+1)
+		nested, err := walkDocument(node.Content, depth+1, limits)
 		if err != nil {
-			return 0, err
+			return documentSize{}, err
 		}
 
-		counted += nested
+		size.nodes += nested.nodes
+		size.textRunes += utf8.RuneCountInString(node.Text) + nested.textRunes
 	}
 
-	return counted, nil
+	return size, nil
 }
 
 func DocumentMentions(document Document) []CommentMention {
