@@ -33,6 +33,7 @@ var policyResources = []entity.Resource{
 	entity.ResourceRunner,
 	entity.ResourceAuditLog,
 	entity.ResourceRoadmap,
+	entity.ResourceKnowledge,
 }
 
 var policyActions = []entity.Action{

@@ -891,11 +891,8 @@ func (s *agentsService) Authenticate(
 		return entity.Actor{}, entity.ErrAgentDisabled
 	}
 
-	agentID := agent.ID
-
-	actor.AgentID = &agentID
+	actor = agent.Attribute(actor)
 	actor.AgentAllowance = agent.Allowance()
-	actor.OwnerAccountID = agent.OwnerAccountID
 
 	return actor, nil
 }

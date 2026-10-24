@@ -41,6 +41,35 @@ func TestEverybodyElseIsTheirOwnAuthority(t *testing.T) {
 	}
 }
 
+func TestAnAgentActorCarriesWhoMayDriveIt(t *testing.T) {
+	projectID := uuid.New()
+
+	for name, agent := range map[string]entity.Agent{
+		"personal":  {ID: uuid.New(), OwnerAccountID: uuid.New(), Scope: entity.AgentScopeMember},
+		"unscoped":  {ID: uuid.New(), OwnerAccountID: uuid.New()},
+		"project":   {ID: uuid.New(), OwnerAccountID: uuid.New(), Scope: entity.AgentScopeProject, ProjectID: &projectID},
+		"workspace": {ID: uuid.New(), OwnerAccountID: uuid.New(), Scope: entity.AgentScopeWorkspace},
+	} {
+		actor := agent.Attribute(entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()})
+
+		if actor.AgentID == nil || *actor.AgentID != agent.ID {
+			t.Errorf("%s: the actor lost which agent it is", name)
+		}
+
+		if actor.OwnerAccountID != agent.OwnerAccountID {
+			t.Errorf("%s: the actor lost its owner", name)
+		}
+
+		if actor.AgentScope != agent.Scope.Normalized() {
+			t.Errorf("%s: actor scope = %q, want %q", name, actor.AgentScope, agent.Scope.Normalized())
+		}
+
+		if actor.AgentProjectID != agent.ProjectID {
+			t.Errorf("%s: the actor lost the project the agent is scoped to", name)
+		}
+	}
+}
+
 func TestAnAgentActionIsAttributedToTheAgentNotItsOwner(t *testing.T) {
 	agentAccount, owner := uuid.New(), uuid.New()
 

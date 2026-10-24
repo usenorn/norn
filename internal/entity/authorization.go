@@ -32,6 +32,7 @@ const (
 	ResourceInstance       Resource = "instance"
 	ResourceAuditLog       Resource = "audit_log"
 	ResourceRoadmap        Resource = "roadmap"
+	ResourceKnowledge      Resource = "knowledge"
 )
 
 func (r Resource) GatedByAuthMethod() bool {
@@ -39,7 +40,7 @@ func (r Resource) GatedByAuthMethod() bool {
 }
 
 func (r Resource) Conceals() bool {
-	return r == ResourceIssue || r == ResourceTeam || r == ResourceCycle
+	return r == ResourceIssue || r == ResourceTeam || r == ResourceCycle || r == ResourceKnowledge
 }
 
 func (r Resource) NotFound() error {
@@ -50,6 +51,8 @@ func (r Resource) NotFound() error {
 		return ErrTeamNotFound
 	case ResourceCycle:
 		return ErrCycleNotFound
+	case ResourceKnowledge:
+		return ErrKnowledgeNotFound
 	default:
 		return ErrAccountForbidden
 	}
@@ -99,6 +102,8 @@ type Actor struct {
 	AccountID      uuid.UUID
 	AgentID        *uuid.UUID
 	AgentAllowance int
+	AgentScope     AgentScope
+	AgentProjectID *uuid.UUID
 	RunnerID       *uuid.UUID
 	OwnerAccountID uuid.UUID
 	TokenID        *uuid.UUID

@@ -200,14 +200,11 @@ func (s *runnersService) ActorFor(
 		return entity.Actor{}, entity.Runner{}, entity.ErrAgentDisabled
 	}
 
-	actor := held.Authority.Replay(entity.ActorKindAgent, agent.AccountID, "", held.WorkspaceID)
+	actor := agent.Attribute(held.Authority.Replay(entity.ActorKindAgent, agent.AccountID, "", held.WorkspaceID))
 
-	agentID := agent.ID
 	machineID := held.ID
 
-	actor.AgentID = &agentID
 	actor.AgentAllowance = agent.Allowance()
-	actor.OwnerAccountID = agent.OwnerAccountID
 	actor.RunnerID = &machineID
 
 	return actor, held, nil

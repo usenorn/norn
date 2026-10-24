@@ -330,11 +330,8 @@ func (s *apiTokensService) Authenticate(ctx context.Context, value string) (enti
 		return entity.Actor{}, entity.ErrAgentDisabled
 	}
 
-	agentID := agent.ID
-
-	actor.AgentID = &agentID
+	actor = agent.Attribute(actor)
 	actor.AgentAllowance = agent.Allowance()
-	actor.OwnerAccountID = agent.OwnerAccountID
 
 	return actor, nil
 }

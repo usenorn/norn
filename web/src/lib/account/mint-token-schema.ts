@@ -26,6 +26,8 @@ const apiScopes = [
 	"audit_log:read",
 	"roadmap:read",
 	"roadmap:manage",
+	"knowledge:read",
+	"knowledge:manage",
 ] as const satisfies readonly components["schemas"]["APIScope"][];
 
 export const grantSchema = z.object({

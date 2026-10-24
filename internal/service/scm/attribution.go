@@ -38,13 +38,11 @@ func (s *sync) attribute(
 	}
 
 	attributed := decision
-	attributed.Actor = entity.Actor{
-		Kind:           entity.ActorKindAgent,
-		AccountID:      agent.AccountID,
-		AgentID:        &agent.ID,
-		OwnerAccountID: agent.OwnerAccountID,
-		AuthMethod:     decision.Actor.AuthMethod,
-	}
+	attributed.Actor = agent.Attribute(entity.Actor{
+		Kind:       entity.ActorKindAgent,
+		AccountID:  agent.AccountID,
+		AuthMethod: decision.Actor.AuthMethod,
+	})
 
 	return attributed
 }
