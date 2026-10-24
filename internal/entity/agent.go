@@ -190,17 +190,25 @@ func (a Agent) ActingWith(token APIToken, now time.Time) (Actor, error) {
 		Scopes:   AgentAPIScopes(scopes),
 	}
 
-	actor := authority.Replay(ActorKindAgent, a.AccountID, "", a.WorkspaceID)
-	agentID := a.ID
+	actor := a.Attribute(authority.Replay(ActorKindAgent, a.AccountID, "", a.WorkspaceID))
 	tokenID := token.ID
 
 	actor.TokenID = &tokenID
 	actor.TokenName = token.Name
-	actor.AgentID = &agentID
 	actor.AgentAllowance = a.Allowance()
-	actor.OwnerAccountID = a.OwnerAccountID
 
 	return actor, nil
+}
+
+func (a Agent) Attribute(actor Actor) Actor {
+	agentID := a.ID
+
+	actor.AgentID = &agentID
+	actor.OwnerAccountID = a.OwnerAccountID
+	actor.AgentScope = a.Scope.Normalized()
+	actor.AgentProjectID = a.ProjectID
+
+	return actor
 }
 
 func (a Agent) OwnedBy(accountID uuid.UUID) bool {

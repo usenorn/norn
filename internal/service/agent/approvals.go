@@ -332,18 +332,16 @@ func (s *agentsService) apply(
 	proposal entity.AgentProposal,
 	approver uuid.UUID,
 ) error {
-	acting := identity.WithApproval(identity.WithActor(ctx, entity.Actor{
+	acting := identity.WithApproval(identity.WithActor(ctx, agent.Attribute(entity.Actor{
 		Kind:           entity.ActorKindAgent,
 		AccountID:      agent.AccountID,
-		AgentID:        &agent.ID,
 		AgentAllowance: agent.Allowance(),
-		OwnerAccountID: agent.OwnerAccountID,
 		Grants: entity.APITokenGrants{{
 			WorkspaceID: proposal.WorkspaceID,
 			AllTeams:    true,
 		}},
 		Scopes: proposal.Action.Scopes(),
-	}), approver)
+	})), approver)
 
 	switch proposal.Action {
 	case entity.AgentActionComment:

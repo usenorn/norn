@@ -99,6 +99,8 @@ type Actor struct {
 	AccountID      uuid.UUID
 	AgentID        *uuid.UUID
 	AgentAllowance int
+	AgentScope     AgentScope
+	AgentProjectID *uuid.UUID
 	RunnerID       *uuid.UUID
 	OwnerAccountID uuid.UUID
 	TokenID        *uuid.UUID
