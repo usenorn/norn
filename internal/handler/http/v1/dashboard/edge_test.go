@@ -39,6 +39,7 @@ import (
 	issuetemplatesvc "github.com/usenorn/norn/internal/service/issuetemplate"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
+	memorysvc "github.com/usenorn/norn/internal/service/memory"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	previewsvc "github.com/usenorn/norn/internal/service/preview"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
@@ -68,6 +69,7 @@ type edgeServices struct {
 	publicRoadmaps    service.PublicRoadmaps
 	docs              service.Docs
 	docLinks          service.DocLinks
+	memories          service.Memories
 	agents            service.Agents
 	hostedAgents      service.HostedAgents
 	telegramBots      service.TelegramBots
@@ -108,6 +110,10 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 
 	if services.docLinks == nil {
 		services.docLinks = doclinksvc.NewMockDocLinks(ctrl)
+	}
+
+	if services.memories == nil {
+		services.memories = memorysvc.NewMockMemories(ctrl)
 	}
 
 	if services.agents == nil {
@@ -158,6 +164,7 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		services.publicRoadmaps,
 		services.docs,
 		services.docLinks,
+		services.memories,
 		savedviewsvc.NewMockSavedViews(ctrl),
 		triagesvc.NewMockTriages(ctrl),
 		intakesvc.NewMockIntakes(ctrl),
