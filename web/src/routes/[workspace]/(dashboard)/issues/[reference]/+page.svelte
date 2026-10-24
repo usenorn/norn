@@ -107,6 +107,7 @@
 	import type { CreationOutcome } from "$lib/issues/creating";
 	import type { NewIssuePrefill } from "$lib/issues/new-issue-schema";
 	import IssueRelations from "$lib/issues/issue-relations.svelte";
+	import LinkedDocs from "$lib/docs/linked-docs.svelte";
 	import CommentThreadView from "$lib/comments/comment-thread.svelte";
 	import {
 		actorLabel,
@@ -1441,6 +1442,9 @@
 
 	const showChildren = $derived((ready?.children.length ?? 0) > 0);
 	const showLinks = $derived((ready?.relations.length ?? 0) > 0 || linking);
+	const showDocs = $derived(
+		ready?.docs.kind === "unavailable" || (ready?.docs.kind === "ready" && ready.docs.docs.length > 0)
+	);
 	const showAttachments = $derived(
 		attachments.kind === "ready" ||
 			attachments.kind === "unavailable" ||
@@ -2667,6 +2671,15 @@
 								onadd={addRelation}
 								onremove={removeRelation}
 							/>
+						</section>
+					{/if}
+
+					{#if showDocs}
+						<section class="flex flex-col gap-1.5">
+							<h2>
+								<Eyebrow rule class="text-ink-600">Docs</Eyebrow>
+							</h2>
+							<LinkedDocs docs={ready.docs} workspace={data.workspace.slug} projects={ready.projects} />
 						</section>
 					{/if}
 

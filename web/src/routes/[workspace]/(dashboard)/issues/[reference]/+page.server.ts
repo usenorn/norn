@@ -20,6 +20,8 @@ import type {
 	MirrorConflict,
 } from "$lib/source-control/source-control";
 import type { WorkflowState } from "$lib/team/states";
+import { readIssueDocs } from "$lib/docs/docs.server";
+import type { LinkedDocs } from "$lib/docs/docs";
 import type { PageServerLoad } from "./$types";
 
 export type Member = components["schemas"]["Membership"];
@@ -60,6 +62,7 @@ export type IssueDetail =
 			right: DecisionRight;
 			mirrorConflicts: MirrorConflict[];
 			shipping: IssueShipping;
+			docs: LinkedDocs;
 	  }
 	| { kind: "unavailable" };
 
@@ -122,6 +125,7 @@ export const load: PageServerLoad = async ({
 		runs,
 		changeset,
 		right,
+		docs,
 	] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/teams/{teamId}/states", {
 			params: { path: { workspaceId: workspace.id, teamId: issue.data.teamId } },
@@ -168,6 +172,7 @@ export const load: PageServerLoad = async ({
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/executions", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues/{issueId}/changeset", { params: { path } }),
 		readDecisionRight(locals.api, workspace.id, path.issueId),
+		readIssueDocs(locals.api, workspace.id, path.issueId),
 	]);
 
 	if (
@@ -212,6 +217,7 @@ export const load: PageServerLoad = async ({
 			right,
 			mirrorConflicts: mirrorConflicts.data ?? [],
 			shipping: shipping.data ?? { releases: [], deployments: [] },
+			docs,
 		},
 	};
 };
