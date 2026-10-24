@@ -15,7 +15,8 @@
 		disabled?: boolean;
 	} = $props();
 
-	const { form: formData } = $derived(form);
+	// svelte-ignore state_referenced_locally
+	const { form: formData } = form;
 
 	const visibility = "visibility" as FormPath<T>;
 	const projectId = "projectId" as FormPath<T>;
