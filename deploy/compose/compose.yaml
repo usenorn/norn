@@ -25,7 +25,7 @@ x-norn-service: &norn-service
 
 services:
   postgres:
-    image: postgres:18.4-alpine
+    image: pgvector/pgvector:0.8.7-pg18-trixie
     restart: unless-stopped
     environment:
       POSTGRES_USER: norn
