@@ -25,11 +25,12 @@ type teamRulesDTO struct {
 }
 
 type whoamiOutput struct {
-	Kind     string         `json:"kind"`
-	Name     string         `json:"name,omitempty"`
-	Scopes   []string       `json:"scopes"`
-	Teams    []teamRulesDTO `json:"teams,omitempty"`
-	Reminder string         `json:"reminder"`
+	Kind          string         `json:"kind"`
+	Name          string         `json:"name,omitempty"`
+	Scopes        []string       `json:"scopes"`
+	Teams         []teamRulesDTO `json:"teams,omitempty"`
+	HoldDocWrites string         `json:"holdDocWrites,omitempty"`
+	Reminder      string         `json:"reminder"`
 }
 
 const whoamiReminder = "A held write is not an error and not a reason to retry: Norn records it " +
@@ -66,6 +67,10 @@ func (t *toolset) whoami(
 
 	if actor.Kind == entity.ActorKindAgent {
 		output.Name = t.agentName(ctx, workspace.ID, actor)
+	}
+
+	if settings, err := t.agents.WorkspaceSettings(ctx, workspace.ID); err == nil {
+		output.HoldDocWrites = string(settings.Holds(entity.AgentActionDocEdit))
 	}
 
 	teams, err := t.teams.List(ctx, workspace.ID, entity.TeamStatusActive)

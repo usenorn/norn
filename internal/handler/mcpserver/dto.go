@@ -437,3 +437,60 @@ func relationDTOsFrom(groups []entity.IssueRelationGroup) []relationDTO {
 
 	return dtos
 }
+
+type docAudienceDTO struct {
+	Visibility string `json:"visibility"`
+	ProjectID  string `json:"projectId,omitempty"`
+}
+
+type docSummaryDTO struct {
+	ID         string         `json:"id"`
+	Title      string         `json:"title"`
+	ParentID   string         `json:"parentId,omitempty"`
+	Audience   docAudienceDTO `json:"audience"`
+	AuthorID   string         `json:"authorId,omitempty"`
+	AuthorName string         `json:"authorName,omitempty"`
+	Status     string         `json:"status"`
+	Version    int            `json:"version"`
+	UpdatedAt  string         `json:"updatedAt"`
+}
+
+type docDTO struct {
+	docSummaryDTO
+	Markdown string `json:"markdown"`
+}
+
+type docMatchDTO struct {
+	docSummaryDTO
+	Excerpt string `json:"excerpt"`
+}
+
+func docSummaryDTOFrom(summary entity.DocSummary) docSummaryDTO {
+	dto := docSummaryDTO{
+		ID:         summary.ID.String(),
+		Title:      summary.Title,
+		Audience:   docAudienceDTO{Visibility: string(summary.Audience.Visibility)},
+		AuthorName: summary.AuthorName,
+		Status:     string(summary.Status),
+		Version:    summary.Version,
+		UpdatedAt:  summary.UpdatedAt.Format(time.RFC3339),
+	}
+
+	if summary.ParentID != nil {
+		dto.ParentID = summary.ParentID.String()
+	}
+
+	if summary.Audience.Visibility == entity.KnowledgeVisibilityProject {
+		dto.Audience.ProjectID = summary.Audience.ProjectID.String()
+	}
+
+	if summary.AuthorID != uuid.Nil {
+		dto.AuthorID = summary.AuthorID.String()
+	}
+
+	return dto
+}
+
+func docDTOFrom(doc entity.Doc) docDTO {
+	return docDTO{docSummaryDTO: docSummaryDTOFrom(doc.DocSummary), Markdown: doc.Markdown}
+}

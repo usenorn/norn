@@ -584,7 +584,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	skillSource := skillsource.New(toolingclientClient)
 	mcpRegistry := mcpregistry.New(toolingclientClient)
 	agentCapabilities := agentcapability.New(repositoryAgent, agentSkill, agentMCPServer, agentMCPConnection, agentMCPOAuthState, skillSource, mcpRegistry, mcpAuthorizer, repositoryBlob, serviceAuthorizer, serviceAudit, postgresClient, instance)
-	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl)
+	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs)
 	if err != nil {
 		cleanup8()
 		cleanup7()
@@ -1032,7 +1032,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	agents := agent2.New(repositoryAgent, agentSetting, workspaceAgentSetting, agentProposal, repositoryAccount, repositoryMembership, repositoryProject, projectMember, apiToken, repositoryTeam, repositoryActivity, workflowState, issues, issueComments, docs, issueQuestion, serviceAuthorizer, client, serviceAudit)
 	repositorySearch := search.New(client)
 	searches := search2.New(repositorySearch, repositoryIssue, serviceAuthorizer, client)
-	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, serviceCycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl)
+	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, serviceCycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs)
 	if err != nil {
 		cleanup8()
 		cleanup7()

@@ -132,6 +132,32 @@ var disclosedFailures = []disclosure{
 		entity.ErrIssueRelationNotFound, "relation_not_found",
 		"the two issues are not related; norn_get_issue lists the relations an issue has",
 	},
+	{
+		entity.ErrDocNotFound, "doc_not_found",
+		"doc not found; norn_search_docs and norn_list_docs find the docs this connection may read",
+	},
+	{entity.ErrDocArchived, "doc_archived", "the doc is archived and takes no more edits"},
+	{
+		entity.ErrDocStale, "version_conflict",
+		"the doc changed since it was read; call norn_get_doc, apply the edit to what it says " +
+			"now, and retry with its version",
+	},
+	{entity.ErrDocParentCycle, "doc_parent_cycle", "a doc cannot sit beneath itself"},
+	{entity.ErrDocTreeTooDeep, "doc_tree_too_deep", "docs nest no deeper than ten levels"},
+	{entity.ErrDocCursorInvalid, "invalid_cursor", "the cursor is not one norn_list_docs returned"},
+	{
+		entity.ErrDocSectionNotFound, "section_not_found",
+		"no heading in the doc reads exactly like that; call norn_get_doc and name a heading as written",
+	},
+	{
+		entity.ErrDocSectionAmbiguous, "section_ambiguous",
+		"more than one heading in the doc reads like that; replace the whole body instead",
+	},
+	{
+		entity.ErrKnowledgeNotEditable, "permission_denied",
+		"this connection may read the doc but not change it; its author, its contributors and " +
+			"the people who maintain its project or workspace may",
+	},
 	{errWorkspaceUnknown, "workspace_not_found", errWorkspaceUnknown.Error()},
 }
 
@@ -173,6 +199,16 @@ func toolFailure(ctx context.Context, err error) error {
 				"expected_version=%d (conflicting fields: %s)",
 			stale.Version,
 			strings.Join(stale.Conflicts, ", "),
+		))
+	}
+
+	var staleDoc entity.DocStaleError
+	if errors.As(err, &staleDoc) {
+		return refusal("version_conflict", fmt.Sprintf(
+			"the doc changed since it was read and is now at version %d; call norn_get_doc, "+
+				"apply the edit to what it says now, and retry with expected_version=%d",
+			staleDoc.Version,
+			staleDoc.Version,
 		))
 	}
 
