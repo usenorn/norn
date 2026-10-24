@@ -96,11 +96,24 @@ type DocMatch struct {
 	Excerpt string
 }
 
+type DocViewer struct {
+	Edits    bool
+	Reshares bool
+}
+
 type Doc struct {
 	DocSummary
 	Content        Document
 	Markdown       string
 	ContributorIDs []uuid.UUID
+	Viewer         DocViewer
+}
+
+func (d Doc) ViewedBy(reader KnowledgeReader) Doc {
+	access := d.Access()
+	d.Viewer = DocViewer{Edits: reader.Edits(access), Reshares: reader.Reshares(access)}
+
+	return d
 }
 
 func (s DocSummary) Access() KnowledgeAccess {

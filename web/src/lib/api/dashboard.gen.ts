@@ -7603,6 +7603,11 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        /** @description What the caller may do with this doc under the permission model. */
+        DocViewer: {
+            canEdit: boolean;
+            canShare: boolean;
+        };
         Doc: {
             /** Format: uuid */
             id: string;
@@ -7625,6 +7630,7 @@ export interface components {
             markdown: string;
             content: components["schemas"]["Document"];
             contributorIds: string[];
+            viewer: components["schemas"]["DocViewer"];
         };
         DocPage: {
             docs: components["schemas"]["DocSummary"][];

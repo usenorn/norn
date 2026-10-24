@@ -219,6 +219,10 @@ func (r KnowledgeReader) Edits(access KnowledgeAccess) bool {
 	return access.AuthoredBy(principal) || access.ContributedBy(principal) || r.Maintains(access)
 }
 
+func (r KnowledgeReader) Reshares(access KnowledgeAccess) bool {
+	return r.Edits(access) && (access.AuthoredBy(r.Identity.Principal) || r.Maintains(access))
+}
+
 func (r KnowledgeReader) Read(access KnowledgeAccess) error {
 	if !r.Sees(access) {
 		return ErrKnowledgeNotFound
@@ -271,7 +275,7 @@ func (r KnowledgeReader) Reshare(access KnowledgeAccess, to KnowledgeAudience) e
 		return err
 	}
 
-	if !access.AuthoredBy(r.Identity.Principal) && !r.Maintains(access) {
+	if !r.Reshares(access) {
 		return ErrKnowledgeNotShareable
 	}
 

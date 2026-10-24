@@ -937,3 +937,49 @@ func TestAPersonsDocWriteIsNeverHeld(t *testing.T) {
 		t.Fatalf("a person's edit got %v with %d proposals", err, len(h.proposed))
 	}
 }
+
+func TestADocTellsWhoIsReadingItWhetherTheyMayEditOrReshareIt(t *testing.T) {
+	h := newHarness(t)
+	created := h.create(t, "Runbook", entity.WorkspaceAudience(), nil)
+
+	if created.Viewer != (entity.DocViewer{Edits: true, Reshares: true}) {
+		t.Fatalf("the author's freshly created doc reads as %+v", created.Viewer)
+	}
+
+	cases := []struct {
+		name string
+		role entity.MembershipRole
+		want entity.DocViewer
+	}{
+		{name: "an admin", role: entity.MembershipRoleAdmin, want: entity.DocViewer{Edits: true, Reshares: true}},
+		{name: "a member who never wrote it", role: entity.MembershipRoleMember},
+		{name: "a viewer", role: entity.MembershipRoleViewer},
+	}
+
+	for _, tc := range cases {
+		h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, tc.role)
+
+		doc, err := h.service.Get(context.Background(), h.workspaceID, created.ID)
+		if err != nil {
+			t.Fatalf("%s reading the doc: %v", tc.name, err)
+		}
+
+		if doc.Viewer != tc.want {
+			t.Errorf("%s reads the doc as %+v, want %+v", tc.name, doc.Viewer, tc.want)
+		}
+	}
+
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, entity.MembershipRoleAdmin)
+
+	narrowed, err := h.service.Reshare(context.Background(), h.workspaceID, created.ID, service.ReshareDocInput{
+		ExpectedVersion: 1,
+		Audience:        entity.ProjectAudience(h.projectID),
+	})
+	if err != nil {
+		t.Fatalf("an admin narrowing the doc to the project: %v", err)
+	}
+
+	if narrowed.Viewer != (entity.DocViewer{Edits: true, Reshares: true}) {
+		t.Fatalf("the reshared doc reads as %+v for the admin who reshared it", narrowed.Viewer)
+	}
+}

@@ -11892,9 +11892,17 @@ components:
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
+    DocViewer:
+      type: object
+      description: What the caller may do with this doc under the permission model.
+      required: [canEdit, canShare]
+      properties:
+        canEdit: { type: boolean }
+        canShare: { type: boolean }
+
     Doc:
       type: object
-      required: [id, title, audience, status, version, createdAt, updatedAt, markdown, content, contributorIds]
+      required: [id, title, audience, status, version, createdAt, updatedAt, markdown, content, contributorIds, viewer]
       properties:
         id: { type: string, format: uuid }
         parentId: { type: string, format: uuid }
@@ -11912,6 +11920,7 @@ components:
         contributorIds:
           type: array
           items: { type: string, format: uuid }
+        viewer: { $ref: '#/components/schemas/DocViewer' }
 
     DocPage:
       type: object
