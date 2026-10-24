@@ -17,19 +17,22 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 
 	depends(keys.doc(params.docId));
 
-	const forms = {
-		archiveForm: await superValidate<ArchiveForm, DocFailure>(zod4(archiveDocSchema), { id: archiveFormId }),
-	};
+	const emptyForm = await superValidate<ArchiveForm, DocFailure>(zod4(archiveDocSchema), { id: archiveFormId });
 
 	if (import.meta.env.DEV && docPreviewStates[url.searchParams.get("state") ?? ""]) {
-		return { detail: { kind: "loading" } as DocDetail, ...forms };
+		return { detail: { kind: "loading" } as DocDetail, archiveForm: emptyForm };
 	}
 
 	const read = await readDoc(locals.api, workspace.id, params.docId);
 
-	if (read.kind !== "ready") return { detail: read as DocDetail, ...forms };
+	if (read.kind !== "ready") return { detail: read as DocDetail, archiveForm: emptyForm };
 
 	const { doc } = read;
+	const archiveForm = await superValidate<ArchiveForm, DocFailure>(
+		{ expectedVersion: doc.version },
+		zod4(archiveDocSchema),
+		{ id: archiveFormId, errors: false }
+	);
 
 	const [revisions, readers] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/docs/{docId}/revisions", {
@@ -46,7 +49,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 
 	const detail: DocDetail = { kind: "ready", doc, latest, agents, readers };
 
-	return { detail, ...forms };
+	return { detail, archiveForm };
 };
 
 export const actions: Actions = {

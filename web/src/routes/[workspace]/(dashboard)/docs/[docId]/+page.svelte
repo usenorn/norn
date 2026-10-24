@@ -8,7 +8,7 @@
 	import Pencil from "@lucide/svelte/icons/pencil";
 	import Plus from "@lucide/svelte/icons/plus";
 	import Users from "@lucide/svelte/icons/users";
-	import { invalidate } from "$app/navigation";
+	import { afterNavigate, invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
@@ -63,6 +63,12 @@
 	let moving = $state(false);
 	let moveOpen = $state(false);
 
+	afterNavigate(() => {
+		sharing = false;
+		archiving = false;
+		moveOpen = false;
+	});
+
 	// svelte-ignore state_referenced_locally
 	const archive = superForm(data.archiveForm, {
 		id: archiveFormId,
@@ -70,7 +76,13 @@
 		resetForm: false,
 	});
 
-	const { enhance: archiveEnhance, message: archiveMessage, submitting: archiveSubmitting } = archive;
+	const {
+		form: archiveData,
+		enhance: archiveEnhance,
+		message: archiveMessage,
+		submitting: archiveSubmitting,
+	} = archive;
+
 
 	const homes = $derived.by((): PickerOption[] => {
 		if (!doc) return [];
@@ -300,7 +312,7 @@
 			{/if}
 			<form method="POST" action="?/archive" use:archiveEnhance>
 				<input type="hidden" name="workspaceId" value={data.workspace.id} />
-				<input type="hidden" name="expectedVersion" value={doc.version} />
+				<input type="hidden" name="expectedVersion" value={$archiveData.expectedVersion} />
 				<AlertDialog.Footer>
 					<AlertDialog.Cancel type="button" disabled={$archiveSubmitting}>Cancel</AlertDialog.Cancel>
 					<Button type="submit" variant="destructive" disabled={$archiveSubmitting}>

@@ -25,15 +25,15 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 
 	depends(keys.doc(params.docId));
 
-	const restoreForm = await superValidate<RestoreForm, DocFailure>(zod4(restoreDocSchema), { id: restoreFormId });
+	const emptyForm = await superValidate<RestoreForm, DocFailure>(zod4(restoreDocSchema), { id: restoreFormId });
 
 	if (import.meta.env.DEV && docHistoryPreviewStates[url.searchParams.get("state") ?? ""]) {
-		return { history: { kind: "loading" } as DocHistory, restoreForm };
+		return { history: { kind: "loading" } as DocHistory, restoreForm: emptyForm };
 	}
 
 	const read = await readDoc(locals.api, workspace.id, params.docId);
 
-	if (read.kind !== "ready") return { history: read as DocHistory, restoreForm };
+	if (read.kind !== "ready") return { history: read as DocHistory, restoreForm: emptyForm };
 
 	const path = { workspaceId: workspace.id, docId: read.doc.id };
 	const cursor = url.searchParams.get("cursor") ?? undefined;
@@ -42,7 +42,9 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 		params: { path, query: { limit: docRevisionPageSize, cursor } },
 	});
 
-	if (listed.error || !listed.data) return { history: { kind: "unavailable" } as DocHistory, restoreForm };
+	if (listed.error || !listed.data) {
+		return { history: { kind: "unavailable" } as DocHistory, restoreForm: emptyForm };
+	}
 
 	const { revisions, nextCursor } = listed.data;
 	const wanted = url.searchParams.get("revision");
@@ -60,6 +62,13 @@ export const load: PageServerLoad = async ({ depends, route, locals, params, par
 	]);
 
 	const history: DocHistory = { kind: "ready", doc: read.doc, revisions, nextCursor, agents, chosen };
+	const restoreForm = summary
+		? await superValidate<RestoreForm, DocFailure>(
+				{ revisionId: summary.id, expectedVersion: read.doc.version },
+				zod4(restoreDocSchema),
+				{ id: restoreFormId, errors: false }
+			)
+		: emptyForm;
 
 	return { history, restoreForm };
 };

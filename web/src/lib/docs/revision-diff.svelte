@@ -2,11 +2,13 @@
 	import { diffCodeTones, diffGutterTones, diffMarks } from "$lib/executions/diff";
 	import type { RevisionDiff } from "./diff";
 
-	let { diff }: { diff: RevisionDiff } = $props();
+	let { diff, first = false }: { diff: RevisionDiff; first?: boolean } = $props();
 </script>
 
 {#if diff.additions + diff.deletions === 0}
-	<p class="px-3 py-3 text-xs text-muted-foreground">The text did not change in this version.</p>
+	<p class="px-3 py-3 text-xs text-muted-foreground">
+		{first ? "Nothing was written in this version." : "The text did not change in this version."}
+	</p>
 {:else}
 	<div class="flex flex-col">
 		<p class="flex items-center gap-2 border-b border-line-subtle px-3 py-1.5 font-mono text-2xs">

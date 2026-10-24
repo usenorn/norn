@@ -55,7 +55,7 @@
 		resetForm: false,
 	});
 
-	const { enhance, message, submitting } = restore;
+	const { form: restoreData, enhance, message, submitting } = restore;
 
 	const failure = $derived(preview?.failure ?? $message);
 	const restoring = $derived(preview?.restoring ?? $submitting);
@@ -210,15 +210,15 @@
 									/>
 								</div>
 							{:else}
-								<RevisionDiff {diff} />
+								<RevisionDiff {diff} first={!chosen.before} />
 							{/if}
 						</div>
 
 						{#if restorable}
 							<form method="POST" use:enhance>
 								<input type="hidden" name="workspaceId" value={data.workspace.id} />
-								<input type="hidden" name="revisionId" value={chosen.revision.id} />
-								<input type="hidden" name="expectedVersion" value={doc.version} />
+								<input type="hidden" name="revisionId" value={$restoreData.revisionId} />
+								<input type="hidden" name="expectedVersion" value={$restoreData.expectedVersion} />
 								<Button type="submit" size="sm" disabled={restoring}>
 									<RotateCcw aria-hidden="true" />
 									{restoring ? "Putting it back" : "Put this version back"}
