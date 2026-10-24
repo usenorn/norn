@@ -2,6 +2,7 @@ package aiprovider_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -35,12 +36,14 @@ type harness struct {
 	audit       *auditsvc.MockAudit
 	service     service.AIProviders
 
-	roles   map[uuid.UUID]entity.MembershipRole
-	store   map[uuid.UUID]stored
-	offered map[string][]string
-	listed  []entity.AIProviderEndpoint
-	probed  []probe
-	audited []entity.AuditEntry
+	roles    map[uuid.UUID]entity.MembershipRole
+	store    map[uuid.UUID]stored
+	offered  map[string][]string
+	embedder map[string][]string
+	listed   []entity.AIProviderEndpoint
+	probed   []probe
+	embedded []string
+	audited  []entity.AuditEntry
 }
 
 func newHarness(t *testing.T) *harness {
@@ -56,6 +59,7 @@ func newHarness(t *testing.T) *harness {
 		roles:       map[uuid.UUID]entity.MembershipRole{},
 		store:       map[uuid.UUID]stored{},
 		offered:     map[string][]string{},
+		embedder:    map[string][]string{},
 	}
 
 	h.authorizer.EXPECT().
@@ -120,6 +124,7 @@ func newHarness(t *testing.T) *harness {
 			row.connection.Provider = connection.Provider
 			row.connection.Endpoint = connection.Endpoint
 			row.connection.DefaultModel = connection.DefaultModel
+			row.connection.EmbeddingModel = connection.EmbeddingModel
 			row.connection.VerifiedAt, row.connection.FailedAt, row.connection.Failure = nil, nil, ""
 			h.store[connection.WorkspaceID] = row
 
@@ -162,15 +167,37 @@ func newHarness(t *testing.T) *harness {
 
 	h.models.EXPECT().
 		List(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, endpoint entity.AIProviderEndpoint, apiKey string) ([]string, error) {
+		DoAndReturn(func(
+			_ context.Context, endpoint entity.AIProviderEndpoint, apiKey string,
+		) (entity.AIProviderModels, error) {
 			h.listed = append(h.listed, endpoint)
 
 			models, known := h.offered[apiKey]
 			if !known {
-				return nil, entity.ErrAIProviderKeyRejected
+				return entity.AIProviderModels{}, entity.ErrAIProviderKeyRejected
 			}
 
-			return models, nil
+			return entity.AIProviderModels{Text: models, Embedding: h.embedder[apiKey]}, nil
+		}).
+		AnyTimes()
+
+	h.models.EXPECT().
+		Embed(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context, _ entity.AIProviderEndpoint, apiKey, model string, inputs []string,
+		) ([][]float32, error) {
+			h.embedded = append(h.embedded, model)
+
+			if !slices.Contains(h.embedder[apiKey], model) {
+				return nil, entity.ErrAIProviderModelUnavailable
+			}
+
+			vectors := make([][]float32, len(inputs))
+			for i := range vectors {
+				vectors[i] = []float32{1}
+			}
+
+			return vectors, nil
 		}).
 		AnyTimes()
 

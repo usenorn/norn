@@ -818,18 +818,21 @@ func (e AgentUnusableProblemCode) Valid() bool {
 
 // Defines values for AiProviderFailure.
 const (
-	AiProviderDestinationRefused AiProviderFailure = "destination_refused"
-	AiProviderKeyRejected        AiProviderFailure = "key_rejected"
-	AiProviderModelUnavailable   AiProviderFailure = "model_unavailable"
-	AiProviderQuotaExceeded      AiProviderFailure = "quota_exceeded"
-	AiProviderRateLimited        AiProviderFailure = "rate_limited"
-	AiProviderUnreachable        AiProviderFailure = "unreachable"
+	AiProviderDestinationRefused        AiProviderFailure = "destination_refused"
+	AiProviderEmbeddingModelUnavailable AiProviderFailure = "embedding_model_unavailable"
+	AiProviderKeyRejected               AiProviderFailure = "key_rejected"
+	AiProviderModelUnavailable          AiProviderFailure = "model_unavailable"
+	AiProviderQuotaExceeded             AiProviderFailure = "quota_exceeded"
+	AiProviderRateLimited               AiProviderFailure = "rate_limited"
+	AiProviderUnreachable               AiProviderFailure = "unreachable"
 )
 
 // Valid indicates whether the value is a known member of the AiProviderFailure enum.
 func (e AiProviderFailure) Valid() bool {
 	switch e {
 	case AiProviderDestinationRefused:
+		return true
+	case AiProviderEmbeddingModelUnavailable:
 		return true
 	case AiProviderKeyRejected:
 		return true
@@ -920,81 +923,82 @@ func (e AttachmentStatus) Valid() bool {
 
 // Defines values for AuditAction.
 const (
-	AuditActionAccessDenied                 AuditAction = "access.denied"
-	AuditActionAccountDeactivated           AuditAction = "account.deactivated"
-	AuditActionAccountDeleted               AuditAction = "account.deleted"
-	AuditActionAccountEmailChanged          AuditAction = "account.email_changed"
-	AuditActionAccountPasswordChanged       AuditAction = "account.password_changed"
-	AuditActionAccountPasswordReset         AuditAction = "account.password_reset"
-	AuditActionAgentCapabilityAttached      AuditAction = "agent.capability_attached"
-	AuditActionAgentCapabilityDetached      AuditAction = "agent.capability_detached"
-	AuditActionAgentDisabled                AuditAction = "agent.disabled"
-	AuditActionAgentEnabled                 AuditAction = "agent.enabled"
-	AuditActionAgentExecutionChanged        AuditAction = "agent.execution_changed"
-	AuditActionAgentInstructionsChanged     AuditAction = "agent.instructions_changed"
-	AuditActionAgentMcpConnected            AuditAction = "agent.mcp_connected"
-	AuditActionAgentMcpDisconnected         AuditAction = "agent.mcp_disconnected"
-	AuditActionAgentMcpServerAdded          AuditAction = "agent.mcp_server_added"
-	AuditActionAgentMcpServerRemoved        AuditAction = "agent.mcp_server_removed"
-	AuditActionAgentMcpServerUpdated        AuditAction = "agent.mcp_server_updated"
-	AuditActionAgentProposalDecided         AuditAction = "agent.proposal_decided"
-	AuditActionAgentRegistered              AuditAction = "agent.registered"
-	AuditActionAgentScopeChanged            AuditAction = "agent.scope_changed"
-	AuditActionAgentSkillAdded              AuditAction = "agent.skill_added"
-	AuditActionAgentSkillRemoved            AuditAction = "agent.skill_removed"
-	AuditActionAgentSkillUpdated            AuditAction = "agent.skill_updated"
-	AuditActionAgentTelegramConnected       AuditAction = "agent.telegram_connected"
-	AuditActionAgentTelegramDisconnected    AuditAction = "agent.telegram_disconnected"
-	AuditActionAgentTelegramGroupBound      AuditAction = "agent.telegram_group_bound"
-	AuditActionAgentTelegramGroupUnbound    AuditAction = "agent.telegram_group_unbound"
-	AuditActionAiProviderConfigured         AuditAction = "ai_provider.configured"
-	AuditActionAiProviderEndpointChanged    AuditAction = "ai_provider.endpoint_changed"
-	AuditActionAiProviderKeyReplaced        AuditAction = "ai_provider.key_replaced"
-	AuditActionAiProviderModelChanged       AuditAction = "ai_provider.model_changed"
-	AuditActionAiProviderRemoved            AuditAction = "ai_provider.removed"
-	AuditActionAuditExported                AuditAction = "audit.exported"
-	AuditActionCodebaseConnected            AuditAction = "codebase.connected"
-	AuditActionCodebaseDisconnected         AuditAction = "codebase.disconnected"
-	AuditActionDirectoryConnected           AuditAction = "directory.connected"
-	AuditActionDirectoryDisconnected        AuditAction = "directory.disconnected"
-	AuditActionDirectoryTokenRotated        AuditAction = "directory.token_rotated"
-	AuditActionInvitationAccepted           AuditAction = "invitation.accepted"
-	AuditActionInvitationCreated            AuditAction = "invitation.created"
-	AuditActionInvitationRevoked            AuditAction = "invitation.revoked"
-	AuditActionMembershipAdded              AuditAction = "membership.added"
-	AuditActionMembershipAuditAccessChanged AuditAction = "membership.audit_access_changed"
-	AuditActionMembershipRemoved            AuditAction = "membership.removed"
-	AuditActionMembershipRoleChanged        AuditAction = "membership.role_changed"
-	AuditActionRoadmapEntryRemoved          AuditAction = "roadmap.entry_removed"
-	AuditActionRoadmapPublished             AuditAction = "roadmap.published"
-	AuditActionRoadmapUnpublished           AuditAction = "roadmap.unpublished"
-	AuditActionRunnerEnrolled               AuditAction = "runner.enrolled"
-	AuditActionRunnerRevoked                AuditAction = "runner.revoked"
-	AuditActionSessionRevoked               AuditAction = "session.revoked"
-	AuditActionSessionSignInCodeSent        AuditAction = "session.sign_in_code_sent"
-	AuditActionSessionSignInFailed          AuditAction = "session.sign_in_failed"
-	AuditActionSessionSignedIn              AuditAction = "session.signed_in"
-	AuditActionSessionSignedOut             AuditAction = "session.signed_out"
-	AuditActionSsoAccountOpened             AuditAction = "sso.account_opened"
-	AuditActionSsoConnectionRemoved         AuditAction = "sso.connection_removed"
-	AuditActionSsoConnectionSaved           AuditAction = "sso.connection_saved"
-	AuditActionSsoEnforcementChanged        AuditAction = "sso.enforcement_changed"
-	AuditActionSsoIdentityLinked            AuditAction = "sso.identity_linked"
-	AuditActionSsoIdentityRefused           AuditAction = "sso.identity_refused"
-	AuditActionSsoIdentityUnlinked          AuditAction = "sso.identity_unlinked"
-	AuditActionSsoRecoveryCodeRedeemed      AuditAction = "sso.recovery_code_redeemed"
-	AuditActionSsoRecoveryCodesIssued       AuditAction = "sso.recovery_codes_issued"
-	AuditActionTeamMembershipAdded          AuditAction = "team_membership.added"
-	AuditActionTeamMembershipRemoved        AuditAction = "team_membership.removed"
-	AuditActionTokenMinted                  AuditAction = "token.minted"
-	AuditActionTokenRevoked                 AuditAction = "token.revoked"
-	AuditActionWebhookDisabled              AuditAction = "webhook.disabled"
-	AuditActionWebhookRegistered            AuditAction = "webhook.registered"
-	AuditActionWebhookRemoved               AuditAction = "webhook.removed"
-	AuditActionWorkspaceDeletionRequested   AuditAction = "workspace.deletion_requested"
-	AuditActionWorkspacePurged              AuditAction = "workspace.purged"
-	AuditActionWorkspaceRestored            AuditAction = "workspace.restored"
-	AuditActionWorkspaceUpdated             AuditAction = "workspace.updated"
+	AuditActionAccessDenied                    AuditAction = "access.denied"
+	AuditActionAccountDeactivated              AuditAction = "account.deactivated"
+	AuditActionAccountDeleted                  AuditAction = "account.deleted"
+	AuditActionAccountEmailChanged             AuditAction = "account.email_changed"
+	AuditActionAccountPasswordChanged          AuditAction = "account.password_changed"
+	AuditActionAccountPasswordReset            AuditAction = "account.password_reset"
+	AuditActionAgentCapabilityAttached         AuditAction = "agent.capability_attached"
+	AuditActionAgentCapabilityDetached         AuditAction = "agent.capability_detached"
+	AuditActionAgentDisabled                   AuditAction = "agent.disabled"
+	AuditActionAgentEnabled                    AuditAction = "agent.enabled"
+	AuditActionAgentExecutionChanged           AuditAction = "agent.execution_changed"
+	AuditActionAgentInstructionsChanged        AuditAction = "agent.instructions_changed"
+	AuditActionAgentMcpConnected               AuditAction = "agent.mcp_connected"
+	AuditActionAgentMcpDisconnected            AuditAction = "agent.mcp_disconnected"
+	AuditActionAgentMcpServerAdded             AuditAction = "agent.mcp_server_added"
+	AuditActionAgentMcpServerRemoved           AuditAction = "agent.mcp_server_removed"
+	AuditActionAgentMcpServerUpdated           AuditAction = "agent.mcp_server_updated"
+	AuditActionAgentProposalDecided            AuditAction = "agent.proposal_decided"
+	AuditActionAgentRegistered                 AuditAction = "agent.registered"
+	AuditActionAgentScopeChanged               AuditAction = "agent.scope_changed"
+	AuditActionAgentSkillAdded                 AuditAction = "agent.skill_added"
+	AuditActionAgentSkillRemoved               AuditAction = "agent.skill_removed"
+	AuditActionAgentSkillUpdated               AuditAction = "agent.skill_updated"
+	AuditActionAgentTelegramConnected          AuditAction = "agent.telegram_connected"
+	AuditActionAgentTelegramDisconnected       AuditAction = "agent.telegram_disconnected"
+	AuditActionAgentTelegramGroupBound         AuditAction = "agent.telegram_group_bound"
+	AuditActionAgentTelegramGroupUnbound       AuditAction = "agent.telegram_group_unbound"
+	AuditActionAiProviderConfigured            AuditAction = "ai_provider.configured"
+	AuditActionAiProviderEmbeddingModelChanged AuditAction = "ai_provider.embedding_model_changed"
+	AuditActionAiProviderEndpointChanged       AuditAction = "ai_provider.endpoint_changed"
+	AuditActionAiProviderKeyReplaced           AuditAction = "ai_provider.key_replaced"
+	AuditActionAiProviderModelChanged          AuditAction = "ai_provider.model_changed"
+	AuditActionAiProviderRemoved               AuditAction = "ai_provider.removed"
+	AuditActionAuditExported                   AuditAction = "audit.exported"
+	AuditActionCodebaseConnected               AuditAction = "codebase.connected"
+	AuditActionCodebaseDisconnected            AuditAction = "codebase.disconnected"
+	AuditActionDirectoryConnected              AuditAction = "directory.connected"
+	AuditActionDirectoryDisconnected           AuditAction = "directory.disconnected"
+	AuditActionDirectoryTokenRotated           AuditAction = "directory.token_rotated"
+	AuditActionInvitationAccepted              AuditAction = "invitation.accepted"
+	AuditActionInvitationCreated               AuditAction = "invitation.created"
+	AuditActionInvitationRevoked               AuditAction = "invitation.revoked"
+	AuditActionMembershipAdded                 AuditAction = "membership.added"
+	AuditActionMembershipAuditAccessChanged    AuditAction = "membership.audit_access_changed"
+	AuditActionMembershipRemoved               AuditAction = "membership.removed"
+	AuditActionMembershipRoleChanged           AuditAction = "membership.role_changed"
+	AuditActionRoadmapEntryRemoved             AuditAction = "roadmap.entry_removed"
+	AuditActionRoadmapPublished                AuditAction = "roadmap.published"
+	AuditActionRoadmapUnpublished              AuditAction = "roadmap.unpublished"
+	AuditActionRunnerEnrolled                  AuditAction = "runner.enrolled"
+	AuditActionRunnerRevoked                   AuditAction = "runner.revoked"
+	AuditActionSessionRevoked                  AuditAction = "session.revoked"
+	AuditActionSessionSignInCodeSent           AuditAction = "session.sign_in_code_sent"
+	AuditActionSessionSignInFailed             AuditAction = "session.sign_in_failed"
+	AuditActionSessionSignedIn                 AuditAction = "session.signed_in"
+	AuditActionSessionSignedOut                AuditAction = "session.signed_out"
+	AuditActionSsoAccountOpened                AuditAction = "sso.account_opened"
+	AuditActionSsoConnectionRemoved            AuditAction = "sso.connection_removed"
+	AuditActionSsoConnectionSaved              AuditAction = "sso.connection_saved"
+	AuditActionSsoEnforcementChanged           AuditAction = "sso.enforcement_changed"
+	AuditActionSsoIdentityLinked               AuditAction = "sso.identity_linked"
+	AuditActionSsoIdentityRefused              AuditAction = "sso.identity_refused"
+	AuditActionSsoIdentityUnlinked             AuditAction = "sso.identity_unlinked"
+	AuditActionSsoRecoveryCodeRedeemed         AuditAction = "sso.recovery_code_redeemed"
+	AuditActionSsoRecoveryCodesIssued          AuditAction = "sso.recovery_codes_issued"
+	AuditActionTeamMembershipAdded             AuditAction = "team_membership.added"
+	AuditActionTeamMembershipRemoved           AuditAction = "team_membership.removed"
+	AuditActionTokenMinted                     AuditAction = "token.minted"
+	AuditActionTokenRevoked                    AuditAction = "token.revoked"
+	AuditActionWebhookDisabled                 AuditAction = "webhook.disabled"
+	AuditActionWebhookRegistered               AuditAction = "webhook.registered"
+	AuditActionWebhookRemoved                  AuditAction = "webhook.removed"
+	AuditActionWorkspaceDeletionRequested      AuditAction = "workspace.deletion_requested"
+	AuditActionWorkspacePurged                 AuditAction = "workspace.purged"
+	AuditActionWorkspaceRestored               AuditAction = "workspace.restored"
+	AuditActionWorkspaceUpdated                AuditAction = "workspace.updated"
 )
 
 // Valid indicates whether the value is a known member of the AuditAction enum.
@@ -1055,6 +1059,8 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAgentTelegramGroupUnbound:
 		return true
 	case AuditActionAiProviderConfigured:
+		return true
+	case AuditActionAiProviderEmbeddingModelChanged:
 		return true
 	case AuditActionAiProviderEndpointChanged:
 		return true
@@ -6408,7 +6414,8 @@ type AiProviderKind string
 
 // AiProviderModelList defines model for AiProviderModelList.
 type AiProviderModelList struct {
-	Models []string `json:"models"`
+	EmbeddingModels []string `json:"embeddingModels"`
+	Models          []string `json:"models"`
 }
 
 // AiProviderRefusedProblem defines model for AiProviderRefusedProblem.
@@ -10585,6 +10592,7 @@ type SetWorkspaceAiProviderRequest struct {
 	ApiKey              *string        `json:"apiKey,omitempty"`
 	BaseUrl             *string        `json:"baseUrl,omitempty"`
 	DefaultModel        *string        `json:"defaultModel,omitempty"`
+	EmbeddingModel      *string        `json:"embeddingModel,omitempty"`
 	Provider            AiProviderKind `json:"provider"`
 }
 
@@ -11543,12 +11551,13 @@ type WorkspaceAgentSettings struct {
 	HoldDocWrites AgentHold `json:"holdDocWrites"`
 }
 
-// WorkspaceAiProvider The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it.
+// WorkspaceAiProvider The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it. An empty embeddingModel means knowledge retrieval matches words only.
 type WorkspaceAiProvider struct {
 	AllowPrivateAddress bool               `json:"allowPrivateAddress"`
 	BaseUrl             string             `json:"baseUrl"`
 	CreatedAt           time.Time          `json:"createdAt"`
 	DefaultModel        string             `json:"defaultModel"`
+	EmbeddingModel      string             `json:"embeddingModel"`
 	FailedAt            *time.Time         `json:"failedAt,omitempty"`
 	Failure             *AiProviderFailure `json:"failure,omitempty"`
 	KeyHint             string             `json:"keyHint"`
@@ -13847,25 +13856,25 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/ai-provider (the `GetWorkspaceAiProvider` operationId).
 	GetWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetWorkspaceAiProviderWithBody Save the provider, a new key, or a new default model
+	// SetWorkspaceAiProviderWithBody Save the provider, a new key, or new default and embedding models
 	//
-	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
 	SetWorkspaceAiProviderWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+	// SetWorkspaceAiProvider Save the provider, a new key, or new default and embedding models
 	//
-	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
 	SetWorkspaceAiProvider(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAiProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListWorkspaceAiProviderModels List the chat models the stored key can use
+	// ListWorkspaceAiProviderModels List the chat and embedding models the stored key can use
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/ai-provider/models (the `ListWorkspaceAiProviderModels` operationId).
 	ListWorkspaceAiProviderModels(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -18732,9 +18741,9 @@ func (c *Client) GetWorkspaceAiProvider(ctx context.Context, workspaceId Workspa
 	return c.Client.Do(req)
 }
 
-// SetWorkspaceAiProviderWithBody Save the provider, a new key, or a new default model
+// SetWorkspaceAiProviderWithBody Save the provider, a new key, or new default and embedding models
 //
-// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 //
 // Takes any type of body and a specified content type.
 //
@@ -18751,9 +18760,9 @@ func (c *Client) SetWorkspaceAiProviderWithBody(ctx context.Context, workspaceId
 	return c.Client.Do(req)
 }
 
-// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+// SetWorkspaceAiProvider Save the provider, a new key, or new default and embedding models
 //
-// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -18770,7 +18779,7 @@ func (c *Client) SetWorkspaceAiProvider(ctx context.Context, workspaceId Workspa
 	return c.Client.Do(req)
 }
 
-// ListWorkspaceAiProviderModels List the chat models the stored key can use
+// ListWorkspaceAiProviderModels List the chat and embedding models the stored key can use
 //
 // Corresponds with GET /workspaces/{workspaceId}/ai-provider/models (the `ListWorkspaceAiProviderModels` operationId).
 func (c *Client) ListWorkspaceAiProviderModels(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -45953,25 +45962,25 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/ai-provider (the `GetWorkspaceAiProvider` operationId).
 	GetWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceAiProviderResponse, error)
 
-	// SetWorkspaceAiProviderWithBodyWithResponse Save the provider, a new key, or a new default model
+	// SetWorkspaceAiProviderWithBodyWithResponse Save the provider, a new key, or new default and embedding models
 	//
-	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
 	SetWorkspaceAiProviderWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAiProviderResponse, error)
 
-	// SetWorkspaceAiProviderWithResponse Save the provider, a new key, or a new default model
+	// SetWorkspaceAiProviderWithResponse Save the provider, a new key, or new default and embedding models
 	//
-	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+	// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/ai-provider (the `SetWorkspaceAiProvider` operationId).
 	SetWorkspaceAiProviderWithResponse(ctx context.Context, workspaceId WorkspaceId, body SetWorkspaceAiProviderJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAiProviderResponse, error)
 
-	// ListWorkspaceAiProviderModelsWithResponse List the chat models the stored key can use
+	// ListWorkspaceAiProviderModelsWithResponse List the chat and embedding models the stored key can use
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -80502,9 +80511,9 @@ func (c *ClientWithResponses) GetWorkspaceAiProviderWithResponse(ctx context.Con
 	return ParseGetWorkspaceAiProviderResponse(rsp)
 }
 
-// SetWorkspaceAiProviderWithBodyWithResponse Save the provider, a new key, or a new default model
+// SetWorkspaceAiProviderWithBodyWithResponse Save the provider, a new key, or new default and embedding models
 //
-// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -80517,9 +80526,9 @@ func (c *ClientWithResponses) SetWorkspaceAiProviderWithBodyWithResponse(ctx con
 	return ParseSetWorkspaceAiProviderResponse(rsp)
 }
 
-// SetWorkspaceAiProviderWithResponse Save the provider, a new key, or a new default model
+// SetWorkspaceAiProviderWithResponse Save the provider, a new key, or new default and embedding models
 //
-// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+// A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -80532,7 +80541,7 @@ func (c *ClientWithResponses) SetWorkspaceAiProviderWithResponse(ctx context.Con
 	return ParseSetWorkspaceAiProviderResponse(rsp)
 }
 
-// ListWorkspaceAiProviderModelsWithResponse List the chat models the stored key can use
+// ListWorkspaceAiProviderModelsWithResponse List the chat and embedding models the stored key can use
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -110195,10 +110204,10 @@ type ServerInterface interface {
 	// GetWorkspaceAiProvider Read the AI provider this workspace brings its own key for
 	// (GET /workspaces/{workspaceId}/ai-provider)
 	GetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+	// SetWorkspaceAiProvider Save the provider, a new key, or new default and embedding models
 	// (PUT /workspaces/{workspaceId}/ai-provider)
 	SetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
-	// ListWorkspaceAiProviderModels List the chat models the stored key can use
+	// ListWorkspaceAiProviderModels List the chat and embedding models the stored key can use
 	// (GET /workspaces/{workspaceId}/ai-provider/models)
 	ListWorkspaceAiProviderModels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
 	// TestWorkspaceAiProvider Send one small request to the default model and record the outcome
@@ -111728,13 +111737,13 @@ func (_ Unimplemented) GetWorkspaceAiProvider(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+// SetWorkspaceAiProvider Save the provider, a new key, or new default and embedding models
 // (PUT /workspaces/{workspaceId}/ai-provider)
 func (_ Unimplemented) SetWorkspaceAiProvider(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// ListWorkspaceAiProviderModels List the chat models the stored key can use
+// ListWorkspaceAiProviderModels List the chat and embedding models the stored key can use
 // (GET /workspaces/{workspaceId}/ai-provider/models)
 func (_ Unimplemented) ListWorkspaceAiProviderModels(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -167193,10 +167202,10 @@ type StrictServerInterface interface {
 	// GetWorkspaceAiProvider Read the AI provider this workspace brings its own key for
 	// (GET /workspaces/{workspaceId}/ai-provider)
 	GetWorkspaceAiProvider(ctx context.Context, request GetWorkspaceAiProviderRequestObject) (GetWorkspaceAiProviderResponseObject, error)
-	// SetWorkspaceAiProvider Save the provider, a new key, or a new default model
+	// SetWorkspaceAiProvider Save the provider, a new key, or new default and embedding models
 	// (PUT /workspaces/{workspaceId}/ai-provider)
 	SetWorkspaceAiProvider(ctx context.Context, request SetWorkspaceAiProviderRequestObject) (SetWorkspaceAiProviderResponseObject, error)
-	// ListWorkspaceAiProviderModels List the chat models the stored key can use
+	// ListWorkspaceAiProviderModels List the chat and embedding models the stored key can use
 	// (GET /workspaces/{workspaceId}/ai-provider/models)
 	ListWorkspaceAiProviderModels(ctx context.Context, request ListWorkspaceAiProviderModelsRequestObject) (ListWorkspaceAiProviderModelsResponseObject, error)
 	// TestWorkspaceAiProvider Send one small request to the default model and record the outcome

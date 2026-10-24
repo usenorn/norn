@@ -100,6 +100,7 @@ function spoken(reply: AgentConversationReply): string {
 const providerTitles: Record<AiProviderFailureCode, string> = {
 	key_rejected: "The AI provider rejected the workspace's key",
 	model_unavailable: "The workspace's key cannot use its default model",
+	embedding_model_unavailable: "The workspace's key cannot use its embedding model",
 	quota_exceeded: "The AI provider account is out of credit",
 	rate_limited: "The AI provider is rate limiting the workspace's key",
 	unreachable: "The AI provider could not be reached",

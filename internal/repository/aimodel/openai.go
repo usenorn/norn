@@ -20,8 +20,17 @@ func (r *openAIModels) List(
 	ctx context.Context,
 	endpoint entity.AIProviderEndpoint,
 	apiKey string,
-) ([]string, error) {
-	return r.client.TextModels(ctx, endpoint, apiKey)
+) (entity.AIProviderModels, error) {
+	return r.client.Models(ctx, endpoint, apiKey)
+}
+
+func (r *openAIModels) Embed(
+	ctx context.Context,
+	endpoint entity.AIProviderEndpoint,
+	apiKey, model string,
+	inputs []string,
+) ([][]float32, error) {
+	return r.client.Embed(ctx, endpoint, apiKey, model, inputs)
 }
 
 func (r *openAIModels) Probe(

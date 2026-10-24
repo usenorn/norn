@@ -96,6 +96,10 @@ func TestAProviderRefusalCarriesACodeTheScreenCanBranchOn(t *testing.T) {
 	}{
 		{fmt.Errorf("%w: Incorrect API key provided", entity.ErrAIProviderKeyRejected), api.AiProviderKeyRejected},
 		{entity.ErrAIProviderModelUnavailable, api.AiProviderModelUnavailable},
+		{
+			fmt.Errorf("%w: %w", entity.ErrAIProviderEmbeddingUnavailable, entity.ErrAIProviderModelUnavailable),
+			api.AiProviderEmbeddingModelUnavailable,
+		},
 		{entity.ErrAIProviderQuotaExceeded, api.AiProviderQuotaExceeded},
 		{entity.ErrAIProviderUnreachable, api.AiProviderUnreachable},
 	}

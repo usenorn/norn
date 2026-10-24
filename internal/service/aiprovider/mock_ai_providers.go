@@ -73,10 +73,10 @@ func (mr *MockAIProvidersMockRecorder) Get(ctx, workspaceID any) *gomock.Call {
 }
 
 // Models mocks base method.
-func (m *MockAIProviders) Models(ctx context.Context, workspaceID uuid.UUID) ([]string, error) {
+func (m *MockAIProviders) Models(ctx context.Context, workspaceID uuid.UUID) (entity.AIProviderModels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Models", ctx, workspaceID)
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].(entity.AIProviderModels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

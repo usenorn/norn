@@ -58,6 +58,9 @@
 	const kind = $derived<AiProviderKind>(provider?.provider ?? "openai");
 	const label = $derived(providerLabels[kind]);
 	const models = $derived(view.kind === "configured" && view.models.kind === "listed" ? view.models.models : []);
+	const embeddingModels = $derived(
+		view.kind === "configured" && view.models.kind === "listed" ? view.models.embeddingModels : []
+	);
 	const modelsFailure = $derived<AiProviderFailure | null>(
 		view.kind === "configured" && view.models.kind === "failed" ? view.models.failure : null
 	);
@@ -92,6 +95,7 @@
 				baseUrl: provider?.baseUrl ?? current.baseUrl,
 				allowPrivateAddress: provider?.allowPrivateAddress ?? current.allowPrivateAddress,
 				defaultModel: provider?.defaultModel ?? current.defaultModel,
+				embeddingModel: provider?.embeddingModel ?? current.embeddingModel,
 				keyStored: provider !== null,
 			}),
 			{ taint: false }
@@ -260,6 +264,10 @@
 						<dt class="text-muted-foreground">Default model</dt>
 						<dd class="font-mono text-xs break-all text-ink-900">{provider.defaultModel || "None chosen"}</dd>
 					</div>
+					<div class="flex flex-col gap-0.5">
+						<dt class="text-muted-foreground">Embedding model</dt>
+						<dd class="font-mono text-xs break-all text-ink-900">{provider.embeddingModel || "None chosen"}</dd>
+					</div>
 				</dl>
 
 				<div class="flex flex-wrap items-center gap-2">
@@ -284,6 +292,7 @@
 			<input type="hidden" name="workspaceId" value={workspace.id} />
 			<input type="hidden" name="provider" value={$formData.provider} />
 			<input type="hidden" name="defaultModel" value={$formData.defaultModel} />
+			<input type="hidden" name="embeddingModel" value={$formData.embeddingModel} />
 			<input type="hidden" name="keyStored" value={String($formData.keyStored)} />
 
 			<div class="flex flex-col gap-1">
@@ -414,6 +423,34 @@
 						{:else}
 							The models this key can use, as {provider.baseUrl ? "the endpoint" : label} lists them.
 						{/if}
+					</Form.Description>
+					<Form.FieldErrors />
+				</Form.Field>
+
+				<Form.Field {form} name="embeddingModel">
+					<Form.Control>
+						{#snippet children({ props })}
+							<Form.Label>Embedding model</Form.Label>
+							<Select.Root
+								type="single"
+								value={$formData.embeddingModel}
+								disabled={busy || modelsFailure !== null}
+								onValueChange={(value) => ($formData.embeddingModel = value)}
+							>
+								<Select.Trigger {...props} class="w-full">
+									{$formData.embeddingModel || "None chosen"}
+								</Select.Trigger>
+								<Select.Content>
+									<Select.Item value="" label="None chosen">None chosen</Select.Item>
+									{#each embeddingModels as model (model)}
+										<Select.Item value={model} label={model}>{model}</Select.Item>
+									{/each}
+								</Select.Content>
+							</Select.Root>
+						{/snippet}
+					</Form.Control>
+					<Form.Description class="text-sm text-muted-foreground">
+						Used to find memories and docs by meaning. Without one, retrieval matches words only.
 					</Form.Description>
 					<Form.FieldErrors />
 				</Form.Field>

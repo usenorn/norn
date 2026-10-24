@@ -4206,8 +4206,8 @@ export interface paths {
         /** Read the AI provider this workspace brings its own key for */
         get: operations["getWorkspaceAiProvider"];
         /**
-         * Save the provider, a new key, or a new default model
-         * @description A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
+         * Save the provider, a new key, or new default and embedding models
+         * @description A new key is proved against the provider before it is stored, so a key the provider refuses never replaces one that works. A new embedding model is proved with one embedding request before it is stored. Leaving apiKey out keeps the stored key. Any change leaves the provider untested until it is tested again.
          */
         put: operations["setWorkspaceAiProvider"];
         post?: never;
@@ -4227,7 +4227,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** List the chat models the stored key can use */
+        /** List the chat and embedding models the stored key can use */
         get: operations["listWorkspaceAiProviderModels"];
         put?: never;
         post?: never;
@@ -8503,7 +8503,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "roadmap.published" | "roadmap.unpublished" | "roadmap.entry_removed" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "roadmap.published" | "roadmap.unpublished" | "roadmap.entry_removed" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.embedding_model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -9545,14 +9545,15 @@ export interface components {
         /** @enum {string} */
         AiProviderStatus: "unverified" | "verified" | "failed";
         /** @enum {string} */
-        AiProviderFailure: "key_rejected" | "model_unavailable" | "quota_exceeded" | "rate_limited" | "unreachable" | "destination_refused";
-        /** @description The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it. */
+        AiProviderFailure: "key_rejected" | "model_unavailable" | "embedding_model_unavailable" | "quota_exceeded" | "rate_limited" | "unreachable" | "destination_refused";
+        /** @description The key is never returned; keyHint carries its last few characters so an administrator can tell which key is installed. An empty baseUrl means the provider's own endpoint, as this instance is configured to reach it. An empty embeddingModel means knowledge retrieval matches words only. */
         WorkspaceAiProvider: {
             provider: components["schemas"]["AiProviderKind"];
             baseUrl: string;
             allowPrivateAddress: boolean;
             keyHint: string;
             defaultModel: string;
+            embeddingModel: string;
             status: components["schemas"]["AiProviderStatus"];
             failure?: components["schemas"]["AiProviderFailure"];
             /** Format: date-time */
@@ -9571,9 +9572,11 @@ export interface components {
             allowPrivateAddress?: boolean;
             apiKey?: string;
             defaultModel?: string;
+            embeddingModel?: string;
         };
         AiProviderModelList: {
             models: string[];
+            embeddingModels: string[];
         };
         AiProviderRefusedProblem: components["schemas"]["Problem"] & {
             code?: components["schemas"]["AiProviderFailure"];

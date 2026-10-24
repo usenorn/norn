@@ -23,7 +23,7 @@ export type AiProviderFailure =
 	| { kind: "unavailable" };
 
 export type AiProviderModels =
-	| { kind: "listed"; models: string[] }
+	| { kind: "listed"; models: string[]; embeddingModels: string[] }
 	| { kind: "failed"; failure: AiProviderFailure };
 
 export type AiProviderView =
@@ -45,6 +45,7 @@ export const aiProviderKinds: AiProviderKind[] = ["openai"];
 const aiProviderFailureCodes: AiProviderFailureCode[] = [
 	"key_rejected",
 	"model_unavailable",
+	"embedding_model_unavailable",
 	"quota_exceeded",
 	"rate_limited",
 	"unreachable",
@@ -76,6 +77,7 @@ export function aiProviderFailure(problem: AiProviderProblem): AiProviderFailure
 const providerTitles: Record<AiProviderFailureCode, (label: string) => string> = {
 	key_rejected: (label) => `${label} rejected this key`,
 	model_unavailable: () => "This key cannot use that model",
+	embedding_model_unavailable: () => "This key cannot use that embedding model",
 	quota_exceeded: (label) => `The ${label} account is out of credit`,
 	rate_limited: (label) => `${label} is rate limiting this key`,
 	unreachable: (label) => `${label} could not be reached`,
@@ -87,6 +89,8 @@ const providerAdvice: Record<AiProviderFailureCode, (label: string, selfHosted: 
 		"Check that the whole key was copied and that it has not been revoked. A restricted key needs permission to list models and to make requests.",
 	model_unavailable: () =>
 		"The model may have been retired, or the key's project may not have access to it. Choose another model.",
+	embedding_model_unavailable: () =>
+		"The model may have been retired, or the key's project may not have access to it. Choose another embedding model, or none.",
 	quota_exceeded: (label) =>
 		`Add credit or raise the usage limit on the ${label} account this key belongs to, then test again.`,
 	rate_limited: () => "Wait a minute and test again.",

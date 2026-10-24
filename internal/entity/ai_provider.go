@@ -21,6 +21,7 @@ var (
 	ErrAIProviderNotConfigured        = errors.New("this workspace has no AI provider configured")
 	ErrAIProviderKeyRejected          = errors.New("the provider rejected this API key")
 	ErrAIProviderModelUnavailable     = errors.New("this API key cannot use that model")
+	ErrAIProviderEmbeddingUnavailable = errors.New("this API key cannot use that embedding model")
 	ErrAIProviderQuotaExceeded        = errors.New("the provider account behind this API key is out of quota")
 	ErrAIProviderRateLimited          = errors.New("the provider is rate limiting this API key")
 	ErrAIProviderUnreachable          = errors.New("the provider could not be reached")
@@ -49,6 +50,7 @@ type AIProviderFailure string
 const (
 	AIProviderFailureKeyRejected        AIProviderFailure = "key_rejected"
 	AIProviderFailureModelUnavailable   AIProviderFailure = "model_unavailable"
+	AIProviderFailureEmbeddingModel     AIProviderFailure = "embedding_model_unavailable"
 	AIProviderFailureQuotaExceeded      AIProviderFailure = "quota_exceeded"
 	AIProviderFailureRateLimited        AIProviderFailure = "rate_limited"
 	AIProviderFailureUnreachable        AIProviderFailure = "unreachable"
@@ -60,6 +62,7 @@ var aiProviderFailures = []struct {
 	err     error
 }{
 	{AIProviderFailureKeyRejected, ErrAIProviderKeyRejected},
+	{AIProviderFailureEmbeddingModel, ErrAIProviderEmbeddingUnavailable},
 	{AIProviderFailureModelUnavailable, ErrAIProviderModelUnavailable},
 	{AIProviderFailureQuotaExceeded, ErrAIProviderQuotaExceeded},
 	{AIProviderFailureRateLimited, ErrAIProviderRateLimited},
@@ -90,17 +93,27 @@ type AIProviderEndpoint struct {
 	AllowPrivateAddress bool
 }
 
+type AIProviderModels struct {
+	Text      []string
+	Embedding []string
+}
+
 type AIProviderConnection struct {
-	WorkspaceID  uuid.UUID
-	Provider     AIProviderKind
-	Endpoint     AIProviderEndpoint
-	KeyHint      string
-	DefaultModel string
-	VerifiedAt   *time.Time
-	FailedAt     *time.Time
-	Failure      AIProviderFailure
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	WorkspaceID    uuid.UUID
+	Provider       AIProviderKind
+	Endpoint       AIProviderEndpoint
+	KeyHint        string
+	DefaultModel   string
+	EmbeddingModel string
+	VerifiedAt     *time.Time
+	FailedAt       *time.Time
+	Failure        AIProviderFailure
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+func (c AIProviderConnection) Embeds() bool {
+	return c.EmbeddingModel != ""
 }
 
 func (c AIProviderConnection) Status() AIProviderStatus {
@@ -115,10 +128,11 @@ func (c AIProviderConnection) Status() AIProviderStatus {
 }
 
 type AIProviderInput struct {
-	Provider     AIProviderKind
-	Endpoint     AIProviderEndpoint
-	APIKey       string
-	DefaultModel string
+	Provider       AIProviderKind
+	Endpoint       AIProviderEndpoint
+	APIKey         string
+	DefaultModel   string
+	EmbeddingModel string
 }
 
 func (in AIProviderInput) Normalized() AIProviderInput {
@@ -128,8 +142,9 @@ func (in AIProviderInput) Normalized() AIProviderInput {
 			BaseURL:             strings.TrimRight(strings.TrimSpace(in.Endpoint.BaseURL), "/"),
 			AllowPrivateAddress: in.Endpoint.AllowPrivateAddress,
 		},
-		APIKey:       strings.TrimSpace(in.APIKey),
-		DefaultModel: strings.TrimSpace(in.DefaultModel),
+		APIKey:         strings.TrimSpace(in.APIKey),
+		DefaultModel:   strings.TrimSpace(in.DefaultModel),
+		EmbeddingModel: strings.TrimSpace(in.EmbeddingModel),
 	}
 }
 
@@ -149,6 +164,10 @@ func (in AIProviderInput) Validate(configured bool) error {
 
 	if utf8.RuneCountInString(in.DefaultModel) > AIProviderModelMaxLen {
 		fields = append(fields, FieldError{Field: "defaultModel", Code: ValidationCodeTooLong})
+	}
+
+	if utf8.RuneCountInString(in.EmbeddingModel) > AIProviderModelMaxLen {
+		fields = append(fields, FieldError{Field: "embeddingModel", Code: ValidationCodeTooLong})
 	}
 
 	if field := validateAIProviderBaseURL(in.Endpoint.BaseURL); field.Field != "" {

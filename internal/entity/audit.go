@@ -129,6 +129,7 @@ const (
 	AuditAIProviderConfigured      AuditAction = "ai_provider.configured"
 	AuditAIProviderKeyReplaced     AuditAction = "ai_provider.key_replaced"
 	AuditAIProviderModelChanged    AuditAction = "ai_provider.model_changed"
+	AuditAIProviderEmbeddingModel  AuditAction = "ai_provider.embedding_model_changed"
 	AuditAIProviderEndpointChanged AuditAction = "ai_provider.endpoint_changed"
 	AuditAIProviderRemoved         AuditAction = "ai_provider.removed"
 
@@ -169,7 +170,7 @@ func AuditActions() []AuditAction {
 		AuditSourceControlConnected, AuditSourceControlDisconnected,
 		AuditSourceControlTokenReplaced, AuditSourceControlBroken,
 		AuditAIProviderConfigured, AuditAIProviderKeyReplaced, AuditAIProviderModelChanged,
-		AuditAIProviderEndpointChanged, AuditAIProviderRemoved,
+		AuditAIProviderEmbeddingModel, AuditAIProviderEndpointChanged, AuditAIProviderRemoved,
 		AuditExported, AuditAccessDenied,
 	}
 }
