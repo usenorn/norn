@@ -534,3 +534,161 @@ func docLinkDTOFrom(link entity.DocLink) docLinkDTO {
 func docDTOFrom(doc entity.Doc) docDTO {
 	return docDTO{docSummaryDTO: docSummaryDTOFrom(doc.DocSummary), Markdown: doc.Markdown}
 }
+
+type memoryApplicabilityDTO struct {
+	ProjectID string `json:"projectId,omitempty"`
+	Component string `json:"component,omitempty"`
+}
+
+type memoryProvenanceDTO struct {
+	Source  string `json:"source"`
+	AgentID string `json:"agentId,omitempty"`
+	TokenID string `json:"tokenId,omitempty"`
+}
+
+type memoryEvidenceDTO struct {
+	Kind          string `json:"kind"`
+	IssueID       string `json:"issueId,omitempty"`
+	CommentID     string `json:"commentId,omitempty"`
+	DocID         string `json:"docId,omitempty"`
+	DocRevisionID string `json:"docRevisionId,omitempty"`
+	Excerpt       string `json:"excerpt,omitempty"`
+}
+
+type memoryDTO struct {
+	ID             string                 `json:"id"`
+	Kind           string                 `json:"kind"`
+	Statement      string                 `json:"statement"`
+	Rationale      string                 `json:"rationale,omitempty"`
+	Conditions     string                 `json:"conditions,omitempty"`
+	Status         string                 `json:"status"`
+	Basis          string                 `json:"basis"`
+	Audience       docAudienceDTO         `json:"audience"`
+	AppliesTo      memoryApplicabilityDTO `json:"appliesTo"`
+	AuthorID       string                 `json:"authorId,omitempty"`
+	AuthorName     string                 `json:"authorName,omitempty"`
+	Provenance     memoryProvenanceDTO    `json:"provenance"`
+	Evidence       []memoryEvidenceDTO    `json:"evidence,omitempty"`
+	EffectiveFrom  string                 `json:"effectiveFrom"`
+	EffectiveUntil string                 `json:"effectiveUntil,omitempty"`
+	SupersedesID   string                 `json:"supersedesId,omitempty"`
+	SupersededByID string                 `json:"supersededById,omitempty"`
+	Version        int                    `json:"version"`
+	UpdatedAt      string                 `json:"updatedAt"`
+}
+
+type memoryLinkDTO struct {
+	ID        string `json:"id"`
+	Statement string `json:"statement"`
+	Status    string `json:"status"`
+	Version   int    `json:"version"`
+}
+
+type knowledgePassageDTO struct {
+	DocID    string `json:"docId"`
+	DocTitle string `json:"docTitle"`
+	Heading  string `json:"heading,omitempty"`
+	Excerpt  string `json:"excerpt"`
+}
+
+type knowledgeHitDTO struct {
+	Kind    string               `json:"kind"`
+	Memory  *memoryDTO           `json:"memory,omitempty"`
+	Passage *knowledgePassageDTO `json:"passage,omitempty"`
+	Matches []string             `json:"matches"`
+	Score   float64              `json:"score"`
+}
+
+func optionalID(id *uuid.UUID) string {
+	if id == nil {
+		return ""
+	}
+
+	return id.String()
+}
+
+func memoryDTOFrom(memory entity.Memory) memoryDTO {
+	dto := memoryDTO{
+		ID:         memory.ID.String(),
+		Kind:       string(memory.Kind),
+		Statement:  memory.Statement,
+		Rationale:  memory.Rationale,
+		Conditions: memory.Conditions,
+		Status:     string(memory.Status),
+		Basis:      string(memory.Basis),
+		Audience:   docAudienceDTO{Visibility: string(memory.Audience.Visibility)},
+		AppliesTo: memoryApplicabilityDTO{
+			ProjectID: optionalID(memory.Applicability.ProjectID),
+			Component: memory.Applicability.Component,
+		},
+		AuthorName: memory.AuthorName,
+		Provenance: memoryProvenanceDTO{
+			Source:  string(memory.By.Source),
+			AgentID: optionalID(memory.By.AgentID),
+			TokenID: optionalID(memory.By.TokenID),
+		},
+		EffectiveFrom:  memory.EffectiveFrom.Format(time.DateOnly),
+		SupersedesID:   optionalID(memory.SupersedesID),
+		SupersededByID: optionalID(memory.SupersededByID),
+		Version:        memory.Version,
+		UpdatedAt:      memory.UpdatedAt.Format(time.RFC3339),
+	}
+
+	if memory.Audience.Visibility == entity.KnowledgeVisibilityProject {
+		dto.Audience.ProjectID = memory.Audience.ProjectID.String()
+	}
+
+	if memory.AuthorID != uuid.Nil {
+		dto.AuthorID = memory.AuthorID.String()
+	}
+
+	if memory.EffectiveUntil != nil {
+		dto.EffectiveUntil = memory.EffectiveUntil.Format(time.DateOnly)
+	}
+
+	for _, evidence := range memory.Evidence {
+		dto.Evidence = append(dto.Evidence, memoryEvidenceDTO{
+			Kind:          string(evidence.Kind),
+			IssueID:       optionalID(evidence.IssueID),
+			CommentID:     optionalID(evidence.CommentID),
+			DocID:         optionalID(evidence.DocID),
+			DocRevisionID: optionalID(evidence.DocRevisionID),
+			Excerpt:       evidence.Excerpt,
+		})
+	}
+
+	return dto
+}
+
+func memoryLinkDTOFrom(memory entity.Memory) memoryLinkDTO {
+	return memoryLinkDTO{
+		ID:        memory.ID.String(),
+		Statement: memory.Statement,
+		Status:    string(memory.Status),
+		Version:   memory.Version,
+	}
+}
+
+func knowledgeHitDTOFrom(hit entity.KnowledgeHit) knowledgeHitDTO {
+	dto := knowledgeHitDTO{Kind: string(hit.Kind), Matches: make([]string, 0, len(hit.Matches)), Score: hit.Score}
+
+	for _, match := range hit.Matches {
+		dto.Matches = append(dto.Matches, string(match))
+	}
+
+	if hit.Memory != nil {
+		memory := memoryDTOFrom(*hit.Memory)
+		dto.Memory = &memory
+	}
+
+	if hit.Passage != nil {
+		dto.Passage = &knowledgePassageDTO{
+			DocID:    hit.Passage.DocID.String(),
+			DocTitle: hit.Passage.DocTitle,
+			Heading:  hit.Passage.Heading,
+			Excerpt:  hit.Passage.Excerpt,
+		}
+	}
+
+	return dto
+}
