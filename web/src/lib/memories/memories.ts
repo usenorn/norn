@@ -302,7 +302,7 @@ export function offers(choices: MemoryChoice[], resolution: MemoryResolution): b
 	return choices.some((choice) => choice.resolution === resolution && !choice.targetId);
 }
 
-export function scopeLine(memory: Memory, projects: Project[]): string {
+export function scopeLine(memory: Pick<Memory, "appliesTo">, projects: Project[]): string {
 	const project = memory.appliesTo.projectId
 		? (projects.find((candidate) => candidate.id === memory.appliesTo.projectId)?.name ?? "One project")
 		: "The whole workspace";

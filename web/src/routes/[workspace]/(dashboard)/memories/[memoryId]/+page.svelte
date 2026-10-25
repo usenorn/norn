@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ArrowUpRight from "@lucide/svelte/icons/arrow-up-right";
 	import Ban from "@lucide/svelte/icons/ban";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -22,6 +21,7 @@
 	import Pill from "#lib/components/norn/pill.svelte";
 	import RowGroup from "#lib/components/norn/row-group.svelte";
 	import MemoriesHeader from "#lib/memories/memories-header.svelte";
+	import MemoryEvidence from "#lib/memories/memory-evidence.svelte";
 	import MemoryReviewActions from "#lib/memories/memory-review-actions.svelte";
 	import MemorySection from "#lib/memories/memory-section.svelte";
 	import RejectMemoryDialog from "#lib/memories/reject-memory-dialog.svelte";
@@ -29,7 +29,6 @@
 	import ShareMemoryDialog from "#lib/memories/share-memory-dialog.svelte";
 	import {
 		choicesFor,
-		evidenceLink,
 		memoriesPath,
 		memoryAuthorLine,
 		memoryBasisLabels,
@@ -350,33 +349,7 @@
 						<time datetime={memory.updatedAt}>{onDateAndTime(memory.updatedAt, timezone)}</time>
 					</dd>
 				</dl>
-				{#if memory.evidence.length > 0}
-					<ul class="flex flex-col gap-1.5" aria-label="Evidence">
-						{#each memory.evidence as cited, index (index)}
-							{@const link = evidenceLink(slug, cited)}
-							<li class="flex min-w-0 flex-col gap-0.5 rounded-md border border-line-subtle px-2.5 py-2">
-								<span class="text-2xs text-muted-foreground">{link.detail ?? link.label}</span>
-								{#if link.quote !== undefined}
-									<blockquote class="text-sm leading-normal text-pretty break-words text-ink-900">
-										“{link.quote}”
-									</blockquote>
-								{:else if link.href}
-									<a
-										href={link.href}
-										class="inline-flex min-w-0 items-center gap-1 text-sm text-link underline-offset-2 hover:text-link-hover hover:underline"
-									>
-										<span class="min-w-0 truncate">{link.label}</span>
-										<ArrowUpRight class="size-3 shrink-0" aria-hidden="true" />
-									</a>
-								{:else}
-									<span class="text-sm text-ink-900">{link.label}</span>
-								{/if}
-							</li>
-						{/each}
-					</ul>
-				{:else}
-					<p class="text-xs text-muted-foreground">It cites no evidence you can read.</p>
-				{/if}
+				<MemoryEvidence evidence={memory.evidence} workspace={slug} />
 			</MemorySection>
 
 			{#if ready.lineage.length > 1}
