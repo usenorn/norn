@@ -15,14 +15,25 @@ func (h *handler) ListWorkspaceMemories(
 	input := service.ListMemoriesInput{ProjectID: request.Params.ProjectId}
 
 	if request.Params.Kind != nil {
-		kind := entity.MemoryKind(*request.Params.Kind)
-		input.Kind = &kind
+		for _, kind := range *request.Params.Kind {
+			input.Kinds = append(input.Kinds, entity.MemoryKind(kind))
+		}
 	}
 
 	if request.Params.Status != nil {
 		for _, status := range *request.Params.Status {
 			input.Statuses = append(input.Statuses, entity.MemoryStatus(status))
 		}
+	}
+
+	if request.Params.Visibility != nil {
+		for _, visibility := range *request.Params.Visibility {
+			input.Visibilities = append(input.Visibilities, entity.KnowledgeVisibility(visibility))
+		}
+	}
+
+	if request.Params.Reviewable != nil {
+		input.Reviewable = *request.Params.Reviewable
 	}
 
 	if request.Params.Component != nil {

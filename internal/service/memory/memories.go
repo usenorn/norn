@@ -629,13 +629,21 @@ func (s *memoriesService) List(
 	workspaceID uuid.UUID,
 	input service.ListMemoriesInput,
 ) (service.MemoryList, error) {
-	if input.Kind != nil && !input.Kind.Valid() {
-		return service.MemoryList{}, unsupported(entity.MemoryFieldKind)
+	for _, kind := range input.Kinds {
+		if !kind.Valid() {
+			return service.MemoryList{}, unsupported(entity.MemoryFieldKind)
+		}
 	}
 
 	for _, status := range input.Statuses {
 		if !status.Valid() {
 			return service.MemoryList{}, unsupported("status")
+		}
+	}
+
+	for _, visibility := range input.Visibilities {
+		if !visibility.Valid() {
+			return service.MemoryList{}, unsupported("visibility")
 		}
 	}
 
@@ -656,19 +664,27 @@ func (s *memoriesService) List(
 	}
 
 	reader := decision.Reader
-	var kinds []entity.MemoryKind
-	if input.Kind != nil {
-		kinds = []entity.MemoryKind{*input.Kind}
-	}
 
 	filter := repository.MemoryFilter{
-		Kinds:            kinds,
+		Kinds:            input.Kinds,
 		Statuses:         input.Statuses,
 		AppliesProjectID: input.ProjectID,
 		Component:        strings.TrimSpace(input.Component),
 		AllProjects:      reader.AllProjects,
 		ProjectIDs:       reader.ProjectIDs,
 		PersonalAuthorID: reader.PersonalAuthor(),
+		Visibilities:     input.Visibilities,
+	}
+
+	if input.Reviewable {
+		review, reviews := reader.Reviewing()
+		filter.Statuses = awaitingReview(input.Statuses)
+
+		if !reviews || len(filter.Statuses) == 0 {
+			return service.MemoryList{Memories: []entity.Memory{}}, nil
+		}
+
+		filter.ReviewedBy = &review
 	}
 
 	memories, err := s.memories.List(ctx, workspaceID, filter, page.Lookahead())
@@ -698,6 +714,17 @@ func (s *memoriesService) List(
 	}
 
 	return list, nil
+}
+
+func awaitingReview(statuses []entity.MemoryStatus) []entity.MemoryStatus {
+	pending := entity.MemoryPendingStatuses()
+	if len(statuses) == 0 {
+		return pending
+	}
+
+	return slices.DeleteFunc(slices.Clone(statuses), func(status entity.MemoryStatus) bool {
+		return !slices.Contains(pending, status)
+	})
 }
 
 func (s *memoriesService) Correct(

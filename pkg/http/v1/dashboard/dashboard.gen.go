@@ -12414,10 +12414,17 @@ type RemoveWorkspaceMemberParams struct {
 
 // ListWorkspaceMemoriesParams defines parameters for ListWorkspaceMemories.
 type ListWorkspaceMemoriesParams struct {
-	Kind *MemoryKind `form:"kind,omitempty" json:"kind,omitempty"`
+	// Kind Only memories of one of these kinds.
+	Kind *[]MemoryKind `form:"kind,omitempty" json:"kind,omitempty"`
 
 	// Status Only memories in one of these statuses.
 	Status *[]MemoryStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// Visibility Only memories shared with one of these audiences.
+	Visibility *[]DocVisibility `form:"visibility,omitempty" json:"visibility,omitempty"`
+
+	// Reviewable Only the proposed or disputed memories this caller may accept or reject. An agent or a caller who maintains no memory gets none.
+	Reviewable *bool `form:"reviewable,omitempty" json:"reviewable,omitempty"`
 
 	// ProjectId Only the memories that apply to this project.
 	ProjectId *openapi_types.UUID `form:"projectId,omitempty" json:"projectId,omitempty"`
@@ -38270,7 +38277,7 @@ func NewListWorkspaceMemoriesRequest(server string, workspaceId WorkspaceId, par
 
 		if params.Kind != nil {
 
-			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "kind", *params.Kind, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "kind", *params.Kind, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -38283,6 +38290,30 @@ func NewListWorkspaceMemoriesRequest(server string, workspaceId WorkspaceId, par
 		if params.Status != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "status", *params.Status, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Visibility != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "visibility", *params.Visibility, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "array", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Reviewable != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "reviewable", *params.Reviewable, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -123926,7 +123957,7 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceMemories(w http.ResponseWriter, 
 
 	// ------------- Optional query parameter "kind" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", r.URL.Query(), &params.Kind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", r.URL.Query(), &params.Kind, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
@@ -123946,6 +123977,32 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceMemories(w http.ResponseWriter, 
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "visibility" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "visibility", r.URL.Query(), &params.Visibility, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "visibility"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "visibility", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "reviewable" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "reviewable", r.URL.Query(), &params.Reviewable, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "reviewable"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reviewable", Err: err})
 		}
 		return
 	}

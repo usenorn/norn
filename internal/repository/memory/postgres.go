@@ -71,19 +71,23 @@ const filteredMemories = `
        OR ($%[5]d::boolean AND m.applies_project_id IS NULL))
   AND ($%[4]d::text = '' OR m.component = $%[4]d::text OR ($%[5]d::boolean AND m.component = ''))
   AND ($%[6]d::date IS NULL
-       OR (m.effective_from <= $%[6]d::date AND (m.effective_until IS NULL OR m.effective_until >= $%[6]d::date)))`
+       OR (m.effective_from <= $%[6]d::date AND (m.effective_until IS NULL OR m.effective_until >= $%[6]d::date)))
+  AND (cardinality($%[7]d::text[]) = 0 OR m.visibility = ANY($%[7]d::text[]))
+  AND ($%[8]d::boolean IS NOT TRUE
+       OR (m.visibility = 'workspace' AND $%[9]d::boolean)
+       OR (m.visibility = 'project' AND ($%[9]d::boolean OR m.project_id = ANY($%[10]d::uuid[]))))`
 
 var listMemoriesQuery = `
 SELECT` + memoryColumns + visibleMemories + `
   AND ($5::timestamptz IS NULL OR (m.updated_at, m.id) < ($5::timestamptz, $6::uuid))` +
-	fmt.Sprintf(filteredMemories, 8, 9, 10, 11, 12, 13) + `
+	fmt.Sprintf(filteredMemories, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17) + `
 ORDER BY m.updated_at DESC, m.id DESC
 LIMIT $7`
 
 var enumerateMemoriesQuery = `
 SELECT` + memoryColumns + visibleMemories + `
   AND ($5::uuid IS NULL OR m.id > $5::uuid)` +
-	fmt.Sprintf(filteredMemories, 7, 8, 9, 10, 11, 12) + `
+	fmt.Sprintf(filteredMemories, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16) + `
 ORDER BY m.id
 LIMIT $6`
 
@@ -575,6 +579,16 @@ func filterArgs(filter repository.MemoryFilter) []any {
 		on = sql.NullTime{Time: *filter.InEffectOn, Valid: true}
 	}
 
+	visibilities := make([]string, 0, len(filter.Visibilities))
+	for _, visibility := range filter.Visibilities {
+		visibilities = append(visibilities, string(visibility))
+	}
+
+	var review entity.KnowledgeReview
+	if filter.ReviewedBy != nil {
+		review = *filter.ReviewedBy
+	}
+
 	return []any{
 		kinds,
 		statuses,
@@ -582,6 +596,10 @@ func filterArgs(filter repository.MemoryFilter) []any {
 		filter.Component,
 		filter.WorkspaceWide,
 		on,
+		visibilities,
+		filter.ReviewedBy != nil,
+		review.Workspace,
+		idStrings(review.LedProjectIDs),
 	}
 }
 

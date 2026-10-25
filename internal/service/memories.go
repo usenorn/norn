@@ -76,12 +76,14 @@ type MemoryReconciliation struct {
 }
 
 type ListMemoriesInput struct {
-	Kind      *entity.MemoryKind
-	Statuses  []entity.MemoryStatus
-	ProjectID *uuid.UUID
-	Component string
-	Cursor    string
-	Limit     int
+	Kinds        []entity.MemoryKind
+	Statuses     []entity.MemoryStatus
+	Visibilities []entity.KnowledgeVisibility
+	Reviewable   bool
+	ProjectID    *uuid.UUID
+	Component    string
+	Cursor       string
+	Limit        int
 }
 
 type MemoryList struct {

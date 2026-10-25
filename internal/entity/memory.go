@@ -132,6 +132,10 @@ func MemoryStatuses() []MemoryStatus {
 	}
 }
 
+func MemoryPendingStatuses() []MemoryStatus {
+	return []MemoryStatus{MemoryStatusProposed, MemoryStatusDisputed}
+}
+
 func (s MemoryStatus) Valid() bool {
 	return slices.Contains(MemoryStatuses(), s)
 }

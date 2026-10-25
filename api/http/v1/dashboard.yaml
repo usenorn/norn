@@ -5586,7 +5586,12 @@ paths:
         - name: kind
           in: query
           required: false
-          schema: { $ref: '#/components/schemas/MemoryKind' }
+          description: Only memories of one of these kinds.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/MemoryKind' }
         - name: status
           in: query
           required: false
@@ -5596,6 +5601,22 @@ paths:
           schema:
             type: array
             items: { $ref: '#/components/schemas/MemoryStatus' }
+        - name: visibility
+          in: query
+          required: false
+          description: Only memories shared with one of these audiences.
+          style: form
+          explode: true
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/DocVisibility' }
+        - name: reviewable
+          in: query
+          required: false
+          description: >-
+            Only the proposed or disputed memories this caller may accept or reject. An agent or a
+            caller who maintains no memory gets none.
+          schema: { type: boolean }
         - name: projectId
           in: query
           required: false

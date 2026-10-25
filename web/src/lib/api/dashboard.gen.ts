@@ -19177,9 +19177,14 @@ export interface operations {
     listWorkspaceMemories: {
         parameters: {
             query?: {
-                kind?: components["schemas"]["MemoryKind"];
+                /** @description Only memories of one of these kinds. */
+                kind?: components["schemas"]["MemoryKind"][];
                 /** @description Only memories in one of these statuses. */
                 status?: components["schemas"]["MemoryStatus"][];
+                /** @description Only memories shared with one of these audiences. */
+                visibility?: components["schemas"]["DocVisibility"][];
+                /** @description Only the proposed or disputed memories this caller may accept or reject. An agent or a caller who maintains no memory gets none. */
+                reviewable?: boolean;
                 /** @description Only the memories that apply to this project. */
                 projectId?: string;
                 /** @description Only the memories tagged with this component. */
