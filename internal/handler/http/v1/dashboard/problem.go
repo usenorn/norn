@@ -3294,6 +3294,10 @@ func (r problemResponse) VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseW
 	return r.write(w)
 }
 
+func (r problemResponse) VisitGetWorkspaceMemoryLineageResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

@@ -124,6 +124,27 @@ func (h *handler) GetWorkspaceMemory(
 	return api.GetWorkspaceMemory200JSONResponse(memoryDTO(memory)), nil
 }
 
+func (h *handler) GetWorkspaceMemoryLineage(
+	ctx context.Context,
+	request api.GetWorkspaceMemoryLineageRequestObject,
+) (api.GetWorkspaceMemoryLineageResponseObject, error) {
+	lineage, err := h.memories.Lineage(ctx, request.WorkspaceId, request.MemoryId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	memories := make([]api.Memory, 0, len(lineage))
+	for _, memory := range lineage {
+		memories = append(memories, memoryDTO(memory))
+	}
+
+	return api.GetWorkspaceMemoryLineage200JSONResponse(api.MemoryLineage{Memories: memories}), nil
+}
+
 func (h *handler) CorrectWorkspaceMemory(
 	ctx context.Context,
 	request api.CorrectWorkspaceMemoryRequestObject,

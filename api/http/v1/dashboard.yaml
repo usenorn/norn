@@ -5735,6 +5735,28 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/memories/{memoryId}/lineage:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    get:
+      tags: [memories]
+      operationId: getWorkspaceMemoryLineage
+      summary: Read the chain of memories this one replaced and was replaced by, oldest first
+      description: >-
+        The chain includes the memory itself. A memory in it that the caller may not read is left
+        out.
+      responses:
+        '200':
+          description: The supersession chain
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemoryLineage' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/memories/{memoryId}/reconcile:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -12786,6 +12808,14 @@ components:
           minimum: 1
           description: The version of the memory being replaced.
         replacement: { $ref: '#/components/schemas/CreateMemoryRequest' }
+
+    MemoryLineage:
+      type: object
+      required: [memories]
+      properties:
+        memories:
+          type: array
+          items: { $ref: '#/components/schemas/Memory' }
 
     MemoryRelation:
       type: string

@@ -3679,6 +3679,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/memories/{memoryId}/lineage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Read the chain of memories this one replaced and was replaced by, oldest first
+         * @description The chain includes the memory itself. A memory in it that the caller may not read is left out.
+         */
+        get: operations["getWorkspaceMemoryLineage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/memories/{memoryId}/reconcile": {
         parameters: {
             query?: never;
@@ -8237,6 +8260,9 @@ export interface components {
              */
             expectedVersion: number;
             replacement: components["schemas"]["CreateMemoryRequest"];
+        };
+        MemoryLineage: {
+            memories: components["schemas"]["Memory"][];
         };
         /**
          * @description duplicate covers the same subject under the same conditions, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
@@ -19324,6 +19350,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemoryWrite"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceMemoryLineage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The supersession chain */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryLineage"];
                 };
             };
             401: components["responses"]["Problem"];
