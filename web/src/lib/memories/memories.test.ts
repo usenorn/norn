@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Project } from "#lib/projects/projects.js";
 import {
 	choicesFor,
+	evidenceHealth,
 	evidenceLink,
 	memoriesPath,
 	memoryAuthorLine,
@@ -152,6 +153,10 @@ describe("memory failures", () => {
 		expect(readMemoryFailure({ code: "memory_stale", version: 4 })).toEqual({ kind: "stale", version: 4 });
 		expect(readMemoryFailure({ code: "memory_not_pending" })).toEqual({ kind: "settled" });
 		expect(readMemoryFailure({ reason: "knowledge_not_editable", status: 403 })).toEqual({ kind: "not_editable" });
+		expect(readMemoryFailure({ reason: "knowledge_not_shareable", status: 403 })).toEqual({ kind: "narrower_source" });
+		expect(readMemoryFailure({ reason: "memory_redaction_forbidden", status: 403 })).toEqual({
+			kind: "redaction_forbidden",
+		});
 		expect(readMemoryFailure({ reason: "memory_review_forbidden", status: 403 })).toEqual({ kind: "not_reviewer" });
 		expect(readMemoryFailure({ status: 404 })).toEqual({ kind: "not_found" });
 		expect(readMemoryFailure(undefined)).toEqual({ kind: "unavailable" });
@@ -166,5 +171,28 @@ describe("scope line", () => {
 		expect(scopeLine(memory("m1", "accepted", { projectId: "p1", component: "ledger" }), projects)).toBe(
 			"Billing · ledger"
 		);
+	});
+});
+
+describe("stale evidence", () => {
+	it("reads a changed source before an unavailable one, and current otherwise", () => {
+		expect(evidenceHealth([{ kind: "excerpt", excerpt: "it broke", state: "current" }])).toEqual({ kind: "current" });
+		expect(
+			evidenceHealth([
+				{ kind: "issue", issueId: "i1", state: "changed" },
+				{ kind: "comment", state: "unavailable" },
+			])
+		).toEqual({ kind: "changed", changed: 1, unavailable: 1 });
+		expect(evidenceHealth([{ kind: "doc_revision", state: "unavailable" }])).toEqual({
+			kind: "unavailable",
+			unavailable: 1,
+		});
+	});
+
+	it("never links a source that is gone or not shared with the reader", () => {
+		expect(evidenceLink("acme", { kind: "doc_revision", state: "unavailable" })).toEqual({
+			label: "Gone, or not shared with you",
+			detail: "A version of a doc",
+		});
 	});
 });
