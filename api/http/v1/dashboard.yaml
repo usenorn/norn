@@ -12692,9 +12692,9 @@ components:
     MemoryRelation:
       type: string
       description: >-
-        duplicate restates the memory, conditional covers the same subject under other conditions
-        and stays compatible, and conflict contradicts an accepted decision under the same
-        conditions.
+        duplicate covers the same subject under the same conditions, conditional covers the same
+        subject under other conditions and stays compatible, and conflict contradicts an accepted
+        decision under the same conditions.
       enum: [duplicate, conditional, conflict]
 
     MemoryResolution:

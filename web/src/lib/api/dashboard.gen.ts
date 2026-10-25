@@ -8180,7 +8180,7 @@ export interface components {
             replacement: components["schemas"]["CreateMemoryRequest"];
         };
         /**
-         * @description duplicate restates the memory, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
+         * @description duplicate covers the same subject under the same conditions, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
          * @enum {string}
          */
         MemoryRelation: "duplicate" | "conditional" | "conflict";

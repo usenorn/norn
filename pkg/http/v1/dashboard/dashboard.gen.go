@@ -9351,7 +9351,7 @@ type MemoryReconciliation struct {
 	Target *Memory `json:"target,omitempty"`
 }
 
-// MemoryRelation duplicate restates the memory, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
+// MemoryRelation duplicate covers the same subject under the same conditions, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
 type MemoryRelation string
 
 // MemoryResolution defines model for MemoryResolution.
@@ -9867,7 +9867,7 @@ type RegisteredAgent struct {
 type RelatedMemory struct {
 	Memory Memory `json:"memory"`
 
-	// Relation duplicate restates the memory, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
+	// Relation duplicate covers the same subject under the same conditions, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
 	Relation MemoryRelation `json:"relation"`
 }
 
