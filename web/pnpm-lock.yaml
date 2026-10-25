@@ -118,7 +118,7 @@ importers:
         version: 5.0.6
       bits-ui:
         specifier: ^2.18.1
-        version: 2.20.2(@internationalized/date@3.12.2)(@sveltejs/kit@3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.2.0(svelte@5.57.2)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2)
+        version: 2.18.1(@internationalized/date@3.12.2)(@sveltejs/kit@3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.2.0(svelte@5.57.2)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1425,8 +1425,8 @@ packages:
   bidi-js@1.1.0:
     resolution: {integrity: sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg==}
 
-  bits-ui@2.20.2:
-    resolution: {integrity: sha512-cb1eQD1wZEhJWb1dTLiAdYWqeUI5v7f+7EAHmetxBuELI9lo4cpAIfGEjald/PR4wTR80Fu5DFH+IaY1OKn+tg==}
+  bits-ui@2.18.1:
+    resolution: {integrity: sha512-KkemzKFH4T3gt3H+P86JcnAWExjByv/6vlwjm/BoCwTPHu03yiCdxbghdJLvFReQTe0acCAiRcKfmixxD6XvlA==}
     engines: {node: '>=20'}
     peerDependencies:
       '@internationalized/date': ^3.8.1
@@ -4041,7 +4041,7 @@ snapshots:
     dependencies:
       require-from-string: 2.0.2
 
-  bits-ui@2.20.2(@internationalized/date@3.12.2)(@sveltejs/kit@3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.2.0(svelte@5.57.2)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2):
+  bits-ui@2.18.1(@internationalized/date@3.12.2)(@sveltejs/kit@3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.2.0(svelte@5.57.2)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(jiti@2.7.0)))(svelte@5.57.2):
     dependencies:
       '@floating-ui/core': 1.8.0
       '@floating-ui/dom': 1.8.0
