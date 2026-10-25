@@ -164,6 +164,7 @@ type KnowledgeAttribution struct {
 	AccountID    uuid.UUID
 	AgentID      *uuid.UUID
 	ConnectionID *uuid.UUID
+	TokenID      *uuid.UUID
 	Source       RevisionSource
 }
 
@@ -174,6 +175,7 @@ func KnowledgeAttributionOf(decision KnowledgeDecision) KnowledgeAttribution {
 		AccountID:    decision.Reader.Identity.Principal,
 		AgentID:      actor.AgentID,
 		ConnectionID: actor.ConnectionID,
+		TokenID:      actor.TokenID,
 		Source:       RevisionSourceOf(actor.Kind, "", nil),
 	}
 }

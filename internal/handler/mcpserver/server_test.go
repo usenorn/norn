@@ -25,7 +25,9 @@ import (
 	issuequestionsvc "github.com/usenorn/norn/internal/service/issuequestion"
 	issuerelationsvc "github.com/usenorn/norn/internal/service/issuerelation"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
+	memorysvc "github.com/usenorn/norn/internal/service/memory"
 	projectsvc "github.com/usenorn/norn/internal/service/project"
+	retrievalsvc "github.com/usenorn/norn/internal/service/retrieval"
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
@@ -67,6 +69,8 @@ type harness struct {
 	sourceControl *scmsvc.MockSourceControl
 	docs          *docsvc.MockDocs
 	docLinks      *doclinksvc.MockDocLinks
+	memories      *memorysvc.MockMemories
+	retrievals    *retrievalsvc.MockRetrievals
 	tools         *mcpserver.Tools
 	edge          *mcpserver.Edge
 	actor         entity.Actor
@@ -90,6 +94,8 @@ func newHarness(t *testing.T) *harness {
 		sourceControl: scmsvc.NewMockSourceControl(ctrl),
 		docs:          docsvc.NewMockDocs(ctrl),
 		docLinks:      doclinksvc.NewMockDocLinks(ctrl),
+		memories:      memorysvc.NewMockMemories(ctrl),
+		retrievals:    retrievalsvc.NewMockRetrievals(ctrl),
 		actor: entity.Actor{
 			Kind:      entity.ActorKindToken,
 			AccountID: uuid.New(),
@@ -113,6 +119,8 @@ func newHarness(t *testing.T) *harness {
 		h.sourceControl,
 		h.docs,
 		h.docLinks,
+		h.memories,
+		h.retrievals,
 	)
 	if err != nil {
 		t.Fatalf("NewTools: %v", err)
@@ -234,6 +242,13 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_edit_doc",
 		"norn_link_doc",
 		"norn_unlink_doc",
+		"norn_recall_memory",
+		"norn_list_memories",
+		"norn_get_memory",
+		"norn_remember",
+		"norn_correct_memory",
+		"norn_supersede_memory",
+		"norn_withdraw_memory",
 		"norn_list_projects",
 		"norn_create_project",
 		"norn_update_project",
@@ -259,8 +274,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 32 {
-		t.Errorf("registered %d tools, want 32", len(tools.Tools))
+	if len(tools.Tools) != 39 {
+		t.Errorf("registered %d tools, want 39", len(tools.Tools))
 	}
 }
 
@@ -432,6 +447,8 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 		scmsvc.NewMockSourceControl(ctrl),
 		docsvc.NewMockDocs(ctrl),
 		doclinksvc.NewMockDocLinks(ctrl),
+		memorysvc.NewMockMemories(ctrl),
+		retrievalsvc.NewMockRetrievals(ctrl),
 	)
 	if err != nil {
 		t.Fatalf("NewTools: %v", err)

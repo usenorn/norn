@@ -178,10 +178,11 @@ func (h *harness) actAs(actor entity.Actor, role entity.MembershipRole) {
 }
 
 func (h *harness) actAsAgent(scope entity.AgentScope) uuid.UUID {
-	agentID, connectionID := uuid.New(), uuid.New()
+	agentID, connectionID, tokenID := uuid.New(), uuid.New(), uuid.New()
 	h.actAs(entity.Actor{
 		Kind:           entity.ActorKindAgent,
 		AccountID:      uuid.New(),
+		TokenID:        &tokenID,
 		AgentID:        &agentID,
 		AgentScope:     scope,
 		OwnerAccountID: h.accountID,
@@ -272,6 +273,11 @@ func (h *harness) store() {
 			return nil
 		}).
 		AnyTimes()
+	h.memories.EXPECT().Lineage(gomock.Any(), h.workspaceID, gomock.Any(), entity.MemoryLineageMax).
+		DoAndReturn(func(_ context.Context, _, memoryID uuid.UUID, _ int) ([]entity.Memory, error) {
+			return h.lineage(memoryID), nil
+		}).
+		AnyTimes()
 	h.memories.EXPECT().List(gomock.Any(), h.workspaceID, gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ uuid.UUID, filter repository.MemoryFilter, _ entity.MemoryPage) ([]entity.Memory, error) {
 			h.listed = append(h.listed, filter)
@@ -285,6 +291,29 @@ func (h *harness) store() {
 			return memories, nil
 		}).
 		AnyTimes()
+}
+
+func (h *harness) lineage(memoryID uuid.UUID) []entity.Memory {
+	memory, err := h.find(memoryID)
+	if err != nil {
+		return nil
+	}
+
+	lineage := []entity.Memory{memory}
+
+	for earlier := memory.SupersedesID; earlier != nil; {
+		previous, _ := h.find(*earlier)
+		lineage = append([]entity.Memory{previous}, lineage...)
+		earlier = previous.SupersedesID
+	}
+
+	for later := memory.SupersededByID; later != nil; {
+		next, _ := h.find(*later)
+		lineage = append(lineage, next)
+		later = next.SupersededByID
+	}
+
+	return lineage
 }
 
 func (h *harness) history() {
@@ -376,14 +405,14 @@ func TestAPersonalMemoryIsAcceptedOnCreation(t *testing.T) {
 	}
 }
 
-func TestWhoWritesASharedMemoryDecidesWhetherItIsAProposal(t *testing.T) {
+func TestAnAgentsSharedMemoryIsAcceptedAsItsOwnInference(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		agent bool
 		want  entity.MemoryStatus
 		basis entity.MemoryBasis
 	}{
 		"a person":                 {agent: false, want: entity.MemoryStatusAccepted, basis: entity.MemoryBasisObservation},
-		"an agent acting for them": {agent: true, want: entity.MemoryStatusProposed, basis: entity.MemoryBasisInference},
+		"an agent acting for them": {agent: true, want: entity.MemoryStatusAccepted, basis: entity.MemoryBasisInference},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)
@@ -403,7 +432,8 @@ func TestWhoWritesASharedMemoryDecidesWhetherItIsAProposal(t *testing.T) {
 				t.Fatalf("the memory is authored by %s, want the person %s", memory.AuthorID, h.accountID)
 			}
 
-			if testCase.agent && (memory.By.AgentID == nil || *memory.By.AgentID != agentID || memory.By.ConnectionID == nil) {
+			if testCase.agent && (memory.By.AgentID == nil || *memory.By.AgentID != agentID ||
+				memory.By.ConnectionID == nil || memory.By.TokenID == nil || *memory.By.TokenID != *h.actor.TokenID) {
 				t.Fatalf("an agent's memory lost its provenance: %+v", memory.By)
 			}
 		})
@@ -672,7 +702,7 @@ func TestAnAcceptedReplacementSupersedesWithoutDeleting(t *testing.T) {
 	}
 }
 
-func TestAProposedReplacementLeavesTheAcceptedMemoryStanding(t *testing.T) {
+func TestAnAgentsReplacementRetiresTheMemoryItSupersedes(t *testing.T) {
 	h := newHarness(t)
 	replaced := h.create(t, "Use SQLite", entity.WorkspaceAudience())
 	h.actAsAgent(entity.AgentScopeMember)
@@ -682,23 +712,81 @@ func TestAProposedReplacementLeavesTheAcceptedMemoryStanding(t *testing.T) {
 		ExpectedVersion: 1,
 	})
 	if err != nil {
-		t.Fatalf("propose a replacement: %v", err)
+		t.Fatalf("supersede as an agent: %v", err)
 	}
 
-	if replacement.Status != entity.MemoryStatusProposed || replacement.SupersedesID == nil || *replacement.SupersedesID != replaced.ID {
-		t.Fatalf("the replacement read back as %s superseding %v", replacement.Status, replacement.SupersedesID)
+	if replacement.Status != entity.MemoryStatusAccepted || replacement.Basis != entity.MemoryBasisInference {
+		t.Fatalf("the replacement read back as %s on %s", replacement.Status, replacement.Basis)
 	}
 
-	if old := h.stored[replaced.ID]; old.Status != entity.MemoryStatusAccepted || old.Version != 1 {
-		t.Fatalf("a proposal moved the accepted memory to %s at version %d", old.Status, old.Version)
+	if old := h.stored[replaced.ID]; old.Status != entity.MemoryStatusSuperseded || old.SupersededByID == nil || *old.SupersededByID != replacement.ID {
+		t.Fatalf("the replaced memory is %s, replaced by %v", old.Status, old.SupersededByID)
+	}
+}
+
+func TestLineageTracesEverySupersessionItsReaderMaySee(t *testing.T) {
+	h := newHarness(t)
+	first := h.create(t, "Use SQLite", entity.WorkspaceAudience())
+
+	supersede := func(memory entity.Memory, statement string) entity.Memory {
+		t.Helper()
+
+		replacement, err := h.service.Supersede(context.Background(), h.workspaceID, memory.ID, service.SupersedeMemoryInput{
+			Replacement:     service.CreateMemoryInput{MemoryContent: content(statement), Audience: entity.WorkspaceAudience()},
+			ExpectedVersion: memory.Version,
+		})
+		if err != nil {
+			t.Fatalf("supersede %q: %v", memory.Statement, err)
+		}
+
+		return replacement
+	}
+
+	second := supersede(first, "Use Postgres")
+	third := supersede(second, "Use Postgres with pgvector")
+
+	statements := func(lineage []entity.Memory) []string {
+		var got []string
+		for _, memory := range lineage {
+			got = append(got, memory.Statement)
+		}
+
+		return got
+	}
+
+	lineage, err := h.service.Lineage(context.Background(), h.workspaceID, second.ID)
+	if err != nil {
+		t.Fatalf("lineage: %v", err)
+	}
+
+	if got := statements(lineage); !slices.Equal(got, []string{"Use SQLite", "Use Postgres", "Use Postgres with pgvector"}) {
+		t.Fatalf("the lineage reads %q, oldest first", got)
+	}
+
+	hidden := h.stored[second.ID]
+	hidden.Audience = entity.PersonalAudience()
+	hidden.AuthorID = uuid.New()
+	h.stored[second.ID] = hidden
+
+	lineage, err = h.service.Lineage(context.Background(), h.workspaceID, third.ID)
+	if err != nil {
+		t.Fatalf("lineage past a hidden link: %v", err)
+	}
+
+	if got := statements(lineage); !slices.Equal(got, []string{"Use SQLite", "Use Postgres with pgvector"}) {
+		t.Fatalf("the lineage past a hidden link reads %q", got)
+	}
+
+	if _, err := h.service.Lineage(context.Background(), h.workspaceID, second.ID); !errors.Is(err, entity.ErrMemoryNotFound) {
+		t.Fatalf("the lineage of a hidden memory got %v, want ErrMemoryNotFound", err)
 	}
 }
 
 func TestAProposalCannotBeSuperseded(t *testing.T) {
 	h := newHarness(t)
-	h.actAsAgent(entity.AgentScopeMember)
 	proposal := h.create(t, "Cache everything", entity.WorkspaceAudience())
-	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID}, entity.MembershipRoleMember)
+	proposal.Status = entity.MemoryStatusProposed
+	h.stored[proposal.ID] = proposal
 
 	_, err := h.service.Supersede(context.Background(), h.workspaceID, proposal.ID, service.SupersedeMemoryInput{
 		Replacement:     service.CreateMemoryInput{MemoryContent: content("Cache reads"), Audience: entity.WorkspaceAudience()},

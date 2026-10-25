@@ -110,21 +110,13 @@ func (s *memoriesService) Supersede(
 		return entity.Memory{}, err
 	}
 
-	retires := replacement.Status == entity.MemoryStatusAccepted
-
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		replaced, err := s.memories.LockByID(ctx, workspaceID, memoryID)
 		if err != nil {
 			return err
 		}
 
-		if retires {
-			_, err = s.knowledge.Change(ctx, replaced.Access())
-		} else {
-			_, err = s.knowledge.Read(ctx, replaced.Access())
-		}
-
-		if err != nil {
+		if _, err := s.knowledge.Change(ctx, replaced.Access()); err != nil {
 			return concealed(err)
 		}
 
@@ -140,10 +132,6 @@ func (s *memoriesService) Supersede(
 
 		if replacement, err = s.insert(ctx, replacement, decision); err != nil {
 			return err
-		}
-
-		if !retires {
-			return nil
 		}
 
 		if err := replaced.SupersededBy(replacement.ID); err != nil {
@@ -180,12 +168,11 @@ func (s *memoriesService) draft(
 	}
 
 	now := time.Now().UTC()
-	actor := decision.Decision.Actor
 	memory := entity.Memory{
 		ID:          uuid.New(),
 		WorkspaceID: workspaceID,
 		Audience:    input.Audience,
-		Status:      entity.InitialMemoryStatus(input.Audience, actor.Kind),
+		Status:      entity.MemoryStatusAccepted,
 		AuthorID:    decision.Reader.Identity.Principal,
 		By:          entity.KnowledgeAttributionOf(decision),
 		Version:     1,
@@ -396,6 +383,32 @@ func (s *memoriesService) Get(ctx context.Context, workspaceID, memoryID uuid.UU
 	}
 
 	return s.shown(ctx, decision.Reader, memory)
+}
+
+func (s *memoriesService) Lineage(ctx context.Context, workspaceID, memoryID uuid.UUID) ([]entity.Memory, error) {
+	lineage, err := s.memories.Lineage(ctx, workspaceID, memoryID, entity.MemoryLineageMax)
+	if err != nil {
+		return nil, err
+	}
+
+	at := slices.IndexFunc(lineage, func(memory entity.Memory) bool { return memory.ID == memoryID })
+	if at < 0 {
+		return nil, entity.ErrMemoryNotFound
+	}
+
+	decision, err := s.knowledge.Read(ctx, lineage[at].Access())
+	if err != nil {
+		return nil, concealed(err)
+	}
+
+	reader := decision.Reader
+	lineage = slices.DeleteFunc(lineage, func(memory entity.Memory) bool { return !reader.Sees(memory.Access()) })
+
+	for i := range lineage {
+		lineage[i] = lineage[i].ViewedBy(reader)
+	}
+
+	return lineage, nil
 }
 
 func (s *memoriesService) List(

@@ -20,6 +20,7 @@ const (
 	MemoryComponentMaxLen  = 100
 	MemoryExcerptMaxLen    = 2000
 	MemoryEvidenceMax      = 20
+	MemoryLineageMax       = 50
 
 	MemoryPageDefaultSize = 50
 	MemoryPageMaxSize     = 200
@@ -145,14 +146,6 @@ func (s MemoryStatus) CanBecome(to MemoryStatus) bool {
 	default:
 		return false
 	}
-}
-
-func InitialMemoryStatus(audience KnowledgeAudience, kind ActorKind) MemoryStatus {
-	if audience.Visibility != KnowledgeVisibilityPersonal && kind == ActorKindAgent {
-		return MemoryStatusProposed
-	}
-
-	return MemoryStatusAccepted
 }
 
 type MemoryViewer struct {

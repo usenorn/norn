@@ -75,30 +75,6 @@ func TestSupersedingRecordsTheReplacement(t *testing.T) {
 	}
 }
 
-func TestOnlyAnAgentsSharedMemoryStartsAsAProposal(t *testing.T) {
-	project := entity.ProjectAudience(uuid.New())
-
-	for name, testCase := range map[string]struct {
-		audience entity.KnowledgeAudience
-		kind     entity.ActorKind
-		want     entity.MemoryStatus
-	}{
-		"a person's personal memory":  {entity.PersonalAudience(), entity.ActorKindUser, entity.MemoryStatusAccepted},
-		"an agent's personal memory":  {entity.PersonalAudience(), entity.ActorKindAgent, entity.MemoryStatusAccepted},
-		"a person's project memory":   {project, entity.ActorKindUser, entity.MemoryStatusAccepted},
-		"a person's workspace memory": {entity.WorkspaceAudience(), entity.ActorKindUser, entity.MemoryStatusAccepted},
-		"a token's workspace memory":  {entity.WorkspaceAudience(), entity.ActorKindToken, entity.MemoryStatusAccepted},
-		"an agent's project memory":   {project, entity.ActorKindAgent, entity.MemoryStatusProposed},
-		"an agent's workspace memory": {entity.WorkspaceAudience(), entity.ActorKindAgent, entity.MemoryStatusProposed},
-	} {
-		t.Run(name, func(t *testing.T) {
-			if got := entity.InitialMemoryStatus(testCase.audience, testCase.kind); got != testCase.want {
-				t.Fatalf("got %s, want %s", got, testCase.want)
-			}
-		})
-	}
-}
-
 func TestAStaleMemoryVersionIsRefusedBeforeItsStatus(t *testing.T) {
 	memory := entity.Memory{Version: 3, Status: entity.MemoryStatusWithdrawn}
 

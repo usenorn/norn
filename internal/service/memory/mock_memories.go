@@ -88,6 +88,21 @@ func (mr *MockMemoriesMockRecorder) Get(ctx, workspaceID, memoryID any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockMemories)(nil).Get), ctx, workspaceID, memoryID)
 }
 
+// Lineage mocks base method.
+func (m *MockMemories) Lineage(ctx context.Context, workspaceID, memoryID uuid.UUID) ([]entity.Memory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Lineage", ctx, workspaceID, memoryID)
+	ret0, _ := ret[0].([]entity.Memory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Lineage indicates an expected call of Lineage.
+func (mr *MockMemoriesMockRecorder) Lineage(ctx, workspaceID, memoryID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lineage", reflect.TypeOf((*MockMemories)(nil).Lineage), ctx, workspaceID, memoryID)
+}
+
 // List mocks base method.
 func (m *MockMemories) List(ctx context.Context, workspaceID uuid.UUID, input service.ListMemoriesInput) (service.MemoryList, error) {
 	m.ctrl.T.Helper()

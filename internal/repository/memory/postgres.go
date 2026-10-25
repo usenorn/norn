@@ -34,6 +34,7 @@ const memoryColumns = `
        coalesce(a.display_name, ''),
        coalesce(m.agent_id::text, ''),
        coalesce(m.connection_id::text, ''),
+       coalesce(m.token_id::text, ''),
        m.source,
        m.effective_from,
        m.effective_until,
@@ -92,6 +93,36 @@ FROM workspace_memories m
 LEFT JOIN accounts a ON a.id = m.author_account_id
 WHERE m.workspace_id = $1 AND m.id = ANY($2::uuid[])`
 
+const lineageQuery = `
+WITH RECURSIVE earlier AS (
+    SELECT id, supersedes_id, 0 AS depth
+    FROM workspace_memories
+    WHERE id = $1 AND workspace_id = $2
+    UNION ALL
+    SELECT m.id, m.supersedes_id, e.depth - 1
+    FROM workspace_memories m
+    JOIN earlier e ON m.id = e.supersedes_id AND m.workspace_id = $2
+    WHERE e.depth > -$3::integer
+), later AS (
+    SELECT id, superseded_by_id, 0 AS depth
+    FROM workspace_memories
+    WHERE id = $1 AND workspace_id = $2
+    UNION ALL
+    SELECT m.id, m.superseded_by_id, l.depth + 1
+    FROM workspace_memories m
+    JOIN later l ON m.id = l.superseded_by_id AND m.workspace_id = $2
+    WHERE l.depth < $3::integer
+), chain AS (
+    SELECT id, depth FROM earlier
+    UNION
+    SELECT id, depth FROM later
+)
+SELECT` + memoryColumns + `
+FROM chain c
+JOIN workspace_memories m ON m.id = c.id
+LEFT JOIN accounts a ON a.id = m.author_account_id
+ORDER BY c.depth`
+
 const evidenceQuery = `
 SELECT e.memory_id,
        e.kind,
@@ -125,6 +156,7 @@ func memoryToModel(memory entity.Memory) *dbpostgres.WorkspaceMemory {
 		AuthorAccountID:  null.NewString(memory.AuthorID.String(), memory.AuthorID != uuid.Nil),
 		AgentID:          optionalUUID(memory.By.AgentID),
 		ConnectionID:     optionalUUID(memory.By.ConnectionID),
+		TokenID:          optionalUUID(memory.By.TokenID),
 		Source:           string(memory.By.Source),
 		EffectiveFrom:    memory.EffectiveFrom,
 		EffectiveUntil:   null.TimeFromPtr(memory.EffectiveUntil),
@@ -172,9 +204,9 @@ type scanner interface {
 }
 
 type memoryRow struct {
-	id, workspace, kind, visibility, project, appliesProject, status, basis   string
-	author, agent, connection, source, supersedes, supersededBy, contributors string
-	effectiveUntil                                                            sql.NullTime
+	id, workspace, kind, visibility, project, appliesProject, status, basis          string
+	author, agent, connection, token, source, supersedes, supersededBy, contributors string
+	effectiveUntil                                                                   sql.NullTime
 }
 
 func scanMemory(row scanner) (entity.Memory, error) {
@@ -186,7 +218,7 @@ func scanMemory(row scanner) (entity.Memory, error) {
 	if err := row.Scan(
 		&raw.id, &raw.workspace, &raw.kind, &memory.Statement, &memory.Rationale, &memory.Conditions,
 		&raw.visibility, &raw.project, &raw.appliesProject, &memory.Applicability.Component, &raw.status,
-		&raw.basis, &raw.author, &memory.AuthorName, &raw.agent, &raw.connection, &raw.source,
+		&raw.basis, &raw.author, &memory.AuthorName, &raw.agent, &raw.connection, &raw.token, &raw.source,
 		&memory.EffectiveFrom, &raw.effectiveUntil, &raw.supersedes, &raw.supersededBy, &memory.Version,
 		&memory.CreatedAt, &memory.UpdatedAt, &raw.contributors,
 	); err != nil {
@@ -230,6 +262,10 @@ func (row *memoryRow) fill(memory *entity.Memory) error {
 
 	if memory.By.ConnectionID, err = parseOptional(row.connection); err != nil {
 		return fmt.Errorf("parse memory connection id: %w", err)
+	}
+
+	if memory.By.TokenID, err = parseOptional(row.token); err != nil {
+		return fmt.Errorf("parse memory token id: %w", err)
 	}
 
 	if memory.SupersedesID, err = parseOptional(row.supersedes); err != nil {
@@ -491,6 +527,14 @@ func (r *memoryRepository) ListByIDs(
 	}
 
 	return r.query(ctx, "list memories by id", memoriesByIDsQuery, workspaceID.String(), idStrings(memoryIDs))
+}
+
+func (r *memoryRepository) Lineage(
+	ctx context.Context,
+	workspaceID, memoryID uuid.UUID,
+	depth int,
+) ([]entity.Memory, error) {
+	return r.query(ctx, "trace memory lineage", lineageQuery, memoryID.String(), workspaceID.String(), depth)
 }
 
 func (r *memoryRepository) Enumerate(

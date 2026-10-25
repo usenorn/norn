@@ -162,9 +162,38 @@ var disclosedFailures = []disclosure{
 		"more than one heading in the doc reads like that; replace the whole body instead",
 	},
 	{
+		entity.ErrDocRevisionNotFound, "doc_revision_not_found",
+		"that doc has no such revision; cite the doc alone to cite its current revision",
+	},
+	{
+		entity.ErrMemoryNotFound, "memory_not_found",
+		"memory not found; norn_recall_memory and norn_list_memories find the memories this " +
+			"connection may read",
+	},
+	{
+		entity.ErrMemoryStale, "version_conflict",
+		"the memory changed since it was read; call norn_get_memory, apply the change to what " +
+			"it says now, and retry with its version",
+	},
+	{
+		entity.ErrMemoryClosed, "memory_closed",
+		"the memory is superseded or withdrawn and takes no more changes; norn_get_memory shows " +
+			"what replaced it",
+	},
+	{
+		entity.ErrMemoryCursorInvalid, "invalid_cursor", "the cursor is not one norn_list_memories returned",
+	},
+	{
+		entity.ErrKnowledgeCursorInvalid, "invalid_cursor", "the cursor is not one norn_list_memories returned",
+	},
+	{
 		entity.ErrKnowledgeNotEditable, "permission_denied",
-		"this connection may read the doc but not change it; its author, its contributors and " +
+		"this connection may read it but not change it; its author, its contributors and " +
 			"the people who maintain its project or workspace may",
+	},
+	{
+		entity.ErrKnowledgeNotShareable, "permission_denied",
+		"this connection may not share with that audience; choose one it belongs to, or personal",
 	},
 	{errWorkspaceUnknown, "workspace_not_found", errWorkspaceUnknown.Error()},
 }
@@ -217,6 +246,23 @@ func toolFailure(ctx context.Context, err error) error {
 				"apply the edit to what it says now, and retry with expected_version=%d",
 			staleDoc.Version,
 			staleDoc.Version,
+		))
+	}
+
+	var staleMemory entity.MemoryStaleError
+	if errors.As(err, &staleMemory) {
+		return refusal("version_conflict", fmt.Sprintf(
+			"the memory changed since it was read and is now at version %d; call norn_get_memory, "+
+				"apply the change to what it says now, and retry with expected_version=%d",
+			staleMemory.Version,
+			staleMemory.Version,
+		))
+	}
+
+	var transition entity.MemoryTransitionError
+	if errors.As(err, &transition) {
+		return refusal("memory_transition_invalid", fmt.Sprintf(
+			"a %s memory cannot become %s", transition.From, transition.To,
 		))
 	}
 

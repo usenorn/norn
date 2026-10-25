@@ -87,6 +87,21 @@ func (mr *MockMemoryMockRecorder) GetByID(ctx, workspaceID, memoryID any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMemory)(nil).GetByID), ctx, workspaceID, memoryID)
 }
 
+// Lineage mocks base method.
+func (m *MockMemory) Lineage(ctx context.Context, workspaceID, memoryID uuid.UUID, depth int) ([]entity.Memory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Lineage", ctx, workspaceID, memoryID, depth)
+	ret0, _ := ret[0].([]entity.Memory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Lineage indicates an expected call of Lineage.
+func (mr *MockMemoryMockRecorder) Lineage(ctx, workspaceID, memoryID, depth any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lineage", reflect.TypeOf((*MockMemory)(nil).Lineage), ctx, workspaceID, memoryID, depth)
+}
+
 // List mocks base method.
 func (m *MockMemory) List(ctx context.Context, workspaceID uuid.UUID, filter repository.MemoryFilter, page entity.MemoryPage) ([]entity.Memory, error) {
 	m.ctrl.T.Helper()

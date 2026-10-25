@@ -35,6 +35,7 @@ type Memory interface {
 		page entity.MemoryPage,
 	) ([]entity.Memory, error)
 	ListByIDs(ctx context.Context, workspaceID uuid.UUID, memoryIDs []uuid.UUID) ([]entity.Memory, error)
+	Lineage(ctx context.Context, workspaceID, memoryID uuid.UUID, depth int) ([]entity.Memory, error)
 	Enumerate(
 		ctx context.Context,
 		workspaceID uuid.UUID,

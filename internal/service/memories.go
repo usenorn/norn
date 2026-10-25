@@ -70,6 +70,7 @@ type MemoryHistory struct {
 type Memories interface {
 	Create(ctx context.Context, workspaceID uuid.UUID, input CreateMemoryInput) (entity.Memory, error)
 	Get(ctx context.Context, workspaceID, memoryID uuid.UUID) (entity.Memory, error)
+	Lineage(ctx context.Context, workspaceID, memoryID uuid.UUID) ([]entity.Memory, error)
 	List(ctx context.Context, workspaceID uuid.UUID, input ListMemoriesInput) (MemoryList, error)
 	Correct(ctx context.Context, workspaceID, memoryID uuid.UUID, input CorrectMemoryInput) (entity.Memory, error)
 	Supersede(

@@ -30,6 +30,7 @@ const summaryColumns = `
        coalesce(a.display_name, ''),
        coalesce(r.agent_id::text, ''),
        coalesce(r.connection_id::text, ''),
+       coalesce(r.token_id::text, ''),
        r.source,
        r.created_at`
 
@@ -128,6 +129,7 @@ func revisionToModel(revision entity.MemoryRevision) (*dbpostgres.WorkspaceMemor
 		AccountID:        null.NewString(revision.By.AccountID.String(), revision.By.AccountID != uuid.Nil),
 		AgentID:          optionalUUID(revision.By.AgentID),
 		ConnectionID:     optionalUUID(revision.By.ConnectionID),
+		TokenID:          optionalUUID(revision.By.TokenID),
 		Source:           string(revision.By.Source),
 		CreatedAt:        revision.CreatedAt,
 	}, nil
@@ -142,13 +144,13 @@ func optionalUUID(id *uuid.UUID) null.String {
 }
 
 type summaryRow struct {
-	id, workspace, memory, action, status, account, agent, connection, source string
+	id, workspace, memory, action, status, account, agent, connection, token, source string
 }
 
 func (row *summaryRow) targets(summary *entity.MemoryRevisionSummary) []any {
 	return []any{
 		&row.id, &row.workspace, &row.memory, &summary.Version, &row.action, &row.status, &summary.Statement,
-		&row.account, &summary.AccountName, &row.agent, &row.connection, &row.source, &summary.CreatedAt,
+		&row.account, &summary.AccountName, &row.agent, &row.connection, &row.token, &row.source, &summary.CreatedAt,
 	}
 }
 
@@ -177,6 +179,10 @@ func (row *summaryRow) fill(summary *entity.MemoryRevisionSummary) error {
 
 	if summary.By.ConnectionID, err = parseOptional(row.connection); err != nil {
 		return fmt.Errorf("parse memory revision connection id: %w", err)
+	}
+
+	if summary.By.TokenID, err = parseOptional(row.token); err != nil {
+		return fmt.Errorf("parse memory revision token id: %w", err)
 	}
 
 	summary.Action = entity.MemoryRevisionAction(row.action)
