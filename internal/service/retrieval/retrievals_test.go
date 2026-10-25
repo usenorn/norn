@@ -20,6 +20,7 @@ import (
 	memoryrevisionrepo "github.com/usenorn/norn/internal/repository/memoryrevision"
 	"github.com/usenorn/norn/internal/service"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	retrievalsvc "github.com/usenorn/norn/internal/service/retrieval"
 )
 
@@ -90,9 +91,9 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	cfg := config.Knowledge{QueryTimeout: time.Second, SemanticMinSimilarity: 0.3}
 	h.service = retrievalsvc.New(
-		h.knowledge, h.memories, h.revisions, h.providers, h.models, readers,
-		config.Knowledge{QueryTimeout: time.Second, SemanticMinSimilarity: 0.3},
+		h.knowledge, h.memories, h.revisions, knowledgeembeddingsvc.New(h.providers, h.models, cfg), readers, cfg,
 	)
 
 	return h

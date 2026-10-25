@@ -188,6 +188,7 @@ import (
 	issuetemplatesvc "github.com/usenorn/norn/internal/service/issuetemplate"
 	jobssvc "github.com/usenorn/norn/internal/service/jobs"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
@@ -382,6 +383,7 @@ var baseSet = wire.NewSet(
 	notificationsvc.Set,
 	savedviewsvc.Set,
 	knowledgeauthorizersvc.Set,
+	knowledgeembeddingsvc.Set,
 	knowledgeindexsvc.Set,
 	retrievalsvc.Set,
 	eventsvc.Set,

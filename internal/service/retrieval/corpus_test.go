@@ -31,6 +31,7 @@ import (
 	memoryrevisionrepo "github.com/usenorn/norn/internal/repository/memoryrevision"
 	"github.com/usenorn/norn/internal/service"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
 	retrievalsvc "github.com/usenorn/norn/internal/service/retrieval"
 )
@@ -291,9 +292,10 @@ func TestTheRetrievalCorpusReturnsWhatEachQuestionNeeds(t *testing.T) {
 		jobqueuerepo.NewMockJobProducer(ctrl), client,
 	)
 
+	cfg := config.Knowledge{QueryTimeout: 5 * time.Second, SemanticMinSimilarity: 0.3}
 	retrievals := retrievalsvc.New(
-		knowledgerepo.New(client), memoryrepo.New(client), memoryrevisionrepo.New(client), providers, embedder,
-		readers, config.Knowledge{QueryTimeout: 5 * time.Second, SemanticMinSimilarity: 0.3},
+		knowledgerepo.New(client), memoryrepo.New(client), memoryrevisionrepo.New(client),
+		knowledgeembeddingsvc.New(providers, embedder, cfg), readers, cfg,
 	)
 
 	err := client.WithTx(context.Background(), func(ctx context.Context) error {
