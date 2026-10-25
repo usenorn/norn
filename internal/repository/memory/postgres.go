@@ -139,15 +139,20 @@ SELECT e.memory_id,
        coalesce(e.comment_id::text, ''),
        coalesce(e.doc_id::text, ''),
        coalesce(e.doc_revision_id::text, ''),
+       e.issue_version,
+       e.comment_version,
        coalesce(e.excerpt, ''),
+       workspace_memory_evidence_state(e.kind, e.issue_id, e.issue_version, e.comment_id, e.comment_version,
+                                       e.doc_id, e.doc_revision_id),
        coalesce(d.visibility, ''),
        coalesce(d.project_id::text, ''),
        coalesce(d.author_account_id::text, ''),
        coalesce(i.reference_key || '-' || i.number::text, ''),
        coalesce(i.title, ''),
-       coalesce(d.title, '')
+       coalesce(pinned.title, '')
 FROM workspace_memory_evidence e
 LEFT JOIN workspace_docs d ON d.id = e.doc_id
+LEFT JOIN workspace_doc_revisions pinned ON pinned.id = e.doc_revision_id
 LEFT JOIN workspace_issues i ON i.id = e.issue_id
 WHERE e.memory_id = ANY($1::uuid[])
 ORDER BY e.memory_id, e.position`
@@ -183,16 +188,18 @@ func memoryToModel(memory entity.Memory) *dbpostgres.WorkspaceMemory {
 
 func evidenceToModel(memory entity.Memory, position int, evidence entity.MemoryEvidence) *dbpostgres.WorkspaceMemoryEvidence {
 	return &dbpostgres.WorkspaceMemoryEvidence{
-		ID:            uuid.NewString(),
-		WorkspaceID:   memory.WorkspaceID.String(),
-		MemoryID:      memory.ID.String(),
-		Position:      position,
-		Kind:          string(evidence.Kind),
-		IssueID:       optionalUUID(evidence.IssueID),
-		CommentID:     optionalUUID(evidence.CommentID),
-		DocID:         optionalUUID(evidence.DocID),
-		DocRevisionID: optionalUUID(evidence.DocRevisionID),
-		Excerpt:       null.NewString(evidence.Excerpt, evidence.Kind == entity.MemoryEvidenceExcerpt),
+		ID:             uuid.NewString(),
+		WorkspaceID:    memory.WorkspaceID.String(),
+		MemoryID:       memory.ID.String(),
+		Position:       position,
+		Kind:           string(evidence.Kind),
+		IssueID:        optionalUUID(evidence.IssueID),
+		CommentID:      optionalUUID(evidence.CommentID),
+		DocID:          optionalUUID(evidence.DocID),
+		DocRevisionID:  optionalUUID(evidence.DocRevisionID),
+		IssueVersion:   null.IntFromPtr(evidence.IssueVersion),
+		CommentVersion: null.IntFromPtr(evidence.CommentVersion),
+		Excerpt:        null.NewString(evidence.Excerpt, evidence.Kind == entity.MemoryEvidenceExcerpt),
 	}
 }
 
@@ -315,15 +322,21 @@ func scanEvidence(row scanner) (uuid.UUID, entity.MemoryEvidence, error) {
 	var (
 		evidence                                    entity.MemoryEvidence
 		memory, kind, issue, comment, doc, revision string
+		state                                       string
+		issueVersion, commentVersion                sql.NullInt64
 		docVisibility, docProject, docAuthor        string
 	)
 
 	if err := row.Scan(
-		&memory, &kind, &issue, &comment, &doc, &revision, &evidence.Excerpt,
+		&memory, &kind, &issue, &comment, &doc, &revision, &issueVersion, &commentVersion, &evidence.Excerpt, &state,
 		&docVisibility, &docProject, &docAuthor, &evidence.IssueReference, &evidence.IssueTitle, &evidence.DocTitle,
 	); err != nil {
 		return uuid.Nil, entity.MemoryEvidence{}, err
 	}
+
+	evidence.State = entity.MemoryEvidenceState(state)
+	evidence.IssueVersion = pinnedVersion(issueVersion)
+	evidence.CommentVersion = pinnedVersion(commentVersion)
 
 	memoryID, err := uuid.Parse(memory)
 	if err != nil {
@@ -361,6 +374,16 @@ func scanEvidence(row scanner) (uuid.UUID, entity.MemoryEvidence, error) {
 	}
 
 	return memoryID, evidence, nil
+}
+
+func pinnedVersion(raw sql.NullInt64) *int {
+	if !raw.Valid {
+		return nil
+	}
+
+	version := int(raw.Int64)
+
+	return &version
 }
 
 func parseOptional(raw string) (*uuid.UUID, error) {

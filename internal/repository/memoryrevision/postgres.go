@@ -69,39 +69,50 @@ SELECT e.item ->> 'kind',
        coalesce(e.item ->> 'comment_id', ''),
        coalesce(e.item ->> 'doc_id', ''),
        coalesce(e.item ->> 'doc_revision_id', ''),
+       (e.item ->> 'issue_version')::integer,
+       (e.item ->> 'comment_version')::integer,
        coalesce(e.item ->> 'excerpt', ''),
+       workspace_memory_evidence_state(e.item ->> 'kind', (e.item ->> 'issue_id')::uuid,
+                                       (e.item ->> 'issue_version')::integer, (e.item ->> 'comment_id')::uuid,
+                                       (e.item ->> 'comment_version')::integer, (e.item ->> 'doc_id')::uuid,
+                                       (e.item ->> 'doc_revision_id')::uuid),
        coalesce(d.visibility, ''),
        coalesce(d.project_id::text, ''),
        coalesce(d.author_account_id::text, ''),
        coalesce(i.reference_key || '-' || i.number::text, ''),
        coalesce(i.title, ''),
-       coalesce(d.title, '')
+       coalesce(pinned.title, '')
 FROM workspace_memory_revisions r
 CROSS JOIN LATERAL jsonb_array_elements(r.evidence) WITH ORDINALITY AS e(item, position)
 LEFT JOIN workspace_docs d ON d.id::text = e.item ->> 'doc_id'
+LEFT JOIN workspace_doc_revisions pinned ON pinned.id::text = e.item ->> 'doc_revision_id'
 LEFT JOIN workspace_issues i ON i.id::text = e.item ->> 'issue_id'
 WHERE r.id = $1
 ORDER BY e.position`
 
 type evidenceRecord struct {
-	Kind          string     `json:"kind"`
-	IssueID       *uuid.UUID `json:"issue_id,omitempty"`
-	CommentID     *uuid.UUID `json:"comment_id,omitempty"`
-	DocID         *uuid.UUID `json:"doc_id,omitempty"`
-	DocRevisionID *uuid.UUID `json:"doc_revision_id,omitempty"`
-	Excerpt       string     `json:"excerpt,omitempty"`
+	Kind           string     `json:"kind"`
+	IssueID        *uuid.UUID `json:"issue_id,omitempty"`
+	CommentID      *uuid.UUID `json:"comment_id,omitempty"`
+	DocID          *uuid.UUID `json:"doc_id,omitempty"`
+	DocRevisionID  *uuid.UUID `json:"doc_revision_id,omitempty"`
+	IssueVersion   *int       `json:"issue_version,omitempty"`
+	CommentVersion *int       `json:"comment_version,omitempty"`
+	Excerpt        string     `json:"excerpt,omitempty"`
 }
 
 func revisionToModel(revision entity.MemoryRevision) (*dbpostgres.WorkspaceMemoryRevision, error) {
 	records := make([]evidenceRecord, 0, len(revision.Evidence))
 	for _, evidence := range revision.Evidence {
 		records = append(records, evidenceRecord{
-			Kind:          string(evidence.Kind),
-			IssueID:       evidence.IssueID,
-			CommentID:     evidence.CommentID,
-			DocID:         evidence.DocID,
-			DocRevisionID: evidence.DocRevisionID,
-			Excerpt:       evidence.Excerpt,
+			Kind:           string(evidence.Kind),
+			IssueID:        evidence.IssueID,
+			CommentID:      evidence.CommentID,
+			DocID:          evidence.DocID,
+			DocRevisionID:  evidence.DocRevisionID,
+			IssueVersion:   evidence.IssueVersion,
+			CommentVersion: evidence.CommentVersion,
+			Excerpt:        evidence.Excerpt,
 		})
 	}
 
@@ -201,6 +212,16 @@ func (row *summaryRow) fill(summary *entity.MemoryRevisionSummary) error {
 	summary.CreatedAt = summary.CreatedAt.UTC()
 
 	return nil
+}
+
+func pinnedVersion(raw sql.NullInt64) *int {
+	if !raw.Valid {
+		return nil
+	}
+
+	version := int(raw.Int64)
+
+	return &version
 }
 
 func parseOptional(raw string) (*uuid.UUID, error) {
@@ -359,17 +380,22 @@ func (r *revisionRepository) evidence(ctx context.Context, revisionID uuid.UUID)
 		var (
 			evidence                               entity.MemoryEvidence
 			kind, issue, comment, doc, docRevision string
+			state                                  string
+			issueVersion, commentVersion           sql.NullInt64
 			docVisibility, docProject, docAuthor   string
 		)
 
 		if err := rows.Scan(
-			&kind, &issue, &comment, &doc, &docRevision, &evidence.Excerpt, &docVisibility, &docProject, &docAuthor,
-			&evidence.IssueReference, &evidence.IssueTitle, &evidence.DocTitle,
+			&kind, &issue, &comment, &doc, &docRevision, &issueVersion, &commentVersion, &evidence.Excerpt, &state,
+			&docVisibility, &docProject, &docAuthor, &evidence.IssueReference, &evidence.IssueTitle, &evidence.DocTitle,
 		); err != nil {
 			return nil, fmt.Errorf("scan memory revision evidence: %w", err)
 		}
 
 		evidence.Kind = entity.MemoryEvidenceKind(kind)
+		evidence.State = entity.MemoryEvidenceState(state)
+		evidence.IssueVersion = pinnedVersion(issueVersion)
+		evidence.CommentVersion = pinnedVersion(commentVersion)
 
 		for _, target := range []struct {
 			raw string

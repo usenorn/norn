@@ -28,13 +28,32 @@ func (k MemoryEvidenceKind) Valid() bool {
 	return slices.Contains(MemoryEvidenceKinds(), k)
 }
 
+type MemoryEvidenceState string
+
+const (
+	MemoryEvidenceCurrent     MemoryEvidenceState = "current"
+	MemoryEvidenceChanged     MemoryEvidenceState = "changed"
+	MemoryEvidenceUnavailable MemoryEvidenceState = "unavailable"
+)
+
+func MemoryEvidenceStates() []MemoryEvidenceState {
+	return []MemoryEvidenceState{MemoryEvidenceCurrent, MemoryEvidenceChanged, MemoryEvidenceUnavailable}
+}
+
+func (s MemoryEvidenceState) Valid() bool {
+	return slices.Contains(MemoryEvidenceStates(), s)
+}
+
 type MemoryEvidence struct {
 	Kind           MemoryEvidenceKind
 	IssueID        *uuid.UUID
 	CommentID      *uuid.UUID
 	DocID          *uuid.UUID
 	DocRevisionID  *uuid.UUID
+	IssueVersion   *int
+	CommentVersion *int
 	Excerpt        string
+	State          MemoryEvidenceState
 	DocAudience    KnowledgeAudience
 	DocAuthorID    uuid.UUID
 	IssueReference string
@@ -88,6 +107,14 @@ func (e MemoryEvidence) SeenBy(reader KnowledgeReader, visibleIssues []uuid.UUID
 	default:
 		return true
 	}
+}
+
+func (e MemoryEvidence) Concealed() MemoryEvidence {
+	return MemoryEvidence{Kind: e.Kind, State: MemoryEvidenceUnavailable}
+}
+
+func (e MemoryEvidence) Stale() bool {
+	return e.State != MemoryEvidenceCurrent
 }
 
 func (e MemoryEvidence) Cites(other MemoryEvidence) bool {
