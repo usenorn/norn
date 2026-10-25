@@ -115,7 +115,6 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "3000"
-      ORIGIN: ${NORN_APP_BASE_URL:?set NORN_APP_BASE_URL in .env}
       INTERNAL_API_ORIGIN: http://api:8080
       ADDRESS_HEADER: X-Forwarded-For
       XFF_DEPTH: "1"
