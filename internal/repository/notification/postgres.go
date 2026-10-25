@@ -46,7 +46,7 @@ SELECT d.event_id,
        coalesce(e.actor_account_id::text, '') AS actor_id,
        e.actor_kind,
        coalesce(actor.display_name, '') AS actor_name,
-       coalesce(i.title, p.name, t.name, '') AS title,
+       coalesce(i.title, p.name, t.name, mem.statement, '') AS title,
        coalesce(i.reference_key || '-' || i.number::text, '') AS reference,
        coalesce(it.key, t.key, '') AS team_key,
        coalesce(p.slug, '') AS project_slug,
@@ -63,6 +63,8 @@ LEFT JOIN workspace_team_members itm ON itm.team_id = it.id AND itm.account_id =
 LEFT JOIN workspace_projects p ON p.id = e.project_id AND p.archived_at IS NULL
 LEFT JOIN workspace_teams t ON t.id = e.team_id AND t.status = 'active'
 LEFT JOIN workspace_team_members tm ON tm.team_id = t.id AND tm.account_id = d.account_id
+LEFT JOIN workspace_memories mem ON mem.id = e.memory_id
+LEFT JOIN workspace_projects mp ON mp.id = mem.project_id
 LEFT JOIN workspace_notification_reads r
     ON r.workspace_id = d.workspace_id
    AND r.account_id = d.account_id
@@ -76,7 +78,18 @@ WHERE d.workspace_id = $1
   AND (e.project_id IS NULL OR p.id IS NOT NULL)
   AND (e.team_id IS NULL
        OR (t.id IS NOT NULL
-           AND (m.role = 'admin' OR t.visibility = 'public' OR tm.account_id IS NOT NULL)))`
+           AND (m.role = 'admin' OR t.visibility = 'public' OR tm.account_id IS NOT NULL)))
+  AND (e.memory_id IS NULL
+       OR (mem.id IS NOT NULL
+           AND (mem.visibility = 'workspace'
+                OR (mem.visibility = 'personal' AND mem.author_account_id = d.account_id)
+                OR (mem.visibility = 'project'
+                    AND (m.role = 'admin'
+                         OR mp.lead_account_id = d.account_id
+                         OR EXISTS (
+                             SELECT 1 FROM workspace_project_members pm
+                             WHERE pm.project_id = mem.project_id AND pm.account_id = d.account_id
+                         ))))))`
 
 const unreadRows = `read_through IS NULL OR created_at > read_through`
 

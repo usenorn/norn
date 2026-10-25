@@ -177,8 +177,8 @@ var disclosedFailures = []disclosure{
 	},
 	{
 		entity.ErrMemoryClosed, "memory_closed",
-		"the memory is superseded or withdrawn and takes no more changes; norn_get_memory shows " +
-			"what replaced it",
+		"the memory is superseded, withdrawn or rejected and takes no more changes; " +
+			"norn_get_memory shows what replaced it",
 	},
 	{
 		entity.ErrMemoryNotPending, "memory_not_pending",

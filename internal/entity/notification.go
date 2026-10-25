@@ -34,6 +34,7 @@ const (
 
 	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
 	NotificationKindDecisionWaiting NotificationKind = "decision_waiting"
+	NotificationKindMemoryProposed  NotificationKind = "memory_proposed"
 )
 
 func NotificationKinds() []NotificationKind {
@@ -45,6 +46,7 @@ func NotificationKinds() []NotificationKind {
 		NotificationKindMembership,
 		NotificationKindApprovalWaiting,
 		NotificationKindDecisionWaiting,
+		NotificationKindMemoryProposed,
 	}
 }
 
@@ -62,11 +64,12 @@ const (
 	NotificationSubjectIssue   NotificationSubjectKind = "issue"
 	NotificationSubjectProject NotificationSubjectKind = "project"
 	NotificationSubjectTeam    NotificationSubjectKind = "team"
+	NotificationSubjectMemory  NotificationSubjectKind = "memory"
 )
 
 func (k NotificationSubjectKind) Valid() bool {
 	switch k {
-	case NotificationSubjectIssue, NotificationSubjectProject, NotificationSubjectTeam:
+	case NotificationSubjectIssue, NotificationSubjectProject, NotificationSubjectTeam, NotificationSubjectMemory:
 		return true
 	default:
 		return false
@@ -88,6 +91,10 @@ func NotifyProject(projectID uuid.UUID) NotificationSubject {
 
 func NotifyTeam(teamID uuid.UUID) NotificationSubject {
 	return NotificationSubject{Kind: NotificationSubjectTeam, ID: teamID}
+}
+
+func NotifyMemory(memoryID uuid.UUID) NotificationSubject {
+	return NotificationSubject{Kind: NotificationSubjectMemory, ID: memoryID}
 }
 
 type NotificationReason string
@@ -212,7 +219,7 @@ func (p NotificationPreferences) For(kind NotificationKind) NotificationChannels
 		return p.StateChanged
 	case NotificationKindMembership:
 		return p.Membership
-	case NotificationKindApprovalWaiting, NotificationKindDecisionWaiting:
+	case NotificationKindApprovalWaiting, NotificationKindDecisionWaiting, NotificationKindMemoryProposed:
 		return p.Approvals
 	default:
 		return NotificationChannels{}

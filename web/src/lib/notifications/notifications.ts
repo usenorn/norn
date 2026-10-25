@@ -97,6 +97,7 @@ const kindVerbs: Record<NotificationKind, string> = {
 	membership: "added you",
 	approval_waiting: "is waiting for you to approve what it proposed",
 	decision_waiting: "is waiting for your decision",
+	memory_proposed: "proposed a memory for you to review",
 };
 
 export function summary(notification: Notification): string {
@@ -126,6 +127,10 @@ export function subjectPath(workspace: string, notification: Notification): stri
 
 	if (notification.subjectKind === "team") {
 		return notification.teamKey ? teamSettingsPath(workspace, notification.teamKey) : null;
+	}
+
+	if (notification.subjectKind === "memory") {
+		return `/${workspace}/memories/${notification.subjectId}`;
 	}
 
 	return `/${workspace}/issues/${notification.reference ?? notification.subjectId}`;

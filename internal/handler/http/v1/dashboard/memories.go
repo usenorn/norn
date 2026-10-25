@@ -179,6 +179,48 @@ func (h *handler) WithdrawWorkspaceMemory(
 	return api.WithdrawWorkspaceMemory200JSONResponse(memoryDTO(memory)), nil
 }
 
+func (h *handler) AcceptWorkspaceMemory(
+	ctx context.Context,
+	request api.AcceptWorkspaceMemoryRequestObject,
+) (api.AcceptWorkspaceMemoryResponseObject, error) {
+	input := service.AcceptMemoryInput{ExpectedVersion: int(request.Body.ExpectedVersion)}
+
+	if request.Body.Content != nil {
+		content := memoryContentOf(*request.Body.Content)
+		input.Content = &content
+	}
+
+	memory, err := h.memories.Accept(ctx, request.WorkspaceId, request.MemoryId, input)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.AcceptWorkspaceMemory200JSONResponse(memoryDTO(memory)), nil
+}
+
+func (h *handler) RejectWorkspaceMemory(
+	ctx context.Context,
+	request api.RejectWorkspaceMemoryRequestObject,
+) (api.RejectWorkspaceMemoryResponseObject, error) {
+	memory, err := h.memories.Reject(ctx, request.WorkspaceId, request.MemoryId, service.RejectMemoryInput{
+		ExpectedVersion: int(request.Body.ExpectedVersion),
+		Reason:          request.Body.Reason,
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.RejectWorkspaceMemory200JSONResponse(memoryDTO(memory)), nil
+}
+
 func (h *handler) ShareWorkspaceMemory(
 	ctx context.Context,
 	request api.ShareWorkspaceMemoryRequestObject,

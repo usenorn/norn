@@ -566,7 +566,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	repositoryKnowledge := knowledge.New(postgresClient)
 	configKnowledge := config.NewKnowledge(configConfig)
 	knowledgeEmbeddings := knowledgeembedding.New(aiProvider, aiModel, configKnowledge)
-	memories := memory2.New(repositoryMemory, memoryRevision, repositoryProject, repositoryIssue, issueComment, repositoryDoc, docRevision, repositoryKnowledge, knowledgeAuthorizer, serviceAuthorizer, knowledgeIndexes, knowledgeEmbeddings, postgresClient, configKnowledge)
+	memories := memory2.New(repositoryMemory, memoryRevision, repositoryProject, repositoryIssue, issueComment, repositoryDoc, docRevision, repositoryKnowledge, notificationEvent, repositoryMembership, knowledgeAuthorizer, serviceAuthorizer, knowledgeIndexes, knowledgeEmbeddings, postgresClient, configKnowledge)
 	savedView := savedview.New(postgresClient)
 	issueFilterReference := issuefilterreference.New(postgresClient)
 	savedViews := savedview2.New(savedView, issueFilterReference, repositoryTeam, serviceAuthorizer, postgresClient)
@@ -1064,7 +1064,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	memoryRevision := memoryrevision.New(client)
 	repositoryKnowledge := knowledge.New(client)
 	knowledgeEmbeddings := knowledgeembedding.New(aiProvider, aiModel, configKnowledge)
-	memories := memory2.New(repositoryMemory, memoryRevision, repositoryProject, repositoryIssue, issueComment, repositoryDoc, docRevision, repositoryKnowledge, knowledgeAuthorizer, serviceAuthorizer, knowledgeIndexes, knowledgeEmbeddings, client, configKnowledge)
+	memories := memory2.New(repositoryMemory, memoryRevision, repositoryProject, repositoryIssue, issueComment, repositoryDoc, docRevision, repositoryKnowledge, notificationEvent, repositoryMembership, knowledgeAuthorizer, serviceAuthorizer, knowledgeIndexes, knowledgeEmbeddings, client, configKnowledge)
 	retrievals := retrieval.New(repositoryKnowledge, repositoryMemory, memoryRevision, knowledgeEmbeddings, knowledgeAuthorizer, configKnowledge)
 	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, serviceCycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs, docLinks, memories, retrievals)
 	if err != nil {

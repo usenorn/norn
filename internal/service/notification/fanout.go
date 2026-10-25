@@ -124,7 +124,7 @@ func (s *notificationsService) subjectTeam(
 	switch event.Subject.Kind {
 	case entity.NotificationSubjectTeam:
 		return event.Subject.ID, nil
-	case entity.NotificationSubjectProject:
+	case entity.NotificationSubjectProject, entity.NotificationSubjectMemory:
 		return uuid.Nil, nil
 	default:
 		issue, err := s.issues.GetVisible(
@@ -199,7 +199,8 @@ func targetReason(kind entity.NotificationKind) entity.NotificationReason {
 	switch kind {
 	case entity.NotificationKindMembership:
 		return entity.NotificationReasonMembership
-	case entity.NotificationKindApprovalWaiting, entity.NotificationKindDecisionWaiting:
+	case entity.NotificationKindApprovalWaiting, entity.NotificationKindDecisionWaiting,
+		entity.NotificationKindMemoryProposed:
 		return entity.NotificationReasonApproval
 	default:
 		return entity.NotificationReasonAssigned

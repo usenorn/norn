@@ -137,10 +137,23 @@ func TestADraftWaitsWhileAnythingRelatesAndIsDisputedOnlyByAConflict(t *testing.
 				related = append(related, entity.RelatedMemory{Relation: relation})
 			}
 
-			if got := draft.StatusAmong(related); got != testCase.want {
+			if got := draft.StatusAmong(related, true); got != testCase.want {
 				t.Fatalf("status = %s, want %s", got, testCase.want)
 			}
 		})
+	}
+}
+
+func TestADraftNobodyMaySettleWaitsForReviewUnlessItConflicts(t *testing.T) {
+	var draft entity.Memory
+
+	if got := draft.StatusAmong(nil, false); got != entity.MemoryStatusProposed {
+		t.Fatalf("an unrelated draft awaiting review is %s, want proposed", got)
+	}
+
+	conflict := []entity.RelatedMemory{{Relation: entity.MemoryRelationConflict}}
+	if got := draft.StatusAmong(conflict, false); got != entity.MemoryStatusDisputed {
+		t.Fatalf("a conflicting draft awaiting review is %s, want disputed", got)
 	}
 }
 

@@ -123,11 +123,12 @@ type KnowledgeIdentity struct {
 	Principal uuid.UUID
 	Personal  bool
 	Shared    bool
+	Agent     bool
 	Role      MembershipRole
 }
 
 func KnowledgeIdentityOf(actor Actor, role MembershipRole) KnowledgeIdentity {
-	identity := KnowledgeIdentity{Principal: actor.AccountID, Role: role}
+	identity := KnowledgeIdentity{Principal: actor.AccountID, Agent: actor.Kind == ActorKindAgent, Role: role}
 
 	switch {
 	case actor.Anonymous():
@@ -235,6 +236,10 @@ func (r KnowledgeReader) Maintains(access KnowledgeAccess) bool {
 	default:
 		return false
 	}
+}
+
+func (r KnowledgeReader) Reviews(access KnowledgeAccess) bool {
+	return !r.Identity.Agent && r.Sees(access) && r.Maintains(access)
 }
 
 func (r KnowledgeReader) Edits(access KnowledgeAccess) bool {

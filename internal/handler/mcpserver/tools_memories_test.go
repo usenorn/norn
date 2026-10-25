@@ -189,7 +189,7 @@ func TestAMemoryReadsOutAsWorkspaceDataWithItsStatusAuthorAndInference(t *testin
 	}
 }
 
-func TestRecallSearchesTheNamedScopeAndIncludesProposals(t *testing.T) {
+func TestRecallSearchesTheNamedScopeAndLeavesOutProposals(t *testing.T) {
 	h := newHarness(t)
 	scene := docSceneFor(h)
 	memory := memoryFor(scene, "Use Postgres")
@@ -229,7 +229,7 @@ func TestRecallSearchesTheNamedScopeAndIncludesProposals(t *testing.T) {
 	}
 
 	if asked.Query != "which database for storage" || asked.ProjectID == nil || *asked.ProjectID != scene.project.ID ||
-		asked.Component != "storage" || !asked.IncludeProposed ||
+		asked.Component != "storage" || asked.IncludeProposed ||
 		!slices.Equal(asked.MemoryKinds, []entity.MemoryKind{entity.MemoryKindDecision, entity.MemoryKindConstraint}) {
 		t.Fatalf("recall asked %+v", asked)
 	}
@@ -259,7 +259,7 @@ func TestRecallSearchesTheNamedScopeAndIncludesProposals(t *testing.T) {
 	}
 }
 
-func TestListingActiveMemoriesCanLeaveOutProposals(t *testing.T) {
+func TestListingActiveMemoriesCanIncludeProposals(t *testing.T) {
 	h := newHarness(t)
 	scene := docSceneFor(h)
 
@@ -273,16 +273,16 @@ func TestListingActiveMemoriesCanLeaveOutProposals(t *testing.T) {
 		})
 
 	result := callTool(t, h, "norn_list_memories", map[string]any{
-		"workspace":     "acme",
-		"project":       "atlas",
-		"accepted_only": true,
-		"cursor":        "page-two",
+		"workspace":        "acme",
+		"project":          "atlas",
+		"include_proposed": true,
+		"cursor":           "page-two",
 	})
 	if result.IsError {
 		t.Fatalf("list memories refused: %s", refusalText(t, result))
 	}
 
-	if asked.IncludeProposed || asked.Cursor != "page-two" || asked.ProjectID == nil || *asked.ProjectID != scene.project.ID {
+	if !asked.IncludeProposed || asked.Cursor != "page-two" || asked.ProjectID == nil || *asked.ProjectID != scene.project.ID {
 		t.Fatalf("listing asked %+v", asked)
 	}
 
@@ -465,6 +465,31 @@ func TestRememberingWithNothingRelatedSaysNothingAboutAHold(t *testing.T) {
 
 	if output.Related != nil || output.Choices != nil || strings.Contains(output.Reminder, "held as") {
 		t.Fatalf("an accepted memory came back with %+v", output)
+	}
+}
+
+func TestASharedMemoryWaitingForReviewSaysWhoAcceptsIt(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+	proposal := memoryFor(scene, "Ship the API behind a flag")
+	proposal.Status = entity.MemoryStatusProposed
+
+	h.memories.EXPECT().Create(gomock.Any(), scene.workspace.ID, gomock.Any()).
+		Return(service.MemoryWrite{Memory: proposal}, nil)
+
+	result := callTool(t, h, "norn_remember", map[string]any{
+		"workspace": "acme", "kind": "decision", "statement": "Ship the API behind a flag",
+	})
+	if result.IsError {
+		t.Fatalf("remember refused: %s", refusalText(t, result))
+	}
+
+	var output heldResult
+	structured(t, result.StructuredContent, &output)
+
+	if strings.Contains(output.Reminder, "held as") || !strings.Contains(output.Reminder, "waits as proposed") ||
+		!strings.Contains(output.Reminder, "project lead accepts it") {
+		t.Fatalf("a proposal awaiting review reminded %q", output.Reminder)
 	}
 }
 

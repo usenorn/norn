@@ -30,7 +30,7 @@ function memory(id: string, status: Memory["status"], appliesTo: Memory["applies
 		effectiveFrom: "2026-10-25",
 		version: 1,
 		contributorIds: [],
-		viewer: { canEdit: true, canShare: true },
+		viewer: { canEdit: true, canShare: true, canReview: false },
 		createdAt: "2026-10-25T09:00:00Z",
 		updatedAt: "2026-10-25T09:00:00Z",
 	};

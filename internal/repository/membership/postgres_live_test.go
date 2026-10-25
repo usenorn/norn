@@ -309,3 +309,59 @@ func TestPagingAFilteredListNeverMixesInAnotherKind(t *testing.T) {
 		t.Fatal(failure)
 	}
 }
+
+func TestOnlyActivePeopleAreListedAsAWorkspacesAdmins(t *testing.T) {
+	client, cleanup := liveClient(t)
+	defer cleanup()
+
+	var failure error
+
+	err := client.WithTx(context.Background(), func(ctx context.Context) error {
+		repository := &membershipRepository{db: client}
+
+		workspaceID, seeded, err := seedWorkspaceMembers(ctx, client, repository)
+		if err != nil {
+			failure = err
+
+			return errMembershipRollback
+		}
+
+		person, agent, deactivated := seeded[0].accountID, seeded[1].accountID, seeded[3].accountID
+
+		for _, accountID := range []uuid.UUID{person, agent, deactivated} {
+			if _, err := repository.UpdateRole(ctx, workspaceID, accountID, entity.MembershipRoleAdmin); err != nil {
+				failure = fmt.Errorf("promote admin: %w", err)
+
+				return errMembershipRollback
+			}
+		}
+
+		at := time.Now().UTC()
+		if _, err := repository.SetDeactivated(ctx, workspaceID, deactivated, &at); err != nil {
+			failure = fmt.Errorf("deactivate admin: %w", err)
+
+			return errMembershipRollback
+		}
+
+		admins, err := repository.ListActiveAdminAccountIDs(ctx, workspaceID)
+		if err != nil {
+			failure = fmt.Errorf("list admins: %w", err)
+
+			return errMembershipRollback
+		}
+
+		if len(admins) != 1 || admins[0] != person {
+			failure = fmt.Errorf("admins = %v, want only the active person %s", admins, person)
+		}
+
+		return errMembershipRollback
+	})
+
+	if !errors.Is(err, errMembershipRollback) {
+		t.Fatalf("fixture rollback: %v", err)
+	}
+
+	if failure != nil {
+		t.Fatal(failure)
+	}
+}

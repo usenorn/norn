@@ -24,6 +24,8 @@ type memoriesService struct {
 	docs         repository.Doc
 	docRevisions repository.DocRevision
 	search       repository.Knowledge
+	notify       repository.NotificationEvent
+	memberships  repository.Membership
 	knowledge    service.KnowledgeAuthorizer
 	authorizer   service.Authorizer
 	indexes      service.KnowledgeIndexes
@@ -41,6 +43,8 @@ func New(
 	docs repository.Doc,
 	docRevisions repository.DocRevision,
 	search repository.Knowledge,
+	notify repository.NotificationEvent,
+	memberships repository.Membership,
 	knowledge service.KnowledgeAuthorizer,
 	authorizer service.Authorizer,
 	indexes service.KnowledgeIndexes,
@@ -57,6 +61,8 @@ func New(
 		docs:         docs,
 		docRevisions: docRevisions,
 		search:       search,
+		notify:       notify,
+		memberships:  memberships,
 		knowledge:    knowledge,
 		authorizer:   authorizer,
 		indexes:      indexes,
@@ -103,12 +109,14 @@ func (s *memoriesService) Create(
 		return service.MemoryWrite{}, err
 	}
 
-	draft.Status = draft.StatusAmong(related)
+	draft.Status = draft.StatusAmong(related, draft.SettledBy(decision.Reader))
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
-		draft, err = s.insert(ctx, draft, decision)
+		if draft, err = s.insert(ctx, draft, decision); err != nil {
+			return err
+		}
 
-		return err
+		return s.propose(ctx, draft, decision)
 	})
 	if err != nil {
 		return service.MemoryWrite{}, err
@@ -274,6 +282,16 @@ func (s *memoriesService) Supersede(
 		}
 
 		replacement.SupersedesID = &replaced.ID
+
+		if !replacement.SettledBy(decision.Reader) {
+			replacement.Status = entity.MemoryStatusProposed
+
+			if replacement, err = s.insert(ctx, replacement, decision); err != nil {
+				return err
+			}
+
+			return s.propose(ctx, replacement, decision)
+		}
 
 		if replacement, err = s.insert(ctx, replacement, decision); err != nil {
 			return err
@@ -513,7 +531,57 @@ func (s *memoriesService) insert(
 		return entity.Memory{}, err
 	}
 
-	return s.record(ctx, memory, entity.MemoryRevisionCreated, decision)
+	return s.record(ctx, memory.Revision(entity.MemoryRevisionCreated, entity.KnowledgeAttributionOf(decision)))
+}
+
+func (s *memoriesService) propose(ctx context.Context, memory entity.Memory, decision entity.KnowledgeDecision) error {
+	if !memory.Pending() || memory.SettledBy(decision.Reader) {
+		return nil
+	}
+
+	reviewers, err := s.reviewers(ctx, memory)
+	if err != nil {
+		return err
+	}
+
+	actor := decision.Decision.Actor
+
+	for _, reviewer := range reviewers {
+		if err := s.notify.Record(ctx, entity.NotificationEvent{
+			WorkspaceID: memory.WorkspaceID,
+			Subject:     entity.NotifyMemory(memory.ID),
+			Kind:        entity.NotificationKindMemoryProposed,
+			Actor:       actor.AccountID,
+			ActorKind:   actor.Kind,
+			Target:      reviewer,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *memoriesService) reviewers(ctx context.Context, memory entity.Memory) ([]uuid.UUID, error) {
+	reviewers, err := s.memberships.ListActiveAdminAccountIDs(ctx, memory.WorkspaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	if memory.Audience.Visibility != entity.KnowledgeVisibilityProject {
+		return reviewers, nil
+	}
+
+	project, err := s.projects.GetByID(ctx, memory.WorkspaceID, memory.Audience.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if project.LeadAccountID != uuid.Nil && !slices.Contains(reviewers, project.LeadAccountID) {
+		reviewers = append(reviewers, project.LeadAccountID)
+	}
+
+	return reviewers, nil
 }
 
 func (s *memoriesService) Get(ctx context.Context, workspaceID, memoryID uuid.UUID) (entity.Memory, error) {
@@ -702,7 +770,7 @@ func (s *memoriesService) Reconcile(
 			}
 		}
 
-		action, err := s.resolve(ctx, input, &proposal, target, targetDecision)
+		action, err := s.resolve(ctx, input, &proposal, target, decision.Reader, targetDecision)
 		if err != nil {
 			return err
 		}
@@ -736,8 +804,11 @@ func (s *memoriesService) resolve(
 	ctx context.Context,
 	input service.ReconcileMemoryInput,
 	proposal, target *entity.Memory,
+	reader entity.KnowledgeReader,
 	decision entity.KnowledgeDecision,
 ) (entity.MemoryRevisionAction, error) {
+	settled := proposal.SettledBy(reader)
+
 	switch input.Resolution {
 	case entity.MemoryResolutionUpdate:
 		adopted, err := s.adopt(ctx, *target, *proposal, input.Target.ExpectedVersion, decision)
@@ -749,6 +820,16 @@ func (s *memoriesService) resolve(
 
 		return entity.MemoryRevisionWithdrawn, proposal.Become(entity.MemoryStatusWithdrawn)
 	case entity.MemoryResolutionSupersede:
+		if !settled {
+			if !target.Status.CanBecome(entity.MemoryStatusSuperseded) {
+				return "", entity.MemoryTransitionError{From: target.Status, To: entity.MemoryStatusSuperseded}
+			}
+
+			proposal.SupersedesID = &target.ID
+
+			return entity.MemoryRevisionReconciled, nil
+		}
+
 		if err := target.SupersededBy(proposal.ID); err != nil {
 			return "", err
 		}
@@ -770,6 +851,12 @@ func (s *memoriesService) resolve(
 	case entity.MemoryResolutionNoChange:
 		return entity.MemoryRevisionWithdrawn, proposal.Become(entity.MemoryStatusWithdrawn)
 	default:
+		proposal.SupersedesID = nil
+
+		if !settled {
+			return entity.MemoryRevisionReconciled, nil
+		}
+
 		return entity.MemoryRevisionAccepted, proposal.Become(entity.MemoryStatusAccepted)
 	}
 }
@@ -875,7 +962,7 @@ func (s *memoriesService) Reshare(
 	}
 
 	return s.revise(ctx, workspaceID, memoryID, input.ExpectedVersion, entity.MemoryRevisionReshared, reshare,
-		func(ctx context.Context, memory *entity.Memory, _ entity.KnowledgeDecision) (bool, error) {
+		func(ctx context.Context, memory *entity.Memory, decision entity.KnowledgeDecision) (bool, error) {
 			if memory.Audience == input.Audience {
 				return false, nil
 			}
@@ -892,8 +979,161 @@ func (s *memoriesService) Reshare(
 
 			memory.Audience = input.Audience
 
-			return true, nil
+			if memory.Status != entity.MemoryStatusAccepted || memory.SettledBy(decision.Reader) {
+				return true, nil
+			}
+
+			if err := memory.Become(entity.MemoryStatusProposed); err != nil {
+				return false, err
+			}
+
+			return true, s.propose(ctx, *memory, decision)
 		})
+}
+
+func (s *memoriesService) Accept(
+	ctx context.Context,
+	workspaceID, memoryID uuid.UUID,
+	input service.AcceptMemoryInput,
+) (entity.Memory, error) {
+	var (
+		accepted entity.Memory
+		reader   entity.KnowledgeReader
+	)
+
+	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		memory, decision, err := s.review(ctx, workspaceID, memoryID, input.ExpectedVersion)
+		if err != nil {
+			return err
+		}
+
+		reader = decision.Reader
+		version := input.ExpectedVersion
+
+		if input.Content != nil {
+			corrected := memory
+
+			if err := s.write(ctx, decision, &corrected, *input.Content); err != nil {
+				return err
+			}
+
+			if !corrected.Restates(memory) {
+				if memory, err = s.save(ctx, corrected, version, entity.MemoryRevisionCorrected, decision); err != nil {
+					return err
+				}
+
+				version = memory.Version
+			}
+		}
+
+		if memory.SupersedesID != nil {
+			if err := s.retire(ctx, workspaceID, *memory.SupersedesID, memory.ID); err != nil {
+				return err
+			}
+		}
+
+		if err := memory.Become(entity.MemoryStatusAccepted); err != nil {
+			return err
+		}
+
+		accepted, err = s.save(ctx, memory, version, entity.MemoryRevisionAccepted, decision)
+
+		return err
+	})
+	if err != nil {
+		return entity.Memory{}, err
+	}
+
+	return s.shown(ctx, reader, accepted)
+}
+
+func (s *memoriesService) Reject(
+	ctx context.Context,
+	workspaceID, memoryID uuid.UUID,
+	input service.RejectMemoryInput,
+) (entity.Memory, error) {
+	if err := entity.ValidateMemoryReason(input.Reason); err != nil {
+		return entity.Memory{}, err
+	}
+
+	var (
+		rejected entity.Memory
+		reader   entity.KnowledgeReader
+	)
+
+	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		memory, decision, err := s.review(ctx, workspaceID, memoryID, input.ExpectedVersion)
+		if err != nil {
+			return err
+		}
+
+		reader = decision.Reader
+
+		if err := memory.Become(entity.MemoryStatusRejected); err != nil {
+			return err
+		}
+
+		if err := s.bump(ctx, &memory, input.ExpectedVersion); err != nil {
+			return err
+		}
+
+		rejected, err = s.record(ctx, memory.Rejection(input.Reason, entity.KnowledgeAttributionOf(decision)))
+
+		return err
+	})
+	if err != nil {
+		return entity.Memory{}, err
+	}
+
+	return s.shown(ctx, reader, rejected)
+}
+
+func (s *memoriesService) review(
+	ctx context.Context,
+	workspaceID, memoryID uuid.UUID,
+	expectedVersion int,
+) (entity.Memory, entity.KnowledgeDecision, error) {
+	memory, err := s.memories.LockByID(ctx, workspaceID, memoryID)
+	if err != nil {
+		return entity.Memory{}, entity.KnowledgeDecision{}, err
+	}
+
+	decision, err := s.knowledge.Change(ctx, memory.Access())
+	if err != nil {
+		return entity.Memory{}, entity.KnowledgeDecision{}, concealed(err)
+	}
+
+	if err := memory.Expect(expectedVersion); err != nil {
+		return entity.Memory{}, entity.KnowledgeDecision{}, err
+	}
+
+	if err := memory.Review(decision.Reader); err != nil {
+		return entity.Memory{}, entity.KnowledgeDecision{}, err
+	}
+
+	return memory, decision, nil
+}
+
+func (s *memoriesService) retire(ctx context.Context, workspaceID, replacedID, replacementID uuid.UUID) error {
+	replaced, err := s.memories.LockByID(ctx, workspaceID, replacedID)
+	if err != nil {
+		return err
+	}
+
+	decision, err := s.knowledge.Change(ctx, replaced.Access())
+	if err != nil {
+		return concealed(err)
+	}
+
+	version := replaced.Version
+
+	if err := replaced.SupersededBy(replacementID); err != nil {
+		return err
+	}
+
+	_, err = s.save(ctx, replaced, version, entity.MemoryRevisionSuperseded, decision)
+
+	return err
 }
 
 func (s *memoriesService) Revisions(
@@ -1023,29 +1263,28 @@ func (s *memoriesService) save(
 	action entity.MemoryRevisionAction,
 	decision entity.KnowledgeDecision,
 ) (entity.Memory, error) {
+	if err := s.bump(ctx, &memory, expectedVersion); err != nil {
+		return entity.Memory{}, err
+	}
+
+	return s.record(ctx, memory.Revision(action, entity.KnowledgeAttributionOf(decision)))
+}
+
+func (s *memoriesService) bump(ctx context.Context, memory *entity.Memory, expectedVersion int) error {
 	memory.Version++
 	memory.UpdatedAt = time.Now().UTC()
 
-	if err := s.memories.Update(ctx, memory, expectedVersion); err != nil {
-		return entity.Memory{}, err
-	}
-
-	return s.record(ctx, memory, action, decision)
+	return s.memories.Update(ctx, *memory, expectedVersion)
 }
 
-func (s *memoriesService) record(
-	ctx context.Context,
-	memory entity.Memory,
-	action entity.MemoryRevisionAction,
-	decision entity.KnowledgeDecision,
-) (entity.Memory, error) {
-	if err := s.revisions.Record(ctx, memory.Revision(action, entity.KnowledgeAttributionOf(decision))); err != nil {
+func (s *memoriesService) record(ctx context.Context, revision entity.MemoryRevision) (entity.Memory, error) {
+	if err := s.revisions.Record(ctx, revision); err != nil {
 		return entity.Memory{}, err
 	}
 
-	s.indexes.Schedule(ctx, memory.WorkspaceID)
+	s.indexes.Schedule(ctx, revision.WorkspaceID)
 
-	return s.memories.GetByID(ctx, memory.WorkspaceID, memory.ID)
+	return s.memories.GetByID(ctx, revision.WorkspaceID, revision.MemoryID)
 }
 
 func (s *memoriesService) shown(

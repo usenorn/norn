@@ -101,3 +101,51 @@ VALUES ($1, 'active', 'person', $2, 'Sol', 'UTC')`, hidden.AuthorID, hidden.Auth
 		return nil
 	})
 }
+
+func TestARejectedProposalWasNeverInEffect(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := memoryrepo.New(client)
+		revisions := New(client)
+		by := entity.KnowledgeAttribution{AccountID: fixture.authorID, Source: entity.RevisionSourceAgent}
+		start := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
+
+		proposal := draftMemory(fixture, "Deploy from a laptop", entity.WorkspaceAudience(), start)
+		proposal.Status = entity.MemoryStatusProposed
+
+		if err := memories.Create(ctx, proposal); err != nil {
+			return fmt.Errorf("create the proposal: %w", err)
+		}
+
+		if err := revisions.Record(ctx, proposal.Revision(entity.MemoryRevisionCreated, by)); err != nil {
+			return err
+		}
+
+		rejected := proposal
+		rejected.Version, rejected.Status, rejected.UpdatedAt = 2, entity.MemoryStatusRejected, start.AddDate(0, 1, 0)
+
+		if err := memories.Update(ctx, rejected, 1); err != nil {
+			return fmt.Errorf("reject the proposal: %w", err)
+		}
+
+		if err := revisions.Record(ctx, rejected.Rejection("unsafe", by)); err != nil {
+			return err
+		}
+
+		found, err := revisions.InEffect(ctx, fixture.workspaceID, repository.KnowledgeQuery{
+			Query:            entity.ParseSearchQuery("how do we deploy"),
+			Statuses:         entity.GuidanceStatuses(true),
+			On:               start.AddDate(0, 0, 7),
+			PersonalAuthorID: fixture.authorID,
+			Limit:            entity.KnowledgeLaneSize,
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(found) != 0 {
+			return fmt.Errorf("a rejected proposal was in effect before its rejection: %+v", found)
+		}
+
+		return nil
+	})
+}

@@ -19,6 +19,7 @@ const (
 	MemoryConditionsMaxLen = 4000
 	MemoryComponentMaxLen  = 100
 	MemoryExcerptMaxLen    = 2000
+	MemoryReasonMaxLen     = 1000
 	MemoryEvidenceMax      = 20
 	MemoryLineageMax       = 50
 
@@ -40,14 +41,16 @@ const (
 	MemoryFieldEvidence       = "evidence"
 	MemoryFieldEffectiveFrom  = "effectiveFrom"
 	MemoryFieldEffectiveUntil = "effectiveUntil"
+	MemoryFieldReason         = "reason"
 )
 
 var (
 	ErrMemoryNotFound          = errors.New("memory not found")
 	ErrMemoryStale             = errors.New("memory changed since it was read")
-	ErrMemoryClosed            = errors.New("memory is superseded or withdrawn")
+	ErrMemoryClosed            = errors.New("memory is superseded, withdrawn, or rejected")
 	ErrMemoryTransitionInvalid = errors.New("memory cannot move to that status")
 	ErrMemoryCursorInvalid     = errors.New("memory cursor is invalid")
+	ErrMemoryReviewForbidden   = errors.New("memory review needs a workspace admin or the project lead")
 )
 
 type MemoryStaleError struct {
@@ -115,6 +118,7 @@ const (
 	MemoryStatusDisputed   MemoryStatus = "disputed"
 	MemoryStatusSuperseded MemoryStatus = "superseded"
 	MemoryStatusWithdrawn  MemoryStatus = "withdrawn"
+	MemoryStatusRejected   MemoryStatus = "rejected"
 )
 
 func MemoryStatuses() []MemoryStatus {
@@ -124,6 +128,7 @@ func MemoryStatuses() []MemoryStatus {
 		MemoryStatusDisputed,
 		MemoryStatusSuperseded,
 		MemoryStatusWithdrawn,
+		MemoryStatusRejected,
 	}
 }
 
@@ -132,17 +137,20 @@ func (s MemoryStatus) Valid() bool {
 }
 
 func (s MemoryStatus) Terminal() bool {
-	return s == MemoryStatusSuperseded || s == MemoryStatusWithdrawn
+	return s == MemoryStatusSuperseded || s == MemoryStatusWithdrawn || s == MemoryStatusRejected
 }
 
 func (s MemoryStatus) CanBecome(to MemoryStatus) bool {
 	switch s {
 	case MemoryStatusProposed:
-		return to == MemoryStatusAccepted || to == MemoryStatusDisputed || to == MemoryStatusWithdrawn
+		return to == MemoryStatusAccepted || to == MemoryStatusDisputed || to == MemoryStatusWithdrawn ||
+			to == MemoryStatusRejected
 	case MemoryStatusAccepted:
-		return to == MemoryStatusDisputed || to == MemoryStatusSuperseded || to == MemoryStatusWithdrawn
+		return to == MemoryStatusProposed || to == MemoryStatusDisputed || to == MemoryStatusSuperseded ||
+			to == MemoryStatusWithdrawn
 	case MemoryStatusDisputed:
-		return to == MemoryStatusAccepted || to == MemoryStatusSuperseded || to == MemoryStatusWithdrawn
+		return to == MemoryStatusAccepted || to == MemoryStatusSuperseded || to == MemoryStatusWithdrawn ||
+			to == MemoryStatusRejected
 	default:
 		return false
 	}
@@ -151,6 +159,7 @@ func (s MemoryStatus) CanBecome(to MemoryStatus) bool {
 type MemoryViewer struct {
 	Edits    bool
 	Reshares bool
+	Reviews  bool
 }
 
 type Memory struct {
@@ -191,9 +200,33 @@ func (m Memory) Access() KnowledgeAccess {
 
 func (m Memory) ViewedBy(reader KnowledgeReader) Memory {
 	access := m.Access()
-	m.Viewer = MemoryViewer{Edits: reader.Edits(access), Reshares: reader.Reshares(access)}
+	m.Viewer = MemoryViewer{
+		Edits:    reader.Edits(access),
+		Reshares: reader.Reshares(access),
+		Reviews:  reader.Reviews(access),
+	}
 
 	return m
+}
+
+func (m Memory) SettledBy(reader KnowledgeReader) bool {
+	return m.Audience.Visibility == KnowledgeVisibilityPersonal || reader.Reviews(m.Access())
+}
+
+func (m Memory) Review(reader KnowledgeReader) error {
+	if !reader.Reviews(m.Access()) {
+		return ErrMemoryReviewForbidden
+	}
+
+	if !m.Pending() {
+		return ErrMemoryNotPending
+	}
+
+	return nil
+}
+
+func ValidateMemoryReason(reason string) error {
+	return NewValidationError(validateMemoryText(MemoryFieldReason, reason, MemoryReasonMaxLen, true))
 }
 
 func (m Memory) Expect(version int) error {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,6 +31,8 @@ const (
 	MemoryRevisionDisputed   MemoryRevisionAction = "disputed"
 	MemoryRevisionSuperseded MemoryRevisionAction = "superseded"
 	MemoryRevisionWithdrawn  MemoryRevisionAction = "withdrawn"
+	MemoryRevisionRejected   MemoryRevisionAction = "rejected"
+	MemoryRevisionReconciled MemoryRevisionAction = "reconciled"
 )
 
 func MemoryRevisionActions() []MemoryRevisionAction {
@@ -41,6 +44,8 @@ func MemoryRevisionActions() []MemoryRevisionAction {
 		MemoryRevisionDisputed,
 		MemoryRevisionSuperseded,
 		MemoryRevisionWithdrawn,
+		MemoryRevisionRejected,
+		MemoryRevisionReconciled,
 	}
 }
 
@@ -56,6 +61,7 @@ type MemoryRevisionSummary struct {
 	Action      MemoryRevisionAction
 	Status      MemoryStatus
 	Statement   string
+	Reason      string
 	By          KnowledgeAttribution
 	AccountName string
 	CreatedAt   time.Time
@@ -97,6 +103,13 @@ func (m Memory) Revision(action MemoryRevisionAction, by KnowledgeAttribution) M
 		EffectiveFrom:  m.EffectiveFrom,
 		EffectiveUntil: m.EffectiveUntil,
 	}
+}
+
+func (m Memory) Rejection(reason string, by KnowledgeAttribution) MemoryRevision {
+	revision := m.Revision(MemoryRevisionRejected, by)
+	revision.Reason = strings.TrimSpace(reason)
+
+	return revision
 }
 
 func (r MemoryRevisionSummary) Cursor() MemoryRevisionCursor {
