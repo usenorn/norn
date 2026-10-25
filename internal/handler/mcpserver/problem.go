@@ -181,6 +181,11 @@ var disclosedFailures = []disclosure{
 			"what replaced it",
 	},
 	{
+		entity.ErrMemoryNotPending, "memory_not_pending",
+		"the memory is already settled; only a proposed or disputed memory is reconciled, and " +
+			"norn_get_memory shows where it stands",
+	},
+	{
 		entity.ErrMemoryCursorInvalid, "invalid_cursor", "the cursor is not one norn_list_memories returned",
 	},
 	{

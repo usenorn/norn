@@ -43,6 +43,28 @@ type ReshareMemoryInput struct {
 	Audience        entity.KnowledgeAudience
 }
 
+type MemoryWrite struct {
+	Memory  entity.Memory
+	Related []entity.RelatedMemory
+	Choices []entity.MemoryChoice
+}
+
+type MemoryTarget struct {
+	ID              uuid.UUID
+	ExpectedVersion int
+}
+
+type ReconcileMemoryInput struct {
+	Resolution      entity.MemoryResolution
+	ExpectedVersion int
+	Target          *MemoryTarget
+}
+
+type MemoryReconciliation struct {
+	Memory entity.Memory
+	Target *entity.Memory
+}
+
 type ListMemoriesInput struct {
 	Kind      *entity.MemoryKind
 	Statuses  []entity.MemoryStatus
@@ -68,8 +90,9 @@ type MemoryHistory struct {
 }
 
 type Memories interface {
-	Create(ctx context.Context, workspaceID uuid.UUID, input CreateMemoryInput) (entity.Memory, error)
+	Create(ctx context.Context, workspaceID uuid.UUID, input CreateMemoryInput) (MemoryWrite, error)
 	Get(ctx context.Context, workspaceID, memoryID uuid.UUID) (entity.Memory, error)
+	Related(ctx context.Context, workspaceID, memoryID uuid.UUID) (MemoryWrite, error)
 	Lineage(ctx context.Context, workspaceID, memoryID uuid.UUID) ([]entity.Memory, error)
 	List(ctx context.Context, workspaceID uuid.UUID, input ListMemoriesInput) (MemoryList, error)
 	Correct(ctx context.Context, workspaceID, memoryID uuid.UUID, input CorrectMemoryInput) (entity.Memory, error)
@@ -78,6 +101,11 @@ type Memories interface {
 		workspaceID, memoryID uuid.UUID,
 		input SupersedeMemoryInput,
 	) (entity.Memory, error)
+	Reconcile(
+		ctx context.Context,
+		workspaceID, memoryID uuid.UUID,
+		input ReconcileMemoryInput,
+	) (MemoryReconciliation, error)
 	Withdraw(ctx context.Context, workspaceID, memoryID uuid.UUID, expectedVersion int) (entity.Memory, error)
 	Reshare(ctx context.Context, workspaceID, memoryID uuid.UUID, input ReshareMemoryInput) (entity.Memory, error)
 	Revisions(

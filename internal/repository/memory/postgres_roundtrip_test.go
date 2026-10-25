@@ -412,3 +412,50 @@ func TestLineageWalksBothWaysAlongSupersessionOldestFirst(t *testing.T) {
 		return nil
 	})
 }
+
+func TestAProposalLinkedOnReconciliationJoinsTheLineage(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := New(client)
+		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
+
+		existing := draftMemory(fixture, "Production uses PostgreSQL", entity.WorkspaceAudience(), at)
+		proposal := draftMemory(fixture, "Production uses MySQL", entity.WorkspaceAudience(), at.Add(time.Minute))
+		proposal.Status = entity.MemoryStatusDisputed
+
+		for _, memory := range []entity.Memory{existing, proposal} {
+			if err := memories.Create(ctx, memory); err != nil {
+				return fmt.Errorf("create %q: %w", memory.Statement, err)
+			}
+		}
+
+		existing.Status, existing.SupersededByID, existing.Version = entity.MemoryStatusSuperseded, &proposal.ID, 2
+		if err := memories.Update(ctx, existing, 1); err != nil {
+			return fmt.Errorf("supersede the existing decision: %w", err)
+		}
+
+		proposal.Status, proposal.SupersedesID, proposal.Version = entity.MemoryStatusAccepted, &existing.ID, 2
+		if err := memories.Update(ctx, proposal, 1); err != nil {
+			return fmt.Errorf("accept the proposal: %w", err)
+		}
+
+		stored, err := memories.GetByID(ctx, fixture.workspaceID, proposal.ID)
+		if err != nil {
+			return fmt.Errorf("read the proposal: %w", err)
+		}
+
+		if stored.SupersedesID == nil || *stored.SupersedesID != existing.ID {
+			return fmt.Errorf("the proposal supersedes %v, want %s", stored.SupersedesID, existing.ID)
+		}
+
+		lineage, err := memories.Lineage(ctx, fixture.workspaceID, existing.ID, entity.MemoryLineageMax)
+		if err != nil {
+			return fmt.Errorf("trace lineage: %w", err)
+		}
+
+		if len(lineage) != 2 || lineage[0].ID != existing.ID || lineage[1].ID != proposal.ID {
+			return fmt.Errorf("the lineage holds %d memories, want the decision then its replacement", len(lineage))
+		}
+
+		return nil
+	})
+}

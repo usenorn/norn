@@ -7,6 +7,7 @@
 			tone: {
 				success: "border-success/40 text-success",
 				warning: "border-warning/40 text-warning",
+				danger: "border-destructive/40 text-destructive",
 				active: "border-status-active/40 text-status-active",
 				muted: "border-line-strong text-muted-foreground",
 			},

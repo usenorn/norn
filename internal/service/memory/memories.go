@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -22,10 +23,13 @@ type memoriesService struct {
 	comments     repository.IssueComment
 	docs         repository.Doc
 	docRevisions repository.DocRevision
+	search       repository.Knowledge
 	knowledge    service.KnowledgeAuthorizer
 	authorizer   service.Authorizer
 	indexes      service.KnowledgeIndexes
+	vectors      service.KnowledgeEmbeddings
 	transactor   repository.Transactor
+	cfg          config.Knowledge
 }
 
 func New(
@@ -36,10 +40,13 @@ func New(
 	comments repository.IssueComment,
 	docs repository.Doc,
 	docRevisions repository.DocRevision,
+	search repository.Knowledge,
 	knowledge service.KnowledgeAuthorizer,
 	authorizer service.Authorizer,
 	indexes service.KnowledgeIndexes,
+	vectors service.KnowledgeEmbeddings,
 	transactor repository.Transactor,
+	cfg config.Knowledge,
 ) service.Memories {
 	return &memoriesService{
 		memories:     memories,
@@ -49,10 +56,13 @@ func New(
 		comments:     comments,
 		docs:         docs,
 		docRevisions: docRevisions,
+		search:       search,
 		knowledge:    knowledge,
 		authorizer:   authorizer,
 		indexes:      indexes,
+		vectors:      vectors,
 		transactor:   transactor,
+		cfg:          cfg,
 	}
 }
 
@@ -82,11 +92,18 @@ func (s *memoriesService) Create(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	input service.CreateMemoryInput,
-) (entity.Memory, error) {
+) (service.MemoryWrite, error) {
 	decision, draft, err := s.draft(ctx, workspaceID, input)
 	if err != nil {
-		return entity.Memory{}, err
+		return service.MemoryWrite{}, err
 	}
+
+	related, err := s.related(ctx, decision.Reader, draft)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	draft.Status = draft.StatusAmong(related)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		draft, err = s.insert(ctx, draft, decision)
@@ -94,10 +111,138 @@ func (s *memoriesService) Create(
 		return err
 	})
 	if err != nil {
-		return entity.Memory{}, err
+		return service.MemoryWrite{}, err
 	}
 
-	return s.shown(ctx, decision.Reader, draft)
+	memory, err := s.shown(ctx, decision.Reader, draft)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	return reconciling(memory, related), nil
+}
+
+func (s *memoriesService) Related(ctx context.Context, workspaceID, memoryID uuid.UUID) (service.MemoryWrite, error) {
+	memory, err := s.memories.GetByID(ctx, workspaceID, memoryID)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	decision, err := s.knowledge.Read(ctx, memory.Access())
+	if err != nil {
+		return service.MemoryWrite{}, concealed(err)
+	}
+
+	var related []entity.RelatedMemory
+
+	if memory.Pending() {
+		if related, err = s.related(ctx, decision.Reader, memory); err != nil {
+			return service.MemoryWrite{}, err
+		}
+	}
+
+	memory, err = s.shown(ctx, decision.Reader, memory)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	return reconciling(memory, related), nil
+}
+
+func reconciling(memory entity.Memory, related []entity.RelatedMemory) service.MemoryWrite {
+	write := service.MemoryWrite{Memory: memory, Related: related}
+
+	if memory.Pending() && memory.Viewer.Edits {
+		write.Choices = entity.MemoryChoices(related)
+	}
+
+	return write
+}
+
+func (s *memoriesService) related(
+	ctx context.Context,
+	reader entity.KnowledgeReader,
+	draft entity.Memory,
+) ([]entity.RelatedMemory, error) {
+	lookup := repository.KnowledgeQuery{
+		Query:            entity.ParseSearchQuery(draft.Statement),
+		Statuses:         entity.MemoryRelatableStatuses(),
+		On:               time.Now().UTC(),
+		ProjectID:        draft.Applicability.ProjectID,
+		Component:        draft.Applicability.Component,
+		AllProjects:      reader.AllProjects,
+		ProjectIDs:       reader.ProjectIDs,
+		PersonalAuthorID: reader.PersonalAuthor(),
+		Limit:            entity.MemoryRelatedLaneSize,
+	}
+
+	lexical, err := s.search.LexicalMemories(ctx, draft.WorkspaceID, lookup)
+	if err != nil {
+		return nil, err
+	}
+
+	lanes := []entity.KnowledgeLane{{Match: entity.KnowledgeMatchLexical, Candidates: lexical}}
+
+	embedded, state, err := s.vectors.Embed(ctx, draft.WorkspaceID, draft.Statement)
+	if err != nil {
+		return nil, err
+	}
+
+	if state == entity.KnowledgeSemanticUsed {
+		semantic, err := s.search.SemanticMemories(ctx, draft.WorkspaceID, lookup, repository.KnowledgeVector{
+			Model:         embedded.Model,
+			Vector:        embedded.Vector,
+			MinSimilarity: s.cfg.RelatedMinSimilarity,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		lanes = append(lanes, entity.KnowledgeLane{Match: entity.KnowledgeMatchSemantic, Candidates: semantic})
+	}
+
+	hits := slices.DeleteFunc(
+		entity.FuseKnowledge(entity.KnowledgeLaneSize, lanes...),
+		func(hit entity.KnowledgeHit) bool { return hit.ID == draft.ID },
+	)
+	if len(hits) == 0 {
+		return nil, nil
+	}
+
+	ids := make([]uuid.UUID, 0, len(hits))
+	for _, hit := range hits {
+		ids = append(ids, hit.ID)
+	}
+
+	candidates, err := s.memories.ListByIDs(ctx, draft.WorkspaceID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	var related []entity.RelatedMemory
+
+	for _, hit := range hits {
+		at := slices.IndexFunc(candidates, func(candidate entity.Memory) bool { return candidate.ID == hit.ID })
+		if at < 0 || !reader.Sees(candidates[at].Access()) {
+			continue
+		}
+
+		candidate := candidates[at]
+
+		relation, ok := draft.RelationTo(candidate, slices.Contains(hit.Matches, entity.KnowledgeMatchSemantic))
+		if !ok {
+			continue
+		}
+
+		candidate.Evidence = nil
+		related = append(related, entity.RelatedMemory{Memory: candidate.ViewedBy(reader), Relation: relation})
+
+		if len(related) == entity.MemoryRelatedMax {
+			break
+		}
+	}
+
+	return related, nil
 }
 
 func (s *memoriesService) Supersede(
@@ -508,6 +653,205 @@ func (s *memoriesService) Correct(
 
 			return true, nil
 		})
+}
+
+func (s *memoriesService) Reconcile(
+	ctx context.Context,
+	workspaceID, memoryID uuid.UUID,
+	input service.ReconcileMemoryInput,
+) (service.MemoryReconciliation, error) {
+	if err := reconcilable(memoryID, input); err != nil {
+		return service.MemoryReconciliation{}, err
+	}
+
+	var (
+		reconciled service.MemoryReconciliation
+		reader     entity.KnowledgeReader
+	)
+
+	err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		proposal, target, err := s.lockPair(ctx, workspaceID, memoryID, input.Target)
+		if err != nil {
+			return err
+		}
+
+		decision, err := s.knowledge.Change(ctx, proposal.Access())
+		if err != nil {
+			return concealed(err)
+		}
+
+		reader = decision.Reader
+
+		if err := proposal.Expect(input.ExpectedVersion); err != nil {
+			return err
+		}
+
+		if !proposal.Pending() {
+			return entity.ErrMemoryNotPending
+		}
+
+		var targetDecision entity.KnowledgeDecision
+
+		if target != nil {
+			if targetDecision, err = s.knowledge.Change(ctx, target.Access()); err != nil {
+				return concealed(err)
+			}
+
+			if err := target.Expect(input.Target.ExpectedVersion); err != nil {
+				return err
+			}
+		}
+
+		action, err := s.resolve(ctx, input, &proposal, target, targetDecision)
+		if err != nil {
+			return err
+		}
+
+		reconciled.Target = target
+		reconciled.Memory, err = s.save(ctx, proposal, input.ExpectedVersion, action, decision)
+
+		return err
+	})
+	if err != nil {
+		return service.MemoryReconciliation{}, err
+	}
+
+	if reconciled.Memory, err = s.shown(ctx, reader, reconciled.Memory); err != nil {
+		return service.MemoryReconciliation{}, err
+	}
+
+	if reconciled.Target != nil {
+		target, err := s.shown(ctx, reader, *reconciled.Target)
+		if err != nil {
+			return service.MemoryReconciliation{}, err
+		}
+
+		reconciled.Target = &target
+	}
+
+	return reconciled, nil
+}
+
+func (s *memoriesService) resolve(
+	ctx context.Context,
+	input service.ReconcileMemoryInput,
+	proposal, target *entity.Memory,
+	decision entity.KnowledgeDecision,
+) (entity.MemoryRevisionAction, error) {
+	switch input.Resolution {
+	case entity.MemoryResolutionUpdate:
+		adopted, err := s.adopt(ctx, *target, *proposal, input.Target.ExpectedVersion, decision)
+		if err != nil {
+			return "", err
+		}
+
+		*target = adopted
+
+		return entity.MemoryRevisionWithdrawn, proposal.Become(entity.MemoryStatusWithdrawn)
+	case entity.MemoryResolutionSupersede:
+		if err := target.SupersededBy(proposal.ID); err != nil {
+			return "", err
+		}
+
+		proposal.SupersedesID = &target.ID
+
+		if err := proposal.Become(entity.MemoryStatusAccepted); err != nil {
+			return "", err
+		}
+
+		retired, err := s.save(ctx, *target, input.Target.ExpectedVersion, entity.MemoryRevisionSuperseded, decision)
+		if err != nil {
+			return "", err
+		}
+
+		*target = retired
+
+		return entity.MemoryRevisionAccepted, nil
+	case entity.MemoryResolutionNoChange:
+		return entity.MemoryRevisionWithdrawn, proposal.Become(entity.MemoryStatusWithdrawn)
+	default:
+		return entity.MemoryRevisionAccepted, proposal.Become(entity.MemoryStatusAccepted)
+	}
+}
+
+func reconcilable(memoryID uuid.UUID, input service.ReconcileMemoryInput) error {
+	switch {
+	case !input.Resolution.Valid():
+		return unsupported(entity.MemoryFieldResolution)
+	case input.Resolution.Targeted() && input.Target == nil:
+		return entity.NewValidationError(entity.FieldError{
+			Field: entity.MemoryFieldTarget, Code: entity.ValidationCodeRequired,
+		})
+	case !input.Resolution.Targeted() && input.Target != nil, input.Target != nil && input.Target.ID == memoryID:
+		return unsupported(entity.MemoryFieldTarget)
+	default:
+		return nil
+	}
+}
+
+func (s *memoriesService) lockPair(
+	ctx context.Context,
+	workspaceID, memoryID uuid.UUID,
+	target *service.MemoryTarget,
+) (entity.Memory, *entity.Memory, error) {
+	if target == nil {
+		proposal, err := s.memories.LockByID(ctx, workspaceID, memoryID)
+
+		return proposal, nil, err
+	}
+
+	ids := []uuid.UUID{memoryID, target.ID}
+	slices.SortFunc(ids, func(a, b uuid.UUID) int { return strings.Compare(a.String(), b.String()) })
+
+	locked := make(map[uuid.UUID]entity.Memory, len(ids))
+
+	for _, id := range ids {
+		memory, err := s.memories.LockByID(ctx, workspaceID, id)
+		if err != nil {
+			return entity.Memory{}, nil, err
+		}
+
+		locked[id] = memory
+	}
+
+	existing := locked[target.ID]
+
+	return locked[memoryID], &existing, nil
+}
+
+func (s *memoriesService) adopt(
+	ctx context.Context,
+	target, proposal entity.Memory,
+	expectedVersion int,
+	decision entity.KnowledgeDecision,
+) (entity.Memory, error) {
+	corrected := target
+
+	if err := s.write(ctx, decision, &corrected, contentOf(proposal)); err != nil {
+		return entity.Memory{}, err
+	}
+
+	if corrected.Restates(target) {
+		return target, nil
+	}
+
+	return s.save(ctx, corrected, expectedVersion, entity.MemoryRevisionCorrected, decision)
+}
+
+func contentOf(memory entity.Memory) service.MemoryContent {
+	from := memory.EffectiveFrom
+
+	return service.MemoryContent{
+		Kind:           memory.Kind,
+		Statement:      memory.Statement,
+		Rationale:      memory.Rationale,
+		Conditions:     memory.Conditions,
+		Applicability:  memory.Applicability,
+		Basis:          memory.Basis,
+		Evidence:       memory.Evidence,
+		EffectiveFrom:  &from,
+		EffectiveUntil: memory.EffectiveUntil,
+	}
 }
 
 func (s *memoriesService) Withdraw(

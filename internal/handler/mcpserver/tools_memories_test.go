@@ -79,10 +79,10 @@ func TestRememberingRecordsEveryFieldTheAgentGave(t *testing.T) {
 	var recorded service.CreateMemoryInput
 
 	h.memories.EXPECT().Create(gomock.Any(), scene.workspace.ID, gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ uuid.UUID, input service.CreateMemoryInput) (entity.Memory, error) {
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, input service.CreateMemoryInput) (service.MemoryWrite, error) {
 			recorded = input
 
-			return memoryFor(scene, input.Statement), nil
+			return service.MemoryWrite{Memory: memoryFor(scene, input.Statement)}, nil
 		})
 
 	result := callTool(t, h, "norn_remember", map[string]any{
@@ -387,5 +387,181 @@ func TestTheServerInstructionsCountMemoriesAsWorkspaceData(t *testing.T) {
 	instructions := h.session(t).InitializeResult().Instructions
 	if !strings.Contains(instructions, "memory statements, rationale, conditions and evidence excerpts") {
 		t.Fatalf("the instructions do not count memories as workspace data: %s", instructions)
+	}
+}
+
+type heldResult struct {
+	Memory struct {
+		ID     string `json:"id"`
+		Status string `json:"status"`
+	} `json:"memory"`
+	Related []struct {
+		Memory struct {
+			ID string `json:"id"`
+		} `json:"memory"`
+		Relation string `json:"relation"`
+	} `json:"related"`
+	Choices []struct {
+		Resolution string `json:"resolution"`
+		Target     string `json:"target"`
+	} `json:"choices"`
+	Reminder string `json:"reminder"`
+}
+
+func TestRememberingAgainstAnAcceptedDecisionReturnsItHeldWithTheChoices(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+	existing := memoryFor(scene, "Use Postgres for storage")
+	draft := memoryFor(scene, "Use MySQL for storage")
+	draft.Status = entity.MemoryStatusDisputed
+
+	h.memories.EXPECT().Create(gomock.Any(), scene.workspace.ID, gomock.Any()).Return(service.MemoryWrite{
+		Memory:  draft,
+		Related: []entity.RelatedMemory{{Memory: existing, Relation: entity.MemoryRelationConflict}},
+		Choices: []entity.MemoryChoice{
+			{Resolution: entity.MemoryResolutionIndependent},
+			{Resolution: entity.MemoryResolutionSupersede, TargetID: &existing.ID},
+			{Resolution: entity.MemoryResolutionNoChange},
+		},
+	}, nil)
+
+	result := callTool(t, h, "norn_remember", map[string]any{
+		"workspace": "acme",
+		"kind":      "decision",
+		"statement": "Use MySQL for storage",
+	})
+	if result.IsError {
+		t.Fatalf("remember refused: %s", refusalText(t, result))
+	}
+
+	var output heldResult
+	structured(t, result.StructuredContent, &output)
+
+	if output.Memory.Status != "disputed" || len(output.Related) != 1 ||
+		output.Related[0].Memory.ID != existing.ID.String() || output.Related[0].Relation != "conflict" {
+		t.Fatalf("remember returned %+v", output)
+	}
+
+	if len(output.Choices) != 3 || output.Choices[1].Resolution != "supersede" || output.Choices[1].Target != existing.ID.String() {
+		t.Fatalf("remember offered %+v", output.Choices)
+	}
+
+	if !strings.Contains(output.Reminder, "held as disputed") || !strings.Contains(output.Reminder, "norn_reconcile_memory") {
+		t.Fatalf("the reminder %q does not explain the hold", output.Reminder)
+	}
+}
+
+func TestRememberingWithNothingRelatedSaysNothingAboutAHold(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+
+	h.memories.EXPECT().Create(gomock.Any(), scene.workspace.ID, gomock.Any()).
+		Return(service.MemoryWrite{Memory: memoryFor(scene, "Use Postgres")}, nil)
+
+	result := callTool(t, h, "norn_remember", map[string]any{"workspace": "acme", "kind": "decision", "statement": "Use Postgres"})
+
+	var output heldResult
+	structured(t, result.StructuredContent, &output)
+
+	if output.Related != nil || output.Choices != nil || strings.Contains(output.Reminder, "held as") {
+		t.Fatalf("an accepted memory came back with %+v", output)
+	}
+}
+
+func TestReconcilingPassesTheChoiceAndItsTargetThrough(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+	existing := memoryFor(scene, "Use Postgres for storage")
+	draft := memoryFor(scene, "Use MySQL for storage")
+
+	h.memories.EXPECT().
+		Reconcile(gomock.Any(), scene.workspace.ID, draft.ID, service.ReconcileMemoryInput{
+			Resolution:      entity.MemoryResolutionSupersede,
+			ExpectedVersion: 1,
+			Target:          &service.MemoryTarget{ID: existing.ID, ExpectedVersion: 3},
+		}).
+		DoAndReturn(func(context.Context, uuid.UUID, uuid.UUID, service.ReconcileMemoryInput) (service.MemoryReconciliation, error) {
+			replacement, replaced := draft, existing
+			replacement.SupersedesID = &existing.ID
+			replaced.Status, replaced.SupersededByID = entity.MemoryStatusSuperseded, &draft.ID
+
+			return service.MemoryReconciliation{Memory: replacement, Target: &replaced}, nil
+		})
+
+	result := callTool(t, h, "norn_reconcile_memory", map[string]any{
+		"workspace":               "acme",
+		"memory":                  draft.ID.String(),
+		"expected_version":        1,
+		"resolution":              "Supersede",
+		"target":                  existing.ID.String(),
+		"target_expected_version": 3,
+	})
+	if result.IsError {
+		t.Fatalf("reconcile refused: %s", refusalText(t, result))
+	}
+
+	var output struct {
+		Memory struct {
+			SupersedesID string `json:"supersedesId"`
+		} `json:"memory"`
+		Target *struct {
+			Status         string `json:"status"`
+			SupersededByID string `json:"supersededById"`
+		} `json:"target"`
+	}
+	structured(t, result.StructuredContent, &output)
+
+	if output.Memory.SupersedesID != existing.ID.String() || output.Target == nil ||
+		output.Target.Status != "superseded" || output.Target.SupersededByID != draft.ID.String() {
+		t.Fatalf("reconcile returned %+v", output)
+	}
+}
+
+func TestReconcilingASettledMemoryExplainsWhy(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+	memoryID := uuid.New()
+
+	h.memories.EXPECT().Reconcile(gomock.Any(), scene.workspace.ID, memoryID, gomock.Any()).
+		Return(service.MemoryReconciliation{}, entity.ErrMemoryNotPending)
+
+	result := callTool(t, h, "norn_reconcile_memory", map[string]any{
+		"workspace":        "acme",
+		"memory":           memoryID.String(),
+		"expected_version": 2,
+		"resolution":       "independent",
+	})
+
+	if !result.IsError || !strings.Contains(refusalText(t, result), "memory_not_pending") {
+		t.Fatalf("reconcile answered %+v", result)
+	}
+}
+
+func TestReadingAHeldMemoryShowsWhatItIsHeldAgainst(t *testing.T) {
+	h := newHarness(t)
+	scene := docSceneFor(h)
+	existing := memoryFor(scene, "Use Postgres for storage")
+	draft := memoryFor(scene, "Use Postgres for storage.")
+	draft.Status = entity.MemoryStatusProposed
+
+	h.memories.EXPECT().Get(gomock.Any(), scene.workspace.ID, draft.ID).Return(draft, nil)
+	h.memories.EXPECT().Lineage(gomock.Any(), scene.workspace.ID, draft.ID).Return([]entity.Memory{draft}, nil)
+	h.memories.EXPECT().Related(gomock.Any(), scene.workspace.ID, draft.ID).Return(service.MemoryWrite{
+		Memory:  draft,
+		Related: []entity.RelatedMemory{{Memory: existing, Relation: entity.MemoryRelationDuplicate}},
+		Choices: []entity.MemoryChoice{{Resolution: entity.MemoryResolutionNoChange}},
+	}, nil)
+
+	result := callTool(t, h, "norn_get_memory", map[string]any{"workspace": "acme", "memory": draft.ID.String()})
+	if result.IsError {
+		t.Fatalf("get refused: %s", refusalText(t, result))
+	}
+
+	var output heldResult
+	structured(t, result.StructuredContent, &output)
+
+	if len(output.Related) != 1 || output.Related[0].Relation != "duplicate" || len(output.Choices) != 1 ||
+		!strings.Contains(output.Reminder, "held as proposed") {
+		t.Fatalf("get returned %+v", output)
 	}
 }

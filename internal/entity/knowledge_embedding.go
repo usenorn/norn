@@ -20,3 +20,8 @@ type KnowledgeEmbedding struct {
 func KnowledgeEmbeddedStatuses() []MemoryStatus {
 	return []MemoryStatus{MemoryStatusProposed, MemoryStatusAccepted, MemoryStatusDisputed}
 }
+
+type KnowledgeQueryVector struct {
+	Model  string
+	Vector []float32
+}

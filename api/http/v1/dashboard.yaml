@@ -5629,8 +5629,10 @@ paths:
       operationId: createWorkspaceMemory
       summary: Record a memory for an audience
       description: >-
-        A personal memory is accepted as soon as it is recorded. A shared memory recorded by an
-        agent starts as a proposal.
+        The memory is compared with the memories the writer can read. With nothing related it is
+        accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted
+        decision under the same conditions, and answered with the related memories and the choices
+        that reconcile it. Nothing is resolved automatically.
       requestBody:
         required: true
         content:
@@ -5638,10 +5640,10 @@ paths:
             schema: { $ref: '#/components/schemas/CreateMemoryRequest' }
       responses:
         '201':
-          description: The memory as recorded
+          description: The memory as recorded, with what it relates to
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Memory' }
+              schema: { $ref: '#/components/schemas/MemoryWrite' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/Problem' }
@@ -5683,6 +5685,58 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/related:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    get:
+      tags: [memories]
+      operationId: getWorkspaceMemoryRelated
+      summary: Read the memories a pending memory relates to and the choices that reconcile it
+      description: >-
+        A proposed or disputed memory is compared again with the memories the caller can read. A
+        settled memory answers with nothing related and no choices.
+      responses:
+        '200':
+          description: The memory with what it relates to
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemoryWrite' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/reconcile:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    post:
+      tags: [memories]
+      operationId: reconcileWorkspaceMemory
+      summary: Settle a proposed or disputed memory against a related one
+      description: >-
+        independent accepts the memory as it is. update corrects the target with this memory's
+        content and withdraws this one. supersede accepts this memory and moves the target to
+        superseded, linking the two. no_change withdraws this memory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReconcileMemoryRequest' }
+      responses:
+        '200':
+          description: The memory and the target after reconciliation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MemoryReconciliation' }
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
@@ -12635,6 +12689,74 @@ components:
           description: The version of the memory being replaced.
         replacement: { $ref: '#/components/schemas/CreateMemoryRequest' }
 
+    MemoryRelation:
+      type: string
+      description: >-
+        duplicate covers the same subject under the same conditions, conditional covers the same
+        subject under other conditions and stays compatible, and conflict contradicts an accepted
+        decision under the same conditions.
+      enum: [duplicate, conditional, conflict]
+
+    MemoryResolution:
+      type: string
+      enum: [independent, update, supersede, no_change]
+
+    RelatedMemory:
+      type: object
+      required: [memory, relation]
+      properties:
+        memory: { $ref: '#/components/schemas/Memory' }
+        relation: { $ref: '#/components/schemas/MemoryRelation' }
+
+    MemoryChoice:
+      type: object
+      required: [resolution]
+      properties:
+        resolution: { $ref: '#/components/schemas/MemoryResolution' }
+        targetId:
+          type: string
+          format: uuid
+          description: The related memory that update and supersede act on.
+
+    MemoryWrite:
+      type: object
+      required: [memory, related, choices]
+      properties:
+        memory: { $ref: '#/components/schemas/Memory' }
+        related:
+          type: array
+          items: { $ref: '#/components/schemas/RelatedMemory' }
+        choices:
+          type: array
+          description: What the caller may do to settle the memory. Empty once it is settled.
+          items: { $ref: '#/components/schemas/MemoryChoice' }
+
+    MemoryTarget:
+      type: object
+      required: [memoryId, expectedVersion]
+      properties:
+        memoryId: { type: string, format: uuid }
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+
+    ReconcileMemoryRequest:
+      type: object
+      required: [resolution, expectedVersion]
+      properties:
+        resolution: { $ref: '#/components/schemas/MemoryResolution' }
+        expectedVersion:
+          type: integer
+          format: int32
+          minimum: 1
+          description: The version of the memory being settled.
+        target: { $ref: '#/components/schemas/MemoryTarget' }
+
+    MemoryReconciliation:
+      type: object
+      required: [memory]
+      properties:
+        memory: { $ref: '#/components/schemas/Memory' }
+        target: { $ref: '#/components/schemas/Memory' }
+
     WithdrawMemoryRequest:
       type: object
       required: [expectedVersion]
@@ -12737,6 +12859,7 @@ components:
                 - memory_stale
                 - memory_closed
                 - memory_transition_invalid
+                - memory_not_pending
             version:
               type: integer
               format: int32

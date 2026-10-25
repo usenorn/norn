@@ -222,10 +222,21 @@ func (t *toolset) register(tools *Tools) {
 	add(tools, &mcp.Tool{
 		Name: "norn_remember",
 		Description: "Record a decision, constraint, lesson or preference once it is settled, so " +
-			"later work can recall it. Recall first: if a memory already covers it, correct or " +
-			"supersede that one instead.",
+			"later work can recall it. It is compared with the memories you can read: when it " +
+			"duplicates one, restates its subject under other conditions, or contradicts an " +
+			"accepted decision, it is held as proposed or disputed and returned with those " +
+			"memories and the choices that settle it through norn_reconcile_memory.",
 		Annotations: create,
 	}, t.remember)
+
+	add(tools, &mcp.Tool{
+		Name: "norn_reconcile_memory",
+		Description: "Settle a proposed or disputed memory that norn_remember held against related " +
+			"ones: keep it independent, update the related memory with it, supersede the " +
+			"related memory with it, or make no change and drop it. Pick one of the choices " +
+			"it was returned with; nothing is resolved for you.",
+		Annotations: update,
+	}, t.reconcileMemory)
 
 	add(tools, &mcp.Tool{
 		Name: "norn_correct_memory",

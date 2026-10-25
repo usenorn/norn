@@ -246,6 +246,7 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		"norn_list_memories",
 		"norn_get_memory",
 		"norn_remember",
+		"norn_reconcile_memory",
 		"norn_correct_memory",
 		"norn_supersede_memory",
 		"norn_withdraw_memory",
@@ -274,8 +275,8 @@ func TestEveryAdvertisedToolIsRegistered(t *testing.T) {
 		}
 	}
 
-	if len(tools.Tools) != 39 {
-		t.Errorf("registered %d tools, want 39", len(tools.Tools))
+	if len(tools.Tools) != 40 {
+		t.Errorf("registered %d tools, want 40", len(tools.Tools))
 	}
 }
 

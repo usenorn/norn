@@ -599,6 +599,16 @@ type knowledgeHitDTO struct {
 	Score   float64              `json:"score"`
 }
 
+type relatedMemoryDTO struct {
+	Memory   memoryDTO `json:"memory"`
+	Relation string    `json:"relation"`
+}
+
+type memoryChoiceDTO struct {
+	Resolution string `json:"resolution"`
+	Target     string `json:"target,omitempty"`
+}
+
 func optionalID(id *uuid.UUID) string {
 	if id == nil {
 		return ""
@@ -658,6 +668,24 @@ func memoryDTOFrom(memory entity.Memory) memoryDTO {
 	}
 
 	return dto
+}
+
+func relatedMemoryDTOsFrom(related []entity.RelatedMemory) []relatedMemoryDTO {
+	dtos := make([]relatedMemoryDTO, 0, len(related))
+	for _, candidate := range related {
+		dtos = append(dtos, relatedMemoryDTO{Memory: memoryDTOFrom(candidate.Memory), Relation: string(candidate.Relation)})
+	}
+
+	return dtos
+}
+
+func memoryChoiceDTOsFrom(choices []entity.MemoryChoice) []memoryChoiceDTO {
+	dtos := make([]memoryChoiceDTO, 0, len(choices))
+	for _, choice := range choices {
+		dtos = append(dtos, memoryChoiceDTO{Resolution: string(choice.Resolution), Target: optionalID(choice.TargetID)})
+	}
+
+	return dtos
 }
 
 func memoryLinkDTOFrom(memory entity.Memory) memoryLinkDTO {

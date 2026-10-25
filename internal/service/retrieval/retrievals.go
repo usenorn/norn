@@ -2,7 +2,6 @@ package retrieval
 
 import (
 	"context"
-	"errors"
 	"slices"
 	"strings"
 	"time"
@@ -19,8 +18,7 @@ type retrievals struct {
 	knowledge repository.Knowledge
 	memories  repository.Memory
 	revisions repository.MemoryRevision
-	providers repository.AIProvider
-	models    repository.AIModel
+	vectors   service.KnowledgeEmbeddings
 	readers   service.KnowledgeAuthorizer
 	cfg       config.Knowledge
 	now       func() time.Time
@@ -30,8 +28,7 @@ func New(
 	knowledge repository.Knowledge,
 	memories repository.Memory,
 	revisions repository.MemoryRevision,
-	providers repository.AIProvider,
-	models repository.AIModel,
+	vectors service.KnowledgeEmbeddings,
 	readers service.KnowledgeAuthorizer,
 	cfg config.Knowledge,
 ) service.Retrievals {
@@ -39,8 +36,7 @@ func New(
 		knowledge: knowledge,
 		memories:  memories,
 		revisions: revisions,
-		providers: providers,
-		models:    models,
+		vectors:   vectors,
 		readers:   readers,
 		cfg:       cfg,
 		now:       time.Now,
@@ -190,27 +186,14 @@ func (s *retrievals) semantic(
 	lookup repository.KnowledgeQuery,
 	question string,
 ) ([]entity.KnowledgeLane, entity.KnowledgeSemantic, error) {
-	connection, err := s.providers.Get(ctx, workspaceID)
-	if errors.Is(err, entity.ErrAIProviderNotConfigured) {
-		return nil, entity.KnowledgeSemanticUnconfigured, nil
-	}
-
-	if err != nil {
-		return nil, "", err
-	}
-
-	if !connection.Embeds() {
-		return nil, entity.KnowledgeSemanticUnconfigured, nil
-	}
-
-	vector, embedded := s.embed(ctx, connection, strings.TrimSpace(question))
-	if !embedded {
-		return nil, entity.KnowledgeSemanticUnavailable, nil
+	embedded, state, err := s.vectors.Embed(ctx, workspaceID, question)
+	if err != nil || state != entity.KnowledgeSemanticUsed {
+		return nil, state, err
 	}
 
 	nearest := repository.KnowledgeVector{
-		Model:         connection.EmbeddingModel,
-		Vector:        vector,
+		Model:         embedded.Model,
+		Vector:        embedded.Vector,
 		MinSimilarity: s.cfg.SemanticMinSimilarity,
 	}
 
@@ -235,27 +218,6 @@ func (s *retrievals) semantic(
 	}
 
 	return lanes, entity.KnowledgeSemanticUsed, nil
-}
-
-func (s *retrievals) embed(
-	ctx context.Context,
-	connection entity.AIProviderConnection,
-	question string,
-) ([]float32, bool) {
-	apiKey, err := s.providers.APIKey(ctx, connection.WorkspaceID)
-	if err != nil {
-		return nil, false
-	}
-
-	bounded, cancel := context.WithTimeout(ctx, s.cfg.QueryTimeout)
-	defer cancel()
-
-	vectors, err := s.models.Embed(bounded, connection.Endpoint, apiKey, connection.EmbeddingModel, []string{question})
-	if err != nil || len(vectors) != 1 {
-		return nil, false
-	}
-
-	return vectors[0], true
 }
 
 func (s *retrievals) hydrate(

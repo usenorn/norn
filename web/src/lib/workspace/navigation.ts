@@ -4,6 +4,8 @@ import List from "@lucide/svelte/icons/list";
 import Menu from "@lucide/svelte/icons/menu";
 import Zap from "@lucide/svelte/icons/zap";
 import {
+	Brain as BrainGlyph,
+	BrainCircuit as BrainCircuitGlyph,
 	CircleDot as CircleDotGlyph,
 	Crosshair as CrosshairGlyph,
 	Eye as EyeGlyph,
@@ -83,6 +85,12 @@ export function primaryNav(workspace: string, waiting = 0, unread = 0): NavEntry
 			href: at("/docs"),
 			glyph: FileTextGlyph,
 			glyphEngaged: FilePenGlyph,
+		},
+		{
+			label: "Memories",
+			href: at("/memories"),
+			glyph: BrainGlyph,
+			glyphEngaged: BrainCircuitGlyph,
 		},
 	];
 }
