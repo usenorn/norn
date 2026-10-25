@@ -553,3 +553,41 @@ func TestDerivedKnowledgeKeepsTheNarrowestAudienceOfItsSources(t *testing.T) {
 		t.Error("a workspace summary of project knowledge was accepted as no wider than its source")
 	}
 }
+
+func TestTheReviewScopeCoversExactlyWhatTheReaderMayReview(t *testing.T) {
+	world := newKnowledgeWorld()
+	project := []uuid.UUID{world.projectID}
+
+	lead := world.reader(person(uuid.New()), entity.MembershipRoleMember)
+	lead.ProjectIDs, lead.LedProjectIDs = project, project
+
+	admin := world.reader(person(uuid.New()), entity.MembershipRoleAdmin)
+	admin.AllProjects = true
+
+	agent := world.reader(agentActing(world.author, entity.AgentScopeMember, nil), entity.MembershipRoleAdmin)
+	agent.AllProjects = true
+
+	member := world.reader(person(world.author), entity.MembershipRoleMember)
+	member.ProjectIDs = project
+
+	readers := map[string]entity.KnowledgeReader{
+		"an admin":      admin,
+		"a lead":        lead,
+		"an agent":      agent,
+		"the author":    member,
+		"a shared link": world.reader(entity.Actor{Kind: entity.ActorKindUser}, entity.MembershipRoleAdmin),
+	}
+
+	for name, reader := range readers {
+		review, reviews := reader.Reviewing()
+
+		for audience, access := range world.items {
+			want := reader.Reviews(access)
+			got := reviews && reader.Sees(access) && review.Covers(access.Audience)
+
+			if got != want {
+				t.Errorf("%s on %s knowledge: review scope covers it %v, Reviews says %v", name, audience, got, want)
+			}
+		}
+	}
+}

@@ -132,6 +132,10 @@ func MemoryStatuses() []MemoryStatus {
 	}
 }
 
+func MemoryPendingStatuses() []MemoryStatus {
+	return []MemoryStatus{MemoryStatusProposed, MemoryStatusDisputed}
+}
+
 func (s MemoryStatus) Valid() bool {
 	return slices.Contains(MemoryStatuses(), s)
 }
@@ -176,6 +180,7 @@ type Memory struct {
 	Evidence       []MemoryEvidence
 	AuthorID       uuid.UUID
 	AuthorName     string
+	AgentName      string
 	By             KnowledgeAttribution
 	EffectiveFrom  time.Time
 	EffectiveUntil *time.Time

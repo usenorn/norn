@@ -84,7 +84,7 @@ func MemoryRelatableStatuses() []MemoryStatus {
 }
 
 func (m Memory) Pending() bool {
-	return m.Status == MemoryStatusProposed || m.Status == MemoryStatusDisputed
+	return slices.Contains(MemoryPendingStatuses(), m.Status)
 }
 
 func (m Memory) RelationTo(other Memory, semantic bool) (MemoryRelation, bool) {

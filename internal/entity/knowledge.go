@@ -242,6 +242,32 @@ func (r KnowledgeReader) Reviews(access KnowledgeAccess) bool {
 	return !r.Identity.Agent && r.Sees(access) && r.Maintains(access)
 }
 
+type KnowledgeReview struct {
+	Workspace     bool
+	LedProjectIDs []uuid.UUID
+}
+
+func (r KnowledgeReader) Reviewing() (KnowledgeReview, bool) {
+	if r.Identity.Agent || r.Identity.Shared {
+		return KnowledgeReview{}, false
+	}
+
+	review := KnowledgeReview{Workspace: r.Identity.Maintainer(), LedProjectIDs: r.LedProjectIDs}
+
+	return review, review.Workspace || len(review.LedProjectIDs) > 0
+}
+
+func (r KnowledgeReview) Covers(audience KnowledgeAudience) bool {
+	switch audience.Visibility {
+	case KnowledgeVisibilityWorkspace:
+		return r.Workspace
+	case KnowledgeVisibilityProject:
+		return r.Workspace || slices.Contains(r.LedProjectIDs, audience.ProjectID)
+	default:
+		return false
+	}
+}
+
 func (r KnowledgeReader) Edits(access KnowledgeAccess) bool {
 	if !r.Sees(access) {
 		return false

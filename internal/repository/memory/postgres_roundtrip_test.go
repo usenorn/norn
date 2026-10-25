@@ -192,7 +192,8 @@ func TestAMemoryReadsBackWithItsEvidenceAndRefusesAStaleWrite(t *testing.T) {
 		}
 
 		cited := created.Evidence[1]
-		if cited.DocAudience.Visibility != entity.KnowledgeVisibilityPersonal || cited.DocAuthorID != fixture.authorID {
+		if cited.DocAudience.Visibility != entity.KnowledgeVisibilityPersonal || cited.DocAuthorID != fixture.authorID ||
+			cited.DocTitle != "Storage notes" {
 			return fmt.Errorf("a cited doc revision lost its doc's audience: %+v", cited)
 		}
 
@@ -264,6 +265,80 @@ func TestTheMemoryListHonoursTheReaderAndItsFilters(t *testing.T) {
 			},
 		} {
 			listed, err := memories.List(ctx, fixture.workspaceID, testCase.filter, page)
+			if err != nil {
+				return fmt.Errorf("%s: list: %w", name, err)
+			}
+
+			got := make([]string, 0, len(listed))
+			for _, memory := range listed {
+				got = append(got, memory.Statement)
+			}
+
+			if strings.Join(got, "|") != strings.Join(testCase.want, "|") {
+				return fmt.Errorf("%s: listed %v, want %v", name, got, testCase.want)
+			}
+		}
+
+		return nil
+	})
+}
+
+func TestTheMemoryListNarrowsToAScopeAndToWhatAReviewerMaintains(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := New(client)
+		at := time.Date(2026, 10, 25, 9, 0, 0, 0, time.UTC)
+
+		workspaceProposal := draftMemory(fixture, "Cache everything", entity.WorkspaceAudience(), at)
+		workspaceProposal.Status = entity.MemoryStatusProposed
+		projectProposal := draftMemory(fixture, "Freeze on Fridays", entity.ProjectAudience(fixture.projectID), at.Add(time.Minute))
+		projectProposal.Status = entity.MemoryStatusDisputed
+		personal := draftMemory(fixture, "I prefer tabs", entity.PersonalAudience(), at.Add(2*time.Minute))
+		personal.Status = entity.MemoryStatusProposed
+
+		for _, memory := range []entity.Memory{workspaceProposal, projectProposal, personal} {
+			if err := memories.Create(ctx, memory); err != nil {
+				return fmt.Errorf("create %q: %w", memory.Statement, err)
+			}
+		}
+
+		reader := repository.MemoryFilter{AllProjects: true, PersonalAuthorID: fixture.authorID}
+		narrowed := func(change func(*repository.MemoryFilter)) repository.MemoryFilter {
+			filter := reader
+			change(&filter)
+
+			return filter
+		}
+
+		for name, testCase := range map[string]struct {
+			filter repository.MemoryFilter
+			want   []string
+		}{
+			"project and personal scopes": {
+				filter: narrowed(func(f *repository.MemoryFilter) {
+					f.Visibilities = []entity.KnowledgeVisibility{entity.KnowledgeVisibilityProject, entity.KnowledgeVisibilityPersonal}
+				}),
+				want: []string{"I prefer tabs", "Freeze on Fridays"},
+			},
+			"a workspace admin reviewing": {
+				filter: narrowed(func(f *repository.MemoryFilter) {
+					f.ReviewedBy = &entity.KnowledgeReview{Workspace: true}
+				}),
+				want: []string{"Freeze on Fridays", "Cache everything"},
+			},
+			"the project lead reviewing": {
+				filter: narrowed(func(f *repository.MemoryFilter) {
+					f.ReviewedBy = &entity.KnowledgeReview{LedProjectIDs: []uuid.UUID{fixture.projectID}}
+				}),
+				want: []string{"Freeze on Fridays"},
+			},
+			"the lead of another project reviewing": {
+				filter: narrowed(func(f *repository.MemoryFilter) {
+					f.ReviewedBy = &entity.KnowledgeReview{LedProjectIDs: []uuid.UUID{uuid.New()}}
+				}),
+				want: nil,
+			},
+		} {
+			listed, err := memories.List(ctx, fixture.workspaceID, testCase.filter, entity.MemoryPage{Limit: 10})
 			if err != nil {
 				return fmt.Errorf("%s: list: %w", name, err)
 			}

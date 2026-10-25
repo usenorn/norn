@@ -25,6 +25,9 @@
 	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
 	import LinkedDocs from "#lib/docs/linked-docs.svelte";
 	import { docsPath, type DocBacklinks } from "#lib/docs/docs.js";
+	import RowGroup from "#lib/components/norn/row-group.svelte";
+	import MemoryRow from "#lib/memories/memory-row.svelte";
+	import { memoriesPath, type ProjectMemories } from "#lib/memories/memories.js";
 	import IssueRow from "#lib/components/norn/issue-row.svelte";
 	import { cn } from "#lib/utils.js";
 	import ProjectDetailsForm from "#lib/projects/project-details-form.svelte";
@@ -85,6 +88,7 @@
 	const ready = $derived(detail.kind === "ready" ? detail : null);
 	const project = $derived(ready?.project ?? null);
 	const linkedDocs = $derived<DocBacklinks>(ready ? ready.docs : { kind: "unavailable" });
+	const projectMemories = $derived<ProjectMemories>(ready ? ready.memories : { kind: "unavailable" });
 	const settled = $derived(
 		project
 			? project.archived || project.state === "completed" || project.state === "cancelled"
@@ -994,6 +998,40 @@
 						</p>
 					{:else}
 						<LinkedDocs docs={linkedDocs} workspace={slug} projects={data.projects} />
+					{/if}
+				</section>
+
+				<section class="flex flex-col gap-2" aria-label="Memories">
+					<div class="flex items-baseline justify-between gap-2">
+						<Eyebrow class="text-ink-600">Memories</Eyebrow>
+						<Button variant="ghost" size="sm" href={memoriesPath(slug, { project: project.id })}>
+							All memories
+						</Button>
+					</div>
+					{#if projectMemories.kind === "unavailable"}
+						<p class="text-sm leading-normal text-muted-foreground text-pretty">
+							We could not load the memories for {project.name}. Wait a moment and try again.
+						</p>
+					{:else}
+						{#if projectMemories.awaiting}
+							<a
+								href={memoriesPath(slug, { tab: "review", project: project.id })}
+								class="text-sm text-link underline-offset-2 hover:text-link-hover hover:underline"
+							>
+								Proposals for {project.name} wait for your decision
+							</a>
+						{/if}
+						{#if projectMemories.memories.length === 0}
+							<p class="text-sm leading-normal text-muted-foreground text-pretty">
+								No accepted memory applies to {project.name} yet. Agents record them as they work.
+							</p>
+						{:else}
+							<RowGroup as="ul">
+								{#each projectMemories.memories as memory (memory.id)}
+									<li><MemoryRow {memory} workspace={slug} projects={data.projects} /></li>
+								{/each}
+							</RowGroup>
+						{/if}
 					{/if}
 				</section>
 

@@ -21,6 +21,8 @@ type MemoryFilter struct {
 	AllProjects      bool
 	ProjectIDs       []uuid.UUID
 	PersonalAuthorID uuid.UUID
+	Visibilities     []entity.KnowledgeVisibility
+	ReviewedBy       *entity.KnowledgeReview
 }
 
 type Memory interface {

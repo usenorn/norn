@@ -14,7 +14,7 @@
 	import { showToast } from "#lib/toast/toasts.js";
 	import AudienceFields from "./audience-fields.svelte";
 	import DocReaders from "./doc-readers.svelte";
-	import { shareDocSchema, shareFormId } from "./doc-schema";
+	import { shareAudienceSchema, shareFormId } from "./doc-schema";
 	import {
 		audienceLine,
 		docFailureMessage,
@@ -43,10 +43,10 @@
 
 	let failure = $state("");
 
-	const form = superForm(defaults(zod4(shareDocSchema)), {
+	const form = superForm(defaults(zod4(shareAudienceSchema)), {
 		id: shareFormId,
 		SPA: true,
-		validators: zod4Client(shareDocSchema),
+		validators: zod4Client(shareAudienceSchema),
 		resetForm: false,
 		onSubmit: () => {
 			failure = "";

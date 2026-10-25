@@ -3,6 +3,7 @@ import type { ActivityFeed } from "#lib/activity/activity.js";
 import type { Listed } from "#lib/api/listed.js";
 import type { DocBacklinks } from "#lib/docs/docs.js";
 import type { Issue } from "#lib/issues/issues.js";
+import type { ProjectMemories } from "#lib/memories/memories.js";
 import type { StateCategory } from "#lib/team/states.js";
 import type { Team } from "#lib/team/teams.js";
 import { totalIssues, type IssueProgress } from "#lib/issues/board.js";
@@ -86,6 +87,7 @@ export type ProjectDetail =
 			members: ProjectMember[];
 			links: ProjectLink[];
 			docs: DocBacklinks;
+			memories: ProjectMemories;
 			updates: ProjectStatusUpdate[];
 			rows: Listed<Issue>;
 			activity: ActivityFeed;

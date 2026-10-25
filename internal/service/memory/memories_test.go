@@ -1035,3 +1035,60 @@ func TestEveryMemoryWriteSchedulesAKnowledgeRefresh(t *testing.T) {
 		t.Fatalf("scheduled refreshes for %v, want one for the creation and one for the withdrawal", h.scheduled)
 	}
 }
+
+func TestTheReviewQueueAsksForPendingMemoriesTheReaderMaintains(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: h.leadID}, entity.MembershipRoleMember)
+
+	if _, err := h.service.List(context.Background(), h.workspaceID, service.ListMemoriesInput{
+		Reviewable: true,
+		Statuses:   []entity.MemoryStatus{entity.MemoryStatusDisputed, entity.MemoryStatusAccepted},
+	}); err != nil {
+		t.Fatalf("list: %v", err)
+	}
+
+	filter := h.listed[0]
+	if !slices.Equal(filter.Statuses, []entity.MemoryStatus{entity.MemoryStatusDisputed}) {
+		t.Fatalf("the queue asked for statuses %v, want only disputed", filter.Statuses)
+	}
+
+	if filter.ReviewedBy == nil || filter.ReviewedBy.Workspace || !slices.Equal(filter.ReviewedBy.LedProjectIDs, []uuid.UUID{h.projectID}) {
+		t.Fatalf("the queue asked for review scope %+v, want the led project only", filter.ReviewedBy)
+	}
+}
+
+func TestAnAgentOrAPlainMemberHasNothingToReview(t *testing.T) {
+	h := newHarness(t)
+
+	for name, act := range map[string]func(){
+		"an agent": func() { h.actAsAgent(entity.AgentScopeWorkspace) },
+		"a plain member": func() {
+			h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, entity.MembershipRoleMember)
+		},
+	} {
+		act()
+		h.listed = nil
+
+		list, err := h.service.List(context.Background(), h.workspaceID, service.ListMemoriesInput{Reviewable: true})
+		if err != nil {
+			t.Fatalf("%s: list: %v", name, err)
+		}
+
+		if len(list.Memories) != 0 || len(h.listed) != 0 {
+			t.Fatalf("%s: got %d memories after %d store reads, want none", name, len(list.Memories), len(h.listed))
+		}
+	}
+}
+
+func TestAnUnknownScopeIsRefused(t *testing.T) {
+	h := newHarness(t)
+
+	_, err := h.service.List(context.Background(), h.workspaceID, service.ListMemoriesInput{
+		Visibilities: []entity.KnowledgeVisibility{"everyone"},
+	})
+
+	var invalid entity.ValidationError
+	if !errors.As(err, &invalid) {
+		t.Fatalf("got %v, want a validation error", err)
+	}
+}
