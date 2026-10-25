@@ -26,6 +26,7 @@ const summaryColumns = `
        r.action,
        r.status,
        r.statement,
+       r.reason,
        coalesce(r.account_id::text, ''),
        coalesce(a.display_name, ''),
        coalesce(r.agent_id::text, ''),
@@ -115,6 +116,7 @@ func revisionToModel(revision entity.MemoryRevision) (*dbpostgres.WorkspaceMemor
 		Action:           string(revision.Action),
 		Kind:             string(revision.Kind),
 		Statement:        revision.Statement,
+		Reason:           revision.Reason,
 		Rationale:        revision.Rationale,
 		Conditions:       revision.Conditions,
 		Visibility:       string(revision.Audience.Visibility),
@@ -150,7 +152,7 @@ type summaryRow struct {
 func (row *summaryRow) targets(summary *entity.MemoryRevisionSummary) []any {
 	return []any{
 		&row.id, &row.workspace, &row.memory, &summary.Version, &row.action, &row.status, &summary.Statement,
-		&row.account, &summary.AccountName, &row.agent, &row.connection, &row.token, &row.source, &summary.CreatedAt,
+		&summary.Reason, &row.account, &summary.AccountName, &row.agent, &row.connection, &row.token, &row.source, &summary.CreatedAt,
 	}
 }
 

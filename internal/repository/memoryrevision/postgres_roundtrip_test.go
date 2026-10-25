@@ -218,3 +218,54 @@ func TestAMemoryRevisionKeepsTheEvidenceItWasRecordedWith(t *testing.T) {
 		return nil
 	})
 }
+
+func TestARejectedMemoryKeepsItsReasonInHistory(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := memoryrepo.New(client)
+		revisions := New(client)
+		at := time.Date(2026, 10, 25, 9, 0, 0, 0, time.UTC)
+		by := entity.KnowledgeAttribution{AccountID: fixture.authorID, Source: entity.RevisionSourcePerson}
+
+		memory := draftMemory(fixture, "Deploy on Fridays", entity.ProjectAudience(fixture.projectID), at)
+		memory.Status = entity.MemoryStatusProposed
+
+		if err := memories.Create(ctx, memory); err != nil {
+			return fmt.Errorf("create memory: %w", err)
+		}
+
+		if err := revisions.Record(ctx, memory.Revision(entity.MemoryRevisionCreated, by)); err != nil {
+			return fmt.Errorf("record the proposal: %w", err)
+		}
+
+		memory.Version, memory.Status, memory.UpdatedAt = 2, entity.MemoryStatusRejected, at.Add(time.Hour)
+
+		if err := memories.Update(ctx, memory, 1); err != nil {
+			return fmt.Errorf("reject memory: %w", err)
+		}
+
+		if err := revisions.Record(ctx, memory.Rejection("contradicts the release freeze", by)); err != nil {
+			return fmt.Errorf("record the rejection: %w", err)
+		}
+
+		read, err := memories.GetByID(ctx, fixture.workspaceID, memory.ID)
+		if err != nil {
+			return fmt.Errorf("read memory: %w", err)
+		}
+
+		if read.Status != entity.MemoryStatusRejected {
+			return fmt.Errorf("the memory read back %s, want rejected", read.Status)
+		}
+
+		history, err := revisions.List(ctx, fixture.workspaceID, memory.ID, entity.MemoryRevisionPage{Limit: 10})
+		if err != nil {
+			return fmt.Errorf("list revisions: %w", err)
+		}
+
+		if len(history) != 2 || history[0].Action != entity.MemoryRevisionRejected ||
+			history[0].Reason != "contradicts the release freeze" || history[1].Reason != "" {
+			return fmt.Errorf("history read back as %+v", history)
+		}
+
+		return nil
+	})
+}
