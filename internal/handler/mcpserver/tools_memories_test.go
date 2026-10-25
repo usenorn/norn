@@ -194,6 +194,7 @@ func TestRecallSearchesTheNamedScopeAndLeavesOutProposals(t *testing.T) {
 	scene := docSceneFor(h)
 	memory := memoryFor(scene, "Use Postgres")
 	memory.Status = entity.MemoryStatusProposed
+	memory.Evidence = []entity.MemoryEvidence{{Kind: entity.MemoryEvidenceDocRevision, State: entity.MemoryEvidenceChanged}}
 
 	var asked service.RetrieveInput
 
@@ -238,7 +239,8 @@ func TestRecallSearchesTheNamedScopeAndLeavesOutProposals(t *testing.T) {
 		Hits []struct {
 			Kind   string `json:"kind"`
 			Memory *struct {
-				Status string `json:"status"`
+				Status   string           `json:"status"`
+				Evidence []map[string]any `json:"evidence"`
 			} `json:"memory"`
 			Passage *struct {
 				DocTitle string `json:"docTitle"`
@@ -252,6 +254,15 @@ func TestRecallSearchesTheNamedScopeAndLeavesOutProposals(t *testing.T) {
 	if len(output.Hits) != 2 || output.Hits[0].Memory == nil || output.Hits[0].Memory.Status != "proposed" ||
 		output.Hits[1].Passage == nil || output.Hits[1].Passage.DocTitle != "Deploy runbook" {
 		t.Fatalf("recall returned %+v", output.Hits)
+	}
+
+	if evidence := output.Hits[0].Memory.Evidence; len(evidence) != 1 || len(evidence[0]) != 2 ||
+		evidence[0]["kind"] != "doc_revision" || evidence[0]["state"] != "changed" {
+		t.Fatalf("recall answered evidence %v, want only its kind and changed state", evidence)
+	}
+
+	if !strings.Contains(output.Reminder, "may no longer hold") {
+		t.Fatalf("recall did not explain stale evidence: %q", output.Reminder)
 	}
 
 	if output.Semantic != "used" || !strings.Contains(output.Reminder, "proposed or disputed one is still open") {

@@ -553,6 +553,7 @@ type memoryEvidenceDTO struct {
 	DocID         string `json:"docId,omitempty"`
 	DocRevisionID string `json:"docRevisionId,omitempty"`
 	Excerpt       string `json:"excerpt,omitempty"`
+	State         string `json:"state"`
 }
 
 type memoryDTO struct {
@@ -664,6 +665,7 @@ func memoryDTOFrom(memory entity.Memory) memoryDTO {
 			DocID:         optionalID(evidence.DocID),
 			DocRevisionID: optionalID(evidence.DocRevisionID),
 			Excerpt:       evidence.Excerpt,
+			State:         string(evidence.State),
 		})
 	}
 

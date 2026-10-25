@@ -1064,6 +1064,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("agent_hosting.max_total_tokens", 200000)
 	v.SetDefault("agent_hosting.max_tool_result_bytes", 32<<10)
 	v.SetDefault("knowledge.refresh_sweep_schedule", "*/5 * * * *")
+	v.SetDefault("knowledge.evidence_sweep_schedule", "*/15 * * * *")
 	v.SetDefault("knowledge.query_timeout", 5*time.Second)
 	v.SetDefault("knowledge.semantic_min_similarity", 0.3)
 	v.SetDefault("knowledge.related_min_similarity", 0.85)

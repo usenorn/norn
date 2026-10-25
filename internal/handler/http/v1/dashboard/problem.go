@@ -773,6 +773,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrMemoryReviewForbidden):
 		return knowledgeForbidden(api.MemoryReviewForbidden, err), true
 
+	case errors.Is(err, entity.ErrMemoryRedactionForbidden):
+		return knowledgeForbidden(api.MemoryRedactionForbidden, err), true
+
 	case errors.Is(err, entity.ErrIntakeDomainUnset):
 		return intakeConflict(api.IntakeDomainUnset, err), true
 
@@ -3307,6 +3310,10 @@ func (r problemResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWr
 }
 
 func (r problemResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

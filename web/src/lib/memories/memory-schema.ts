@@ -55,4 +55,8 @@ export type SupersedeMemoryInput = z.infer<typeof supersedeMemorySchema>;
 export const correctMemoryFormId = "memory-correct-form";
 export const supersedeMemoryFormId = "memory-supersede-form";
 export const rejectMemoryFormId = "memory-reject-form";
+export const shareMemorySchema = z
+	.object({ ...audienceShape, redacted: z.boolean().default(false) })
+	.refine(chosesProject, projectChosen);
+
 export const shareMemoryFormId = "memory-share-form";

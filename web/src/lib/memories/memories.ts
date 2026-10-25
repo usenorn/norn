@@ -17,6 +17,7 @@ export type MemoryRevisionSummary = components["schemas"]["MemoryRevisionSummary
 export type MemoryRevision = components["schemas"]["MemoryRevision"];
 export type MemoryRevisionAction = components["schemas"]["MemoryRevisionAction"];
 export type MemoryEvidence = components["schemas"]["MemoryEvidence"];
+export type MemoryEvidenceState = components["schemas"]["MemoryEvidenceState"];
 export type MemoryContent = components["schemas"]["MemoryContent"];
 
 export const memoryPageSize = 50;
@@ -343,29 +344,61 @@ export const memoryRevisionActionLabels: Record<MemoryRevisionAction, string> = 
 	withdrawn: "Withdrew it",
 	rejected: "Rejected it",
 	reconciled: "Settled how it relates",
+	confirmed: "Confirmed its sources",
 };
 
 export type EvidenceLink = { label: string; detail?: string; href?: string; quote?: string };
 
+const evidenceKindLabels: Record<MemoryEvidence["kind"], string> = {
+	issue: "An issue",
+	comment: "A comment on an issue",
+	doc_revision: "A version of a doc",
+	excerpt: "A pasted excerpt",
+};
+
+export const evidenceStateLabels: Record<Exclude<MemoryEvidenceState, "current">, string> = {
+	changed: "Source changed",
+	unavailable: "Source unavailable",
+};
+
+export type EvidenceHealth =
+	| { kind: "current" }
+	| { kind: "changed"; changed: number; unavailable: number }
+	| { kind: "unavailable"; unavailable: number };
+
+export function evidenceHealth(evidence: MemoryEvidence[]): EvidenceHealth {
+	const changed = evidence.filter((cited) => cited.state === "changed").length;
+	const unavailable = evidence.filter((cited) => cited.state === "unavailable").length;
+
+	if (changed > 0) return { kind: "changed", changed, unavailable };
+	if (unavailable > 0) return { kind: "unavailable", unavailable };
+
+	return { kind: "current" };
+}
+
 export function evidenceLink(workspace: string, evidence: MemoryEvidence): EvidenceLink {
+	if (evidence.state === "unavailable") {
+		return { label: "Gone, or not shared with you", detail: evidenceKindLabels[evidence.kind] };
+	}
+
 	switch (evidence.kind) {
 		case "issue":
 		case "comment":
 			return {
 				label: evidence.issueTitle ?? "An issue",
-				detail: evidence.kind === "comment" ? "A comment on an issue" : "An issue",
+				detail: evidenceKindLabels[evidence.kind],
 				href: evidence.issueReference ? workspacePath(workspace, `/issues/${evidence.issueReference}`) : undefined,
 			};
 		case "doc_revision":
 			return {
 				label: evidence.docTitle ?? "A doc",
-				detail: "A version of a doc",
+				detail: evidenceKindLabels.doc_revision,
 				href: evidence.docId
 					? `${workspacePath(workspace, `/docs/${evidence.docId}/history`)}${evidence.docRevisionId ? `?revision=${evidence.docRevisionId}` : ""}`
 					: undefined,
 			};
 		case "excerpt":
-			return { label: "A pasted excerpt", quote: evidence.excerpt ?? "" };
+			return { label: evidenceKindLabels.excerpt, quote: evidence.excerpt ?? "" };
 	}
 }
 
@@ -428,7 +461,7 @@ export function memoryContentOf(fields: MemoryContentFields, evidence: MemoryEvi
 			...(fields.component ? { component: fields.component } : {}),
 		},
 		basis: fields.basis,
-		evidence: evidence.map((cited) => ({
+		evidence: evidence.filter((cited) => cited.state !== "unavailable").map((cited) => ({
 			kind: cited.kind,
 			issueId: cited.issueId,
 			commentId: cited.commentId,
@@ -455,6 +488,8 @@ export type MemoryFailure =
 	| { kind: "settled" }
 	| { kind: "not_editable" }
 	| { kind: "not_reviewer" }
+	| { kind: "narrower_source" }
+	| { kind: "redaction_forbidden" }
 	| { kind: "not_found" }
 	| { kind: "invalid" }
 	| { kind: "unavailable" };
@@ -475,6 +510,8 @@ export function readMemoryFailure(problem: unknown): MemoryFailure {
 	if (conflict === "stale") return { kind: "stale", version: read.version };
 	if (conflict) return { kind: conflict } as MemoryFailure;
 	if (read.reason === "memory_review_forbidden") return { kind: "not_reviewer" };
+	if (read.reason === "knowledge_not_shareable") return { kind: "narrower_source" };
+	if (read.reason === "memory_redaction_forbidden") return { kind: "redaction_forbidden" };
 	if (read.reason === "knowledge_not_editable" || read.status === 403) return { kind: "not_editable" };
 	if (read.status === 404) return { kind: "not_found" };
 	if (read.status === 422) return { kind: "invalid" };
@@ -489,6 +526,8 @@ const failureMessages: Record<MemoryFailure["kind"], string> = {
 	settled: "This memory is already settled. Reload to see where it stands.",
 	not_editable: "Only the author, its contributors, and its maintainers can change that memory.",
 	not_reviewer: "Only a workspace admin, or the lead of its project, can accept or reject it.",
+	narrower_source: "A doc it cites is shared with fewer people. Share it this way only as a redacted statement.",
+	redaction_forbidden: "Only a person can share a memory wider than the docs it cites.",
 	not_found: "That memory is gone, or it is not shared with you.",
 	invalid: "That choice no longer fits these memories. Reload and pick again.",
 	unavailable: "Something went wrong and nothing changed. Wait a moment and try again.",

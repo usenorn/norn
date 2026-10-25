@@ -272,6 +272,7 @@ func writingIssues(t *testing.T, client *postgres.Client) (service.Issues, repos
 			notificationeventrepo.New(client),
 			events,
 			emitter,
+			uncheckedEvidence(ctrl),
 			relationsvc.New(
 				issuerelationrepo.New(client),
 				issuerepo.New(client),

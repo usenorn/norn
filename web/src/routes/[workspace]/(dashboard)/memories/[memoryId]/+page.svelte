@@ -27,8 +27,10 @@
 	import RejectMemoryDialog from "#lib/memories/reject-memory-dialog.svelte";
 	import RelatedMemoryCard from "#lib/memories/related-memory.svelte";
 	import ShareMemoryDialog from "#lib/memories/share-memory-dialog.svelte";
+	import StaleEvidenceAlert from "#lib/memories/stale-evidence-alert.svelte";
 	import {
 		choicesFor,
+		evidenceHealth,
 		memoriesPath,
 		memoryAuthorLine,
 		memoryBasisLabels,
@@ -80,6 +82,7 @@
 	const changing = $derived(Boolean(memory && !closed && (memory.viewer.canEdit || memory.viewer.canShare)));
 	const supersedable = $derived(memory?.status === "accepted" || memory?.status === "disputed");
 	const rejection = $derived(ready?.recent.find((revision) => revision.action === "rejected"));
+	const health = $derived(evidenceHealth(memory?.evidence ?? []));
 
 	let working = $state<MemoryResolution | "withdraw" | null>(null);
 	let confirming = $state<Confirming | null>(null);
@@ -291,6 +294,9 @@
 						Agents do not recall it until a workspace admin, or the lead of its project, accepts it.
 					</Alert.Description>
 				</Alert.Root>
+			{/if}
+			{#if !closed && health.kind !== "current"}
+				<StaleEvidenceAlert {memory} {health} workspace={slug} workspaceId={data.workspace.id} {supersedable} />
 			{/if}
 			{#if !closed && !memory.viewer.canEdit && !memory.viewer.canReview}
 				<Alert.Root>

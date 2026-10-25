@@ -50,6 +50,7 @@ type WorkspaceMemory struct {
 	SearchDocument   null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
 	ContentHash      []byte      `boil:"content_hash" json:"content_hash" toml:"content_hash" yaml:"content_hash"`
 	TokenID          null.String `boil:"token_id" json:"token_id,omitempty" toml:"token_id" yaml:"token_id,omitempty"`
+	Redacted         bool        `boil:"redacted" json:"redacted" toml:"redacted" yaml:"redacted"`
 
 	R *workspaceMemoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMemoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -82,6 +83,7 @@ var WorkspaceMemoryColumns = struct {
 	SearchDocument   string
 	ContentHash      string
 	TokenID          string
+	Redacted         string
 }{
 	ID:               "id",
 	WorkspaceID:      "workspace_id",
@@ -109,6 +111,7 @@ var WorkspaceMemoryColumns = struct {
 	SearchDocument:   "search_document",
 	ContentHash:      "content_hash",
 	TokenID:          "token_id",
+	Redacted:         "redacted",
 }
 
 var WorkspaceMemoryTableColumns = struct {
@@ -138,6 +141,7 @@ var WorkspaceMemoryTableColumns = struct {
 	SearchDocument   string
 	ContentHash      string
 	TokenID          string
+	Redacted         string
 }{
 	ID:               "workspace_memories.id",
 	WorkspaceID:      "workspace_memories.workspace_id",
@@ -165,6 +169,7 @@ var WorkspaceMemoryTableColumns = struct {
 	SearchDocument:   "workspace_memories.search_document",
 	ContentHash:      "workspace_memories.content_hash",
 	TokenID:          "workspace_memories.token_id",
+	Redacted:         "workspace_memories.redacted",
 }
 
 // Generated where
@@ -196,6 +201,7 @@ var WorkspaceMemoryWhere = struct {
 	SearchDocument   whereHelpernull_String
 	ContentHash      whereHelper__byte
 	TokenID          whereHelpernull_String
+	Redacted         whereHelperbool
 }{
 	ID:               whereHelperstring{field: "\"workspace_memories\".\"id\""},
 	WorkspaceID:      whereHelperstring{field: "\"workspace_memories\".\"workspace_id\""},
@@ -223,6 +229,7 @@ var WorkspaceMemoryWhere = struct {
 	SearchDocument:   whereHelpernull_String{field: "\"workspace_memories\".\"search_document\""},
 	ContentHash:      whereHelper__byte{field: "\"workspace_memories\".\"content_hash\""},
 	TokenID:          whereHelpernull_String{field: "\"workspace_memories\".\"token_id\""},
+	Redacted:         whereHelperbool{field: "\"workspace_memories\".\"redacted\""},
 }
 
 // WorkspaceMemoryRels is where relationship names are stored.
@@ -300,9 +307,9 @@ func (r *workspaceMemoryR) GetWorkspace() *Workspace {
 type workspaceMemoryL struct{}
 
 var (
-	workspaceMemoryAllColumns            = []string{"id", "workspace_id", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "author_account_id", "agent_id", "connection_id", "source", "effective_from", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash", "token_id"}
+	workspaceMemoryAllColumns            = []string{"id", "workspace_id", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "author_account_id", "agent_id", "connection_id", "source", "effective_from", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash", "token_id", "redacted"}
 	workspaceMemoryColumnsWithoutDefault = []string{"workspace_id", "kind", "statement", "visibility", "status", "basis", "source", "effective_from"}
-	workspaceMemoryColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "author_account_id", "agent_id", "connection_id", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash", "token_id"}
+	workspaceMemoryColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "author_account_id", "agent_id", "connection_id", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash", "token_id", "redacted"}
 	workspaceMemoryPrimaryKeyColumns     = []string{"id"}
 	workspaceMemoryGeneratedColumns      = []string{"search_document", "content_hash"}
 )

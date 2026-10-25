@@ -330,11 +330,16 @@ func (s *memoriesService) draft(
 		return entity.KnowledgeDecision{}, entity.Memory{}, err
 	}
 
+	if input.Redacted && decision.Reader.Identity.Agent {
+		return entity.KnowledgeDecision{}, entity.Memory{}, entity.ErrMemoryRedactionForbidden
+	}
+
 	now := time.Now().UTC()
 	memory := entity.Memory{
 		ID:          uuid.New(),
 		WorkspaceID: workspaceID,
 		Audience:    input.Audience,
+		Redacted:    input.Redacted,
 		Status:      entity.MemoryStatusAccepted,
 		AuthorID:    decision.Reader.Identity.Principal,
 		By:          entity.KnowledgeAttributionOf(decision),
@@ -356,6 +361,7 @@ func (s *memoriesService) write(
 	memory *entity.Memory,
 	content service.MemoryContent,
 ) error {
+	prior := memory.Evidence
 	memory.Kind = content.Kind
 	memory.Statement = strings.TrimSpace(content.Statement)
 	memory.Rationale = strings.TrimSpace(content.Rationale)
@@ -391,6 +397,14 @@ func (s *memoriesService) write(
 		memory.Evidence[i].Excerpt = strings.TrimSpace(memory.Evidence[i].Excerpt)
 	}
 
+	withheld, err := s.withheld(ctx, decision.Reader, memory.WorkspaceID, prior)
+	if err != nil {
+		return err
+	}
+
+	submitted := len(memory.Evidence)
+	memory.Evidence = append(memory.Evidence, withheld...)
+
 	if err := memory.Validate(); err != nil {
 		return err
 	}
@@ -406,14 +420,45 @@ func (s *memoriesService) write(
 		}
 	}
 
-	return s.cite(ctx, decision.Reader, memory)
+	if err := s.cite(ctx, decision.Reader, memory, memory.Evidence[:submitted], prior); err != nil {
+		return err
+	}
+
+	memory.Redacted = memory.Redacted && slices.ContainsFunc(memory.Evidence, memory.Widens)
+
+	return nil
 }
 
-func (s *memoriesService) cite(ctx context.Context, reader entity.KnowledgeReader, memory *entity.Memory) error {
+func (s *memoriesService) withheld(
+	ctx context.Context,
+	reader entity.KnowledgeReader,
+	workspaceID uuid.UUID,
+	prior []entity.MemoryEvidence,
+) ([]entity.MemoryEvidence, error) {
+	if len(prior) == 0 {
+		return nil, nil
+	}
+
+	visible, err := s.visibleIssues(ctx, workspaceID, []entity.Memory{{Evidence: prior}})
+	if err != nil {
+		return nil, err
+	}
+
+	return slices.DeleteFunc(slices.Clone(prior), func(cited entity.MemoryEvidence) bool {
+		return cited.State == entity.MemoryEvidenceUnavailable || cited.SeenBy(reader, visible)
+	}), nil
+}
+
+func (s *memoriesService) cite(
+	ctx context.Context,
+	reader entity.KnowledgeReader,
+	memory *entity.Memory,
+	cited, prior []entity.MemoryEvidence,
+) error {
 	var scope *entity.TeamScope
 
-	for i := range memory.Evidence {
-		evidence := &memory.Evidence[i]
+	for i := range cited {
+		evidence := &cited[i]
 		field := entity.MemoryEvidenceField(i)
 
 		switch evidence.Kind {
@@ -435,13 +480,38 @@ func (s *memoriesService) cite(ctx context.Context, reader entity.KnowledgeReade
 				return err
 			}
 
-			if !memory.Audience.Within(evidence.DocAudience) {
-				return entity.ErrKnowledgeNotShareable
+			if err := redacts(reader, *memory, *evidence, prior); err != nil {
+				return err
+			}
+		}
+
+		for _, earlier := range prior {
+			if earlier.Cites(*evidence) {
+				evidence.IssueVersion, evidence.CommentVersion = earlier.IssueVersion, earlier.CommentVersion
+				evidence.AlertedState = earlier.AlertedState
 			}
 		}
 	}
 
 	return nil
+}
+
+func redacts(
+	reader entity.KnowledgeReader,
+	memory entity.Memory,
+	evidence entity.MemoryEvidence,
+	prior []entity.MemoryEvidence,
+) error {
+	switch {
+	case !memory.Widens(evidence):
+		return nil
+	case !memory.Redacted:
+		return entity.ErrKnowledgeNotShareable
+	case reader.Identity.Agent && !slices.ContainsFunc(prior, evidence.Cites):
+		return entity.ErrMemoryRedactionForbidden
+	default:
+		return nil
+	}
 }
 
 func (s *memoriesService) issueScope(ctx context.Context, workspaceID uuid.UUID) (entity.TeamScope, error) {
@@ -479,14 +549,23 @@ func (s *memoriesService) citeIssue(
 		}
 
 		evidence.IssueID = &comment.IssueID
+		evidence.CommentVersion = &comment.Version
 	}
 
-	err := s.issues.VisibleExists(ctx, scope.WorkspaceID, *evidence.IssueID, scope)
+	issue, err := s.issues.GetVisible(ctx, scope.WorkspaceID, *evidence.IssueID, scope)
 	if errors.Is(err, entity.ErrIssueNotFound) {
 		return unsupported(field)
 	}
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	if evidence.Kind == entity.MemoryEvidenceIssue {
+		evidence.IssueVersion = &issue.Version
+	}
+
+	return nil
 }
 
 func (s *memoriesService) citeDocRevision(
@@ -709,7 +788,7 @@ func (s *memoriesService) List(
 	list.Memories = make([]entity.Memory, 0, len(memories))
 
 	for _, memory := range memories {
-		memory.Evidence = seenEvidence(reader, visible, memory.Evidence)
+		memory.Evidence = reader.Concealing(visible, memory.Evidence)
 		list.Memories = append(list.Memories, memory.ViewedBy(reader))
 	}
 
@@ -990,7 +1069,20 @@ func (s *memoriesService) Reshare(
 
 	return s.revise(ctx, workspaceID, memoryID, input.ExpectedVersion, entity.MemoryRevisionReshared, reshare,
 		func(ctx context.Context, memory *entity.Memory, decision entity.KnowledgeDecision) (bool, error) {
-			if memory.Audience == input.Audience {
+			if input.Redacted && decision.Reader.Identity.Agent {
+				return false, entity.ErrMemoryRedactionForbidden
+			}
+
+			reshared := *memory
+			reshared.Audience = input.Audience
+			widens := slices.ContainsFunc(reshared.Evidence, reshared.Widens)
+			reshared.Redacted = input.Redacted && widens
+
+			if widens && !input.Redacted {
+				return false, entity.ErrKnowledgeNotShareable
+			}
+
+			if reshared.Audience == memory.Audience && reshared.Redacted == memory.Redacted {
 				return false, nil
 			}
 
@@ -998,13 +1090,7 @@ func (s *memoriesService) Reshare(
 				return false, err
 			}
 
-			for _, evidence := range memory.Evidence {
-				if evidence.Kind == entity.MemoryEvidenceDocRevision && !input.Audience.Within(evidence.DocAudience) {
-					return false, entity.ErrKnowledgeNotShareable
-				}
-			}
-
-			memory.Audience = input.Audience
+			*memory = reshared
 
 			if memory.Status != entity.MemoryStatusAccepted || memory.SettledBy(decision.Reader) {
 				return true, nil
@@ -1222,7 +1308,7 @@ func (s *memoriesService) Revision(
 		return entity.MemoryRevision{}, err
 	}
 
-	revision.Evidence = seenEvidence(decision.Reader, visible, revision.Evidence)
+	revision.Evidence = decision.Reader.Concealing(visible, revision.Evidence)
 
 	return revision, nil
 }
@@ -1324,7 +1410,7 @@ func (s *memoriesService) shown(
 		return entity.Memory{}, err
 	}
 
-	memory.Evidence = seenEvidence(reader, visible, memory.Evidence)
+	memory.Evidence = reader.Concealing(visible, memory.Evidence)
 
 	return memory.ViewedBy(reader), nil
 }
@@ -1364,16 +1450,6 @@ func (s *memoriesService) visibleIssues(
 	}
 
 	return visible, nil
-}
-
-func seenEvidence(
-	reader entity.KnowledgeReader,
-	visibleIssues []uuid.UUID,
-	evidence []entity.MemoryEvidence,
-) []entity.MemoryEvidence {
-	return slices.DeleteFunc(slices.Clone(evidence), func(cited entity.MemoryEvidence) bool {
-		return !cited.SeenBy(reader, visibleIssues)
-	})
 }
 
 func (s *memoriesService) audienceProject(

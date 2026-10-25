@@ -39,4 +39,6 @@ var Set = wire.NewSet(
 	NewQuestionExpirySweepHandler,
 	NewKnowledgeRefreshHandler,
 	NewKnowledgeSweepHandler,
+	NewMemoryEvidenceCheckHandler,
+	NewMemoryEvidenceSweepHandler,
 )

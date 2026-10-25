@@ -25,11 +25,13 @@ import (
 	aiproviderrepo "github.com/usenorn/norn/internal/repository/aiprovider"
 	docrepo "github.com/usenorn/norn/internal/repository/doc"
 	docpassagerepo "github.com/usenorn/norn/internal/repository/docpassage"
+	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	jobqueuerepo "github.com/usenorn/norn/internal/repository/jobqueue"
 	knowledgerepo "github.com/usenorn/norn/internal/repository/knowledge"
 	memoryrepo "github.com/usenorn/norn/internal/repository/memory"
 	memoryrevisionrepo "github.com/usenorn/norn/internal/repository/memoryrevision"
 	"github.com/usenorn/norn/internal/service"
+	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
@@ -293,9 +295,14 @@ func TestTheRetrievalCorpusReturnsWhatEachQuestionNeeds(t *testing.T) {
 	)
 
 	cfg := config.Knowledge{QueryTimeout: 5 * time.Second, SemanticMinSimilarity: 0.3}
+	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
+	authorizer.EXPECT().Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{Scope: entity.TeamScope{AllTeams: true}}, nil).
+		AnyTimes()
+
 	retrievals := retrievalsvc.New(
-		knowledgerepo.New(client), memoryrepo.New(client), memoryrevisionrepo.New(client),
-		knowledgeembeddingsvc.New(providers, embedder, cfg), readers, cfg,
+		knowledgerepo.New(client), memoryrepo.New(client), memoryrevisionrepo.New(client), issuerepo.New(client),
+		knowledgeembeddingsvc.New(providers, embedder, cfg), readers, authorizer, cfg,
 	)
 
 	err := client.WithTx(context.Background(), func(ctx context.Context) error {

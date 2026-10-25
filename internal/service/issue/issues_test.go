@@ -165,7 +165,7 @@ func newHarness(t *testing.T) *harness {
 	h.service = issuesvc.New(
 		h.issues, h.revisions, h.templates, h.requests, h.states, h.activity, h.labels, h.accounts, h.memberships,
 		h.cycles, h.scope, h.projects, h.teams, h.triage, h.notify, h.events,
-		silentEmitter(ctrl), h.relations, h.followers,
+		silentEmitter(ctrl), uncheckedEvidence(ctrl), h.relations, h.followers,
 		h.jobs,
 		agenthold.New(
 			h.settings,

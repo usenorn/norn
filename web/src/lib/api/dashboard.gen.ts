@@ -3771,6 +3771,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm that changed sources still support a memory
+         * @description Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+         */
+        post: operations["confirmWorkspaceMemoryEvidence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/memories/{memoryId}/accept": {
         parameters: {
             query?: never;
@@ -8153,7 +8176,12 @@ export interface components {
         MemoryBasis: "observation" | "inference";
         /** @enum {string} */
         MemoryEvidenceKind: "issue" | "comment" | "doc_revision" | "excerpt";
-        /** @description One source the memory cites. An issue names issueId, a comment names commentId and is answered with its issue, a doc revision names docId and docRevisionId, and an excerpt carries the pasted text. A source the caller may not read is left out of the response. */
+        /**
+         * @description changed means the cited source was edited or archived after the memory was derived from it. unavailable means the source is gone or the caller may not read it.
+         * @enum {string}
+         */
+        MemoryEvidenceState: "current" | "changed" | "unavailable";
+        /** @description One source the memory cites. An issue names issueId, a comment names commentId and is answered with its issue, a doc revision names docId and docRevisionId, and an excerpt carries the pasted text. A source that is gone or that the caller may not read is answered with only its kind and an unavailable state. */
         MemoryEvidence: {
             kind: components["schemas"]["MemoryEvidenceKind"];
             /** Format: uuid */
@@ -8165,6 +8193,17 @@ export interface components {
             /** Format: uuid */
             docRevisionId?: string;
             excerpt?: string;
+            readonly state?: components["schemas"]["MemoryEvidenceState"];
+            /**
+             * Format: int32
+             * @description The issue version the memory was derived from, on an issue source.
+             */
+            readonly issueVersion?: number;
+            /**
+             * Format: int32
+             * @description The comment version the memory was derived from, on a comment source.
+             */
+            readonly commentVersion?: number;
             /** @description The cited issue's reference, such as NORN-42, on an issue or comment source. */
             readonly issueReference?: string;
             readonly issueTitle?: string;
@@ -8207,6 +8246,8 @@ export interface components {
             rationale: string;
             conditions: string;
             audience: components["schemas"]["DocAudience"];
+            /** @description Whether a person chose to share the memory wider than a doc it cites. */
+            redacted: boolean;
             appliesTo: components["schemas"]["MemoryApplicability"];
             status: components["schemas"]["MemoryStatus"];
             basis: components["schemas"]["MemoryBasis"];
@@ -8253,6 +8294,8 @@ export interface components {
         };
         CreateMemoryRequest: components["schemas"]["MemoryContent"] & {
             audience: components["schemas"]["DocAudience"];
+            /** @description Share the statement with an audience wider than a doc it cites. Only a person may choose it; readers outside the doc's audience see that source as unavailable. */
+            redacted?: boolean;
         };
         CorrectMemoryRequest: components["schemas"]["MemoryContent"] & {
             /** Format: int32 */
@@ -8332,12 +8375,18 @@ export interface components {
             /** Format: int32 */
             expectedVersion: number;
             audience: components["schemas"]["DocAudience"];
+            /** @description Share the statement with an audience wider than a doc it cites. Only a person may choose it; readers outside the doc's audience see that source as unavailable. */
+            redacted?: boolean;
+        };
+        ConfirmMemoryEvidenceRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
         };
         /**
-         * @description reconciled records an author settling how a proposal relates to other memories while it still waits for review.
+         * @description reconciled records an author settling how a proposal relates to other memories while it still waits for review. confirmed records an editor confirming that changed sources still support the memory.
          * @enum {string}
          */
-        MemoryRevisionAction: "created" | "corrected" | "reshared" | "accepted" | "disputed" | "superseded" | "withdrawn" | "rejected" | "reconciled";
+        MemoryRevisionAction: "created" | "corrected" | "reshared" | "accepted" | "disputed" | "superseded" | "withdrawn" | "rejected" | "reconciled" | "confirmed";
         MemoryRevisionSummary: {
             /** Format: uuid */
             id: string;
@@ -8392,6 +8441,7 @@ export interface components {
             rationale: string;
             conditions: string;
             audience: components["schemas"]["DocAudience"];
+            redacted?: boolean;
             appliesTo: components["schemas"]["MemoryApplicability"];
             basis: components["schemas"]["MemoryBasis"];
             evidence: components["schemas"]["MemoryEvidence"][];
@@ -10315,7 +10365,7 @@ export interface components {
             /** @enum {string} */
             code: "forbidden";
             /** @enum {string} */
-            reason?: "role_lacks_action" | "auth_method_not_permitted" | "token_permission_missing" | "token_workspace_mismatch" | "instance_admin_required" | "knowledge_not_editable" | "knowledge_not_shareable" | "memory_review_forbidden";
+            reason?: "role_lacks_action" | "auth_method_not_permitted" | "token_permission_missing" | "token_workspace_mismatch" | "instance_admin_required" | "knowledge_not_editable" | "knowledge_not_shareable" | "memory_review_forbidden" | "memory_redaction_forbidden";
         };
         SignUpClosedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -10935,7 +10985,7 @@ export interface components {
         /** @enum {string} */
         NotificationSubjectKind: "issue" | "project" | "team" | "memory";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "decision_waiting" | "memory_proposed";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "decision_waiting" | "memory_proposed" | "memory_evidence_changed";
         /** @enum {string} */
         NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "following";
         /** @enum {string} */
@@ -19475,6 +19525,38 @@ export interface operations {
         };
         responses: {
             /** @description The withdrawn memory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    confirmWorkspaceMemoryEvidence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmMemoryEvidenceRequest"];
+            };
+        };
+        responses: {
+            /** @description The memory with its evidence confirmed */
             200: {
                 headers: {
                     [name: string]: unknown;

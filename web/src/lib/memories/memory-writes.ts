@@ -35,12 +35,27 @@ export function withdrawMemory(workspaceId: string, memory: Memory): Promise<Out
 	});
 }
 
-export function shareMemory(workspaceId: string, memory: Memory, audience: DocAudience): Promise<Outcome<Memory>> {
+export function shareMemory(
+	workspaceId: string,
+	memory: Memory,
+	audience: DocAudience,
+	redacted: boolean
+): Promise<Outcome<Memory>> {
 	return attempt({
 		run: () =>
 			api.POST("/workspaces/{workspaceId}/memories/{memoryId}/share", {
 				params: { path: { workspaceId, memoryId: memory.id } },
-				body: { expectedVersion: memory.version, audience },
+				body: { expectedVersion: memory.version, audience, redacted },
+			}),
+	});
+}
+
+export function confirmMemoryEvidence(workspaceId: string, memory: Memory): Promise<Outcome<Memory>> {
+	return attempt({
+		run: () =>
+			api.POST("/workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence", {
+				params: { path: { workspaceId, memoryId: memory.id } },
+				body: { expectedVersion: memory.version },
 			}),
 	});
 }

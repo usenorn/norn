@@ -45,12 +45,13 @@ const (
 )
 
 var (
-	ErrMemoryNotFound          = errors.New("memory not found")
-	ErrMemoryStale             = errors.New("memory changed since it was read")
-	ErrMemoryClosed            = errors.New("memory is superseded, withdrawn, or rejected")
-	ErrMemoryTransitionInvalid = errors.New("memory cannot move to that status")
-	ErrMemoryCursorInvalid     = errors.New("memory cursor is invalid")
-	ErrMemoryReviewForbidden   = errors.New("memory review needs a workspace admin or the project lead")
+	ErrMemoryNotFound           = errors.New("memory not found")
+	ErrMemoryStale              = errors.New("memory changed since it was read")
+	ErrMemoryClosed             = errors.New("memory is superseded, withdrawn, or rejected")
+	ErrMemoryTransitionInvalid  = errors.New("memory cannot move to that status")
+	ErrMemoryCursorInvalid      = errors.New("memory cursor is invalid")
+	ErrMemoryReviewForbidden    = errors.New("memory review needs a workspace admin or the project lead")
+	ErrMemoryRedactionForbidden = errors.New("only a person may share a memory wider than its sources")
 )
 
 type MemoryStaleError struct {
@@ -174,6 +175,7 @@ type Memory struct {
 	Rationale      string
 	Conditions     string
 	Audience       KnowledgeAudience
+	Redacted       bool
 	Applicability  KnowledgeApplicability
 	Status         MemoryStatus
 	Basis          MemoryBasis
@@ -191,6 +193,22 @@ type Memory struct {
 	Viewer         MemoryViewer
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+}
+
+func (m Memory) Editors() []uuid.UUID {
+	var editors []uuid.UUID
+
+	for _, accountID := range append([]uuid.UUID{m.AuthorID}, m.ContributorIDs...) {
+		if accountID != uuid.Nil && !slices.Contains(editors, accountID) {
+			editors = append(editors, accountID)
+		}
+	}
+
+	return editors
+}
+
+func (m Memory) Widens(evidence MemoryEvidence) bool {
+	return evidence.Kind == MemoryEvidenceDocRevision && !m.Audience.Within(evidence.DocAudience)
 }
 
 func (m Memory) Access() KnowledgeAccess {

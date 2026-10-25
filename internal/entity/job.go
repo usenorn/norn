@@ -44,6 +44,8 @@ const (
 	TaskTypeTelegramSweep           = "telegram:retention_sweep"
 	TaskTypeKnowledgeRefresh        = "knowledge:refresh"
 	TaskTypeKnowledgeSweep          = "knowledge:sweep"
+	TaskTypeMemoryEvidenceCheck     = "memory:evidence_check"
+	TaskTypeMemoryEvidenceSweep     = "memory:evidence_sweep"
 
 	AttachmentReclaimTaskID = "attachment-reclaim"
 	WebhookFanOutTaskID     = "webhook-fan-out"
@@ -126,6 +128,10 @@ type IntakeDeliveryPayload struct {
 }
 
 type KnowledgeRefreshPayload struct {
+	WorkspaceID uuid.UUID
+}
+
+type MemoryEvidenceCheckPayload struct {
 	WorkspaceID uuid.UUID
 }
 

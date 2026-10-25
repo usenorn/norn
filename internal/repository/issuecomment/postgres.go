@@ -34,6 +34,7 @@ const commentColumns = `
        coalesce(c.body_doc::text, ''),
        c.edited_at,
        c.deleted_at,
+       c.version,
        c.created_at,
        c.updated_at`
 
@@ -131,12 +132,12 @@ WHERE comment_id = $1`
 
 const editCommentQuery = `
 UPDATE workspace_issue_comments
-SET body = $2, body_doc = $4::jsonb, edited_at = $3, updated_at = $3
+SET body = $2, body_doc = $4::jsonb, edited_at = $3, updated_at = $3, version = version + 1
 WHERE id = $1 AND deleted_at IS NULL`
 
 const tombstoneCommentQuery = `
 UPDATE workspace_issue_comments
-SET body = '', body_doc = NULL, edited_at = NULL, deleted_at = $2, updated_at = $2
+SET body = '', body_doc = NULL, edited_at = NULL, deleted_at = $2, updated_at = $2, version = version + 1
 WHERE id = $1 AND deleted_at IS NULL`
 
 const purgeImportedCommentsQuery = `
@@ -198,7 +199,7 @@ func scanComment(row scanner) (entity.IssueComment, error) {
 
 	if err := row.Scan(
 		&id, &workspace, &issue, &parent, &author, &comment.AuthorName, &kind,
-		&comment.Body, &documented, &edited, &deleted, &comment.CreatedAt, &comment.UpdatedAt,
+		&comment.Body, &documented, &edited, &deleted, &comment.Version, &comment.CreatedAt, &comment.UpdatedAt,
 	); err != nil {
 		return entity.IssueComment{}, err
 	}

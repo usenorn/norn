@@ -26,6 +26,7 @@ type MemoryContent struct {
 type CreateMemoryInput struct {
 	MemoryContent
 	Audience entity.KnowledgeAudience
+	Redacted bool
 }
 
 type CorrectMemoryInput struct {
@@ -41,6 +42,7 @@ type SupersedeMemoryInput struct {
 type ReshareMemoryInput struct {
 	ExpectedVersion int
 	Audience        entity.KnowledgeAudience
+	Redacted        bool
 }
 
 type MemoryWrite struct {
@@ -121,6 +123,7 @@ type Memories interface {
 	Accept(ctx context.Context, workspaceID, memoryID uuid.UUID, input AcceptMemoryInput) (entity.Memory, error)
 	Reject(ctx context.Context, workspaceID, memoryID uuid.UUID, input RejectMemoryInput) (entity.Memory, error)
 	Withdraw(ctx context.Context, workspaceID, memoryID uuid.UUID, expectedVersion int) (entity.Memory, error)
+	ConfirmEvidence(ctx context.Context, workspaceID, memoryID uuid.UUID, expectedVersion int) (entity.Memory, error)
 	Reshare(ctx context.Context, workspaceID, memoryID uuid.UUID, input ReshareMemoryInput) (entity.Memory, error)
 	Revisions(
 		ctx context.Context,

@@ -24,93 +24,114 @@ import (
 
 // WorkspaceMemoryEvidence is an object representing the database table.
 type WorkspaceMemoryEvidence struct {
-	ID            string      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	WorkspaceID   string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
-	MemoryID      string      `boil:"memory_id" json:"memory_id" toml:"memory_id" yaml:"memory_id"`
-	Position      int         `boil:"position" json:"position" toml:"position" yaml:"position"`
-	Kind          string      `boil:"kind" json:"kind" toml:"kind" yaml:"kind"`
-	IssueID       null.String `boil:"issue_id" json:"issue_id,omitempty" toml:"issue_id" yaml:"issue_id,omitempty"`
-	CommentID     null.String `boil:"comment_id" json:"comment_id,omitempty" toml:"comment_id" yaml:"comment_id,omitempty"`
-	DocID         null.String `boil:"doc_id" json:"doc_id,omitempty" toml:"doc_id" yaml:"doc_id,omitempty"`
-	DocRevisionID null.String `boil:"doc_revision_id" json:"doc_revision_id,omitempty" toml:"doc_revision_id" yaml:"doc_revision_id,omitempty"`
-	Excerpt       null.String `boil:"excerpt" json:"excerpt,omitempty" toml:"excerpt" yaml:"excerpt,omitempty"`
+	ID             string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	WorkspaceID    string      `boil:"workspace_id" json:"workspace_id" toml:"workspace_id" yaml:"workspace_id"`
+	MemoryID       string      `boil:"memory_id" json:"memory_id" toml:"memory_id" yaml:"memory_id"`
+	Position       int         `boil:"position" json:"position" toml:"position" yaml:"position"`
+	Kind           string      `boil:"kind" json:"kind" toml:"kind" yaml:"kind"`
+	IssueID        null.String `boil:"issue_id" json:"issue_id,omitempty" toml:"issue_id" yaml:"issue_id,omitempty"`
+	CommentID      null.String `boil:"comment_id" json:"comment_id,omitempty" toml:"comment_id" yaml:"comment_id,omitempty"`
+	DocID          null.String `boil:"doc_id" json:"doc_id,omitempty" toml:"doc_id" yaml:"doc_id,omitempty"`
+	DocRevisionID  null.String `boil:"doc_revision_id" json:"doc_revision_id,omitempty" toml:"doc_revision_id" yaml:"doc_revision_id,omitempty"`
+	Excerpt        null.String `boil:"excerpt" json:"excerpt,omitempty" toml:"excerpt" yaml:"excerpt,omitempty"`
+	IssueVersion   null.Int    `boil:"issue_version" json:"issue_version,omitempty" toml:"issue_version" yaml:"issue_version,omitempty"`
+	CommentVersion null.Int    `boil:"comment_version" json:"comment_version,omitempty" toml:"comment_version" yaml:"comment_version,omitempty"`
+	AlertedState   null.String `boil:"alerted_state" json:"alerted_state,omitempty" toml:"alerted_state" yaml:"alerted_state,omitempty"`
 
 	R *workspaceMemoryEvidenceR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMemoryEvidenceL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var WorkspaceMemoryEvidenceColumns = struct {
-	ID            string
-	WorkspaceID   string
-	MemoryID      string
-	Position      string
-	Kind          string
-	IssueID       string
-	CommentID     string
-	DocID         string
-	DocRevisionID string
-	Excerpt       string
+	ID             string
+	WorkspaceID    string
+	MemoryID       string
+	Position       string
+	Kind           string
+	IssueID        string
+	CommentID      string
+	DocID          string
+	DocRevisionID  string
+	Excerpt        string
+	IssueVersion   string
+	CommentVersion string
+	AlertedState   string
 }{
-	ID:            "id",
-	WorkspaceID:   "workspace_id",
-	MemoryID:      "memory_id",
-	Position:      "position",
-	Kind:          "kind",
-	IssueID:       "issue_id",
-	CommentID:     "comment_id",
-	DocID:         "doc_id",
-	DocRevisionID: "doc_revision_id",
-	Excerpt:       "excerpt",
+	ID:             "id",
+	WorkspaceID:    "workspace_id",
+	MemoryID:       "memory_id",
+	Position:       "position",
+	Kind:           "kind",
+	IssueID:        "issue_id",
+	CommentID:      "comment_id",
+	DocID:          "doc_id",
+	DocRevisionID:  "doc_revision_id",
+	Excerpt:        "excerpt",
+	IssueVersion:   "issue_version",
+	CommentVersion: "comment_version",
+	AlertedState:   "alerted_state",
 }
 
 var WorkspaceMemoryEvidenceTableColumns = struct {
-	ID            string
-	WorkspaceID   string
-	MemoryID      string
-	Position      string
-	Kind          string
-	IssueID       string
-	CommentID     string
-	DocID         string
-	DocRevisionID string
-	Excerpt       string
+	ID             string
+	WorkspaceID    string
+	MemoryID       string
+	Position       string
+	Kind           string
+	IssueID        string
+	CommentID      string
+	DocID          string
+	DocRevisionID  string
+	Excerpt        string
+	IssueVersion   string
+	CommentVersion string
+	AlertedState   string
 }{
-	ID:            "workspace_memory_evidence.id",
-	WorkspaceID:   "workspace_memory_evidence.workspace_id",
-	MemoryID:      "workspace_memory_evidence.memory_id",
-	Position:      "workspace_memory_evidence.position",
-	Kind:          "workspace_memory_evidence.kind",
-	IssueID:       "workspace_memory_evidence.issue_id",
-	CommentID:     "workspace_memory_evidence.comment_id",
-	DocID:         "workspace_memory_evidence.doc_id",
-	DocRevisionID: "workspace_memory_evidence.doc_revision_id",
-	Excerpt:       "workspace_memory_evidence.excerpt",
+	ID:             "workspace_memory_evidence.id",
+	WorkspaceID:    "workspace_memory_evidence.workspace_id",
+	MemoryID:       "workspace_memory_evidence.memory_id",
+	Position:       "workspace_memory_evidence.position",
+	Kind:           "workspace_memory_evidence.kind",
+	IssueID:        "workspace_memory_evidence.issue_id",
+	CommentID:      "workspace_memory_evidence.comment_id",
+	DocID:          "workspace_memory_evidence.doc_id",
+	DocRevisionID:  "workspace_memory_evidence.doc_revision_id",
+	Excerpt:        "workspace_memory_evidence.excerpt",
+	IssueVersion:   "workspace_memory_evidence.issue_version",
+	CommentVersion: "workspace_memory_evidence.comment_version",
+	AlertedState:   "workspace_memory_evidence.alerted_state",
 }
 
 // Generated where
 
 var WorkspaceMemoryEvidenceWhere = struct {
-	ID            whereHelperstring
-	WorkspaceID   whereHelperstring
-	MemoryID      whereHelperstring
-	Position      whereHelperint
-	Kind          whereHelperstring
-	IssueID       whereHelpernull_String
-	CommentID     whereHelpernull_String
-	DocID         whereHelpernull_String
-	DocRevisionID whereHelpernull_String
-	Excerpt       whereHelpernull_String
+	ID             whereHelperstring
+	WorkspaceID    whereHelperstring
+	MemoryID       whereHelperstring
+	Position       whereHelperint
+	Kind           whereHelperstring
+	IssueID        whereHelpernull_String
+	CommentID      whereHelpernull_String
+	DocID          whereHelpernull_String
+	DocRevisionID  whereHelpernull_String
+	Excerpt        whereHelpernull_String
+	IssueVersion   whereHelpernull_Int
+	CommentVersion whereHelpernull_Int
+	AlertedState   whereHelpernull_String
 }{
-	ID:            whereHelperstring{field: "\"workspace_memory_evidence\".\"id\""},
-	WorkspaceID:   whereHelperstring{field: "\"workspace_memory_evidence\".\"workspace_id\""},
-	MemoryID:      whereHelperstring{field: "\"workspace_memory_evidence\".\"memory_id\""},
-	Position:      whereHelperint{field: "\"workspace_memory_evidence\".\"position\""},
-	Kind:          whereHelperstring{field: "\"workspace_memory_evidence\".\"kind\""},
-	IssueID:       whereHelpernull_String{field: "\"workspace_memory_evidence\".\"issue_id\""},
-	CommentID:     whereHelpernull_String{field: "\"workspace_memory_evidence\".\"comment_id\""},
-	DocID:         whereHelpernull_String{field: "\"workspace_memory_evidence\".\"doc_id\""},
-	DocRevisionID: whereHelpernull_String{field: "\"workspace_memory_evidence\".\"doc_revision_id\""},
-	Excerpt:       whereHelpernull_String{field: "\"workspace_memory_evidence\".\"excerpt\""},
+	ID:             whereHelperstring{field: "\"workspace_memory_evidence\".\"id\""},
+	WorkspaceID:    whereHelperstring{field: "\"workspace_memory_evidence\".\"workspace_id\""},
+	MemoryID:       whereHelperstring{field: "\"workspace_memory_evidence\".\"memory_id\""},
+	Position:       whereHelperint{field: "\"workspace_memory_evidence\".\"position\""},
+	Kind:           whereHelperstring{field: "\"workspace_memory_evidence\".\"kind\""},
+	IssueID:        whereHelpernull_String{field: "\"workspace_memory_evidence\".\"issue_id\""},
+	CommentID:      whereHelpernull_String{field: "\"workspace_memory_evidence\".\"comment_id\""},
+	DocID:          whereHelpernull_String{field: "\"workspace_memory_evidence\".\"doc_id\""},
+	DocRevisionID:  whereHelpernull_String{field: "\"workspace_memory_evidence\".\"doc_revision_id\""},
+	Excerpt:        whereHelpernull_String{field: "\"workspace_memory_evidence\".\"excerpt\""},
+	IssueVersion:   whereHelpernull_Int{field: "\"workspace_memory_evidence\".\"issue_version\""},
+	CommentVersion: whereHelpernull_Int{field: "\"workspace_memory_evidence\".\"comment_version\""},
+	AlertedState:   whereHelpernull_String{field: "\"workspace_memory_evidence\".\"alerted_state\""},
 }
 
 // WorkspaceMemoryEvidenceRels is where relationship names are stored.
@@ -130,9 +151,9 @@ func (*workspaceMemoryEvidenceR) NewStruct() *workspaceMemoryEvidenceR {
 type workspaceMemoryEvidenceL struct{}
 
 var (
-	workspaceMemoryEvidenceAllColumns            = []string{"id", "workspace_id", "memory_id", "position", "kind", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt"}
+	workspaceMemoryEvidenceAllColumns            = []string{"id", "workspace_id", "memory_id", "position", "kind", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt", "issue_version", "comment_version", "alerted_state"}
 	workspaceMemoryEvidenceColumnsWithoutDefault = []string{"workspace_id", "memory_id", "position", "kind"}
-	workspaceMemoryEvidenceColumnsWithDefault    = []string{"id", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt"}
+	workspaceMemoryEvidenceColumnsWithDefault    = []string{"id", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt", "issue_version", "comment_version", "alerted_state"}
 	workspaceMemoryEvidencePrimaryKeyColumns     = []string{"id"}
 	workspaceMemoryEvidenceGeneratedColumns      = []string{}
 )

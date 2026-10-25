@@ -3,6 +3,7 @@ package issuecomment_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	eventsvc "github.com/usenorn/norn/internal/service/event"
 	issuecommentsvc "github.com/usenorn/norn/internal/service/issuecomment"
+	memoryevidencesvc "github.com/usenorn/norn/internal/service/memoryevidence"
 )
 
 type harness struct {
@@ -44,6 +46,7 @@ type harness struct {
 	followers   *issuefollowerrepo.MockIssueFollower
 	authorizer  *authorizersvc.MockAuthorizer
 	service     service.IssueComments
+	checked     []uuid.UUID
 
 	workspaceID uuid.UUID
 	issueID     uuid.UUID
@@ -84,9 +87,14 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	evidence := memoryevidencesvc.NewMockMemoryEvidenceChecks(ctrl)
+	evidence.EXPECT().Schedule(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, workspaceID uuid.UUID) { h.checked = append(h.checked, workspaceID) }).
+		AnyTimes()
+
 	h.service = issuecommentsvc.New(
 		h.comments, h.attachments, h.issues, h.teams, h.activity, h.notify, h.events,
-		silentEmitter(ctrl), h.followers,
+		silentEmitter(ctrl), evidence, h.followers,
 		agenthold.New(
 			agentsettingrepo.NewMockAgentSetting(ctrl),
 			workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
@@ -563,6 +571,10 @@ func TestOnlyTheAuthorMayEdit(t *testing.T) {
 
 			if actor.allowed && err != nil {
 				t.Fatalf("the author could not edit their own comment: %v", err)
+			}
+
+			if actor.allowed && !slices.Equal(h.checked, []uuid.UUID{h.workspaceID}) {
+				t.Fatalf("an edit checked memory evidence in %v, want once in its workspace", h.checked)
 			}
 
 			if !actor.allowed && !errors.Is(err, entity.ErrIssueCommentNotAuthor) {

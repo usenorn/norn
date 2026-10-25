@@ -35,6 +35,7 @@ type JobProducer interface {
 	EnqueueSCMBackfill(ctx context.Context, payload entity.SCMBackfillPayload) error
 	EnqueueSCMResume(ctx context.Context, payload entity.SCMResumePayload) error
 	EnqueueKnowledgeRefresh(ctx context.Context, payload entity.KnowledgeRefreshPayload) error
+	EnqueueMemoryEvidenceCheck(ctx context.Context, payload entity.MemoryEvidenceCheckPayload) error
 }
 
 type JobInspector interface {

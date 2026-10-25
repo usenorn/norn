@@ -518,6 +518,7 @@ func liveIssues(t *testing.T, client *postgres.Client, world *live) service.Issu
 		notificationeventrepo.New(client),
 		events,
 		silentEmitter(ctrl),
+		uncheckedEvidence(ctrl),
 		relationsvc.New(
 			issuerelationrepo.New(client),
 			issuerepo.New(client),

@@ -98,12 +98,13 @@ const kindVerbs: Record<NotificationKind, string> = {
 	approval_waiting: "is waiting for you to approve what it proposed",
 	decision_waiting: "is waiting for your decision",
 	memory_proposed: "proposed a memory for you to review",
+	memory_evidence_changed: "found that a source behind your memory changed",
 };
 
 export function summary(notification: Notification): string {
 	const verb =
 		notification.reason === "mentioned" ? kindVerbs.mentioned : kindVerbs[notification.kind];
-	const actor = notification.actorName ?? "Someone";
+	const actor = notification.actorName ?? (notification.actorKind === "system" ? "Norn" : "Someone");
 
 	if (notification.unreadCount > 1) {
 		return `${actor} ${verb} and ${notification.unreadCount - 1} more`;

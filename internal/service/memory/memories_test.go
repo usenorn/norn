@@ -3,6 +3,7 @@ package memory_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -55,9 +56,12 @@ type harness struct {
 	recorded      []entity.MemoryRevision
 	listed        []repository.MemoryFilter
 	visibleIssues []uuid.UUID
+	issueVersions map[uuid.UUID]int
+	sourceStates  map[uuid.UUID]entity.MemoryEvidenceState
 	comments      map[uuid.UUID]entity.IssueComment
 	docs          map[uuid.UUID]entity.Doc
 	docRevisions  map[uuid.UUID]uuid.UUID
+	latest        map[uuid.UUID]uuid.UUID
 	scheduled     []uuid.UUID
 	searched      []repository.KnowledgeQuery
 	embedding     entity.KnowledgeSemantic
@@ -70,22 +74,25 @@ func newHarness(t *testing.T) *harness {
 	ctrl := gomock.NewController(t)
 
 	h := &harness{
-		memories:     memoryrepo.NewMockMemory(ctrl),
-		revisions:    memoryrevisionrepo.NewMockMemoryRevision(ctrl),
-		knowledge:    knowledgeauthorizersvc.NewMockKnowledgeAuthorizer(ctrl),
-		search:       knowledgerepo.NewMockKnowledge(ctrl),
-		vectors:      knowledgeembeddingsvc.NewMockKnowledgeEmbeddings(ctrl),
-		transactor:   transactorrepo.NewMockTransactor(ctrl),
-		notify:       notificationeventrepo.NewMockNotificationEvent(ctrl),
-		workspaceID:  uuid.New(),
-		projectID:    uuid.New(),
-		accountID:    uuid.New(),
-		leadID:       uuid.New(),
-		stored:       map[uuid.UUID]entity.Memory{},
-		comments:     map[uuid.UUID]entity.IssueComment{},
-		docs:         map[uuid.UUID]entity.Doc{},
-		docRevisions: map[uuid.UUID]uuid.UUID{},
-		embedding:    entity.KnowledgeSemanticUnconfigured,
+		memories:      memoryrepo.NewMockMemory(ctrl),
+		revisions:     memoryrevisionrepo.NewMockMemoryRevision(ctrl),
+		knowledge:     knowledgeauthorizersvc.NewMockKnowledgeAuthorizer(ctrl),
+		search:        knowledgerepo.NewMockKnowledge(ctrl),
+		vectors:       knowledgeembeddingsvc.NewMockKnowledgeEmbeddings(ctrl),
+		transactor:    transactorrepo.NewMockTransactor(ctrl),
+		notify:        notificationeventrepo.NewMockNotificationEvent(ctrl),
+		workspaceID:   uuid.New(),
+		projectID:     uuid.New(),
+		accountID:     uuid.New(),
+		leadID:        uuid.New(),
+		stored:        map[uuid.UUID]entity.Memory{},
+		comments:      map[uuid.UUID]entity.IssueComment{},
+		issueVersions: map[uuid.UUID]int{},
+		sourceStates:  map[uuid.UUID]entity.MemoryEvidenceState{},
+		docs:          map[uuid.UUID]entity.Doc{},
+		docRevisions:  map[uuid.UUID]uuid.UUID{},
+		latest:        map[uuid.UUID]uuid.UUID{},
+		embedding:     entity.KnowledgeSemanticUnconfigured,
 	}
 
 	projects := projectrepo.NewMockProject(ctrl)
@@ -140,13 +147,13 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
-	issues.EXPECT().VisibleExists(gomock.Any(), h.workspaceID, gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _, issueID uuid.UUID, _ entity.TeamScope) error {
+	issues.EXPECT().GetVisible(gomock.Any(), h.workspaceID, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _, issueID uuid.UUID, _ entity.TeamScope) (entity.Issue, error) {
 			if !slices.Contains(h.visibleIssues, issueID) {
-				return entity.ErrIssueNotFound
+				return entity.Issue{}, entity.ErrIssueNotFound
 			}
 
-			return nil
+			return entity.Issue{ID: issueID, Version: max(h.issueVersions[issueID], 1)}, nil
 		}).
 		AnyTimes()
 	issues.EXPECT().ListVisibleByIDs(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -191,6 +198,17 @@ func newHarness(t *testing.T) *harness {
 			}
 
 			return entity.DocRevision{}, nil
+		}).
+		AnyTimes()
+
+	docRevisions.EXPECT().List(gomock.Any(), h.workspaceID, gomock.Any(), entity.DocRevisionPage{Limit: 1}).
+		DoAndReturn(func(_ context.Context, _, docID uuid.UUID, _ entity.DocRevisionPage) ([]entity.DocRevisionSummary, error) {
+			revisionID, ok := h.latest[docID]
+			if !ok {
+				return nil, nil
+			}
+
+			return []entity.DocRevisionSummary{{ID: revisionID, DocID: docID}}, nil
 		}).
 		AnyTimes()
 
@@ -335,6 +353,23 @@ func (h *harness) find(memoryID uuid.UUID) (entity.Memory, error) {
 	}
 
 	memory.ContributorIDs = nil
+	memory.Evidence = slices.Clone(memory.Evidence)
+
+	for i, evidence := range memory.Evidence {
+		memory.Evidence[i].State = entity.MemoryEvidenceCurrent
+
+		for _, source := range []*uuid.UUID{evidence.CommentID, evidence.DocRevisionID, evidence.IssueID} {
+			if source == nil {
+				continue
+			}
+
+			if state, ok := h.sourceStates[*source]; ok {
+				memory.Evidence[i].State = state
+
+				break
+			}
+		}
+	}
 
 	for _, revision := range h.recorded {
 		if revision.MemoryID == memoryID && !slices.Contains(memory.ContributorIDs, revision.By.AccountID) {
@@ -981,7 +1016,7 @@ func TestSomeoneElsesPersonalMemoryAndItsHistoryAreConcealed(t *testing.T) {
 	}
 }
 
-func TestTheListHidesEvidenceTheReaderCannotSee(t *testing.T) {
+func TestTheListConcealsEvidenceTheReaderCannotSee(t *testing.T) {
 	h := newHarness(t)
 	visible, hidden := uuid.New(), uuid.New()
 	h.visibleIssues = []uuid.UUID{visible, hidden}
@@ -1013,7 +1048,10 @@ func TestTheListHidesEvidenceTheReaderCannotSee(t *testing.T) {
 	}
 
 	evidence := list.Memories[0].Evidence
-	if len(evidence) != 2 || *evidence[0].IssueID != visible || evidence[1].Excerpt != "we shipped twice in March" {
+	concealed := entity.MemoryEvidence{Kind: entity.MemoryEvidenceIssue, State: entity.MemoryEvidenceUnavailable}
+
+	if len(evidence) != 3 || *evidence[0].IssueID != visible || !reflect.DeepEqual(evidence[1], concealed) ||
+		evidence[2].Excerpt != "we shipped twice in March" {
 		t.Fatalf("the reader sees evidence %+v", evidence)
 	}
 

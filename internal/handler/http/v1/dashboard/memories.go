@@ -211,6 +211,24 @@ func (h *handler) WithdrawWorkspaceMemory(
 	return api.WithdrawWorkspaceMemory200JSONResponse(memoryDTO(memory)), nil
 }
 
+func (h *handler) ConfirmWorkspaceMemoryEvidence(
+	ctx context.Context,
+	request api.ConfirmWorkspaceMemoryEvidenceRequestObject,
+) (api.ConfirmWorkspaceMemoryEvidenceResponseObject, error) {
+	memory, err := h.memories.ConfirmEvidence(
+		ctx, request.WorkspaceId, request.MemoryId, int(request.Body.ExpectedVersion),
+	)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ConfirmWorkspaceMemoryEvidence200JSONResponse(memoryDTO(memory)), nil
+}
+
 func (h *handler) AcceptWorkspaceMemory(
 	ctx context.Context,
 	request api.AcceptWorkspaceMemoryRequestObject,
@@ -260,6 +278,7 @@ func (h *handler) ShareWorkspaceMemory(
 	memory, err := h.memories.Reshare(ctx, request.WorkspaceId, request.MemoryId, service.ReshareMemoryInput{
 		ExpectedVersion: int(request.Body.ExpectedVersion),
 		Audience:        docAudienceOf(request.Body.Audience),
+		Redacted:        request.Body.Redacted != nil && *request.Body.Redacted,
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {

@@ -15,10 +15,12 @@ import (
 	"github.com/usenorn/norn/internal/repository"
 	aimodelrepo "github.com/usenorn/norn/internal/repository/aimodel"
 	aiproviderrepo "github.com/usenorn/norn/internal/repository/aiprovider"
+	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	knowledgerepo "github.com/usenorn/norn/internal/repository/knowledge"
 	memoryrepo "github.com/usenorn/norn/internal/repository/memory"
 	memoryrevisionrepo "github.com/usenorn/norn/internal/repository/memoryrevision"
 	"github.com/usenorn/norn/internal/service"
+	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	retrievalsvc "github.com/usenorn/norn/internal/service/retrieval"
@@ -36,6 +38,7 @@ type harness struct {
 	accountID   uuid.UUID
 	reader      entity.KnowledgeReader
 	stored      map[uuid.UUID]entity.Memory
+	visible     []uuid.UUID
 	lexical     []entity.KnowledgeCandidate
 	asked       []repository.KnowledgeQuery
 }
@@ -91,9 +94,30 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
+	issues := issuerepo.NewMockIssue(ctrl)
+	issues.EXPECT().ListVisibleByIDs(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ entity.TeamScope, issueIDs []uuid.UUID) ([]entity.Issue, error) {
+			var visible []entity.Issue
+
+			for _, issueID := range issueIDs {
+				if slices.Contains(h.visible, issueID) {
+					visible = append(visible, entity.Issue{ID: issueID})
+				}
+			}
+
+			return visible, nil
+		}).
+		AnyTimes()
+
+	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
+	authorizer.EXPECT().Decide(gomock.Any(), gomock.Any()).
+		Return(entity.Decision{Scope: entity.TeamScope{WorkspaceID: h.workspaceID}}, nil).
+		AnyTimes()
+
 	cfg := config.Knowledge{QueryTimeout: time.Second, SemanticMinSimilarity: 0.3}
 	h.service = retrievalsvc.New(
-		h.knowledge, h.memories, h.revisions, knowledgeembeddingsvc.New(h.providers, h.models, cfg), readers, cfg,
+		h.knowledge, h.memories, h.revisions, issues, knowledgeembeddingsvc.New(h.providers, h.models, cfg), readers,
+		authorizer, cfg,
 	)
 
 	return h
@@ -108,12 +132,24 @@ func (h *harness) memory(statement string, audience entity.KnowledgeAudience, st
 		Audience:    audience,
 		Status:      status,
 		AuthorID:    h.accountID,
-		Evidence:    []entity.MemoryEvidence{{Kind: entity.MemoryEvidenceExcerpt, Excerpt: "from the incident"}},
+		Evidence: []entity.MemoryEvidence{{
+			Kind: entity.MemoryEvidenceExcerpt, Excerpt: "from the incident", State: entity.MemoryEvidenceCurrent,
+		}},
 	}
 
 	h.stored[memory.ID] = memory
 
 	return memory.ID
+}
+
+func summarized(evidence []entity.MemoryEvidence) bool {
+	for _, cited := range evidence {
+		if cited != cited.Summary() || !cited.State.Valid() {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (h *harness) noProvider() {
@@ -237,8 +273,8 @@ func TestMeaningAndWordsAreFusedIntoOneRanking(t *testing.T) {
 	}
 
 	for _, hit := range retrieval.Hits {
-		if hit.Memory == nil || hit.Memory.Evidence != nil {
-			t.Fatalf("hit %v carries %+v; evidence needs its own visibility check and stays out of retrieval", hit.ID, hit.Memory)
+		if hit.Memory == nil || len(hit.Memory.Evidence) != 1 || !summarized(hit.Memory.Evidence) {
+			t.Fatalf("hit %v carries %+v; recall answers each source with only its kind and state", hit.ID, hit.Memory)
 		}
 	}
 }
@@ -402,11 +438,42 @@ func TestEnumerationPagesWithALookaheadAndNeverRanks(t *testing.T) {
 		t.Fatalf("filter %+v, want accepted guidance in effect today, workspace-wide included", filter)
 	}
 
-	if first.Memories[0].Evidence != nil {
-		t.Fatal("enumeration handed back evidence without checking who may see it")
+	if !summarized(first.Memories[0].Evidence) {
+		t.Fatalf("enumeration handed back evidence %+v, want only each source's kind and state", first.Memories[0].Evidence)
 	}
 
 	if _, err := h.service.Enumerate(context.Background(), h.workspaceID, service.EnumerateInput{Cursor: "%%"}); !errors.Is(err, entity.ErrKnowledgeCursorInvalid) {
 		t.Fatalf("garbage cursor: err = %v", err)
+	}
+}
+
+func TestRecallFlagsChangedSourcesAndConcealsOnesTheReaderCannotRead(t *testing.T) {
+	h := newHarness(t)
+	h.noProvider()
+
+	readable, hidden := uuid.New(), uuid.New()
+	h.visible = []uuid.UUID{readable}
+
+	id := h.memory("Ship on Tuesdays", entity.WorkspaceAudience(), entity.MemoryStatusAccepted)
+	memory := h.stored[id]
+	memory.Evidence = []entity.MemoryEvidence{
+		{Kind: entity.MemoryEvidenceIssue, IssueID: &readable, State: entity.MemoryEvidenceChanged},
+		{Kind: entity.MemoryEvidenceIssue, IssueID: &hidden, State: entity.MemoryEvidenceCurrent},
+	}
+	h.stored[id] = memory
+	h.lexical = memories(id)
+
+	retrieval, err := h.service.Retrieve(context.Background(), h.workspaceID, service.RetrieveInput{Query: "ship"})
+	if err != nil {
+		t.Fatalf("Retrieve: %v", err)
+	}
+
+	want := []entity.MemoryEvidence{
+		{Kind: entity.MemoryEvidenceIssue, State: entity.MemoryEvidenceChanged},
+		{Kind: entity.MemoryEvidenceIssue, State: entity.MemoryEvidenceUnavailable},
+	}
+
+	if len(retrieval.Hits) != 1 || !slices.Equal(retrieval.Hits[0].Memory.Evidence, want) {
+		t.Fatalf("recall answered %+v, want %+v", retrieval.Hits, want)
 	}
 }

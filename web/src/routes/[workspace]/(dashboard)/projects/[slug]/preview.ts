@@ -346,6 +346,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 								rationale: "",
 								conditions: "",
 								audience: { visibility: "workspace" },
+								redacted: false,
 								appliesTo: { component: "ledger" },
 								status: "accepted",
 								basis: "observation",

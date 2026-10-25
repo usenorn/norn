@@ -3520,6 +3520,7 @@ func createMemoryInputOf(body api.CreateMemoryRequest) service.CreateMemoryInput
 			EffectiveUntil: body.EffectiveUntil,
 		}),
 		Audience: docAudienceOf(body.Audience),
+		Redacted: body.Redacted != nil && *body.Redacted,
 	}
 }
 
@@ -3588,12 +3589,17 @@ func memoryApplicabilityDTO(applicability entity.KnowledgeApplicability) api.Mem
 func memoryEvidenceDTOs(cited []entity.MemoryEvidence) []api.MemoryEvidence {
 	evidence := make([]api.MemoryEvidence, 0, len(cited))
 	for _, source := range cited {
+		state := api.MemoryEvidenceState(source.State)
+
 		evidence = append(evidence, api.MemoryEvidence{
 			Kind:           api.MemoryEvidenceKind(source.Kind),
 			IssueId:        source.IssueID,
 			CommentId:      source.CommentID,
 			DocId:          source.DocID,
 			DocRevisionId:  source.DocRevisionID,
+			IssueVersion:   pinnedVersionDTO(source.IssueVersion),
+			CommentVersion: pinnedVersionDTO(source.CommentVersion),
+			State:          &state,
 			Excerpt:        nilIfEmpty(source.Excerpt),
 			IssueReference: nilIfEmpty(source.IssueReference),
 			IssueTitle:     nilIfEmpty(source.IssueTitle),
@@ -3602,6 +3608,16 @@ func memoryEvidenceDTOs(cited []entity.MemoryEvidence) []api.MemoryEvidence {
 	}
 
 	return evidence
+}
+
+func pinnedVersionDTO(version *int) *int32 {
+	if version == nil {
+		return nil
+	}
+
+	pinned := int32(*version)
+
+	return &pinned
 }
 
 func memoryDayDTO(day *time.Time) *openapi_types.Date {
@@ -3625,6 +3641,7 @@ func memoryDTO(memory entity.Memory) api.Memory {
 		Rationale:       memory.Rationale,
 		Conditions:      memory.Conditions,
 		Audience:        docAudienceDTO(memory.Audience),
+		Redacted:        memory.Redacted,
 		AppliesTo:       memoryApplicabilityDTO(memory.Applicability),
 		Status:          api.MemoryStatus(memory.Status),
 		Basis:           api.MemoryBasis(memory.Basis),
@@ -3745,6 +3762,7 @@ func memoryRevisionDTO(revision entity.MemoryRevision) api.MemoryRevision {
 		Rationale:      revision.Rationale,
 		Conditions:     revision.Conditions,
 		Audience:       docAudienceDTO(revision.Audience),
+		Redacted:       &revision.Redacted,
 		AppliesTo:      memoryApplicabilityDTO(revision.Applicability),
 		Basis:          api.MemoryBasis(revision.Basis),
 		Evidence:       memoryEvidenceDTOs(revision.Evidence),

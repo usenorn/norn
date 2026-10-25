@@ -34,6 +34,7 @@ type issuesService struct {
 	notify       repository.NotificationEvent
 	events       service.Events
 	emitter      service.WebhookEmitter
+	evidence     service.MemoryEvidenceChecks
 	relations    service.IssueRelations
 	followers    repository.IssueFollower
 	jobs         repository.JobProducer
@@ -60,6 +61,7 @@ func New(
 	notify repository.NotificationEvent,
 	events service.Events,
 	emitter service.WebhookEmitter,
+	evidence service.MemoryEvidenceChecks,
 	relations service.IssueRelations,
 	followers repository.IssueFollower,
 	jobs repository.JobProducer,
@@ -85,6 +87,7 @@ func New(
 		notify:       notify,
 		events:       events,
 		emitter:      emitter,
+		evidence:     evidence,
 		relations:    relations,
 		followers:    followers,
 		jobs:         jobs,

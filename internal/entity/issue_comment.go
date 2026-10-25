@@ -107,6 +107,7 @@ type IssueComment struct {
 	BodyDoc         Document
 	EditedAt        *time.Time
 	DeletedAt       *time.Time
+	Version         int
 	Mentions        []CommentMention
 	Reactions       []CommentReactionTally
 	Replies         []IssueComment

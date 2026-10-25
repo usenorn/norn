@@ -2501,14 +2501,15 @@ func (e ForbiddenProblemCode) Valid() bool {
 
 // Defines values for ForbiddenProblemReason.
 const (
-	AuthMethodNotPermitted ForbiddenProblemReason = "auth_method_not_permitted"
-	InstanceAdminRequired  ForbiddenProblemReason = "instance_admin_required"
-	KnowledgeNotEditable   ForbiddenProblemReason = "knowledge_not_editable"
-	KnowledgeNotShareable  ForbiddenProblemReason = "knowledge_not_shareable"
-	MemoryReviewForbidden  ForbiddenProblemReason = "memory_review_forbidden"
-	RoleLacksAction        ForbiddenProblemReason = "role_lacks_action"
-	TokenPermissionMissing ForbiddenProblemReason = "token_permission_missing"
-	TokenWorkspaceMismatch ForbiddenProblemReason = "token_workspace_mismatch"
+	AuthMethodNotPermitted   ForbiddenProblemReason = "auth_method_not_permitted"
+	InstanceAdminRequired    ForbiddenProblemReason = "instance_admin_required"
+	KnowledgeNotEditable     ForbiddenProblemReason = "knowledge_not_editable"
+	KnowledgeNotShareable    ForbiddenProblemReason = "knowledge_not_shareable"
+	MemoryRedactionForbidden ForbiddenProblemReason = "memory_redaction_forbidden"
+	MemoryReviewForbidden    ForbiddenProblemReason = "memory_review_forbidden"
+	RoleLacksAction          ForbiddenProblemReason = "role_lacks_action"
+	TokenPermissionMissing   ForbiddenProblemReason = "token_permission_missing"
+	TokenWorkspaceMismatch   ForbiddenProblemReason = "token_workspace_mismatch"
 )
 
 // Valid indicates whether the value is a known member of the ForbiddenProblemReason enum.
@@ -2521,6 +2522,8 @@ func (e ForbiddenProblemReason) Valid() bool {
 	case KnowledgeNotEditable:
 		return true
 	case KnowledgeNotShareable:
+		return true
+	case MemoryRedactionForbidden:
 		return true
 	case MemoryReviewForbidden:
 		return true
@@ -3681,6 +3684,27 @@ func (e MemoryEvidenceKind) Valid() bool {
 	}
 }
 
+// Defines values for MemoryEvidenceState.
+const (
+	MemoryEvidenceStateChanged     MemoryEvidenceState = "changed"
+	MemoryEvidenceStateCurrent     MemoryEvidenceState = "current"
+	MemoryEvidenceStateUnavailable MemoryEvidenceState = "unavailable"
+)
+
+// Valid indicates whether the value is a known member of the MemoryEvidenceState enum.
+func (e MemoryEvidenceState) Valid() bool {
+	switch e {
+	case MemoryEvidenceStateChanged:
+		return true
+	case MemoryEvidenceStateCurrent:
+		return true
+	case MemoryEvidenceStateUnavailable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MemoryKind.
 const (
 	MemoryKindConstraint MemoryKind = "constraint"
@@ -3753,6 +3777,7 @@ func (e MemoryResolution) Valid() bool {
 // Defines values for MemoryRevisionAction.
 const (
 	MemoryRevisionActionAccepted   MemoryRevisionAction = "accepted"
+	MemoryRevisionActionConfirmed  MemoryRevisionAction = "confirmed"
 	MemoryRevisionActionCorrected  MemoryRevisionAction = "corrected"
 	MemoryRevisionActionCreated    MemoryRevisionAction = "created"
 	MemoryRevisionActionDisputed   MemoryRevisionAction = "disputed"
@@ -3767,6 +3792,8 @@ const (
 func (e MemoryRevisionAction) Valid() bool {
 	switch e {
 	case MemoryRevisionActionAccepted:
+		return true
+	case MemoryRevisionActionConfirmed:
 		return true
 	case MemoryRevisionActionCorrected:
 		return true
@@ -3884,14 +3911,15 @@ func (e NotificationActorKind) Valid() bool {
 
 // Defines values for NotificationKind.
 const (
-	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
-	NotificationKindAssigned        NotificationKind = "assigned"
-	NotificationKindCommented       NotificationKind = "commented"
-	NotificationKindDecisionWaiting NotificationKind = "decision_waiting"
-	NotificationKindMembership      NotificationKind = "membership"
-	NotificationKindMemoryProposed  NotificationKind = "memory_proposed"
-	NotificationKindMentioned       NotificationKind = "mentioned"
-	NotificationKindStateChanged    NotificationKind = "state_changed"
+	NotificationKindApprovalWaiting       NotificationKind = "approval_waiting"
+	NotificationKindAssigned              NotificationKind = "assigned"
+	NotificationKindCommented             NotificationKind = "commented"
+	NotificationKindDecisionWaiting       NotificationKind = "decision_waiting"
+	NotificationKindMembership            NotificationKind = "membership"
+	NotificationKindMemoryEvidenceChanged NotificationKind = "memory_evidence_changed"
+	NotificationKindMemoryProposed        NotificationKind = "memory_proposed"
+	NotificationKindMentioned             NotificationKind = "mentioned"
+	NotificationKindStateChanged          NotificationKind = "state_changed"
 )
 
 // Valid indicates whether the value is a known member of the NotificationKind enum.
@@ -3906,6 +3934,8 @@ func (e NotificationKind) Valid() bool {
 	case NotificationKindDecisionWaiting:
 		return true
 	case NotificationKindMembership:
+		return true
+	case NotificationKindMemoryEvidenceChanged:
 		return true
 	case NotificationKindMemoryProposed:
 		return true
@@ -6937,6 +6967,11 @@ type ConfirmEmailChangeRequest struct {
 	Token string `json:"token"`
 }
 
+// ConfirmMemoryEvidenceRequest defines model for ConfirmMemoryEvidenceRequest.
+type ConfirmMemoryEvidenceRequest struct {
+	ExpectedVersion int32 `json:"expectedVersion"`
+}
+
 // ConfirmPasswordResetRequest defines model for ConfirmPasswordResetRequest.
 type ConfirmPasswordResetRequest struct {
 	Password string `json:"password"`
@@ -7109,7 +7144,10 @@ type CreateMemoryRequest struct {
 	Evidence       *[]MemoryEvidence   `json:"evidence,omitempty"`
 	Kind           MemoryKind          `json:"kind"`
 	Rationale      *string             `json:"rationale,omitempty"`
-	Statement      string              `json:"statement"`
+
+	// Redacted Share the statement with an audience wider than a doc it cites. Only a person may choose it; readers outside the doc's audience see that source as unavailable.
+	Redacted  *bool  `json:"redacted,omitempty"`
+	Statement string `json:"statement"`
 }
 
 // CreateProjectRequest defines model for CreateProjectRequest.
@@ -9278,6 +9316,9 @@ type Memory struct {
 	Kind           MemoryKind          `json:"kind"`
 	Rationale      string              `json:"rationale"`
 
+	// Redacted Whether a person chose to share the memory wider than a doc it cites.
+	Redacted bool `json:"redacted"`
+
 	// Source Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
 	Source    DocRevisionSource `json:"source"`
 	Statement string            `json:"statement"`
@@ -9351,23 +9392,33 @@ type MemoryContent struct {
 	Statement      string              `json:"statement"`
 }
 
-// MemoryEvidence One source the memory cites. An issue names issueId, a comment names commentId and is answered with its issue, a doc revision names docId and docRevisionId, and an excerpt carries the pasted text. A source the caller may not read is left out of the response.
+// MemoryEvidence One source the memory cites. An issue names issueId, a comment names commentId and is answered with its issue, a doc revision names docId and docRevisionId, and an excerpt carries the pasted text. A source that is gone or that the caller may not read is answered with only its kind and an unavailable state.
 type MemoryEvidence struct {
-	CommentId     *openapi_types.UUID `json:"commentId,omitempty"`
-	DocId         *openapi_types.UUID `json:"docId,omitempty"`
-	DocRevisionId *openapi_types.UUID `json:"docRevisionId,omitempty"`
-	DocTitle      *string             `json:"docTitle,omitempty"`
-	Excerpt       *string             `json:"excerpt,omitempty"`
-	IssueId       *openapi_types.UUID `json:"issueId,omitempty"`
+	CommentId *openapi_types.UUID `json:"commentId,omitempty"`
+
+	// CommentVersion The comment version the memory was derived from, on a comment source.
+	CommentVersion *int32              `json:"commentVersion,omitempty"`
+	DocId          *openapi_types.UUID `json:"docId,omitempty"`
+	DocRevisionId  *openapi_types.UUID `json:"docRevisionId,omitempty"`
+	DocTitle       *string             `json:"docTitle,omitempty"`
+	Excerpt        *string             `json:"excerpt,omitempty"`
+	IssueId        *openapi_types.UUID `json:"issueId,omitempty"`
 
 	// IssueReference The cited issue's reference, such as NORN-42, on an issue or comment source.
-	IssueReference *string            `json:"issueReference,omitempty"`
-	IssueTitle     *string            `json:"issueTitle,omitempty"`
-	Kind           MemoryEvidenceKind `json:"kind"`
+	IssueReference *string `json:"issueReference,omitempty"`
+	IssueTitle     *string `json:"issueTitle,omitempty"`
+
+	// IssueVersion The issue version the memory was derived from, on an issue source.
+	IssueVersion *int32               `json:"issueVersion,omitempty"`
+	Kind         MemoryEvidenceKind   `json:"kind"`
+	State        *MemoryEvidenceState `json:"state,omitempty"`
 }
 
 // MemoryEvidenceKind defines model for MemoryEvidenceKind.
 type MemoryEvidenceKind string
+
+// MemoryEvidenceState changed means the cited source was edited or archived after the memory was derived from it. unavailable means the source is gone or the caller may not read it.
+type MemoryEvidenceState string
 
 // MemoryKind defines model for MemoryKind.
 type MemoryKind string
@@ -9400,7 +9451,7 @@ type MemoryRevision struct {
 	AccountId   *openapi_types.UUID `json:"accountId,omitempty"`
 	AccountName *string             `json:"accountName,omitempty"`
 
-	// Action reconciled records an author settling how a proposal relates to other memories while it still waits for review.
+	// Action reconciled records an author settling how a proposal relates to other memories while it still waits for review. confirmed records an editor confirming that changed sources still support the memory.
 	Action    MemoryRevisionAction `json:"action"`
 	AgentId   *openapi_types.UUID  `json:"agentId,omitempty"`
 	AgentName *string              `json:"agentName,omitempty"`
@@ -9423,7 +9474,8 @@ type MemoryRevision struct {
 	Rationale      string              `json:"rationale"`
 
 	// Reason Why the memory was rejected, on a rejected revision.
-	Reason *string `json:"reason,omitempty"`
+	Reason   *string `json:"reason,omitempty"`
+	Redacted *bool   `json:"redacted,omitempty"`
 
 	// Source Who made the change. It names the actor rather than the person who allowed it, and a restore is its own source so a put-back reads as one.
 	Source    DocRevisionSource `json:"source"`
@@ -9434,7 +9486,7 @@ type MemoryRevision struct {
 	Version int32        `json:"version"`
 }
 
-// MemoryRevisionAction reconciled records an author settling how a proposal relates to other memories while it still waits for review.
+// MemoryRevisionAction reconciled records an author settling how a proposal relates to other memories while it still waits for review. confirmed records an editor confirming that changed sources still support the memory.
 type MemoryRevisionAction string
 
 // MemoryRevisionPage defines model for MemoryRevisionPage.
@@ -9448,7 +9500,7 @@ type MemoryRevisionSummary struct {
 	AccountId   *openapi_types.UUID `json:"accountId,omitempty"`
 	AccountName *string             `json:"accountName,omitempty"`
 
-	// Action reconciled records an author settling how a proposal relates to other memories while it still waits for review.
+	// Action reconciled records an author settling how a proposal relates to other memories while it still waits for review. confirmed records an editor confirming that changed sources still support the memory.
 	Action       MemoryRevisionAction `json:"action"`
 	AgentId      *openapi_types.UUID  `json:"agentId,omitempty"`
 	AgentName    *string              `json:"agentName,omitempty"`
@@ -10803,6 +10855,9 @@ type ShareDocRequest struct {
 type ShareMemoryRequest struct {
 	Audience        DocAudience `json:"audience"`
 	ExpectedVersion int32       `json:"expectedVersion"`
+
+	// Redacted Share the statement with an audience wider than a doc it cites. Only a person may choose it; readers outside the doc's audience see that source as unavailable.
+	Redacted *bool `json:"redacted,omitempty"`
 }
 
 // SharePreviewRequest defines model for SharePreviewRequest.
@@ -12857,6 +12912,9 @@ type CorrectWorkspaceMemoryJSONRequestBody = CorrectMemoryRequest
 
 // AcceptWorkspaceMemoryJSONRequestBody defines body for AcceptWorkspaceMemory for application/json ContentType.
 type AcceptWorkspaceMemoryJSONRequestBody = AcceptMemoryRequest
+
+// ConfirmWorkspaceMemoryEvidenceJSONRequestBody defines body for ConfirmWorkspaceMemoryEvidence for application/json ContentType.
+type ConfirmWorkspaceMemoryEvidenceJSONRequestBody = ConfirmMemoryEvidenceRequest
 
 // ReconcileWorkspaceMemoryJSONRequestBody defines body for ReconcileWorkspaceMemory for application/json ContentType.
 type ReconcileWorkspaceMemoryJSONRequestBody = ReconcileMemoryRequest
@@ -15509,6 +15567,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/accept (the `AcceptWorkspaceMemory` operationId).
 	AcceptWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body AcceptWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfirmWorkspaceMemoryEvidenceWithBody Confirm that changed sources still support a memory
+	//
+	// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+	ConfirmWorkspaceMemoryEvidenceWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfirmWorkspaceMemoryEvidence Confirm that changed sources still support a memory
+	//
+	// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+	ConfirmWorkspaceMemoryEvidence(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ConfirmWorkspaceMemoryEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWorkspaceMemoryLineage Read the chain of memories this one replaced and was replaced by, oldest first
 	//
@@ -22747,6 +22823,44 @@ func (c *Client) AcceptWorkspaceMemoryWithBody(ctx context.Context, workspaceId 
 // Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/accept (the `AcceptWorkspaceMemory` operationId).
 func (c *Client) AcceptWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body AcceptWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAcceptWorkspaceMemoryRequest(c.Server, workspaceId, memoryId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConfirmWorkspaceMemoryEvidenceWithBody Confirm that changed sources still support a memory
+//
+// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+func (c *Client) ConfirmWorkspaceMemoryEvidenceWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfirmWorkspaceMemoryEvidenceRequestWithBody(c.Server, workspaceId, memoryId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConfirmWorkspaceMemoryEvidence Confirm that changed sources still support a memory
+//
+// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+func (c *Client) ConfirmWorkspaceMemoryEvidence(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ConfirmWorkspaceMemoryEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfirmWorkspaceMemoryEvidenceRequest(c.Server, workspaceId, memoryId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -38618,6 +38732,60 @@ func NewAcceptWorkspaceMemoryRequestWithBody(server string, workspaceId Workspac
 	return req, nil
 }
 
+// NewConfirmWorkspaceMemoryEvidenceRequest calls the generic ConfirmWorkspaceMemoryEvidence builder with application/json body
+func NewConfirmWorkspaceMemoryEvidenceRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, body ConfirmWorkspaceMemoryEvidenceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewConfirmWorkspaceMemoryEvidenceRequestWithBody(server, workspaceId, memoryId, "application/json", bodyReader)
+}
+
+// NewConfirmWorkspaceMemoryEvidenceRequestWithBody constructs an http.Request for the ConfirmWorkspaceMemoryEvidence method, with any body, and a specified content type
+func NewConfirmWorkspaceMemoryEvidenceRequestWithBody(server string, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/confirm-evidence", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetWorkspaceMemoryLineageRequest constructs an http.Request for the GetWorkspaceMemoryLineage method
 func NewGetWorkspaceMemoryLineageRequest(server string, workspaceId WorkspaceId, memoryId MemoryId) (*http.Request, error) {
 	var err error
@@ -48325,6 +48493,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/accept (the `AcceptWorkspaceMemory` operationId).
 	AcceptWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body AcceptWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptWorkspaceMemoryResponse, error)
+
+	// ConfirmWorkspaceMemoryEvidenceWithBodyWithResponse Confirm that changed sources still support a memory
+	//
+	// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+	ConfirmWorkspaceMemoryEvidenceWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmWorkspaceMemoryEvidenceResponse, error)
+
+	// ConfirmWorkspaceMemoryEvidenceWithResponse Confirm that changed sources still support a memory
+	//
+	// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+	ConfirmWorkspaceMemoryEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ConfirmWorkspaceMemoryEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmWorkspaceMemoryEvidenceResponse, error)
 
 	// GetWorkspaceMemoryLineageWithResponse Read the chain of memories this one replaced and was replaced by, oldest first
 	//
@@ -69131,6 +69317,82 @@ func (r AcceptWorkspaceMemoryResponse) ContentType() string {
 	return ""
 }
 
+type ConfirmWorkspaceMemoryEvidenceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Memory
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *MemoryConflict
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ConfirmWorkspaceMemoryEvidenceResponse) GetJSON200() *Memory {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ConfirmWorkspaceMemoryEvidenceResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ConfirmWorkspaceMemoryEvidenceResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ConfirmWorkspaceMemoryEvidenceResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ConfirmWorkspaceMemoryEvidenceResponse) GetApplicationproblemJSON409() *MemoryConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ConfirmWorkspaceMemoryEvidenceResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ConfirmWorkspaceMemoryEvidenceResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfirmWorkspaceMemoryEvidenceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfirmWorkspaceMemoryEvidenceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ConfirmWorkspaceMemoryEvidenceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetWorkspaceMemoryLineageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -84710,6 +84972,36 @@ func (c *ClientWithResponses) AcceptWorkspaceMemoryWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseAcceptWorkspaceMemoryResponse(rsp)
+}
+
+// ConfirmWorkspaceMemoryEvidenceWithBodyWithResponse Confirm that changed sources still support a memory
+//
+// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+func (c *ClientWithResponses) ConfirmWorkspaceMemoryEvidenceWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ConfirmWorkspaceMemoryEvidenceResponse, error) {
+	rsp, err := c.ConfirmWorkspaceMemoryEvidenceWithBody(ctx, workspaceId, memoryId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfirmWorkspaceMemoryEvidenceResponse(rsp)
+}
+
+// ConfirmWorkspaceMemoryEvidenceWithResponse Confirm that changed sources still support a memory
+//
+// Pins every changed source the caller can read to its current revision. Unavailable sources are left for a correction, and the memory's status does not change.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence (the `ConfirmWorkspaceMemoryEvidence` operationId).
+func (c *ClientWithResponses) ConfirmWorkspaceMemoryEvidenceWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ConfirmWorkspaceMemoryEvidenceJSONRequestBody, reqEditors ...RequestEditorFn) (*ConfirmWorkspaceMemoryEvidenceResponse, error) {
+	rsp, err := c.ConfirmWorkspaceMemoryEvidence(ctx, workspaceId, memoryId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfirmWorkspaceMemoryEvidenceResponse(rsp)
 }
 
 // GetWorkspaceMemoryLineageWithResponse Read the chain of memories this one replaced and was replaced by, oldest first
@@ -102930,6 +103222,67 @@ func ParseAcceptWorkspaceMemoryResponse(rsp *http.Response) (*AcceptWorkspaceMem
 	return response, nil
 }
 
+// ParseConfirmWorkspaceMemoryEvidenceResponse parses an HTTP response from a ConfirmWorkspaceMemoryEvidenceWithResponse call
+func ParseConfirmWorkspaceMemoryEvidenceResponse(rsp *http.Response) (*ConfirmWorkspaceMemoryEvidenceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfirmWorkspaceMemoryEvidenceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Memory
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest MemoryConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetWorkspaceMemoryLineageResponse parses an HTTP response from a GetWorkspaceMemoryLineageWithResponse call
 func ParseGetWorkspaceMemoryLineageResponse(rsp *http.Response) (*GetWorkspaceMemoryLineageResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -112288,6 +112641,9 @@ type ServerInterface interface {
 	// AcceptWorkspaceMemory Accept a proposed or disputed memory, optionally editing it first
 	// (POST /workspaces/{workspaceId}/memories/{memoryId}/accept)
 	AcceptWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
+	// ConfirmWorkspaceMemoryEvidence Confirm that changed sources still support a memory
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence)
+	ConfirmWorkspaceMemoryEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
 	// GetWorkspaceMemoryLineage Read the chain of memories this one replaced and was replaced by, oldest first
 	// (GET /workspaces/{workspaceId}/memories/{memoryId}/lineage)
 	GetWorkspaceMemoryLineage(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
@@ -114343,6 +114699,12 @@ func (_ Unimplemented) CorrectWorkspaceMemory(w http.ResponseWriter, r *http.Req
 // AcceptWorkspaceMemory Accept a proposed or disputed memory, optionally editing it first
 // (POST /workspaces/{workspaceId}/memories/{memoryId}/accept)
 func (_ Unimplemented) AcceptWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ConfirmWorkspaceMemoryEvidence Confirm that changed sources still support a memory
+// (POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence)
+func (_ Unimplemented) ConfirmWorkspaceMemoryEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -124435,6 +124797,41 @@ func (siw *ServerInterfaceWrapper) AcceptWorkspaceMemory(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
+// ConfirmWorkspaceMemoryEvidence operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmWorkspaceMemoryEvidence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmWorkspaceMemoryEvidence(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetWorkspaceMemoryLineage operation middleware
 func (siw *ServerInterfaceWrapper) GetWorkspaceMemoryLineage(w http.ResponseWriter, r *http.Request) {
 
@@ -130610,6 +131007,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/withdraw", wrapper.WithdrawWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence", wrapper.ConfirmWorkspaceMemoryEvidence)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/accept", wrapper.AcceptWorkspaceMemory)
@@ -155672,6 +156072,106 @@ func (response AcceptWorkspaceMemory500ApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type ConfirmWorkspaceMemoryEvidenceRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	Body        *ConfirmWorkspaceMemoryEvidenceJSONRequestBody
+}
+
+type ConfirmWorkspaceMemoryEvidenceResponseObject interface {
+	VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error
+}
+
+type ConfirmWorkspaceMemoryEvidence200JSONResponse Memory
+
+func (response ConfirmWorkspaceMemoryEvidence200JSONResponse) VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmWorkspaceMemoryEvidence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmWorkspaceMemoryEvidence401ApplicationProblemPlusJSONResponse) VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmWorkspaceMemoryEvidence403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmWorkspaceMemoryEvidence403ApplicationProblemPlusJSONResponse) VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmWorkspaceMemoryEvidence404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmWorkspaceMemoryEvidence404ApplicationProblemPlusJSONResponse) VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmWorkspaceMemoryEvidence409ApplicationProblemPlusJSONResponse struct {
+	MemoryConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmWorkspaceMemoryEvidence409ApplicationProblemPlusJSONResponse) VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmWorkspaceMemoryEvidence500ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmWorkspaceMemoryEvidence500ApplicationProblemPlusJSONResponse) VisitConfirmWorkspaceMemoryEvidenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetWorkspaceMemoryLineageRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	MemoryId    MemoryId    `json:"memoryId"`
@@ -170055,6 +170555,9 @@ type StrictServerInterface interface {
 	// AcceptWorkspaceMemory Accept a proposed or disputed memory, optionally editing it first
 	// (POST /workspaces/{workspaceId}/memories/{memoryId}/accept)
 	AcceptWorkspaceMemory(ctx context.Context, request AcceptWorkspaceMemoryRequestObject) (AcceptWorkspaceMemoryResponseObject, error)
+	// ConfirmWorkspaceMemoryEvidence Confirm that changed sources still support a memory
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence)
+	ConfirmWorkspaceMemoryEvidence(ctx context.Context, request ConfirmWorkspaceMemoryEvidenceRequestObject) (ConfirmWorkspaceMemoryEvidenceResponseObject, error)
 	// GetWorkspaceMemoryLineage Read the chain of memories this one replaced and was replaced by, oldest first
 	// (GET /workspaces/{workspaceId}/memories/{memoryId}/lineage)
 	GetWorkspaceMemoryLineage(ctx context.Context, request GetWorkspaceMemoryLineageRequestObject) (GetWorkspaceMemoryLineageResponseObject, error)
@@ -178350,6 +178853,40 @@ func (sh *strictHandler) AcceptWorkspaceMemory(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AcceptWorkspaceMemoryResponseObject); ok {
 		if err := validResponse.VisitAcceptWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmWorkspaceMemoryEvidence operation middleware
+func (sh *strictHandler) ConfirmWorkspaceMemoryEvidence(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request ConfirmWorkspaceMemoryEvidenceRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	var body ConfirmWorkspaceMemoryEvidenceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmWorkspaceMemoryEvidence(ctx, request.(ConfirmWorkspaceMemoryEvidenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmWorkspaceMemoryEvidence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmWorkspaceMemoryEvidenceResponseObject); ok {
+		if err := validResponse.VisitConfirmWorkspaceMemoryEvidenceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
