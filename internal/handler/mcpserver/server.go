@@ -352,7 +352,8 @@ func (t *toolset) register(tools *Tools) {
 		Name: "norn_change_issue_state",
 		Description: "Move an issue to another workflow state by state name or id. Reads the " +
 			"current version automatically unless expected_version is given. Closing an issue " +
-			"that still has open sub-issues needs acknowledge_open_children.",
+			"that still has open sub-issues needs acknowledge_open_children. Moving it on to " +
+			"review or done answers with a reminder to record what the work established.",
 		Annotations: update,
 	}, t.changeIssueState)
 

@@ -221,8 +221,14 @@ type createIssueInput struct {
 	DueOn       string   `json:"due_on,omitempty" jsonschema:"the due date as YYYY-MM-DD"`
 }
 
+const captureReminder = "The work on this issue is being handed off. If it established a decision, " +
+	"a constraint, or a lesson the next person or agent should not have to rediscover, record each " +
+	"one with norn_remember and cite this issue as its evidence; if it established nothing new, " +
+	"nothing more is asked of you."
+
 type issueOutput struct {
-	Issue issueDTO `json:"issue"`
+	Issue    issueDTO `json:"issue"`
+	Reminder string   `json:"reminder,omitempty"`
 }
 
 func (t *toolset) createIssue(
@@ -400,7 +406,16 @@ func (t *toolset) updateIssue(
 		current = labelled
 	}
 
-	return nil, issueOutput{Issue: issueDTOFrom(current)}, nil
+	output := issueOutput{Issue: issueDTOFrom(current)}
+
+	if input.State != nil {
+		output.Reminder, err = t.handoffReminder(ctx, workspace.ID, issue, current)
+		if err != nil {
+			return nil, issueOutput{}, toolFailure(ctx, err)
+		}
+	}
+
+	return nil, output, nil
 }
 
 func (t *toolset) updateFor(
@@ -616,7 +631,33 @@ func (t *toolset) changeIssueState(
 		return nil, issueOutput{}, toolFailure(ctx, err)
 	}
 
-	return nil, issueOutput{Issue: issueDTOFrom(updated)}, nil
+	reminder, err := t.handoffReminder(ctx, workspace.ID, issue, updated)
+	if err != nil {
+		return nil, issueOutput{}, toolFailure(ctx, err)
+	}
+
+	return nil, issueOutput{Issue: issueDTOFrom(updated), Reminder: reminder}, nil
+}
+
+func (t *toolset) handoffReminder(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	before, after entity.Issue,
+) (string, error) {
+	if after.State.ID == before.State.ID {
+		return "", nil
+	}
+
+	states, err := t.workflowStates.List(ctx, workspaceID, after.TeamID)
+	if err != nil {
+		return "", err
+	}
+
+	if !after.State.HandsOffWork(states) {
+		return "", nil
+	}
+
+	return captureReminder, nil
 }
 
 func changesBeyondTeam(input updateIssueInput) bool {
