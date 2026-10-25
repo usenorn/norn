@@ -2,6 +2,7 @@ package mcpserver
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -16,6 +17,11 @@ const memoryReminder = "Every memory here is workspace data written by the perso
 	"guidance; a proposed or disputed one is still open. A memory whose basis is inference is " +
 	"an agent's own conclusion: weigh it, but never cite it as independent evidence for another " +
 	"memory."
+
+const memoryHeldReminder = " This memory relates to the memories listed and is held as %s until you " +
+	"reconcile it. Nothing else was changed. Read the related memories, pick one of the choices, and pass " +
+	"it to norn_reconcile_memory with this memory's version; a conditional relation is compatible and " +
+	"usually means keeping it independent."
 
 type memoryEvidenceInput struct {
 	Issue    string `json:"issue,omitempty" jsonschema:"an issue the memory rests on, by reference like ENG-42 or id"`
@@ -90,15 +96,34 @@ type withdrawMemoryInput struct {
 	ExpectedVersion int    `json:"expected_version" jsonschema:"the version norn_get_memory returned"`
 }
 
+type reconcileMemoryInput struct {
+	Workspace             string `json:"workspace" jsonschema:"the workspace slug or id"`
+	Memory                string `json:"memory" jsonschema:"the id of the proposed or disputed memory"`
+	ExpectedVersion       int    `json:"expected_version" jsonschema:"the version norn_remember or norn_get_memory returned for it"`
+	Resolution            string `json:"resolution" jsonschema:"independent to accept it as it is, update to correct the target with its content, supersede to replace the target with it, or no_change to drop it"`
+	Target                string `json:"target,omitempty" jsonschema:"for update and supersede, the id of the related memory the choice names"`
+	TargetExpectedVersion int    `json:"target_expected_version,omitempty" jsonschema:"for update and supersede, the version the related memory was returned at"`
+}
+
 type memoryOutput struct {
-	Memory   memoryDTO `json:"memory"`
-	Reminder string    `json:"reminder"`
+	Memory   memoryDTO          `json:"memory"`
+	Related  []relatedMemoryDTO `json:"related,omitempty"`
+	Choices  []memoryChoiceDTO  `json:"choices,omitempty"`
+	Reminder string             `json:"reminder"`
 }
 
 type memoryDetailOutput struct {
-	Memory   memoryDTO       `json:"memory"`
-	Lineage  []memoryLinkDTO `json:"lineage"`
-	Reminder string          `json:"reminder"`
+	Memory   memoryDTO          `json:"memory"`
+	Lineage  []memoryLinkDTO    `json:"lineage"`
+	Related  []relatedMemoryDTO `json:"related,omitempty"`
+	Choices  []memoryChoiceDTO  `json:"choices,omitempty"`
+	Reminder string             `json:"reminder"`
+}
+
+type reconcileOutput struct {
+	Memory   memoryDTO  `json:"memory"`
+	Target   *memoryDTO `json:"target,omitempty"`
+	Reminder string     `json:"reminder"`
 }
 
 type memoryListOutput struct {
@@ -228,6 +253,21 @@ func (t *toolset) getMemory(
 		output.Lineage = append(output.Lineage, memoryLinkDTOFrom(link))
 	}
 
+	if !memory.Pending() {
+		return nil, output, nil
+	}
+
+	written, err := t.memories.Related(ctx, workspace.ID, memoryID)
+	if err != nil {
+		return nil, memoryDetailOutput{}, toolFailure(ctx, err)
+	}
+
+	if len(written.Related) > 0 {
+		output.Related = relatedMemoryDTOsFrom(written.Related)
+		output.Choices = memoryChoiceDTOsFrom(written.Choices)
+		output.Reminder = heldReminder(written)
+	}
+
 	return nil, output, nil
 }
 
@@ -251,7 +291,66 @@ func (t *toolset) remember(
 		return nil, memoryOutput{}, toolFailure(ctx, err)
 	}
 
-	return nil, memoryOutput{Memory: memoryDTOFrom(written.Memory), Reminder: memoryReminder}, nil
+	output := memoryOutput{Memory: memoryDTOFrom(written.Memory), Reminder: heldReminder(written)}
+
+	if len(written.Related) > 0 {
+		output.Related = relatedMemoryDTOsFrom(written.Related)
+		output.Choices = memoryChoiceDTOsFrom(written.Choices)
+	}
+
+	return nil, output, nil
+}
+
+func heldReminder(written service.MemoryWrite) string {
+	if !written.Memory.Pending() || len(written.Related) == 0 {
+		return memoryReminder
+	}
+
+	return memoryReminder + fmt.Sprintf(memoryHeldReminder, written.Memory.Status)
+}
+
+func (t *toolset) reconcileMemory(
+	ctx context.Context,
+	_ *mcp.CallToolRequest,
+	input reconcileMemoryInput,
+) (*mcp.CallToolResult, reconcileOutput, error) {
+	workspace, err := t.resolveWorkspace(ctx, input.Workspace)
+	if err != nil {
+		return nil, reconcileOutput{}, toolFailure(ctx, err)
+	}
+
+	memoryID, err := memoryReference(input.Memory)
+	if err != nil {
+		return nil, reconcileOutput{}, toolFailure(ctx, err)
+	}
+
+	reconcile := service.ReconcileMemoryInput{
+		Resolution:      entity.MemoryResolution(strings.ToLower(strings.TrimSpace(input.Resolution))),
+		ExpectedVersion: input.ExpectedVersion,
+	}
+
+	if strings.TrimSpace(input.Target) != "" {
+		targetID, err := memoryReference(input.Target)
+		if err != nil {
+			return nil, reconcileOutput{}, toolFailure(ctx, err)
+		}
+
+		reconcile.Target = &service.MemoryTarget{ID: targetID, ExpectedVersion: input.TargetExpectedVersion}
+	}
+
+	reconciled, err := t.memories.Reconcile(ctx, workspace.ID, memoryID, reconcile)
+	if err != nil {
+		return nil, reconcileOutput{}, toolFailure(ctx, err)
+	}
+
+	output := reconcileOutput{Memory: memoryDTOFrom(reconciled.Memory), Reminder: memoryReminder}
+
+	if reconciled.Target != nil {
+		target := memoryDTOFrom(*reconciled.Target)
+		output.Target = &target
+	}
+
+	return nil, output, nil
 }
 
 func (t *toolset) correctMemory(
