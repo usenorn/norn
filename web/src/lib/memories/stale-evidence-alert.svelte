@@ -66,9 +66,11 @@
 		<Alert.Title>A source behind this memory is no longer available</Alert.Title>
 	{/if}
 	<Alert.Description>
-		{#if memory.viewer.canEdit}
+		{#if memory.viewer.canEdit && health.kind === "changed"}
 			It still guides agents as it reads. Confirm it if its sources still hold it up, correct it, or supersede
 			it.
+		{:else if memory.viewer.canEdit}
+			It still guides agents as it reads. Correct it to rest on what you can still cite, or supersede it.
 		{:else}
 			It still guides agents as it reads. Its editors have been told so they can confirm, correct, or
 			supersede it.
@@ -83,27 +85,25 @@
 		{/if}
 	</Alert.Description>
 	{#if memory.viewer.canEdit}
-		<Alert.Action>
-			<div class="flex flex-wrap gap-1.5">
-				{#if health.kind === "changed"}
-					<Button variant="secondary" size="sm" disabled={confirming} onclick={confirm}>
-						{confirming ? "Confirming" : "Confirm sources"}
-					</Button>
-				{/if}
-				<Button variant="secondary" size="sm" href={memoryEditPath(workspace, memory.id)} aria-disabled={confirming}>
-					Correct
+		<Alert.Action placement="below">
+			{#if health.kind === "changed"}
+				<Button variant="secondary" size="sm" disabled={confirming} onclick={confirm}>
+					{confirming ? "Confirming" : "Confirm sources"}
 				</Button>
-				{#if supersedable}
-					<Button
-						variant="secondary"
-						size="sm"
-						href={memorySupersedePath(workspace, memory.id)}
-						aria-disabled={confirming}
-					>
-						Supersede
-					</Button>
-				{/if}
-			</div>
+			{/if}
+			<Button variant="secondary" size="sm" href={memoryEditPath(workspace, memory.id)} aria-disabled={confirming}>
+				Correct
+			</Button>
+			{#if supersedable}
+				<Button
+					variant="secondary"
+					size="sm"
+					href={memorySupersedePath(workspace, memory.id)}
+					aria-disabled={confirming}
+				>
+					Supersede
+				</Button>
+			{/if}
 		</Alert.Action>
 	{/if}
 </Alert.Root>

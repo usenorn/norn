@@ -40,6 +40,7 @@
 		SPA: true,
 		validators: zod4Client(shareMemorySchema),
 		resetForm: false,
+		invalidateAll: false,
 		onSubmit: () => {
 			failure = "";
 		},
