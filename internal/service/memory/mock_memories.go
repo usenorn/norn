@@ -118,6 +118,21 @@ func (mr *MockMemoriesMockRecorder) List(ctx, workspaceID, input any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockMemories)(nil).List), ctx, workspaceID, input)
 }
 
+// Reconcile mocks base method.
+func (m *MockMemories) Reconcile(ctx context.Context, workspaceID, memoryID uuid.UUID, input service.ReconcileMemoryInput) (service.MemoryReconciliation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reconcile", ctx, workspaceID, memoryID, input)
+	ret0, _ := ret[0].(service.MemoryReconciliation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reconcile indicates an expected call of Reconcile.
+func (mr *MockMemoriesMockRecorder) Reconcile(ctx, workspaceID, memoryID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockMemories)(nil).Reconcile), ctx, workspaceID, memoryID, input)
+}
+
 // Related mocks base method.
 func (m *MockMemories) Related(ctx context.Context, workspaceID, memoryID uuid.UUID) (service.MemoryWrite, error) {
 	m.ctrl.T.Helper()

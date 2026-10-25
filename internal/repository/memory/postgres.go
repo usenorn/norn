@@ -466,6 +466,7 @@ func (r *memoryRepository) Update(ctx context.Context, memory entity.Memory, exp
 		dbpostgres.WorkspaceMemoryColumns.Basis:            model.Basis,
 		dbpostgres.WorkspaceMemoryColumns.EffectiveFrom:    model.EffectiveFrom,
 		dbpostgres.WorkspaceMemoryColumns.EffectiveUntil:   model.EffectiveUntil,
+		dbpostgres.WorkspaceMemoryColumns.SupersedesID:     model.SupersedesID,
 		dbpostgres.WorkspaceMemoryColumns.SupersededByID:   model.SupersededByID,
 		dbpostgres.WorkspaceMemoryColumns.Version:          model.Version,
 		dbpostgres.WorkspaceMemoryColumns.UpdatedAt:        model.UpdatedAt,

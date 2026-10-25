@@ -2,6 +2,7 @@ package memory_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -236,5 +237,204 @@ func TestAPendingMemoryShowsItsRelatedMemoriesAgain(t *testing.T) {
 
 	if len(settled.Related) != 0 || settled.Choices != nil {
 		t.Fatalf("an accepted memory was offered %v", settled.Choices)
+	}
+}
+
+func (h *harness) reconcile(
+	memory entity.Memory,
+	resolution entity.MemoryResolution,
+	target *entity.Memory,
+) (service.MemoryReconciliation, error) {
+	input := service.ReconcileMemoryInput{Resolution: resolution, ExpectedVersion: memory.Version}
+	if target != nil {
+		input.Target = &service.MemoryTarget{ID: target.ID, ExpectedVersion: target.Version}
+	}
+
+	return h.service.Reconcile(context.Background(), h.workspaceID, memory.ID, input)
+}
+
+func (h *harness) conflicting(t *testing.T) (entity.Memory, entity.Memory) {
+	t.Helper()
+
+	existing := h.remember(t, decided("Production uses PostgreSQL", "all deployed environments")).Memory
+	draft := h.remember(t, decided("Production uses MySQL", "all deployed environments")).Memory
+
+	return existing, draft
+}
+
+func lastAction(h *harness, memoryID uuid.UUID) entity.MemoryRevisionAction {
+	revisions := h.revisionsOf(memoryID)
+
+	return revisions[len(revisions)-1].Action
+}
+
+func TestSupersedingFromReconciliationLinksBothMemories(t *testing.T) {
+	h := newHarness(t)
+	existing, draft := h.conflicting(t)
+
+	reconciled, err := h.reconcile(draft, entity.MemoryResolutionSupersede, &existing)
+	if err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	replaced, replacement := h.stored[existing.ID], h.stored[draft.ID]
+
+	if replaced.Status != entity.MemoryStatusSuperseded || replaced.SupersededByID == nil || *replaced.SupersededByID != draft.ID {
+		t.Fatalf("the existing decision is %s replaced by %v, want superseded by %s", replaced.Status, replaced.SupersededByID, draft.ID)
+	}
+
+	if replacement.Status != entity.MemoryStatusAccepted || replacement.SupersedesID == nil || *replacement.SupersedesID != existing.ID {
+		t.Fatalf("the draft is %s superseding %v, want accepted superseding %s", replacement.Status, replacement.SupersedesID, existing.ID)
+	}
+
+	if reconciled.Memory.ID != draft.ID || reconciled.Target == nil || reconciled.Target.ID != existing.ID {
+		t.Fatalf("reconciliation answered with %s and %v", reconciled.Memory.ID, reconciled.Target)
+	}
+
+	if lastAction(h, existing.ID) != entity.MemoryRevisionSuperseded || lastAction(h, draft.ID) != entity.MemoryRevisionAccepted {
+		t.Fatalf("recorded %s and %s", lastAction(h, existing.ID), lastAction(h, draft.ID))
+	}
+
+	lineage, err := h.service.Lineage(context.Background(), h.workspaceID, draft.ID)
+	if err != nil {
+		t.Fatalf("lineage: %v", err)
+	}
+
+	if len(lineage) != 2 || lineage[0].ID != existing.ID || lineage[1].ID != draft.ID {
+		t.Fatalf("lineage = %v, want the existing decision then its replacement", lineage)
+	}
+}
+
+func TestKeepingADraftIndependentAcceptsItAndLeavesTheOtherAlone(t *testing.T) {
+	h := newHarness(t)
+	existing, draft := h.conflicting(t)
+
+	reconciled, err := h.reconcile(draft, entity.MemoryResolutionIndependent, nil)
+	if err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	if reconciled.Memory.Status != entity.MemoryStatusAccepted || reconciled.Memory.Version != 2 || reconciled.Target != nil {
+		t.Fatalf("the draft became %s at version %d", reconciled.Memory.Status, reconciled.Memory.Version)
+	}
+
+	if lastAction(h, draft.ID) != entity.MemoryRevisionAccepted {
+		t.Fatalf("recorded %s", lastAction(h, draft.ID))
+	}
+
+	if h.stored[existing.ID].Version != 1 || h.stored[existing.ID].Status != entity.MemoryStatusAccepted {
+		t.Fatalf("the existing decision changed to %+v", h.stored[existing.ID])
+	}
+}
+
+func TestMakingNoChangeWithdrawsOnlyTheDraft(t *testing.T) {
+	h := newHarness(t)
+	existing, draft := h.conflicting(t)
+
+	reconciled, err := h.reconcile(draft, entity.MemoryResolutionNoChange, nil)
+	if err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	if reconciled.Memory.Status != entity.MemoryStatusWithdrawn || lastAction(h, draft.ID) != entity.MemoryRevisionWithdrawn {
+		t.Fatalf("the draft became %s", reconciled.Memory.Status)
+	}
+
+	if h.stored[existing.ID].Version != 1 {
+		t.Fatalf("the existing decision changed to version %d", h.stored[existing.ID].Version)
+	}
+}
+
+func TestUpdatingCorrectsTheExistingMemoryWithTheDraftAndRetiresTheDraft(t *testing.T) {
+	h := newHarness(t)
+	existing, draft := h.conflicting(t)
+
+	reconciled, err := h.reconcile(draft, entity.MemoryResolutionUpdate, &existing)
+	if err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	corrected := h.stored[existing.ID]
+	if corrected.Statement != "Production uses MySQL" || corrected.Version != 2 || corrected.Status != entity.MemoryStatusAccepted {
+		t.Fatalf("the existing memory is %q at version %d, %s", corrected.Statement, corrected.Version, corrected.Status)
+	}
+
+	if lastAction(h, existing.ID) != entity.MemoryRevisionCorrected || reconciled.Target == nil || reconciled.Target.Version != 2 {
+		t.Fatalf("recorded %s, answered target %v", lastAction(h, existing.ID), reconciled.Target)
+	}
+
+	if h.stored[draft.ID].Status != entity.MemoryStatusWithdrawn {
+		t.Fatalf("the draft stayed %s", h.stored[draft.ID].Status)
+	}
+}
+
+func TestReconciliationIsRefusedWhenItCannotApply(t *testing.T) {
+	h := newHarness(t)
+	existing, draft := h.conflicting(t)
+	stale := draft
+	stale.Version = 7
+	staleTarget := existing
+	staleTarget.Version = 3
+
+	var refusal entity.ValidationError
+
+	for name, testCase := range map[string]struct {
+		run   func() error
+		check func(error) bool
+	}{
+		"an accepted memory": {
+			run:   func() error { _, err := h.reconcile(existing, entity.MemoryResolutionIndependent, nil); return err },
+			check: func(err error) bool { return errors.Is(err, entity.ErrMemoryNotPending) },
+		},
+		"a stale draft": {
+			run:   func() error { _, err := h.reconcile(stale, entity.MemoryResolutionIndependent, nil); return err },
+			check: func(err error) bool { return errors.Is(err, entity.ErrMemoryStale) },
+		},
+		"a stale target": {
+			run:   func() error { _, err := h.reconcile(draft, entity.MemoryResolutionSupersede, &staleTarget); return err },
+			check: func(err error) bool { return errors.Is(err, entity.ErrMemoryStale) },
+		},
+		"supersede without a target": {
+			run:   func() error { _, err := h.reconcile(draft, entity.MemoryResolutionSupersede, nil); return err },
+			check: func(err error) bool { return errors.As(err, &refusal) },
+		},
+		"a target the draft itself": {
+			run:   func() error { _, err := h.reconcile(draft, entity.MemoryResolutionUpdate, &draft); return err },
+			check: func(err error) bool { return errors.As(err, &refusal) },
+		},
+		"a target for keeping it independent": {
+			run:   func() error { _, err := h.reconcile(draft, entity.MemoryResolutionIndependent, &existing); return err },
+			check: func(err error) bool { return errors.As(err, &refusal) },
+		},
+		"an unknown resolution": {
+			run:   func() error { _, err := h.reconcile(draft, "merge", nil); return err },
+			check: func(err error) bool { return errors.As(err, &refusal) },
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := testCase.run(); !testCase.check(err) {
+				t.Fatalf("got %v", err)
+			}
+		})
+	}
+
+	if h.stored[draft.ID].Status != entity.MemoryStatusDisputed || h.stored[existing.ID].Version != 1 {
+		t.Fatal("a refused reconciliation changed a memory")
+	}
+}
+
+func TestOnlySomeoneWhoMayEditTheExistingMemoryMaySupersedeIt(t *testing.T) {
+	h := newHarness(t)
+	existing := h.remember(t, decided("Production uses PostgreSQL", "")).Memory
+
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, entity.MembershipRoleMember)
+	draft := h.remember(t, decided("Production uses MySQL", "")).Memory
+
+	if _, err := h.reconcile(draft, entity.MemoryResolutionSupersede, &existing); !errors.Is(err, entity.ErrKnowledgeNotEditable) {
+		t.Fatalf("got %v, want not editable", err)
+	}
+
+	if h.stored[existing.ID].Status != entity.MemoryStatusAccepted {
+		t.Fatalf("the existing decision became %s", h.stored[existing.ID].Status)
 	}
 }

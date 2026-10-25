@@ -49,6 +49,22 @@ type MemoryWrite struct {
 	Choices []entity.MemoryChoice
 }
 
+type MemoryTarget struct {
+	ID              uuid.UUID
+	ExpectedVersion int
+}
+
+type ReconcileMemoryInput struct {
+	Resolution      entity.MemoryResolution
+	ExpectedVersion int
+	Target          *MemoryTarget
+}
+
+type MemoryReconciliation struct {
+	Memory entity.Memory
+	Target *entity.Memory
+}
+
 type ListMemoriesInput struct {
 	Kind      *entity.MemoryKind
 	Statuses  []entity.MemoryStatus
@@ -85,6 +101,11 @@ type Memories interface {
 		workspaceID, memoryID uuid.UUID,
 		input SupersedeMemoryInput,
 	) (entity.Memory, error)
+	Reconcile(
+		ctx context.Context,
+		workspaceID, memoryID uuid.UUID,
+		input ReconcileMemoryInput,
+	) (MemoryReconciliation, error)
 	Withdraw(ctx context.Context, workspaceID, memoryID uuid.UUID, expectedVersion int) (entity.Memory, error)
 	Reshare(ctx context.Context, workspaceID, memoryID uuid.UUID, input ReshareMemoryInput) (entity.Memory, error)
 	Revisions(
