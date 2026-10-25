@@ -1,4 +1,4 @@
-import type { components } from "$lib/api/dashboard.gen";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type DecisionRight = components["schemas"]["DecisionRight"];
 export type ReviewQuestion = components["schemas"]["ReviewQuestion"];

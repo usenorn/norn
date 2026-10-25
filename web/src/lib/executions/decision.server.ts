@@ -1,5 +1,5 @@
 import type { Client } from "openapi-fetch";
-import type { paths } from "$lib/api/dashboard.gen";
+import type { paths } from "#lib/api/dashboard.gen.js";
 import type { DecisionRight } from "./reviews";
 
 export async function readDecisionRight(

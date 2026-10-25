@@ -1,6 +1,6 @@
 import type { Client } from "openapi-fetch";
-import type { paths } from "$lib/api/dashboard.gen";
-import { internalOrigin } from "$lib/api/server";
+import type { paths } from "#lib/api/dashboard.gen.js";
+import { internalOrigin } from "#lib/api/server.js";
 import { reviewBudget } from "./diff";
 import { highlighted } from "./highlight.server";
 import { readPatch } from "./patch.server";

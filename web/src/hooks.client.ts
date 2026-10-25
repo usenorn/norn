@@ -1,8 +1,8 @@
+import type { HandleClientError } from "@sveltejs/kit/hooks";
 import * as Sentry from "@sentry/sveltekit";
-import { env } from "$env/dynamic/public";
-import type { HandleClientError } from "@sveltejs/kit";
-import { startEarlyKeys } from "$lib/shortcuts/early-keys";
-import { dataCollection, recordsSessions, reportingFrom } from "$lib/telemetry";
+import * as env from "$app/env/public";
+import { startEarlyKeys } from "#lib/shortcuts/early-keys.js";
+import { dataCollection, recordsSessions, reportingFrom } from "#lib/telemetry.js";
 
 startEarlyKeys();
 
@@ -20,10 +20,11 @@ if (reporting) {
 	});
 }
 
-const report: HandleClientError = ({ error, status, message }) => {
-	if (status === 404) return { message, code: "not_found" };
+const report: HandleClientError = (caught) => {
+	if (caught.kind === "framework" && caught.error.status === 404) return { code: "not_found" };
+	if (caught.kind !== "unknown") return;
 
-	console.error(error);
+	console.error(caught.error);
 
 	return { message: "Something went wrong.", code: "unexpected" };
 };

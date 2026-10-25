@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import IssueListing from "$lib/issues/issue-listing.svelte";
-	import { teamIssuesPath } from "$lib/issues/listing";
+	import IssueListing from "#lib/issues/issue-listing.svelte";
+	import { teamIssuesPath } from "#lib/issues/listing.js";
 	import { teamIssuesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

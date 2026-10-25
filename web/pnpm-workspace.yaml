@@ -1,6 +1,5 @@
 overrides:
   brace-expansion: ^2.1.7
-  cookie: ^0.7.2
   devalue: ^5.9.4
   dompurify: ^3.4.17
   joi: ^17.13.8

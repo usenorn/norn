@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { minPasswordLength } from "$lib/auth/sign-up-schema";
+import { minPasswordLength } from "#lib/auth/sign-up-schema.js";
 
 export const acceptInvitationSchema = z
 	.object({

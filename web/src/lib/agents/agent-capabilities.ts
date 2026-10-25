@@ -1,4 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
+import type { ReadonlyURL } from "$app/state";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type AgentSkill = components["schemas"]["AgentSkill"];
 export type AgentMcpServer = components["schemas"]["AgentMcpServer"];
@@ -172,7 +173,7 @@ function plural(count: number, noun: string): string {
 	return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
-export function connectOutcome(url: URL): McpConnectOutcome {
+export function connectOutcome(url: ReadonlyURL): McpConnectOutcome {
 	switch (url.searchParams.get("connection")) {
 		case "connected":
 			return { kind: "connected" };

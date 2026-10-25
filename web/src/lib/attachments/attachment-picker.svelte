@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Paperclip from "@lucide/svelte/icons/paperclip";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 
 	let {
 		disabled = false,

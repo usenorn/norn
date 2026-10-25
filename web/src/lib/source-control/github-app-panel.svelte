@@ -3,12 +3,12 @@
 	import { goto } from "$app/navigation";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 
-	import { api } from "$lib/api";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { api } from "#lib/api/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
 	import {
 		appNoticeMessage,
 		detailOf,
@@ -128,7 +128,7 @@
 			return;
 		}
 
-		await goto(sourceControlPath(workspaceSlug), { invalidateAll: true });
+		await goto(sourceControlPath(workspaceSlug), { refreshAll: true });
 	}
 </script>
 

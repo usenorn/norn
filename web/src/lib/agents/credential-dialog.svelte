@@ -2,12 +2,12 @@
 	import Check from "@lucide/svelte/icons/check";
 	import Copy from "@lucide/svelte/icons/copy";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import CommandSnippet from "$lib/components/norn/command-snippet.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import CommandSnippet from "#lib/components/norn/command-snippet.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
 	import { mcpAddCommand, mcpServerUrl, type Agent } from "./agents";
 
 	let {

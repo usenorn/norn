@@ -1,5 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { MemberTelegramBots } from "$lib/agents/telegram";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { MemberTelegramBots } from "#lib/agents/telegram.js";
 
 export type DecisionChannel = components["schemas"]["DecisionChannel"];
 

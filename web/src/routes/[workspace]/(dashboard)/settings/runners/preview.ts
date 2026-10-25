@@ -1,5 +1,5 @@
-import type { WorkspaceAgent } from "$lib/agents/agents";
-import type { RunnerFailure, RunnersView } from "$lib/runners/runners";
+import type { WorkspaceAgent } from "#lib/agents/agents.js";
+import type { RunnerFailure, RunnersView } from "#lib/runners/runners.js";
 
 export type RunnersPreview = {
 	view?: RunnersView;

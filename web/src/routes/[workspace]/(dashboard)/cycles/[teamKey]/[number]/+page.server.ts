@@ -1,8 +1,8 @@
-import type { CycleDetail } from "$lib/cycles/cycles";
-import type { TeamMember } from "$lib/team/members";
-import { keys } from "$lib/api/keys";
-import type { IssueProgress } from "$lib/issues/board";
-import type { WorkflowState } from "$lib/team/states";
+import type { CycleDetail } from "#lib/cycles/cycles.js";
+import type { TeamMember } from "#lib/team/members.js";
+import { keys } from "#lib/api/keys.js";
+import type { IssueProgress } from "#lib/issues/board.js";
+import type { WorkflowState } from "#lib/team/states.js";
 import { cyclePreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

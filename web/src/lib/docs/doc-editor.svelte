@@ -3,17 +3,17 @@
 	import { beforeNavigate, invalidate } from "$app/navigation";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import { api } from "$lib/api";
-	import { attempt } from "$lib/api/attempt";
-	import { keys } from "$lib/api/keys";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Autosave, type SaveOutcome, type SaveState } from "$lib/editor/autosave.svelte";
-	import { asDocument, sameDocument, withParagraph, type Document } from "$lib/editor/document";
-	import EditConflict from "$lib/editor/edit-conflict.svelte";
-	import SaveStatus from "$lib/editor/save-status.svelte";
-	import Editor from "$lib/editor/editor.svelte";
+	import { api } from "#lib/api/index.js";
+	import { attempt } from "#lib/api/attempt.js";
+	import { keys } from "#lib/api/keys.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Autosave, type SaveOutcome, type SaveState } from "#lib/editor/autosave.svelte.js";
+	import { asDocument, sameDocument, withParagraph, type Document } from "#lib/editor/document.js";
+	import EditConflict from "#lib/editor/edit-conflict.svelte";
+	import SaveStatus from "#lib/editor/save-status.svelte";
+	import Editor from "#lib/editor/editor.svelte";
 	import { docTitleFormId, docTitleFormSchema, docTitleSchema } from "./doc-schema";
 	import { docFailureMessage, readDocFailure, type Doc, type DocFailure } from "./docs";
 

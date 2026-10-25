@@ -1,8 +1,8 @@
-import { api } from "$lib/api";
-import { attempt, unknownLine } from "$lib/api/attempt";
-import type { components } from "$lib/api/dashboard.gen";
-import { failures, outcomeLabel, settled } from "$lib/issues/bulk";
-import { issueFailureMessage, readIssueFailure } from "$lib/issues/issues";
+import { api } from "#lib/api/index.js";
+import { attempt, unknownLine } from "#lib/api/attempt.js";
+import type { components } from "#lib/api/dashboard.gen.js";
+import { failures, outcomeLabel, settled } from "#lib/issues/bulk.js";
+import { issueFailureMessage, readIssueFailure } from "#lib/issues/issues.js";
 
 export type BulkChange = components["schemas"]["BulkChange"];
 

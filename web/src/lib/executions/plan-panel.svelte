@@ -1,9 +1,9 @@
 <script lang="ts">
-	import * as Tabs from "$lib/components/ui/tabs/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Markdown from "$lib/issues/markdown.svelte";
-	import { onDateAndTime } from "$lib/time";
+	import * as Tabs from "#lib/components/ui/tabs/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Markdown from "#lib/issues/markdown.svelte";
+	import { onDateAndTime } from "#lib/time.js";
 	import DecisionActions from "./decision-actions.svelte";
 	import PlanCopy from "./plan-copy.svelte";
 	import type { Execution, IssueQuestion, Reach } from "./executions";

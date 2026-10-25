@@ -5,21 +5,21 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import RowGroup from "$lib/components/norn/row-group.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import { Switch } from "$lib/components/ui/switch/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import SettingRow from "$lib/settings/setting-row.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import RowGroup from "#lib/components/norn/row-group.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import { Switch } from "#lib/components/ui/switch/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import SettingRow from "#lib/settings/setting-row.svelte";
 	import { statusLabels, timelineLabel } from "./public-roadmap";
 	import {
 		answerOf,

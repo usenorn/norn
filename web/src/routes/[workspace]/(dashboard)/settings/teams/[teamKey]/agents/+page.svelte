@@ -1,6 +1,6 @@
 <script lang="ts">
-	import TeamAgents from "$lib/team/team-agents.svelte";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
+	import TeamAgents from "#lib/team/team-agents.svelte";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();

@@ -1,8 +1,8 @@
-import { listingFor, type TriageListing } from "$lib/triage/triage";
-import { keys } from "$lib/api/keys";
-import { candidateOf, type IssueCandidate } from "$lib/issues/issues";
-import type { Member } from "$lib/issues/members";
-import type { Team } from "$lib/team/teams";
+import { listingFor, type TriageListing } from "#lib/triage/triage.js";
+import { keys } from "#lib/api/keys.js";
+import { candidateOf, type IssueCandidate } from "#lib/issues/issues.js";
+import type { Member } from "#lib/issues/members.js";
+import type { Team } from "#lib/team/teams.js";
 import type { PageServerLoad } from "./$types";
 
 const candidateLimit = 200;

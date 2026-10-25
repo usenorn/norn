@@ -1,4 +1,4 @@
-import type { ProposalQueue } from "$lib/agents/agents";
+import type { ProposalQueue } from "#lib/agents/agents.js";
 
 export type ApprovalsPreview = {
 	queue?: ProposalQueue;

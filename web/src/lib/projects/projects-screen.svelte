@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Folder from "@lucide/svelte/icons/folder";
 	import Target from "@lucide/svelte/icons/target";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { api } from "$lib/api";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { api } from "#lib/api/index.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
 	import {
 		healthLabel,
 		projectFailureMessage,
@@ -24,11 +24,11 @@
 		stateLabel,
 		type ProjectFailure,
 		type ProjectListing,
-	} from "$lib/projects/projects";
-	import { onCalendarDate } from "$lib/time";
-	import { slugFromName } from "$lib/workspace/create-workspace-schema";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import { attempt } from "$lib/api/attempt";
+	} from "#lib/projects/projects.js";
+	import { onCalendarDate } from "#lib/time.js";
+	import { slugFromName } from "#lib/workspace/create-workspace-schema.js";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import { attempt } from "#lib/api/attempt.js";
 
 	let {
 		workspace,
@@ -71,9 +71,9 @@
 	const derivedAddress = $derived(addressEdited ? address : slugFromName(name));
 
 	function dismiss() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete("new");
-		goto(next, { replaceState: true, noScroll: true, keepFocus: true });
+		goto(next, { replace: true, reset: false });
 	}
 
 	async function create() {

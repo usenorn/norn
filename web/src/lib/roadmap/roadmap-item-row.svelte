@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Progress } from "$lib/components/ui/progress/index.js";
-	import { cn } from "$lib/utils.js";
+	import { Progress } from "#lib/components/ui/progress/index.js";
+	import { cn } from "#lib/utils.js";
 	import RoadmapStatus from "./roadmap-status.svelte";
 	import RoadmapTimeline from "./roadmap-timeline.svelte";
 	import {

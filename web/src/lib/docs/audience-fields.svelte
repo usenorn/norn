@@ -1,8 +1,8 @@
 <script lang="ts" generics="T extends { visibility: DocVisibility; projectId: string }">
 	import type { FormPath, SuperForm } from "sveltekit-superforms";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import type { Project } from "$lib/projects/projects";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import type { Project } from "#lib/projects/projects.js";
 	import { docAudienceLabels, docVisibilities, docVisibilityLabels, type DocVisibility } from "./docs";
 
 	let {

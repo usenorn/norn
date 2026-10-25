@@ -1,4 +1,4 @@
-import type { DocFailure } from "$lib/docs/docs";
+import type { DocFailure } from "#lib/docs/docs.js";
 
 export type NewDocPreview = { failure?: DocFailure; submitting?: boolean };
 

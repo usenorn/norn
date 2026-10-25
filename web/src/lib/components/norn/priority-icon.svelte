@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
-	import { cn } from "$lib/utils.js";
-	import { priorityLabel, type IssuePriority } from "$lib/issues/issues";
+	import { cn } from "#lib/utils.js";
+	import { priorityLabel, type IssuePriority } from "#lib/issues/issues.js";
 
 	let {
 		priority,

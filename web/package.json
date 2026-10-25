@@ -23,8 +23,8 @@
 		"@internationalized/date": "^3.12.2",
 		"@lucide/svelte": "^1.27.0",
 		"@playwright/test": "^1.63.0",
-		"@sveltejs/adapter-node": "^5.5.7",
-		"@sveltejs/kit": "^2.70.2",
+		"@sveltejs/adapter-node": "^6.0.0",
+		"@sveltejs/kit": "^3.1.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.19",
@@ -38,21 +38,21 @@
 		"lucide": "^1.33.0",
 		"morphicons": "^1.7.0",
 		"openapi-typescript": "^7.13.0",
-		"shadcn-svelte": "^1.4.2",
-		"svelte": "^5.56.1",
-		"svelte-check": "^4.6.0",
+		"shadcn-svelte": "^1.7.1",
+		"svelte": "^5.57.2",
+		"svelte-check": "^4.7.5",
 		"svelte-sonner": "^1.2.1",
-		"sveltekit-superforms": "^2.30.2",
+		"sveltekit-superforms": "^3.0.0",
 		"tailwind-merge": "^3.6.0",
 		"tailwind-variants": "^3.3.0",
 		"tailwindcss": "^4.3.0",
 		"typescript": "^6.0.3",
 		"vite": "^8.3.4",
 		"vitest": "^4.1.12",
-		"zod": "^4.4.3"
+		"zod": "^4.6.7"
 	},
 	"dependencies": {
-		"@sentry/sveltekit": "^10.70.0",
+		"@sentry/sveltekit": "^10.76.2",
 		"@tiptap/core": "^3.31.3",
 		"@tiptap/extension-details": "3.31.3",
 		"@tiptap/extension-image": "^3.31.3",
@@ -72,5 +72,9 @@
 		"shiki": "^4.4.3",
 		"turndown": "^7.2.4",
 		"turndown-plugin-gfm": "^1.0.2"
+	},
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
 	}
 }

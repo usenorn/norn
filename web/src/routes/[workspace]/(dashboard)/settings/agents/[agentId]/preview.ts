@@ -1,15 +1,15 @@
-import type { ActivityFeed } from "$lib/activity/activity";
+import type { ActivityFeed } from "#lib/activity/activity.js";
 import type {
 	AgentCapabilities,
 	AgentLibraryListing,
 	CapabilityDialogPreview,
 	McpConnectOutcome,
-} from "$lib/agents/agent-capabilities";
-import type { AgentRecord } from "$lib/agents/agent-record";
-import type { HostedConversation } from "$lib/agents/hosted";
-import type { TelegramOutcome, TelegramPanel } from "$lib/agents/telegram";
-import type { Project } from "$lib/projects/projects";
-import type { MembershipRole } from "$lib/workspace/members";
+} from "#lib/agents/agent-capabilities.js";
+import type { AgentRecord } from "#lib/agents/agent-record.js";
+import type { HostedConversation } from "#lib/agents/hosted.js";
+import type { TelegramOutcome, TelegramPanel } from "#lib/agents/telegram.js";
+import type { Project } from "#lib/projects/projects.js";
+import type { MembershipRole } from "#lib/workspace/members.js";
 
 export type AgentDetailTab =
 	| "overview"

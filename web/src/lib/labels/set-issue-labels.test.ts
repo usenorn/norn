@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Issue } from "$lib/issues/issues";
-import { forget } from "$lib/issues/versions";
+import type { Issue } from "#lib/issues/issues.js";
+import { forget } from "#lib/issues/versions.js";
 
 const put = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/api", () => ({ api: { PUT: put } }));
+vi.mock("#lib/api/index.js", () => ({ api: { PUT: put } }));
 
 const { setIssueLabels } = await import("./set-issue-labels");
 

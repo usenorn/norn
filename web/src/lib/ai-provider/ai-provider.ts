@@ -1,4 +1,4 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
 
 export type AiProvider = components["schemas"]["WorkspaceAiProvider"];
 export type AiProviderKind = components["schemas"]["AiProviderKind"];

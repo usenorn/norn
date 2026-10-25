@@ -1,10 +1,10 @@
 <script lang="ts">
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { failures, outcomeLabel, settled, summary, type BulkActionResult } from "$lib/issues/bulk";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import ProgressBar from "#lib/components/norn/progress-bar.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { failures, outcomeLabel, settled, summary, type BulkActionResult } from "#lib/issues/bulk.js";
 
 	let {
 		result,

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from "svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
 	import { reviewBodyMaxLength } from "./review";
 
 	type Choice = { label: string; publish: boolean };

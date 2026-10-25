@@ -2,9 +2,9 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import FileText from "@lucide/svelte/icons/file-text";
 	import Plus from "@lucide/svelte/icons/plus";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import DocTree from "./doc-tree.svelte";
 	import { newDocPath, type DocTree as Tree } from "./docs";
 

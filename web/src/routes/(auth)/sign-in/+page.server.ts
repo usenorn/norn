@@ -1,13 +1,13 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { message, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { signInSchema } from "$lib/auth/sign-in-schema";
-import { signInFailure } from "$lib/auth/sign-in";
-import { codeEntry } from "$lib/auth/sign-in-code";
-import { safeReturn } from "$lib/auth/return-to";
-import { addingAccount, leaveIfSignedIn } from "$lib/auth/signed-in";
-import { reachWorkspaceSignIn, type WorkspaceEntry } from "$lib/auth/workspace-sign-in";
-import type { SignInFailure } from "$lib/auth/types";
+import { signInSchema } from "#lib/auth/sign-in-schema.js";
+import { signInFailure } from "#lib/auth/sign-in.js";
+import { codeEntry } from "#lib/auth/sign-in-code.js";
+import { safeReturn } from "#lib/auth/return-to.js";
+import { addingAccount, leaveIfSignedIn } from "#lib/auth/signed-in.js";
+import { reachWorkspaceSignIn, type WorkspaceEntry } from "#lib/auth/workspace-sign-in.js";
+import type { SignInFailure } from "#lib/auth/types.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type SignInForm = Infer<typeof signInSchema>;

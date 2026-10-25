@@ -6,7 +6,7 @@
 	import Eye from "@lucide/svelte/icons/eye";
 	import EyeOff from "@lucide/svelte/icons/eye-off";
 	import PencilLine from "@lucide/svelte/icons/pencil-line";
-	import Pill, { type PillTone } from "$lib/components/norn/pill.svelte";
+	import Pill, { type PillTone } from "#lib/components/norn/pill.svelte";
 
 	let { label, tone, note }: { label: string; tone: RoadmapFieldTone; note?: string } = $props();
 

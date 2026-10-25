@@ -4,13 +4,13 @@
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import { authPath } from "$lib/auth/return-to";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import { signInCodeLength, signInCodeSchema } from "$lib/auth/sign-in-code-schema";
-	import type { SignInCodeFailure } from "$lib/auth/types";
+	import { authPath } from "#lib/auth/return-to.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import InstanceLine from "#lib/components/norn/instance-line.svelte";
+	import { signInCodeLength, signInCodeSchema } from "#lib/auth/sign-in-code-schema.js";
+	import type { SignInCodeFailure } from "#lib/auth/types.js";
 	import { signInCodePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

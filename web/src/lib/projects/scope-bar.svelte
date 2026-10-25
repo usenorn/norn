@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { totalIssues, type IssueProgress } from "$lib/issues/board";
+	import { totalIssues, type IssueProgress } from "#lib/issues/board.js";
 	import { progressLabel, scopeSegments } from "./projects";
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 
 	let { progress, class: className }: { progress: IssueProgress; class?: string } = $props();
 

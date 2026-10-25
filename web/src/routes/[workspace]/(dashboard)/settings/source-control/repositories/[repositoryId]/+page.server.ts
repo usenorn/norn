@@ -1,5 +1,5 @@
-import type { SourceControlRepositoryView } from "$lib/source-control/source-control";
-import { keys } from "$lib/api/keys";
+import type { SourceControlRepositoryView } from "#lib/source-control/source-control.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export type SourceControlRepositoryPageData = {

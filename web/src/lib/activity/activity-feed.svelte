@@ -2,7 +2,7 @@
 	import Bot from "@lucide/svelte/icons/bot";
 	import Cog from "@lucide/svelte/icons/cog";
 	import Plug from "@lucide/svelte/icons/plug";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		actorKindLabels,
 		actorLabel,
@@ -10,9 +10,9 @@
 		readable,
 		type ActivityEvent,
 		type ActivityFeed,
-	} from "$lib/activity/activity";
-	import { moreFailedLine } from "$lib/api/listed";
-	import type { ColumnPaging } from "$lib/issues/paging";
+	} from "#lib/activity/activity.js";
+	import { moreFailedLine } from "#lib/api/listed.js";
+	import type { ColumnPaging } from "#lib/issues/paging.js";
 
 	let {
 		feed,

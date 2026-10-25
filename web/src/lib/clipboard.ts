@@ -1,4 +1,4 @@
-import { showFailure, showToast } from "$lib/toast/toasts";
+import { showFailure, showToast } from "#lib/toast/toasts.js";
 
 export const copyRefusedLine = "Your browser would not let us copy that";
 

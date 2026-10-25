@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import TeamIntake from "$lib/team/team-intake.svelte";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
+	import TeamIntake from "#lib/team/team-intake.svelte";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
 	import { teamEmailPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

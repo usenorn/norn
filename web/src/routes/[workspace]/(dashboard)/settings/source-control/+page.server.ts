@@ -3,8 +3,8 @@ import {
 	type SourceControlAppNotice,
 	type SourceControlAppState,
 	type SourceControlView,
-} from "$lib/source-control/source-control";
-import { keys } from "$lib/api/keys";
+} from "#lib/source-control/source-control.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export type SourceControlPageData = {

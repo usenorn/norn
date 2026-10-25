@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
-	import Wordmark from "$lib/components/norn/wordmark.svelte";
+	import Wordmark from "#lib/components/norn/wordmark.svelte";
 
 	let { banner, children }: { banner?: Snippet; children: Snippet } = $props();
 </script>

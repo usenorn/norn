@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import PublicRoadmap from "$lib/roadmap/public-roadmap.svelte";
-	import PublicRoadmapFallback from "$lib/roadmap/public-roadmap-fallback.svelte";
-	import PublicRoadmapHead from "$lib/roadmap/public-roadmap-head.svelte";
-	import { entryPath } from "$lib/roadmap/public-roadmap";
+	import PublicRoadmap from "#lib/roadmap/public-roadmap.svelte";
+	import PublicRoadmapFallback from "#lib/roadmap/public-roadmap-fallback.svelte";
+	import PublicRoadmapHead from "#lib/roadmap/public-roadmap-head.svelte";
+	import { entryPath } from "#lib/roadmap/public-roadmap.js";
 	import { publicRoadmapPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

@@ -1,16 +1,16 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
-import { mintTokenSchema } from "$lib/account/mint-token-schema";
+import { keys } from "#lib/api/keys.js";
+import { mintTokenSchema } from "#lib/account/mint-token-schema.js";
 import {
 	defaultExpiryDays,
 	failureMessage,
 	mintFailure,
 	type MintOutcome,
 	type TokenListing,
-} from "$lib/account/tokens";
-import type { Team } from "$lib/team/teams";
+} from "#lib/account/tokens.js";
+import type { Team } from "#lib/team/teams.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type MintTokenForm = Infer<typeof mintTokenSchema>;

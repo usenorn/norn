@@ -1,6 +1,6 @@
-import type { Instance } from "$lib/auth/instance";
-import type { SignInFailure } from "$lib/auth/types";
-import type { WorkspaceEntry } from "$lib/auth/workspace-sign-in";
+import type { Instance } from "#lib/auth/instance.js";
+import type { SignInFailure } from "#lib/auth/types.js";
+import type { WorkspaceEntry } from "#lib/auth/workspace-sign-in.js";
 
 export type SignInPreview = {
 	auth?: Partial<Instance>;

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import Wrench from "@lucide/svelte/icons/wrench";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		failedPreviews,
 		noPlanPreviewsLine,

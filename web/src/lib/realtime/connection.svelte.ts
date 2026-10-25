@@ -1,9 +1,9 @@
 import { getContext, setContext } from "svelte";
-import { invalidate, invalidateAll } from "$app/navigation";
+import { invalidate, refreshAll } from "$app/navigation";
 import { navigating } from "$app/state";
-import { keys } from "$lib/api/keys";
-import { sessionParam } from "$lib/account/accounts";
-import type { components } from "$lib/api/dashboard.gen";
+import { keys } from "#lib/api/keys.js";
+import { sessionParam } from "#lib/account/accounts.js";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type Issue = components["schemas"]["Issue"];
 export type IssueComment = components["schemas"]["IssueComment"];
@@ -209,7 +209,7 @@ export class RealtimeConnection {
 			this.#resync = false;
 			this.#pending.clear();
 
-			return invalidateAll();
+			return refreshAll();
 		}
 
 		const invalidated = [...this.#pending];

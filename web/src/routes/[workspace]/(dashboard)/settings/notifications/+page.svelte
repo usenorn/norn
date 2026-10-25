@@ -1,24 +1,24 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import Bell from "@lucide/svelte/icons/bell";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { api } from "$lib/api";
-	import PreferenceGrid from "$lib/notifications/preference-grid.svelte";
-	import TelegramLinks from "$lib/agents/telegram-links.svelte";
-	import DecisionChannelForm from "$lib/notifications/decision-channel-form.svelte";
-	import { telegramLinked } from "$lib/notifications/decision-channel";
-	import { deploymentPreview } from "$lib/auth/preview";
-	import type { NotificationPreferences } from "$lib/notifications/notifications";
-	import { workspacePath } from "$lib/workspace/navigation";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { api } from "#lib/api/index.js";
+	import PreferenceGrid from "#lib/notifications/preference-grid.svelte";
+	import TelegramLinks from "#lib/agents/telegram-links.svelte";
+	import DecisionChannelForm from "#lib/notifications/decision-channel-form.svelte";
+	import { telegramLinked } from "#lib/notifications/decision-channel.js";
+	import { deploymentPreview } from "#lib/auth/preview.js";
+	import type { NotificationPreferences } from "#lib/notifications/notifications.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { notificationSettingsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { showToast } from "$lib/toast/toasts";
+	import { showToast } from "#lib/toast/toasts.js";
 
 	let { data }: PageProps = $props();
 

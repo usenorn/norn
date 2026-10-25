@@ -1,4 +1,4 @@
-import type { SearchListing } from "$lib/search/search";
+import type { SearchListing } from "#lib/search/search.js";
 
 export type SearchPreview = { query: string; listing: SearchListing };
 

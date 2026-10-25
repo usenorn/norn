@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Grid, LineChart, Points, Spline } from "layerchart";
-	import * as Chart from "$lib/components/ui/chart";
-	import type { BurndownDay, BurndownSeries } from "$lib/cycles/cycles";
-	import { onCalendarDate } from "$lib/time";
+	import * as Chart from "#lib/components/ui/chart/index.js";
+	import type { BurndownDay, BurndownSeries } from "#lib/cycles/cycles.js";
+	import { onCalendarDate } from "#lib/time.js";
 
 	let { series, label }: { series: BurndownSeries; label: string } = $props();
 

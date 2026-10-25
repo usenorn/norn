@@ -1,5 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { CodeLink } from "$lib/source-control/source-control";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { CodeLink } from "#lib/source-control/source-control.js";
 import type { ExecutionPlan } from "./plans";
 import type { DecisionRight } from "./reviews";
 

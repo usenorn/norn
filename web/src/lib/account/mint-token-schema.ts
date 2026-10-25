@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { components } from "$lib/api/dashboard.gen";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 const apiScopes = [
 	"workspace:read",

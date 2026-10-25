@@ -2,11 +2,11 @@
 	import Check from "@lucide/svelte/icons/check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import { page } from "$app/state";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import DocEditor from "$lib/docs/doc-editor.svelte";
-	import DocsHeader from "$lib/docs/docs-header.svelte";
-	import { ancestry, docPath, docsPath } from "$lib/docs/docs";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import DocEditor from "#lib/docs/doc-editor.svelte";
+	import DocsHeader from "#lib/docs/docs-header.svelte";
+	import { ancestry, docPath, docsPath } from "#lib/docs/docs.js";
 	import { docEditPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

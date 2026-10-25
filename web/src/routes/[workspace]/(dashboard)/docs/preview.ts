@@ -1,4 +1,4 @@
-import type { DocTree } from "$lib/docs/docs";
+import type { DocTree } from "#lib/docs/docs.js";
 
 export type DocsPreview = { tree: DocTree };
 

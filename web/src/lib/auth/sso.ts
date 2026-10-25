@@ -1,4 +1,4 @@
-import type { Diagnostic, SsoExchange, SsoFailure, SsoStage } from "$lib/auth/types";
+import type { Diagnostic, SsoExchange, SsoFailure, SsoStage } from "#lib/auth/types.js";
 
 const stages: SsoStage[] = [
 	"discovery",

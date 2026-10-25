@@ -8,10 +8,10 @@
 	import Search from "@lucide/svelte/icons/search";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
 	import {
 		kindLabels,
 		resultPath,
@@ -19,9 +19,9 @@
 		searchPath,
 		type SearchKind,
 		type SearchListing,
-	} from "$lib/search/search";
-	import { onDateAndTime } from "$lib/time";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/search/search.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { searchPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -70,9 +70,8 @@
 		clearTimeout(timer);
 
 		void goto(searchPath(slug, typed), {
-			replaceState: true,
-			keepFocus: true,
-			noScroll: true,
+			replace: true,
+			reset: false,
 		});
 	}
 

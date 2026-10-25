@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Pill, { type PillTone } from "$lib/components/norn/pill.svelte";
+	import Pill, { type PillTone } from "#lib/components/norn/pill.svelte";
 	import { standingLabels, type ProjectStanding } from "./projects";
 
 	let { standing, class: className }: { standing: ProjectStanding; class?: string } = $props();

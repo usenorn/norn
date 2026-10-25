@@ -6,20 +6,20 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { onDate } from "$lib/time";
-	import { mcpAddCommand, mcpServerUrl } from "$lib/agents/agents";
-	import { mintTokenSchema, type GrantInput } from "$lib/account/mint-token-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { onDate } from "#lib/time.js";
+	import { mcpAddCommand, mcpServerUrl } from "#lib/agents/agents.js";
+	import { mintTokenSchema, type GrantInput } from "#lib/account/mint-token-schema.js";
 	import {
 		daysUntil,
 		defaultExpiryDays,
@@ -33,7 +33,7 @@
 		type MintOutcome,
 		type TokenFailure,
 		type TokenListing,
-	} from "$lib/account/tokens";
+	} from "#lib/account/tokens.js";
 	import { tokensPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

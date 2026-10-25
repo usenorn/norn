@@ -2,17 +2,17 @@ import { fail } from "@sveltejs/kit";
 import type { Client } from "openapi-fetch";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
-import type { paths } from "$lib/api/dashboard.gen";
-import { reachInstance } from "$lib/auth/instance";
-import { aiProviderSchema } from "$lib/ai-provider/ai-provider-schema";
+import { keys } from "#lib/api/keys.js";
+import type { paths } from "#lib/api/dashboard.gen.js";
+import { reachInstance } from "#lib/auth/instance.js";
+import { aiProviderSchema } from "#lib/ai-provider/ai-provider-schema.js";
 import {
 	aiProviderFailure,
 	failureTitle,
 	type AiProviderModels,
 	type AiProviderOutcome,
 	type AiProviderView,
-} from "$lib/ai-provider/ai-provider";
+} from "#lib/ai-provider/ai-provider.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type AiProviderForm = Infer<typeof aiProviderSchema>;

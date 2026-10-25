@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Wordmark from "$lib/components/norn/wordmark.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Wordmark from "#lib/components/norn/wordmark.svelte";
 
 	const title = $derived(page.status === 404 ? "Not found" : "Something went wrong");
 </script>

@@ -7,16 +7,16 @@
 		type SuperValidated,
 	} from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import type { Project } from "$lib/projects/projects";
-	import type { Team } from "$lib/team/teams";
-	import { cn } from "$lib/utils.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import type { Project } from "#lib/projects/projects.js";
+	import type { Team } from "#lib/team/teams.js";
+	import { cn } from "#lib/utils.js";
 	import AgentIcon from "./agent-icon.svelte";
 	import CredentialDialog from "./credential-dialog.svelte";
 	import {

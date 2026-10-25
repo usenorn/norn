@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
-import { sessionParam } from "$lib/account/accounts";
+import { sessionParam } from "#lib/account/accounts.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = () => {

@@ -2,12 +2,12 @@
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
-	import { authPath } from "$lib/auth/return-to";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import { workspaceEntrySchema } from "$lib/auth/workspace-entry-schema";
+	import { authPath } from "#lib/auth/return-to.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import InstanceLine from "#lib/components/norn/instance-line.svelte";
+	import { workspaceEntrySchema } from "#lib/auth/workspace-entry-schema.js";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();

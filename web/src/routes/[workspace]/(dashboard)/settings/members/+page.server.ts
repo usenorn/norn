@@ -1,5 +1,5 @@
-import type { WorkspaceAPIToken } from "$lib/account/tokens";
-import { keys } from "$lib/api/keys";
+import type { WorkspaceAPIToken } from "#lib/account/tokens.js";
+import { keys } from "#lib/api/keys.js";
 import {
 	kindsFor,
 	listingFor,
@@ -7,7 +7,7 @@ import {
 	segmentFrom,
 	type MemberListing,
 	type MemberSegment,
-} from "$lib/workspace/members";
+} from "#lib/workspace/members.js";
 import { membersPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

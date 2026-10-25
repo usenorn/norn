@@ -1,6 +1,6 @@
-import { keys } from "$lib/api/keys";
-import { readDecisionRight } from "$lib/executions/decision.server";
-import type { RunView } from "$lib/executions/executions";
+import { keys } from "#lib/api/keys.js";
+import { readDecisionRight } from "#lib/executions/decision.server.js";
+import type { RunView } from "#lib/executions/executions.js";
 import { runPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

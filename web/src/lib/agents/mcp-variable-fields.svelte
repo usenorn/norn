@@ -2,9 +2,9 @@
 	import Plus from "@lucide/svelte/icons/plus";
 	import X from "@lucide/svelte/icons/x";
 	import type { SuperForm } from "sveltekit-superforms";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
 	import type { McpServerInput } from "./agent-capability-schemas";
 
 	type Variable = { key: string; value: string; stored: boolean };

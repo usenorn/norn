@@ -1,9 +1,9 @@
 <script lang="ts">
 	import Check from "@lucide/svelte/icons/check";
 	import Copy from "@lucide/svelte/icons/copy";
-	import { copyText } from "$lib/clipboard";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { copyText } from "#lib/clipboard.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
 	import { copiedPlanLine } from "./plan-review";
 
 	let { text, blocked }: { text: string; blocked?: string } = $props();

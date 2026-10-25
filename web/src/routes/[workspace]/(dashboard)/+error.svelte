@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { invalidateAll } from "$app/navigation";
+	import { refreshAll } from "$app/navigation";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
 
 	const title = $derived(page.status === 404 ? "Not found" : "Something went wrong");
 </script>
@@ -26,7 +26,7 @@
 			</p>
 		</div>
 
-		<Button variant="outline" size="sm" onclick={() => invalidateAll()}>Try again</Button>
+		<Button variant="outline" size="sm" onclick={() => refreshAll()}>Try again</Button>
 
 		{#if page.error?.reference}
 			<p class="font-mono text-xs break-all text-muted-foreground">

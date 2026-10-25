@@ -1,6 +1,6 @@
-import { keys } from "$lib/api/keys";
-import { rosterFor, type TeamRoster } from "$lib/team/members";
-import { teamOf } from "$lib/team/team-settings";
+import { keys } from "#lib/api/keys.js";
+import { rosterFor, type TeamRoster } from "#lib/team/members.js";
+import { teamOf } from "#lib/team/team-settings.js";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {

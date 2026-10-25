@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import TeamMembers from "$lib/team/team-members.svelte";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
+	import TeamMembers from "#lib/team/team-members.svelte";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
 	import { teamMembersPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

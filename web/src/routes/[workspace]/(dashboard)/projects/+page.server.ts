@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
-import { teamProjectsPath, type ProjectListing } from "$lib/projects/projects";
-import { keys } from "$lib/api/keys";
+import { teamProjectsPath, type ProjectListing } from "#lib/projects/projects.js";
+import { keys } from "#lib/api/keys.js";
 import { projectsPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

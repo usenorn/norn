@@ -1,7 +1,7 @@
 import { flushSync, mount, unmount } from "svelte";
 import { describe, expect, it, vi } from "vitest";
 import Diagnostics from "./diagnostics.svelte";
-import { copyRefusedLine } from "$lib/clipboard";
+import { copyRefusedLine } from "#lib/clipboard.js";
 
 const entries = [
 	{ key: "error", value: "sso_metadata_unreachable" },
@@ -10,7 +10,7 @@ const entries = [
 
 const raised: { message: string; tone?: string }[] = [];
 
-vi.mock("$lib/toast/toasts", () => ({
+vi.mock("#lib/toast/toasts.js", () => ({
 	showToast: (message: string) => raised.push({ message }),
 	showFailure: (message: string) => raised.push({ message, tone: "failure" }),
 }));

@@ -1,4 +1,4 @@
-import type { CycleListing } from "$lib/cycles/cycles";
+import type { CycleListing } from "#lib/cycles/cycles.js";
 
 export type TeamCyclesPreview = { listing: CycleListing };
 

@@ -1,11 +1,10 @@
 import * as Sentry from "@sentry/sveltekit";
-import { env } from "$env/dynamic/public";
-import type { Handle, HandleServerError } from "@sveltejs/kit";
-import { sequence } from "@sveltejs/kit/hooks";
-import { actingSlot, signedInAccounts } from "$lib/api/acting.server";
-import { apiForEvent, correlationHeader } from "$lib/api/server";
-import { isPublicRoadmapRoute, onRoadmapHost } from "$lib/roadmap/host";
-import { reportingFrom } from "$lib/telemetry";
+import * as env from "$app/env/public";
+import { sequence, type Handle, type HandleServerError } from "@sveltejs/kit/hooks";
+import { actingSlot, signedInAccounts } from "#lib/api/acting.server.js";
+import { apiForEvent, correlationHeader } from "#lib/api/server.js";
+import { isPublicRoadmapRoute, onRoadmapHost } from "#lib/roadmap/host.js";
+import { reportingFrom } from "#lib/telemetry.js";
 
 const reporting = reportingFrom(env);
 
@@ -43,13 +42,15 @@ const scope: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = reporting ? sequence(Sentry.sentryHandle(), scope) : scope;
 
-const report: HandleServerError = ({ error, event, status, message }) => {
-	if (status === 404) return { message, code: "not_found" };
+const report: HandleServerError = (caught) => {
+	if (caught.kind === "framework" && caught.error.status === 404) return { code: "not_found" };
+	if (caught.kind !== "unknown") return;
+
+	const { error, event } = caught;
 
 	console.error({
 		correlationId: event.locals.correlationId,
 		route: event.route.id,
-		status,
 		error,
 	});
 

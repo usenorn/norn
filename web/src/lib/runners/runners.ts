@@ -1,6 +1,6 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { WorkspaceAgent } from "$lib/agents/agents";
-import { elapsed, onDateAndTime } from "$lib/time";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { WorkspaceAgent } from "#lib/agents/agents.js";
+import { elapsed, onDateAndTime } from "#lib/time.js";
 
 export type Runner = components["schemas"]["Runner"];
 export type RunnerHost = components["schemas"]["RunnerHost"];

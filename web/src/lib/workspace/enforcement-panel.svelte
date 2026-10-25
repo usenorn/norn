@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { refreshAll } from "$app/navigation";
 	import Copy from "@lucide/svelte/icons/copy";
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import ShieldCheck from "@lucide/svelte/icons/shield-check";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { api } from "$lib/api";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { api } from "#lib/api/index.js";
 	import {
 		blockerCopy,
 		enforcementProblem,
 		type Enforcement,
 		type RecoveryCodes,
-	} from "$lib/workspace/sso";
+	} from "#lib/workspace/sso.js";
 
 	let {
 		workspace,
@@ -66,7 +66,7 @@
 				? { kind: "issued", codes: data.recoveryCodes }
 				: { kind: "none" };
 
-			await invalidateAll();
+			await refreshAll();
 		} catch {
 			failed = true;
 		} finally {

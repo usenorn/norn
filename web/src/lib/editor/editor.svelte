@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Editor } from "@tiptap/core";
 	import type { EditorView } from "@tiptap/pm/view";
-	import { markdownProse } from "$lib/issues/markdown";
+	import { markdownProse } from "#lib/issues/markdown.js";
 	import {
 		asDocument,
 		emptyDocument,
@@ -9,17 +9,17 @@
 		withParagraph,
 		type Document,
 		type DocumentNode,
-	} from "$lib/editor/document";
-	import { editorExtensions } from "$lib/editor/schema";
-	import { completing, type SuggestionAnchor, type SuggestionSession } from "$lib/editor/suggest";
-	import { insertIssueRef, insertLink, insertMention, runBlock } from "$lib/editor/blocks";
-	import { matchingCommands, type SlashCommand } from "$lib/editor/slash";
-	import { findIssues, findMentions, type Suggestion } from "$lib/editor/search";
-	import { pastedFiles } from "$lib/editor/clipboard";
-	import { combination, composing } from "$lib/editor/keys";
-	import { searchDebounceMs } from "$lib/workspace/members";
-	import { dropUpload, placeUpload, previewOf, uploadPosition } from "$lib/editor/uploads";
-	import SuggestionPopup, { type PopupRow } from "$lib/editor/suggestion-popup.svelte";
+	} from "#lib/editor/document.js";
+	import { editorExtensions } from "#lib/editor/schema.js";
+	import { completing, type SuggestionAnchor, type SuggestionSession } from "#lib/editor/suggest.js";
+	import { insertIssueRef, insertLink, insertMention, runBlock } from "#lib/editor/blocks.js";
+	import { matchingCommands, type SlashCommand } from "#lib/editor/slash.js";
+	import { findIssues, findMentions, type Suggestion } from "#lib/editor/search.js";
+	import { pastedFiles } from "#lib/editor/clipboard.js";
+	import { combination, composing } from "#lib/editor/keys.js";
+	import { searchDebounceMs } from "#lib/workspace/members.js";
+	import { dropUpload, placeUpload, previewOf, uploadPosition } from "#lib/editor/uploads.js";
+	import SuggestionPopup, { type PopupRow } from "#lib/editor/suggestion-popup.svelte";
 
 	let {
 		document = $bindable(emptyDocument),

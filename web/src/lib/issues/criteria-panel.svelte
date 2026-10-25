@@ -4,11 +4,11 @@
 	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import Plus from "@lucide/svelte/icons/plus";
 	import X from "@lucide/svelte/icons/x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
 	import {
 		dropEvidence,
 		evidenceKinds,
@@ -21,7 +21,7 @@
 		type CriteriaPanel,
 		type CriterionEvidence,
 		type EvidenceKind,
-	} from "$lib/issues/criteria";
+	} from "#lib/issues/criteria.js";
 
 	let {
 		workspaceId,

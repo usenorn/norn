@@ -5,12 +5,12 @@
 	import Info from "@lucide/svelte/icons/info";
 	import Reply from "@lucide/svelte/icons/reply";
 	import SmilePlus from "@lucide/svelte/icons/smile-plus";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Markdown from "$lib/issues/markdown.svelte";
-	import CommentComposer from "$lib/comments/comment-composer.svelte";
-	import { asDocument, type Document } from "$lib/editor/document";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Markdown from "#lib/issues/markdown.svelte";
+	import CommentComposer from "#lib/comments/comment-composer.svelte";
+	import { asDocument, type Document } from "#lib/editor/document.js";
 	import {
 		authorLabel,
 		commentFailureMessage,
@@ -24,8 +24,8 @@
 		type CommentReaction,
 		type CommentThread,
 		type IssueComment,
-	} from "$lib/comments/comments";
-	import type { UploadTask } from "$lib/attachments/upload";
+	} from "#lib/comments/comments.js";
+	import type { UploadTask } from "#lib/attachments/upload.js";
 
 	let {
 		thread,

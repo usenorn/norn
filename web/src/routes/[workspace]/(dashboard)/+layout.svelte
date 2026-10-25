@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
 	import Layers from "@lucide/svelte/icons/layers";
@@ -13,31 +13,31 @@
 	import Settings from "@lucide/svelte/icons/settings";
 	import BadgeCheck from "@lucide/svelte/icons/badge-check";
 	import Bot from "@lucide/svelte/icons/bot";
-	import AccountSwitcher from "$lib/account/account-switcher.svelte";
-	import { logoSource } from "$lib/workspace/logo";
-	import SearchPalette from "$lib/search/search-palette.svelte";
-	import StaleBanner from "$lib/realtime/stale-banner.svelte";
-	import { invalidatedBy, provideRealtime } from "$lib/realtime/connection.svelte";
+	import AccountSwitcher from "#lib/account/account-switcher.svelte";
+	import { logoSource } from "#lib/workspace/logo.js";
+	import SearchPalette from "#lib/search/search-palette.svelte";
+	import StaleBanner from "#lib/realtime/stale-banner.svelte";
+	import { invalidatedBy, provideRealtime } from "#lib/realtime/connection.svelte.js";
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import Network from "@lucide/svelte/icons/network";
 	import Terminal from "@lucide/svelte/icons/terminal";
-	import ProviderRequired from "$lib/workspace/provider-required.svelte";
+	import ProviderRequired from "#lib/workspace/provider-required.svelte";
 	import Tags from "@lucide/svelte/icons/tags";
 	import UserRound from "@lucide/svelte/icons/user-round";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import { canCreateLabels } from "$lib/labels/create-label";
-	import { provideNewIssue } from "$lib/issues/new-issue.svelte";
-	import { provideCommandTargets } from "$lib/command/scope.svelte";
-	import { applyDensity, readDensity } from "$lib/layout/density";
-	import { showToast } from "$lib/toast/toasts";
-	import { announceCreated } from "$lib/issues/created-toast";
-	import type { CreationOutcome } from "$lib/issues/creating";
-	import { calendarDate } from "$lib/time";
-	import ShortcutHelp from "$lib/shortcuts/shortcut-help.svelte";
-	import { bindShortcuts, holdShortcuts, provideShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { drainEarlyKeys } from "$lib/shortcuts/early-keys";
-	import { destinations } from "$lib/shortcuts/destinations";
-	import { bindRoam, provideRoam } from "$lib/shortcuts/roam/roam.svelte";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import { canCreateLabels } from "#lib/labels/create-label.js";
+	import { provideNewIssue } from "#lib/issues/new-issue.svelte.js";
+	import { provideCommandTargets } from "#lib/command/scope.svelte.js";
+	import { applyDensity, readDensity } from "#lib/layout/density.js";
+	import { showToast } from "#lib/toast/toasts.js";
+	import { announceCreated } from "#lib/issues/created-toast.js";
+	import type { CreationOutcome } from "#lib/issues/creating.js";
+	import { calendarDate } from "#lib/time.js";
+	import ShortcutHelp from "#lib/shortcuts/shortcut-help.svelte";
+	import { bindShortcuts, holdShortcuts, provideShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { drainEarlyKeys } from "#lib/shortcuts/early-keys.js";
+	import { destinations } from "#lib/shortcuts/destinations.js";
+	import { bindRoam, provideRoam } from "#lib/shortcuts/roam/roam.svelte.js";
 	import {
 		Crosshair as CrosshairGlyph,
 		List as ListGlyph,
@@ -46,31 +46,31 @@
 	} from "lucide";
 	import Lock from "@lucide/svelte/icons/lock";
 	import Users from "@lucide/svelte/icons/users";
-	import SidebarBranch from "$lib/components/norn/sidebar-branch.svelte";
-	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
-	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
-	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import SidebarBranch from "#lib/components/norn/sidebar-branch.svelte";
+	import SidebarItem from "#lib/components/norn/sidebar-item.svelte";
+	import SidebarSection from "#lib/components/norn/sidebar-section.svelte";
+	import WorkspaceMark from "#lib/components/norn/workspace-mark.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		isCurrent,
 		isExactly,
 		mobileNav,
 		primaryNav,
 		workspacePath,
-	} from "$lib/workspace/navigation";
-	import { viewEntries, viewsPath } from "$lib/views/views";
-	import { cyclePath } from "$lib/cycles/cycles";
-	import { teamIssuesPath } from "$lib/issues/listing";
-	import { teamPath, teamSettingsPath } from "$lib/team/teams";
-	import { expansionCookie, toggledExpansion, writeExpanded } from "$lib/workspace/sidebar";
+	} from "#lib/workspace/navigation.js";
+	import { viewEntries, viewsPath } from "#lib/views/views.js";
+	import { cyclePath } from "#lib/cycles/cycles.js";
+	import { teamIssuesPath } from "#lib/issues/listing.js";
+	import { teamPath, teamSettingsPath } from "#lib/team/teams.js";
+	import { expansionCookie, toggledExpansion, writeExpanded } from "#lib/workspace/sidebar.js";
 	import { untrack } from "svelte";
-	import { cn } from "$lib/utils.js";
-	import { panelBounds } from "$lib/layout/panels";
-	import { providePanels } from "$lib/layout/panels.svelte";
-	import ResizeHandle from "$lib/components/norn/resize-handle.svelte";
-	import PanelRestore from "$lib/components/norn/panel-restore.svelte";
-	import { projectPath, projectsPath, teamProjectsPath } from "$lib/projects/projects";
+	import { cn } from "#lib/utils.js";
+	import { panelBounds } from "#lib/layout/panels.js";
+	import { providePanels } from "#lib/layout/panels.svelte.js";
+	import ResizeHandle from "#lib/components/norn/resize-handle.svelte";
+	import PanelRestore from "#lib/components/norn/panel-restore.svelte";
+	import { projectPath, projectsPath, teamProjectsPath } from "#lib/projects/projects.js";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();
@@ -157,10 +157,10 @@
 
 	const raising = provideNewIssue();
 
-	let newIssueDialog = $state<Promise<typeof import("$lib/issues/new-issue-dialog.svelte")>>();
+	let newIssueDialog = $state<Promise<typeof import("#lib/issues/new-issue-dialog.svelte")>>();
 
 	function loadNewIssueDialog() {
-		newIssueDialog ??= import("$lib/issues/new-issue-dialog.svelte");
+		newIssueDialog ??= import("#lib/issues/new-issue-dialog.svelte");
 	}
 
 	$effect(() => {

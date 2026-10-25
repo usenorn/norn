@@ -1,4 +1,4 @@
-import type { IntakeSetting } from "$lib/triage/intake";
+import type { IntakeSetting } from "#lib/triage/intake.js";
 
 export type TeamEmailPreview = { intake: IntakeSetting };
 

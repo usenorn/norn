@@ -3,7 +3,7 @@ import type {
 	CommandScope,
 	CommandStep,
 	PaletteListing,
-} from "$lib/command/model";
+} from "#lib/command/model.js";
 
 export type PalettePreview = {
 	typed: string;

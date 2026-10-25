@@ -1,7 +1,7 @@
-import { unknownLine } from "$lib/api/attempt";
-import type { components } from "$lib/api/dashboard.gen";
-import type { Issue } from "$lib/issues/issues";
-import type { Team } from "$lib/team/teams";
+import { unknownLine } from "#lib/api/attempt.js";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { Issue } from "#lib/issues/issues.js";
+import type { Team } from "#lib/team/teams.js";
 
 export type TriageQueue = components["schemas"]["TriageQueue"];
 export type TriageSettings = components["schemas"]["TriageSettings"];

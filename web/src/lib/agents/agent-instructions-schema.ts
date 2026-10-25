@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { agentInstructionsMaxLength, agentInstructionsTooLong } from "$lib/agents/instructions";
+import { agentInstructionsMaxLength, agentInstructionsTooLong } from "#lib/agents/instructions.js";
 
 export const agentInstructionsSchema = z.object({
 	instructions: z.string().trim().max(agentInstructionsMaxLength, agentInstructionsTooLong),

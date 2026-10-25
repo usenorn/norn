@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Project } from "$lib/projects/projects";
-import type { IssueCandidate } from "$lib/issues/issues";
+import type { Project } from "#lib/projects/projects.js";
+import type { IssueCandidate } from "#lib/issues/issues.js";
 import {
 	ancestry,
 	descendants,

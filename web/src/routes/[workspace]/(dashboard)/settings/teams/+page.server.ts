@@ -1,8 +1,8 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
-import { createTeamSchema } from "$lib/team/create-team-schema";
+import { keys } from "#lib/api/keys.js";
+import { createTeamSchema } from "#lib/team/create-team-schema.js";
 import {
 	listingFor,
 	teamKeyMessage,
@@ -10,7 +10,7 @@ import {
 	teamNameMessage,
 	type Team,
 	type TeamCreationFailure,
-} from "$lib/team/teams";
+} from "#lib/team/teams.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type CreateTeamForm = Infer<typeof createTeamSchema>;

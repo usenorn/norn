@@ -1,5 +1,5 @@
 import type { RequestEvent } from "@sveltejs/kit";
-import { actingOf, type SignedInAccount } from "$lib/account/accounts";
+import { actingOf, type SignedInAccount } from "#lib/account/accounts.js";
 import { apiForEvent, hasSession } from "./server";
 
 export function signedInAccounts(event: RequestEvent): Promise<SignedInAccount[]> {

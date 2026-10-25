@@ -1,8 +1,8 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { newDocFormId, newDocSchema } from "$lib/docs/doc-schema";
-import { docEditPath, readDocFailure, type DocAudience, type DocFailure } from "$lib/docs/docs";
+import { newDocFormId, newDocSchema } from "#lib/docs/doc-schema.js";
+import { docEditPath, readDocFailure, type DocAudience, type DocFailure } from "#lib/docs/docs.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type NewDocForm = Infer<typeof newDocSchema>;

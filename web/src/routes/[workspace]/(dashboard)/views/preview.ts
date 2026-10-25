@@ -1,5 +1,5 @@
-import type { Team } from "$lib/team/teams";
-import type { ViewFailure, ViewListing } from "$lib/views/views";
+import type { Team } from "#lib/team/teams.js";
+import type { ViewFailure, ViewListing } from "#lib/views/views.js";
 
 export type ViewsPreview = {
 	listing: ViewListing;

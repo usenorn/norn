@@ -1,9 +1,9 @@
-import type { Label } from "$lib/labels/labels";
-import type { Project } from "$lib/projects/projects";
-import type { WorkflowState } from "$lib/team/states";
-import type { Team } from "$lib/team/teams";
+import type { Label } from "#lib/labels/labels.js";
+import type { Project } from "#lib/projects/projects.js";
+import type { WorkflowState } from "#lib/team/states.js";
+import type { Team } from "#lib/team/teams.js";
 import type { Issue } from "./issues";
-import { documentText, type Document } from "$lib/editor/document";
+import { documentText, type Document } from "#lib/editor/document.js";
 import type { NewIssueInput, NewIssuePrefill } from "./new-issue-schema";
 
 export type IssueCreation = { key: string; issue: Issue; settled: boolean };

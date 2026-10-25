@@ -4,9 +4,9 @@
 		roadmapPreviewEntryPath,
 		roadmapPreviewPath,
 		type RoadmapPreviewEntryView,
-	} from "$lib/roadmap/admin";
-	import PublicRoadmapEntry from "$lib/roadmap/public-roadmap-entry.svelte";
-	import RoadmapPreviewFallback from "$lib/roadmap/roadmap-preview-fallback.svelte";
+	} from "#lib/roadmap/admin.js";
+	import PublicRoadmapEntry from "#lib/roadmap/public-roadmap-entry.svelte";
+	import RoadmapPreviewFallback from "#lib/roadmap/roadmap-preview-fallback.svelte";
 	import { roadmapPreviewEntryStates } from "./preview";
 	import type { PageProps } from "./$types";
 

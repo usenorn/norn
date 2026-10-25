@@ -1,11 +1,11 @@
-import type { IssueCandidate } from "$lib/issues/issues";
-import type { Team } from "$lib/team/teams";
+import type { IssueCandidate } from "#lib/issues/issues.js";
+import type { Team } from "#lib/team/teams.js";
 import type {
 	TriageDeclineReason,
 	TriageFailure,
 	TriageFlow,
 	TriageListing,
-} from "$lib/triage/triage";
+} from "#lib/triage/triage.js";
 
 export type TriagePreview = {
 	listing: TriageListing;

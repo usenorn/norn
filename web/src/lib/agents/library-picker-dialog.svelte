@@ -2,10 +2,10 @@
 	import Cable from "@lucide/svelte/icons/cable";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Puzzle from "@lucide/svelte/icons/puzzle";
-	import { api } from "$lib/api";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		agentLibraryPath,
 		capabilityFailure,

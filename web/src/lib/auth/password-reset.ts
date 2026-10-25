@@ -1,4 +1,4 @@
-import type { operations } from "$lib/api/dashboard.gen";
+import type { operations } from "#lib/api/dashboard.gen.js";
 import { minPasswordLength } from "./sign-up-schema";
 import type { PasswordReset } from "./types";
 

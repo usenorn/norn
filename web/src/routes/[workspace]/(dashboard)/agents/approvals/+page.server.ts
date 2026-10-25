@@ -1,5 +1,5 @@
-import type { ProposalQueue } from "$lib/agents/agents";
-import { keys } from "$lib/api/keys";
+import type { ProposalQueue } from "#lib/agents/agents.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({

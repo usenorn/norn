@@ -1,6 +1,6 @@
-import { keys } from "$lib/api/keys";
-import { statesFor } from "$lib/team/states";
-import { teamOf } from "$lib/team/team-settings";
+import { keys } from "#lib/api/keys.js";
+import { statesFor } from "#lib/team/states.js";
+import { teamOf } from "#lib/team/team-settings.js";
 import type { PageServerLoad } from "./$types";
 
 const branchTemplate = "{handle}/{reference}-{title}";

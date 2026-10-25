@@ -1,4 +1,4 @@
-import type { components } from "$lib/api/dashboard.gen";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type AuditEvent = components["schemas"]["AuditEvent"];
 export type AuditAction = components["schemas"]["AuditAction"];

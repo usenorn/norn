@@ -1,9 +1,9 @@
 import { redirect } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
-import { signUpConfirmFailure } from "$lib/auth/sign-up";
-import { safeReturn } from "$lib/auth/return-to";
-import { withSlot } from "$lib/account/accounts";
-import type { SignUpConfirmation } from "$lib/auth/types";
+import { keys } from "#lib/api/keys.js";
+import { signUpConfirmFailure } from "#lib/auth/sign-up.js";
+import { safeReturn } from "#lib/auth/return-to.js";
+import { withSlot } from "#lib/account/accounts.js";
+import type { SignUpConfirmation } from "#lib/auth/types.js";
 import { signUpConfirmPreviewStates } from "./preview";
 import type { Actions, PageServerLoad } from "./$types";
 

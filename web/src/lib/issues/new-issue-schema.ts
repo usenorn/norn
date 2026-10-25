@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { Document } from "$lib/editor/document";
+import type { Document } from "#lib/editor/document.js";
 
 export const newIssueSchema = z.object({
 	teamId: z.string().trim().min(1, "Choose a team for this issue."),

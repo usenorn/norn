@@ -6,7 +6,7 @@ import type {
 	MembershipFailure,
 	MembershipNotice,
 	MemberSegment,
-} from "$lib/workspace/members";
+} from "#lib/workspace/members.js";
 
 export type MembersPreview = {
 	listing: MemberListing;

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Markdown from "$lib/issues/markdown.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Markdown from "#lib/issues/markdown.svelte";
 
 	let {
 		now,

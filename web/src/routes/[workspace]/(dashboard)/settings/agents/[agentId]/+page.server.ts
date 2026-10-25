@@ -1,17 +1,17 @@
-import type { ActivityFeed } from "$lib/activity/activity";
-import { keys } from "$lib/api/keys";
-import { reachInstance } from "$lib/auth/instance";
+import type { ActivityFeed } from "#lib/activity/activity.js";
+import { keys } from "#lib/api/keys.js";
+import { reachInstance } from "#lib/auth/instance.js";
 import {
 	listedCapabilities,
 	listedLibrary,
 	type AgentCapabilities,
 	type AgentLibraryListing,
-} from "$lib/agents/agent-capabilities";
-import { connectMcpServer, mcpConnectForm, type McpConnectForm } from "$lib/agents/mcp-connect.server";
-import { connectTelegram, telegramConnectForm, type TelegramConnectForm } from "$lib/agents/telegram-connect.server";
-import type { TelegramPanel } from "$lib/agents/telegram";
-import type { AgentRecord } from "$lib/agents/agent-record";
-import type { Project } from "$lib/projects/projects";
+} from "#lib/agents/agent-capabilities.js";
+import { connectMcpServer, mcpConnectForm, type McpConnectForm } from "#lib/agents/mcp-connect.server.js";
+import { connectTelegram, telegramConnectForm, type TelegramConnectForm } from "#lib/agents/telegram-connect.server.js";
+import type { TelegramPanel } from "#lib/agents/telegram.js";
+import type { AgentRecord } from "#lib/agents/agent-record.js";
+import type { Project } from "#lib/projects/projects.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 export type AgentRecordData = {

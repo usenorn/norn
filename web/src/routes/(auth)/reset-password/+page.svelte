@@ -5,15 +5,15 @@
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import Info from "@lucide/svelte/icons/info";
-	import { authPath } from "$lib/auth/return-to";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import { newPasswordSchema, resetRequestSchema } from "$lib/auth/reset-password-schema";
-	import { minPasswordLength } from "$lib/auth/sign-up-schema";
-	import type { PasswordReset } from "$lib/auth/types";
+	import { authPath } from "#lib/auth/return-to.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import InstanceLine from "#lib/components/norn/instance-line.svelte";
+	import { newPasswordSchema, resetRequestSchema } from "#lib/auth/reset-password-schema.js";
+	import { minPasswordLength } from "#lib/auth/sign-up-schema.js";
+	import type { PasswordReset } from "#lib/auth/types.js";
 	import { resetPasswordPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

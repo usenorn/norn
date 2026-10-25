@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
-	import { page } from "$app/state";
+	import { page, type ReadonlyURL } from "$app/state";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Gauge from "@lucide/svelte/icons/gauge";
 	import KeyRound from "@lucide/svelte/icons/key-round";
@@ -8,25 +8,25 @@
 	import RotateCw from "@lucide/svelte/icons/rotate-cw";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import Users from "@lucide/svelte/icons/users";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import * as Tabs from "$lib/components/ui/tabs/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
-	import AgentCapabilitiesManager from "$lib/agents/agent-capabilities-manager.svelte";
-	import AgentExecutionForm from "$lib/agents/agent-execution-form.svelte";
-	import AgentIcon from "$lib/agents/agent-icon.svelte";
-	import AgentInstructionsForm from "$lib/agents/agent-instructions-form.svelte";
-	import AgentScopeForm from "$lib/agents/agent-scope-form.svelte";
-	import AgentTelegramPanel from "$lib/agents/agent-telegram-panel.svelte";
-	import AgentTestConversation from "$lib/agents/agent-test-conversation.svelte";
-	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { onDate, onDateAndTime } from "$lib/time";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import * as Tabs from "#lib/components/ui/tabs/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import ActivityFeedView from "#lib/activity/activity-feed.svelte";
+	import AgentCapabilitiesManager from "#lib/agents/agent-capabilities-manager.svelte";
+	import AgentExecutionForm from "#lib/agents/agent-execution-form.svelte";
+	import AgentIcon from "#lib/agents/agent-icon.svelte";
+	import AgentInstructionsForm from "#lib/agents/agent-instructions-form.svelte";
+	import AgentScopeForm from "#lib/agents/agent-scope-form.svelte";
+	import AgentTelegramPanel from "#lib/agents/agent-telegram-panel.svelte";
+	import AgentTestConversation from "#lib/agents/agent-test-conversation.svelte";
+	import CredentialDialog from "#lib/agents/credential-dialog.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { holdShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { onDate, onDateAndTime } from "#lib/time.js";
 	import {
 		agentExecutionLabels,
 		agentPermissionLabels,
@@ -35,28 +35,28 @@
 		type AgentScope,
 		agentsPath,
 		type Agent,
-	} from "$lib/agents/agents";
+	} from "#lib/agents/agents.js";
 	import {
 		agentLibraryPath,
 		agentRows,
 		connectOutcome,
 		type AgentCapabilities,
 		type AgentLibraryListing,
-	} from "$lib/agents/agent-capabilities";
-	import { agentInstructionsMessage } from "$lib/agents/instructions";
-	import { deploymentPreview } from "$lib/auth/preview";
+	} from "#lib/agents/agent-capabilities.js";
+	import { agentInstructionsMessage } from "#lib/agents/instructions.js";
+	import { deploymentPreview } from "#lib/auth/preview.js";
 	import {
 		agentLifecycleFailureMessage,
 		type AgentLifecycleAction,
 		type AgentLifecycleFailure,
-	} from "$lib/agents/agent-record";
-	import { runnersPath } from "$lib/runners/runners";
-	import type { ActivityFeed } from "$lib/activity/activity";
-	import type { TelegramPanel } from "$lib/agents/telegram";
+	} from "#lib/agents/agent-record.js";
+	import { runnersPath } from "#lib/runners/runners.js";
+	import type { ActivityFeed } from "#lib/activity/activity.js";
+	import type { TelegramPanel } from "#lib/agents/telegram.js";
 	import { agentRecordPreviewStates, type AgentDetailTab } from "./preview";
 	import type { PageProps } from "./$types";
-	import SettingsBody from "$lib/settings/settings-body.svelte";
-	import SettingsBackBar from "$lib/settings/settings-back-bar.svelte";
+	import SettingsBody from "#lib/settings/settings-body.svelte";
+	import SettingsBackBar from "#lib/settings/settings-back-bar.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -135,7 +135,7 @@
 		if (preview?.tab) selectedTab = preview.tab;
 	});
 
-	function openingTab(url: URL): AgentDetailTab {
+	function openingTab(url: ReadonlyURL): AgentDetailTab {
 		if (url.searchParams.get("tab") === "telegram") return "telegram";
 
 		return url.searchParams.get("tab") === "capabilities" || url.searchParams.has("connection")

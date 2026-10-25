@@ -1,4 +1,4 @@
-import type { DocFailure, DocHistory } from "$lib/docs/docs";
+import type { DocFailure, DocHistory } from "#lib/docs/docs.js";
 
 export type DocHistoryPreview = { history: DocHistory; failure?: DocFailure; restoring?: boolean };
 

@@ -1,6 +1,6 @@
 import { flushSync, mount, unmount } from "svelte";
 import { describe, expect, it, vi } from "vitest";
-import { copyRefusedLine } from "$lib/clipboard";
+import { copyRefusedLine } from "#lib/clipboard.js";
 import PlanCopy from "./plan-copy.svelte";
 import PlanPanel from "./plan-panel.svelte";
 import type { Execution } from "./executions";
@@ -9,7 +9,7 @@ import type { ExecutionPlan } from "./plans";
 
 const raised: { message: string; tone?: string }[] = [];
 
-vi.mock("$lib/toast/toasts", () => ({
+vi.mock("#lib/toast/toasts.js", () => ({
 	showToast: (message: string) => raised.push({ message }),
 	showFailure: (message: string) => raised.push({ message, tone: "failure" }),
 }));

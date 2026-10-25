@@ -2,9 +2,9 @@
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
 	import HoldRule from "./hold-rule.svelte";
 	import { approvalsPath, type AgentHold, type WorkspaceAgentSettings } from "./agents";
 

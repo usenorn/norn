@@ -1,6 +1,6 @@
-import { keys } from "$lib/api/keys";
-import type { CadenceSetting, CycleCadence } from "$lib/cycles/cycles";
-import { teamOf } from "$lib/team/team-settings";
+import { keys } from "#lib/api/keys.js";
+import type { CadenceSetting, CycleCadence } from "#lib/cycles/cycles.js";
+import { teamOf } from "#lib/team/team-settings.js";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {

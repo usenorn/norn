@@ -2,15 +2,15 @@ import { fail, redirect } from "@sveltejs/kit";
 import { message, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 
-import { keys } from "$lib/api/keys";
-import { connectRepositoriesSchema } from "$lib/source-control/source-control-schema";
+import { keys } from "#lib/api/keys.js";
+import { connectRepositoriesSchema } from "#lib/source-control/source-control-schema.js";
 import {
 	detailOf,
 	sourceControlFailure,
 	sourceControlPath,
 	type AvailableSourceControlRepository,
 	type SourceControlConnection,
-} from "$lib/source-control/source-control";
+} from "#lib/source-control/source-control.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 export type ConnectRepositoriesView =

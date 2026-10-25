@@ -1,5 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { IssueGroupTally } from "$lib/issues/filter";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { IssueGroupTally } from "#lib/issues/filter.js";
 
 export type Label = components["schemas"]["Label"];
 export type LabelGroup = components["schemas"]["LabelGroup"];

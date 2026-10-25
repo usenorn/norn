@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import PublicRoadmapFallback from "$lib/roadmap/public-roadmap-fallback.svelte";
-	import { roadmapPath } from "$lib/roadmap/public-roadmap";
+	import PublicRoadmapFallback from "#lib/roadmap/public-roadmap-fallback.svelte";
+	import { roadmapPath } from "#lib/roadmap/public-roadmap.js";
 
 	const notFound = 404;
 </script>

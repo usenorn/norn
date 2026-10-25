@@ -12,7 +12,7 @@ vi.mock("$app/navigation", () => ({
 			held.calls.push(key);
 			held.settle.push(done);
 		}),
-	invalidateAll: () =>
+	refreshAll: () =>
 		new Promise<void>((done) => {
 			held.calls.push("*");
 			held.settle.push(done);
@@ -85,7 +85,7 @@ describe("refetching after a realtime event", () => {
 		expect(held.calls).toEqual(["issues", "inbox"]);
 	});
 
-	it("turns a resync into one invalidateAll that also waits for the navigation", async () => {
+	it("turns a resync into one refreshAll that also waits for the navigation", async () => {
 		const realtime = new RealtimeConnection();
 
 		held.route.to = { url: new URL("https://norn.test/w/issues/BIL-6") };

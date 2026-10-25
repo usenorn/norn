@@ -1,7 +1,7 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
-import { formatBytes } from "$lib/attachments/attachments";
-import type { LabelColor } from "$lib/labels/labels";
-import { workspacePath } from "$lib/workspace/navigation";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
+import { formatBytes } from "#lib/attachments/attachments.js";
+import type { LabelColor } from "#lib/labels/labels.js";
+import { workspacePath } from "#lib/workspace/navigation.js";
 
 export type ImportSource = components["schemas"]["ImportSource"];
 export type ImportRun = components["schemas"]["ImportRun"];

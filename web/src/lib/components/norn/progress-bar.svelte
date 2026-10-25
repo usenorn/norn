@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
-	import { totalIssues, type IssueProgress } from "$lib/issues/board";
+	import { cn } from "#lib/utils.js";
+	import { totalIssues, type IssueProgress } from "#lib/issues/board.js";
 
 	let {
 		progress,

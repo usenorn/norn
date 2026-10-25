@@ -3,14 +3,14 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Network from "@lucide/svelte/icons/network";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { api } from "$lib/api";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { api } from "#lib/api/index.js";
 	import {
 		absentPolicies,
 		changeLabel,
@@ -23,8 +23,8 @@
 		type DirectoryFailure,
 		type DirectoryUnknownPolicy,
 		type DirectoryView,
-	} from "$lib/directory/directory";
-	import { onDateAndTime } from "$lib/time";
+	} from "#lib/directory/directory.js";
+	import { onDateAndTime } from "#lib/time.js";
 	import { directoryPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

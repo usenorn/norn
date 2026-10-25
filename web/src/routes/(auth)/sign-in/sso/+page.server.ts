@@ -1,10 +1,10 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { setError, superValidate } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { safeReturn } from "$lib/auth/return-to";
-import { leaveIfSignedIn } from "$lib/auth/signed-in";
-import { workspaceEntrySchema } from "$lib/auth/workspace-entry-schema";
-import { reachWorkspaceSignIn, ssoEntryPoint, workspaceSlug } from "$lib/auth/workspace-sign-in";
+import { safeReturn } from "#lib/auth/return-to.js";
+import { leaveIfSignedIn } from "#lib/auth/signed-in.js";
+import { workspaceEntrySchema } from "#lib/auth/workspace-entry-schema.js";
+import { reachWorkspaceSignIn, ssoEntryPoint, workspaceSlug } from "#lib/auth/workspace-sign-in.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 const unknownWorkspace = "No workspace at that address. Check it with whoever invited you.";

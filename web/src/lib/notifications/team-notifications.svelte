@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import Bell from "@lucide/svelte/icons/bell";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { api } from "$lib/api";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
 	import PreferenceGrid from "./preference-grid.svelte";
 	import type { NotificationPreferences, TeamNotificationSetting } from "./notifications";
-	import type { Team } from "$lib/team/teams";
+	import type { Team } from "#lib/team/teams.js";
 
 	let {
 		workspace,

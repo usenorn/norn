@@ -1,10 +1,10 @@
 <script lang="ts">
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Map from "@lucide/svelte/icons/map";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
 	import PublicRoadmapHead from "./public-roadmap-head.svelte";
 
 	let {

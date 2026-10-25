@@ -1,12 +1,12 @@
-import type { IssueProgress } from "$lib/issues/board";
-import { keys } from "$lib/api/keys";
-import { listed } from "$lib/api/listed";
-import { issuePageSize } from "$lib/issues/filter";
-import type { ProjectDetail } from "$lib/projects/projects";
-import { readProjectDocs } from "$lib/docs/docs.server";
+import type { IssueProgress } from "#lib/issues/board.js";
+import { keys } from "#lib/api/keys.js";
+import { listed } from "#lib/api/listed.js";
+import { issuePageSize } from "#lib/issues/filter.js";
+import type { ProjectDetail } from "#lib/projects/projects.js";
+import { readProjectDocs } from "#lib/docs/docs.server.js";
 import { projectPreviewStates } from "./preview";
-import type { components } from "$lib/api/dashboard.gen";
-import type { ActivityFeed } from "$lib/activity/activity";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { ActivityFeed } from "#lib/activity/activity.js";
 import type { PageServerLoad } from "./$types";
 
 export type ProjectPageData = {

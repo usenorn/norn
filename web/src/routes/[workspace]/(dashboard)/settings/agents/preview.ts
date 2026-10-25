@@ -3,9 +3,9 @@ import type {
 	AgentListing,
 	APIScope,
 	WorkspaceAgentSettings,
-} from "$lib/agents/agents";
-import type { Project } from "$lib/projects/projects";
-import type { Team } from "$lib/team/teams";
+} from "#lib/agents/agents.js";
+import type { Project } from "#lib/projects/projects.js";
+import type { Team } from "#lib/team/teams.js";
 
 export type AgentsPreview = {
 	listing?: AgentListing;

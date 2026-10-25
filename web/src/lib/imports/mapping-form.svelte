@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { api } from "$lib/api";
-	import { priorities } from "$lib/issues/issues";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import LabelDot from "$lib/labels/label-dot.svelte";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
+	import { priorities } from "#lib/issues/issues.js";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import LabelDot from "#lib/labels/label-dot.svelte";
 	import { mappingSchema, type MappingInput } from "./import-schema";
 	import {
 		counted,

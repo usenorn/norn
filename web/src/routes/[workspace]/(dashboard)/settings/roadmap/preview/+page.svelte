@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
 	import {
 		blockerMessage,
 		roadmapPreviewEntryPath,
 		roadmapPreviewPath,
 		roadmapSettingsPath,
 		type RoadmapPreviewView,
-	} from "$lib/roadmap/admin";
-	import PublicRoadmap from "$lib/roadmap/public-roadmap.svelte";
-	import RoadmapPreviewFallback from "$lib/roadmap/roadmap-preview-fallback.svelte";
+	} from "#lib/roadmap/admin.js";
+	import PublicRoadmap from "#lib/roadmap/public-roadmap.svelte";
+	import RoadmapPreviewFallback from "#lib/roadmap/roadmap-preview-fallback.svelte";
 	import { roadmapPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

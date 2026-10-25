@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import Bot from "@lucide/svelte/icons/bot";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -13,28 +13,28 @@
 	import Settings from "@lucide/svelte/icons/settings";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Zap from "@lucide/svelte/icons/zap";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import LabelChips from "$lib/labels/label-chips.svelte";
-	import Markdown from "$lib/issues/markdown.svelte";
-	import PropertyPicker from "$lib/issues/property-picker.svelte";
-	import { api } from "$lib/api";
-	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { showToast } from "$lib/toast/toasts";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { lift } from "$lib/motion";
-	import { priorityLabel } from "$lib/issues/issues";
-	import { initialsOf } from "$lib/account/accounts";
-	import { onDateAndTime } from "$lib/time";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Avatar from "#lib/components/ui/avatar/index.js";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import LabelChips from "#lib/labels/label-chips.svelte";
+	import Markdown from "#lib/issues/markdown.svelte";
+	import PropertyPicker from "#lib/issues/property-picker.svelte";
+	import { api } from "#lib/api/index.js";
+	import { bindShortcuts, useShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import { showToast } from "#lib/toast/toasts.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { lift } from "#lib/motion.js";
+	import { priorityLabel } from "#lib/issues/issues.js";
+	import { initialsOf } from "#lib/account/accounts.js";
+	import { onDateAndTime } from "#lib/time.js";
 	import {
 		declineReasons,
 		queued,
@@ -51,13 +51,13 @@
 		type TriageFlow,
 		type TriageListing,
 		type TriageSource,
-	} from "$lib/triage/triage";
-	import type { Issue, IssueCandidate } from "$lib/issues/issues";
-	import { workspacePath } from "$lib/workspace/navigation";
-	import Soon from "$lib/triage/soon.svelte";
+	} from "#lib/triage/triage.js";
+	import type { Issue, IssueCandidate } from "#lib/issues/issues.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
+	import Soon from "#lib/triage/soon.svelte";
 	import { triagePreviewStates, type TriagePreview } from "./preview";
 	import type { PageProps } from "./$types";
-	import { attempt } from "$lib/api/attempt";
+	import { attempt } from "#lib/api/attempt.js";
 
 	let { data }: PageProps = $props();
 

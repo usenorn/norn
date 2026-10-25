@@ -4,15 +4,15 @@
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import { page } from "$app/state";
-	import { api } from "$lib/api";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import { runnersPath } from "$lib/runners/runners";
+	import { api } from "#lib/api/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import { runnersPath } from "#lib/runners/runners.js";
 	import { agentsPath } from "./agents";
 	import { delegateIssueSchema } from "./delegate-schema";
 	import {

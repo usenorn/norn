@@ -1,27 +1,27 @@
 import { redirect } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
-import type { components } from "$lib/api/dashboard.gen";
-import type { Cycle } from "$lib/cycles/cycles";
-import type { Project } from "$lib/projects/projects";
-import { candidateOf, type Issue, type IssueCandidate } from "$lib/issues/issues";
-import type { Label, LabelGroup } from "$lib/labels/labels";
-import type { CommentThread } from "$lib/comments/comments";
-import type { FollowState } from "$lib/notifications/notifications";
-import type { Agent } from "$lib/agents/agents";
-import { currentDelegation, type DelegationPanel } from "$lib/agents/delegation";
-import type { Execution, IssueChangeSet } from "$lib/executions/executions";
-import type { IssueQuestion } from "$lib/questions/questions";
-import { readDecisionRight } from "$lib/executions/decision.server";
-import type { DecisionRight } from "$lib/executions/reviews";
-import type { AttachmentPanel } from "$lib/attachments/attachments";
+import { keys } from "#lib/api/keys.js";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { Cycle } from "#lib/cycles/cycles.js";
+import type { Project } from "#lib/projects/projects.js";
+import { candidateOf, type Issue, type IssueCandidate } from "#lib/issues/issues.js";
+import type { Label, LabelGroup } from "#lib/labels/labels.js";
+import type { CommentThread } from "#lib/comments/comments.js";
+import type { FollowState } from "#lib/notifications/notifications.js";
+import type { Agent } from "#lib/agents/agents.js";
+import { currentDelegation, type DelegationPanel } from "#lib/agents/delegation.js";
+import type { Execution, IssueChangeSet } from "#lib/executions/executions.js";
+import type { IssueQuestion } from "#lib/questions/questions.js";
+import { readDecisionRight } from "#lib/executions/decision.server.js";
+import type { DecisionRight } from "#lib/executions/reviews.js";
+import type { AttachmentPanel } from "#lib/attachments/attachments.js";
 import type {
 	CodeLink,
 	IssueShipping,
 	MirrorConflict,
-} from "$lib/source-control/source-control";
-import type { WorkflowState } from "$lib/team/states";
-import { readIssueDocs } from "$lib/docs/docs.server";
-import type { DocBacklinks } from "$lib/docs/docs";
+} from "#lib/source-control/source-control.js";
+import type { WorkflowState } from "#lib/team/states.js";
+import { readIssueDocs } from "#lib/docs/docs.server.js";
+import type { DocBacklinks } from "#lib/docs/docs.js";
 import type { PageServerLoad } from "./$types";
 
 export type Member = components["schemas"]["Membership"];
@@ -30,7 +30,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const candidateLimit = 200;
 
-import type { ActivityFeed } from "$lib/activity/activity";
+import type { ActivityFeed } from "#lib/activity/activity.js";
 
 export type IssueDetail =
 	| { kind: "loading" }

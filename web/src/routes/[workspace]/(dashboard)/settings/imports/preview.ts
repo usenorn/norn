@@ -1,4 +1,4 @@
-import type { ImportFailure, ImportsView } from "$lib/imports/imports";
+import type { ImportFailure, ImportsView } from "#lib/imports/imports.js";
 
 export type ImportsPreview = {
 	view?: ImportsView;

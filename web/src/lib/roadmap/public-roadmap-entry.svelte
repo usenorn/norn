@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { Progress } from "$lib/components/ui/progress/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { Progress } from "#lib/components/ui/progress/index.js";
 	import RoadmapItemList from "./roadmap-item-list.svelte";
 	import RoadmapStatus from "./roadmap-status.svelte";
 	import {

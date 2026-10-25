@@ -1,5 +1,5 @@
-import { listingFor, type SearchListing } from "$lib/search/search";
-import { keys } from "$lib/api/keys";
+import { listingFor, type SearchListing } from "#lib/search/search.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export type SearchPageData = { query: string; listing: SearchListing };

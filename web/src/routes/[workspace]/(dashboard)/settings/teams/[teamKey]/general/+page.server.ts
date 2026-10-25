@@ -1,9 +1,9 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import type { TeamSettings } from "$lib/team/team-settings";
-import { teamSettingsSchema } from "$lib/team/team-settings-schema";
-import { teamNameMessage, type Team } from "$lib/team/teams";
+import type { TeamSettings } from "#lib/team/team-settings.js";
+import { teamSettingsSchema } from "#lib/team/team-settings-schema.js";
+import { teamNameMessage, type Team } from "#lib/team/teams.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type TeamSettingsForm = Infer<typeof teamSettingsSchema>;

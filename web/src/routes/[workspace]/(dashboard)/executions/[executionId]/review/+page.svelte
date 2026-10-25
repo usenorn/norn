@@ -5,34 +5,34 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import FolderTree from "@lucide/svelte/icons/folder-tree";
 	import GitBranch from "@lucide/svelte/icons/git-branch";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Sheet from "$lib/components/ui/sheet/index.js";
-	import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Markdown from "$lib/issues/markdown.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { attempt, unknownLine, type ApiResult } from "$lib/api/attempt";
-	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import { workspacePath } from "$lib/workspace/navigation";
-	import { onDateAndTime } from "$lib/time";
-	import RunState from "$lib/executions/run-state.svelte";
-	import ReviewFile from "$lib/executions/review-file.svelte";
-	import ReviewFiles from "$lib/executions/review-files.svelte";
-	import { waitingOnLine } from "$lib/executions/reviews";
-	import ReviewSubmit from "$lib/executions/review-submit.svelte";
-	import ReviewCommits from "$lib/executions/review-commits.svelte";
-	import ReviewPreviews from "$lib/executions/review-previews.svelte";
-	import ReviewRevisions from "$lib/executions/review-revisions.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Sheet from "#lib/components/ui/sheet/index.js";
+	import * as ToggleGroup from "#lib/components/ui/toggle-group/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Markdown from "#lib/issues/markdown.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { attempt, unknownLine, type ApiResult } from "#lib/api/attempt.js";
+	import { useRealtime } from "#lib/realtime/connection.svelte.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import RunState from "#lib/executions/run-state.svelte";
+	import ReviewFile from "#lib/executions/review-file.svelte";
+	import ReviewFiles from "#lib/executions/review-files.svelte";
+	import { waitingOnLine } from "#lib/executions/reviews.js";
+	import ReviewSubmit from "#lib/executions/review-submit.svelte";
+	import ReviewCommits from "#lib/executions/review-commits.svelte";
+	import ReviewPreviews from "#lib/executions/review-previews.svelte";
+	import ReviewRevisions from "#lib/executions/review-revisions.svelte";
 	import {
 		blockingQuestion,
 		changeStatLine,
 		readRunFailure,
 		runFailureMessage,
 		type Execution,
-	} from "$lib/executions/executions";
-	import type { DiffAnchor } from "$lib/executions/diff";
+	} from "#lib/executions/executions.js";
+	import type { DiffAnchor } from "#lib/executions/diff.js";
 	import {
 		draftCount,
 		fileId,
@@ -57,7 +57,7 @@
 		type ReviewVerdict,
 		type ReviewView,
 		type ReviewedRepository,
-	} from "$lib/executions/review";
+	} from "#lib/executions/review.js";
 	import { reviewPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

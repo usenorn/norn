@@ -1,8 +1,8 @@
 import createClient, { type Client } from "openapi-fetch";
 import { parseSetCookie } from "set-cookie-parser";
-import { env } from "$env/dynamic/private";
+import { INTERNAL_API_ORIGIN } from "$app/env/private";
 import type { Cookies, RequestEvent } from "@sveltejs/kit";
-import { sessionHeader } from "$lib/account/accounts";
+import { sessionHeader } from "#lib/account/accounts.js";
 import type { paths } from "./dashboard.gen";
 
 export const correlationHeader = "x-correlation-id";
@@ -13,7 +13,7 @@ const hostCookiePrefix = "__Host-";
 const loopbackOrigin = "http://127.0.0.1:8080";
 
 export function internalOrigin(): string {
-	return env.INTERNAL_API_ORIGIN || loopbackOrigin;
+	return INTERNAL_API_ORIGIN || loopbackOrigin;
 }
 
 const verbatim = { decode: (value: string) => value };

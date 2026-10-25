@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { diffCodeTones, diffGutterTones, diffMarks } from "$lib/executions/diff";
+	import { diffCodeTones, diffGutterTones, diffMarks } from "#lib/executions/diff.js";
 	import type { RevisionDiff } from "./diff";
 
 	let { diff, first = false }: { diff: RevisionDiff; first?: boolean } = $props();

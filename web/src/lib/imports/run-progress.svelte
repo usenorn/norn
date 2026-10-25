@@ -1,6 +1,6 @@
 <script lang="ts">
-	import StepList, { type Step, type StepState } from "$lib/components/norn/step-list.svelte";
-	import { Progress } from "$lib/components/ui/progress/index.js";
+	import StepList, { type Step, type StepState } from "#lib/components/norn/step-list.svelte";
+	import { Progress } from "#lib/components/ui/progress/index.js";
 	import { counted, statusLabel, type ImportRun, type ImportStatus } from "./imports";
 
 	let { run, busy = false }: { run: ImportRun; busy?: boolean } = $props();

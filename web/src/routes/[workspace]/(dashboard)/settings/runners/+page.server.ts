@@ -1,5 +1,5 @@
-import { keys } from "$lib/api/keys";
-import type { WorkspaceAgent } from "$lib/agents/agents";
+import { keys } from "#lib/api/keys.js";
+import type { WorkspaceAgent } from "#lib/agents/agents.js";
 import {
 	agentOf,
 	agentOfMachine,
@@ -9,7 +9,7 @@ import {
 	type MachineAgent,
 	type Runner,
 	type RunnersView,
-} from "$lib/runners/runners";
+} from "#lib/runners/runners.js";
 import type { PageServerLoad } from "./$types";
 
 export type RunnersPageData = { view: RunnersView; agents: WorkspaceAgent[] };

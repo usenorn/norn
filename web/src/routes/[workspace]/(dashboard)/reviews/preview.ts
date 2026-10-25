@@ -1,4 +1,4 @@
-import type { ReviewQueue } from "$lib/executions/reviews";
+import type { ReviewQueue } from "#lib/executions/reviews.js";
 
 export type ReviewsPreview = { queue: ReviewQueue };
 

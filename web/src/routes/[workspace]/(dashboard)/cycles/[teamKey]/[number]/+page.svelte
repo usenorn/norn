@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -8,28 +8,28 @@
 	import Layers from "@lucide/svelte/icons/layers";
 	import Plus from "@lucide/svelte/icons/plus";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import IssueRow from "$lib/components/norn/issue-row.svelte";
-	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
-	import BurndownChart from "$lib/components/norn/burndown-chart.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import IssueRow from "#lib/components/norn/issue-row.svelte";
+	import ProgressBar from "#lib/components/norn/progress-bar.svelte";
+	import BurndownChart from "#lib/components/norn/burndown-chart.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import { api } from "$lib/api";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { bindShortcuts, holdShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
-	import { showFailure, showToast } from "$lib/toast/toasts";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
-	import { memberName } from "$lib/workspace/members";
-	import { membersOf, rosterFor } from "$lib/team/members";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
+	import { api } from "#lib/api/index.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import { bindShortcuts, holdShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { nthState, setStatus, statusIndexOf, statusMessage } from "#lib/issues/set-status.js";
+	import { showFailure, showToast } from "#lib/toast/toasts.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { registerNewIssue, useNewIssue } from "#lib/issues/new-issue.svelte.js";
+	import { memberName } from "#lib/workspace/members.js";
+	import { membersOf, rosterFor } from "#lib/team/members.js";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
 	import {
 		burndownSeries,
 		issueAsRecorded,
@@ -54,15 +54,15 @@
 		type CycleFailure,
 		type CycleRiskKind,
 		type CycleRollover,
-	} from "$lib/cycles/cycles";
-	import { closeCycleSchema } from "$lib/cycles/close-schema";
-	import { calendarDate, cycleWindow, daysBetween, onCalendarDate, onDate } from "$lib/time";
-	import { teamSettingsPath } from "$lib/team/teams";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/cycles/cycles.js";
+	import { closeCycleSchema } from "#lib/cycles/close-schema.js";
+	import { calendarDate, cycleWindow, daysBetween, onCalendarDate, onDate } from "#lib/time.js";
+	import { teamSettingsPath } from "#lib/team/teams.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { cyclePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import { attempt } from "$lib/api/attempt";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import { attempt } from "#lib/api/attempt.js";
 
 	let { data }: PageProps = $props();
 

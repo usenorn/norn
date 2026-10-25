@@ -1,16 +1,16 @@
-import type { Issue, IssueProgress } from "$lib/issues/board";
-import type { Display, IssueLayout, IssueTab } from "$lib/issues/display";
-import type { Facets } from "$lib/issues/facets";
-import type { IssueGroupTally, IssueQueryBody } from "$lib/issues/filter";
-import type { BulkActionResult } from "$lib/issues/bulk";
-import type { ColumnPage } from "$lib/issues/paging";
-import type { Label } from "$lib/labels/labels";
-import type { Membership } from "$lib/workspace/members";
-import type { Project } from "$lib/projects/projects";
-import type { TeamCycle } from "$lib/cycles/cycles";
-import type { Team } from "$lib/team/teams";
-import type { WorkflowState } from "$lib/team/states";
-import type { AppliedView } from "$lib/views/applied";
+import type { Issue, IssueProgress } from "#lib/issues/board.js";
+import type { Display, IssueLayout, IssueTab } from "#lib/issues/display.js";
+import type { Facets } from "#lib/issues/facets.js";
+import type { IssueGroupTally, IssueQueryBody } from "#lib/issues/filter.js";
+import type { BulkActionResult } from "#lib/issues/bulk.js";
+import type { ColumnPage } from "#lib/issues/paging.js";
+import type { Label } from "#lib/labels/labels.js";
+import type { Membership } from "#lib/workspace/members.js";
+import type { Project } from "#lib/projects/projects.js";
+import type { TeamCycle } from "#lib/cycles/cycles.js";
+import type { Team } from "#lib/team/teams.js";
+import type { WorkflowState } from "#lib/team/states.js";
+import type { AppliedView } from "#lib/views/applied.js";
 
 export type IssuesListingData = {
 	team: Team | null;

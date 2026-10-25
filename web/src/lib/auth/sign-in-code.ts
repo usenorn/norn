@@ -1,4 +1,4 @@
-import type { operations } from "$lib/api/dashboard.gen";
+import type { operations } from "#lib/api/dashboard.gen.js";
 import { authPath } from "./return-to";
 import type { SignInCodeFailure } from "./types";
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
 	import type { DocReaders } from "./docs";
 
 	let { readers, line }: { readers: DocReaders; line: string } = $props();

@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { untrack } from "svelte";
-	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import UploadList from "$lib/attachments/upload-list.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import { attachmentNode } from "$lib/attachments/attachments";
-	import { settled, type UploadTask } from "$lib/attachments/upload";
-	import Editor from "$lib/editor/editor.svelte";
+	import AttachmentPicker from "#lib/attachments/attachment-picker.svelte";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import UploadList from "#lib/attachments/upload-list.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import { attachmentNode } from "#lib/attachments/attachments.js";
+	import { settled, type UploadTask } from "#lib/attachments/upload.js";
+	import Editor from "#lib/editor/editor.svelte";
 	import {
 		documentEmpty,
 		emptyDocument,
 		type Document,
 		type DocumentNode,
-	} from "$lib/editor/document";
+	} from "#lib/editor/document.js";
 
 	let {
 		workspaceId,

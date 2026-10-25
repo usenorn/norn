@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import type { Project } from "$lib/projects/projects";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import type { Project } from "#lib/projects/projects.js";
 	import { agentScopeLabels, agentScopeHints, agentScopes, type AgentScope } from "./agents";
 	import { agentScopeSchema } from "./agent-scope-schema";
 

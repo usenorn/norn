@@ -2,9 +2,9 @@
 	import { get } from "svelte/store";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
 	import { agentInstructionsSchema } from "./agent-instructions-schema";
 
 	let {

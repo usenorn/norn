@@ -9,17 +9,17 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import Info from "@lucide/svelte/icons/info";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import { authPath } from "$lib/auth/return-to";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { minPasswordLength, signUpSchema } from "$lib/auth/sign-up-schema";
-	import type { SignUpOutcome } from "$lib/auth/types";
-	import { atClock } from "$lib/time";
+	import { authPath } from "#lib/auth/return-to.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import InstanceLine from "#lib/components/norn/instance-line.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { minPasswordLength, signUpSchema } from "#lib/auth/sign-up-schema.js";
+	import type { SignUpOutcome } from "#lib/auth/types.js";
+	import { atClock } from "#lib/time.js";
 	import { signUpPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

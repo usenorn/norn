@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
 	import type { AgentReasoning } from "./agents";
 
 	let { reasoning }: { reasoning: AgentReasoning | undefined } = $props();

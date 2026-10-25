@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { markdownProse, renderMarkdown } from "$lib/issues/markdown";
+	import { markdownProse, renderMarkdown } from "#lib/issues/markdown.js";
 
 	let { source, class: className = "" }: { source: string; class?: string } = $props();
 

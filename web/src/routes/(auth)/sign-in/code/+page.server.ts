@@ -1,12 +1,12 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { message, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { signInCodeSchema } from "$lib/auth/sign-in-code-schema";
-import { signInCodeFailure } from "$lib/auth/sign-in-code";
-import { safeReturn } from "$lib/auth/return-to";
-import { withSlot } from "$lib/account/accounts";
-import { leaveIfSignedIn } from "$lib/auth/signed-in";
-import type { SignInCodeFailure } from "$lib/auth/types";
+import { signInCodeSchema } from "#lib/auth/sign-in-code-schema.js";
+import { signInCodeFailure } from "#lib/auth/sign-in-code.js";
+import { safeReturn } from "#lib/auth/return-to.js";
+import { withSlot } from "#lib/account/accounts.js";
+import { leaveIfSignedIn } from "#lib/auth/signed-in.js";
+import type { SignInCodeFailure } from "#lib/auth/types.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type CodeForm = Infer<typeof signInCodeSchema>;

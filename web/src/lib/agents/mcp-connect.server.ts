@@ -37,5 +37,5 @@ export async function connectMcpServer({ locals, request }: RequestEvent) {
 		return message(form, failure, { status: failure.kind === "forbidden" ? 403 : 400 });
 	}
 
-	redirect(303, data.authorizationUrl);
+	redirect(303, data.authorizationUrl, { external: true });
 }

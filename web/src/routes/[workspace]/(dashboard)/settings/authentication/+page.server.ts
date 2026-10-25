@@ -2,10 +2,10 @@ import { fail } from "@sveltejs/kit";
 import type { Client } from "openapi-fetch";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
-import type { paths } from "$lib/api/dashboard.gen";
-import { samlConnectionSchema } from "$lib/workspace/saml-schema";
-import { ssoConnectionSchema } from "$lib/workspace/sso-schema";
+import { keys } from "#lib/api/keys.js";
+import type { paths } from "#lib/api/dashboard.gen.js";
+import { samlConnectionSchema } from "#lib/workspace/saml-schema.js";
+import { ssoConnectionSchema } from "#lib/workspace/sso-schema.js";
 import {
 	failureMessage,
 	parseScopes,
@@ -13,7 +13,7 @@ import {
 	type Enforcement,
 	type SsoOutcome,
 	type SsoProviderConfiguration,
-} from "$lib/workspace/sso";
+} from "#lib/workspace/sso.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type OidcForm = Infer<typeof ssoConnectionSchema>;

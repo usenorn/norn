@@ -1,4 +1,4 @@
-import type { MemberTelegramBots, TelegramOutcome } from "$lib/agents/telegram";
+import type { MemberTelegramBots, TelegramOutcome } from "#lib/agents/telegram.js";
 import type { NotificationSettingsPanel } from "./+page.server";
 
 export type NotificationSettingsPreview = {

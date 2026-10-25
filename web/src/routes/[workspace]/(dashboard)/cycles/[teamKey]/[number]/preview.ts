@@ -1,7 +1,7 @@
-import type { CycleDetail, CycleReport } from "$lib/cycles/cycles";
-import type { IssueProgress } from "$lib/issues/board";
-import type { TeamMember } from "$lib/team/members";
-import type { WorkflowState } from "$lib/team/states";
+import type { CycleDetail, CycleReport } from "#lib/cycles/cycles.js";
+import type { IssueProgress } from "#lib/issues/board.js";
+import type { TeamMember } from "#lib/team/members.js";
+import type { WorkflowState } from "#lib/team/states.js";
 
 export type CyclePreview = {
 	detail: CycleDetail;

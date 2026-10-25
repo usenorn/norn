@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import WorkflowStates from "$lib/components/norn/workflow-states.svelte";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
+	import WorkflowStates from "#lib/components/norn/workflow-states.svelte";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
 	import { teamStatesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

@@ -32,45 +32,45 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import { Calendar } from "$lib/components/ui/calendar/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import ResizeHandle from "$lib/components/norn/resize-handle.svelte";
-	import PanelRestore from "$lib/components/norn/panel-restore.svelte";
-	import { panelBounds } from "$lib/layout/panels";
-	import { usePanels } from "$lib/layout/panels.svelte";
-	import { cn } from "$lib/utils.js";
-	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import IssueField from "$lib/issues/issue-field.svelte";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import UnassignedAvatar from "#lib/components/norn/unassigned-avatar.svelte";
+	import * as Popover from "#lib/components/ui/popover/index.js";
+	import { Calendar } from "#lib/components/ui/calendar/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import ResizeHandle from "#lib/components/norn/resize-handle.svelte";
+	import PanelRestore from "#lib/components/norn/panel-restore.svelte";
+	import { panelBounds } from "#lib/layout/panels.js";
+	import { usePanels } from "#lib/layout/panels.svelte.js";
+	import { cn } from "#lib/utils.js";
+	import ProgressBar from "#lib/components/norn/progress-bar.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import IssueField from "#lib/issues/issue-field.svelte";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
 	import { MediaQuery } from "svelte/reactivity";
-	import DelegateDialog from "$lib/agents/delegate-dialog.svelte";
-	import DelegationField from "$lib/agents/delegation-field.svelte";
+	import DelegateDialog from "#lib/agents/delegate-dialog.svelte";
+	import DelegationField from "#lib/agents/delegation-field.svelte";
 	import {
 		delegatableAgents,
 		delegationFailureMessage,
 		readDelegationFailure,
 		type DelegationFailure,
 		type DelegationPanel,
-	} from "$lib/agents/delegation";
-	import { totalIssues } from "$lib/issues/board";
-	import { cyclingTeams } from "$lib/cycles/cycles";
-	import { assignees } from "$lib/workspace/members";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { api } from "$lib/api";
-	import { useShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { showToast } from "$lib/toast/toasts";
-	import { keys } from "$lib/api/keys";
-	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import { calendarDate, cycleWindow, dueValue, onDate, onDateAndTime, overdue } from "$lib/time";
-	import { finished } from "$lib/team/states";
-	import Markdown from "$lib/issues/markdown.svelte";
+	} from "#lib/agents/delegation.js";
+	import { totalIssues } from "#lib/issues/board.js";
+	import { cyclingTeams } from "#lib/cycles/cycles.js";
+	import { assignees } from "#lib/workspace/members.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
+	import { useShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { showToast } from "#lib/toast/toasts.js";
+	import { keys } from "#lib/api/keys.js";
+	import { useRealtime } from "#lib/realtime/connection.svelte.js";
+	import { calendarDate, cycleWindow, dueValue, onDate, onDateAndTime, overdue } from "#lib/time.js";
+	import { finished } from "#lib/team/states.js";
+	import Markdown from "#lib/issues/markdown.svelte";
 	import {
 		issueFailureMessage,
 		priorityLabel,
@@ -78,22 +78,22 @@
 		type IssueFailure,
 		type IssuePriority,
 		type IssueRelationKind,
-	} from "$lib/issues/issues";
-	import { issueEditSchema } from "$lib/issues/issue-schema";
+	} from "#lib/issues/issues.js";
+	import { issueEditSchema } from "#lib/issues/issue-schema.js";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
 	import Layers from "@lucide/svelte/icons/layers";
 	import Target from "@lucide/svelte/icons/target";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import PriorityPicker from "$lib/issues/priority-picker.svelte";
-	import IssueChildren from "$lib/issues/issue-children.svelte";
-	import Editor from "$lib/editor/editor.svelte";
-	import EditConflict from "$lib/editor/edit-conflict.svelte";
-	import SaveStatus from "$lib/editor/save-status.svelte";
-	import CriteriaPanel from "$lib/issues/criteria-panel.svelte";
-	import DescriptionHistory from "$lib/issues/description-history.svelte";
-	import { Autosave, type SaveOutcome } from "$lib/editor/autosave.svelte";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import PriorityPicker from "#lib/issues/priority-picker.svelte";
+	import IssueChildren from "#lib/issues/issue-children.svelte";
+	import Editor from "#lib/editor/editor.svelte";
+	import EditConflict from "#lib/editor/edit-conflict.svelte";
+	import SaveStatus from "#lib/editor/save-status.svelte";
+	import CriteriaPanel from "#lib/issues/criteria-panel.svelte";
+	import DescriptionHistory from "#lib/issues/description-history.svelte";
+	import { Autosave, type SaveOutcome } from "#lib/editor/autosave.svelte.js";
 	import {
 		asDocument,
 		documentEmpty,
@@ -102,32 +102,32 @@
 		sameDocument,
 		type Document,
 		type DocumentNode,
-	} from "$lib/editor/document";
-	import NewIssueDialog from "$lib/issues/new-issue-dialog.svelte";
-	import type { CreationOutcome } from "$lib/issues/creating";
-	import type { NewIssuePrefill } from "$lib/issues/new-issue-schema";
-	import IssueRelations from "$lib/issues/issue-relations.svelte";
-	import LinkedDocs from "$lib/docs/linked-docs.svelte";
-	import CommentThreadView from "$lib/comments/comment-thread.svelte";
+	} from "#lib/editor/document.js";
+	import NewIssueDialog from "#lib/issues/new-issue-dialog.svelte";
+	import type { CreationOutcome } from "#lib/issues/creating.js";
+	import type { NewIssuePrefill } from "#lib/issues/new-issue-schema.js";
+	import IssueRelations from "#lib/issues/issue-relations.svelte";
+	import LinkedDocs from "#lib/docs/linked-docs.svelte";
+	import CommentThreadView from "#lib/comments/comment-thread.svelte";
 	import {
 		actorLabel,
 		changeLine,
 		readable,
 		type ActivityFeed,
-	} from "$lib/activity/activity";
-	import AttachmentList from "$lib/attachments/attachment-list.svelte";
-	import { waitingOnLine, type DecisionRight } from "$lib/executions/reviews";
-	import QuestionList from "$lib/questions/question-list.svelte";
-	import RunRow from "$lib/executions/run-row.svelte";
-	import RepoChange from "$lib/executions/repo-change.svelte";
+	} from "#lib/activity/activity.js";
+	import AttachmentList from "#lib/attachments/attachment-list.svelte";
+	import { waitingOnLine, type DecisionRight } from "#lib/executions/reviews.js";
+	import QuestionList from "#lib/questions/question-list.svelte";
+	import RunRow from "#lib/executions/run-row.svelte";
+	import RepoChange from "#lib/executions/repo-change.svelte";
 	import {
 		changeStatLine,
 		changeTotals,
 		type IssueRepositoryChange,
-	} from "$lib/executions/executions";
-	import type { Execution } from "$lib/executions/executions";
-	import type { IssueQuestion } from "$lib/questions/questions";
-	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
+	} from "#lib/executions/executions.js";
+	import type { Execution } from "#lib/executions/executions.js";
+	import type { IssueQuestion } from "#lib/questions/questions.js";
+	import CodeLinkPanel from "#lib/source-control/code-link-panel.svelte";
 
 	import {
 		conflictSummary,
@@ -137,23 +137,23 @@
 		failureMessage as codeFailureMessage,
 		type CodeLink,
 		type SourceControlFailure,
-	} from "$lib/source-control/source-control";
-	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
-	import UploadList from "$lib/attachments/upload-list.svelte";
+	} from "#lib/source-control/source-control.js";
+	import AttachmentPicker from "#lib/attachments/attachment-picker.svelte";
+	import UploadList from "#lib/attachments/upload-list.svelte";
 	import {
 		attachmentNode,
 		attachmentFailureMessage,
 		readAttachmentFailure,
 		type AttachmentFailure,
 		type AttachmentPanel,
-	} from "$lib/attachments/attachments";
+	} from "#lib/attachments/attachments.js";
 	import {
 		newTask,
 		settled,
 		upload,
 		uploadsSettleMs,
 		type UploadTask,
-	} from "$lib/attachments/upload";
+	} from "#lib/attachments/upload.js";
 	import {
 		authorLabel,
 		readCommentFailure,
@@ -161,23 +161,23 @@
 		type CommentMention,
 		type CommentReaction,
 		type CommentThread,
-	} from "$lib/comments/comments";
+	} from "#lib/comments/comments.js";
 	import {
 		labelFailureMessage,
 		refusedLabelFailure,
 		type Label,
 		type LabelFailure,
-	} from "$lib/labels/labels";
-	import { canCreateLabels } from "$lib/labels/create-label";
-	import LabelChips from "$lib/labels/label-chips.svelte";
-	import LabelPicker from "$lib/labels/label-picker.svelte";
-	import { setIssueLabels } from "$lib/labels/set-issue-labels";
+	} from "#lib/labels/labels.js";
+	import { canCreateLabels } from "#lib/labels/create-label.js";
+	import LabelChips from "#lib/labels/label-chips.svelte";
+	import LabelPicker from "#lib/labels/label-picker.svelte";
+	import { setIssueLabels } from "#lib/labels/set-issue-labels.js";
 	import { parseDate } from "@internationalized/date";
-	import { workspacePath } from "$lib/workspace/navigation";
-	import { listReturn, withReturn } from "$lib/issues/return-to-list";
-	import { neighboursIn, orderFor } from "$lib/issues/visit-order";
-	import { statusIndexOf } from "$lib/issues/set-status";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
+	import { workspacePath } from "#lib/workspace/navigation.js";
+	import { listReturn, withReturn } from "#lib/issues/return-to-list.js";
+	import { neighboursIn, orderFor } from "#lib/issues/visit-order.js";
+	import { statusIndexOf } from "#lib/issues/set-status.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
 	import {
 		activityPreviewStates,
 		attachmentPreviewStates,
@@ -186,10 +186,10 @@
 		issueDetailPreviewStates,
 	} from "./preview";
 	import type { IssueDetail } from "./+page.server";
-	import type { Issue, IssueComment } from "$lib/realtime/connection.svelte";
+	import type { Issue, IssueComment } from "#lib/realtime/connection.svelte.js";
 	import type { PageProps } from "./$types";
-	import { copyText } from "$lib/clipboard";
-	import { registerCommandTargets } from "$lib/command/scope.svelte";
+	import { copyText } from "#lib/clipboard.js";
+	import { registerCommandTargets } from "#lib/command/scope.svelte.js";
 
 	let { data }: PageProps = $props();
 
@@ -908,7 +908,7 @@
 			pendingTeamId = "";
 
 			if (moved) {
-				await goto(at(`/issues/${moved.reference}`), { invalidateAll: true });
+				await goto(at(`/issues/${moved.reference}`), { refreshAll: true });
 			}
 		} catch {
 			failure = { kind: "unavailable" };

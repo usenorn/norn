@@ -1,5 +1,5 @@
 import { toast } from "svelte-sonner";
-import Toast, { type ToastTone } from "$lib/components/norn/toast.svelte";
+import Toast, { type ToastTone } from "#lib/components/norn/toast.svelte";
 
 export type Raised = {
 	href?: string;

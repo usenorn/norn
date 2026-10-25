@@ -1,5 +1,5 @@
-import { listingFor, type InboxFilter, type InboxListing } from "$lib/notifications/notifications";
-import { keys } from "$lib/api/keys";
+import { listingFor, type InboxFilter, type InboxListing } from "#lib/notifications/notifications.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export type InboxPageData = {

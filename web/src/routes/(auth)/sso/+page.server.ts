@@ -1,7 +1,7 @@
-import { exchangeFrom } from "$lib/auth/sso";
-import { keys } from "$lib/api/keys";
-import { reachWorkspaceSignIn } from "$lib/auth/workspace-sign-in";
-import type { SsoExchange } from "$lib/auth/types";
+import { exchangeFrom } from "#lib/auth/sso.js";
+import { keys } from "#lib/api/keys.js";
+import { reachWorkspaceSignIn } from "#lib/auth/workspace-sign-in.js";
+import type { SsoExchange } from "#lib/auth/types.js";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({

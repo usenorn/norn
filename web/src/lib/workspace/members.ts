@@ -1,6 +1,6 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
 
-export { joinedOn, lastActive } from "$lib/time";
+export { joinedOn, lastActive } from "#lib/time.js";
 
 export type Membership = components["schemas"]["Membership"];
 export type AccountKind = components["schemas"]["AccountKind"];

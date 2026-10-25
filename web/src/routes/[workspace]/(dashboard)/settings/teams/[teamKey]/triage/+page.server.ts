@@ -1,6 +1,6 @@
-import { keys } from "$lib/api/keys";
-import { teamOf } from "$lib/team/team-settings";
-import { settingFor, type TriageSetting } from "$lib/triage/triage";
+import { keys } from "#lib/api/keys.js";
+import { teamOf } from "#lib/team/team-settings.js";
+import { settingFor, type TriageSetting } from "#lib/triage/triage.js";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {

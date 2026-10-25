@@ -1,7 +1,7 @@
-import { keys } from "$lib/api/keys";
-import { docTree, type DocTree } from "$lib/docs/docs";
-import { listDocs } from "$lib/docs/docs.server";
-import type { Project } from "$lib/projects/projects";
+import { keys } from "#lib/api/keys.js";
+import { docTree, type DocTree } from "#lib/docs/docs.js";
+import { listDocs } from "#lib/docs/docs.server.js";
+import type { Project } from "#lib/projects/projects.js";
 import type { LayoutServerLoad } from "./$types";
 
 export type DocsScope = { tree: DocTree; reachable: Project[] };

@@ -7,16 +7,16 @@
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Table from "$lib/components/ui/table/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { api } from "$lib/api";
-	import { onDateAndTime } from "$lib/time";
-	import { editWebhookSchema } from "$lib/webhooks/webhook-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Table from "#lib/components/ui/table/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { api } from "#lib/api/index.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import { editWebhookSchema } from "#lib/webhooks/webhook-schema.js";
 	import {
 		deliverySummary,
 		disableReasonLabel,
@@ -32,11 +32,11 @@
 		type WebhookDetailView,
 		type WebhookDeliveryDetail,
 		type WebhookFailure,
-	} from "$lib/webhooks/webhooks";
+	} from "#lib/webhooks/webhooks.js";
 	import { webhookDetailPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import SettingsBody from "$lib/settings/settings-body.svelte";
-	import SettingsBackBar from "$lib/settings/settings-back-bar.svelte";
+	import SettingsBody from "#lib/settings/settings-body.svelte";
+	import SettingsBackBar from "#lib/settings/settings-back-bar.svelte";
 
 	const formId = "edit-webhook-form";
 	const pageSize = 25;

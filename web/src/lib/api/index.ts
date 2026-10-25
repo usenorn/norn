@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
-import { browser } from "$app/environment";
+import { browser } from "$app/env";
 import { page } from "$app/state";
-import { sessionHeader } from "$lib/account/accounts";
+import { sessionHeader } from "#lib/account/accounts.js";
 import type { paths } from "./dashboard.gen";
 
 export const api = createClient<paths>({ baseUrl: "/v1" });

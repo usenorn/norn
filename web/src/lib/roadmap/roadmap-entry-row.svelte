@@ -5,9 +5,9 @@
 	import Pencil from "@lucide/svelte/icons/pencil";
 	import RefreshCw from "@lucide/svelte/icons/refresh-cw";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import Pill, { type PillTone } from "$lib/components/norn/pill.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import Pill, { type PillTone } from "#lib/components/norn/pill.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import RoadmapFieldChip from "./roadmap-field-chip.svelte";
 	import { timelineLabel } from "./public-roadmap";
 	import {

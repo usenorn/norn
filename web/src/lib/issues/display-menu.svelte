@@ -3,9 +3,9 @@
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import SlidersHorizontal from "@lucide/svelte/icons/sliders-horizontal";
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Switch } from "$lib/components/ui/switch/index.js";
+	import * as Popover from "#lib/components/ui/popover/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Switch } from "#lib/components/ui/switch/index.js";
 	import {
 		atDefaults,
 		groupingLabels,
@@ -17,8 +17,8 @@
 		type Display,
 		type Grouping,
 		type Ordering,
-	} from "$lib/issues/display";
-	import type { LinkWith } from "$lib/issues/linking";
+	} from "#lib/issues/display.js";
+	import type { LinkWith } from "#lib/issues/linking.js";
 
 	let {
 		display,
@@ -110,7 +110,7 @@
 					<Switch
 						checked={display.showEmpty}
 						onCheckedChange={() =>
-							goto(linkWith({ empty: display.showEmpty ? null : "1" }), { noScroll: true })}
+							goto(linkWith({ empty: display.showEmpty ? null : "1" }), { reset: false })}
 					/>
 				</label>
 			{/if}
@@ -120,7 +120,7 @@
 					<Switch
 						checked={display.shown.includes(property)}
 						onCheckedChange={() =>
-							goto(linkWith({ hide: hiddenParam(display.shown, property) }), { noScroll: true })}
+							goto(linkWith({ hide: hiddenParam(display.shown, property) }), { reset: false })}
 					/>
 				</label>
 			{/each}

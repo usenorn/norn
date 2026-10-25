@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion";
 import { PluginKey } from "@tiptap/pm/state";
-import { opensMenu } from "$lib/editor/slash";
+import { opensMenu } from "#lib/editor/slash.js";
 
 export type SuggestionAnchor = { getBoundingClientRect: () => DOMRect };
 

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
-	import Pill from "$lib/components/norn/pill.svelte";
+	import Pill from "#lib/components/norn/pill.svelte";
 	import { revisionAuthor, type DocRevisionSummary } from "./docs";
-	import type { Agent } from "$lib/agents/agents";
+	import type { Agent } from "#lib/agents/agents.js";
 
 	let {
 		revision,

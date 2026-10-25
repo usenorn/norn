@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import StepList from "$lib/components/norn/step-list.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import StepList from "#lib/components/norn/step-list.svelte";
 	import RunState from "./run-state.svelte";
 	import { lifecycleSteps } from "./plans";
-	import { elapsed } from "$lib/time";
+	import { elapsed } from "#lib/time.js";
 	import {
 		elapsedLabel,
 		slotLine,

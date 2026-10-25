@@ -1,15 +1,15 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
-import { registerAgentSchema } from "$lib/agents/register-agent-schema";
+import { keys } from "#lib/api/keys.js";
+import { registerAgentSchema } from "#lib/agents/register-agent-schema.js";
 import {
 	failureMessage,
 	registerFailure,
 	type Agent,
 	type AgentFailure,
 	type AgentListing,
-} from "$lib/agents/agents";
+} from "#lib/agents/agents.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type RegisterForm = Infer<typeof registerAgentSchema>;

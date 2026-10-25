@@ -23,7 +23,7 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 
 	let {
 		steps,

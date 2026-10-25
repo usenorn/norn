@@ -1,6 +1,6 @@
 <script lang="ts">
 	import FileText from "@lucide/svelte/icons/file-text";
-	import type { Project } from "$lib/projects/projects";
+	import type { Project } from "#lib/projects/projects.js";
 	import LinkRow from "./link-row.svelte";
 	import { docPath, docVisibilityLabels, projectName, type DocBacklinks } from "./docs";
 

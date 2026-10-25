@@ -1,17 +1,17 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
-	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import LabelChips from "$lib/labels/label-chips.svelte";
-	import { cn } from "$lib/utils.js";
-	import { dueLabel, overdue } from "$lib/time";
-	import { finished } from "$lib/team/states";
+	import UnassignedAvatar from "#lib/components/norn/unassigned-avatar.svelte";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import LabelChips from "#lib/labels/label-chips.svelte";
+	import { cn } from "#lib/utils.js";
+	import { dueLabel, overdue } from "#lib/time.js";
+	import { finished } from "#lib/team/states.js";
 	import type { RowProperty } from "./display";
 	import type { Issue } from "./issues";
-	import { rovingControls } from "$lib/shortcuts/roving";
-	import { touchDrag, type TouchDragHandlers } from "$lib/issues/touch-drag";
+	import { rovingControls } from "#lib/shortcuts/roving.js";
+	import { touchDrag, type TouchDragHandlers } from "#lib/issues/touch-drag.js";
 
 	let {
 		issue,

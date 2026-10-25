@@ -1,4 +1,4 @@
-import type { IssuesPreview } from "$lib/issues/listing";
+import type { IssuesPreview } from "#lib/issues/listing.js";
 
 export const teamIssuesPreviewStates: Record<string, IssuesPreview> = import.meta.env.DEV
 	? {

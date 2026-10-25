@@ -2,10 +2,10 @@
 	import { superForm, type SuperValidated } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		decisionChannelHints,
 		decisionChannelLabels,

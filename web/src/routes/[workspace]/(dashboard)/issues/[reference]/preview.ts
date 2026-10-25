@@ -2,13 +2,13 @@ import type {
 	CommentFailure,
 	CommentMention,
 	CommentThread,
-} from "$lib/comments/comments";
-import type { ActivityFeed } from "$lib/activity/activity";
-import type { AttachmentPanel } from "$lib/attachments/attachments";
-import type { UploadTask } from "$lib/attachments/upload";
-import type { DelegationFailure, DelegationPanel } from "$lib/agents/delegation";
-import type { IssueQuestion } from "$lib/questions/questions";
-import type { MembershipRole } from "$lib/workspace/members";
+} from "#lib/comments/comments.js";
+import type { ActivityFeed } from "#lib/activity/activity.js";
+import type { AttachmentPanel } from "#lib/attachments/attachments.js";
+import type { UploadTask } from "#lib/attachments/upload.js";
+import type { DelegationFailure, DelegationPanel } from "#lib/agents/delegation.js";
+import type { IssueQuestion } from "#lib/questions/questions.js";
+import type { MembershipRole } from "#lib/workspace/members.js";
 import type { IssueDetail } from "./+page.server";
 
 export type IssueDetailPreview = { detail: IssueDetail; role?: MembershipRole };

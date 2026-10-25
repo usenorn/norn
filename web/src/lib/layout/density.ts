@@ -1,4 +1,4 @@
-import { readStored, store } from "$lib/storage";
+import { readStored, store } from "#lib/storage.js";
 
 export type Density = "comfortable" | "compact";
 

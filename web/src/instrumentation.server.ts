@@ -1,13 +1,13 @@
 import * as Sentry from '@sentry/sveltekit';
-import { env } from '$env/dynamic/public';
-import { dataCollection, sampleRate } from '$lib/telemetry';
+import { PUBLIC_SENTRY_DSN, PUBLIC_SENTRY_TRACES_SAMPLE_RATE } from '$app/env/public';
+import { dataCollection, sampleRate } from '#lib/telemetry.js';
 
-const dsn = env.PUBLIC_SENTRY_DSN?.trim();
+const dsn = PUBLIC_SENTRY_DSN?.trim();
 
 if (dsn) {
 	Sentry.init({
 		dsn,
-		tracesSampleRate: sampleRate(env.PUBLIC_SENTRY_TRACES_SAMPLE_RATE),
+		tracesSampleRate: sampleRate(PUBLIC_SENTRY_TRACES_SAMPLE_RATE),
 		enableLogs: true,
 		dataCollection: dataCollection()
 	});

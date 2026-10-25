@@ -1,6 +1,6 @@
 import { redirect } from "@sveltejs/kit";
-import { withSlot } from "$lib/account/accounts";
-import { lastWorkspaceCookie, rememberedWorkspace } from "$lib/account/last-workspace";
+import { withSlot } from "#lib/account/accounts.js";
+import { lastWorkspaceCookie, rememberedWorkspace } from "#lib/account/last-workspace.js";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ cookies, parent }) => {

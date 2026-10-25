@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
-	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
-	import { settingsEntryFor, type SettingsNavigationSection } from "$lib/settings/navigation";
+	import SidebarItem from "#lib/components/norn/sidebar-item.svelte";
+	import SidebarSection from "#lib/components/norn/sidebar-section.svelte";
+	import { settingsEntryFor, type SettingsNavigationSection } from "#lib/settings/navigation.js";
 
 	let {
 		sections,

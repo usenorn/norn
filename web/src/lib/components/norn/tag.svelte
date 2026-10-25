@@ -1,7 +1,7 @@
 <script lang="ts">
-	import LabelDot from "$lib/labels/label-dot.svelte";
-	import { cn } from "$lib/utils.js";
-	import type { LabelColor } from "$lib/labels/labels";
+	import LabelDot from "#lib/labels/label-dot.svelte";
+	import { cn } from "#lib/utils.js";
+	import type { LabelColor } from "#lib/labels/labels.js";
 
 	let {
 		name,

@@ -4,16 +4,16 @@
 	import Download from "@lucide/svelte/icons/download";
 	import ScrollText from "@lucide/svelte/icons/scroll-text";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { api } from "$lib/api";
-	import { sessionHeader } from "$lib/account/accounts";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { api } from "#lib/api/index.js";
+	import { sessionHeader } from "#lib/account/accounts.js";
 	import {
 		actionLabel,
 		actorLabel,
@@ -27,8 +27,8 @@
 		type AuditEvent,
 		type AuditFilters,
 		type AuditRecord,
-	} from "$lib/audit/audit";
-	import { onDateAndTime } from "$lib/time";
+	} from "#lib/audit/audit.js";
+	import { onDateAndTime } from "#lib/time.js";
 	import type { PageProps } from "./$types";
 	import { auditPreviewStates } from "./preview";
 

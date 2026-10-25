@@ -2,15 +2,15 @@
 	import { page } from "$app/state";
 	import { invalidate } from "$app/navigation";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import { api } from "$lib/api";
-	import { attempt } from "$lib/api/attempt";
-	import { keys } from "$lib/api/keys";
-	import ReviewQuestionRow from "$lib/executions/review-question.svelte";
-	import ReviewRunRow from "$lib/executions/review-run.svelte";
-	import { readRunFailure, runFailureMessage } from "$lib/executions/executions";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import { api } from "#lib/api/index.js";
+	import { attempt } from "#lib/api/attempt.js";
+	import { keys } from "#lib/api/keys.js";
+	import ReviewQuestionRow from "#lib/executions/review-question.svelte";
+	import ReviewRunRow from "#lib/executions/review-run.svelte";
+	import { readRunFailure, runFailureMessage } from "#lib/executions/executions.js";
 	import {
 		implementationQuestions,
 		noReviewsLine,
@@ -18,9 +18,9 @@
 		waitingCount,
 		waitingTotal,
 		type ReviewQueue,
-	} from "$lib/executions/reviews";
-	import type { IssueQuestion } from "$lib/questions/questions";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/executions/reviews.js";
+	import type { IssueQuestion } from "#lib/questions/questions.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { reviewPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

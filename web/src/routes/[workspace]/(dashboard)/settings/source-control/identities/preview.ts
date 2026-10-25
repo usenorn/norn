@@ -1,4 +1,4 @@
-import type { SourceControlFailure } from "$lib/source-control/source-control";
+import type { SourceControlFailure } from "#lib/source-control/source-control.js";
 import type { SCMIdentityView } from "./+page.server";
 
 export type SCMIdentityPreview = {

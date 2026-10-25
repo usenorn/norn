@@ -1,10 +1,10 @@
 <script lang="ts">
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import PropertyPicker from "$lib/issues/property-picker.svelte";
-	import { onDayMonth } from "$lib/time";
-	import type { WorkflowState } from "$lib/team/states";
-	import type { Issue } from "$lib/issues/issues";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import PropertyPicker from "#lib/issues/property-picker.svelte";
+	import { onDayMonth } from "#lib/time.js";
+	import type { WorkflowState } from "#lib/team/states.js";
+	import type { Issue } from "#lib/issues/issues.js";
 
 	let {
 		children,

@@ -1,5 +1,5 @@
 import { diffLines } from "diff";
-import type { DiffLine } from "$lib/executions/diff";
+import type { DiffLine } from "#lib/executions/diff.js";
 
 export type RevisionDiff = { lines: DiffLine[]; additions: number; deletions: number };
 

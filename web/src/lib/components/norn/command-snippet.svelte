@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Check from "@lucide/svelte/icons/check";
 	import Copy from "@lucide/svelte/icons/copy";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { cn } from "$lib/utils.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { cn } from "#lib/utils.js";
 
 	let {
 		command,

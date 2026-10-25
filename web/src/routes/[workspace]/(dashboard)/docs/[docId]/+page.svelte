@@ -12,20 +12,20 @@
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
-	import { api } from "$lib/api";
-	import { attempt, unknownLine, type ApiResult } from "$lib/api/attempt";
-	import { keys } from "$lib/api/keys";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Pill from "$lib/components/norn/pill.svelte";
-	import DocLinks from "$lib/docs/doc-links.svelte";
-	import DocsHeader from "$lib/docs/docs-header.svelte";
-	import RevisionByline from "$lib/docs/revision-byline.svelte";
-	import ShareDialog from "$lib/docs/share-dialog.svelte";
-	import { archiveDocSchema, archiveFormId } from "$lib/docs/doc-schema";
+	import { api } from "#lib/api/index.js";
+	import { attempt, unknownLine, type ApiResult } from "#lib/api/attempt.js";
+	import { keys } from "#lib/api/keys.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Pill from "#lib/components/norn/pill.svelte";
+	import DocLinks from "#lib/docs/doc-links.svelte";
+	import DocsHeader from "#lib/docs/docs-header.svelte";
+	import RevisionByline from "#lib/docs/revision-byline.svelte";
+	import ShareDialog from "#lib/docs/share-dialog.svelte";
+	import { archiveDocSchema, archiveFormId } from "#lib/docs/doc-schema.js";
 	import {
 		ancestry,
 		descendants,
@@ -37,11 +37,11 @@
 		newDocPath,
 		projectName,
 		readDocFailure,
-	} from "$lib/docs/docs";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
-	import Markdown from "$lib/issues/markdown.svelte";
-	import { onDateAndTime } from "$lib/time";
-	import { showFailure, showToast } from "$lib/toast/toasts";
+	} from "#lib/docs/docs.js";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
+	import Markdown from "#lib/issues/markdown.svelte";
+	import { onDateAndTime } from "#lib/time.js";
+	import { showFailure, showToast } from "#lib/toast/toasts.js";
 	import { docPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

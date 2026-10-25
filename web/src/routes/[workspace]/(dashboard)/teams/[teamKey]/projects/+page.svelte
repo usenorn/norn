@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import ProjectsScreen from "$lib/projects/projects-screen.svelte";
+	import ProjectsScreen from "#lib/projects/projects-screen.svelte";
 	import { teamProjectsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { cn } from "$lib/utils.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { cn } from "#lib/utils.js";
 	import {
 		noServicesLine,
 		probeLine,

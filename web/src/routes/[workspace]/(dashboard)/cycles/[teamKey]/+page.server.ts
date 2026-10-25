@@ -1,5 +1,5 @@
-import type { CycleListing } from "$lib/cycles/cycles";
-import { keys } from "$lib/api/keys";
+import type { CycleListing } from "#lib/cycles/cycles.js";
+import { keys } from "#lib/api/keys.js";
 import { teamCyclesPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

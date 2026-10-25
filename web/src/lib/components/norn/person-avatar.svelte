@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
-	import type { AvatarSize } from "$lib/components/ui/avatar/avatar.svelte";
-	import { initialsOf } from "$lib/account/accounts";
-	import { avatarToneOf } from "$lib/account/avatar-tone";
+	import * as Avatar from "#lib/components/ui/avatar/index.js";
+	import type { AvatarSize } from "#lib/components/ui/avatar/avatar.svelte";
+	import { initialsOf } from "#lib/account/accounts.js";
+	import { avatarToneOf } from "#lib/account/avatar-tone.js";
 
 	let {
 		accountId,

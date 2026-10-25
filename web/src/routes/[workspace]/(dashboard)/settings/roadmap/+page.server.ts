@@ -2,9 +2,9 @@ import { fail } from "@sveltejs/kit";
 import type { Client } from "openapi-fetch";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import type { paths } from "$lib/api/dashboard.gen";
-import { keys } from "$lib/api/keys";
-import { reachInstance } from "$lib/auth/instance";
+import type { paths } from "#lib/api/dashboard.gen.js";
+import { keys } from "#lib/api/keys.js";
+import { reachInstance } from "#lib/auth/instance.js";
 import {
 	roadmapFailure,
 	roadmapFieldMessage,
@@ -12,8 +12,8 @@ import {
 	type RoadmapFailure,
 	type RoadmapSettingsOutcome,
 	type RoadmapSettingsView,
-} from "$lib/roadmap/admin";
-import { roadmapSettingsSchema } from "$lib/roadmap/roadmap-settings-schema";
+} from "#lib/roadmap/admin.js";
+import { roadmapSettingsSchema } from "#lib/roadmap/roadmap-settings-schema.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type RoadmapSettingsForm = Infer<typeof roadmapSettingsSchema>;

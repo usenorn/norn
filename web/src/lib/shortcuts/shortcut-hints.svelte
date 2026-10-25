@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import { cn } from "$lib/utils.js";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import { cn } from "#lib/utils.js";
 	import { useShortcuts } from "./registry.svelte";
 	import {
 		displayKeys,

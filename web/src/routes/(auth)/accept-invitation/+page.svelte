@@ -7,27 +7,27 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Info from "@lucide/svelte/icons/info";
-	import { sessionParam, withSlot } from "$lib/account/accounts";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import { minPasswordLength } from "$lib/auth/sign-up-schema";
-	import { acceptInvitationSchema } from "$lib/workspace/accept-invitation-schema";
+	import { sessionParam, withSlot } from "#lib/account/accounts.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Avatar from "#lib/components/ui/avatar/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import WorkspaceMark from "#lib/components/norn/workspace-mark.svelte";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import InstanceLine from "#lib/components/norn/instance-line.svelte";
+	import { minPasswordLength } from "#lib/auth/sign-up-schema.js";
+	import { acceptInvitationSchema } from "#lib/workspace/accept-invitation-schema.js";
 	import {
 		invitedHeadline,
 		linkFailure,
 		type AcceptInvitation,
 		type InvitationContext,
 		type InvitationDetail,
-	} from "$lib/workspace/accept-invitation";
-	import { initialsOf } from "$lib/account/accounts";
-	import { onDate } from "$lib/time";
-	import { roleLabels } from "$lib/workspace/members";
+	} from "#lib/workspace/accept-invitation.js";
+	import { initialsOf } from "#lib/account/accounts.js";
+	import { onDate } from "#lib/time.js";
+	import { roleLabels } from "#lib/workspace/members.js";
 	import { acceptInvitationPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

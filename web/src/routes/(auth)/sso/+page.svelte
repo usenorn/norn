@@ -4,14 +4,14 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import { authPath } from "$lib/auth/return-to";
-	import Diagnostics from "$lib/components/norn/diagnostics.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import StepList, { type Step } from "$lib/components/norn/step-list.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Progress } from "$lib/components/ui/progress/index.js";
-	import { referenceLine, stageFixes, stageTitle } from "$lib/auth/sso";
-	import type { SsoExchange } from "$lib/auth/types";
+	import { authPath } from "#lib/auth/return-to.js";
+	import Diagnostics from "#lib/components/norn/diagnostics.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import StepList, { type Step } from "#lib/components/norn/step-list.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Progress } from "#lib/components/ui/progress/index.js";
+	import { referenceLine, stageFixes, stageTitle } from "#lib/auth/sso.js";
+	import type { SsoExchange } from "#lib/auth/types.js";
 	import { ssoPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

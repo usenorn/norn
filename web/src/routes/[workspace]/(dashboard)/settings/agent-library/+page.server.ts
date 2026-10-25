@@ -1,7 +1,7 @@
-import { keys } from "$lib/api/keys";
-import { reachInstance } from "$lib/auth/instance";
-import { listedLibrary, type AgentLibraryListing } from "$lib/agents/agent-capabilities";
-import { connectMcpServer, mcpConnectForm, type McpConnectForm } from "$lib/agents/mcp-connect.server";
+import { keys } from "#lib/api/keys.js";
+import { reachInstance } from "#lib/auth/instance.js";
+import { listedLibrary, type AgentLibraryListing } from "#lib/agents/agent-capabilities.js";
+import { connectMcpServer, mcpConnectForm, type McpConnectForm } from "#lib/agents/mcp-connect.server.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 export type AgentLibraryData = {

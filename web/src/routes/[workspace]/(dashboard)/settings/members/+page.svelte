@@ -7,20 +7,20 @@
 	import Plug from "@lucide/svelte/icons/plug";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import X from "@lucide/svelte/icons/x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import * as Tabs from "$lib/components/ui/tabs/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { withSlot } from "$lib/account/accounts";
-	import { api } from "$lib/api";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import * as Tabs from "#lib/components/ui/tabs/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { withSlot } from "#lib/account/accounts.js";
+	import { api } from "#lib/api/index.js";
 	import {
 		authMethodLabel,
 		hasMore,
@@ -53,8 +53,8 @@
 		type MembershipFailure,
 		type MembershipNotice,
 		type MembershipRole,
-	} from "$lib/workspace/members";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/workspace/members.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { membersPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -174,25 +174,25 @@
 	async function commit(value: string) {
 		pushed = value;
 
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 
 		if (value) next.searchParams.set("q", value);
 		else next.searchParams.delete("q");
 
 		next.searchParams.delete("remove");
 
-		await goto(next, { replaceState: true, keepFocus: true, noScroll: true });
+		await goto(next, { replace: true, reset: false });
 	}
 
 	async function chooseSegment(value: string) {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 
 		if (value === "agents") next.searchParams.set("kind", "agents");
 		else next.searchParams.delete("kind");
 
 		next.searchParams.delete("remove");
 
-		await goto(next, { noScroll: true });
+		await goto(next, { reset: false });
 	}
 
 	function type(value: string) {
@@ -416,14 +416,14 @@
 	}
 
 	async function closeRemoval() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete("remove");
 
-		await goto(next, { replaceState: true, noScroll: true });
+		await goto(next, { replace: true, reset: false });
 	}
 
 	function removeHref(member: Membership): string {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.set("remove", member.accountId);
 
 		return `${next.pathname}${next.search}`;

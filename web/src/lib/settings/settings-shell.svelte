@@ -3,14 +3,14 @@
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import Menu from "@lucide/svelte/icons/menu";
 	import type { Snippet } from "svelte";
-	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Separator } from "$lib/components/ui/separator/index.js";
-	import * as Sheet from "$lib/components/ui/sheet/index.js";
-	import { settingsEntryFor, type SettingsNavigationSection } from "$lib/settings/navigation";
-	import SettingsNavigation from "$lib/settings/settings-navigation.svelte";
-	import { provideShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { bindRoam, provideRoam } from "$lib/shortcuts/roam/roam.svelte";
+	import SidebarSection from "#lib/components/norn/sidebar-section.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Separator } from "#lib/components/ui/separator/index.js";
+	import * as Sheet from "#lib/components/ui/sheet/index.js";
+	import { settingsEntryFor, type SettingsNavigationSection } from "#lib/settings/navigation.js";
+	import SettingsNavigation from "#lib/settings/settings-navigation.svelte";
+	import { provideShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { bindRoam, provideRoam } from "#lib/shortcuts/roam/roam.svelte.js";
 
 	let {
 		kindLabel,

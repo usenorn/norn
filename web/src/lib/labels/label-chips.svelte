@@ -21,7 +21,7 @@
 </script>
 
 <script lang="ts">
-	import Tag from "$lib/components/norn/tag.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
 	import type { LabelColor } from "./labels";
 
 	let {

@@ -8,7 +8,7 @@
 
 <script lang="ts">
 	import type { Snippet } from "svelte";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
 
 	let {
 		label,

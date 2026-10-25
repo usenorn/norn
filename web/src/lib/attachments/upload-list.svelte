@@ -1,9 +1,9 @@
 <script lang="ts">
 	import X from "@lucide/svelte/icons/x";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Progress } from "$lib/components/ui/progress/index.js";
-	import { attachmentFailureMessage, formatBytes } from "$lib/attachments/attachments";
-	import { settled, type UploadTask } from "$lib/attachments/upload";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Progress } from "#lib/components/ui/progress/index.js";
+	import { attachmentFailureMessage, formatBytes } from "#lib/attachments/attachments.js";
+	import { settled, type UploadTask } from "#lib/attachments/upload.js";
 
 	let {
 		uploads,

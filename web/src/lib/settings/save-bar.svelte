@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { saveBarLabel, type SaveBar } from "$lib/workspace/settings";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { saveBarLabel, type SaveBar } from "#lib/workspace/settings.js";
 
 	let {
 		bar,

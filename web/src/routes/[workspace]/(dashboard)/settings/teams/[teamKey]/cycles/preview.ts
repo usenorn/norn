@@ -1,4 +1,4 @@
-import type { CadenceSetting } from "$lib/cycles/cycles";
+import type { CadenceSetting } from "#lib/cycles/cycles.js";
 
 export type TeamCyclesPreview = { cadence: CadenceSetting };
 

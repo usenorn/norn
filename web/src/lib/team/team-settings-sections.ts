@@ -8,7 +8,7 @@ import RefreshCw from "@lucide/svelte/icons/refresh-cw";
 import Settings from "@lucide/svelte/icons/settings";
 import Users from "@lucide/svelte/icons/users";
 import Workflow from "@lucide/svelte/icons/workflow";
-import type { IconComponent } from "$lib/utils.js";
+import type { IconComponent } from "#lib/utils.js";
 import { teamSettingsSections, type TeamSettingsSection } from "./teams";
 
 export type TeamSettingsEntry = {

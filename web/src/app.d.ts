@@ -1,6 +1,6 @@
 import type { Client } from "openapi-fetch";
-import type { paths } from "$lib/api/dashboard.gen";
-import type { ActingSession, SignedInAccount } from "$lib/account/accounts";
+import type { paths } from "#lib/api/dashboard.gen.js";
+import type { ActingSession, SignedInAccount } from "#lib/account/accounts.js";
 
 declare global {
 	namespace App {

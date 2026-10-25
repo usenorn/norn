@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { agentInstructionsMaxLength, agentInstructionsTooLong } from "$lib/agents/instructions";
+import { agentInstructionsMaxLength, agentInstructionsTooLong } from "#lib/agents/instructions.js";
 
 export const projectDetailsSchema = z.object({
 	name: z

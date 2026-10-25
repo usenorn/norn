@@ -5,24 +5,24 @@
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import ColorChoice from "$lib/components/norn/color-choice.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { colorLabels } from "$lib/labels/labels";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
-	import { settingsFor, teamOf, type TeamSettings } from "$lib/team/team-settings";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import ColorChoice from "#lib/components/norn/color-choice.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { colorLabels } from "#lib/labels/labels.js";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
+	import { settingsFor, teamOf, type TeamSettings } from "#lib/team/team-settings.js";
 	import {
 		teamColors,
 		teamEstimations,
 		teamSettingsSchema,
-	} from "$lib/team/team-settings-schema";
+	} from "#lib/team/team-settings-schema.js";
 	import {
 		estimationLabels,
 		estimationNotes,
@@ -31,7 +31,7 @@
 		type TeamColor,
 		type TeamEstimation,
 		type TeamVisibility,
-	} from "$lib/team/teams";
+	} from "#lib/team/teams.js";
 	import { teamGeneralPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

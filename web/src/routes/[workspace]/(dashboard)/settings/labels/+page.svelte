@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
@@ -16,22 +16,22 @@
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import Ungroup from "@lucide/svelte/icons/ungroup";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import * as InputGroup from "$lib/components/ui/input-group/index.js";
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { api } from "$lib/api";
-	import DeleteLabelDialog from "$lib/labels/delete-label-dialog.svelte";
-	import LabelEditor from "$lib/labels/label-editor.svelte";
-	import MergeLabelDialog from "$lib/labels/merge-label-dialog.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import * as InputGroup from "#lib/components/ui/input-group/index.js";
+	import * as Popover from "#lib/components/ui/popover/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { api } from "#lib/api/index.js";
+	import DeleteLabelDialog from "#lib/labels/delete-label-dialog.svelte";
+	import LabelEditor from "#lib/labels/label-editor.svelte";
+	import MergeLabelDialog from "#lib/labels/merge-label-dialog.svelte";
 	import {
 		groupsOf,
 		issueCount,
@@ -50,12 +50,12 @@
 		type LabelGroup,
 		type LabelUsage,
 		type UsageRead,
-	} from "$lib/labels/labels";
-	import { labelSchema } from "$lib/labels/label-schema";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/labels/labels.js";
+	import { labelSchema } from "#lib/labels/label-schema.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { labelsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { showToast } from "$lib/toast/toasts";
+	import { showToast } from "#lib/toast/toasts.js";
 
 	const labelFormId = "label-form";
 

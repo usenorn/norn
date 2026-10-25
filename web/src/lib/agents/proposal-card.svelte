@@ -1,16 +1,16 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { onDateAndTime } from "$lib/time";
-	import { workspacePath } from "$lib/workspace/navigation";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { onDateAndTime } from "#lib/time.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import AgentReasoning from "./agent-reasoning.svelte";
 	import ProposalComparison from "./proposal-comparison.svelte";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import { priorityLabel } from "$lib/issues/issues";
-	import { docAudienceLabels } from "$lib/docs/docs";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import { priorityLabel } from "#lib/issues/issues.js";
+	import { docAudienceLabels } from "#lib/docs/docs.js";
 	import {
 		actionLabels,
 		changePartLabels,

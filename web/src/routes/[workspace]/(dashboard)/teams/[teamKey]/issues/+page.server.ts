@@ -1,7 +1,7 @@
 import { error } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
-import { issuesListing } from "$lib/issues/listing.server";
-import type { IssuesListingData } from "$lib/issues/listing";
+import { keys } from "#lib/api/keys.js";
+import { issuesListing } from "#lib/issues/listing.server.js";
+import type { IssuesListingData } from "#lib/issues/listing.js";
 import { teamIssuesPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

@@ -1,8 +1,8 @@
-import type { components } from "$lib/api/dashboard.gen";
-import { documentExcerpt } from "$lib/editor/document";
-import type { Project } from "$lib/projects/projects";
-import { onCalendarDay } from "$lib/time";
-import { workspacePath } from "$lib/workspace/navigation";
+import type { components } from "#lib/api/dashboard.gen.js";
+import { documentExcerpt } from "#lib/editor/document.js";
+import type { Project } from "#lib/projects/projects.js";
+import { onCalendarDay } from "#lib/time.js";
+import { workspacePath } from "#lib/workspace/navigation.js";
 import { statusLabels, type PublicRoadmapItem } from "./public-roadmap";
 import type { RoadmapEntryInput } from "./roadmap-entry-schema";
 import { roadmapDescriptionMaxLength, type RoadmapSettingsInput } from "./roadmap-settings-schema";

@@ -6,9 +6,9 @@
 	import Pencil from "@lucide/svelte/icons/pencil";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import Unplug from "@lucide/svelte/icons/unplug";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
 	import {
 		mcpServerSummary,
 		mcpServerTarget,

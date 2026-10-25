@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
-	import { teamSettingsGroups } from "$lib/team/team-settings-sections";
-	import { teamSettingsPath } from "$lib/team/teams";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
+	import { teamSettingsGroups } from "#lib/team/team-settings-sections.js";
+	import { teamSettingsPath } from "#lib/team/teams.js";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();

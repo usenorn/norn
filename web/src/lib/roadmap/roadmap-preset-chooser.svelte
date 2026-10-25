@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import SettingsSectionHeader from "$lib/settings/settings-section-header.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import SettingsSectionHeader from "#lib/settings/settings-section-header.svelte";
 	import {
 		chosenPresets,
 		presetCopy,

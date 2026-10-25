@@ -7,15 +7,15 @@
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
 	import ProgressBar from "./progress-bar.svelte";
-	import LabelChips from "$lib/labels/label-chips.svelte";
-	import { cn } from "$lib/utils.js";
-	import { dueLabel, overdue } from "$lib/time";
-	import { finished } from "$lib/team/states";
-	import { totalIssues } from "$lib/issues/board";
-	import type { RowProperty } from "$lib/issues/display";
-	import type { Issue } from "$lib/issues/issues";
-	import { rovingControls } from "$lib/shortcuts/roving";
-	import { touchDrag, type TouchDragHandlers } from "$lib/issues/touch-drag";
+	import LabelChips from "#lib/labels/label-chips.svelte";
+	import { cn } from "#lib/utils.js";
+	import { dueLabel, overdue } from "#lib/time.js";
+	import { finished } from "#lib/team/states.js";
+	import { totalIssues } from "#lib/issues/board.js";
+	import type { RowProperty } from "#lib/issues/display.js";
+	import type { Issue } from "#lib/issues/issues.js";
+	import { rovingControls } from "#lib/shortcuts/roving.js";
+	import { touchDrag, type TouchDragHandlers } from "#lib/issues/touch-drag.js";
 
 	let {
 		issue,

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 	import { machineStanding, standingLabels, standingTones, type Runner } from "./runners";
 
 	let { machine, class: className }: { machine: Runner; class?: string } = $props();

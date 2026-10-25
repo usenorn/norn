@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
@@ -9,14 +9,14 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Plus from "@lucide/svelte/icons/plus";
 	import X from "@lucide/svelte/icons/x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
 	import StatusIcon from "./status-icon.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { api } from "$lib/api";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { api } from "#lib/api/index.js";
 	import {
 		categoryHints,
 		categoryLabels,
@@ -30,10 +30,10 @@
 		type StateFailure,
 		type StateList,
 		type WorkflowState,
-	} from "$lib/team/states";
-	import { workflowStateSchema } from "$lib/team/workflow-state-schema";
-	import type { Team } from "$lib/team/teams";
-	import { showToast } from "$lib/toast/toasts";
+	} from "#lib/team/states.js";
+	import { workflowStateSchema } from "#lib/team/workflow-state-schema.js";
+	import type { Team } from "#lib/team/teams.js";
+	import { showToast } from "#lib/toast/toasts.js";
 
 	const formId = "workflow-state-form";
 
@@ -236,18 +236,18 @@
 	}
 
 	function removeHref(state: WorkflowState): string {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.set("remove", state.id);
 
 		return `${next.pathname}${next.search}`;
 	}
 
 	async function closeRemoval() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete("remove");
 		reassignTo = "";
 
-		await goto(next, { replaceState: true, noScroll: true });
+		await goto(next, { replace: true, reset: false });
 	}
 
 	async function confirmRemoval() {

@@ -1,5 +1,5 @@
-import { settingsFor, type TeamSettings } from "$lib/team/team-settings";
-import { managesTeams } from "$lib/workspace/members";
+import { settingsFor, type TeamSettings } from "#lib/team/team-settings.js";
+import { managesTeams } from "#lib/workspace/members.js";
 import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async ({ params, parent }) => {

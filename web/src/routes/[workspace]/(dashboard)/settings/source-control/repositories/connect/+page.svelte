@@ -7,23 +7,23 @@
 	import RefreshCw from "@lucide/svelte/icons/refresh-cw";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
-	import { keys } from "$lib/api/keys";
-	import * as Alert from "$lib/components/ui/alert";
-	import { Button } from "$lib/components/ui/button";
-	import { Checkbox } from "$lib/components/ui/checkbox";
-	import * as Form from "$lib/components/ui/form";
-	import { Input } from "$lib/components/ui/input";
+	import { keys } from "#lib/api/keys.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
 	import {
 		connectionLabel,
 		providerLabel,
 		sourceControlPath,
 		type SourceControlConnection,
-	} from "$lib/source-control/source-control";
-	import { connectRepositoriesSchema } from "$lib/source-control/source-control-schema";
+	} from "#lib/source-control/source-control.js";
+	import { connectRepositoriesSchema } from "#lib/source-control/source-control-schema.js";
 	import { connectRepositoriesPreviewStates } from "./preview";
 	import type { PageData } from "./$types";
-	import SettingsBackBar from "$lib/settings/settings-back-bar.svelte";
-	import SettingsBody from "$lib/settings/settings-body.svelte";
+	import SettingsBackBar from "#lib/settings/settings-back-bar.svelte";
+	import SettingsBody from "#lib/settings/settings-body.svelte";
 
 	let { data }: { data: PageData } = $props();
 

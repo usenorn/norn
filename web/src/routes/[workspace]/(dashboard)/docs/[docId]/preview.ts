@@ -1,4 +1,4 @@
-import type { DocDetail } from "$lib/docs/docs";
+import type { DocDetail } from "#lib/docs/docs.js";
 
 export type DocPreview = { detail: DocDetail };
 

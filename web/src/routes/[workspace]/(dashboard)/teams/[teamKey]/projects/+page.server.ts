@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
-import type { ProjectListing } from "$lib/projects/projects";
-import { keys } from "$lib/api/keys";
+import type { ProjectListing } from "#lib/projects/projects.js";
+import { keys } from "#lib/api/keys.js";
 import { teamProjectsPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

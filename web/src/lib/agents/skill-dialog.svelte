@@ -2,15 +2,15 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import { api } from "$lib/api";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import * as Tabs from "$lib/components/ui/tabs/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { api } from "#lib/api/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import * as Tabs from "#lib/components/ui/tabs/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
 	import {
 		capabilityFailure,
 		capabilityFailureMessage,

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import Plus from "@lucide/svelte/icons/plus";
 	import { page } from "$app/state";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import DocsTreePanel from "$lib/docs/docs-tree-panel.svelte";
-	import { newDocPath } from "$lib/docs/docs";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import DocsTreePanel from "#lib/docs/docs-tree-panel.svelte";
+	import { newDocPath } from "#lib/docs/docs.js";
 	import { docsPreviewStates } from "./preview";
 	import type { LayoutProps } from "./$types";
 

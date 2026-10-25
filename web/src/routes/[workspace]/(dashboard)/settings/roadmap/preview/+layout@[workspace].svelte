@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { navigating, page } from "$app/state";
-	import { roadmapPreviewPath } from "$lib/roadmap/admin";
-	import PublicRoadmapFrame from "$lib/roadmap/public-roadmap-frame.svelte";
-	import RoadmapPreviewBar from "$lib/roadmap/roadmap-preview-bar.svelte";
-	import RoadmapPreviewFallback from "$lib/roadmap/roadmap-preview-fallback.svelte";
+	import { roadmapPreviewPath } from "#lib/roadmap/admin.js";
+	import PublicRoadmapFrame from "#lib/roadmap/public-roadmap-frame.svelte";
+	import RoadmapPreviewBar from "#lib/roadmap/roadmap-preview-bar.svelte";
+	import RoadmapPreviewFallback from "#lib/roadmap/roadmap-preview-fallback.svelte";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();

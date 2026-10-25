@@ -1,9 +1,9 @@
 <script lang="ts">
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import * as Popover from "#lib/components/ui/popover/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
 	import {
 		reviewBodyMaxLength,
 		draftsLine,

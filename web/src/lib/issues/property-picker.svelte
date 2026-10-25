@@ -14,10 +14,10 @@
 	import type { Snippet } from "svelte";
 	import Check from "@lucide/svelte/icons/check";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
-	import * as Command from "$lib/components/ui/command/index.js";
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import { cn } from "$lib/utils.js";
+	import * as Command from "#lib/components/ui/command/index.js";
+	import * as Popover from "#lib/components/ui/popover/index.js";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import { cn } from "#lib/utils.js";
 
 	let {
 		options,

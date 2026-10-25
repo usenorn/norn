@@ -2,17 +2,17 @@
 	import { page } from "$app/state";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { api } from "$lib/api";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
 	import { goto, invalidate } from "$app/navigation";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { workspacePath } from "$lib/workspace/navigation";
-	import { keys } from "$lib/api/keys";
-	import { agentsPath, type ProposalQueue } from "$lib/agents/agents";
-	import ProposalCard from "$lib/agents/proposal-card.svelte";
-	import type { ChangePart } from "$lib/agents/agents";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { workspacePath } from "#lib/workspace/navigation.js";
+	import { keys } from "#lib/api/keys.js";
+	import { agentsPath, type ProposalQueue } from "#lib/agents/agents.js";
+	import ProposalCard from "#lib/agents/proposal-card.svelte";
+	import type { ChangePart } from "#lib/agents/agents.js";
 	import { approvalsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

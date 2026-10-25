@@ -4,12 +4,12 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import Send from "@lucide/svelte/icons/send";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { onDateAndTime } from "$lib/time";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { onDateAndTime } from "#lib/time.js";
 	import {
 		telegramFailure,
 		telegramFailureMessage,

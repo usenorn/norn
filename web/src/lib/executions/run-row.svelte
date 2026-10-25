@@ -1,7 +1,7 @@
 <script lang="ts">
 	import RunState from "./run-state.svelte";
-	import { onDateAndTime } from "$lib/time";
-	import { cn } from "$lib/utils.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import { cn } from "#lib/utils.js";
 	import { diffStatLine, type Execution, type ExecutionChangeSummary } from "./executions";
 
 	let {

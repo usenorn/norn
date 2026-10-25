@@ -1,4 +1,4 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
 
 export type APIToken = components["schemas"]["APIToken"];
 export type APIScope = components["schemas"]["APIScope"];
