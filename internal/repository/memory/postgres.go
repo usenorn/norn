@@ -593,7 +593,16 @@ func (r *memoryRepository) ListByIDs(
 		return nil, nil
 	}
 
-	return r.query(ctx, "list memories by id", memoriesByIDsQuery, workspaceID.String(), idStrings(memoryIDs))
+	memories, err := r.query(ctx, "list memories by id", memoriesByIDsQuery, workspaceID.String(), idStrings(memoryIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.attachEvidence(ctx, memories); err != nil {
+		return nil, err
+	}
+
+	return memories, nil
 }
 
 func (r *memoryRepository) Lineage(
@@ -613,7 +622,16 @@ func (r *memoryRepository) Enumerate(
 ) ([]entity.Memory, error) {
 	args := append(visibleArgs(workspaceID, filter), nullableID(after), limit)
 
-	return r.query(ctx, "enumerate memories", enumerateMemoriesQuery, append(args, filterArgs(filter)...)...)
+	memories, err := r.query(ctx, "enumerate memories", enumerateMemoriesQuery, append(args, filterArgs(filter)...)...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.attachEvidence(ctx, memories); err != nil {
+		return nil, err
+	}
+
+	return memories, nil
 }
 
 func (r *memoryRepository) Unalerted(ctx context.Context, workspaceID uuid.UUID) ([]uuid.UUID, error) {

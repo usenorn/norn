@@ -2,6 +2,7 @@ package retrieval
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"time"
@@ -15,31 +16,37 @@ import (
 )
 
 type retrievals struct {
-	knowledge repository.Knowledge
-	memories  repository.Memory
-	revisions repository.MemoryRevision
-	vectors   service.KnowledgeEmbeddings
-	readers   service.KnowledgeAuthorizer
-	cfg       config.Knowledge
-	now       func() time.Time
+	knowledge  repository.Knowledge
+	memories   repository.Memory
+	revisions  repository.MemoryRevision
+	issues     repository.Issue
+	vectors    service.KnowledgeEmbeddings
+	readers    service.KnowledgeAuthorizer
+	authorizer service.Authorizer
+	cfg        config.Knowledge
+	now        func() time.Time
 }
 
 func New(
 	knowledge repository.Knowledge,
 	memories repository.Memory,
 	revisions repository.MemoryRevision,
+	issues repository.Issue,
 	vectors service.KnowledgeEmbeddings,
 	readers service.KnowledgeAuthorizer,
+	authorizer service.Authorizer,
 	cfg config.Knowledge,
 ) service.Retrievals {
 	return &retrievals{
-		knowledge: knowledge,
-		memories:  memories,
-		revisions: revisions,
-		vectors:   vectors,
-		readers:   readers,
-		cfg:       cfg,
-		now:       time.Now,
+		knowledge:  knowledge,
+		memories:   memories,
+		revisions:  revisions,
+		issues:     issues,
+		vectors:    vectors,
+		readers:    readers,
+		authorizer: authorizer,
+		cfg:        cfg,
+		now:        time.Now,
 	}
 }
 
@@ -261,14 +268,92 @@ func (s *retrievals) hydrate(
 		}
 
 		if hit.Memory != nil {
-			hit.Memory.Evidence = nil
 			hit.Proposed = hit.Memory.Status == entity.MemoryStatusProposed
 		}
 
 		shown = append(shown, hit)
 	}
 
+	var recalled []*entity.Memory
+
+	for _, hit := range shown {
+		if hit.Memory != nil {
+			recalled = append(recalled, hit.Memory)
+		}
+	}
+
+	if err := s.summarize(ctx, workspaceID, reader, recalled); err != nil {
+		return nil, err
+	}
+
 	return shown, nil
+}
+
+func (s *retrievals) summarize(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	reader entity.KnowledgeReader,
+	memories []*entity.Memory,
+) error {
+	var cited []uuid.UUID
+
+	for _, memory := range memories {
+		for _, evidence := range memory.Evidence {
+			if evidence.IssueID != nil && !slices.Contains(cited, *evidence.IssueID) {
+				cited = append(cited, *evidence.IssueID)
+			}
+		}
+	}
+
+	visible, err := s.visibleIssues(ctx, workspaceID, cited)
+	if err != nil {
+		return err
+	}
+
+	for _, memory := range memories {
+		summaries := make([]entity.MemoryEvidence, 0, len(memory.Evidence))
+		for _, evidence := range reader.Concealing(visible, memory.Evidence) {
+			summaries = append(summaries, evidence.Summary())
+		}
+
+		memory.Evidence = summaries
+	}
+
+	return nil
+}
+
+func (s *retrievals) visibleIssues(ctx context.Context, workspaceID uuid.UUID, cited []uuid.UUID) ([]uuid.UUID, error) {
+	if len(cited) == 0 {
+		return nil, nil
+	}
+
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceIssue,
+		Action:      entity.ActionRead,
+		WorkspaceID: workspaceID,
+		Scoped:      true,
+	})
+
+	var refusal entity.AccessDeniedError
+	if errors.As(err, &refusal) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	issues, err := s.issues.ListVisibleByIDs(ctx, decision.Scope, cited)
+	if err != nil {
+		return nil, err
+	}
+
+	visible := make([]uuid.UUID, 0, len(issues))
+	for _, issue := range issues {
+		visible = append(visible, issue.ID)
+	}
+
+	return visible, nil
 }
 
 func visible(reader entity.KnowledgeReader, hit entity.KnowledgeHit) bool {
@@ -348,9 +433,17 @@ func (s *retrievals) Enumerate(
 
 	for _, memory := range memories {
 		if reader.Sees(memory.Access()) {
-			memory.Evidence = nil
 			list.Memories = append(list.Memories, memory)
 		}
+	}
+
+	listed := make([]*entity.Memory, 0, len(list.Memories))
+	for i := range list.Memories {
+		listed = append(listed, &list.Memories[i])
+	}
+
+	if err := s.summarize(ctx, workspaceID, reader, listed); err != nil {
+		return service.KnowledgeList{}, err
 	}
 
 	return list, nil

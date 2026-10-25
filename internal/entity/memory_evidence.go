@@ -110,6 +110,24 @@ func (e MemoryEvidence) SeenBy(reader KnowledgeReader, visibleIssues []uuid.UUID
 	}
 }
 
+func (r KnowledgeReader) Concealing(visibleIssues []uuid.UUID, evidence []MemoryEvidence) []MemoryEvidence {
+	seen := make([]MemoryEvidence, 0, len(evidence))
+
+	for _, cited := range evidence {
+		if cited.State == MemoryEvidenceUnavailable || !cited.SeenBy(r, visibleIssues) {
+			cited = cited.Concealed()
+		}
+
+		seen = append(seen, cited)
+	}
+
+	return seen
+}
+
+func (e MemoryEvidence) Summary() MemoryEvidence {
+	return MemoryEvidence{Kind: e.Kind, State: e.State}
+}
+
 func (e MemoryEvidence) Concealed() MemoryEvidence {
 	return MemoryEvidence{Kind: e.Kind, State: MemoryEvidenceUnavailable}
 }

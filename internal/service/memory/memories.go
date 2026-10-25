@@ -788,7 +788,7 @@ func (s *memoriesService) List(
 	list.Memories = make([]entity.Memory, 0, len(memories))
 
 	for _, memory := range memories {
-		memory.Evidence = seenEvidence(reader, visible, memory.Evidence)
+		memory.Evidence = reader.Concealing(visible, memory.Evidence)
 		list.Memories = append(list.Memories, memory.ViewedBy(reader))
 	}
 
@@ -1308,7 +1308,7 @@ func (s *memoriesService) Revision(
 		return entity.MemoryRevision{}, err
 	}
 
-	revision.Evidence = seenEvidence(decision.Reader, visible, revision.Evidence)
+	revision.Evidence = decision.Reader.Concealing(visible, revision.Evidence)
 
 	return revision, nil
 }
@@ -1410,7 +1410,7 @@ func (s *memoriesService) shown(
 		return entity.Memory{}, err
 	}
 
-	memory.Evidence = seenEvidence(reader, visible, memory.Evidence)
+	memory.Evidence = reader.Concealing(visible, memory.Evidence)
 
 	return memory.ViewedBy(reader), nil
 }
@@ -1450,24 +1450,6 @@ func (s *memoriesService) visibleIssues(
 	}
 
 	return visible, nil
-}
-
-func seenEvidence(
-	reader entity.KnowledgeReader,
-	visibleIssues []uuid.UUID,
-	evidence []entity.MemoryEvidence,
-) []entity.MemoryEvidence {
-	seen := make([]entity.MemoryEvidence, 0, len(evidence))
-
-	for _, cited := range evidence {
-		if cited.State == entity.MemoryEvidenceUnavailable || !cited.SeenBy(reader, visibleIssues) {
-			cited = cited.Concealed()
-		}
-
-		seen = append(seen, cited)
-	}
-
-	return seen
 }
 
 func (s *memoriesService) audienceProject(
