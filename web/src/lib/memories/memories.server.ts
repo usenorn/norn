@@ -6,12 +6,14 @@ import {
 	memoryListParams,
 	memoryPageSize,
 	memoryRevisionPageSize,
+	projectMemoryCount,
 	type MemoryChosen,
 	type MemoryDetail,
 	type MemoryDraft,
 	type MemoryHistory,
 	type MemoryList,
 	type MemoryQuery,
+	type ProjectMemories,
 } from "./memories";
 
 const recentRevisions = 3;
@@ -114,6 +116,31 @@ async function readRevision(
 	});
 
 	return data ? { kind: "ready", revision: data } : { kind: "unavailable" };
+}
+
+export async function readProjectMemories(
+	api: Client<paths>,
+	workspaceId: string,
+	projectId: string
+): Promise<ProjectMemories> {
+	const path = { workspaceId };
+	const [accepted, awaiting] = await Promise.all([
+		api.GET("/workspaces/{workspaceId}/memories", {
+			params: { path, query: { projectId, status: ["accepted"], limit: projectMemoryCount } },
+		}),
+		api.GET("/workspaces/{workspaceId}/memories", {
+			params: { path, query: { projectId, reviewable: true, limit: 1 } },
+		}),
+	]);
+
+	if (!accepted.data || !awaiting.data) return { kind: "unavailable" };
+
+	return {
+		kind: "ready",
+		memories: accepted.data.memories,
+		more: Boolean(accepted.data.nextCursor),
+		awaiting: awaiting.data.memories.length > 0 || Boolean(awaiting.data.nextCursor),
+	};
 }
 
 export async function readProjects(api: Client<paths>, workspaceId: string): Promise<Project[]> {

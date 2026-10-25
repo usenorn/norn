@@ -224,6 +224,12 @@ export function memoryDraftOf(memory: Memory, supersedes: boolean): MemoryDraft 
 	return { kind: "ready", memory };
 }
 
+export const projectMemoryCount = 5;
+
+export type ProjectMemories =
+	| { kind: "unavailable" }
+	| { kind: "ready"; memories: Memory[]; more: boolean; awaiting: boolean };
+
 export type MemoryChosen = { kind: "ready"; revision: MemoryRevision } | { kind: "unavailable" };
 
 export type MemoryHistory =

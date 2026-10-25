@@ -4,6 +4,7 @@ import { listed } from "#lib/api/listed.js";
 import { issuePageSize } from "#lib/issues/filter.js";
 import type { ProjectDetail } from "#lib/projects/projects.js";
 import { readProjectDocs } from "#lib/docs/docs.server.js";
+import { readProjectMemories } from "#lib/memories/memories.server.js";
 import { projectPreviewStates } from "./preview";
 import type { components } from "#lib/api/dashboard.gen.js";
 import type { ActivityFeed } from "#lib/activity/activity.js";
@@ -33,6 +34,7 @@ export const load: PageServerLoad = async ({
 
 	depends(keys.projects(workspace.id));
 	depends(keys.issues(workspace.id));
+	depends(keys.memories(workspace.id));
 
 	if (import.meta.env.DEV && projectPreviewStates[url.searchParams.get("state") ?? ""]) {
 		return { detail: { kind: "loading" }, progress: undefined };
@@ -50,7 +52,7 @@ export const load: PageServerLoad = async ({
 
 	const path = { workspaceId: workspace.id, projectId: project.id };
 
-	const [members, updates, issues, activity, progress, links, docs] = await Promise.all([
+	const [members, updates, issues, activity, progress, links, docs, memories] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/members", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/projects/{projectId}/status", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/issues", {
@@ -69,6 +71,7 @@ export const load: PageServerLoad = async ({
 			params: { path: { workspaceId: workspace.id, projectId: project.id } },
 		}),
 		readProjectDocs(locals.api, workspace.id, project.id),
+		readProjectMemories(locals.api, workspace.id, project.id),
 	]);
 
 	return {
@@ -78,6 +81,7 @@ export const load: PageServerLoad = async ({
 			members: members.data ?? [],
 			links: links.data ?? [],
 			docs,
+			memories,
 			updates: updates.data ?? [],
 			rows: listed(
 				issues.data && {

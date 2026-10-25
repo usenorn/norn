@@ -34,6 +34,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [
 						{
@@ -147,6 +148,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [
 						{
@@ -178,6 +180,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-09-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [],
 					updates: [],
@@ -201,6 +204,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-09-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [],
 					updates: [],
@@ -228,6 +232,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [
 						{
@@ -329,6 +334,32 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: {
+						kind: "ready",
+						more: true,
+						awaiting: true,
+						memories: [
+							{
+								id: "00000000-0000-4000-8000-000000000c21",
+								kind: "constraint",
+								statement: "Invoices are rounded half to even, never half up",
+								rationale: "",
+								conditions: "",
+								audience: { visibility: "workspace" },
+								appliesTo: { component: "ledger" },
+								status: "accepted",
+								basis: "observation",
+								evidence: [],
+								source: "person",
+								effectiveFrom: "2026-10-24",
+								version: 1,
+								contributorIds: [],
+								viewer: { canEdit: true, canShare: true, canReview: true },
+								createdAt: "2026-10-24T15:30:00Z",
+								updatedAt: "2026-10-24T15:30:00Z",
+							},
+						],
+					},
 					docs: {
 						kind: "ready",
 						docs: [
@@ -456,6 +487,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "unavailable" },
 					docs: { kind: "unavailable" },
 					members: [
 						{
@@ -557,6 +589,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [
 						{
@@ -659,6 +692,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [
 						{
@@ -761,6 +795,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-06-01T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [
 						{
@@ -859,6 +894,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-01-08T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [],
 					updates: [],
@@ -882,6 +918,7 @@ export const projectPreviewStates: Record<string, ProjectPreview> = import.meta.
 						createdAt: "2026-07-14T09:00:00Z",
 					},
 					links: [],
+					memories: { kind: "ready", memories: [], more: false, awaiting: false },
 					docs: { kind: "ready", docs: [] },
 					members: [],
 					updates: [],
