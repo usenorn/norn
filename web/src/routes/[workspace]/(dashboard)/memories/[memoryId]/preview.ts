@@ -22,6 +22,8 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 			duplicate: {
 				detail: {
 					kind: "ready",
+					lineage: [],
+					recent: [],
 					memory: {
 						id: "00000000-0000-4000-8000-000000000c21",
 						kind: "decision",
@@ -100,6 +102,8 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 			conditional: {
 				detail: {
 					kind: "ready",
+					lineage: [],
+					recent: [],
 					memory: {
 						id: "00000000-0000-4000-8000-000000000c31",
 						kind: "decision",
@@ -178,6 +182,8 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 			disputed: {
 				detail: {
 					kind: "ready",
+					lineage: [],
+					recent: [],
 					memory: {
 						id: "00000000-0000-4000-8000-000000000c41",
 						kind: "decision",
@@ -256,6 +262,8 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 			accepted: {
 				detail: {
 					kind: "ready",
+					lineage: [],
+					recent: [],
 					memory: {
 						id: "00000000-0000-4000-8000-000000000c51",
 						kind: "decision",
@@ -292,6 +300,8 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 			read_only: {
 				detail: {
 					kind: "ready",
+					lineage: [],
+					recent: [],
 					memory: {
 						id: "00000000-0000-4000-8000-000000000c61",
 						kind: "decision",

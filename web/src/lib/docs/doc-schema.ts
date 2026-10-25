@@ -7,17 +7,17 @@ export const docTitleSchema = z
 	.min(1, "Give the doc a title.")
 	.max(docTitleMax, `Keep the title under ${docTitleMax} characters.`);
 
-const audienceShape = {
+export const audienceShape = {
 	visibility: z.enum(["workspace", "project", "personal"]).default("workspace"),
 	projectId: z.string().default(""),
 };
 
-const projectChosen = {
+export const projectChosen = {
 	path: ["projectId"],
 	error: "Choose the project whose members will read it.",
 };
 
-function chosesProject(input: { visibility: string; projectId: string }): boolean {
+export function chosesProject(input: { visibility: string; projectId: string }): boolean {
 	return input.visibility !== "project" || input.projectId !== "";
 }
 
@@ -25,10 +25,10 @@ export const newDocSchema = z
 	.object({ title: docTitleSchema, parentId: z.string().default(""), ...audienceShape })
 	.refine(chosesProject, projectChosen);
 
-export const shareDocSchema = z.object(audienceShape).refine(chosesProject, projectChosen);
+export const shareAudienceSchema = z.object(audienceShape).refine(chosesProject, projectChosen);
 
 export type NewDocInput = z.infer<typeof newDocSchema>;
-export type ShareDocInput = z.infer<typeof shareDocSchema>;
+export type ShareAudienceInput = z.infer<typeof shareAudienceSchema>;
 
 const expectedVersion = z.coerce.number().int().min(1);
 
