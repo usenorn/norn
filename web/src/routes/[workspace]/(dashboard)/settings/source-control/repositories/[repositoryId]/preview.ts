@@ -1,7 +1,7 @@
 import type {
 	SourceControlFailure,
 	SourceControlRepositoryView,
-} from "$lib/source-control/source-control";
+} from "#lib/source-control/source-control.js";
 
 export type SourceControlRepositoryPreview = {
 	view?: SourceControlRepositoryView;

@@ -1,5 +1,5 @@
-import { keys } from "$lib/api/keys";
-import { listed, type Listed } from "$lib/api/listed";
+import { keys } from "#lib/api/keys.js";
+import { listed, type Listed } from "#lib/api/listed.js";
 import {
 	carriesDisplay,
 	displayCookie,
@@ -8,11 +8,11 @@ import {
 	surfaceDefaults,
 	writeDisplay,
 	type Display,
-} from "$lib/issues/display";
-import { facetCount, facetFilters, readFacets, type Facets } from "$lib/issues/facets";
-import { allOf, issuePageSize, type IssueFilter, type IssueQueryBody } from "$lib/issues/filter";
-import type { Issue } from "$lib/issues/issues";
-import { calendarDate } from "$lib/time";
+} from "#lib/issues/display.js";
+import { facetCount, facetFilters, readFacets, type Facets } from "#lib/issues/facets.js";
+import { allOf, issuePageSize, type IssueFilter, type IssueQueryBody } from "#lib/issues/filter.js";
+import type { Issue } from "#lib/issues/issues.js";
+import { calendarDate } from "#lib/time.js";
 import type { PageServerLoad } from "./$types";
 
 const openCategories = ["not_started", "active"];

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ChevronLeft from "@lucide/svelte/icons/chevron-left";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 
 	let {
 		side,

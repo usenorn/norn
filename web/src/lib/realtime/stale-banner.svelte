@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
+	import { refreshAll } from "$app/navigation";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 
 	let { shown, off = false }: { shown: boolean; off?: boolean } = $props();
 
@@ -12,7 +12,7 @@
 		refreshing = true;
 
 		try {
-			await invalidateAll();
+			await refreshAll();
 		} finally {
 			refreshing = false;
 		}

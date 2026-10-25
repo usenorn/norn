@@ -7,13 +7,13 @@
 	import Settings from "@lucide/svelte/icons/settings";
 	import Terminal from "@lucide/svelte/icons/terminal";
 	import UserPlus from "@lucide/svelte/icons/user-plus";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
-	import AccountIdentity from "$lib/account/account-identity.svelte";
-	import { withSlot, type SignedInAccount } from "$lib/account/accounts";
-	import { logoSource } from "$lib/workspace/logo";
-	import { workspacePath } from "$lib/workspace/navigation";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import WorkspaceMark from "#lib/components/norn/workspace-mark.svelte";
+	import AccountIdentity from "#lib/account/account-identity.svelte";
+	import { withSlot, type SignedInAccount } from "#lib/account/accounts.js";
+	import { logoSource } from "#lib/workspace/logo.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 
 	type WorkspaceContext = { slug: string; name: string; logoUrl?: string };
 

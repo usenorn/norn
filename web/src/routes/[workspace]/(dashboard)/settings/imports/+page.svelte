@@ -6,18 +6,18 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Import from "@lucide/svelte/icons/import";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { api } from "$lib/api";
-	import { onDateAndTime } from "$lib/time";
-	import { startImportSchema } from "$lib/imports/import-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { api } from "#lib/api/index.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import { startImportSchema } from "#lib/imports/import-schema.js";
 	import {
 		counted,
 		failureMessage,
@@ -30,7 +30,7 @@
 		statusTone,
 		type ImportFailure,
 		type ImportsView,
-	} from "$lib/imports/imports";
+	} from "#lib/imports/imports.js";
 	import { importsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

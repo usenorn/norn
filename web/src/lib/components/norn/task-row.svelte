@@ -3,12 +3,12 @@
 	import PersonAvatar from "./person-avatar.svelte";
 	import PriorityIcon from "./priority-icon.svelte";
 	import StatusIcon from "./status-icon.svelte";
-	import LabelChips from "$lib/labels/label-chips.svelte";
-	import { cn } from "$lib/utils.js";
-	import { dueLabel, overdue } from "$lib/time";
-	import { finished } from "$lib/team/states";
-	import type { RowProperty } from "$lib/issues/display";
-	import type { Task } from "$lib/tasks/types";
+	import LabelChips from "#lib/labels/label-chips.svelte";
+	import { cn } from "#lib/utils.js";
+	import { dueLabel, overdue } from "#lib/time.js";
+	import { finished } from "#lib/team/states.js";
+	import type { RowProperty } from "#lib/issues/display.js";
+	import type { Task } from "#lib/tasks/types.js";
 
 	let {
 		task,

@@ -1,6 +1,6 @@
-import type { IssueProgress } from "$lib/issues/board";
-import type { Membership } from "$lib/workspace/members";
-import type { ProjectDetail } from "$lib/projects/projects";
+import type { IssueProgress } from "#lib/issues/board.js";
+import type { Membership } from "#lib/workspace/members.js";
+import type { ProjectDetail } from "#lib/projects/projects.js";
 
 export type ProjectPreview = {
 	detail: ProjectDetail;

@@ -1,4 +1,4 @@
-import type { DirectoryFailure, DirectoryView } from "$lib/directory/directory";
+import type { DirectoryFailure, DirectoryView } from "#lib/directory/directory.js";
 
 export type DirectoryPreview = {
 	view?: DirectoryView;

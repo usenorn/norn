@@ -1,4 +1,4 @@
-import type { TeamSettings } from "$lib/team/team-settings";
+import type { TeamSettings } from "#lib/team/team-settings.js";
 
 export type TeamGeneralPreview = {
 	settings: TeamSettings;

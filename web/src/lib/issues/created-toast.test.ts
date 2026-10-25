@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Raised } from "$lib/toast/toasts";
+import type { Raised } from "#lib/toast/toasts.js";
 import type { Issue } from "./issues";
 import { announceCreated } from "./created-toast";
 
 const raised: { message: string; options: Raised }[] = [];
 const copied: { text: string; said: string }[] = [];
 
-vi.mock("$lib/toast/toasts", () => ({
+vi.mock("#lib/toast/toasts.js", () => ({
 	showToast: (message: string, options: Raised) => raised.push({ message, options }),
 }));
 
-vi.mock("$lib/clipboard", () => ({
+vi.mock("#lib/clipboard.js", () => ({
 	copyText: async (text: string, said: string) => {
 		copied.push({ text, said });
 

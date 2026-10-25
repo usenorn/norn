@@ -1,12 +1,12 @@
 <script lang="ts">
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Map from "@lucide/svelte/icons/map";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
 
 	let {
 		view,

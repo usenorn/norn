@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 	import { folderLabels, folderTones, type CodebaseState } from "./runners";
 
 	let { state, class: className }: { state: CodebaseState; class?: string } = $props();

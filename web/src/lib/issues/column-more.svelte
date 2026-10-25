@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import type { IssueLayout } from "./display";
 	import type { ColumnLoad } from "./paging";
 

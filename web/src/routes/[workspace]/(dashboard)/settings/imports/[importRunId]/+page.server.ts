@@ -1,12 +1,12 @@
-import { keys } from "$lib/api/keys";
+import { keys } from "#lib/api/keys.js";
 import {
 	configured,
 	memberPageSize,
 	type ImportRun,
 	type ImportRunView,
 	type ImportTargets,
-} from "$lib/imports/imports";
-import type { Team } from "$lib/team/teams";
+} from "#lib/imports/imports.js";
+import type { Team } from "#lib/team/teams.js";
 import type { PageServerLoad } from "./$types";
 
 export type ImportRunPageData = {

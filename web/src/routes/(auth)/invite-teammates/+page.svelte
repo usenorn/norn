@@ -9,17 +9,17 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import Users from "@lucide/svelte/icons/users";
 	import X from "@lucide/svelte/icons/x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import { teamSummary } from "$lib/team/teams";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Progress } from "$lib/components/ui/progress/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import { api } from "$lib/api";
-	import { inviteSchema } from "$lib/workspace/invite-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import { teamSummary } from "#lib/team/teams.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Progress } from "#lib/components/ui/progress/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import { api } from "#lib/api/index.js";
+	import { inviteSchema } from "#lib/workspace/invite-schema.js";
 	import {
 		counted,
 		inviteFromResult,
@@ -27,8 +27,8 @@
 		parseAddresses,
 		type Invite,
 		type InviteStatus,
-	} from "$lib/workspace/invites";
-	import { membershipRoles, roleLabels, type MembershipRole } from "$lib/workspace/members";
+	} from "#lib/workspace/invites.js";
+	import { membershipRoles, roleLabels, type MembershipRole } from "#lib/workspace/members.js";
 	import { invitePreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

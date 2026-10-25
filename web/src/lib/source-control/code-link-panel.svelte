@@ -4,7 +4,7 @@
 	import GitCommitHorizontal from "@lucide/svelte/icons/git-commit-horizontal";
 	import GitPullRequest from "@lucide/svelte/icons/git-pull-request";
 
-	import { Button } from "$lib/components/ui/button";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		changeStateLabel,
 		checksLabel,

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import { issueCount, labelFailureMessage, mergeTargets, type Label, type UsageRead } from "./labels";
 
 	let {

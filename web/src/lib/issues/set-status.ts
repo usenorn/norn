@@ -1,7 +1,7 @@
-import { api } from "$lib/api";
-import { attempt, unknownLine } from "$lib/api/attempt";
+import { api } from "#lib/api/index.js";
+import { attempt, unknownLine } from "#lib/api/attempt.js";
 import { expectedVersion, remember } from "./versions";
-import type { WorkflowState } from "$lib/team/states";
+import type { WorkflowState } from "#lib/team/states.js";
 import type { Issue } from "./issues";
 
 export type StatusOutcome =

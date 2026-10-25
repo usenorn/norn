@@ -1,7 +1,7 @@
-import { api } from "$lib/api";
-import { attempt } from "$lib/api/attempt";
-import { expectedVersion, remember } from "$lib/issues/versions";
-import type { Issue } from "$lib/issues/issues";
+import { api } from "#lib/api/index.js";
+import { attempt } from "#lib/api/attempt.js";
+import { expectedVersion, remember } from "#lib/issues/versions.js";
+import type { Issue } from "#lib/issues/issues.js";
 
 export type LabelsOutcome =
 	| { kind: "changed"; issue: Issue }

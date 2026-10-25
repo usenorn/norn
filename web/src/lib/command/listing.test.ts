@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ShortcutId } from "$lib/shortcuts/shortcuts";
+import type { ShortcutId } from "#lib/shortcuts/shortcuts.js";
 import { paletteCommands } from "./commands";
 import { paletteListing, type ListingSources } from "./listing";
 import { footNote, modeOf, type CommandScope, type Destination } from "./model";

@@ -2,8 +2,8 @@
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import EyeOff from "@lucide/svelte/icons/eye-off";
 	import Send from "@lucide/svelte/icons/send";
-	import Pill from "$lib/components/norn/pill.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import Pill from "#lib/components/norn/pill.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import { roadmapReviewPath, roadmapSettingsPath } from "./admin";
 
 	let { workspace }: { workspace: string } = $props();

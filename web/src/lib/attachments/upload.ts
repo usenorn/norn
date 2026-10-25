@@ -1,10 +1,10 @@
-import { api } from "$lib/api";
+import { api } from "#lib/api/index.js";
 import {
 	readAttachmentFailure,
 	type Attachment,
 	type AttachmentFailure,
 	type AttachmentTransfer,
-} from "$lib/attachments/attachments";
+} from "#lib/attachments/attachments.js";
 
 export type UploadState = "reserving" | "sending" | "finalizing" | "done" | "failed" | "cancelled";
 

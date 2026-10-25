@@ -1,12 +1,12 @@
 <script lang="ts">
 	import Folder from "@lucide/svelte/icons/folder";
 	import Link2 from "@lucide/svelte/icons/link-2";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
-	import type { IssueCandidate } from "$lib/issues/issues";
-	import type { Project } from "$lib/projects/projects";
-	import { workspacePath } from "$lib/workspace/navigation";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
+	import type { IssueCandidate } from "#lib/issues/issues.js";
+	import type { Project } from "#lib/projects/projects.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import LinkRow from "./link-row.svelte";
 	import { unlinkedIssues, unlinkedProjects, type DocLinks } from "./docs";
 

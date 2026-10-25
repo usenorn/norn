@@ -1,4 +1,4 @@
-import type { SignUpConfirmation } from "$lib/auth/types";
+import type { SignUpConfirmation } from "#lib/auth/types.js";
 
 export const signUpConfirmPreviewStates: Record<string, SignUpConfirmation> = import.meta.env.DEV
 	? {

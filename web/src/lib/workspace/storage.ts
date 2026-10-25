@@ -1,6 +1,6 @@
-import { formatBytes, type WorkspaceStorage } from "$lib/attachments/attachments";
-import type { ProgressTone } from "$lib/components/ui/progress/progress.svelte";
-import { onDateAndTime } from "$lib/time";
+import { formatBytes, type WorkspaceStorage } from "#lib/attachments/attachments.js";
+import type { ProgressTone } from "#lib/components/ui/progress/progress.svelte";
+import { onDateAndTime } from "#lib/time.js";
 
 const nearlyFullPercent = 90;
 

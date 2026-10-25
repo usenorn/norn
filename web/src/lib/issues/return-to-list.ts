@@ -1,3 +1,5 @@
+import type { ReadonlyURL } from "$app/state";
+
 const listPath = /^\/(issues|my-tasks|teams\/[^/]+\/issues)$/;
 
 export function withReturn(href: string, from: string): string {
@@ -9,7 +11,7 @@ export function withReturn(href: string, from: string): string {
 	return `${base}?${params}`;
 }
 
-export function listReturn(url: URL, workspace: string, fallback: string): string {
+export function listReturn(url: ReadonlyURL, workspace: string, fallback: string): string {
 	const asked = url.searchParams.get("from");
 
 	if (!asked) return fallback;
@@ -17,7 +19,7 @@ export function listReturn(url: URL, workspace: string, fallback: string): strin
 	let target: URL;
 
 	try {
-		target = new URL(asked, url);
+		target = new URL(asked, url.href);
 	} catch {
 		return fallback;
 	}

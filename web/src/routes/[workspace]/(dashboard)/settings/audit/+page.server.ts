@@ -1,5 +1,5 @@
-import { noAuditFilters, type AuditFilters, type AuditRecord } from "$lib/audit/audit";
-import { keys } from "$lib/api/keys";
+import { noAuditFilters, type AuditFilters, type AuditRecord } from "#lib/audit/audit.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export type AuditPageData = {

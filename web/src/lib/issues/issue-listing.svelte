@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick, untrack } from "svelte";
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import Bookmark from "@lucide/svelte/icons/bookmark";
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -13,50 +13,50 @@
 	import List from "@lucide/svelte/icons/list";
 	import Plus from "@lucide/svelte/icons/plus";
 	import { SvelteSet } from "svelte/reactivity";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import IssueRow from "$lib/components/norn/issue-row.svelte";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import ProgressBar from "$lib/components/norn/progress-bar.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import LabelPicker from "$lib/labels/label-picker.svelte";
-	import { setIssueLabels, type LabelsOutcome } from "$lib/labels/set-issue-labels";
-	import type { Label } from "$lib/labels/labels";
-	import BulkBar, { type BulkPicker } from "$lib/issues/bulk-bar.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { bindShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { showFailure, showToast } from "$lib/toast/toasts";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import UnassignedAvatar from "#lib/components/norn/unassigned-avatar.svelte";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import IssueRow from "#lib/components/norn/issue-row.svelte";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import ProgressBar from "#lib/components/norn/progress-bar.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import LabelPicker from "#lib/labels/label-picker.svelte";
+	import { setIssueLabels, type LabelsOutcome } from "#lib/labels/set-issue-labels.js";
+	import type { Label } from "#lib/labels/labels.js";
+	import BulkBar, { type BulkPicker } from "#lib/issues/bulk-bar.svelte";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { bindShortcuts, useShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import { showFailure, showToast } from "#lib/toast/toasts.js";
 	import { announceCreated } from "./created-toast";
-	import { attempt, outcomeLine, unknownLine, type Outcome } from "$lib/api/attempt";
-	import { statusIndexOf } from "$lib/issues/set-status";
-	import BulkResult from "$lib/issues/bulk-result.svelte";
-	import IssueCard from "$lib/issues/issue-card.svelte";
-	import { registerNewIssue, useNewIssue } from "$lib/issues/new-issue.svelte";
-	import { registerCommandTargets } from "$lib/command/scope.svelte";
-	import PriorityPicker from "$lib/issues/priority-picker.svelte";
-	import PropertyPicker from "$lib/issues/property-picker.svelte";
-	import DisplayMenu from "$lib/issues/display-menu.svelte";
-	import FilterBar from "$lib/issues/filter-bar.svelte";
+	import { attempt, outcomeLine, unknownLine, type Outcome } from "#lib/api/attempt.js";
+	import { statusIndexOf } from "#lib/issues/set-status.js";
+	import BulkResult from "#lib/issues/bulk-result.svelte";
+	import IssueCard from "#lib/issues/issue-card.svelte";
+	import { registerNewIssue, useNewIssue } from "#lib/issues/new-issue.svelte.js";
+	import { registerCommandTargets } from "#lib/command/scope.svelte.js";
+	import PriorityPicker from "#lib/issues/priority-picker.svelte";
+	import PropertyPicker from "#lib/issues/property-picker.svelte";
+	import DisplayMenu from "#lib/issues/display-menu.svelte";
+	import FilterBar from "#lib/issues/filter-bar.svelte";
 	import {
 		clearedLink,
 		dueEntries,
 		unassignedEntry,
 		type FacetCatalogue,
-	} from "$lib/issues/facet-options";
-	import { linkTo } from "$lib/issues/linking";
-	import { withReturn } from "$lib/issues/return-to-list";
-	import { edgeScroll, type TouchDragHandlers } from "$lib/issues/touch-drag";
-	import { rememberOrder } from "$lib/issues/visit-order";
-	import { failures, rangeBetween, settled, type BulkActionResult } from "$lib/issues/bulk";
-	import { api } from "$lib/api";
-	import { flash } from "$lib/motion";
+	} from "#lib/issues/facet-options.js";
+	import { linkTo } from "#lib/issues/linking.js";
+	import { withReturn } from "#lib/issues/return-to-list.js";
+	import { edgeScroll, type TouchDragHandlers } from "#lib/issues/touch-drag.js";
+	import { rememberOrder } from "#lib/issues/visit-order.js";
+	import { failures, rangeBetween, settled, type BulkActionResult } from "#lib/issues/bulk.js";
+	import { api } from "#lib/api/index.js";
+	import { flash } from "#lib/motion.js";
 	import {
 		backlogStates,
 		boardFor,
@@ -64,8 +64,8 @@
 		type ColumnSource,
 		type Issue,
 		type IssueColumn,
-	} from "$lib/issues/board";
-	import ColumnMore from "$lib/issues/column-more.svelte";
+	} from "#lib/issues/board.js";
+	import ColumnMore from "#lib/issues/column-more.svelte";
 	import {
 		boardGroupings,
 		surfaceDefaults,
@@ -76,7 +76,7 @@
 		orderings,
 		tabLabels,
 		writeDisplay,
-	} from "$lib/issues/display";
+	} from "#lib/issues/display.js";
 	import {
 		noPages,
 		pagesOf,
@@ -84,17 +84,17 @@
 		withLoading,
 		withPage,
 		type BoardPages,
-	} from "$lib/issues/paging";
-	import { columnQuery, tallyTotal } from "$lib/issues/filter";
-	import { withEdit, without, type PendingEdit } from "$lib/issues/pending";
-	import type { NewIssuePrefill } from "$lib/issues/new-issue-schema";
+	} from "#lib/issues/paging.js";
+	import { columnQuery, tallyTotal } from "#lib/issues/filter.js";
+	import { withEdit, without, type PendingEdit } from "#lib/issues/pending.js";
+	import type { NewIssuePrefill } from "#lib/issues/new-issue-schema.js";
 	import {
 		settledWith,
 		unsettled,
 		withDraft,
 		type CreationOutcome,
 		type IssueCreation,
-	} from "$lib/issues/creating";
+	} from "#lib/issues/creating.js";
 	import {
 		changedProperty,
 		insertionIndex,
@@ -103,27 +103,27 @@
 		stayedPut,
 		type DropTarget,
 		type PendingMove,
-	} from "$lib/issues/drop";
-	import { expectedVersion, remember } from "$lib/issues/versions";
+	} from "#lib/issues/drop.js";
+	import { expectedVersion, remember } from "#lib/issues/versions.js";
 	import {
 		columnFilter,
 		facetCount,
 		pickableFacets,
 		unassigned,
-	} from "$lib/issues/facets";
-	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "$lib/issues/issues";
-	import type { IssuePriority } from "$lib/issues/issues";
-	import { brokenIn } from "$lib/views/applied";
-	import { referenceLabel, scopeOf, viewsPath } from "$lib/views/views";
-	import type { WorkflowState } from "$lib/team/states";
-	import { assignees } from "$lib/workspace/members";
-	import { workspacePath } from "$lib/workspace/navigation";
-	import { cycleWindow } from "$lib/time";
-	import { cyclingTeams, openCycles, type TeamCyclesRead } from "$lib/cycles/cycles";
+	} from "#lib/issues/facets.js";
+	import { issueFailureMessage, priorities, priorityLabel, readIssueFailure } from "#lib/issues/issues.js";
+	import type { IssuePriority } from "#lib/issues/issues.js";
+	import { brokenIn } from "#lib/views/applied.js";
+	import { referenceLabel, scopeOf, viewsPath } from "#lib/views/views.js";
+	import type { WorkflowState } from "#lib/team/states.js";
+	import { assignees } from "#lib/workspace/members.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
+	import { cycleWindow } from "#lib/time.js";
+	import { cyclingTeams, openCycles, type TeamCyclesRead } from "#lib/cycles/cycles.js";
 	import type { IssuesListingData, IssuesListingScope, IssuesPreview } from "./listing";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import { Pending } from "$lib/api/pending.svelte";
-	import { Watch } from "$lib/api/watch.svelte";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import { Pending } from "#lib/api/pending.svelte.js";
+	import { Watch } from "#lib/api/watch.svelte.js";
 
 	let {
 		data,

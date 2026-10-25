@@ -1,7 +1,7 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { Issue } from "$lib/issues/issues";
-import { categoryLabels, type StateCategory } from "$lib/team/states";
-import { shiftDays } from "$lib/time";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { Issue } from "#lib/issues/issues.js";
+import { categoryLabels, type StateCategory } from "#lib/team/states.js";
+import { shiftDays } from "#lib/time.js";
 
 export type Cycle = components["schemas"]["Cycle"];
 export type CyclePhase = components["schemas"]["CyclePhase"];

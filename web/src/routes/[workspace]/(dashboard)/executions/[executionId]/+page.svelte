@@ -3,23 +3,23 @@
 	import { goto, invalidate } from "$app/navigation";
 	import ArrowLeft from "@lucide/svelte/icons/arrow-left";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { useRealtime } from "$lib/realtime/connection.svelte";
-	import { waitingOnLine, waitingTitle, type DecisionRight } from "$lib/executions/reviews";
-	import QuestionList from "$lib/questions/question-list.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import AttentionPanel from "$lib/components/norn/attention-panel.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import RunHeader from "$lib/executions/run-header.svelte";
-	import RunActions from "$lib/executions/run-actions.svelte";
-	import RunTimeline from "$lib/executions/run-timeline.svelte";
-	import PlanPanel from "$lib/executions/plan-panel.svelte";
-	import ChangesetPanel from "$lib/executions/changeset-panel.svelte";
-	import ServicesPanel from "$lib/executions/services-panel.svelte";
-	import PreviewsPanel from "$lib/executions/previews-panel.svelte";
-	import { workspacePath } from "$lib/workspace/navigation";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { useRealtime } from "#lib/realtime/connection.svelte.js";
+	import { waitingOnLine, waitingTitle, type DecisionRight } from "#lib/executions/reviews.js";
+	import QuestionList from "#lib/questions/question-list.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import AttentionPanel from "#lib/components/norn/attention-panel.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import RunHeader from "#lib/executions/run-header.svelte";
+	import RunActions from "#lib/executions/run-actions.svelte";
+	import RunTimeline from "#lib/executions/run-timeline.svelte";
+	import PlanPanel from "#lib/executions/plan-panel.svelte";
+	import ChangesetPanel from "#lib/executions/changeset-panel.svelte";
+	import ServicesPanel from "#lib/executions/services-panel.svelte";
+	import PreviewsPanel from "#lib/executions/previews-panel.svelte";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import {
 		blockingQuestion,
 		changeStatLine,
@@ -37,10 +37,10 @@
 		type ExecutionEvent,
 		type IssueQuestion,
 		type RunView,
-	} from "$lib/executions/executions";
+	} from "#lib/executions/executions.js";
 	import { runPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { attempt, unknownLine, type ApiResult, type Outcome } from "$lib/api/attempt";
+	import { attempt, unknownLine, type ApiResult, type Outcome } from "#lib/api/attempt.js";
 
 	let { data }: PageProps = $props();
 

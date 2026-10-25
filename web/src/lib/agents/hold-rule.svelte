@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Select from "$lib/components/ui/select/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
 	import { holdOptionHints, holdOptionLabels, type AgentHold } from "./agents";
 
 	let {

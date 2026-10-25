@@ -1,14 +1,14 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { passwordMessage } from "$lib/auth/password-reset";
-import { acceptInvitationSchema } from "$lib/workspace/accept-invitation-schema";
+import { passwordMessage } from "#lib/auth/password-reset.js";
+import { acceptInvitationSchema } from "#lib/workspace/accept-invitation-schema.js";
 import {
 	invitationState,
 	linkFailure,
 	type AcceptInvitation,
 	type InvitationContext,
-} from "$lib/workspace/accept-invitation";
+} from "#lib/workspace/accept-invitation.js";
 import { acceptInvitationPreviewStates } from "./preview";
 import type { Actions, PageServerLoad } from "./$types";
 

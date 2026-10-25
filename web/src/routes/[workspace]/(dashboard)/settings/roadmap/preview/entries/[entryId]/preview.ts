@@ -1,4 +1,4 @@
-import type { RoadmapPreviewEntryView } from "$lib/roadmap/admin";
+import type { RoadmapPreviewEntryView } from "#lib/roadmap/admin.js";
 
 export const roadmapPreviewEntryStates: Record<string, RoadmapPreviewEntryView> = import.meta.env.DEV
 	? {

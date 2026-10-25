@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { api } from "$lib/api";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { api } from "#lib/api/index.js";
 	import { linearScopeSchema } from "./import-schema";
 	import { stageRun } from "./steps";
 	import {

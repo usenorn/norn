@@ -4,16 +4,16 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Server from "@lucide/svelte/icons/server";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { agentsPath } from "$lib/agents/agents";
-	import AgentGroup from "$lib/runners/agent-group.svelte";
-	import ConnectDialog from "$lib/runners/connect-dialog.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { agentsPath } from "#lib/agents/agents.js";
+	import AgentGroup from "#lib/runners/agent-group.svelte";
+	import ConnectDialog from "#lib/runners/connect-dialog.svelte";
 	import {
 		failureMessage,
 		liveRefreshMs,
@@ -22,7 +22,7 @@
 		type Runner,
 		type RunnerFailure,
 		type RunnersView,
-	} from "$lib/runners/runners";
+	} from "#lib/runners/runners.js";
 	import { runnersPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

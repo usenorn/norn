@@ -1,5 +1,5 @@
-import type { DirectoryView } from "$lib/directory/directory";
-import { keys } from "$lib/api/keys";
+import type { DirectoryView } from "#lib/directory/directory.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export type DirectoryPageData = {

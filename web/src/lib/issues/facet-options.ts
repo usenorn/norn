@@ -1,4 +1,4 @@
-import type { LabelColor } from "$lib/labels/labels";
+import type { LabelColor } from "#lib/labels/labels.js";
 import type { PickerOption } from "./property-picker.svelte";
 import { dueWindowLabels, dueWindows, facetLabels, unassigned, type FacetKind, type Facets } from "./facets";
 import type { LinkWith } from "./linking";

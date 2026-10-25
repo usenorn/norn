@@ -15,26 +15,26 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import UserRound from "@lucide/svelte/icons/user-round";
 	import Users from "@lucide/svelte/icons/users";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import * as Command from "$lib/components/ui/command/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import { Progress } from "$lib/components/ui/progress/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { copyText } from "$lib/clipboard";
-	import { applyChange } from "$lib/command/apply";
-	import { paletteCommands, stepLabel } from "$lib/command/commands";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import * as Command from "#lib/components/ui/command/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import { Progress } from "#lib/components/ui/progress/index.js";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { copyText } from "#lib/clipboard.js";
+	import { applyChange } from "#lib/command/apply.js";
+	import { paletteCommands, stepLabel } from "#lib/command/commands.js";
 	import {
 		paletteDestinations,
 		peopleDestinations,
 		resultDestinationId,
-	} from "$lib/command/destinations";
-	import { paletteListing, type SearchState } from "$lib/command/listing";
+	} from "#lib/command/destinations.js";
+	import { paletteListing, type SearchState } from "#lib/command/listing.js";
 	import {
 		createLabel,
 		enterHint,
@@ -53,30 +53,30 @@
 		type PaletteEntry,
 		type RecentEntry,
 		type StepOption,
-	} from "$lib/command/model";
-	import { readRecents, referenceOf, rememberRecent, resolveRecents } from "$lib/command/recents";
-	import { useCommandTargets } from "$lib/command/scope.svelte";
+	} from "#lib/command/model.js";
+	import { readRecents, referenceOf, rememberRecent, resolveRecents } from "#lib/command/recents.js";
+	import { useCommandTargets } from "#lib/command/scope.svelte.js";
 	import {
 		appliedLine,
 		changeFor,
 		failedTitle,
 		queuedLine,
 		stepOptions,
-	} from "$lib/command/steps";
-	import { cyclingTeams, type Cycle, type TeamCycle } from "$lib/cycles/cycles";
-	import { useNewIssue } from "$lib/issues/new-issue.svelte";
-	import LabelDot from "$lib/labels/label-dot.svelte";
-	import type { Label } from "$lib/labels/labels";
-	import { toggleDensity } from "$lib/layout/density";
-	import type { Project } from "$lib/projects/projects";
-	import { chordOf, holdShortcuts, useShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { isApplePlatform, shortcutOf } from "$lib/shortcuts/shortcuts";
-	import type { WorkflowState } from "$lib/team/states";
-	import type { Team } from "$lib/team/teams";
-	import { showToast } from "$lib/toast/toasts";
-	import type { SavedView } from "$lib/views/views";
-	import type { Membership } from "$lib/workspace/members";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/command/steps.js";
+	import { cyclingTeams, type Cycle, type TeamCycle } from "#lib/cycles/cycles.js";
+	import { useNewIssue } from "#lib/issues/new-issue.svelte.js";
+	import LabelDot from "#lib/labels/label-dot.svelte";
+	import type { Label } from "#lib/labels/labels.js";
+	import { toggleDensity } from "#lib/layout/density.js";
+	import type { Project } from "#lib/projects/projects.js";
+	import { chordOf, holdShortcuts, useShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { isApplePlatform, shortcutOf } from "#lib/shortcuts/shortcuts.js";
+	import type { WorkflowState } from "#lib/team/states.js";
+	import type { Team } from "#lib/team/teams.js";
+	import { showToast } from "#lib/toast/toasts.js";
+	import type { SavedView } from "#lib/views/views.js";
+	import type { Membership } from "#lib/workspace/members.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { palettePreviewStates } from "./preview";
 	import {
 		searchDebounceMs,

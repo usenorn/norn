@@ -1,13 +1,13 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { message, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { viewSchema } from "$lib/views/view-schema";
+import { viewSchema } from "#lib/views/view-schema.js";
 import {
 	listingFor,
 	readViewFailure,
 	type SavedViewSharing,
 	type ViewFailure,
-} from "$lib/views/views";
+} from "#lib/views/views.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type ViewForm = Infer<typeof viewSchema>;

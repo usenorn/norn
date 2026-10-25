@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import { memberName, type Membership } from "$lib/workspace/members";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import type { Team } from "$lib/team/teams";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import { memberName, type Membership } from "#lib/workspace/members.js";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import type { Team } from "#lib/team/teams.js";
 	import { projectDetailsSchema } from "./project-details-schema";
 	import { teamsChoice, type Project } from "./projects";
 

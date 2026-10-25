@@ -1,4 +1,4 @@
-import type { StateList } from "$lib/team/states";
+import type { StateList } from "#lib/team/states.js";
 
 export type TeamStatesPreview = { states: StateList };
 

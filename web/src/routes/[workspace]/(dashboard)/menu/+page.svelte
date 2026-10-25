@@ -12,17 +12,17 @@
 		ListChecks as ListChecksGlyph,
 		Target as TargetGlyph,
 	} from "lucide";
-	import AccountSwitcher from "$lib/account/account-switcher.svelte";
-	import { logoSource } from "$lib/workspace/logo";
-	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
-	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { cyclePath } from "$lib/cycles/cycles";
-	import { teamIssuesPath } from "$lib/issues/listing";
-	import { teamProjectsPath } from "$lib/projects/projects";
-	import { teamPath, teamSettingsPath } from "$lib/team/teams";
-	import { viewEntries, viewsPath } from "$lib/views/views";
-	import { isCurrent, isExactly, primaryNav, workspacePath } from "$lib/workspace/navigation";
+	import AccountSwitcher from "#lib/account/account-switcher.svelte";
+	import { logoSource } from "#lib/workspace/logo.js";
+	import SidebarItem from "#lib/components/norn/sidebar-item.svelte";
+	import SidebarSection from "#lib/components/norn/sidebar-section.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { cyclePath } from "#lib/cycles/cycles.js";
+	import { teamIssuesPath } from "#lib/issues/listing.js";
+	import { teamProjectsPath } from "#lib/projects/projects.js";
+	import { teamPath, teamSettingsPath } from "#lib/team/teams.js";
+	import { viewEntries, viewsPath } from "#lib/views/views.js";
+	import { isCurrent, isExactly, primaryNav, workspacePath } from "#lib/workspace/navigation.js";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();

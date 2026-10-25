@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 	import type { LabelColor } from "./labels";
 
 	let { color = "neutral", class: className }: { color?: LabelColor; class?: string } = $props();

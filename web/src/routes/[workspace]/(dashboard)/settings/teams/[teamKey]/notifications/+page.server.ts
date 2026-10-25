@@ -1,6 +1,6 @@
-import { keys } from "$lib/api/keys";
-import type { TeamNotificationSetting } from "$lib/notifications/notifications";
-import { teamOf } from "$lib/team/team-settings";
+import { keys } from "#lib/api/keys.js";
+import type { TeamNotificationSetting } from "#lib/notifications/notifications.js";
+import { teamOf } from "#lib/team/team-settings.js";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ depends, route, locals, parent }) => {

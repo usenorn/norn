@@ -1,5 +1,5 @@
-import { onDate } from "$lib/time";
-import type { components, operations } from "$lib/api/dashboard.gen";
+import { onDate } from "#lib/time.js";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
 
 export type Workspace = components["schemas"]["Workspace"];
 export type WeekDay = components["schemas"]["WeekDay"];

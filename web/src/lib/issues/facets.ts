@@ -1,4 +1,4 @@
-import { onCalendarDate, shiftDays } from "$lib/time";
+import { onCalendarDate, shiftDays } from "#lib/time.js";
 import type { Grouping } from "./display";
 import type { IssueFilter } from "./filter";
 import type { IssuePriority } from "./issues";

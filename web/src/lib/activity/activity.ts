@@ -1,5 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
-import { categoryLabels } from "$lib/team/states";
+import type { components } from "#lib/api/dashboard.gen.js";
+import { categoryLabels } from "#lib/team/states.js";
 
 export type ActivityEvent = components["schemas"]["ActivityEvent"];
 export type ActivityChange = components["schemas"]["ActivityChange"];

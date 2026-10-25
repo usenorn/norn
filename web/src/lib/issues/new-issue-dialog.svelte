@@ -8,26 +8,26 @@
 	import X from "@lucide/svelte/icons/x";
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import { api } from "$lib/api";
-	import { showToast } from "$lib/toast/toasts";
-	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Switch } from "$lib/components/ui/switch/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import LabelPicker from "$lib/labels/label-picker.svelte";
-	import { onCalendarDate } from "$lib/time";
-	import { attachmentNode, formatBytes, type Attachment } from "$lib/attachments/attachments";
-	import AttachmentPicker from "$lib/attachments/attachment-picker.svelte";
-	import UploadList from "$lib/attachments/upload-list.svelte";
-	import type { UploadTask } from "$lib/attachments/upload";
-	import { assignable, type AccountKind } from "$lib/workspace/members";
-	import type { Label } from "$lib/labels/labels";
+	import { api } from "#lib/api/index.js";
+	import { showToast } from "#lib/toast/toasts.js";
+	import UnassignedAvatar from "#lib/components/norn/unassigned-avatar.svelte";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Switch } from "#lib/components/ui/switch/index.js";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import LabelPicker from "#lib/labels/label-picker.svelte";
+	import { onCalendarDate } from "#lib/time.js";
+	import { attachmentNode, formatBytes, type Attachment } from "#lib/attachments/attachments.js";
+	import AttachmentPicker from "#lib/attachments/attachment-picker.svelte";
+	import UploadList from "#lib/attachments/upload-list.svelte";
+	import type { UploadTask } from "#lib/attachments/upload.js";
+	import { assignable, type AccountKind } from "#lib/workspace/members.js";
+	import type { Label } from "#lib/labels/labels.js";
 	import {
 		attachFailureMessage,
 		attachPending,
@@ -37,9 +37,9 @@
 		pendingFrom,
 		type PendingFile,
 	} from "./new-issue-attachments";
-	import type { Project } from "$lib/projects/projects";
-	import type { WorkflowState } from "$lib/team/states";
-	import type { Team } from "$lib/team/teams";
+	import type { Project } from "#lib/projects/projects.js";
+	import type { WorkflowState } from "#lib/team/states.js";
+	import type { Team } from "#lib/team/teams.js";
 	import PriorityPicker from "./priority-picker.svelte";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { duePresets } from "./facets";
@@ -60,7 +60,7 @@
 		type IssueDraft,
 	} from "./drafts";
 	import { draftIssue, type CreationOutcome } from "./creating";
-	import Editor from "$lib/editor/editor.svelte";
+	import Editor from "#lib/editor/editor.svelte";
 	import {
 		asDocument,
 		documentEmpty,
@@ -68,7 +68,7 @@
 		emptyDocument,
 		type Document,
 		type DocumentNode,
-	} from "$lib/editor/document";
+	} from "#lib/editor/document.js";
 	import { issueFailureMessage, readIssueFailure } from "./issues";
 	import type { Issue } from "./issues";
 

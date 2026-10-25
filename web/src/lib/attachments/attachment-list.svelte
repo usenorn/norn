@@ -3,8 +3,8 @@
 	import ImageIcon from "@lucide/svelte/icons/image";
 	import Paperclip from "@lucide/svelte/icons/paperclip";
 	import X from "@lucide/svelte/icons/x";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { formatBytes, type AttachmentPanel } from "$lib/attachments/attachments";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { formatBytes, type AttachmentPanel } from "#lib/attachments/attachments.js";
 
 	let {
 		panel,

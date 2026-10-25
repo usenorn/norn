@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { MorphIcon, type IconNode } from "morphicons/svelte";
-	import { cn, type IconComponent } from "$lib/utils.js";
+	import { cn, type IconComponent } from "#lib/utils.js";
 
 	let {
 		href,

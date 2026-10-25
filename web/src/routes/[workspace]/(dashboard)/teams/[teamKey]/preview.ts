@@ -1,5 +1,5 @@
-import type { TeamRoster } from "$lib/team/members";
-import type { TeamOverview } from "$lib/team/teams";
+import type { TeamRoster } from "#lib/team/members.js";
+import type { TeamOverview } from "#lib/team/teams.js";
 
 export type TeamOverviewPreview = { overview: TeamOverview; roster?: TeamRoster };
 

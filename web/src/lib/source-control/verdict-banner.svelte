@@ -3,8 +3,8 @@
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
-	import * as Alert from "$lib/components/ui/alert";
-	import { Button } from "$lib/components/ui/button";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import type { SourceControlVerdict } from "./source-control";
 
 	let { verdict }: { verdict: SourceControlVerdict } = $props();

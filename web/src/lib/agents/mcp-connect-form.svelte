@@ -2,7 +2,7 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
-	import * as Alert from "$lib/components/ui/alert/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
 	import {
 		capabilityFailureMessage,
 		type AgentCapabilityFailure,

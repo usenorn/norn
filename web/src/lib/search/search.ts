@@ -1,4 +1,4 @@
-import type { components } from "$lib/api/dashboard.gen";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type SearchResults = components["schemas"]["SearchResults"];
 export type SearchGroup = components["schemas"]["SearchGroup"];

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
@@ -9,19 +9,19 @@
 	import KeyRound from "@lucide/svelte/icons/key-round";
 	import ShieldCheck from "@lucide/svelte/icons/shield-check";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { api } from "$lib/api";
-	import { onDate } from "$lib/time";
-	import { ssoConnectionSchema } from "$lib/workspace/sso-schema";
-	import EnforcementPanel from "$lib/workspace/enforcement-panel.svelte";
-	import SamlPanel from "$lib/workspace/saml-panel.svelte";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { api } from "#lib/api/index.js";
+	import { onDate } from "#lib/time.js";
+	import { ssoConnectionSchema } from "#lib/workspace/sso-schema.js";
+	import EnforcementPanel from "#lib/workspace/enforcement-panel.svelte";
+	import SamlPanel from "#lib/workspace/saml-panel.svelte";
 	import {
 		failureMessage,
 		failureTitle,
@@ -34,7 +34,7 @@
 		type SsoOutcome,
 		type SsoProtocol,
 		type SsoProviderConfiguration,
-	} from "$lib/workspace/sso";
+	} from "#lib/workspace/sso.js";
 	import { authenticationPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

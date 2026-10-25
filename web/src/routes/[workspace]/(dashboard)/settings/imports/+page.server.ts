@@ -1,5 +1,5 @@
-import { keys } from "$lib/api/keys";
-import { runPageSize, type ImportsView } from "$lib/imports/imports";
+import { keys } from "#lib/api/keys.js";
+import { runPageSize, type ImportsView } from "#lib/imports/imports.js";
 import type { PageServerLoad } from "./$types";
 
 export type ImportsPageData = {

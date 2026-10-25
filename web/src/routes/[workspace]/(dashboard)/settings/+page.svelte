@@ -1,29 +1,29 @@
 <script lang="ts">
 	import { enhance as changeEnhance } from "$app/forms";
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, refreshAll } from "$app/navigation";
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Settings from "@lucide/svelte/icons/settings";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import RowGroup from "$lib/components/norn/row-group.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import WorkspaceMark from "$lib/components/norn/workspace-mark.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import { Progress } from "$lib/components/ui/progress/index.js";
-	import { withSlot } from "$lib/account/accounts";
-	import SaveBar from "$lib/settings/save-bar.svelte";
-	import SettingRow from "$lib/settings/setting-row.svelte";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { showToast } from "$lib/toast/toasts";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import RowGroup from "#lib/components/norn/row-group.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import WorkspaceMark from "#lib/components/norn/workspace-mark.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import { Progress } from "#lib/components/ui/progress/index.js";
+	import { withSlot } from "#lib/account/accounts.js";
+	import SaveBar from "#lib/settings/save-bar.svelte";
+	import SettingRow from "#lib/settings/setting-row.svelte";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { showToast } from "#lib/toast/toasts.js";
 	import {
 		logoAccept,
 		logoFailureMessage,
@@ -31,9 +31,9 @@
 		removeLogo,
 		uploadLogo,
 		type LogoActivity,
-	} from "$lib/workspace/logo";
-	import { workspacePath } from "$lib/workspace/navigation";
-	import { workspaceSettingsSchema, workspaceSlugPattern } from "$lib/workspace/settings-schema";
+	} from "#lib/workspace/logo.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
+	import { workspaceSettingsSchema, workspaceSlugPattern } from "#lib/workspace/settings-schema.js";
 	import {
 		purgeDate,
 		redirectEnds,
@@ -44,14 +44,14 @@
 		type WeekDay,
 		type Workspace,
 		type WorkspaceSettings,
-	} from "$lib/workspace/settings";
+	} from "#lib/workspace/settings.js";
 	import {
 		headroomLabel,
 		headroomToneClass,
 		measuredLabel,
 		storageToneOf,
 		storedLabel,
-	} from "$lib/workspace/storage";
+	} from "#lib/workspace/storage.js";
 	import { workspaceSettingsPreviewStates } from "./preview";
 	import type { PageProps, SubmitFunction } from "./$types";
 
@@ -97,11 +97,11 @@
 
 			if (outcome.renamedFrom) {
 				await goto(withSlot(workspacePath(outcome.workspace.slug, "/settings"), data.member.slot), {
-					replaceState: true,
-					invalidateAll: true,
+					replace: true,
+					refreshAll: true,
 				});
 			} else {
-				await invalidateAll();
+				await refreshAll();
 			}
 
 			showToast(renamed ? `Saved. Renamed to ${outcome.workspace.name}` : "Saved.");
@@ -196,7 +196,7 @@
 			return;
 		}
 
-		await invalidateAll();
+		await refreshAll();
 		logo = { kind: "idle" };
 	}
 
@@ -211,7 +211,7 @@
 			return;
 		}
 
-		await invalidateAll();
+		await refreshAll();
 		logo = { kind: "idle" };
 	}
 </script>

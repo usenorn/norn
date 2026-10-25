@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { defaults, fileProxy, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { api } from "$lib/api";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { api } from "#lib/api/index.js";
 	import { csvFileSchema } from "./import-schema";
 	import { readCatalogue, uploadFile } from "./steps";
 	import {

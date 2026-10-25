@@ -21,7 +21,7 @@
 	import { Command as CommandPrimitive } from "bits-ui";
 	import SearchIcon from "@lucide/svelte/icons/search";
 	import type { Snippet } from "svelte";
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 
 	let {
 		ref = $bindable(null),

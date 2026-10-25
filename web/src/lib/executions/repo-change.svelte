@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import GitBranch from "@lucide/svelte/icons/git-branch";
-	import CodeLinkPanel from "$lib/source-control/code-link-panel.svelte";
-	import type { CodeLink } from "$lib/source-control/source-control";
+	import CodeLinkPanel from "#lib/source-control/code-link-panel.svelte";
+	import type { CodeLink } from "#lib/source-control/source-control.js";
 	import {
 		diffReach,
 		diffStatLine,

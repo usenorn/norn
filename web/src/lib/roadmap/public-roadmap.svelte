@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Map from "@lucide/svelte/icons/map";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import { onDate } from "$lib/time";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import { onDate } from "#lib/time.js";
 	import RoadmapItemList from "./roadmap-item-list.svelte";
 	import { timelineWindow, type PublicRoadmap, type RoadmapStamp } from "./public-roadmap";
 

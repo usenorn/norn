@@ -1,3 +1,5 @@
+import type { ReadonlyURL } from "$app/state";
+
 export function safeReturn(requested: string | null): string {
 	return requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
 }
@@ -5,7 +7,7 @@ export function safeReturn(requested: string | null): string {
 // Adding a second account can take several screens — sign in, create an account, single sign-on —
 // and each hop has to keep saying that this is an addition and where the person came from, or the
 // next screen bounces them back to the account they already had.
-export function authPath(from: URL, path: string): string {
+export function authPath(from: ReadonlyURL, path: string): string {
 	const adding = from.searchParams.get("add");
 	const back = from.searchParams.get("return");
 

@@ -2,12 +2,12 @@
 	import { page } from "$app/state";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Library from "@lucide/svelte/icons/library";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import AgentCapabilitiesManager from "$lib/agents/agent-capabilities-manager.svelte";
-	import { agentsPath } from "$lib/agents/agents";
-	import { connectOutcome, libraryRows, type AgentLibraryListing } from "$lib/agents/agent-capabilities";
-	import { deploymentPreview } from "$lib/auth/preview";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import AgentCapabilitiesManager from "#lib/agents/agent-capabilities-manager.svelte";
+	import { agentsPath } from "#lib/agents/agents.js";
+	import { connectOutcome, libraryRows, type AgentLibraryListing } from "#lib/agents/agent-capabilities.js";
+	import { deploymentPreview } from "#lib/auth/preview.js";
 	import { agentLibraryPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

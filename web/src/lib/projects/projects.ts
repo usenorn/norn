@@ -1,12 +1,12 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { ActivityFeed } from "$lib/activity/activity";
-import type { Listed } from "$lib/api/listed";
-import type { DocBacklinks } from "$lib/docs/docs";
-import type { Issue } from "$lib/issues/issues";
-import type { StateCategory } from "$lib/team/states";
-import type { Team } from "$lib/team/teams";
-import { totalIssues, type IssueProgress } from "$lib/issues/board";
-import { calendarDate, daysBetween, onCalendarDate, onDate } from "$lib/time";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { ActivityFeed } from "#lib/activity/activity.js";
+import type { Listed } from "#lib/api/listed.js";
+import type { DocBacklinks } from "#lib/docs/docs.js";
+import type { Issue } from "#lib/issues/issues.js";
+import type { StateCategory } from "#lib/team/states.js";
+import type { Team } from "#lib/team/teams.js";
+import { totalIssues, type IssueProgress } from "#lib/issues/board.js";
+import { calendarDate, daysBetween, onCalendarDate, onDate } from "#lib/time.js";
 
 const targetSoonDays = 14;
 

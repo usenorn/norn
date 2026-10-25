@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ActivityFeedView from "$lib/activity/activity-feed.svelte";
-	import type { ActivityFeed } from "$lib/activity/activity";
+	import ActivityFeedView from "#lib/activity/activity-feed.svelte";
+	import type { ActivityFeed } from "#lib/activity/activity.js";
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -14,33 +14,33 @@
 	import Target from "@lucide/svelte/icons/target";
 	import X from "@lucide/svelte/icons/x";
 	import List from "@lucide/svelte/icons/list";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import LinkedDocs from "$lib/docs/linked-docs.svelte";
-	import { docsPath, type DocBacklinks } from "$lib/docs/docs";
-	import IssueRow from "$lib/components/norn/issue-row.svelte";
-	import { cn } from "$lib/utils.js";
-	import ProjectDetailsForm from "$lib/projects/project-details-form.svelte";
-	import ProjectPanel from "$lib/projects/project-panel.svelte";
-	import ScopeBar from "$lib/projects/scope-bar.svelte";
-	import StandingBadge from "$lib/projects/standing-badge.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { api } from "$lib/api";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { bindShortcuts } from "$lib/shortcuts/registry.svelte";
-	import { nthState, setStatus, statusIndexOf, statusMessage } from "$lib/issues/set-status";
-	import { showFailure, showToast } from "$lib/toast/toasts";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { issuePageSize } from "$lib/issues/filter";
-	import type { Issue } from "$lib/issues/issues";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import LinkedDocs from "#lib/docs/linked-docs.svelte";
+	import { docsPath, type DocBacklinks } from "#lib/docs/docs.js";
+	import IssueRow from "#lib/components/norn/issue-row.svelte";
+	import { cn } from "#lib/utils.js";
+	import ProjectDetailsForm from "#lib/projects/project-details-form.svelte";
+	import ProjectPanel from "#lib/projects/project-panel.svelte";
+	import ScopeBar from "#lib/projects/scope-bar.svelte";
+	import StandingBadge from "#lib/projects/standing-badge.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { api } from "#lib/api/index.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import { bindShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import { nthState, setStatus, statusIndexOf, statusMessage } from "#lib/issues/set-status.js";
+	import { showFailure, showToast } from "#lib/toast/toasts.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { issuePageSize } from "#lib/issues/filter.js";
+	import type { Issue } from "#lib/issues/issues.js";
 	import {
 		groupByCategory,
 		healthLabel,
@@ -56,19 +56,19 @@
 		type ProjectFailure,
 		type ProjectHealth,
 		type ProjectState,
-	} from "$lib/projects/projects";
-	import { categoryLabels } from "$lib/team/states";
-	import { memberName, searchDebounceMs, type Membership } from "$lib/workspace/members";
-	import { onDate, onDateAndTime } from "$lib/time";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/projects/projects.js";
+	import { categoryLabels } from "#lib/team/states.js";
+	import { memberName, searchDebounceMs, type Membership } from "#lib/workspace/members.js";
+	import { onDate, onDateAndTime } from "#lib/time.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { projectPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { attempt, type ApiResult } from "$lib/api/attempt";
-	import { cursorOf, grew, moreFailedLine, rowsOf, taken, type Listed } from "$lib/api/listed";
-	import { Pending } from "$lib/api/pending.svelte";
-	import { copyText } from "$lib/clipboard";
-	import type { ColumnPaging } from "$lib/issues/paging";
-	import Retry from "$lib/components/norn/retry.svelte";
+	import { attempt, type ApiResult } from "#lib/api/attempt.js";
+	import { cursorOf, grew, moreFailedLine, rowsOf, taken, type Listed } from "#lib/api/listed.js";
+	import { Pending } from "#lib/api/pending.svelte.js";
+	import { copyText } from "#lib/clipboard.js";
+	import type { ColumnPaging } from "#lib/issues/paging.js";
+	import Retry from "#lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 
@@ -193,9 +193,9 @@
 	$effect(() => () => clearTimeout(candidateDebounce));
 
 	function dismiss() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete("status");
-		goto(next, { replaceState: true, noScroll: true, keepFocus: true });
+		goto(next, { replace: true, reset: false });
 	}
 
 	let loadedActivity = $state.raw<ActivityFeed | null>(null);

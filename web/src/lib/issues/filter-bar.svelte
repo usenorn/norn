@@ -7,12 +7,12 @@
 	import Tags from "@lucide/svelte/icons/tags";
 	import Users from "@lucide/svelte/icons/users";
 	import X from "@lucide/svelte/icons/x";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import PropertyPicker from "$lib/issues/property-picker.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import LabelDot from "$lib/labels/label-dot.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import PropertyPicker from "#lib/issues/property-picker.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import LabelDot from "#lib/labels/label-dot.svelte";
 	import {
 		chosenCount,
 		clearedLink,
@@ -20,9 +20,9 @@
 		facetLabelColor,
 		facetOptions,
 		type FacetCatalogue,
-	} from "$lib/issues/facet-options";
-	import { facetLabels, type FacetKind, type Facets } from "$lib/issues/facets";
-	import type { LinkWith } from "$lib/issues/linking";
+	} from "#lib/issues/facet-options.js";
+	import { facetLabels, type FacetKind, type Facets } from "#lib/issues/facets.js";
+	import type { LinkWith } from "#lib/issues/linking.js";
 
 	let {
 		facets,

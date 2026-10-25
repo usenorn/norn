@@ -1,5 +1,5 @@
-import type { CreateWorkspaceInput } from "$lib/workspace/create-workspace-schema";
-import type { WorkspaceContext, WorkspaceCreationFailure } from "$lib/workspace/types";
+import type { CreateWorkspaceInput } from "#lib/workspace/create-workspace-schema.js";
+import type { WorkspaceContext, WorkspaceCreationFailure } from "#lib/workspace/types.js";
 
 export type CreateWorkspacePreview = {
 	workspace?: Partial<WorkspaceContext>;

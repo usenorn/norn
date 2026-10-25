@@ -1,6 +1,6 @@
-import { api } from "$lib/api";
-import { attempt } from "$lib/api/attempt";
-import type { MembershipRole } from "$lib/workspace/members";
+import { api } from "#lib/api/index.js";
+import { attempt } from "#lib/api/attempt.js";
+import type { MembershipRole } from "#lib/workspace/members.js";
 import { randomLabelColor, refusedLabelFailure, type Label, type LabelFailure } from "./labels";
 
 export type CreatedLabel = { kind: "created"; label: Label } | { kind: "failed"; failure: LabelFailure };

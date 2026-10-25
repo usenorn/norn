@@ -1,12 +1,12 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import CommandSnippet from "$lib/components/norn/command-snippet.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { agentPath } from "$lib/agents/agents";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import CommandSnippet from "#lib/components/norn/command-snippet.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { agentPath } from "#lib/agents/agents.js";
 	import CodebaseCard from "./codebase-card.svelte";
 	import MachineRow from "./machine-row.svelte";
 	import {

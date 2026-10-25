@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { SvelteSet } from "svelte/reactivity";
 	import FileText from "@lucide/svelte/icons/file-text";
-	import SidebarBranch from "$lib/components/norn/sidebar-branch.svelte";
-	import SidebarItem from "$lib/components/norn/sidebar-item.svelte";
-	import SidebarSection from "$lib/components/norn/sidebar-section.svelte";
+	import SidebarBranch from "#lib/components/norn/sidebar-branch.svelte";
+	import SidebarItem from "#lib/components/norn/sidebar-item.svelte";
+	import SidebarSection from "#lib/components/norn/sidebar-section.svelte";
 	import { ancestry, docPath, type DocNode, type DocSection, type DocSummary } from "./docs";
 
 	let {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import QuestionList from "$lib/questions/question-list.svelte";
-	import type { IssueQuestion } from "$lib/questions/questions";
+	import QuestionList from "#lib/questions/question-list.svelte";
+	import type { IssueQuestion } from "#lib/questions/questions.js";
 	import { waitingOnLine, type ReviewQuestion } from "./reviews";
 
 	let {

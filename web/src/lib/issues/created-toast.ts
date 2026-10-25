@@ -1,6 +1,6 @@
-import { copyText } from "$lib/clipboard";
-import { documentExcerpt } from "$lib/editor/document";
-import { showToast } from "$lib/toast/toasts";
+import { copyText } from "#lib/clipboard.js";
+import { documentExcerpt } from "#lib/editor/document.js";
+import { showToast } from "#lib/toast/toasts.js";
 import type { Issue } from "./issues";
 
 const excerptLength = 140;

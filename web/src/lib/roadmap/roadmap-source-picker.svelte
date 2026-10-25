@@ -4,10 +4,10 @@
 
 <script lang="ts">
 	import Plus from "@lucide/svelte/icons/plus";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
-	import { findIssues, type Suggestion, type SuggestionOutcome } from "$lib/editor/search";
-	import type { Project } from "$lib/projects/projects";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
+	import { findIssues, type Suggestion, type SuggestionOutcome } from "#lib/editor/search.js";
+	import type { Project } from "#lib/projects/projects.js";
 	import { issueSearchDelayMs, type EntrySource, type RoadmapEntryKind } from "./admin";
 
 	type IssueSearch = SuggestionOutcome | { state: "searching" };

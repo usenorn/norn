@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 	import { stateLabel, stateTone, type ExecutionState } from "./executions";
 
 	let { state, class: className }: { state: ExecutionState; class?: string } = $props();

@@ -1,5 +1,5 @@
 import { fail } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
+import { keys } from "#lib/api/keys.js";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import {
@@ -8,9 +8,9 @@ import {
 	resetLinkFailure,
 	resetRequestFailure,
 	resetSent,
-} from "$lib/auth/password-reset";
-import { newPasswordSchema, resetRequestSchema } from "$lib/auth/reset-password-schema";
-import type { PasswordReset } from "$lib/auth/types";
+} from "#lib/auth/password-reset.js";
+import { newPasswordSchema, resetRequestSchema } from "#lib/auth/reset-password-schema.js";
+import type { PasswordReset } from "#lib/auth/types.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type RequestForm = Infer<typeof resetRequestSchema>;

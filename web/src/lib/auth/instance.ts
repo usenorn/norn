@@ -1,5 +1,5 @@
 import type { Client } from "openapi-fetch";
-import type { components, paths } from "$lib/api/dashboard.gen";
+import type { components, paths } from "#lib/api/dashboard.gen.js";
 
 export type Instance = components["schemas"]["Instance"];
 

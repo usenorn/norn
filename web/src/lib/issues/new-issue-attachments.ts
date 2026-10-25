@@ -1,7 +1,7 @@
-import { api } from "$lib/api";
-import { attachmentNode, type Attachment } from "$lib/attachments/attachments";
-import { documentAttachments, type Document } from "$lib/editor/document";
-import { newTask, upload, type UploadTask } from "$lib/attachments/upload";
+import { api } from "#lib/api/index.js";
+import { attachmentNode, type Attachment } from "#lib/attachments/attachments.js";
+import { documentAttachments, type Document } from "#lib/editor/document.js";
+import { newTask, upload, type UploadTask } from "#lib/attachments/upload.js";
 
 export type PendingFile = {
 	key: string;

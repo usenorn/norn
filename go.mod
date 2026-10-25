@@ -29,7 +29,7 @@ require (
 	github.com/crewjam/saml v0.5.1
 	github.com/epostix/sdk-go v1.1.0
 	github.com/friendsofgo/errors v0.9.2
-	github.com/go-chi/chi/v5 v5.3.1
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/goforj/wire v1.2.0
 	github.com/google/jsonschema-go v0.4.3

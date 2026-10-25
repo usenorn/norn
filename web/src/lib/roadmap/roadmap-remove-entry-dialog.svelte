@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import type { RoadmapEntry } from "./admin";
 
 	let {

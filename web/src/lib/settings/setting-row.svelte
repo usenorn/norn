@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends Record<string, unknown>, U extends FormPath<T>">
 	import type { Snippet } from "svelte";
 	import type { FormPath, SuperForm } from "sveltekit-superforms";
-	import * as Form from "$lib/components/ui/form/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
 
 	let {
 		form,

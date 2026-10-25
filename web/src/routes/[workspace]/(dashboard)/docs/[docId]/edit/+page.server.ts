@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
-import { docPath, type DocEditing } from "$lib/docs/docs";
-import { readDoc } from "$lib/docs/docs.server";
+import { keys } from "#lib/api/keys.js";
+import { docPath, type DocEditing } from "#lib/docs/docs.js";
+import { readDoc } from "#lib/docs/docs.server.js";
 import { docEditPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

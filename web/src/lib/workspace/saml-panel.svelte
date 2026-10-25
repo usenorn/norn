@@ -3,16 +3,16 @@
 	import { zod4Client } from "sveltekit-superforms/adapters";
 	import Copy from "@lucide/svelte/icons/copy";
 	import ShieldAlert from "@lucide/svelte/icons/shield-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { api } from "$lib/api";
-	import { onDate } from "$lib/time";
-	import { samlConnectionSchema } from "$lib/workspace/saml-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { api } from "#lib/api/index.js";
+	import { onDate } from "#lib/time.js";
+	import { samlConnectionSchema } from "#lib/workspace/saml-schema.js";
 	import {
 		certificateAdvice,
 		certificateLine,
@@ -20,7 +20,7 @@
 		saveFailure,
 		type SamlConnection,
 		type SsoOutcome,
-	} from "$lib/workspace/sso";
+	} from "#lib/workspace/sso.js";
 
 	const formId = "saml-connection-form";
 

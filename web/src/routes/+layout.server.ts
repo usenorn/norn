@@ -1,5 +1,5 @@
-import { keys } from "$lib/api/keys";
-import { actingOf, type ActingSession } from "$lib/account/accounts";
+import { keys } from "#lib/api/keys.js";
+import { actingOf, type ActingSession } from "#lib/account/accounts.js";
 import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async ({ depends, locals, params, url }) => {

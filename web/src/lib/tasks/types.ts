@@ -1,6 +1,6 @@
-import type { IssuePriority } from "$lib/issues/issues";
-import type { LabelColor } from "$lib/labels/labels";
-import type { StateCategory } from "$lib/team/states";
+import type { IssuePriority } from "#lib/issues/issues.js";
+import type { LabelColor } from "#lib/labels/labels.js";
+import type { StateCategory } from "#lib/team/states.js";
 
 export type TaskLabel = { name: string; color: LabelColor };
 

@@ -1,5 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { Step } from "$lib/components/norn/step-list.svelte";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { Step } from "#lib/components/norn/step-list.svelte";
 import { isSettled, type Execution, type IssueQuestion } from "./executions";
 import { waitingOnLine, type DecisionRight } from "./reviews";
 

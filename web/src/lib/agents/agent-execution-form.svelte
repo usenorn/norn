@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as RadioGroup from "$lib/components/ui/radio-group/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		agentExecutionHints,
 		agentExecutionLabels,

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import CycleCadence from "$lib/team/cycle-cadence.svelte";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
+	import CycleCadence from "#lib/team/cycle-cadence.svelte";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
 	import { teamCyclesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

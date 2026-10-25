@@ -3,11 +3,11 @@
 	import { defaults, setError, superForm } from "sveltekit-superforms";
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 
-	import { api } from "$lib/api";
-	import * as Alert from "$lib/components/ui/alert";
-	import { Button } from "$lib/components/ui/button";
-	import * as Form from "$lib/components/ui/form";
-	import { Input } from "$lib/components/ui/input";
+	import { api } from "#lib/api/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
 	import {
 		detailOf,
 		failureMessage,
@@ -16,12 +16,12 @@
 		sourceControlPath,
 		type SCMIdentity,
 		type SourceControlFailure,
-	} from "$lib/source-control/source-control";
-	import { mapIdentitySchema } from "$lib/source-control/source-control-schema";
+	} from "#lib/source-control/source-control.js";
+	import { mapIdentitySchema } from "#lib/source-control/source-control-schema.js";
 	import { scmIdentityPreviewStates } from "./preview";
 	import type { PageData } from "./$types";
-	import SettingsBackBar from "$lib/settings/settings-back-bar.svelte";
-	import SettingsBody from "$lib/settings/settings-body.svelte";
+	import SettingsBackBar from "#lib/settings/settings-back-bar.svelte";
+	import SettingsBody from "#lib/settings/settings-body.svelte";
 
 	let { data }: { data: PageData } = $props();
 

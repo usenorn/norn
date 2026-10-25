@@ -3,12 +3,12 @@
 	import Eye from "@lucide/svelte/icons/eye";
 	import ExternalLink from "@lucide/svelte/icons/external-link";
 	import Send from "@lucide/svelte/icons/send";
-	import Pill, { type PillTone } from "$lib/components/norn/pill.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { copyText } from "$lib/clipboard";
-	import SettingsSectionHeader from "$lib/settings/settings-section-header.svelte";
-	import { onDateAndTime } from "$lib/time";
-	import { memberName, type Membership } from "$lib/workspace/members";
+	import Pill, { type PillTone } from "#lib/components/norn/pill.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { copyText } from "#lib/clipboard.js";
+	import SettingsSectionHeader from "#lib/settings/settings-section-header.svelte";
+	import { onDateAndTime } from "#lib/time.js";
+	import { memberName, type Membership } from "#lib/workspace/members.js";
 	import {
 		publicationLabels,
 		roadmapPreviewPath,

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Kbd from "$lib/components/norn/kbd.svelte";
+	import Kbd from "#lib/components/norn/kbd.svelte";
 	import { useShortcuts } from "../registry.svelte";
 	import { roamMode } from "./shortcuts";
 

@@ -1,5 +1,5 @@
-import type { TokenListing } from "$lib/account/tokens";
-import type { components } from "$lib/api/dashboard.gen";
+import type { TokenListing } from "#lib/account/tokens.js";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 type WorkspaceSummary = components["schemas"]["Workspace"];
 

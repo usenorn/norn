@@ -1,4 +1,4 @@
-import type { WebhookFailure, WebhooksView } from "$lib/webhooks/webhooks";
+import type { WebhookFailure, WebhooksView } from "#lib/webhooks/webhooks.js";
 
 export type WebhooksPreview = {
 	view?: WebhooksView;

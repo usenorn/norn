@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import { authPath } from "$lib/auth/return-to";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Wordmark from "$lib/components/norn/wordmark.svelte";
+	import { authPath } from "#lib/auth/return-to.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Wordmark from "#lib/components/norn/wordmark.svelte";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();

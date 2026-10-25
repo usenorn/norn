@@ -3,16 +3,16 @@
 	import Archive from "@lucide/svelte/icons/archive";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Users from "@lucide/svelte/icons/users";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { provideTeamSettings } from "$lib/team/team-settings-context";
-	import { teamSettingsEntryAt } from "$lib/team/team-settings-sections";
-	import { teamOf } from "$lib/team/team-settings";
-	import { teamSettingsPath, type Team } from "$lib/team/teams";
-	import { workspacePath } from "$lib/workspace/navigation";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { provideTeamSettings } from "#lib/team/team-settings-context.js";
+	import { teamSettingsEntryAt } from "#lib/team/team-settings-sections.js";
+	import { teamOf } from "#lib/team/team-settings.js";
+	import { teamSettingsPath, type Team } from "#lib/team/teams.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { teamSettingsPreviewStates } from "./preview";
 	import type { LayoutProps } from "./$types";
-	import SettingsBody from "$lib/settings/settings-body.svelte";
+	import SettingsBody from "#lib/settings/settings-body.svelte";
 
 	let { data, children }: LayoutProps = $props();
 

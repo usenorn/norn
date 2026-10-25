@@ -1,4 +1,4 @@
-import type { PublicRoadmapEntryView } from "$lib/roadmap/public-roadmap";
+import type { PublicRoadmapEntryView } from "#lib/roadmap/public-roadmap.js";
 
 export const publicRoadmapEntryPreviewStates: Record<string, PublicRoadmapEntryView> = import.meta
 	.env.DEV

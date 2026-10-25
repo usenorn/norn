@@ -1,4 +1,4 @@
-import type { RunView } from "$lib/executions/executions";
+import type { RunView } from "#lib/executions/executions.js";
 
 export type RunPreview = { run: RunView };
 

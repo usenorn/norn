@@ -4,8 +4,8 @@
 	import FolderKanban from "@lucide/svelte/icons/folder-kanban";
 	import User from "@lucide/svelte/icons/user";
 	import Users from "@lucide/svelte/icons/users";
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import type { SuggestionAnchor } from "$lib/editor/suggest";
+	import * as Popover from "#lib/components/ui/popover/index.js";
+	import type { SuggestionAnchor } from "#lib/editor/suggest.js";
 
 	export type PopupRow = {
 		key: string;

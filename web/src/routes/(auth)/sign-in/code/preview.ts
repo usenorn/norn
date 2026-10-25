@@ -1,4 +1,4 @@
-import type { SignInCodeFailure } from "$lib/auth/types";
+import type { SignInCodeFailure } from "#lib/auth/types.js";
 
 export type SignInCodePreview = {
 	failure?: SignInCodeFailure;

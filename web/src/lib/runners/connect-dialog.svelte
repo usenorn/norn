@@ -1,12 +1,12 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
-	import { api } from "$lib/api";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import CommandSnippet from "$lib/components/norn/command-snippet.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import type { WorkspaceAgent } from "$lib/agents/agents";
+	import { api } from "#lib/api/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import CommandSnippet from "#lib/components/norn/command-snippet.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import type { WorkspaceAgent } from "#lib/agents/agents.js";
 	import { connectCommand, installCommand, tokenPlaceholder } from "./runners";
 
 	let {

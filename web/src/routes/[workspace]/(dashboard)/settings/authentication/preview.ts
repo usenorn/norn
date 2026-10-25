@@ -3,7 +3,7 @@ import type {
 	RecoveryCodes,
 	SsoOutcome,
 	SsoProviderConfiguration,
-} from "$lib/workspace/sso";
+} from "#lib/workspace/sso.js";
 
 export type AuthenticationPreview = {
 	configuration?: SsoProviderConfiguration;

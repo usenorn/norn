@@ -1,4 +1,4 @@
-import type { components } from "$lib/api/dashboard.gen";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type WorkflowState = components["schemas"]["WorkflowState"];
 export type StateCategory = components["schemas"]["StateCategory"];

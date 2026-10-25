@@ -1,9 +1,9 @@
-import type { Grouping } from "$lib/issues/display";
-import { dueBucketLabels, dueBuckets, dueBucketOf } from "$lib/issues/facets";
-import { priorities, priorityLabel, type Issue, type IssuePriority } from "$lib/issues/issues";
-import type { Project } from "$lib/projects/projects";
-import type { WorkflowState } from "$lib/team/states";
-import { calendarDate } from "$lib/time";
+import type { Grouping } from "#lib/issues/display.js";
+import { dueBucketLabels, dueBuckets, dueBucketOf } from "#lib/issues/facets.js";
+import { priorities, priorityLabel, type Issue, type IssuePriority } from "#lib/issues/issues.js";
+import type { Project } from "#lib/projects/projects.js";
+import type { WorkflowState } from "#lib/team/states.js";
+import { calendarDate } from "#lib/time.js";
 import type { Task, TaskBucket } from "./types";
 
 export type GroupingContext = { states: WorkflowState[]; projects: Project[] };

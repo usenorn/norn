@@ -7,17 +7,17 @@
 	import Ellipsis from "@lucide/svelte/icons/ellipsis";
 	import Trash2 from "@lucide/svelte/icons/trash-2";
 	import X from "@lucide/svelte/icons/x";
-	import UnassignedAvatar from "$lib/components/norn/unassigned-avatar.svelte";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import Kbd from "$lib/components/norn/kbd.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import UnassignedAvatar from "#lib/components/norn/unassigned-avatar.svelte";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import Kbd from "#lib/components/norn/kbd.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import PropertyPicker, { type PickerOption } from "./property-picker.svelte";
 	import { priorities, type IssuePriority } from "./issues";
-	import type { TeamCyclesRead } from "$lib/cycles/cycles";
-	import type { WorkflowState } from "$lib/team/states";
+	import type { TeamCyclesRead } from "#lib/cycles/cycles.js";
+	import type { WorkflowState } from "#lib/team/states.js";
 	import type { Member } from "./members";
 
 	let {

@@ -1,14 +1,14 @@
 <script lang="ts">
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Plus from "@lucide/svelte/icons/plus";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import Editor from "$lib/editor/editor.svelte";
-	import { asDocument, emptyDocument, type Document } from "$lib/editor/document";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import Editor from "#lib/editor/editor.svelte";
+	import { asDocument, emptyDocument, type Document } from "#lib/editor/document.js";
 	import {
 		readTemplates,
 		removeTemplate,
@@ -21,7 +21,7 @@
 		type TemplateFailure,
 		type TemplateField,
 		type TemplateList,
-	} from "$lib/issues/templates";
+	} from "#lib/issues/templates.js";
 
 	let {
 		workspaceId,

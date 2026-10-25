@@ -3,13 +3,13 @@
 	import { zod4, zod4Client } from "sveltekit-superforms/adapters";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import Wrench from "@lucide/svelte/icons/wrench";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import { api } from "$lib/api";
-	import { aiProviderPath } from "$lib/ai-provider/ai-provider";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import { api } from "#lib/api/index.js";
+	import { aiProviderPath } from "#lib/ai-provider/ai-provider.js";
 	import {
 		conversationFailure,
 		conversationFailureMessage,

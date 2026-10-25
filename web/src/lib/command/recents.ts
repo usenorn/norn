@@ -1,4 +1,4 @@
-import { readStored, store } from "$lib/storage";
+import { readStored, store } from "#lib/storage.js";
 import type { Destination, RecentEntry } from "./model";
 
 export const recentLimit = 5;

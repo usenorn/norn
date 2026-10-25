@@ -1,5 +1,5 @@
-import type { Instance } from "$lib/auth/instance";
-import type { SsoExchange } from "$lib/auth/types";
+import type { Instance } from "#lib/auth/instance.js";
+import type { SsoExchange } from "#lib/auth/types.js";
 
 export type SsoPreview = {
 	auth?: Partial<Instance>;

@@ -1,6 +1,6 @@
 import type { Client } from "openapi-fetch";
-import type { paths } from "$lib/api/dashboard.gen";
-import type { Agent } from "$lib/agents/agents";
+import type { paths } from "#lib/api/dashboard.gen.js";
+import type { Agent } from "#lib/agents/agents.js";
 import {
 	docReadersShown,
 	docTreePageSize,

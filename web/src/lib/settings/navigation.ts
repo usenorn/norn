@@ -15,8 +15,8 @@ import Terminal from "@lucide/svelte/icons/terminal";
 import Users from "@lucide/svelte/icons/users";
 import UsersRound from "@lucide/svelte/icons/users-round";
 import Webhook from "@lucide/svelte/icons/webhook";
-import type { IconComponent } from "$lib/utils.js";
-import { workspacePath } from "$lib/workspace/navigation";
+import type { IconComponent } from "#lib/utils.js";
+import { workspacePath } from "#lib/workspace/navigation.js";
 
 export type SettingsNavigationEntry = {
 	href: string;

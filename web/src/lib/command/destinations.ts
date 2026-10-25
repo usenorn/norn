@@ -4,16 +4,16 @@ import List from "@lucide/svelte/icons/list";
 import Target from "@lucide/svelte/icons/target";
 import UserRound from "@lucide/svelte/icons/user-round";
 import Users from "@lucide/svelte/icons/users";
-import { cyclePath, teamCyclesPath, type TeamCycle } from "$lib/cycles/cycles";
-import { teamIssuesPath } from "$lib/issues/listing";
-import { projectPath, projectsPath, teamProjectsPath, type Project } from "$lib/projects/projects";
-import { resultPath, type SearchResult } from "$lib/search/search";
-import { workspaceSettingsNavigation } from "$lib/settings/navigation";
-import { destinations as chordDestinations } from "$lib/shortcuts/destinations";
-import { displayKeys, shortcutOf } from "$lib/shortcuts/shortcuts";
-import { teamPath, type Team } from "$lib/team/teams";
-import { viewEntries, viewsPath, type SavedView } from "$lib/views/views";
-import type { Membership } from "$lib/workspace/members";
+import { cyclePath, teamCyclesPath, type TeamCycle } from "#lib/cycles/cycles.js";
+import { teamIssuesPath } from "#lib/issues/listing.js";
+import { projectPath, projectsPath, teamProjectsPath, type Project } from "#lib/projects/projects.js";
+import { resultPath, type SearchResult } from "#lib/search/search.js";
+import { workspaceSettingsNavigation } from "#lib/settings/navigation.js";
+import { destinations as chordDestinations } from "#lib/shortcuts/destinations.js";
+import { displayKeys, shortcutOf } from "#lib/shortcuts/shortcuts.js";
+import { teamPath, type Team } from "#lib/team/teams.js";
+import { viewEntries, viewsPath, type SavedView } from "#lib/views/views.js";
+import type { Membership } from "#lib/workspace/members.js";
 import type { Destination } from "./model";
 
 export type DestinationSources = {

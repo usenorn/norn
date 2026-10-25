@@ -1,5 +1,5 @@
-import type { WebhooksView } from "$lib/webhooks/webhooks";
-import { keys } from "$lib/api/keys";
+import type { WebhooksView } from "#lib/webhooks/webhooks.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 export type WebhooksPageData = {

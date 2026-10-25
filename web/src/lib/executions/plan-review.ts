@@ -1,4 +1,4 @@
-import { onFullDateAndTime } from "$lib/time";
+import { onFullDateAndTime } from "#lib/time.js";
 import type { Execution, IssueQuestion } from "./executions";
 import { latestPlan, planStanding, revisionLabel, type ExecutionPlan } from "./plans";
 

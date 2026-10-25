@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Copy from "@lucide/svelte/icons/copy";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { cn } from "$lib/utils.js";
-	import { copyText } from "$lib/clipboard";
-	import type { Diagnostic } from "$lib/auth/types";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { cn } from "#lib/utils.js";
+	import { copyText } from "#lib/clipboard.js";
+	import type { Diagnostic } from "#lib/auth/types.js";
 
 	let {
 		label,

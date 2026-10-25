@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Instance } from "$lib/auth/instance";
+	import type { Instance } from "#lib/auth/instance.js";
 
 	let { instance }: { instance: Instance } = $props();
 </script>

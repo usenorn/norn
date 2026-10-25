@@ -1,4 +1,4 @@
-import type { AiProviderOutcome, AiProviderView } from "$lib/ai-provider/ai-provider";
+import type { AiProviderOutcome, AiProviderView } from "#lib/ai-provider/ai-provider.js";
 
 export type AiProviderPreview = {
 	view: AiProviderView;

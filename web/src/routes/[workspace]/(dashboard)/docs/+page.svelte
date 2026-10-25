@@ -2,11 +2,11 @@
 	import FileText from "@lucide/svelte/icons/file-text";
 	import Plus from "@lucide/svelte/icons/plus";
 	import { page } from "$app/state";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import DocsHeader from "$lib/docs/docs-header.svelte";
-	import DocsTreePanel from "$lib/docs/docs-tree-panel.svelte";
-	import { newDocPath } from "$lib/docs/docs";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import DocsHeader from "#lib/docs/docs-header.svelte";
+	import DocsTreePanel from "#lib/docs/docs-tree-panel.svelte";
+	import { newDocPath } from "#lib/docs/docs.js";
 	import { docsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

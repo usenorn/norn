@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import { tv, type VariantProps } from "tailwind-variants";
-	import { fieldTrigger } from "$lib/issues/issue-field.svelte";
+	import { fieldTrigger } from "#lib/issues/issue-field.svelte";
 
 	export const priorityPickerVariants = tv({
 		slots: {
@@ -28,9 +28,9 @@
 </script>
 
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button/index.js";
-	import PriorityIcon from "$lib/components/norn/priority-icon.svelte";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import PriorityIcon from "#lib/components/norn/priority-icon.svelte";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
 	import { priorities, priorityLabel, type IssuePriority } from "./issues";
 
 	let {

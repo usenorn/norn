@@ -1,6 +1,6 @@
-import { api } from "$lib/api";
-import type { components } from "$lib/api/dashboard.gen";
-import { workspacePath } from "$lib/workspace/navigation";
+import { api } from "#lib/api/index.js";
+import type { components } from "#lib/api/dashboard.gen.js";
+import { workspacePath } from "#lib/workspace/navigation.js";
 
 export type SuggestionGroup = {
 	label: string;

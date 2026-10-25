@@ -1,5 +1,5 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
-import type { AiProviderFailureCode } from "$lib/ai-provider/ai-provider";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
+import type { AiProviderFailureCode } from "#lib/ai-provider/ai-provider.js";
 
 export type AgentTurn = components["schemas"]["AgentTurn"];
 export type AgentConversationReply = components["schemas"]["AgentConversationReply"];

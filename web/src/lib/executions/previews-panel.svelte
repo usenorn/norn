@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ExternalLink from "@lucide/svelte/icons/external-link";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
 	import SharePanel from "./share-panel.svelte";
 	import {
 		noPreviewsLine,

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import AccountSwitcher from "$lib/account/account-switcher.svelte";
-	import { withSlot } from "$lib/account/accounts";
-	import { userSettingsNavigation } from "$lib/settings/navigation";
-	import SettingsShell from "$lib/settings/settings-shell.svelte";
-	import { workspacePath } from "$lib/workspace/navigation";
+	import AccountSwitcher from "#lib/account/account-switcher.svelte";
+	import { withSlot } from "#lib/account/accounts.js";
+	import { userSettingsNavigation } from "#lib/settings/navigation.js";
+	import SettingsShell from "#lib/settings/settings-shell.svelte";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import type { LayoutProps } from "./$types";
 
 	let { data, children }: LayoutProps = $props();

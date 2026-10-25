@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { navigating, page } from "$app/state";
-	import PublicRoadmapFallback from "$lib/roadmap/public-roadmap-fallback.svelte";
-	import PublicRoadmapFrame from "$lib/roadmap/public-roadmap-frame.svelte";
-	import { isPublicRoadmapRoute } from "$lib/roadmap/host";
+	import PublicRoadmapFallback from "#lib/roadmap/public-roadmap-fallback.svelte";
+	import PublicRoadmapFrame from "#lib/roadmap/public-roadmap-frame.svelte";
+	import { isPublicRoadmapRoute } from "#lib/roadmap/host.js";
 	import type { LayoutProps } from "./$types";
 
 	let { children }: LayoutProps = $props();

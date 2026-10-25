@@ -1,5 +1,5 @@
-import { api } from "$lib/api";
-import type { components } from "$lib/api/dashboard.gen";
+import { api } from "#lib/api/index.js";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type AcceptanceCriterion = components["schemas"]["AcceptanceCriterion"];
 export type CriterionEvidence = components["schemas"]["CriterionEvidence"];

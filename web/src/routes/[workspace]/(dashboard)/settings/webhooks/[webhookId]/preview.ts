@@ -2,7 +2,7 @@ import type {
 	WebhookDeliveryDetail,
 	WebhookDetailView,
 	WebhookFailure,
-} from "$lib/webhooks/webhooks";
+} from "#lib/webhooks/webhooks.js";
 
 export type WebhookDetailPreview = {
 	view?: WebhookDetailView;

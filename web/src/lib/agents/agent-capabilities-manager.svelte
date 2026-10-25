@@ -2,12 +2,12 @@
 	import { invalidate } from "$app/navigation";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import type { Infer, SuperValidated } from "sveltekit-superforms";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { holdShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import AgentCapabilitiesPanel from "./agent-capabilities-panel.svelte";
 	import LibraryPickerDialog from "./library-picker-dialog.svelte";
 	import McpConnectForm from "./mcp-connect-form.svelte";

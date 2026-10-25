@@ -17,8 +17,9 @@ import {
 	Target as TargetGlyph,
 	Zap as ZapGlyph,
 } from "lucide";
+import type { ReadonlyURLSearchParams } from "$app/state";
 import type { IconNode } from "morphicons/svelte";
-import type { IconComponent } from "$lib/utils.js";
+import type { IconComponent } from "#lib/utils.js";
 
 export type NavEntry = {
 	label: string;
@@ -96,7 +97,7 @@ export function mobileNav(workspace: string): NavEntry[] {
 	];
 }
 
-export function isCurrent(pathname: string, search: URLSearchParams, href: string): boolean {
+export function isCurrent(pathname: string, search: ReadonlyURLSearchParams, href: string): boolean {
 	const [path, query] = href.split("?");
 
 	if (!query) return pathname === path || pathname.startsWith(`${path}/`);

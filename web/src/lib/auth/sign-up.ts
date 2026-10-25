@@ -1,4 +1,4 @@
-import type { operations } from "$lib/api/dashboard.gen";
+import type { operations } from "#lib/api/dashboard.gen.js";
 import type { SignUpConfirmation, SignUpOutcome } from "./types";
 
 type RequestResponses = operations["requestSignUp"]["responses"];

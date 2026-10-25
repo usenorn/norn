@@ -1,5 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { StateCategory, WorkflowState } from "$lib/team/states";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { StateCategory, WorkflowState } from "#lib/team/states.js";
 import type { IssueTab } from "./display";
 
 export type IssueFilter = components["schemas"]["IssueFilter"];

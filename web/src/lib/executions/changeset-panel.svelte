@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import type { CodeLink } from "$lib/source-control/source-control";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import type { CodeLink } from "#lib/source-control/source-control.js";
 	import RepoChange from "./repo-change.svelte";
 	import {
 		changeStatLine,

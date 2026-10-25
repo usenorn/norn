@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
-	import { onDateAndTime } from "$lib/time";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { fieldTrigger } from "$lib/issues/issue-field.svelte";
+	import { onDateAndTime } from "#lib/time.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { fieldTrigger } from "#lib/issues/issue-field.svelte";
 	import type { DelegationPanel } from "./delegation";
 
 	let {

@@ -4,20 +4,20 @@
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import CircleCheck from "@lucide/svelte/icons/circle-check";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { keys } from "$lib/api/keys";
-	import { onDateAndTime } from "$lib/time";
-	import CsvFileForm from "$lib/imports/csv-file-form.svelte";
-	import CsvShapeForm from "$lib/imports/csv-shape-form.svelte";
-	import LinearScopeForm from "$lib/imports/linear-scope-form.svelte";
-	import MappingForm from "$lib/imports/mapping-form.svelte";
-	import PreviewForm from "$lib/imports/preview-form.svelte";
-	import ReportPanel from "$lib/imports/report-panel.svelte";
-	import RunProgress from "$lib/imports/run-progress.svelte";
-	import SourceKeyForm from "$lib/imports/source-key-form.svelte";
-	import { readCatalogue, readStalePreview } from "$lib/imports/steps";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { keys } from "#lib/api/keys.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import CsvFileForm from "#lib/imports/csv-file-form.svelte";
+	import CsvShapeForm from "#lib/imports/csv-shape-form.svelte";
+	import LinearScopeForm from "#lib/imports/linear-scope-form.svelte";
+	import MappingForm from "#lib/imports/mapping-form.svelte";
+	import PreviewForm from "#lib/imports/preview-form.svelte";
+	import ReportPanel from "#lib/imports/report-panel.svelte";
+	import RunProgress from "#lib/imports/run-progress.svelte";
+	import SourceKeyForm from "#lib/imports/source-key-form.svelte";
+	import { readCatalogue, readStalePreview } from "#lib/imports/steps.js";
 	import {
 		counted,
 		csvSettings,
@@ -32,11 +32,11 @@
 		type ImportFailure,
 		type ImportMappingPlan,
 		type ImportRunView,
-	} from "$lib/imports/imports";
+	} from "#lib/imports/imports.js";
 	import { importRunPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import SettingsBody from "$lib/settings/settings-body.svelte";
-	import SettingsBackBar from "$lib/settings/settings-back-bar.svelte";
+	import SettingsBody from "#lib/settings/settings-body.svelte";
+	import SettingsBackBar from "#lib/settings/settings-back-bar.svelte";
 
 	let { data }: PageProps = $props();
 

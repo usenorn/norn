@@ -1,5 +1,5 @@
-import { parseDiff } from "$lib/executions/diff";
-import type { ReviewView } from "$lib/executions/review";
+import { parseDiff } from "#lib/executions/diff.js";
+import type { ReviewView } from "#lib/executions/review.js";
 
 export type ReviewPreview = { review: ReviewView };
 

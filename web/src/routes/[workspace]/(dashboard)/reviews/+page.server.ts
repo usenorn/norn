@@ -1,5 +1,5 @@
-import { keys } from "$lib/api/keys";
-import type { ReviewQueue } from "$lib/executions/reviews";
+import { keys } from "#lib/api/keys.js";
+import type { ReviewQueue } from "#lib/executions/reviews.js";
 import { reviewPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

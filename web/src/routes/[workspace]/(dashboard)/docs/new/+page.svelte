@@ -3,14 +3,14 @@
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import AudienceFields from "$lib/docs/audience-fields.svelte";
-	import DocsHeader from "$lib/docs/docs-header.svelte";
-	import { newDocFormId, newDocSchema } from "$lib/docs/doc-schema";
-	import { ancestry, docFailureMessage, docPath, docsPath } from "$lib/docs/docs";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import AudienceFields from "#lib/docs/audience-fields.svelte";
+	import DocsHeader from "#lib/docs/docs-header.svelte";
+	import { newDocFormId, newDocSchema } from "#lib/docs/doc-schema.js";
+	import { ancestry, docFailureMessage, docPath, docsPath } from "#lib/docs/docs.js";
 	import { newDocPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

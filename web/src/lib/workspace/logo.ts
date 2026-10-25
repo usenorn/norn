@@ -1,7 +1,7 @@
-import { api } from "$lib/api";
-import { attempt } from "$lib/api/attempt";
-import { withSlot } from "$lib/account/accounts";
-import type { Workspace } from "$lib/workspace/settings";
+import { api } from "#lib/api/index.js";
+import { attempt } from "#lib/api/attempt.js";
+import { withSlot } from "#lib/account/accounts.js";
+import type { Workspace } from "#lib/workspace/settings.js";
 
 export type LogoFailure = "too_large" | "unsupported" | "too_small" | "forbidden" | "unavailable";
 

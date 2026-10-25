@@ -2,10 +2,10 @@
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import MessageSquarePlus from "@lucide/svelte/icons/message-square-plus";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import ReviewComposer from "./review-composer.svelte";
 	import ReviewThread from "./review-thread.svelte";
 	import {

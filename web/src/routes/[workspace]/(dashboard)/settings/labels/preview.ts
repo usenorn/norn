@@ -1,5 +1,5 @@
-import type { LabelBoard, LabelUsage } from "$lib/labels/labels";
-import type { Team } from "$lib/team/teams";
+import type { LabelBoard, LabelUsage } from "#lib/labels/labels.js";
+import type { Team } from "#lib/team/teams.js";
 
 export type LabelsPreview = {
 	board: LabelBoard;

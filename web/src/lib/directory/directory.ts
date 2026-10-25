@@ -1,4 +1,4 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
 
 export type DirectorySettings = components["schemas"]["DirectorySettings"];
 export type DirectoryConnection = components["schemas"]["DirectoryConnection"];

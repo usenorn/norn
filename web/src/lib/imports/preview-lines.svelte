@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ReviewList from "$lib/components/norn/review-list.svelte";
+	import ReviewList from "#lib/components/norn/review-list.svelte";
 	import { outcomeLabel, resourceLabel, type ImportPreviewLine } from "./imports";
 
 	let {

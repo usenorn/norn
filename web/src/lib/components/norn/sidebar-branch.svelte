@@ -3,7 +3,7 @@
 	import { MorphIcon, type IconNode } from "morphicons/svelte";
 	import { ChevronDown, ChevronRight } from "lucide";
 	import SidebarItem from "./sidebar-item.svelte";
-	import { cn, type IconComponent } from "$lib/utils.js";
+	import { cn, type IconComponent } from "#lib/utils.js";
 
 	let {
 		id,

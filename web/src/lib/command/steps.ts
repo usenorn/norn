@@ -1,7 +1,7 @@
-import { openCycles, phaseLabel, type Cycle } from "$lib/cycles/cycles";
-import { selectable, type Label } from "$lib/labels/labels";
-import type { WorkflowState } from "$lib/team/states";
-import { assignees, type Membership } from "$lib/workspace/members";
+import { openCycles, phaseLabel, type Cycle } from "#lib/cycles/cycles.js";
+import { selectable, type Label } from "#lib/labels/labels.js";
+import type { WorkflowState } from "#lib/team/states.js";
+import { assignees, type Membership } from "#lib/workspace/members.js";
 import type { BulkChange } from "./apply";
 import type { StepKind, StepOption } from "./model";
 

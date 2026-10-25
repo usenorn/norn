@@ -1,5 +1,5 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
-import { workspacePath } from "$lib/workspace/navigation";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
+import { workspacePath } from "#lib/workspace/navigation.js";
 
 export type AgentTelegramBot = components["schemas"]["AgentTelegramBot"];
 export type TelegramRefusal = components["schemas"]["TelegramRefusal"];

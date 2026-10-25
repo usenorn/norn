@@ -1,11 +1,11 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { message, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
-import { archiveDocSchema, archiveFormId } from "$lib/docs/doc-schema";
-import { docPath, docsPath, readDocFailure, type DocDetail, type DocFailure } from "$lib/docs/docs";
-import { readAgents, readDoc, readDocLinks, readReaders } from "$lib/docs/docs.server";
-import { candidateOf, type IssueCandidate } from "$lib/issues/issues";
+import { keys } from "#lib/api/keys.js";
+import { archiveDocSchema, archiveFormId } from "#lib/docs/doc-schema.js";
+import { docPath, docsPath, readDocFailure, type DocDetail, type DocFailure } from "#lib/docs/docs.js";
+import { readAgents, readDoc, readDocLinks, readReaders } from "#lib/docs/docs.server.js";
+import { candidateOf, type IssueCandidate } from "#lib/issues/issues.js";
 import { docPreviewStates } from "./preview";
 import type { Actions, PageServerLoad } from "./$types";
 

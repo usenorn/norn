@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto, invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
@@ -8,16 +8,16 @@
 	import ChevronUp from "@lucide/svelte/icons/chevron-up";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Bookmark from "@lucide/svelte/icons/bookmark";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { api } from "$lib/api";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { holdShortcuts } from "$lib/shortcuts/registry.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { viewSchema } from "$lib/views/view-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { api } from "#lib/api/index.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import { holdShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { viewSchema } from "#lib/views/view-schema.js";
 	import {
 		reordered,
 		scopeOf,
@@ -31,11 +31,11 @@
 		type SavedView,
 		type ViewFailure,
 		type ViewListing,
-	} from "$lib/views/views";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/views/views.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { viewsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { showToast } from "$lib/toast/toasts";
+	import { showToast } from "#lib/toast/toasts.js";
 
 	const formId = "saved-view-form";
 
@@ -91,16 +91,16 @@
 	}
 
 	async function closePanels() {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete("remove");
 		next.searchParams.delete("edit");
 		clearFailure();
 
-		await goto(next, { replaceState: true, noScroll: true, keepFocus: true });
+		await goto(next, { replace: true, reset: false });
 	}
 
 	function panelHref(key: "remove" | "edit", view: SavedView): string {
-		const next = new URL(page.url);
+		const next = new URL(page.url.href);
 		next.searchParams.delete(key === "remove" ? "edit" : "remove");
 		next.searchParams.set(key, view.id);
 

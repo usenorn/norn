@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { SuperForm } from "sveltekit-superforms";
 	import Check from "@lucide/svelte/icons/check";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import ColorChoice from "$lib/components/norn/color-choice.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { api } from "$lib/api";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import ColorChoice from "#lib/components/norn/color-choice.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { api } from "#lib/api/index.js";
 	import {
 		colorLabels,
 		labelColors,
@@ -19,7 +19,7 @@
 		type LabelGroup,
 	} from "./labels";
 	import type { LabelInput } from "./label-schema";
-	import type { Team } from "$lib/team/teams";
+	import type { Team } from "#lib/team/teams.js";
 
 	const newGroup = "__new__";
 	const minimumName = 2;

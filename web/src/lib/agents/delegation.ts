@@ -1,4 +1,4 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
 import type { Agent } from "./agents";
 
 export type IssueDelegation = components["schemas"]["IssueDelegation"];

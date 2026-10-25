@@ -1,9 +1,9 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Markdown from "$lib/issues/markdown.svelte";
-	import { onDateAndTime } from "$lib/time";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Markdown from "#lib/issues/markdown.svelte";
+	import { onDateAndTime } from "#lib/time.js";
 	import ReviewComposer from "./review-composer.svelte";
 	import type { ReviewComment, ReviewThread } from "./review";
 

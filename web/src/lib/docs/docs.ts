@@ -1,8 +1,8 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { Agent } from "$lib/agents/agents";
-import type { IssueCandidate } from "$lib/issues/issues";
-import type { Project } from "$lib/projects/projects";
-import { workspacePath } from "$lib/workspace/navigation";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { Agent } from "#lib/agents/agents.js";
+import type { IssueCandidate } from "#lib/issues/issues.js";
+import type { Project } from "#lib/projects/projects.js";
+import { workspacePath } from "#lib/workspace/navigation.js";
 
 export type Doc = components["schemas"]["Doc"];
 export type DocSummary = components["schemas"]["DocSummary"];

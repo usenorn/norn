@@ -1,15 +1,15 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
+import { keys } from "#lib/api/keys.js";
 import {
 	boardFor,
 	conflictFailure,
 	labelFailureMessage,
 	usageFor,
 	type LabelFailure,
-} from "$lib/labels/labels";
-import { labelGroupSchema, labelSchema } from "$lib/labels/label-schema";
+} from "#lib/labels/labels.js";
+import { labelGroupSchema, labelSchema } from "#lib/labels/label-schema.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type LabelForm = Infer<typeof labelSchema>;

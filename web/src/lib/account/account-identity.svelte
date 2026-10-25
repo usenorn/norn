@@ -1,7 +1,7 @@
 <script lang="ts">
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import type { Account } from "$lib/account/accounts";
-	import type { AvatarSize } from "$lib/components/ui/avatar/avatar.svelte";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import type { Account } from "#lib/account/accounts.js";
+	import type { AvatarSize } from "#lib/components/ui/avatar/avatar.svelte";
 
 	let {
 		account,

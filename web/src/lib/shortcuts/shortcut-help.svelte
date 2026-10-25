@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import Kbd from "$lib/components/norn/kbd.svelte";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import Kbd from "#lib/components/norn/kbd.svelte";
 	import { holdShortcuts, useShortcuts } from "./registry.svelte";
 	import {
 		isApplePlatform,

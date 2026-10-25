@@ -1,8 +1,8 @@
-import type { Team } from "$lib/team/teams";
-import type { LogoActivity } from "$lib/workspace/logo";
-import type { MembershipRole } from "$lib/workspace/members";
-import type { WorkspaceSettings } from "$lib/workspace/settings";
-import type { StorageReading } from "$lib/workspace/storage";
+import type { Team } from "#lib/team/teams.js";
+import type { LogoActivity } from "#lib/workspace/logo.js";
+import type { MembershipRole } from "#lib/workspace/members.js";
+import type { WorkspaceSettings } from "#lib/workspace/settings.js";
+import type { StorageReading } from "#lib/workspace/storage.js";
 
 export type WorkspaceSettingsPreview = {
 	settings: WorkspaceSettings;

@@ -1,5 +1,5 @@
-import { keys } from "$lib/api/keys";
-import { readPublicRoadmap, type PublicRoadmapView } from "$lib/roadmap/public-roadmap";
+import { keys } from "#lib/api/keys.js";
+import { readPublicRoadmap, type PublicRoadmapView } from "#lib/roadmap/public-roadmap.js";
 import { publicRoadmapPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

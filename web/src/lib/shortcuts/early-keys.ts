@@ -5,7 +5,7 @@ export type EarlyKey = { key: string; at: number };
 const listKeys = new Set(["j", "k", "x", " ", "arrowup", "arrowdown"]);
 
 const limit = 8;
-const freshness = 1000;
+const freshness = 2000;
 const expiry = 3000;
 
 let queued: EarlyKey[] = [];

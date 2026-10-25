@@ -5,7 +5,7 @@ import type {
 	SourceControlDetailView,
 	SourceControlFailure,
 	SourceControlView,
-} from "$lib/source-control/source-control";
+} from "#lib/source-control/source-control.js";
 
 export type SourceControlPreview = {
 	view?: SourceControlView;

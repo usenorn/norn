@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
 	import Editor from "./editor.svelte";
 	import type { Document } from "./document";
 

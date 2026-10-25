@@ -4,21 +4,21 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import UserPlus from "@lucide/svelte/icons/user-plus";
 	import X from "@lucide/svelte/icons/x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import PersonAvatar from "$lib/components/norn/person-avatar.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import PersonAvatar from "#lib/components/norn/person-avatar.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
 	import {
 		memberFailureMessage,
 		membersOf,
 		rosterFor,
 		type MemberFailure,
 		type TeamRoster,
-	} from "$lib/team/members";
-	import { memberName, searchDebounceMs, type Membership } from "$lib/workspace/members";
+	} from "#lib/team/members.js";
+	import { memberName, searchDebounceMs, type Membership } from "#lib/workspace/members.js";
 
 	const candidateLimit = 8;
 

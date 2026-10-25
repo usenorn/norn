@@ -1,6 +1,6 @@
-import type { components } from "$lib/api/dashboard.gen";
-import type { WorkflowState } from "$lib/team/states";
-import type { Project } from "$lib/projects/projects";
+import type { components } from "#lib/api/dashboard.gen.js";
+import type { WorkflowState } from "#lib/team/states.js";
+import type { Project } from "#lib/projects/projects.js";
 import type { Issue, IssuePriority } from "./issues";
 import { tabAdmits, tallyOf, tallyTotal, type IssueGroupTally } from "./filter";
 import { priorities } from "./issues";

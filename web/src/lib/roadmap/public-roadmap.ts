@@ -1,5 +1,5 @@
-import type { components } from "$lib/api/dashboard.gen";
-import { onCalendarDay } from "$lib/time";
+import type { components } from "#lib/api/dashboard.gen.js";
+import { onCalendarDay } from "#lib/time.js";
 
 export type PublicRoadmap = components["schemas"]["PublicRoadmap"];
 export type PublicRoadmapItem = components["schemas"]["PublicRoadmapItem"];

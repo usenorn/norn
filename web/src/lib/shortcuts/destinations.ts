@@ -1,4 +1,4 @@
-import { workspacePath } from "$lib/workspace/navigation";
+import { workspacePath } from "#lib/workspace/navigation.js";
 import type { ShortcutId } from "./shortcuts";
 
 export type Destination = {

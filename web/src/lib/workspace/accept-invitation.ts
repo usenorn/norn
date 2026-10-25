@@ -1,6 +1,6 @@
-import type { components, operations } from "$lib/api/dashboard.gen";
+import type { components, operations } from "#lib/api/dashboard.gen.js";
 import type { MembershipRole } from "./members";
-import type { SignedInAccount } from "$lib/account/accounts";
+import type { SignedInAccount } from "#lib/account/accounts.js";
 
 export type InvitationWorkspace = components["schemas"]["InvitationWorkspace"];
 

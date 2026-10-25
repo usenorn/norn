@@ -1,7 +1,7 @@
 import type { Cookies } from "@sveltejs/kit";
 import type { Client } from "openapi-fetch";
-import type { paths } from "$lib/api/dashboard.gen";
-import { backlogStates } from "$lib/issues/board";
+import type { paths } from "#lib/api/dashboard.gen.js";
+import { backlogStates } from "#lib/issues/board.js";
 import {
 	carriesDisplay,
 	displayCookie,
@@ -10,13 +10,13 @@ import {
 	readLayout,
 	readTab,
 	writeDisplay,
-} from "$lib/issues/display";
-import { facetFilters, readFacets } from "$lib/issues/facets";
-import { appliedView, viewQuery, viewTeams } from "$lib/views/applied";
-import { calendarDate } from "$lib/time";
-import type { SavedView } from "$lib/views/views";
-import type { Team } from "$lib/team/teams";
-import type { WorkflowState } from "$lib/team/states";
+} from "#lib/issues/display.js";
+import { facetFilters, readFacets } from "#lib/issues/facets.js";
+import { appliedView, viewQuery, viewTeams } from "#lib/views/applied.js";
+import { calendarDate } from "#lib/time.js";
+import type { SavedView } from "#lib/views/views.js";
+import type { Team } from "#lib/team/teams.js";
+import type { WorkflowState } from "#lib/team/states.js";
 import type { IssuesListingData } from "./listing";
 
 export type ListingScope =

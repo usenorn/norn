@@ -1,12 +1,12 @@
 import { fail } from "@sveltejs/kit";
 import { message, superValidate, type Infer, type SuperValidated } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import type { NotificationSettings } from "$lib/notifications/notifications";
-import type { DecisionChannelOutcome } from "$lib/notifications/decision-channel";
-import { decisionChannelSchema } from "$lib/notifications/decision-channel-schema";
-import type { MemberTelegramBots } from "$lib/agents/telegram";
-import { keys } from "$lib/api/keys";
-import { reachInstance } from "$lib/auth/instance";
+import type { NotificationSettings } from "#lib/notifications/notifications.js";
+import type { DecisionChannelOutcome } from "#lib/notifications/decision-channel.js";
+import { decisionChannelSchema } from "#lib/notifications/decision-channel-schema.js";
+import type { MemberTelegramBots } from "#lib/agents/telegram.js";
+import { keys } from "#lib/api/keys.js";
+import { reachInstance } from "#lib/auth/instance.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type DecisionChannelForm = Infer<typeof decisionChannelSchema>;

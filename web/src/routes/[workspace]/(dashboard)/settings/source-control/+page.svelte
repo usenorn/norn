@@ -5,16 +5,16 @@
 	import GitBranch from "@lucide/svelte/icons/git-branch";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
-	import { api } from "$lib/api";
-	import * as Alert from "$lib/components/ui/alert";
-	import { Button } from "$lib/components/ui/button";
-	import * as Empty from "$lib/components/ui/empty";
-	import * as Form from "$lib/components/ui/form";
-	import { Input } from "$lib/components/ui/input";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import GithubAppPanel from "$lib/source-control/github-app-panel.svelte";
-	import VerdictBanner from "$lib/source-control/verdict-banner.svelte";
+	import { api } from "#lib/api/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import GithubAppPanel from "#lib/source-control/github-app-panel.svelte";
+	import VerdictBanner from "#lib/source-control/verdict-banner.svelte";
 	import {
 		brokenLabel,
 		connectionLabel,
@@ -30,8 +30,8 @@
 		sourceControlVerdict,
 		type SourceControlFailure,
 		type SourceControlView,
-	} from "$lib/source-control/source-control";
-	import { connectSourceControlSchema } from "$lib/source-control/source-control-schema";
+	} from "#lib/source-control/source-control.js";
+	import { connectSourceControlSchema } from "#lib/source-control/source-control-schema.js";
 	import { sourceControlPreviewStates } from "./preview";
 	import type { PageData } from "./$types";
 

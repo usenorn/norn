@@ -1,4 +1,4 @@
-import type { AuditFilters, AuditRecord } from "$lib/audit/audit";
+import type { AuditFilters, AuditRecord } from "#lib/audit/audit.js";
 
 export type AuditPreview = {
 	record?: AuditRecord;

@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
-import { reachOfSlug, withSlot } from "$lib/account/accounts";
-import type { Team } from "$lib/team/teams";
+import { keys } from "#lib/api/keys.js";
+import { reachOfSlug, withSlot } from "#lib/account/accounts.js";
+import type { Team } from "#lib/team/teams.js";
 import { invitePreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

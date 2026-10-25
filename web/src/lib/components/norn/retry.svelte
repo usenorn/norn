@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
-	import { keys } from "$lib/api/keys";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 
 	let {
 		label = "Try again",

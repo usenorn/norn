@@ -1,12 +1,12 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { emailMessage, passwordMessage } from "$lib/auth/password-reset";
-import { displayNameMessage, signUpFailure, signUpRefusal, signUpSent } from "$lib/auth/sign-up";
-import { signUpSchema } from "$lib/auth/sign-up-schema";
-import { addingAccount, leaveIfSignedIn } from "$lib/auth/signed-in";
-import { safeReturn } from "$lib/auth/return-to";
-import type { SignUpOutcome, SignUpResend } from "$lib/auth/types";
+import { emailMessage, passwordMessage } from "#lib/auth/password-reset.js";
+import { displayNameMessage, signUpFailure, signUpRefusal, signUpSent } from "#lib/auth/sign-up.js";
+import { signUpSchema } from "#lib/auth/sign-up-schema.js";
+import { addingAccount, leaveIfSignedIn } from "#lib/auth/signed-in.js";
+import { safeReturn } from "#lib/auth/return-to.js";
+import type { SignUpOutcome, SignUpResend } from "#lib/auth/types.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type SignUpForm = Infer<typeof signUpSchema>;

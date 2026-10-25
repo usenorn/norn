@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import { tv, type VariantProps } from "tailwind-variants";
-	import { fieldTrigger } from "$lib/issues/issue-field.svelte";
+	import { fieldTrigger } from "#lib/issues/issue-field.svelte";
 
 	export const labelPickerVariants = tv({
 		slots: {
@@ -54,9 +54,9 @@
 <script lang="ts">
 	import Plus from "@lucide/svelte/icons/plus";
 	import Tags from "@lucide/svelte/icons/tags";
-	import * as Command from "$lib/components/ui/command/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import PropertyPicker, { type PickerOption } from "$lib/issues/property-picker.svelte";
+	import * as Command from "#lib/components/ui/command/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import PropertyPicker, { type PickerOption } from "#lib/issues/property-picker.svelte";
 	import LabelChips from "./label-chips.svelte";
 	import LabelDot from "./label-dot.svelte";
 	import { createLabel } from "./create-label";

@@ -2,8 +2,8 @@ import type {
 	AgentLibraryListing,
 	CapabilityDialogPreview,
 	McpConnectOutcome,
-} from "$lib/agents/agent-capabilities";
-import type { MembershipRole } from "$lib/workspace/members";
+} from "#lib/agents/agent-capabilities.js";
+import type { MembershipRole } from "#lib/workspace/members.js";
 
 export type AgentLibraryPreview = {
 	listing?: AgentLibraryListing;

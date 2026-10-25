@@ -3,13 +3,13 @@
 	import { invalidate } from "$app/navigation";
 	import CircleAlert from "@lucide/svelte/icons/circle-alert";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import ReviewList from "$lib/components/norn/review-list.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import ReviewList from "#lib/components/norn/review-list.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
 	import RoadmapFieldChip from "./roadmap-field-chip.svelte";
 	import {
 		answerOf,

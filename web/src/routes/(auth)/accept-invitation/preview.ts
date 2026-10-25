@@ -1,4 +1,4 @@
-import type { AcceptInvitation } from "$lib/workspace/accept-invitation";
+import type { AcceptInvitation } from "#lib/workspace/accept-invitation.js";
 
 export const acceptInvitationPreviewStates: Record<string, AcceptInvitation> = import.meta.env.DEV
 	? {

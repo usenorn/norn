@@ -2,12 +2,12 @@
 	import ChevronDown from "@lucide/svelte/icons/chevron-down";
 	import Link2 from "@lucide/svelte/icons/link-2";
 	import X from "@lucide/svelte/icons/x";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import StatusIcon from "$lib/components/norn/status-icon.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { relationKinds, relationHeading, type IssueRelationGroup } from "$lib/issues/issues";
-	import type { Issue, IssueCandidate, IssueRelationKind } from "$lib/issues/issues";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import StatusIcon from "#lib/components/norn/status-icon.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { relationKinds, relationHeading, type IssueRelationGroup } from "#lib/issues/issues.js";
+	import type { Issue, IssueCandidate, IssueRelationKind } from "#lib/issues/issues.js";
 
 	let {
 		issue,

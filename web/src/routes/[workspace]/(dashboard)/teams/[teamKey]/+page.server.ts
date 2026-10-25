@@ -1,6 +1,6 @@
-import { keys } from "$lib/api/keys";
-import { rosterFor, type TeamRoster } from "$lib/team/members";
-import type { TeamOverview } from "$lib/team/teams";
+import { keys } from "#lib/api/keys.js";
+import { rosterFor, type TeamRoster } from "#lib/team/members.js";
+import type { TeamOverview } from "#lib/team/teams.js";
 import { teamOverviewPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 

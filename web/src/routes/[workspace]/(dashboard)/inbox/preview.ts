@@ -1,4 +1,4 @@
-import type { InboxFilter, InboxListing, NotificationFailure } from "$lib/notifications/notifications";
+import type { InboxFilter, InboxListing, NotificationFailure } from "#lib/notifications/notifications.js";
 
 export type InboxPreview = {
 	listing: InboxListing;

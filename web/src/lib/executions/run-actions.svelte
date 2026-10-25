@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { onDateAndTime } from "$lib/time";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { onDateAndTime } from "#lib/time.js";
 	import {
 		canCancel,
 		canRestart,

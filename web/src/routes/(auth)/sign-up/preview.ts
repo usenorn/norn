@@ -1,6 +1,6 @@
-import type { Instance } from "$lib/auth/instance";
-import type { SignUpOutcome, SignUpResend } from "$lib/auth/types";
-import type { SignUpInput } from "$lib/auth/sign-up-schema";
+import type { Instance } from "#lib/auth/instance.js";
+import type { SignUpOutcome, SignUpResend } from "#lib/auth/types.js";
+import type { SignUpInput } from "#lib/auth/sign-up-schema.js";
 
 export type SignUpPreview = {
 	auth?: Partial<Instance>;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import { page } from "$app/state";
 	import Bot from "@lucide/svelte/icons/bot";
 	import CircleX from "@lucide/svelte/icons/circle-x";
@@ -8,13 +8,13 @@
 	import Cog from "@lucide/svelte/icons/cog";
 	import Inbox from "@lucide/svelte/icons/inbox";
 	import Plug from "@lucide/svelte/icons/plug";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { api } from "$lib/api";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
 	import { goto } from "$app/navigation";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
 	import {
 		actorKindLabels,
 		notificationFailureMessage,
@@ -25,14 +25,14 @@
 		type InboxListing,
 		type Notification,
 		type NotificationFailure,
-	} from "$lib/notifications/notifications";
-	import { onDateAndTime } from "$lib/time";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/notifications/notifications.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { inboxPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import { showToast } from "$lib/toast/toasts";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import { attempt, type Outcome } from "$lib/api/attempt";
+	import { showToast } from "#lib/toast/toasts.js";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import { attempt, type Outcome } from "#lib/api/attempt.js";
 
 	let { data }: PageProps = $props();
 

@@ -1,4 +1,4 @@
-import { kindLabels, kindOrder, type SearchGroup } from "$lib/search/search";
+import { kindLabels, kindOrder, type SearchGroup } from "#lib/search/search.js";
 import {
 	matches,
 	type Destination,

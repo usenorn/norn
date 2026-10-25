@@ -1,13 +1,13 @@
 <script lang="ts">
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { api } from "$lib/api";
-	import Editor from "$lib/editor/editor.svelte";
-	import { asDocument } from "$lib/editor/document";
-	import type { components } from "$lib/api/dashboard.gen";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Dialog from "#lib/components/ui/dialog/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { api } from "#lib/api/index.js";
+	import Editor from "#lib/editor/editor.svelte";
+	import { asDocument } from "#lib/editor/document.js";
+	import type { components } from "#lib/api/dashboard.gen.js";
 
 	type Revision = components["schemas"]["DescriptionRevision"];
 

@@ -1,5 +1,5 @@
-import type { CreateTeamInput } from "$lib/team/create-team-schema";
-import type { TeamCreationFailure, TeamListing, TeamListView } from "$lib/team/teams";
+import type { CreateTeamInput } from "#lib/team/create-team-schema.js";
+import type { TeamCreationFailure, TeamListing, TeamListView } from "#lib/team/teams.js";
 
 export type TeamsPreview = {
 	listing: TeamListing;

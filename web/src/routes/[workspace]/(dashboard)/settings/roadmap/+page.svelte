@@ -8,33 +8,33 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import { superForm } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { deploymentPreview } from "$lib/auth/preview";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import Retry from "$lib/components/norn/retry.svelte";
-	import RowGroup from "$lib/components/norn/row-group.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import { Switch } from "$lib/components/ui/switch/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import SaveBar from "$lib/settings/save-bar.svelte";
-	import SettingRow from "$lib/settings/setting-row.svelte";
-	import SettingsSectionHeader from "$lib/settings/settings-section-header.svelte";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { showToast } from "$lib/toast/toasts";
-	import { saveBarOf } from "$lib/workspace/settings";
-	import RoadmapEntryEditor from "$lib/roadmap/roadmap-entry-editor.svelte";
-	import RoadmapEntryList from "$lib/roadmap/roadmap-entry-list.svelte";
-	import RoadmapPresetChooser from "$lib/roadmap/roadmap-preset-chooser.svelte";
-	import RoadmapPublicationHeader from "$lib/roadmap/roadmap-publication-header.svelte";
-	import RoadmapRemoveEntryDialog from "$lib/roadmap/roadmap-remove-entry-dialog.svelte";
-	import RoadmapReviewDialog from "$lib/roadmap/roadmap-review-dialog.svelte";
-	import RoadmapSourcePicker from "$lib/roadmap/roadmap-source-picker.svelte";
-	import RoadmapUnpublishDialog from "$lib/roadmap/roadmap-unpublish-dialog.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { deploymentPreview } from "#lib/auth/preview.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import Retry from "#lib/components/norn/retry.svelte";
+	import RowGroup from "#lib/components/norn/row-group.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import { Switch } from "#lib/components/ui/switch/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import SaveBar from "#lib/settings/save-bar.svelte";
+	import SettingRow from "#lib/settings/setting-row.svelte";
+	import SettingsSectionHeader from "#lib/settings/settings-section-header.svelte";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { showToast } from "#lib/toast/toasts.js";
+	import { saveBarOf } from "#lib/workspace/settings.js";
+	import RoadmapEntryEditor from "#lib/roadmap/roadmap-entry-editor.svelte";
+	import RoadmapEntryList from "#lib/roadmap/roadmap-entry-list.svelte";
+	import RoadmapPresetChooser from "#lib/roadmap/roadmap-preset-chooser.svelte";
+	import RoadmapPublicationHeader from "#lib/roadmap/roadmap-publication-header.svelte";
+	import RoadmapRemoveEntryDialog from "#lib/roadmap/roadmap-remove-entry-dialog.svelte";
+	import RoadmapReviewDialog from "#lib/roadmap/roadmap-review-dialog.svelte";
+	import RoadmapSourcePicker from "#lib/roadmap/roadmap-source-picker.svelte";
+	import RoadmapUnpublishDialog from "#lib/roadmap/roadmap-unpublish-dialog.svelte";
 	import {
 		answerOf,
 		failureMessage,
@@ -63,8 +63,8 @@
 		type RoadmapPreset,
 		type RoadmapSettingsView,
 		type VisibilityField,
-	} from "$lib/roadmap/admin";
-	import { roadmapSettingsSchema, type RoadmapSettingsInput } from "$lib/roadmap/roadmap-settings-schema";
+	} from "#lib/roadmap/admin.js";
+	import { roadmapSettingsSchema, type RoadmapSettingsInput } from "#lib/roadmap/roadmap-settings-schema.js";
 	import { roadmapSettingsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

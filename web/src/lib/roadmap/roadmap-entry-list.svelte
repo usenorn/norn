@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ListPlus from "@lucide/svelte/icons/list-plus";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import RowGroup from "$lib/components/norn/row-group.svelte";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import RowGroup from "#lib/components/norn/row-group.svelte";
 	import RoadmapEntryRow from "./roadmap-entry-row.svelte";
 	import { entryLayout, type RoadmapActivity, type RoadmapEntry, type RoadmapVisibility } from "./admin";
 

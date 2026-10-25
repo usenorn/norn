@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
-	import { cn } from "$lib/utils.js";
+	import { cn } from "#lib/utils.js";
 	import Eyebrow from "./eyebrow.svelte";
 
 	let {

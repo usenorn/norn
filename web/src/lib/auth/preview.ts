@@ -1,3 +1,4 @@
+import type { ReadonlyURL } from "$app/state";
 import type { Instance } from "./instance";
 
 export const authPreviewDeployments: Record<string, Partial<Instance>> = {
@@ -9,7 +10,7 @@ export const authPreviewDeployments: Record<string, Partial<Instance>> = {
 	},
 };
 
-export function deploymentPreview(url: URL): Partial<Instance> | undefined {
+export function deploymentPreview(url: ReadonlyURL): Partial<Instance> | undefined {
 	if (!import.meta.env.DEV) return undefined;
 	return authPreviewDeployments[url.searchParams.get("deployment") ?? ""];
 }

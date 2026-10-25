@@ -4,12 +4,12 @@ import { TaskList } from "@tiptap/extension-list";
 import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table";
 import { Placeholder } from "@tiptap/extensions";
-import { Attachment } from "$lib/editor/nodes/attachment";
-import { NamedTaskItem } from "$lib/editor/nodes/task";
-import { IssueRef } from "$lib/editor/nodes/issue-ref";
-import { WorkspaceImage } from "$lib/editor/nodes/image";
-import { WorkspaceMention } from "$lib/editor/nodes/mention";
-import { EditorUploads } from "$lib/editor/uploads";
+import { Attachment } from "#lib/editor/nodes/attachment.js";
+import { NamedTaskItem } from "#lib/editor/nodes/task.js";
+import { IssueRef } from "#lib/editor/nodes/issue-ref.js";
+import { WorkspaceImage } from "#lib/editor/nodes/image.js";
+import { WorkspaceMention } from "#lib/editor/nodes/mention.js";
+import { EditorUploads } from "#lib/editor/uploads.js";
 
 export type SchemaOptions = {
 	placeholder: string;

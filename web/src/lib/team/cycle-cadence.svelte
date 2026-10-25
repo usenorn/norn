@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/state";
-	import { keys } from "$lib/api/keys";
+	import { keys } from "#lib/api/keys.js";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { api } from "$lib/api";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
 	import {
 		cycleFailureMessage,
 		cycleLengths,
@@ -17,9 +17,9 @@
 		weekdays,
 		type CadenceSetting,
 		type CycleFailure,
-	} from "$lib/cycles/cycles";
-	import { cycleWindow } from "$lib/time";
-	import type { Team } from "$lib/team/teams";
+	} from "#lib/cycles/cycles.js";
+	import { cycleWindow } from "#lib/time.js";
+	import type { Team } from "#lib/team/teams.js";
 
 	let {
 		workspace,

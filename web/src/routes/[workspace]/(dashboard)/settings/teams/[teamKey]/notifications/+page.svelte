@@ -1,6 +1,6 @@
 <script lang="ts">
-	import TeamNotifications from "$lib/notifications/team-notifications.svelte";
-	import { useTeamSettings } from "$lib/team/team-settings-context";
+	import TeamNotifications from "#lib/notifications/team-notifications.svelte";
+	import { useTeamSettings } from "#lib/team/team-settings-context.js";
 	import type { PageProps } from "./$types";
 
 	let { data }: PageProps = $props();

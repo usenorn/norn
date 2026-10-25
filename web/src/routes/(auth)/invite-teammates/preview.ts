@@ -1,4 +1,4 @@
-import type { Invite } from "$lib/workspace/invites";
+import type { Invite } from "#lib/workspace/invites.js";
 
 export type InvitePreview = {
 	text?: string;

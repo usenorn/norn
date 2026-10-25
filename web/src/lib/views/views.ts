@@ -1,8 +1,8 @@
 import Bookmark from "@lucide/svelte/icons/bookmark";
 import Globe from "@lucide/svelte/icons/globe";
 import Users from "@lucide/svelte/icons/users";
-import type { components } from "$lib/api/dashboard.gen";
-import { workspacePath, type NavEntry } from "$lib/workspace/navigation";
+import type { components } from "#lib/api/dashboard.gen.js";
+import { workspacePath, type NavEntry } from "#lib/workspace/navigation.js";
 
 export type SavedView = components["schemas"]["SavedView"];
 export type SavedViewSharing = components["schemas"]["SavedViewSharing"];

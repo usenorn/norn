@@ -1,6 +1,6 @@
-import { unknownLine } from "$lib/api/attempt";
-import type { components } from "$lib/api/dashboard.gen";
-import { teamSettingsPath } from "$lib/team/teams";
+import { unknownLine } from "#lib/api/attempt.js";
+import type { components } from "#lib/api/dashboard.gen.js";
+import { teamSettingsPath } from "#lib/team/teams.js";
 
 export type Notification = components["schemas"]["Notification"];
 export type NotificationPage = components["schemas"]["NotificationPage"];

@@ -1,5 +1,5 @@
-import type { WebhookDetailView } from "$lib/webhooks/webhooks";
-import { keys } from "$lib/api/keys";
+import type { WebhookDetailView } from "#lib/webhooks/webhooks.js";
+import { keys } from "#lib/api/keys.js";
 import type { PageServerLoad } from "./$types";
 
 const pageSize = 25;

@@ -7,20 +7,20 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Sparkles from "@lucide/svelte/icons/sparkles";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { deploymentPreview } from "$lib/auth/preview";
-	import { onDateAndTime } from "$lib/time";
-	import { aiProviderSchema } from "$lib/ai-provider/ai-provider-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { deploymentPreview } from "#lib/auth/preview.js";
+	import { onDateAndTime } from "#lib/time.js";
+	import { aiProviderSchema } from "#lib/ai-provider/ai-provider-schema.js";
 	import {
 		aiProviderFailure,
 		aiProviderKinds,
@@ -32,7 +32,7 @@
 		type AiProviderKind,
 		type AiProviderOutcome,
 		type AiProviderView,
-	} from "$lib/ai-provider/ai-provider";
+	} from "#lib/ai-provider/ai-provider.js";
 	import { aiProviderPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

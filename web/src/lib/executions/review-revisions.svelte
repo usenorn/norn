@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { onDateAndTime } from "$lib/time";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { onDateAndTime } from "#lib/time.js";
 	import { revisionLabel, type ReviewRevision } from "./review";
 
 	let {

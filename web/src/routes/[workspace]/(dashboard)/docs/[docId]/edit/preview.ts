@@ -1,6 +1,6 @@
-import type { DocEditing } from "$lib/docs/docs";
-import type { SaveState } from "$lib/editor/autosave.svelte";
-import type { Document } from "$lib/editor/document";
+import type { DocEditing } from "#lib/docs/docs.js";
+import type { SaveState } from "#lib/editor/autosave.svelte.js";
+import type { Document } from "#lib/editor/document.js";
 
 export type DocEditPreview = {
 	editing: DocEditing;

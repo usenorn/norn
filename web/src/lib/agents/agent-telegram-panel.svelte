@@ -7,15 +7,15 @@
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms";
 	import { zod4Client } from "sveltekit-superforms/adapters";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { onDateAndTime } from "$lib/time";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { onDateAndTime } from "#lib/time.js";
 	import {
 		telegramFailure,
 		telegramFailureMessage,

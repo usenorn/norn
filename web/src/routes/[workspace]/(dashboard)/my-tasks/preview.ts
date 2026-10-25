@@ -1,7 +1,7 @@
-import type { Listed } from "$lib/api/listed";
-import type { Issue } from "$lib/issues/issues";
-import type { ColumnPaging } from "$lib/issues/paging";
-import type { TaskBucket } from "$lib/tasks/types";
+import type { Listed } from "#lib/api/listed.js";
+import type { Issue } from "#lib/issues/issues.js";
+import type { ColumnPaging } from "#lib/issues/paging.js";
+import type { TaskBucket } from "#lib/tasks/types.js";
 
 export type MyTasksPreview = {
 	rows?: Listed<Issue>;

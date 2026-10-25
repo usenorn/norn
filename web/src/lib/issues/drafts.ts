@@ -1,6 +1,6 @@
-import { api } from "$lib/api";
-import { documentEmpty, documentText, type Document } from "$lib/editor/document";
-import type { components } from "$lib/api/dashboard.gen";
+import { api } from "#lib/api/index.js";
+import { documentEmpty, documentText, type Document } from "#lib/editor/document.js";
+import type { components } from "#lib/api/dashboard.gen.js";
 
 export type IssueDraft = components["schemas"]["IssueDraft"];
 

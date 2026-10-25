@@ -1,4 +1,4 @@
-import type { MemberFailure, TeamRoster } from "$lib/team/members";
+import type { MemberFailure, TeamRoster } from "#lib/team/members.js";
 
 export type TeamMembersPreview = {
 	roster: TeamRoster;

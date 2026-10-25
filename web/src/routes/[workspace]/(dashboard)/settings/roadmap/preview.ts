@@ -1,4 +1,4 @@
-import type { SuggestionOutcome } from "$lib/editor/search";
+import type { SuggestionOutcome } from "#lib/editor/search.js";
 import type {
 	ChosenPreset,
 	EntryEditor,
@@ -8,8 +8,8 @@ import type {
 	RoadmapSettingsOutcome,
 	RoadmapSettingsView,
 	SourceText,
-} from "$lib/roadmap/admin";
-import type { SourcePickerOpen } from "$lib/roadmap/roadmap-source-picker.svelte";
+} from "#lib/roadmap/admin.js";
+import type { SourcePickerOpen } from "#lib/roadmap/roadmap-source-picker.svelte";
 
 export type RoadmapSettingsPreview = {
 	view: RoadmapSettingsView;

@@ -3,9 +3,9 @@
 	import Library from "@lucide/svelte/icons/library";
 	import Plus from "@lucide/svelte/icons/plus";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
 	import AgentCapabilitySection from "./agent-capability-section.svelte";
 	import McpServerRow from "./mcp-server-row.svelte";
 	import SkillRow from "./skill-row.svelte";

@@ -1,8 +1,8 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { message, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { keys } from "$lib/api/keys";
-import { restoreDocSchema, restoreFormId } from "$lib/docs/doc-schema";
+import { keys } from "#lib/api/keys.js";
+import { restoreDocSchema, restoreFormId } from "#lib/docs/doc-schema.js";
 import {
 	docPath,
 	docRevisionPageSize,
@@ -11,8 +11,8 @@ import {
 	type DocFailure,
 	type DocHistory,
 	type DocRevisionSummary,
-} from "$lib/docs/docs";
-import { readAgents, readDoc } from "$lib/docs/docs.server";
+} from "#lib/docs/docs.js";
+import { readAgents, readDoc } from "#lib/docs/docs.server.js";
 import { docHistoryPreviewStates } from "./preview";
 import type { Actions, PageServerLoad } from "./$types";
 

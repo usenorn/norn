@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
-import type { SignedInAccount } from "$lib/account/accounts";
-import type { components } from "$lib/api/dashboard.gen";
+import { keys } from "#lib/api/keys.js";
+import type { SignedInAccount } from "#lib/account/accounts.js";
+import type { components } from "#lib/api/dashboard.gen.js";
 import type { LayoutServerLoad } from "./$types";
 
 export type WorkspaceSummary = components["schemas"]["Workspace"];

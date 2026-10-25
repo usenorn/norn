@@ -7,16 +7,16 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Lock from "@lucide/svelte/icons/lock";
 	import Users from "@lucide/svelte/icons/users";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as Form from "$lib/components/ui/form/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import TeamKey from "$lib/components/norn/team-key.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import { createTeamSchema } from "$lib/team/create-team-schema";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as Form from "#lib/components/ui/form/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import TeamKey from "#lib/components/norn/team-key.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import { createTeamSchema } from "#lib/team/create-team-schema.js";
 	import {
 		teamKeyFromName,
 		teamListTabs,
@@ -29,8 +29,8 @@
 		type TeamListTab,
 		type TeamListing,
 		type TeamVisibility,
-	} from "$lib/team/teams";
-	import { workspacePath } from "$lib/workspace/navigation";
+	} from "#lib/team/teams.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
 	import { teamsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

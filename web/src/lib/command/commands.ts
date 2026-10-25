@@ -6,7 +6,7 @@ import Table from "@lucide/svelte/icons/table";
 import Tag from "@lucide/svelte/icons/tag";
 import User from "@lucide/svelte/icons/user";
 import Zap from "@lucide/svelte/icons/zap";
-import { displayKeys, shortcutOf, type ShortcutId } from "$lib/shortcuts/shortcuts";
+import { displayKeys, shortcutOf, type ShortcutId } from "#lib/shortcuts/shortcuts.js";
 import { scopeSubject, sharedTeam, type CommandScope, type PaletteCommand } from "./model";
 
 export function paletteCommands(

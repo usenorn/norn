@@ -1,13 +1,13 @@
-import type { IssueFilter, IssueQueryBody } from "$lib/issues/filter";
-import { allOf, issueGroupSize, issuePageSize, tabFilter, teamFilter } from "$lib/issues/filter";
+import type { IssueFilter, IssueQueryBody } from "#lib/issues/filter.js";
+import { allOf, issueGroupSize, issuePageSize, tabFilter, teamFilter } from "#lib/issues/filter.js";
 import {
 	groupByFor,
 	sortFor,
 	type Grouping,
 	type IssueTab,
 	type Ordering,
-} from "$lib/issues/display";
-import type { Team } from "$lib/team/teams";
+} from "#lib/issues/display.js";
+import type { Team } from "#lib/team/teams.js";
 import type { SavedView, ViewReference } from "./views";
 
 export type AppliedView =

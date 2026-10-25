@@ -6,13 +6,13 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Progress } from "$lib/components/ui/progress/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import InstanceLine from "$lib/components/norn/instance-line.svelte";
-	import StepList, { type Step } from "$lib/components/norn/step-list.svelte";
-	import type { SignUpConfirmation } from "$lib/auth/types";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Progress } from "#lib/components/ui/progress/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import InstanceLine from "#lib/components/norn/instance-line.svelte";
+	import StepList, { type Step } from "#lib/components/norn/step-list.svelte";
+	import type { SignUpConfirmation } from "#lib/auth/types.js";
 	import { signUpConfirmPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 

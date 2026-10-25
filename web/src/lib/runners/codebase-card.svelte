@@ -1,11 +1,11 @@
 <script lang="ts">
 	import GitBranch from "@lucide/svelte/icons/git-branch";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import CommandSnippet from "$lib/components/norn/command-snippet.svelte";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { onDateAndTime } from "$lib/time";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import CommandSnippet from "#lib/components/norn/command-snippet.svelte";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { onDateAndTime } from "#lib/time.js";
 	import FolderState from "./folder-state.svelte";
 	import {
 		gatewayLabels,

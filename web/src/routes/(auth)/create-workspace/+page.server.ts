@@ -1,17 +1,17 @@
 import { fail, redirect } from "@sveltejs/kit";
-import { keys } from "$lib/api/keys";
-import { sessionParam, withSlot } from "$lib/account/accounts";
-import { lastWorkspaceCookie, rememberedWorkspace } from "$lib/account/last-workspace";
-import { workspacePath } from "$lib/workspace/navigation";
+import { keys } from "#lib/api/keys.js";
+import { sessionParam, withSlot } from "#lib/account/accounts.js";
+import { lastWorkspaceCookie, rememberedWorkspace } from "#lib/account/last-workspace.js";
+import { workspacePath } from "#lib/workspace/navigation.js";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
 import {
 	createWorkspaceSchema,
 	slugMessage,
 	slugSuggestions,
-} from "$lib/workspace/create-workspace-schema";
-import { teamKeyMessage, teamKeySuggestions, teamNameMessage } from "$lib/team/teams";
-import type { WorkspaceContext, WorkspaceCreationFailure } from "$lib/workspace/types";
+} from "#lib/workspace/create-workspace-schema.js";
+import { teamKeyMessage, teamKeySuggestions, teamNameMessage } from "#lib/team/teams.js";
+import type { WorkspaceContext, WorkspaceCreationFailure } from "#lib/workspace/types.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 type CreateWorkspaceForm = Infer<typeof createWorkspaceSchema>;

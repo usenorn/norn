@@ -1,9 +1,9 @@
 <script lang="ts">
 	import CircleHelp from "@lucide/svelte/icons/circle-help";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Textarea } from "$lib/components/ui/textarea/index.js";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { onDateAndTime } from "$lib/time";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Textarea } from "#lib/components/ui/textarea/index.js";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { onDateAndTime } from "#lib/time.js";
 	import { standingLine, statusLine, type IssueQuestion } from "./questions";
 
 	let {

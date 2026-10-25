@@ -4,17 +4,17 @@
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Copy from "@lucide/svelte/icons/copy";
 	import RefreshCw from "@lucide/svelte/icons/refresh-cw";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
 	import {
 		intakeFailureMessage,
 		readIntakeFailure,
 		type IntakeFailure,
 		type IntakeSetting,
-	} from "$lib/triage/intake";
-	import type { Team } from "$lib/team/teams";
+	} from "#lib/triage/intake.js";
+	import type { Team } from "#lib/team/teams.js";
 
 	let {
 		workspace,

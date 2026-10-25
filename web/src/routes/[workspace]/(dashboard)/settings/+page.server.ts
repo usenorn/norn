@@ -1,8 +1,8 @@
 import { fail } from "@sveltejs/kit";
 import { message, setError, superValidate, type Infer } from "sveltekit-superforms";
 import { zod4 } from "sveltekit-superforms/adapters";
-import { agentInstructionsMessage } from "$lib/agents/instructions";
-import { workspaceSettingsSchema } from "$lib/workspace/settings-schema";
+import { agentInstructionsMessage } from "#lib/agents/instructions.js";
+import { workspaceSettingsSchema } from "#lib/workspace/settings-schema.js";
 import {
 	nameMessage,
 	settingsFor,
@@ -11,8 +11,8 @@ import {
 	weekStartMessage,
 	type Workspace,
 	type WorkspaceSettings,
-} from "$lib/workspace/settings";
-import { storageReading } from "$lib/workspace/storage";
+} from "#lib/workspace/settings.js";
+import { storageReading } from "#lib/workspace/storage.js";
 import { workspaceSettingsPreviewStates } from "./preview";
 import type { Actions, PageServerLoad } from "./$types";
 

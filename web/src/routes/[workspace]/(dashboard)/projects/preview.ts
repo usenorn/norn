@@ -1,4 +1,4 @@
-import type { ProjectListing } from "$lib/projects/projects";
+import type { ProjectListing } from "#lib/projects/projects.js";
 
 export type ProjectsPreview = { listing: ProjectListing };
 

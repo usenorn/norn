@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Bot from "@lucide/svelte/icons/bot";
-	import { Checkbox } from "$lib/components/ui/checkbox/index.js";
-	import { Label } from "$lib/components/ui/label/index.js";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
+	import { Label } from "#lib/components/ui/label/index.js";
 	import { preferenceRows, type NotificationPreferences } from "./notifications";
 
 	let {

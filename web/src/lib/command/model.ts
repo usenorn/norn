@@ -1,7 +1,7 @@
-import type { IconComponent } from "$lib/utils.js";
-import type { LabelColor } from "$lib/labels/labels";
-import type { SearchResult } from "$lib/search/search";
-import type { StateCategory } from "$lib/team/states";
+import type { IconComponent } from "#lib/utils.js";
+import type { LabelColor } from "#lib/labels/labels.js";
+import type { SearchResult } from "#lib/search/search.js";
+import type { StateCategory } from "#lib/team/states.js";
 
 export type IssueTarget = { id: string; reference: string; title: string; teamId: string };
 

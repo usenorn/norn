@@ -3,18 +3,18 @@
 	import { goto } from "$app/navigation";
 	import CircleX from "@lucide/svelte/icons/circle-x";
 	import Layers from "@lucide/svelte/icons/layers";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import Eyebrow from "$lib/components/norn/eyebrow.svelte";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { cyclePath, phaseLabel, type Cycle } from "$lib/cycles/cycles";
-	import { cycleWindow } from "$lib/time";
-	import { workspacePath } from "$lib/workspace/navigation";
-	import { teamSettingsPath } from "$lib/team/teams";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import Eyebrow from "#lib/components/norn/eyebrow.svelte";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { cyclePath, phaseLabel, type Cycle } from "#lib/cycles/cycles.js";
+	import { cycleWindow } from "#lib/time.js";
+	import { workspacePath } from "#lib/workspace/navigation.js";
+	import { teamSettingsPath } from "#lib/team/teams.js";
 	import { teamCyclesPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
-	import Retry from "$lib/components/norn/retry.svelte";
+	import Retry from "#lib/components/norn/retry.svelte";
 
 	let { data }: PageProps = $props();
 

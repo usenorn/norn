@@ -3,8 +3,8 @@
 	import CircleDashed from "@lucide/svelte/icons/circle-dashed";
 	import CircleDot from "@lucide/svelte/icons/circle-dot";
 	import CircleX from "@lucide/svelte/icons/circle-x";
-	import { cn } from "$lib/utils.js";
-	import { categoryLabels, type StateCategory } from "$lib/team/states";
+	import { cn } from "#lib/utils.js";
+	import { categoryLabels, type StateCategory } from "#lib/team/states.js";
 
 	let {
 		category,

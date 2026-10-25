@@ -10,26 +10,26 @@
 	import ShieldCheck from "@lucide/svelte/icons/shield-check";
 	import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 	import UserX from "@lucide/svelte/icons/user-x";
-	import * as Alert from "$lib/components/ui/alert/index.js";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Empty from "$lib/components/ui/empty/index.js";
-	import * as Select from "$lib/components/ui/select/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Input } from "$lib/components/ui/input/index.js";
-	import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-	import SettingsPage from "$lib/settings/settings-page.svelte";
-	import AgentIdentity from "$lib/agents/agent-identity.svelte";
-	import CredentialDialog from "$lib/agents/credential-dialog.svelte";
-	import RegisterAgentDialog from "$lib/agents/register-agent-dialog.svelte";
-	import WorkspaceAgentHolds from "$lib/agents/workspace-agent-holds.svelte";
-	import Tag from "$lib/components/norn/tag.svelte";
-	import { api } from "$lib/api";
-	import { keys } from "$lib/api/keys";
-	import { listCursor } from "$lib/shortcuts/list-cursor.svelte";
-	import { bindShortcut, holdShortcuts } from "$lib/shortcuts/registry.svelte";
-	import ShortcutBar from "$lib/shortcuts/shortcut-bar.svelte";
-	import { onDate } from "$lib/time";
+	import * as Alert from "#lib/components/ui/alert/index.js";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.js";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.js";
+	import * as Empty from "#lib/components/ui/empty/index.js";
+	import * as Select from "#lib/components/ui/select/index.js";
+	import { Button } from "#lib/components/ui/button/index.js";
+	import { Input } from "#lib/components/ui/input/index.js";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.js";
+	import SettingsPage from "#lib/settings/settings-page.svelte";
+	import AgentIdentity from "#lib/agents/agent-identity.svelte";
+	import CredentialDialog from "#lib/agents/credential-dialog.svelte";
+	import RegisterAgentDialog from "#lib/agents/register-agent-dialog.svelte";
+	import WorkspaceAgentHolds from "#lib/agents/workspace-agent-holds.svelte";
+	import Tag from "#lib/components/norn/tag.svelte";
+	import { api } from "#lib/api/index.js";
+	import { keys } from "#lib/api/keys.js";
+	import { listCursor } from "#lib/shortcuts/list-cursor.svelte.js";
+	import { bindShortcut, holdShortcuts } from "#lib/shortcuts/registry.svelte.js";
+	import ShortcutBar from "#lib/shortcuts/shortcut-bar.svelte";
+	import { onDate } from "#lib/time.js";
 	import {
 		agentExecutionLabels,
 		agentPath,
@@ -40,8 +40,8 @@
 		type AgentFailure,
 		type AgentListing,
 		type WorkspaceAgent,
-	} from "$lib/agents/agents";
-	import { runnersPath } from "$lib/runners/runners";
+	} from "#lib/agents/agents.js";
+	import { runnersPath } from "#lib/runners/runners.js";
 	import { agentsPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -70,7 +70,7 @@
 	);
 	const inlineRegistration = $derived(page.url.searchParams.get("register") === "1");
 	const registerHref = $derived.by(() => {
-		const search = new URLSearchParams(page.url.searchParams);
+		const search = new URLSearchParams(page.url.search);
 		search.set("register", "1");
 
 		return `${page.url.pathname}?${search}`;

@@ -1,7 +1,7 @@
-import { keys } from "$lib/api/keys";
-import { readDecisionRight } from "$lib/executions/decision.server";
-import { readDiff } from "$lib/executions/diff.server";
-import type { ReviewView } from "$lib/executions/review";
+import { keys } from "#lib/api/keys.js";
+import { readDecisionRight } from "#lib/executions/decision.server.js";
+import { readDiff } from "#lib/executions/diff.server.js";
+import type { ReviewView } from "#lib/executions/review.js";
 import { reviewPreviewStates } from "./preview";
 import type { PageServerLoad } from "./$types";
 
