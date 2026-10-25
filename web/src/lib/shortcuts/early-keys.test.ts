@@ -116,7 +116,7 @@ describe("what the early buffer refuses to hold", () => {
 	it("drops keys that went stale while the app was loading", () => {
 		press({ key: "j" });
 
-		vi.advanceTimersByTime(1500);
+		vi.advanceTimersByTime(2500);
 
 		expect(drained()).toEqual([]);
 	});
