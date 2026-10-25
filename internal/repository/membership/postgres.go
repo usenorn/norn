@@ -29,6 +29,17 @@ FROM workspace_memberships
 WHERE account_id = $1 AND role = $2
 ORDER BY workspace_id`
 
+const activeAdminAccountIDsQuery = `
+SELECT m.account_id
+FROM workspace_memberships m
+JOIN accounts a ON a.id = m.account_id
+WHERE m.workspace_id = $1
+  AND m.role = $2
+  AND m.deactivated_at IS NULL
+  AND a.status = $3
+  AND a.kind = $4
+ORDER BY m.account_id`
+
 const membershipElsewhereQuery = `
 SELECT EXISTS (
     SELECT 1
@@ -514,21 +525,30 @@ func (r *membershipRepository) ExistsOutside(
 }
 
 func (r *membershipRepository) ListAdminWorkspaceIDs(ctx context.Context, accountID uuid.UUID) ([]uuid.UUID, error) {
-	return r.queryWorkspaceIDs(ctx, adminWorkspaceIDsQuery, accountID.String(), string(entity.MembershipRoleAdmin))
+	return r.queryIDs(ctx, adminWorkspaceIDsQuery, accountID.String(), string(entity.MembershipRoleAdmin))
 }
 
 func (r *membershipRepository) ListWorkspaceIDsWithoutOtherActiveAdmin(ctx context.Context, accountID uuid.UUID) ([]uuid.UUID, error) {
-	return r.queryWorkspaceIDs(ctx, soleAdminWorkspaceIDsQuery,
+	return r.queryIDs(ctx, soleAdminWorkspaceIDsQuery,
 		accountID.String(),
 		string(entity.MembershipRoleAdmin),
 		string(entity.AccountStatusActive),
 	)
 }
 
-func (r *membershipRepository) queryWorkspaceIDs(ctx context.Context, query string, arguments ...any) ([]uuid.UUID, error) {
+func (r *membershipRepository) ListActiveAdminAccountIDs(ctx context.Context, workspaceID uuid.UUID) ([]uuid.UUID, error) {
+	return r.queryIDs(ctx, activeAdminAccountIDsQuery,
+		workspaceID.String(),
+		string(entity.MembershipRoleAdmin),
+		string(entity.AccountStatusActive),
+		string(entity.AccountKindPerson),
+	)
+}
+
+func (r *membershipRepository) queryIDs(ctx context.Context, query string, arguments ...any) ([]uuid.UUID, error) {
 	rows, err := r.db.Querier(ctx).QueryContext(ctx, query, arguments...)
 	if err != nil {
-		return nil, fmt.Errorf("query workspace ids: %w", err)
+		return nil, fmt.Errorf("query ids: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -538,19 +558,19 @@ func (r *membershipRepository) queryWorkspaceIDs(ctx context.Context, query stri
 		var raw string
 
 		if err := rows.Scan(&raw); err != nil {
-			return nil, fmt.Errorf("scan workspace id: %w", err)
+			return nil, fmt.Errorf("scan id: %w", err)
 		}
 
 		id, err := uuid.Parse(raw)
 		if err != nil {
-			return nil, fmt.Errorf("parse workspace id: %w", err)
+			return nil, fmt.Errorf("parse id: %w", err)
 		}
 
 		ids = append(ids, id)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("query workspace ids: %w", err)
+		return nil, fmt.Errorf("read ids: %w", err)
 	}
 
 	return ids, nil

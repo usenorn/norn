@@ -116,6 +116,21 @@ func (mr *MockMembershipMockRecorder) Get(ctx, workspaceID, accountID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockMembership)(nil).Get), ctx, workspaceID, accountID)
 }
 
+// ListActiveAdminAccountIDs mocks base method.
+func (m *MockMembership) ListActiveAdminAccountIDs(ctx context.Context, workspaceID uuid.UUID) ([]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListActiveAdminAccountIDs", ctx, workspaceID)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListActiveAdminAccountIDs indicates an expected call of ListActiveAdminAccountIDs.
+func (mr *MockMembershipMockRecorder) ListActiveAdminAccountIDs(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListActiveAdminAccountIDs", reflect.TypeOf((*MockMembership)(nil).ListActiveAdminAccountIDs), ctx, workspaceID)
+}
+
 // ListAdminWorkspaceIDs mocks base method.
 func (m *MockMembership) ListAdminWorkspaceIDs(ctx context.Context, accountID uuid.UUID) ([]uuid.UUID, error) {
 	m.ctrl.T.Helper()

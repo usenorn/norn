@@ -24,5 +24,6 @@ type Membership interface {
 	Delete(ctx context.Context, workspaceID, accountID uuid.UUID) error
 	DeleteByAccountID(ctx context.Context, accountID uuid.UUID) error
 	ListAdminWorkspaceIDs(ctx context.Context, accountID uuid.UUID) ([]uuid.UUID, error)
+	ListActiveAdminAccountIDs(ctx context.Context, workspaceID uuid.UUID) ([]uuid.UUID, error)
 	ListWorkspaceIDsWithoutOtherActiveAdmin(ctx context.Context, accountID uuid.UUID) ([]uuid.UUID, error)
 }
