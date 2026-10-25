@@ -2,6 +2,7 @@ package entity_test
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -13,9 +14,9 @@ import (
 
 func TestOnlyTheLifecycleMovesAMemoryBetweenStatuses(t *testing.T) {
 	allowed := map[entity.MemoryStatus][]entity.MemoryStatus{
-		entity.MemoryStatusProposed: {entity.MemoryStatusAccepted, entity.MemoryStatusDisputed, entity.MemoryStatusWithdrawn},
-		entity.MemoryStatusAccepted: {entity.MemoryStatusDisputed, entity.MemoryStatusSuperseded, entity.MemoryStatusWithdrawn},
-		entity.MemoryStatusDisputed: {entity.MemoryStatusAccepted, entity.MemoryStatusSuperseded, entity.MemoryStatusWithdrawn},
+		entity.MemoryStatusProposed: {entity.MemoryStatusAccepted, entity.MemoryStatusDisputed, entity.MemoryStatusWithdrawn, entity.MemoryStatusRejected},
+		entity.MemoryStatusAccepted: {entity.MemoryStatusProposed, entity.MemoryStatusDisputed, entity.MemoryStatusSuperseded, entity.MemoryStatusWithdrawn},
+		entity.MemoryStatusDisputed: {entity.MemoryStatusAccepted, entity.MemoryStatusSuperseded, entity.MemoryStatusWithdrawn, entity.MemoryStatusRejected},
 	}
 
 	for _, from := range entity.MemoryStatuses() {
@@ -33,9 +34,10 @@ func TestOnlyTheLifecycleMovesAMemoryBetweenStatuses(t *testing.T) {
 	}
 }
 
-func TestSupersededAndWithdrawnMemoriesAreFinal(t *testing.T) {
+func TestSupersededWithdrawnAndRejectedMemoriesAreFinal(t *testing.T) {
 	for _, status := range entity.MemoryStatuses() {
-		want := status == entity.MemoryStatusSuperseded || status == entity.MemoryStatusWithdrawn
+		want := status == entity.MemoryStatusSuperseded || status == entity.MemoryStatusWithdrawn ||
+			status == entity.MemoryStatusRejected
 
 		if got := status.Terminal(); got != want {
 			t.Errorf("%s terminal = %v, want %v", status, got, want)
@@ -274,5 +276,114 @@ func TestAMemoryRestatesAnotherOnlyWhenEveryContentFieldAgrees(t *testing.T) {
 				t.Fatalf("restates = %v, want %v", got, testCase.want)
 			}
 		})
+	}
+}
+
+func TestOnlyAPersonWhoMaintainsASharedAudienceReviewsItsProposals(t *testing.T) {
+	workspaceID, projectID, author := uuid.New(), uuid.New(), uuid.New()
+	admin := entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}
+	lead := entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}
+	member := entity.Actor{Kind: entity.ActorKindUser, AccountID: author}
+	adminAgent := entity.Agent{
+		ID: uuid.New(), AccountID: uuid.New(), OwnerAccountID: admin.AccountID, Scope: entity.AgentScopeMember,
+	}.Attribute(entity.Actor{Kind: entity.ActorKindAgent, AccountID: uuid.New()})
+
+	readers := map[string]entity.KnowledgeReader{
+		"admin": {WorkspaceID: workspaceID, Identity: entity.KnowledgeIdentityOf(admin, entity.MembershipRoleAdmin), AllProjects: true},
+		"lead": {
+			WorkspaceID: workspaceID, Identity: entity.KnowledgeIdentityOf(lead, entity.MembershipRoleMember),
+			ProjectIDs: []uuid.UUID{projectID}, LedProjectIDs: []uuid.UUID{projectID},
+		},
+		"author": {
+			WorkspaceID: workspaceID, Identity: entity.KnowledgeIdentityOf(member, entity.MembershipRoleMember),
+			ProjectIDs: []uuid.UUID{projectID},
+		},
+		"admin's agent": {
+			WorkspaceID: workspaceID, Identity: entity.KnowledgeIdentityOf(adminAgent, entity.MembershipRoleAdmin),
+			AllProjects: true,
+		},
+	}
+
+	for name, testCase := range map[string]struct {
+		audience entity.KnowledgeAudience
+		settles  []string
+	}{
+		"a workspace memory": {audience: entity.WorkspaceAudience(), settles: []string{"admin"}},
+		"a project memory":   {audience: entity.ProjectAudience(projectID), settles: []string{"admin", "lead"}},
+		"a personal memory":  {audience: entity.PersonalAudience(), settles: []string{"admin", "lead", "author", "admin's agent"}},
+	} {
+		memory := entity.Memory{
+			WorkspaceID: workspaceID, AuthorID: author, Audience: testCase.audience, Status: entity.MemoryStatusProposed,
+		}
+
+		for who, reader := range readers {
+			want := slices.Contains(testCase.settles, who)
+
+			if got := memory.SettledBy(reader); got != want {
+				t.Errorf("%s settled by %s = %v, want %v", name, who, got, want)
+			}
+
+			reviewable := want && testCase.audience.Visibility != entity.KnowledgeVisibilityPersonal
+			if err := memory.Review(reader); (err == nil) != reviewable {
+				t.Errorf("%s reviewed by %s: %v, want allowed %v", name, who, err, reviewable)
+			}
+		}
+	}
+}
+
+func TestOnlyAPendingMemoryAwaitsReview(t *testing.T) {
+	admin := entity.KnowledgeReader{
+		WorkspaceID: uuid.New(),
+		Identity:    entity.KnowledgeIdentityOf(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, entity.MembershipRoleAdmin),
+	}
+
+	for _, status := range entity.MemoryStatuses() {
+		memory := entity.Memory{WorkspaceID: admin.WorkspaceID, Audience: entity.WorkspaceAudience(), Status: status}
+
+		err := memory.Review(admin)
+		if memory.Pending() != (err == nil) {
+			t.Errorf("reviewing a %s memory: %v", status, err)
+		}
+
+		if err != nil && !errors.Is(err, entity.ErrMemoryNotPending) {
+			t.Errorf("reviewing a %s memory: %v, want not pending", status, err)
+		}
+	}
+}
+
+func TestARejectionNeedsAReasonOfBoundedLength(t *testing.T) {
+	for name, testCase := range map[string]struct {
+		reason string
+		code   string
+	}{
+		"blank":    {reason: "   ", code: entity.ValidationCodeRequired},
+		"too long": {reason: strings.Repeat("x", entity.MemoryReasonMaxLen+1), code: entity.ValidationCodeTooLong},
+		"given":    {reason: "contradicts the release policy"},
+	} {
+		err := entity.ValidateMemoryReason(testCase.reason)
+
+		if testCase.code == "" {
+			if err != nil {
+				t.Errorf("%s reason: %v", name, err)
+			}
+
+			continue
+		}
+
+		var invalid entity.ValidationError
+		if !errors.As(err, &invalid) || len(invalid.Fields) != 1 || invalid.Fields[0].Code != testCase.code ||
+			invalid.Fields[0].Field != entity.MemoryFieldReason {
+			t.Errorf("%s reason: %v, want %s on reason", name, err, testCase.code)
+		}
+	}
+}
+
+func TestARejectionRecordsItsTrimmedReason(t *testing.T) {
+	memory := entity.Memory{ID: uuid.New(), Status: entity.MemoryStatusRejected, Version: 2}
+
+	revision := memory.Rejection("  contradicts the release policy ", entity.KnowledgeAttribution{AccountID: uuid.New()})
+
+	if revision.Action != entity.MemoryRevisionRejected || revision.Reason != "contradicts the release policy" {
+		t.Fatalf("got %s with reason %q, want a rejection with the trimmed reason", revision.Action, revision.Reason)
 	}
 }

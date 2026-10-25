@@ -103,7 +103,7 @@ func (s *memoriesService) Create(
 		return service.MemoryWrite{}, err
 	}
 
-	draft.Status = draft.StatusAmong(related)
+	draft.Status = draft.StatusAmong(related, true)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		draft, err = s.insert(ctx, draft, decision)

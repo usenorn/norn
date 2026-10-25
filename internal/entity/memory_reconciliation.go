@@ -21,7 +21,7 @@ const (
 	MemoryFieldTarget     = "target"
 )
 
-var ErrMemoryNotPending = errors.New("memory is not awaiting reconciliation")
+var ErrMemoryNotPending = errors.New("memory is not awaiting a decision")
 
 var memoryFillerWords = []string{
 	"and", "are", "for", "from", "has", "have", "into", "its", "that", "the", "this", "was", "were", "with",
@@ -120,12 +120,12 @@ func (m Memory) sharesScopeWith(other Memory) bool {
 	return ours.Component == "" || theirs.Component == "" || strings.EqualFold(ours.Component, theirs.Component)
 }
 
-func (m Memory) StatusAmong(related []RelatedMemory) MemoryStatus {
+func (m Memory) StatusAmong(related []RelatedMemory, settled bool) MemoryStatus {
 	switch {
-	case len(related) == 0:
-		return MemoryStatusAccepted
 	case slices.ContainsFunc(related, func(r RelatedMemory) bool { return r.Relation == MemoryRelationConflict }):
 		return MemoryStatusDisputed
+	case len(related) == 0 && settled:
+		return MemoryStatusAccepted
 	default:
 		return MemoryStatusProposed
 	}
