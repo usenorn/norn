@@ -10823,9 +10823,9 @@ export interface components {
             snoozedUntil?: string;
         };
         /** @enum {string} */
-        NotificationSubjectKind: "issue" | "project" | "team";
+        NotificationSubjectKind: "issue" | "project" | "team" | "memory";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "decision_waiting";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "decision_waiting" | "memory_proposed";
         /** @enum {string} */
         NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "following";
         /** @enum {string} */

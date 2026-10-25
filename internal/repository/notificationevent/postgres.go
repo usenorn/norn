@@ -15,11 +15,11 @@ import (
 const recordEventQuery = `
 INSERT INTO workspace_notification_events (
     id, workspace_id, subject_kind, subject_id,
-    issue_id, project_id, team_id,
+    issue_id, project_id, team_id, memory_id,
     kind, actor_account_id, actor_kind, target_account_id,
     comment_id, bulk_action_id, created_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 
 const claimPendingQuery = `
 UPDATE workspace_notification_events
@@ -79,13 +79,15 @@ func (r *eventRepository) Record(ctx context.Context, event entity.NotificationE
 		event.ActorKind = entity.ActorKindUser
 	}
 
-	issueID, projectID, teamID := uuid.Nil, uuid.Nil, uuid.Nil
+	issueID, projectID, teamID, memoryID := uuid.Nil, uuid.Nil, uuid.Nil, uuid.Nil
 
 	switch event.Subject.Kind {
 	case entity.NotificationSubjectProject:
 		projectID = event.Subject.ID
 	case entity.NotificationSubjectTeam:
 		teamID = event.Subject.ID
+	case entity.NotificationSubjectMemory:
+		memoryID = event.Subject.ID
 	default:
 		issueID = event.Subject.ID
 	}
@@ -100,6 +102,7 @@ func (r *eventRepository) Record(ctx context.Context, event entity.NotificationE
 		optionalID(issueID),
 		optionalID(projectID),
 		optionalID(teamID),
+		optionalID(memoryID),
 		string(event.Kind),
 		optionalID(event.Actor),
 		string(event.ActorKind),

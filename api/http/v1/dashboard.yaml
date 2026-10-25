@@ -16905,11 +16905,12 @@ components:
 
     NotificationSubjectKind:
       type: string
-      enum: [issue, project, team]
+      enum: [issue, project, team, memory]
 
     NotificationKind:
       type: string
-      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting, decision_waiting]
+      enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting, decision_waiting,
+             memory_proposed]
 
     NotificationReason:
       type: string

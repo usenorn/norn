@@ -169,6 +169,8 @@ func summarise(notification entity.Notification) string {
 		change = "is waiting for you to approve what it proposed"
 	case entity.NotificationKindDecisionWaiting:
 		change = "is waiting for your decision"
+	case entity.NotificationKindMemoryProposed:
+		change = "proposed a memory for you to review"
 	}
 
 	if notification.Reason == entity.NotificationReasonMentioned {
@@ -188,6 +190,8 @@ func subjectURL(baseURL, workspaceSlug string, notification entity.Notification)
 		return workspacePath(baseURL, workspaceSlug, "projects", notification.Subject.ID.String())
 	case entity.NotificationSubjectTeam:
 		return workspacePath(baseURL, workspaceSlug, "teams", notification.TeamKey)
+	case entity.NotificationSubjectMemory:
+		return workspacePath(baseURL, workspaceSlug, "memories", notification.Subject.ID.String())
 	default:
 		return workspacePath(baseURL, workspaceSlug, "issues", notification.Reference)
 	}

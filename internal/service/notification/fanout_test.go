@@ -287,3 +287,34 @@ func TestAMutedThreadStaysQuietUntilSomeoneNamesYou(t *testing.T) {
 		t.Fatalf("the one delivery that got through is %q, want mentioned", (*captured)[0].Reason)
 	}
 }
+
+func TestAProposedMemoryReachesItsReviewerAsAnApprovalByEmailAndInbox(t *testing.T) {
+	h := newHarness(t)
+
+	h.expectPendingEvents(entity.NotificationEvent{
+		ID:          uuid.New(),
+		WorkspaceID: h.workspaceID,
+		Subject:     entity.NotifyMemory(uuid.New()),
+		Kind:        entity.NotificationKindMemoryProposed,
+		Actor:       h.actorID,
+		ActorKind:   entity.ActorKindAgent,
+		Target:      h.readerID,
+	})
+	h.expectAudience(h.readerID)
+	h.expectSettings()
+
+	captured := h.captureDeliveries()
+
+	if _, err := h.service.FanOut(context.Background()); err != nil {
+		t.Fatalf("fanning out failed: %v", err)
+	}
+
+	delivery, found := deliveryTo(*captured, h.readerID)
+	if !found {
+		t.Fatal("the reviewer of a proposed memory was not delivered to")
+	}
+
+	if delivery.Reason != entity.NotificationReasonApproval || !delivery.Channels.Inbox || !delivery.Channels.Email {
+		t.Fatalf("the reviewer got %+v, want an approval in the inbox and by email", delivery)
+	}
+}

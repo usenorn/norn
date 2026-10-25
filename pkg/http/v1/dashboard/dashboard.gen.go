@@ -3877,6 +3877,7 @@ const (
 	NotificationKindCommented       NotificationKind = "commented"
 	NotificationKindDecisionWaiting NotificationKind = "decision_waiting"
 	NotificationKindMembership      NotificationKind = "membership"
+	NotificationKindMemoryProposed  NotificationKind = "memory_proposed"
 	NotificationKindMentioned       NotificationKind = "mentioned"
 	NotificationKindStateChanged    NotificationKind = "state_changed"
 )
@@ -3893,6 +3894,8 @@ func (e NotificationKind) Valid() bool {
 	case NotificationKindDecisionWaiting:
 		return true
 	case NotificationKindMembership:
+		return true
+	case NotificationKindMemoryProposed:
 		return true
 	case NotificationKindMentioned:
 		return true
@@ -3933,6 +3936,7 @@ func (e NotificationReason) Valid() bool {
 // Defines values for NotificationSubjectKind.
 const (
 	NotificationSubjectKindIssue   NotificationSubjectKind = "issue"
+	NotificationSubjectKindMemory  NotificationSubjectKind = "memory"
 	NotificationSubjectKindProject NotificationSubjectKind = "project"
 	NotificationSubjectKindTeam    NotificationSubjectKind = "team"
 )
@@ -3941,6 +3945,8 @@ const (
 func (e NotificationSubjectKind) Valid() bool {
 	switch e {
 	case NotificationSubjectKindIssue:
+		return true
+	case NotificationSubjectKindMemory:
 		return true
 	case NotificationSubjectKindProject:
 		return true

@@ -61,6 +61,9 @@ func TestEveryReadJoinsLiveVisibilityRatherThanTrustingTheDeliveryRow(t *testing
 		"p.archived_at IS NULL",
 		"t.visibility = 'public'",
 		"tm.account_id IS NOT NULL",
+		"mem.author_account_id = d.account_id",
+		"mp.lead_account_id = d.account_id",
+		"pm.account_id = d.account_id",
 	}
 
 	for _, rule := range rules {
