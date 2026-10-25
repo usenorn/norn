@@ -4,18 +4,21 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	docrepo "github.com/usenorn/norn/internal/repository/doc"
 	docrevisionrepo "github.com/usenorn/norn/internal/repository/docrevision"
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
+	knowledgerepo "github.com/usenorn/norn/internal/repository/knowledge"
 	memoryrepo "github.com/usenorn/norn/internal/repository/memory"
 	memoryrevisionrepo "github.com/usenorn/norn/internal/repository/memoryrevision"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
@@ -23,6 +26,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
 	memorysvc "github.com/usenorn/norn/internal/service/memory"
 )
@@ -31,6 +35,8 @@ type harness struct {
 	memories   *memoryrepo.MockMemory
 	revisions  *memoryrevisionrepo.MockMemoryRevision
 	knowledge  *knowledgeauthorizersvc.MockKnowledgeAuthorizer
+	search     *knowledgerepo.MockKnowledge
+	vectors    *knowledgeembeddingsvc.MockKnowledgeEmbeddings
 	transactor *transactorrepo.MockTransactor
 	service    service.Memories
 
@@ -47,6 +53,9 @@ type harness struct {
 	docs          map[uuid.UUID]entity.Doc
 	docRevisions  map[uuid.UUID]uuid.UUID
 	scheduled     []uuid.UUID
+	searched      []repository.KnowledgeQuery
+	embedding     entity.KnowledgeSemantic
+	nearest       []uuid.UUID
 }
 
 func newHarness(t *testing.T) *harness {
@@ -58,6 +67,8 @@ func newHarness(t *testing.T) *harness {
 		memories:     memoryrepo.NewMockMemory(ctrl),
 		revisions:    memoryrevisionrepo.NewMockMemoryRevision(ctrl),
 		knowledge:    knowledgeauthorizersvc.NewMockKnowledgeAuthorizer(ctrl),
+		search:       knowledgerepo.NewMockKnowledge(ctrl),
+		vectors:      knowledgeembeddingsvc.NewMockKnowledgeEmbeddings(ctrl),
 		transactor:   transactorrepo.NewMockTransactor(ctrl),
 		workspaceID:  uuid.New(),
 		projectID:    uuid.New(),
@@ -66,6 +77,7 @@ func newHarness(t *testing.T) *harness {
 		comments:     map[uuid.UUID]entity.IssueComment{},
 		docs:         map[uuid.UUID]entity.Doc{},
 		docRevisions: map[uuid.UUID]uuid.UUID{},
+		embedding:    entity.KnowledgeSemanticUnconfigured,
 	}
 
 	projects := projectrepo.NewMockProject(ctrl)
@@ -81,8 +93,8 @@ func newHarness(t *testing.T) *harness {
 		AnyTimes()
 
 	h.service = memorysvc.New(
-		h.memories, h.revisions, projects, issues, comments, docs, docRevisions, h.knowledge, authorizer, indexes,
-		h.transactor,
+		h.memories, h.revisions, projects, issues, comments, docs, docRevisions, h.search, h.knowledge, authorizer,
+		indexes, h.vectors, h.transactor, config.Knowledge{RelatedMinSimilarity: 0.85},
 	)
 
 	h.transactor.EXPECT().
@@ -164,8 +176,65 @@ func newHarness(t *testing.T) *harness {
 	h.store()
 	h.history()
 	h.judge()
+	h.searchable()
 
 	return h
+}
+
+func (h *harness) searchable() {
+	h.search.EXPECT().LexicalMemories(gomock.Any(), h.workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, query repository.KnowledgeQuery) ([]entity.KnowledgeCandidate, error) {
+			h.searched = append(h.searched, query)
+
+			var candidates []entity.KnowledgeCandidate
+
+			for id, memory := range h.stored {
+				if slices.Contains(query.Statuses, memory.Status) {
+					candidates = append(candidates, entity.KnowledgeCandidate{Kind: entity.KnowledgeSubjectMemory, ID: id})
+				}
+			}
+
+			slices.SortFunc(candidates, func(a, b entity.KnowledgeCandidate) int { return strings.Compare(a.ID.String(), b.ID.String()) })
+
+			return candidates, nil
+		}).
+		AnyTimes()
+	h.search.EXPECT().SemanticMemories(gomock.Any(), h.workspaceID, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, _ repository.KnowledgeQuery, vector repository.KnowledgeVector) ([]entity.KnowledgeCandidate, error) {
+			if vector.MinSimilarity != 0.85 {
+				return nil, errors.New("the related lane searched below its own similarity floor")
+			}
+
+			var candidates []entity.KnowledgeCandidate
+			for _, id := range h.nearest {
+				candidates = append(candidates, entity.KnowledgeCandidate{Kind: entity.KnowledgeSubjectMemory, ID: id})
+			}
+
+			return candidates, nil
+		}).
+		AnyTimes()
+	h.vectors.EXPECT().Embed(gomock.Any(), h.workspaceID, gomock.Any()).
+		DoAndReturn(func(context.Context, uuid.UUID, string) (entity.KnowledgeQueryVector, entity.KnowledgeSemantic, error) {
+			if h.embedding != entity.KnowledgeSemanticUsed {
+				return entity.KnowledgeQueryVector{}, h.embedding, nil
+			}
+
+			return entity.KnowledgeQueryVector{Model: "text-embedding-3-small", Vector: []float32{1, 0}}, h.embedding, nil
+		}).
+		AnyTimes()
+	h.memories.EXPECT().ListByIDs(gomock.Any(), h.workspaceID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, memoryIDs []uuid.UUID) ([]entity.Memory, error) {
+			var found []entity.Memory
+
+			for _, memoryID := range memoryIDs {
+				if memory, err := h.find(memoryID); err == nil {
+					found = append(found, memory)
+				}
+			}
+
+			return found, nil
+		}).
+		AnyTimes()
 }
 
 func (h *harness) actAs(actor entity.Actor, role entity.MembershipRole) {
@@ -362,7 +431,7 @@ func content(statement string) service.MemoryContent {
 func (h *harness) create(t *testing.T, statement string, audience entity.KnowledgeAudience) entity.Memory {
 	t.Helper()
 
-	memory, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
+	written, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
 		MemoryContent: content(statement),
 		Audience:      audience,
 	})
@@ -370,7 +439,7 @@ func (h *harness) create(t *testing.T, statement string, audience entity.Knowled
 		t.Fatalf("create %q: %v", statement, err)
 	}
 
-	return memory
+	return written.Memory
 }
 
 func (h *harness) revisionsOf(memoryID uuid.UUID) []entity.MemoryRevision {
@@ -520,13 +589,15 @@ func TestACitedPersonalDocKeepsTheMemoryPersonal(t *testing.T) {
 		t.Fatalf("a workspace memory drawn from a personal doc got %v, want ErrKnowledgeNotShareable", err)
 	}
 
-	memory, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
+	written, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
 		MemoryContent: input,
 		Audience:      entity.PersonalAudience(),
 	})
 	if err != nil {
 		t.Fatalf("a personal memory drawn from their own personal doc: %v", err)
 	}
+
+	memory := written.Memory
 
 	if len(memory.Evidence) != 1 || memory.Evidence[0].DocAudience.Visibility != entity.KnowledgeVisibilityPersonal {
 		t.Fatalf("the cited doc read back as %+v", memory.Evidence)

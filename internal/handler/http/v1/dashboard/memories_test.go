@@ -28,7 +28,7 @@ func TestAMemoryIsRecordedFromItsContentAndReadsOutWithItsProvenance(t *testing.
 	until := time.Date(2027, 1, 31, 0, 0, 0, 0, time.UTC)
 
 	memories.EXPECT().Create(gomock.Any(), workspaceID, gomock.Any()).
-		DoAndReturn(func(_ any, _ uuid.UUID, input service.CreateMemoryInput) (entity.Memory, error) {
+		DoAndReturn(func(_ any, _ uuid.UUID, input service.CreateMemoryInput) (service.MemoryWrite, error) {
 			if input.Audience != entity.WorkspaceAudience() || input.Kind != entity.MemoryKindConstraint ||
 				input.Conditions != "local prototypes only" || input.Applicability.Component != "storage" ||
 				input.Applicability.ProjectID == nil || *input.Applicability.ProjectID != projectID {
@@ -43,7 +43,7 @@ func TestAMemoryIsRecordedFromItsContentAndReadsOutWithItsProvenance(t *testing.
 				t.Fatalf("the evidence reached the service as %+v", input.Evidence)
 			}
 
-			return entity.Memory{
+			return service.MemoryWrite{Memory: entity.Memory{
 				ID:            uuid.New(),
 				WorkspaceID:   workspaceID,
 				Kind:          input.Kind,
@@ -58,7 +58,7 @@ func TestAMemoryIsRecordedFromItsContentAndReadsOutWithItsProvenance(t *testing.
 				By:            entity.KnowledgeAttribution{AgentID: &agentID, Source: entity.RevisionSourceAgent},
 				EffectiveFrom: time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC),
 				Version:       1,
-			}, nil
+			}}, nil
 		})
 
 	status, body := sendDoc(t, routes, http.MethodPost,

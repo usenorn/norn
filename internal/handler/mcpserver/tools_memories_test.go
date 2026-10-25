@@ -79,10 +79,10 @@ func TestRememberingRecordsEveryFieldTheAgentGave(t *testing.T) {
 	var recorded service.CreateMemoryInput
 
 	h.memories.EXPECT().Create(gomock.Any(), scene.workspace.ID, gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ uuid.UUID, input service.CreateMemoryInput) (entity.Memory, error) {
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, input service.CreateMemoryInput) (service.MemoryWrite, error) {
 			recorded = input
 
-			return memoryFor(scene, input.Statement), nil
+			return service.MemoryWrite{Memory: memoryFor(scene, input.Statement)}, nil
 		})
 
 	result := callTool(t, h, "norn_remember", map[string]any{

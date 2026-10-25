@@ -53,7 +53,7 @@ func (h *handler) CreateWorkspaceMemory(
 	ctx context.Context,
 	request api.CreateWorkspaceMemoryRequestObject,
 ) (api.CreateWorkspaceMemoryResponseObject, error) {
-	memory, err := h.memories.Create(ctx, request.WorkspaceId, createMemoryInputOf(*request.Body))
+	written, err := h.memories.Create(ctx, request.WorkspaceId, createMemoryInputOf(*request.Body))
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -62,7 +62,7 @@ func (h *handler) CreateWorkspaceMemory(
 		return nil, err
 	}
 
-	return api.CreateWorkspaceMemory201JSONResponse(memoryDTO(memory)), nil
+	return api.CreateWorkspaceMemory201JSONResponse(memoryDTO(written.Memory)), nil
 }
 
 func (h *handler) GetWorkspaceMemory(

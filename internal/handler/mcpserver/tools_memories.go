@@ -246,12 +246,12 @@ func (t *toolset) remember(
 		return nil, memoryOutput{}, toolFailure(ctx, err)
 	}
 
-	memory, err := t.memories.Create(ctx, workspace.ID, created)
+	written, err := t.memories.Create(ctx, workspace.ID, created)
 	if err != nil {
 		return nil, memoryOutput{}, toolFailure(ctx, err)
 	}
 
-	return nil, memoryOutput{Memory: memoryDTOFrom(memory), Reminder: memoryReminder}, nil
+	return nil, memoryOutput{Memory: memoryDTOFrom(written.Memory), Reminder: memoryReminder}, nil
 }
 
 func (t *toolset) correctMemory(

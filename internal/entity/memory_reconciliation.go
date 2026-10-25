@@ -79,6 +79,10 @@ type MemoryChoice struct {
 	TargetID   *uuid.UUID
 }
 
+func MemoryRelatableStatuses() []MemoryStatus {
+	return []MemoryStatus{MemoryStatusProposed, MemoryStatusAccepted, MemoryStatusDisputed}
+}
+
 func (m Memory) Pending() bool {
 	return m.Status == MemoryStatusProposed || m.Status == MemoryStatusDisputed
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/repository"
 	"github.com/usenorn/norn/internal/service"
@@ -22,10 +23,13 @@ type memoriesService struct {
 	comments     repository.IssueComment
 	docs         repository.Doc
 	docRevisions repository.DocRevision
+	search       repository.Knowledge
 	knowledge    service.KnowledgeAuthorizer
 	authorizer   service.Authorizer
 	indexes      service.KnowledgeIndexes
+	vectors      service.KnowledgeEmbeddings
 	transactor   repository.Transactor
+	cfg          config.Knowledge
 }
 
 func New(
@@ -36,10 +40,13 @@ func New(
 	comments repository.IssueComment,
 	docs repository.Doc,
 	docRevisions repository.DocRevision,
+	search repository.Knowledge,
 	knowledge service.KnowledgeAuthorizer,
 	authorizer service.Authorizer,
 	indexes service.KnowledgeIndexes,
+	vectors service.KnowledgeEmbeddings,
 	transactor repository.Transactor,
+	cfg config.Knowledge,
 ) service.Memories {
 	return &memoriesService{
 		memories:     memories,
@@ -49,10 +56,13 @@ func New(
 		comments:     comments,
 		docs:         docs,
 		docRevisions: docRevisions,
+		search:       search,
 		knowledge:    knowledge,
 		authorizer:   authorizer,
 		indexes:      indexes,
+		vectors:      vectors,
 		transactor:   transactor,
+		cfg:          cfg,
 	}
 }
 
@@ -82,11 +92,18 @@ func (s *memoriesService) Create(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	input service.CreateMemoryInput,
-) (entity.Memory, error) {
+) (service.MemoryWrite, error) {
 	decision, draft, err := s.draft(ctx, workspaceID, input)
 	if err != nil {
-		return entity.Memory{}, err
+		return service.MemoryWrite{}, err
 	}
+
+	related, err := s.related(ctx, decision.Reader, draft)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	draft.Status = draft.StatusAmong(related)
 
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		draft, err = s.insert(ctx, draft, decision)
@@ -94,10 +111,138 @@ func (s *memoriesService) Create(
 		return err
 	})
 	if err != nil {
-		return entity.Memory{}, err
+		return service.MemoryWrite{}, err
 	}
 
-	return s.shown(ctx, decision.Reader, draft)
+	memory, err := s.shown(ctx, decision.Reader, draft)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	return reconciling(memory, related), nil
+}
+
+func (s *memoriesService) Related(ctx context.Context, workspaceID, memoryID uuid.UUID) (service.MemoryWrite, error) {
+	memory, err := s.memories.GetByID(ctx, workspaceID, memoryID)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	decision, err := s.knowledge.Read(ctx, memory.Access())
+	if err != nil {
+		return service.MemoryWrite{}, concealed(err)
+	}
+
+	var related []entity.RelatedMemory
+
+	if memory.Pending() {
+		if related, err = s.related(ctx, decision.Reader, memory); err != nil {
+			return service.MemoryWrite{}, err
+		}
+	}
+
+	memory, err = s.shown(ctx, decision.Reader, memory)
+	if err != nil {
+		return service.MemoryWrite{}, err
+	}
+
+	return reconciling(memory, related), nil
+}
+
+func reconciling(memory entity.Memory, related []entity.RelatedMemory) service.MemoryWrite {
+	write := service.MemoryWrite{Memory: memory, Related: related}
+
+	if memory.Pending() && memory.Viewer.Edits {
+		write.Choices = entity.MemoryChoices(related)
+	}
+
+	return write
+}
+
+func (s *memoriesService) related(
+	ctx context.Context,
+	reader entity.KnowledgeReader,
+	draft entity.Memory,
+) ([]entity.RelatedMemory, error) {
+	lookup := repository.KnowledgeQuery{
+		Query:            entity.ParseSearchQuery(draft.Statement),
+		Statuses:         entity.MemoryRelatableStatuses(),
+		On:               time.Now().UTC(),
+		ProjectID:        draft.Applicability.ProjectID,
+		Component:        draft.Applicability.Component,
+		AllProjects:      reader.AllProjects,
+		ProjectIDs:       reader.ProjectIDs,
+		PersonalAuthorID: reader.PersonalAuthor(),
+		Limit:            entity.MemoryRelatedLaneSize,
+	}
+
+	lexical, err := s.search.LexicalMemories(ctx, draft.WorkspaceID, lookup)
+	if err != nil {
+		return nil, err
+	}
+
+	lanes := []entity.KnowledgeLane{{Match: entity.KnowledgeMatchLexical, Candidates: lexical}}
+
+	embedded, state, err := s.vectors.Embed(ctx, draft.WorkspaceID, draft.Statement)
+	if err != nil {
+		return nil, err
+	}
+
+	if state == entity.KnowledgeSemanticUsed {
+		semantic, err := s.search.SemanticMemories(ctx, draft.WorkspaceID, lookup, repository.KnowledgeVector{
+			Model:         embedded.Model,
+			Vector:        embedded.Vector,
+			MinSimilarity: s.cfg.RelatedMinSimilarity,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		lanes = append(lanes, entity.KnowledgeLane{Match: entity.KnowledgeMatchSemantic, Candidates: semantic})
+	}
+
+	hits := slices.DeleteFunc(
+		entity.FuseKnowledge(entity.KnowledgeLaneSize, lanes...),
+		func(hit entity.KnowledgeHit) bool { return hit.ID == draft.ID },
+	)
+	if len(hits) == 0 {
+		return nil, nil
+	}
+
+	ids := make([]uuid.UUID, 0, len(hits))
+	for _, hit := range hits {
+		ids = append(ids, hit.ID)
+	}
+
+	candidates, err := s.memories.ListByIDs(ctx, draft.WorkspaceID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	var related []entity.RelatedMemory
+
+	for _, hit := range hits {
+		at := slices.IndexFunc(candidates, func(candidate entity.Memory) bool { return candidate.ID == hit.ID })
+		if at < 0 || !reader.Sees(candidates[at].Access()) {
+			continue
+		}
+
+		candidate := candidates[at]
+
+		relation, ok := draft.RelationTo(candidate, slices.Contains(hit.Matches, entity.KnowledgeMatchSemantic))
+		if !ok {
+			continue
+		}
+
+		candidate.Evidence = nil
+		related = append(related, entity.RelatedMemory{Memory: candidate.ViewedBy(reader), Relation: relation})
+
+		if len(related) == entity.MemoryRelatedMax {
+			break
+		}
+	}
+
+	return related, nil
 }
 
 func (s *memoriesService) Supersede(

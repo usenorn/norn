@@ -59,10 +59,10 @@ func (mr *MockMemoriesMockRecorder) Correct(ctx, workspaceID, memoryID, input an
 }
 
 // Create mocks base method.
-func (m *MockMemories) Create(ctx context.Context, workspaceID uuid.UUID, input service.CreateMemoryInput) (entity.Memory, error) {
+func (m *MockMemories) Create(ctx context.Context, workspaceID uuid.UUID, input service.CreateMemoryInput) (service.MemoryWrite, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", ctx, workspaceID, input)
-	ret0, _ := ret[0].(entity.Memory)
+	ret0, _ := ret[0].(service.MemoryWrite)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -116,6 +116,21 @@ func (m *MockMemories) List(ctx context.Context, workspaceID uuid.UUID, input se
 func (mr *MockMemoriesMockRecorder) List(ctx, workspaceID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockMemories)(nil).List), ctx, workspaceID, input)
+}
+
+// Related mocks base method.
+func (m *MockMemories) Related(ctx context.Context, workspaceID, memoryID uuid.UUID) (service.MemoryWrite, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Related", ctx, workspaceID, memoryID)
+	ret0, _ := ret[0].(service.MemoryWrite)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Related indicates an expected call of Related.
+func (mr *MockMemoriesMockRecorder) Related(ctx, workspaceID, memoryID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Related", reflect.TypeOf((*MockMemories)(nil).Related), ctx, workspaceID, memoryID)
 }
 
 // Reshare mocks base method.

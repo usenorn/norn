@@ -414,6 +414,7 @@ type Knowledge struct {
 	RefreshSweepSchedule  string        `mapstructure:"refresh_sweep_schedule"`
 	QueryTimeout          time.Duration `mapstructure:"query_timeout"`
 	SemanticMinSimilarity float64       `mapstructure:"semantic_min_similarity"`
+	RelatedMinSimilarity  float64       `mapstructure:"related_min_similarity"`
 }
 
 type Telegram struct {
