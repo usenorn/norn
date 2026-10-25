@@ -49,6 +49,7 @@ type WorkspaceMemoryRevision struct {
 	Source           string      `boil:"source" json:"source" toml:"source" yaml:"source"`
 	CreatedAt        time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	TokenID          null.String `boil:"token_id" json:"token_id,omitempty" toml:"token_id" yaml:"token_id,omitempty"`
+	Reason           string      `boil:"reason" json:"reason" toml:"reason" yaml:"reason"`
 
 	R *workspaceMemoryRevisionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMemoryRevisionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -79,6 +80,7 @@ var WorkspaceMemoryRevisionColumns = struct {
 	Source           string
 	CreatedAt        string
 	TokenID          string
+	Reason           string
 }{
 	ID:               "id",
 	WorkspaceID:      "workspace_id",
@@ -104,6 +106,7 @@ var WorkspaceMemoryRevisionColumns = struct {
 	Source:           "source",
 	CreatedAt:        "created_at",
 	TokenID:          "token_id",
+	Reason:           "reason",
 }
 
 var WorkspaceMemoryRevisionTableColumns = struct {
@@ -131,6 +134,7 @@ var WorkspaceMemoryRevisionTableColumns = struct {
 	Source           string
 	CreatedAt        string
 	TokenID          string
+	Reason           string
 }{
 	ID:               "workspace_memory_revisions.id",
 	WorkspaceID:      "workspace_memory_revisions.workspace_id",
@@ -156,6 +160,7 @@ var WorkspaceMemoryRevisionTableColumns = struct {
 	Source:           "workspace_memory_revisions.source",
 	CreatedAt:        "workspace_memory_revisions.created_at",
 	TokenID:          "workspace_memory_revisions.token_id",
+	Reason:           "workspace_memory_revisions.reason",
 }
 
 // Generated where
@@ -185,6 +190,7 @@ var WorkspaceMemoryRevisionWhere = struct {
 	Source           whereHelperstring
 	CreatedAt        whereHelpertime_Time
 	TokenID          whereHelpernull_String
+	Reason           whereHelperstring
 }{
 	ID:               whereHelperstring{field: "\"workspace_memory_revisions\".\"id\""},
 	WorkspaceID:      whereHelperstring{field: "\"workspace_memory_revisions\".\"workspace_id\""},
@@ -210,6 +216,7 @@ var WorkspaceMemoryRevisionWhere = struct {
 	Source:           whereHelperstring{field: "\"workspace_memory_revisions\".\"source\""},
 	CreatedAt:        whereHelpertime_Time{field: "\"workspace_memory_revisions\".\"created_at\""},
 	TokenID:          whereHelpernull_String{field: "\"workspace_memory_revisions\".\"token_id\""},
+	Reason:           whereHelperstring{field: "\"workspace_memory_revisions\".\"reason\""},
 }
 
 // WorkspaceMemoryRevisionRels is where relationship names are stored.
@@ -268,9 +275,9 @@ func (r *workspaceMemoryRevisionR) GetToken() *APIToken {
 type workspaceMemoryRevisionL struct{}
 
 var (
-	workspaceMemoryRevisionAllColumns            = []string{"id", "workspace_id", "memory_id", "version", "action", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "evidence", "effective_from", "effective_until", "account_id", "agent_id", "connection_id", "source", "created_at", "token_id"}
+	workspaceMemoryRevisionAllColumns            = []string{"id", "workspace_id", "memory_id", "version", "action", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "evidence", "effective_from", "effective_until", "account_id", "agent_id", "connection_id", "source", "created_at", "token_id", "reason"}
 	workspaceMemoryRevisionColumnsWithoutDefault = []string{"workspace_id", "memory_id", "version", "action", "kind", "statement", "visibility", "status", "basis", "effective_from", "source"}
-	workspaceMemoryRevisionColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "evidence", "effective_until", "account_id", "agent_id", "connection_id", "created_at", "token_id"}
+	workspaceMemoryRevisionColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "evidence", "effective_until", "account_id", "agent_id", "connection_id", "created_at", "token_id", "reason"}
 	workspaceMemoryRevisionPrimaryKeyColumns     = []string{"id"}
 	workspaceMemoryRevisionGeneratedColumns      = []string{}
 )

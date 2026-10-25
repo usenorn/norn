@@ -39,6 +39,7 @@ type WorkspaceNotificationEvent struct {
 	BulkActionID    null.String `boil:"bulk_action_id" json:"bulk_action_id,omitempty" toml:"bulk_action_id" yaml:"bulk_action_id,omitempty"`
 	FannedOutAt     null.Time   `boil:"fanned_out_at" json:"fanned_out_at,omitempty" toml:"fanned_out_at" yaml:"fanned_out_at,omitempty"`
 	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	MemoryID        null.String `boil:"memory_id" json:"memory_id,omitempty" toml:"memory_id" yaml:"memory_id,omitempty"`
 
 	R *workspaceNotificationEventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceNotificationEventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -60,6 +61,7 @@ var WorkspaceNotificationEventColumns = struct {
 	BulkActionID    string
 	FannedOutAt     string
 	CreatedAt       string
+	MemoryID        string
 }{
 	ID:              "id",
 	WorkspaceID:     "workspace_id",
@@ -76,6 +78,7 @@ var WorkspaceNotificationEventColumns = struct {
 	BulkActionID:    "bulk_action_id",
 	FannedOutAt:     "fanned_out_at",
 	CreatedAt:       "created_at",
+	MemoryID:        "memory_id",
 }
 
 var WorkspaceNotificationEventTableColumns = struct {
@@ -94,6 +97,7 @@ var WorkspaceNotificationEventTableColumns = struct {
 	BulkActionID    string
 	FannedOutAt     string
 	CreatedAt       string
+	MemoryID        string
 }{
 	ID:              "workspace_notification_events.id",
 	WorkspaceID:     "workspace_notification_events.workspace_id",
@@ -110,6 +114,7 @@ var WorkspaceNotificationEventTableColumns = struct {
 	BulkActionID:    "workspace_notification_events.bulk_action_id",
 	FannedOutAt:     "workspace_notification_events.fanned_out_at",
 	CreatedAt:       "workspace_notification_events.created_at",
+	MemoryID:        "workspace_notification_events.memory_id",
 }
 
 // Generated where
@@ -130,6 +135,7 @@ var WorkspaceNotificationEventWhere = struct {
 	BulkActionID    whereHelpernull_String
 	FannedOutAt     whereHelpernull_Time
 	CreatedAt       whereHelpertime_Time
+	MemoryID        whereHelpernull_String
 }{
 	ID:              whereHelperstring{field: "\"workspace_notification_events\".\"id\""},
 	WorkspaceID:     whereHelperstring{field: "\"workspace_notification_events\".\"workspace_id\""},
@@ -146,6 +152,7 @@ var WorkspaceNotificationEventWhere = struct {
 	BulkActionID:    whereHelpernull_String{field: "\"workspace_notification_events\".\"bulk_action_id\""},
 	FannedOutAt:     whereHelpernull_Time{field: "\"workspace_notification_events\".\"fanned_out_at\""},
 	CreatedAt:       whereHelpertime_Time{field: "\"workspace_notification_events\".\"created_at\""},
+	MemoryID:        whereHelpernull_String{field: "\"workspace_notification_events\".\"memory_id\""},
 }
 
 // WorkspaceNotificationEventRels is where relationship names are stored.
@@ -261,9 +268,9 @@ func (r *workspaceNotificationEventR) GetEventWorkspaceNotificationDeliveries() 
 type workspaceNotificationEventL struct{}
 
 var (
-	workspaceNotificationEventAllColumns            = []string{"id", "workspace_id", "subject_kind", "subject_id", "issue_id", "project_id", "team_id", "kind", "actor_account_id", "actor_kind", "target_account_id", "comment_id", "bulk_action_id", "fanned_out_at", "created_at"}
+	workspaceNotificationEventAllColumns            = []string{"id", "workspace_id", "subject_kind", "subject_id", "issue_id", "project_id", "team_id", "kind", "actor_account_id", "actor_kind", "target_account_id", "comment_id", "bulk_action_id", "fanned_out_at", "created_at", "memory_id"}
 	workspaceNotificationEventColumnsWithoutDefault = []string{"workspace_id", "subject_kind", "subject_id", "kind", "actor_kind"}
-	workspaceNotificationEventColumnsWithDefault    = []string{"id", "issue_id", "project_id", "team_id", "actor_account_id", "target_account_id", "comment_id", "bulk_action_id", "fanned_out_at", "created_at"}
+	workspaceNotificationEventColumnsWithDefault    = []string{"id", "issue_id", "project_id", "team_id", "actor_account_id", "target_account_id", "comment_id", "bulk_action_id", "fanned_out_at", "created_at", "memory_id"}
 	workspaceNotificationEventPrimaryKeyColumns     = []string{"id"}
 	workspaceNotificationEventGeneratedColumns      = []string{}
 )
