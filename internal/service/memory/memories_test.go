@@ -273,6 +273,11 @@ func (h *harness) store() {
 			return nil
 		}).
 		AnyTimes()
+	h.memories.EXPECT().Lineage(gomock.Any(), h.workspaceID, gomock.Any(), entity.MemoryLineageMax).
+		DoAndReturn(func(_ context.Context, _, memoryID uuid.UUID, _ int) ([]entity.Memory, error) {
+			return h.lineage(memoryID), nil
+		}).
+		AnyTimes()
 	h.memories.EXPECT().List(gomock.Any(), h.workspaceID, gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ uuid.UUID, filter repository.MemoryFilter, _ entity.MemoryPage) ([]entity.Memory, error) {
 			h.listed = append(h.listed, filter)
@@ -286,6 +291,29 @@ func (h *harness) store() {
 			return memories, nil
 		}).
 		AnyTimes()
+}
+
+func (h *harness) lineage(memoryID uuid.UUID) []entity.Memory {
+	memory, err := h.find(memoryID)
+	if err != nil {
+		return nil
+	}
+
+	lineage := []entity.Memory{memory}
+
+	for earlier := memory.SupersedesID; earlier != nil; {
+		previous, _ := h.find(*earlier)
+		lineage = append([]entity.Memory{previous}, lineage...)
+		earlier = previous.SupersedesID
+	}
+
+	for later := memory.SupersededByID; later != nil; {
+		next, _ := h.find(*later)
+		lineage = append(lineage, next)
+		later = next.SupersededByID
+	}
+
+	return lineage
 }
 
 func (h *harness) history() {
@@ -693,6 +721,64 @@ func TestAnAgentsReplacementRetiresTheMemoryItSupersedes(t *testing.T) {
 
 	if old := h.stored[replaced.ID]; old.Status != entity.MemoryStatusSuperseded || old.SupersededByID == nil || *old.SupersededByID != replacement.ID {
 		t.Fatalf("the replaced memory is %s, replaced by %v", old.Status, old.SupersededByID)
+	}
+}
+
+func TestLineageTracesEverySupersessionItsReaderMaySee(t *testing.T) {
+	h := newHarness(t)
+	first := h.create(t, "Use SQLite", entity.WorkspaceAudience())
+
+	supersede := func(memory entity.Memory, statement string) entity.Memory {
+		t.Helper()
+
+		replacement, err := h.service.Supersede(context.Background(), h.workspaceID, memory.ID, service.SupersedeMemoryInput{
+			Replacement:     service.CreateMemoryInput{MemoryContent: content(statement), Audience: entity.WorkspaceAudience()},
+			ExpectedVersion: memory.Version,
+		})
+		if err != nil {
+			t.Fatalf("supersede %q: %v", memory.Statement, err)
+		}
+
+		return replacement
+	}
+
+	second := supersede(first, "Use Postgres")
+	third := supersede(second, "Use Postgres with pgvector")
+
+	statements := func(lineage []entity.Memory) []string {
+		var got []string
+		for _, memory := range lineage {
+			got = append(got, memory.Statement)
+		}
+
+		return got
+	}
+
+	lineage, err := h.service.Lineage(context.Background(), h.workspaceID, second.ID)
+	if err != nil {
+		t.Fatalf("lineage: %v", err)
+	}
+
+	if got := statements(lineage); !slices.Equal(got, []string{"Use SQLite", "Use Postgres", "Use Postgres with pgvector"}) {
+		t.Fatalf("the lineage reads %q, oldest first", got)
+	}
+
+	hidden := h.stored[second.ID]
+	hidden.Audience = entity.PersonalAudience()
+	hidden.AuthorID = uuid.New()
+	h.stored[second.ID] = hidden
+
+	lineage, err = h.service.Lineage(context.Background(), h.workspaceID, third.ID)
+	if err != nil {
+		t.Fatalf("lineage past a hidden link: %v", err)
+	}
+
+	if got := statements(lineage); !slices.Equal(got, []string{"Use SQLite", "Use Postgres with pgvector"}) {
+		t.Fatalf("the lineage past a hidden link reads %q", got)
+	}
+
+	if _, err := h.service.Lineage(context.Background(), h.workspaceID, second.ID); !errors.Is(err, entity.ErrMemoryNotFound) {
+		t.Fatalf("the lineage of a hidden memory got %v, want ErrMemoryNotFound", err)
 	}
 }
 

@@ -354,3 +354,61 @@ func TestEnumerationPagesThroughEveryInEffectMemoryInAStableOrder(t *testing.T) 
 		return nil
 	})
 }
+
+func TestLineageWalksBothWaysAlongSupersessionOldestFirst(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := New(client)
+		at := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
+
+		var chain []entity.Memory
+
+		for _, statement := range []string{"Use SQLite", "Use Postgres", "Use Postgres with pgvector"} {
+			memory := draftMemory(fixture, statement, entity.WorkspaceAudience(), at)
+
+			if len(chain) > 0 {
+				replaced := chain[len(chain)-1]
+				memory.SupersedesID = &replaced.ID
+
+				if err := memories.Create(ctx, memory); err != nil {
+					return fmt.Errorf("create %q: %w", statement, err)
+				}
+
+				replaced.Status, replaced.SupersededByID, replaced.Version = entity.MemoryStatusSuperseded, &memory.ID, 2
+				if err := memories.Update(ctx, replaced, 1); err != nil {
+					return fmt.Errorf("supersede %q: %w", replaced.Statement, err)
+				}
+
+				chain[len(chain)-1] = replaced
+			} else if err := memories.Create(ctx, memory); err != nil {
+				return fmt.Errorf("create %q: %w", statement, err)
+			}
+
+			chain = append(chain, memory)
+		}
+
+		lineage, err := memories.Lineage(ctx, fixture.workspaceID, chain[1].ID, entity.MemoryLineageMax)
+		if err != nil {
+			return fmt.Errorf("trace lineage: %w", err)
+		}
+
+		var statements []string
+		for _, memory := range lineage {
+			statements = append(statements, memory.Statement)
+		}
+
+		if !slices.Equal(statements, []string{"Use SQLite", "Use Postgres", "Use Postgres with pgvector"}) {
+			return fmt.Errorf("the lineage reads %q, want oldest first", statements)
+		}
+
+		capped, err := memories.Lineage(ctx, fixture.workspaceID, chain[0].ID, 1)
+		if err != nil {
+			return fmt.Errorf("trace a capped lineage: %w", err)
+		}
+
+		if len(capped) != 2 || capped[1].ID != chain[1].ID {
+			return fmt.Errorf("a lineage capped at one step returned %d memories", len(capped))
+		}
+
+		return nil
+	})
+}

@@ -20,6 +20,7 @@ const (
 	MemoryComponentMaxLen  = 100
 	MemoryExcerptMaxLen    = 2000
 	MemoryEvidenceMax      = 20
+	MemoryLineageMax       = 50
 
 	MemoryPageDefaultSize = 50
 	MemoryPageMaxSize     = 200

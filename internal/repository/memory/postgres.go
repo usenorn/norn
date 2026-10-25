@@ -93,6 +93,36 @@ FROM workspace_memories m
 LEFT JOIN accounts a ON a.id = m.author_account_id
 WHERE m.workspace_id = $1 AND m.id = ANY($2::uuid[])`
 
+const lineageQuery = `
+WITH RECURSIVE earlier AS (
+    SELECT id, supersedes_id, 0 AS depth
+    FROM workspace_memories
+    WHERE id = $1 AND workspace_id = $2
+    UNION ALL
+    SELECT m.id, m.supersedes_id, e.depth - 1
+    FROM workspace_memories m
+    JOIN earlier e ON m.id = e.supersedes_id AND m.workspace_id = $2
+    WHERE e.depth > -$3::integer
+), later AS (
+    SELECT id, superseded_by_id, 0 AS depth
+    FROM workspace_memories
+    WHERE id = $1 AND workspace_id = $2
+    UNION ALL
+    SELECT m.id, m.superseded_by_id, l.depth + 1
+    FROM workspace_memories m
+    JOIN later l ON m.id = l.superseded_by_id AND m.workspace_id = $2
+    WHERE l.depth < $3::integer
+), chain AS (
+    SELECT id, depth FROM earlier
+    UNION
+    SELECT id, depth FROM later
+)
+SELECT` + memoryColumns + `
+FROM chain c
+JOIN workspace_memories m ON m.id = c.id
+LEFT JOIN accounts a ON a.id = m.author_account_id
+ORDER BY c.depth`
+
 const evidenceQuery = `
 SELECT e.memory_id,
        e.kind,
@@ -497,6 +527,14 @@ func (r *memoryRepository) ListByIDs(
 	}
 
 	return r.query(ctx, "list memories by id", memoriesByIDsQuery, workspaceID.String(), idStrings(memoryIDs))
+}
+
+func (r *memoryRepository) Lineage(
+	ctx context.Context,
+	workspaceID, memoryID uuid.UUID,
+	depth int,
+) ([]entity.Memory, error) {
+	return r.query(ctx, "trace memory lineage", lineageQuery, memoryID.String(), workspaceID.String(), depth)
 }
 
 func (r *memoryRepository) Enumerate(

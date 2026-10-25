@@ -385,6 +385,32 @@ func (s *memoriesService) Get(ctx context.Context, workspaceID, memoryID uuid.UU
 	return s.shown(ctx, decision.Reader, memory)
 }
 
+func (s *memoriesService) Lineage(ctx context.Context, workspaceID, memoryID uuid.UUID) ([]entity.Memory, error) {
+	lineage, err := s.memories.Lineage(ctx, workspaceID, memoryID, entity.MemoryLineageMax)
+	if err != nil {
+		return nil, err
+	}
+
+	at := slices.IndexFunc(lineage, func(memory entity.Memory) bool { return memory.ID == memoryID })
+	if at < 0 {
+		return nil, entity.ErrMemoryNotFound
+	}
+
+	decision, err := s.knowledge.Read(ctx, lineage[at].Access())
+	if err != nil {
+		return nil, concealed(err)
+	}
+
+	reader := decision.Reader
+	lineage = slices.DeleteFunc(lineage, func(memory entity.Memory) bool { return !reader.Sees(memory.Access()) })
+
+	for i := range lineage {
+		lineage[i] = lineage[i].ViewedBy(reader)
+	}
+
+	return lineage, nil
+}
+
 func (s *memoriesService) List(
 	ctx context.Context,
 	workspaceID uuid.UUID,
