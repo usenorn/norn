@@ -35,6 +35,8 @@ const (
 	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
 	NotificationKindDecisionWaiting NotificationKind = "decision_waiting"
 	NotificationKindMemoryProposed  NotificationKind = "memory_proposed"
+
+	NotificationKindMemoryEvidenceChanged NotificationKind = "memory_evidence_changed"
 )
 
 func NotificationKinds() []NotificationKind {
@@ -47,6 +49,7 @@ func NotificationKinds() []NotificationKind {
 		NotificationKindApprovalWaiting,
 		NotificationKindDecisionWaiting,
 		NotificationKindMemoryProposed,
+		NotificationKindMemoryEvidenceChanged,
 	}
 }
 
@@ -219,7 +222,8 @@ func (p NotificationPreferences) For(kind NotificationKind) NotificationChannels
 		return p.StateChanged
 	case NotificationKindMembership:
 		return p.Membership
-	case NotificationKindApprovalWaiting, NotificationKindDecisionWaiting, NotificationKindMemoryProposed:
+	case NotificationKindApprovalWaiting, NotificationKindDecisionWaiting, NotificationKindMemoryProposed,
+		NotificationKindMemoryEvidenceChanged:
 		return p.Approvals
 	default:
 		return NotificationChannels{}

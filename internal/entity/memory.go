@@ -195,6 +195,18 @@ type Memory struct {
 	UpdatedAt      time.Time
 }
 
+func (m Memory) Editors() []uuid.UUID {
+	var editors []uuid.UUID
+
+	for _, accountID := range append([]uuid.UUID{m.AuthorID}, m.ContributorIDs...) {
+		if accountID != uuid.Nil && !slices.Contains(editors, accountID) {
+			editors = append(editors, accountID)
+		}
+	}
+
+	return editors
+}
+
 func (m Memory) Widens(evidence MemoryEvidence) bool {
 	return evidence.Kind == MemoryEvidenceDocRevision && !m.Audience.Within(evidence.DocAudience)
 }

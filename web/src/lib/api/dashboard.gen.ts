@@ -10985,7 +10985,7 @@ export interface components {
         /** @enum {string} */
         NotificationSubjectKind: "issue" | "project" | "team" | "memory";
         /** @enum {string} */
-        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "decision_waiting" | "memory_proposed";
+        NotificationKind: "assigned" | "mentioned" | "commented" | "state_changed" | "membership" | "approval_waiting" | "decision_waiting" | "memory_proposed" | "memory_evidence_changed";
         /** @enum {string} */
         NotificationReason: "mentioned" | "approval" | "assigned" | "membership" | "following";
         /** @enum {string} */

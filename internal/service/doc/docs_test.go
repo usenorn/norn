@@ -30,6 +30,7 @@ import (
 	docsvc "github.com/usenorn/norn/internal/service/doc"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
+	memoryevidencesvc "github.com/usenorn/norn/internal/service/memoryevidence"
 )
 
 type harness struct {
@@ -53,6 +54,7 @@ type harness struct {
 	recorded    []entity.DocRevision
 	passages    map[uuid.UUID]entity.Doc
 	scheduled   []uuid.UUID
+	checked     []uuid.UUID
 	listed      []repository.DocFilter
 	searched    []repository.DocSearch
 }
@@ -89,6 +91,11 @@ func newHarness(t *testing.T) *harness {
 		Do(func(_ context.Context, workspaceID uuid.UUID) { h.scheduled = append(h.scheduled, workspaceID) }).
 		AnyTimes()
 
+	evidence := memoryevidencesvc.NewMockMemoryEvidenceChecks(ctrl)
+	evidence.EXPECT().Schedule(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, workspaceID uuid.UUID) { h.checked = append(h.checked, workspaceID) }).
+		AnyTimes()
+
 	workspaceSettings := workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl)
 	agents := agentrepo.NewMockAgent(ctrl)
 	proposals := agentproposalrepo.NewMockAgentProposal(ctrl)
@@ -123,7 +130,7 @@ func newHarness(t *testing.T) *harness {
 		notificationeventrepo.NewMockNotificationEvent(ctrl),
 	)
 
-	h.service = docsvc.New(h.docs, h.revisions, passages, h.projects, h.knowledge, indexes, gate, h.transactor)
+	h.service = docsvc.New(h.docs, h.revisions, passages, h.projects, h.knowledge, indexes, evidence, gate, h.transactor)
 
 	h.transactor.EXPECT().
 		WithTx(gomock.Any(), gomock.Any()).
@@ -1029,5 +1036,9 @@ func TestEveryDocWriteRebuildsItsPassagesAndSchedulesARefresh(t *testing.T) {
 
 	if !slices.Equal(h.scheduled, []uuid.UUID{h.workspaceID, h.workspaceID}) {
 		t.Fatalf("scheduled refreshes for %v, want one per write in this workspace", h.scheduled)
+	}
+
+	if !slices.Equal(h.checked, []uuid.UUID{h.workspaceID, h.workspaceID}) {
+		t.Fatalf("checked memory evidence for %v, want one check per write in this workspace", h.checked)
 	}
 }

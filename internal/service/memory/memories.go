@@ -488,6 +488,7 @@ func (s *memoriesService) cite(
 		for _, earlier := range prior {
 			if earlier.Cites(*evidence) {
 				evidence.IssueVersion, evidence.CommentVersion = earlier.IssueVersion, earlier.CommentVersion
+				evidence.AlertedState = earlier.AlertedState
 			}
 		}
 	}

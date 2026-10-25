@@ -196,6 +196,20 @@ func (mr *MockJobProducerMockRecorder) EnqueueKnowledgeRefresh(ctx, payload any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueKnowledgeRefresh", reflect.TypeOf((*MockJobProducer)(nil).EnqueueKnowledgeRefresh), ctx, payload)
 }
 
+// EnqueueMemoryEvidenceCheck mocks base method.
+func (m *MockJobProducer) EnqueueMemoryEvidenceCheck(ctx context.Context, payload entity.MemoryEvidenceCheckPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueMemoryEvidenceCheck", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueMemoryEvidenceCheck indicates an expected call of EnqueueMemoryEvidenceCheck.
+func (mr *MockJobProducerMockRecorder) EnqueueMemoryEvidenceCheck(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueMemoryEvidenceCheck", reflect.TypeOf((*MockJobProducer)(nil).EnqueueMemoryEvidenceCheck), ctx, payload)
+}
+
 // EnqueuePasswordReset mocks base method.
 func (m *MockJobProducer) EnqueuePasswordReset(ctx context.Context, payload entity.PasswordResetPayload) error {
 	m.ctrl.T.Helper()

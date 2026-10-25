@@ -3911,14 +3911,15 @@ func (e NotificationActorKind) Valid() bool {
 
 // Defines values for NotificationKind.
 const (
-	NotificationKindApprovalWaiting NotificationKind = "approval_waiting"
-	NotificationKindAssigned        NotificationKind = "assigned"
-	NotificationKindCommented       NotificationKind = "commented"
-	NotificationKindDecisionWaiting NotificationKind = "decision_waiting"
-	NotificationKindMembership      NotificationKind = "membership"
-	NotificationKindMemoryProposed  NotificationKind = "memory_proposed"
-	NotificationKindMentioned       NotificationKind = "mentioned"
-	NotificationKindStateChanged    NotificationKind = "state_changed"
+	NotificationKindApprovalWaiting       NotificationKind = "approval_waiting"
+	NotificationKindAssigned              NotificationKind = "assigned"
+	NotificationKindCommented             NotificationKind = "commented"
+	NotificationKindDecisionWaiting       NotificationKind = "decision_waiting"
+	NotificationKindMembership            NotificationKind = "membership"
+	NotificationKindMemoryEvidenceChanged NotificationKind = "memory_evidence_changed"
+	NotificationKindMemoryProposed        NotificationKind = "memory_proposed"
+	NotificationKindMentioned             NotificationKind = "mentioned"
+	NotificationKindStateChanged          NotificationKind = "state_changed"
 )
 
 // Valid indicates whether the value is a known member of the NotificationKind enum.
@@ -3933,6 +3934,8 @@ func (e NotificationKind) Valid() bool {
 	case NotificationKindDecisionWaiting:
 		return true
 	case NotificationKindMembership:
+		return true
+	case NotificationKindMemoryEvidenceChanged:
 		return true
 	case NotificationKindMemoryProposed:
 		return true

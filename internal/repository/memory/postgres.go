@@ -145,6 +145,7 @@ SELECT e.memory_id,
        coalesce(e.excerpt, ''),
        workspace_memory_evidence_state(e.kind, e.issue_id, e.issue_version, e.comment_id, e.comment_version,
                                        e.doc_id, e.doc_revision_id),
+       coalesce(e.alerted_state, ''),
        coalesce(d.visibility, ''),
        coalesce(d.project_id::text, ''),
        coalesce(d.author_account_id::text, ''),
@@ -157,6 +158,29 @@ LEFT JOIN workspace_doc_revisions pinned ON pinned.id = e.doc_revision_id
 LEFT JOIN workspace_issues i ON i.id = e.issue_id
 WHERE e.memory_id = ANY($1::uuid[])
 ORDER BY e.memory_id, e.position`
+
+const unalertedEvidence = `
+FROM workspace_memory_evidence e
+JOIN workspace_memories m ON m.id = e.memory_id
+CROSS JOIN LATERAL (
+    SELECT workspace_memory_evidence_state(e.kind, e.issue_id, e.issue_version, e.comment_id, e.comment_version,
+                                           e.doc_id, e.doc_revision_id) AS state
+) cited
+WHERE m.status <> ALL($1::text[])
+  AND cited.state <> $2
+  AND cited.state IS DISTINCT FROM e.alerted_state`
+
+const unalertedQuery = `
+SELECT DISTINCT e.memory_id` + unalertedEvidence + `
+  AND e.workspace_id = $3`
+
+const unalertedWorkspacesQuery = `
+SELECT DISTINCT e.workspace_id` + unalertedEvidence
+
+const alertedQuery = `
+UPDATE workspace_memory_evidence
+SET alerted_state = $3
+WHERE memory_id = $1 AND position = $2`
 
 func memoryToModel(memory entity.Memory) *dbpostgres.WorkspaceMemory {
 	return &dbpostgres.WorkspaceMemory{
@@ -201,6 +225,7 @@ func evidenceToModel(memory entity.Memory, position int, evidence entity.MemoryE
 		DocRevisionID:  optionalUUID(evidence.DocRevisionID),
 		IssueVersion:   null.IntFromPtr(evidence.IssueVersion),
 		CommentVersion: null.IntFromPtr(evidence.CommentVersion),
+		AlertedState:   null.NewString(string(evidence.AlertedState), evidence.AlertedState != ""),
 		Excerpt:        null.NewString(evidence.Excerpt, evidence.Kind == entity.MemoryEvidenceExcerpt),
 	}
 }
@@ -324,19 +349,21 @@ func scanEvidence(row scanner) (uuid.UUID, entity.MemoryEvidence, error) {
 	var (
 		evidence                                    entity.MemoryEvidence
 		memory, kind, issue, comment, doc, revision string
-		state                                       string
+		state, alerted                              string
 		issueVersion, commentVersion                sql.NullInt64
 		docVisibility, docProject, docAuthor        string
 	)
 
 	if err := row.Scan(
 		&memory, &kind, &issue, &comment, &doc, &revision, &issueVersion, &commentVersion, &evidence.Excerpt, &state,
+		&alerted,
 		&docVisibility, &docProject, &docAuthor, &evidence.IssueReference, &evidence.IssueTitle, &evidence.DocTitle,
 	); err != nil {
 		return uuid.Nil, entity.MemoryEvidence{}, err
 	}
 
 	evidence.State = entity.MemoryEvidenceState(state)
+	evidence.AlertedState = entity.MemoryEvidenceState(alerted)
 	evidence.IssueVersion = pinnedVersion(issueVersion)
 	evidence.CommentVersion = pinnedVersion(commentVersion)
 
@@ -587,6 +614,66 @@ func (r *memoryRepository) Enumerate(
 	args := append(visibleArgs(workspaceID, filter), nullableID(after), limit)
 
 	return r.query(ctx, "enumerate memories", enumerateMemoriesQuery, append(args, filterArgs(filter)...)...)
+}
+
+func (r *memoryRepository) Unalerted(ctx context.Context, workspaceID uuid.UUID) ([]uuid.UUID, error) {
+	return r.ids(ctx, "list memories with unalerted evidence", unalertedQuery, workspaceID.String())
+}
+
+func (r *memoryRepository) UnalertedWorkspaces(ctx context.Context) ([]uuid.UUID, error) {
+	return r.ids(ctx, "list workspaces with unalerted memory evidence", unalertedWorkspacesQuery)
+}
+
+func (r *memoryRepository) ids(ctx context.Context, action, statement string, args ...any) ([]uuid.UUID, error) {
+	terminal := make([]string, 0, len(entity.MemoryStatuses()))
+	for _, status := range entity.MemoryStatuses() {
+		if status.Terminal() {
+			terminal = append(terminal, string(status))
+		}
+	}
+
+	rows, err := r.db.Querier(ctx).QueryContext(
+		ctx, statement, append([]any{terminal, string(entity.MemoryEvidenceCurrent)}, args...)...,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", action, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var ids []uuid.UUID
+
+	for rows.Next() {
+		var raw string
+		if err := rows.Scan(&raw); err != nil {
+			return nil, fmt.Errorf("%s: %w", action, err)
+		}
+
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", action, err)
+		}
+
+		ids = append(ids, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: %w", action, err)
+	}
+
+	return ids, nil
+}
+
+func (r *memoryRepository) Alerted(
+	ctx context.Context,
+	memoryID uuid.UUID,
+	position int,
+	state entity.MemoryEvidenceState,
+) error {
+	if _, err := r.db.Querier(ctx).ExecContext(ctx, alertedQuery, memoryID.String(), position, string(state)); err != nil {
+		return fmt.Errorf("mark memory evidence alerted: %w", err)
+	}
+
+	return nil
 }
 
 func visibleArgs(workspaceID uuid.UUID, filter repository.MemoryFilter) []any {

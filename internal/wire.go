@@ -190,6 +190,7 @@ import (
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
+	memoryevidencesvc "github.com/usenorn/norn/internal/service/memoryevidence"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	memorysvc "github.com/usenorn/norn/internal/service/memory"
@@ -385,6 +386,7 @@ var baseSet = wire.NewSet(
 	knowledgeauthorizersvc.Set,
 	knowledgeembeddingsvc.Set,
 	knowledgeindexsvc.Set,
+	memoryevidencesvc.Set,
 	retrievalsvc.Set,
 	eventsvc.Set,
 	searchsvc.Set,

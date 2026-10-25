@@ -146,7 +146,12 @@ func buildDigest(
 
 func summarise(notification entity.Notification) string {
 	actor := notification.ActorName
-	if actor == "" {
+
+	switch {
+	case actor != "":
+	case notification.ActorKind == entity.ActorKindSystem:
+		actor = "Norn"
+	default:
 		actor = "Someone"
 	}
 
@@ -171,6 +176,8 @@ func summarise(notification entity.Notification) string {
 		change = "is waiting for your decision"
 	case entity.NotificationKindMemoryProposed:
 		change = "proposed a memory for you to review"
+	case entity.NotificationKindMemoryEvidenceChanged:
+		change = "found that a source behind your memory changed"
 	}
 
 	if notification.Reason == entity.NotificationReasonMentioned {

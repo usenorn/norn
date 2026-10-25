@@ -23,6 +23,7 @@ type issueCommentsService struct {
 	notify      repository.NotificationEvent
 	events      service.Events
 	emitter     service.WebhookEmitter
+	evidence    service.MemoryEvidenceChecks
 	followers   repository.IssueFollower
 	gate        *agenthold.Gate
 	authorizer  service.Authorizer
@@ -38,6 +39,7 @@ func New(
 	notify repository.NotificationEvent,
 	events service.Events,
 	emitter service.WebhookEmitter,
+	evidence service.MemoryEvidenceChecks,
 	followers repository.IssueFollower,
 	gate *agenthold.Gate,
 	authorizer service.Authorizer,
@@ -52,6 +54,7 @@ func New(
 		notify:      notify,
 		events:      events,
 		emitter:     emitter,
+		evidence:    evidence,
 		followers:   followers,
 		gate:        gate,
 		authorizer:  authorizer,

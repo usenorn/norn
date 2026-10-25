@@ -76,6 +76,8 @@ func NewServeMux(
 	telegramSweep *job.TelegramSweepHandler,
 	knowledgeRefresh *job.KnowledgeRefreshHandler,
 	knowledgeSweep *job.KnowledgeSweepHandler,
+	memoryEvidenceCheck *job.MemoryEvidenceCheckHandler,
+	memoryEvidenceSweep *job.MemoryEvidenceSweepHandler,
 ) *asynq.ServeMux {
 	mux := asynq.NewServeMux()
 	mux.Handle(entity.TaskTypeSignUpVerification, signUpVerification)
@@ -114,6 +116,8 @@ func NewServeMux(
 	mux.Handle(entity.TaskTypeTelegramSweep, telegramSweep)
 	mux.Handle(entity.TaskTypeKnowledgeRefresh, knowledgeRefresh)
 	mux.Handle(entity.TaskTypeKnowledgeSweep, knowledgeSweep)
+	mux.Handle(entity.TaskTypeMemoryEvidenceCheck, memoryEvidenceCheck)
+	mux.Handle(entity.TaskTypeMemoryEvidenceSweep, memoryEvidenceSweep)
 
 	return mux
 }
@@ -283,6 +287,14 @@ func (w *Worker) Run(ctx context.Context) error {
 		asynq.Queue(entity.QueueDefault),
 	); err != nil {
 		return fmt.Errorf("register knowledge refresh sweep: %w", err)
+	}
+
+	if _, err := w.scheduler.Register(
+		w.knowledge.EvidenceSweepSchedule,
+		asynq.NewTask(entity.TaskTypeMemoryEvidenceSweep, nil),
+		asynq.Queue(entity.QueueDefault),
+	); err != nil {
+		return fmt.Errorf("register memory evidence sweep: %w", err)
 	}
 
 	if err := w.server.Start(w.mux); err != nil {

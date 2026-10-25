@@ -54,6 +54,7 @@ type MemoryEvidence struct {
 	CommentVersion *int
 	Excerpt        string
 	State          MemoryEvidenceState
+	AlertedState   MemoryEvidenceState
 	DocAudience    KnowledgeAudience
 	DocAuthorID    uuid.UUID
 	IssueReference string
@@ -115,6 +116,10 @@ func (e MemoryEvidence) Concealed() MemoryEvidence {
 
 func (e MemoryEvidence) Stale() bool {
 	return e.State != MemoryEvidenceCurrent
+}
+
+func (e MemoryEvidence) Unalerted() bool {
+	return e.Stale() && e.State != e.AlertedState
 }
 
 func (e MemoryEvidence) Cites(other MemoryEvidence) bool {

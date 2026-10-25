@@ -402,6 +402,12 @@ func (c *Client) EnqueueKnowledgeRefresh(ctx context.Context, payload entity.Kno
 	)
 }
 
+func (c *Client) EnqueueMemoryEvidenceCheck(ctx context.Context, payload entity.MemoryEvidenceCheckPayload) error {
+	return c.enqueueOnce(
+		ctx, entity.TaskTypeMemoryEvidenceCheck, "memory-evidence-check:"+payload.WorkspaceID.String(), payload,
+	)
+}
+
 func telegramTaskID(prefix string, decision entity.TelegramDecision) string {
 	return fmt.Sprintf("%s:%s:%s:%s", prefix, decision.Kind, decision.Subject(), decision.Round)
 }

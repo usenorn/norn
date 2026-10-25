@@ -43,6 +43,20 @@ func (m *MockMemory) EXPECT() *MockMemoryMockRecorder {
 	return m.recorder
 }
 
+// Alerted mocks base method.
+func (m *MockMemory) Alerted(ctx context.Context, memoryID uuid.UUID, position int, state entity.MemoryEvidenceState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Alerted", ctx, memoryID, position, state)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Alerted indicates an expected call of Alerted.
+func (mr *MockMemoryMockRecorder) Alerted(ctx, memoryID, position, state any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alerted", reflect.TypeOf((*MockMemory)(nil).Alerted), ctx, memoryID, position, state)
+}
+
 // Create mocks base method.
 func (m *MockMemory) Create(ctx context.Context, memory entity.Memory) error {
 	m.ctrl.T.Helper()
@@ -145,6 +159,36 @@ func (m *MockMemory) LockByID(ctx context.Context, workspaceID, memoryID uuid.UU
 func (mr *MockMemoryMockRecorder) LockByID(ctx, workspaceID, memoryID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockByID", reflect.TypeOf((*MockMemory)(nil).LockByID), ctx, workspaceID, memoryID)
+}
+
+// Unalerted mocks base method.
+func (m *MockMemory) Unalerted(ctx context.Context, workspaceID uuid.UUID) ([]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unalerted", ctx, workspaceID)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Unalerted indicates an expected call of Unalerted.
+func (mr *MockMemoryMockRecorder) Unalerted(ctx, workspaceID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unalerted", reflect.TypeOf((*MockMemory)(nil).Unalerted), ctx, workspaceID)
+}
+
+// UnalertedWorkspaces mocks base method.
+func (m *MockMemory) UnalertedWorkspaces(ctx context.Context) ([]uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnalertedWorkspaces", ctx)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UnalertedWorkspaces indicates an expected call of UnalertedWorkspaces.
+func (mr *MockMemoryMockRecorder) UnalertedWorkspaces(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnalertedWorkspaces", reflect.TypeOf((*MockMemory)(nil).UnalertedWorkspaces), ctx)
 }
 
 // Update mocks base method.

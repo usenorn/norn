@@ -45,4 +45,7 @@ type Memory interface {
 		after *uuid.UUID,
 		limit int,
 	) ([]entity.Memory, error)
+	Unalerted(ctx context.Context, workspaceID uuid.UUID) ([]uuid.UUID, error)
+	UnalertedWorkspaces(ctx context.Context) ([]uuid.UUID, error)
+	Alerted(ctx context.Context, memoryID uuid.UUID, position int, state entity.MemoryEvidenceState) error
 }

@@ -22,6 +22,7 @@ type docsService struct {
 	projects   repository.Project
 	knowledge  service.KnowledgeAuthorizer
 	indexes    service.KnowledgeIndexes
+	evidence   service.MemoryEvidenceChecks
 	gate       *agenthold.Gate
 	transactor repository.Transactor
 }
@@ -33,6 +34,7 @@ func New(
 	projects repository.Project,
 	knowledge service.KnowledgeAuthorizer,
 	indexes service.KnowledgeIndexes,
+	evidence service.MemoryEvidenceChecks,
 	gate *agenthold.Gate,
 	transactor repository.Transactor,
 ) service.Docs {
@@ -43,6 +45,7 @@ func New(
 		projects:   projects,
 		knowledge:  knowledge,
 		indexes:    indexes,
+		evidence:   evidence,
 		gate:       gate,
 		transactor: transactor,
 	}
@@ -654,6 +657,7 @@ func (s *docsService) record(
 	}
 
 	s.indexes.Schedule(ctx, doc.WorkspaceID)
+	s.evidence.Schedule(ctx, doc.WorkspaceID)
 
 	return s.docs.GetByID(ctx, doc.WorkspaceID, doc.ID)
 }

@@ -32,6 +32,7 @@ func (s *memoriesService) ConfirmEvidence(
 					return false, err
 				}
 
+				evidence.AlertedState = ""
 				confirmed = true
 			}
 

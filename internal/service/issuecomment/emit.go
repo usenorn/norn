@@ -21,6 +21,8 @@ func (s *issueCommentsService) emit(
 		return fmt.Errorf("encode %s payload: %w", event, err)
 	}
 
+	s.evidence.Schedule(ctx, issue.WorkspaceID)
+
 	return s.emitter.Emit(ctx, entity.WebhookOutboxEntry{
 		WorkspaceID: issue.WorkspaceID,
 		Event:       event,

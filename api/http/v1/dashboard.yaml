@@ -17149,7 +17149,7 @@ components:
     NotificationKind:
       type: string
       enum: [assigned, mentioned, commented, state_changed, membership, approval_waiting, decision_waiting,
-             memory_proposed]
+             memory_proposed, memory_evidence_changed]
 
     NotificationReason:
       type: string

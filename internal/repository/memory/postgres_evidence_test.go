@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -161,5 +162,71 @@ WHERE id = $1`, issueID); err != nil {
 		}
 
 		return nil
+	})
+}
+
+func TestEvidenceStaysUnalertedUntilItsEditorsAreToldOfItsState(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := &memoryRepository{db: client}
+		missing := uuid.New()
+
+		draft := draftMemory(fixture, "Use SQLite", entity.PersonalAudience(), time.Date(2026, 10, 25, 9, 0, 0, 0, time.UTC))
+		draft.Evidence = []entity.MemoryEvidence{
+			{Kind: entity.MemoryEvidenceDocRevision, DocID: &fixture.docID, DocRevisionID: &fixture.docRevisionID},
+			{Kind: entity.MemoryEvidenceDocRevision, DocID: &fixture.docID, DocRevisionID: &missing},
+		}
+
+		if err := memories.Create(ctx, draft); err != nil {
+			return fmt.Errorf("create memory: %w", err)
+		}
+
+		unalerted := func(want bool) error {
+			memoryIDs, err := memories.Unalerted(ctx, fixture.workspaceID)
+			if err != nil {
+				return err
+			}
+
+			workspaceIDs, err := memories.UnalertedWorkspaces(ctx)
+			if err != nil {
+				return err
+			}
+
+			if got := slices.Contains(memoryIDs, draft.ID); got != want || slices.Contains(workspaceIDs, fixture.workspaceID) != want {
+				return fmt.Errorf("unalerted memories %v in workspaces %v, want the fixture listed: %t", memoryIDs, workspaceIDs, want)
+			}
+
+			return nil
+		}
+
+		if err := unalerted(true); err != nil {
+			return err
+		}
+
+		if err := memories.Alerted(ctx, draft.ID, 1, entity.MemoryEvidenceUnavailable); err != nil {
+			return fmt.Errorf("mark alerted: %w", err)
+		}
+
+		if err := unalerted(false); err != nil {
+			return err
+		}
+
+		memory, err := memories.GetByID(ctx, fixture.workspaceID, draft.ID)
+		if err != nil {
+			return err
+		}
+
+		if memory.Evidence[1].AlertedState != entity.MemoryEvidenceUnavailable || memory.Evidence[0].AlertedState != "" {
+			return fmt.Errorf("alerted states read back as %+v", memory.Evidence)
+		}
+
+		withdrawn := memory
+		withdrawn.Status, withdrawn.Version = entity.MemoryStatusWithdrawn, memory.Version+1
+		withdrawn.Evidence[1].AlertedState = ""
+
+		if err := memories.Update(ctx, withdrawn, memory.Version); err != nil {
+			return fmt.Errorf("withdraw: %w", err)
+		}
+
+		return unalerted(false)
 	})
 }

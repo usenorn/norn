@@ -36,6 +36,7 @@ type WorkspaceMemoryEvidence struct {
 	Excerpt        null.String `boil:"excerpt" json:"excerpt,omitempty" toml:"excerpt" yaml:"excerpt,omitempty"`
 	IssueVersion   null.Int    `boil:"issue_version" json:"issue_version,omitempty" toml:"issue_version" yaml:"issue_version,omitempty"`
 	CommentVersion null.Int    `boil:"comment_version" json:"comment_version,omitempty" toml:"comment_version" yaml:"comment_version,omitempty"`
+	AlertedState   null.String `boil:"alerted_state" json:"alerted_state,omitempty" toml:"alerted_state" yaml:"alerted_state,omitempty"`
 
 	R *workspaceMemoryEvidenceR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMemoryEvidenceL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -54,6 +55,7 @@ var WorkspaceMemoryEvidenceColumns = struct {
 	Excerpt        string
 	IssueVersion   string
 	CommentVersion string
+	AlertedState   string
 }{
 	ID:             "id",
 	WorkspaceID:    "workspace_id",
@@ -67,6 +69,7 @@ var WorkspaceMemoryEvidenceColumns = struct {
 	Excerpt:        "excerpt",
 	IssueVersion:   "issue_version",
 	CommentVersion: "comment_version",
+	AlertedState:   "alerted_state",
 }
 
 var WorkspaceMemoryEvidenceTableColumns = struct {
@@ -82,6 +85,7 @@ var WorkspaceMemoryEvidenceTableColumns = struct {
 	Excerpt        string
 	IssueVersion   string
 	CommentVersion string
+	AlertedState   string
 }{
 	ID:             "workspace_memory_evidence.id",
 	WorkspaceID:    "workspace_memory_evidence.workspace_id",
@@ -95,6 +99,7 @@ var WorkspaceMemoryEvidenceTableColumns = struct {
 	Excerpt:        "workspace_memory_evidence.excerpt",
 	IssueVersion:   "workspace_memory_evidence.issue_version",
 	CommentVersion: "workspace_memory_evidence.comment_version",
+	AlertedState:   "workspace_memory_evidence.alerted_state",
 }
 
 // Generated where
@@ -112,6 +117,7 @@ var WorkspaceMemoryEvidenceWhere = struct {
 	Excerpt        whereHelpernull_String
 	IssueVersion   whereHelpernull_Int
 	CommentVersion whereHelpernull_Int
+	AlertedState   whereHelpernull_String
 }{
 	ID:             whereHelperstring{field: "\"workspace_memory_evidence\".\"id\""},
 	WorkspaceID:    whereHelperstring{field: "\"workspace_memory_evidence\".\"workspace_id\""},
@@ -125,6 +131,7 @@ var WorkspaceMemoryEvidenceWhere = struct {
 	Excerpt:        whereHelpernull_String{field: "\"workspace_memory_evidence\".\"excerpt\""},
 	IssueVersion:   whereHelpernull_Int{field: "\"workspace_memory_evidence\".\"issue_version\""},
 	CommentVersion: whereHelpernull_Int{field: "\"workspace_memory_evidence\".\"comment_version\""},
+	AlertedState:   whereHelpernull_String{field: "\"workspace_memory_evidence\".\"alerted_state\""},
 }
 
 // WorkspaceMemoryEvidenceRels is where relationship names are stored.
@@ -144,9 +151,9 @@ func (*workspaceMemoryEvidenceR) NewStruct() *workspaceMemoryEvidenceR {
 type workspaceMemoryEvidenceL struct{}
 
 var (
-	workspaceMemoryEvidenceAllColumns            = []string{"id", "workspace_id", "memory_id", "position", "kind", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt", "issue_version", "comment_version"}
+	workspaceMemoryEvidenceAllColumns            = []string{"id", "workspace_id", "memory_id", "position", "kind", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt", "issue_version", "comment_version", "alerted_state"}
 	workspaceMemoryEvidenceColumnsWithoutDefault = []string{"workspace_id", "memory_id", "position", "kind"}
-	workspaceMemoryEvidenceColumnsWithDefault    = []string{"id", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt", "issue_version", "comment_version"}
+	workspaceMemoryEvidenceColumnsWithDefault    = []string{"id", "issue_id", "comment_id", "doc_id", "doc_revision_id", "excerpt", "issue_version", "comment_version", "alerted_state"}
 	workspaceMemoryEvidencePrimaryKeyColumns     = []string{"id"}
 	workspaceMemoryEvidenceGeneratedColumns      = []string{}
 )
