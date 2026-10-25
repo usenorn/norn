@@ -45,12 +45,14 @@ const memoryColumns = `
        m.updated_at,
        coalesce((SELECT string_agg(DISTINCT r.account_id::text, ',')
                  FROM workspace_memory_revisions r
-                 WHERE r.memory_id = m.id AND r.account_id IS NOT NULL), '')`
+                 WHERE r.memory_id = m.id AND r.account_id IS NOT NULL), ''),
+       coalesce(g.name, '')`
 
 const memoryByIDQuery = `
 SELECT` + memoryColumns + `
 FROM workspace_memories m
 LEFT JOIN accounts a ON a.id = m.author_account_id
+LEFT JOIN workspace_agents g ON g.id = m.agent_id
 WHERE m.id = $1 AND m.workspace_id = $2`
 
 const lockMemoryQuery = memoryByIDQuery + `
@@ -59,6 +61,7 @@ FOR UPDATE OF m`
 const visibleMemories = `
 FROM workspace_memories m
 LEFT JOIN accounts a ON a.id = m.author_account_id
+LEFT JOIN workspace_agents g ON g.id = m.agent_id
 WHERE m.workspace_id = $1
   AND (m.visibility = 'workspace'
        OR (m.visibility = 'project' AND ($2::boolean IS TRUE OR m.project_id = ANY($3::uuid[])))
@@ -95,6 +98,7 @@ const memoriesByIDsQuery = `
 SELECT` + memoryColumns + `
 FROM workspace_memories m
 LEFT JOIN accounts a ON a.id = m.author_account_id
+LEFT JOIN workspace_agents g ON g.id = m.agent_id
 WHERE m.workspace_id = $1 AND m.id = ANY($2::uuid[])`
 
 const lineageQuery = `
@@ -125,6 +129,7 @@ SELECT` + memoryColumns + `
 FROM chain c
 JOIN workspace_memories m ON m.id = c.id
 LEFT JOIN accounts a ON a.id = m.author_account_id
+LEFT JOIN workspace_agents g ON g.id = m.agent_id
 ORDER BY c.depth`
 
 const evidenceQuery = `
@@ -137,9 +142,13 @@ SELECT e.memory_id,
        coalesce(e.excerpt, ''),
        coalesce(d.visibility, ''),
        coalesce(d.project_id::text, ''),
-       coalesce(d.author_account_id::text, '')
+       coalesce(d.author_account_id::text, ''),
+       coalesce(i.reference_key || '-' || i.number::text, ''),
+       coalesce(i.title, ''),
+       coalesce(d.title, '')
 FROM workspace_memory_evidence e
 LEFT JOIN workspace_docs d ON d.id = e.doc_id
+LEFT JOIN workspace_issues i ON i.id = e.issue_id
 WHERE e.memory_id = ANY($1::uuid[])
 ORDER BY e.memory_id, e.position`
 
@@ -224,7 +233,7 @@ func scanMemory(row scanner) (entity.Memory, error) {
 		&raw.visibility, &raw.project, &raw.appliesProject, &memory.Applicability.Component, &raw.status,
 		&raw.basis, &raw.author, &memory.AuthorName, &raw.agent, &raw.connection, &raw.token, &raw.source,
 		&memory.EffectiveFrom, &raw.effectiveUntil, &raw.supersedes, &raw.supersededBy, &memory.Version,
-		&memory.CreatedAt, &memory.UpdatedAt, &raw.contributors,
+		&memory.CreatedAt, &memory.UpdatedAt, &raw.contributors, &memory.AgentName,
 	); err != nil {
 		return entity.Memory{}, err
 	}
@@ -311,7 +320,7 @@ func scanEvidence(row scanner) (uuid.UUID, entity.MemoryEvidence, error) {
 
 	if err := row.Scan(
 		&memory, &kind, &issue, &comment, &doc, &revision, &evidence.Excerpt,
-		&docVisibility, &docProject, &docAuthor,
+		&docVisibility, &docProject, &docAuthor, &evidence.IssueReference, &evidence.IssueTitle, &evidence.DocTitle,
 	); err != nil {
 		return uuid.Nil, entity.MemoryEvidence{}, err
 	}

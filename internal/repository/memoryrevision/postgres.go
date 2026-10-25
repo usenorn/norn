@@ -33,12 +33,14 @@ const summaryColumns = `
        coalesce(r.connection_id::text, ''),
        coalesce(r.token_id::text, ''),
        r.source,
-       r.created_at`
+       r.created_at,
+       coalesce(g.name, '')`
 
 const listRevisionsQuery = `
 SELECT` + summaryColumns + `
 FROM workspace_memory_revisions r
 LEFT JOIN accounts a ON a.id = r.account_id
+LEFT JOIN workspace_agents g ON g.id = r.agent_id
 WHERE r.memory_id = $1 AND r.workspace_id = $2
   AND ($3::integer IS NULL OR r.version < $3::integer)
 ORDER BY r.version DESC
@@ -58,6 +60,7 @@ SELECT` + summaryColumns + `,
        r.effective_until
 FROM workspace_memory_revisions r
 LEFT JOIN accounts a ON a.id = r.account_id
+LEFT JOIN workspace_agents g ON g.id = r.agent_id
 WHERE r.id = $1 AND r.memory_id = $2 AND r.workspace_id = $3`
 
 const revisionEvidenceQuery = `
@@ -69,10 +72,14 @@ SELECT e.item ->> 'kind',
        coalesce(e.item ->> 'excerpt', ''),
        coalesce(d.visibility, ''),
        coalesce(d.project_id::text, ''),
-       coalesce(d.author_account_id::text, '')
+       coalesce(d.author_account_id::text, ''),
+       coalesce(i.reference_key || '-' || i.number::text, ''),
+       coalesce(i.title, ''),
+       coalesce(d.title, '')
 FROM workspace_memory_revisions r
 CROSS JOIN LATERAL jsonb_array_elements(r.evidence) WITH ORDINALITY AS e(item, position)
 LEFT JOIN workspace_docs d ON d.id::text = e.item ->> 'doc_id'
+LEFT JOIN workspace_issues i ON i.id::text = e.item ->> 'issue_id'
 WHERE r.id = $1
 ORDER BY e.position`
 
@@ -153,6 +160,7 @@ func (row *summaryRow) targets(summary *entity.MemoryRevisionSummary) []any {
 	return []any{
 		&row.id, &row.workspace, &row.memory, &summary.Version, &row.action, &row.status, &summary.Statement,
 		&summary.Reason, &row.account, &summary.AccountName, &row.agent, &row.connection, &row.token, &row.source, &summary.CreatedAt,
+		&summary.AgentName,
 	}
 }
 
@@ -356,6 +364,7 @@ func (r *revisionRepository) evidence(ctx context.Context, revisionID uuid.UUID)
 
 		if err := rows.Scan(
 			&kind, &issue, &comment, &doc, &docRevision, &evidence.Excerpt, &docVisibility, &docProject, &docAuthor,
+			&evidence.IssueReference, &evidence.IssueTitle, &evidence.DocTitle,
 		); err != nil {
 			return nil, fmt.Errorf("scan memory revision evidence: %w", err)
 		}

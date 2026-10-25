@@ -180,6 +180,7 @@ type Memory struct {
 	Evidence       []MemoryEvidence
 	AuthorID       uuid.UUID
 	AuthorName     string
+	AgentName      string
 	By             KnowledgeAttribution
 	EffectiveFrom  time.Time
 	EffectiveUntil *time.Time

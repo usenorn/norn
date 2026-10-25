@@ -9254,7 +9254,8 @@ type MembershipSource string
 
 // Memory defines model for Memory.
 type Memory struct {
-	AgentId *openapi_types.UUID `json:"agentId,omitempty"`
+	AgentId   *openapi_types.UUID `json:"agentId,omitempty"`
+	AgentName *string             `json:"agentName,omitempty"`
 
 	// AppliesTo Where the memory applies. It never decides who may read it.
 	AppliesTo       MemoryApplicability `json:"appliesTo"`
@@ -9355,9 +9356,14 @@ type MemoryEvidence struct {
 	CommentId     *openapi_types.UUID `json:"commentId,omitempty"`
 	DocId         *openapi_types.UUID `json:"docId,omitempty"`
 	DocRevisionId *openapi_types.UUID `json:"docRevisionId,omitempty"`
+	DocTitle      *string             `json:"docTitle,omitempty"`
 	Excerpt       *string             `json:"excerpt,omitempty"`
 	IssueId       *openapi_types.UUID `json:"issueId,omitempty"`
-	Kind          MemoryEvidenceKind  `json:"kind"`
+
+	// IssueReference The cited issue's reference, such as NORN-42, on an issue or comment source.
+	IssueReference *string            `json:"issueReference,omitempty"`
+	IssueTitle     *string            `json:"issueTitle,omitempty"`
+	Kind           MemoryEvidenceKind `json:"kind"`
 }
 
 // MemoryEvidenceKind defines model for MemoryEvidenceKind.
@@ -9395,8 +9401,9 @@ type MemoryRevision struct {
 	AccountName *string             `json:"accountName,omitempty"`
 
 	// Action reconciled records an author settling how a proposal relates to other memories while it still waits for review.
-	Action  MemoryRevisionAction `json:"action"`
-	AgentId *openapi_types.UUID  `json:"agentId,omitempty"`
+	Action    MemoryRevisionAction `json:"action"`
+	AgentId   *openapi_types.UUID  `json:"agentId,omitempty"`
+	AgentName *string              `json:"agentName,omitempty"`
 
 	// AppliesTo Where the memory applies. It never decides who may read it.
 	AppliesTo MemoryApplicability `json:"appliesTo"`
@@ -9444,6 +9451,7 @@ type MemoryRevisionSummary struct {
 	// Action reconciled records an author settling how a proposal relates to other memories while it still waits for review.
 	Action       MemoryRevisionAction `json:"action"`
 	AgentId      *openapi_types.UUID  `json:"agentId,omitempty"`
+	AgentName    *string              `json:"agentName,omitempty"`
 	ConnectionId *openapi_types.UUID  `json:"connectionId,omitempty"`
 	CreatedAt    time.Time            `json:"createdAt"`
 	Id           openapi_types.UUID   `json:"id"`

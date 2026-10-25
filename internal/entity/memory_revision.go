@@ -64,6 +64,7 @@ type MemoryRevisionSummary struct {
 	Reason      string
 	By          KnowledgeAttribution
 	AccountName string
+	AgentName   string
 	CreatedAt   time.Time
 }
 

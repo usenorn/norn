@@ -8165,6 +8165,10 @@ export interface components {
             /** Format: uuid */
             docRevisionId?: string;
             excerpt?: string;
+            /** @description The cited issue's reference, such as NORN-42, on an issue or comment source. */
+            readonly issueReference?: string;
+            readonly issueTitle?: string;
+            readonly docTitle?: string;
         };
         /** @description Where the memory applies. It never decides who may read it. */
         MemoryApplicability: {
@@ -8212,6 +8216,7 @@ export interface components {
             authorName?: string;
             /** Format: uuid */
             agentId?: string;
+            agentName?: string;
             /** Format: uuid */
             connectionId?: string;
             source: components["schemas"]["DocRevisionSource"];
@@ -8353,6 +8358,7 @@ export interface components {
             accountName?: string;
             /** Format: uuid */
             agentId?: string;
+            agentName?: string;
             /** Format: uuid */
             connectionId?: string;
             source: components["schemas"]["DocRevisionSource"];
@@ -8376,6 +8382,7 @@ export interface components {
             accountName?: string;
             /** Format: uuid */
             agentId?: string;
+            agentName?: string;
             /** Format: uuid */
             connectionId?: string;
             source: components["schemas"]["DocRevisionSource"];

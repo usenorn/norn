@@ -3589,12 +3589,15 @@ func memoryEvidenceDTOs(cited []entity.MemoryEvidence) []api.MemoryEvidence {
 	evidence := make([]api.MemoryEvidence, 0, len(cited))
 	for _, source := range cited {
 		evidence = append(evidence, api.MemoryEvidence{
-			Kind:          api.MemoryEvidenceKind(source.Kind),
-			IssueId:       source.IssueID,
-			CommentId:     source.CommentID,
-			DocId:         source.DocID,
-			DocRevisionId: source.DocRevisionID,
-			Excerpt:       nilIfEmpty(source.Excerpt),
+			Kind:           api.MemoryEvidenceKind(source.Kind),
+			IssueId:        source.IssueID,
+			CommentId:      source.CommentID,
+			DocId:          source.DocID,
+			DocRevisionId:  source.DocRevisionID,
+			Excerpt:        nilIfEmpty(source.Excerpt),
+			IssueReference: nilIfEmpty(source.IssueReference),
+			IssueTitle:     nilIfEmpty(source.IssueTitle),
+			DocTitle:       nilIfEmpty(source.DocTitle),
 		})
 	}
 
@@ -3629,6 +3632,7 @@ func memoryDTO(memory entity.Memory) api.Memory {
 		AuthorAccountId: optionalUUIDDTO(memory.AuthorID),
 		AuthorName:      nilIfEmpty(memory.AuthorName),
 		AgentId:         memory.By.AgentID,
+		AgentName:       nilIfEmpty(memory.AgentName),
 		ConnectionId:    memory.By.ConnectionID,
 		Source:          api.DocRevisionSource(memory.By.Source),
 		EffectiveFrom:   openapi_types.Date{Time: memory.EffectiveFrom},
@@ -3642,8 +3646,8 @@ func memoryDTO(memory entity.Memory) api.Memory {
 			CanShare:  memory.Viewer.Reshares,
 			CanReview: memory.Viewer.Reviews,
 		},
-		CreatedAt:       memory.CreatedAt,
-		UpdatedAt:       memory.UpdatedAt,
+		CreatedAt: memory.CreatedAt,
+		UpdatedAt: memory.UpdatedAt,
 	}
 }
 
@@ -3712,6 +3716,7 @@ func memoryRevisionSummaryDTO(summary entity.MemoryRevisionSummary) api.MemoryRe
 		AccountId:    optionalUUIDDTO(summary.By.AccountID),
 		AccountName:  nilIfEmpty(summary.AccountName),
 		AgentId:      summary.By.AgentID,
+		AgentName:    nilIfEmpty(summary.AgentName),
 		ConnectionId: summary.By.ConnectionID,
 		Source:       api.DocRevisionSource(summary.By.Source),
 		CreatedAt:    summary.CreatedAt,
@@ -3732,6 +3737,7 @@ func memoryRevisionDTO(revision entity.MemoryRevision) api.MemoryRevision {
 		AccountId:      summary.AccountId,
 		AccountName:    summary.AccountName,
 		AgentId:        summary.AgentId,
+		AgentName:      summary.AgentName,
 		ConnectionId:   summary.ConnectionId,
 		Source:         summary.Source,
 		CreatedAt:      summary.CreatedAt,

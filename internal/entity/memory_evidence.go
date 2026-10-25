@@ -29,14 +29,17 @@ func (k MemoryEvidenceKind) Valid() bool {
 }
 
 type MemoryEvidence struct {
-	Kind          MemoryEvidenceKind
-	IssueID       *uuid.UUID
-	CommentID     *uuid.UUID
-	DocID         *uuid.UUID
-	DocRevisionID *uuid.UUID
-	Excerpt       string
-	DocAudience   KnowledgeAudience
-	DocAuthorID   uuid.UUID
+	Kind           MemoryEvidenceKind
+	IssueID        *uuid.UUID
+	CommentID      *uuid.UUID
+	DocID          *uuid.UUID
+	DocRevisionID  *uuid.UUID
+	Excerpt        string
+	DocAudience    KnowledgeAudience
+	DocAuthorID    uuid.UUID
+	IssueReference string
+	IssueTitle     string
+	DocTitle       string
 }
 
 func (e MemoryEvidence) Validate(field string) FieldError {

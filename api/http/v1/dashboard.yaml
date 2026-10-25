@@ -12672,6 +12672,12 @@ components:
         docId: { type: string, format: uuid }
         docRevisionId: { type: string, format: uuid }
         excerpt: { type: string, maxLength: 2000 }
+        issueReference:
+          type: string
+          readOnly: true
+          description: The cited issue's reference, such as NORN-42, on an issue or comment source.
+        issueTitle: { type: string, readOnly: true }
+        docTitle: { type: string, readOnly: true }
 
     MemoryApplicability:
       type: object
@@ -12745,6 +12751,7 @@ components:
         authorAccountId: { type: string, format: uuid }
         authorName: { type: string }
         agentId: { type: string, format: uuid }
+        agentName: { type: string }
         connectionId: { type: string, format: uuid }
         source: { $ref: '#/components/schemas/DocRevisionSource' }
         effectiveFrom: { type: string, format: date }
@@ -12943,6 +12950,7 @@ components:
         accountId: { type: string, format: uuid }
         accountName: { type: string }
         agentId: { type: string, format: uuid }
+        agentName: { type: string }
         connectionId: { type: string, format: uuid }
         source: { $ref: '#/components/schemas/DocRevisionSource' }
         createdAt: { type: string, format: date-time }
@@ -12979,6 +12987,7 @@ components:
         accountId: { type: string, format: uuid }
         accountName: { type: string }
         agentId: { type: string, format: uuid }
+        agentName: { type: string }
         connectionId: { type: string, format: uuid }
         source: { $ref: '#/components/schemas/DocRevisionSource' }
         createdAt: { type: string, format: date-time }

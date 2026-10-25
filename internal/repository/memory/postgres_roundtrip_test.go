@@ -192,7 +192,8 @@ func TestAMemoryReadsBackWithItsEvidenceAndRefusesAStaleWrite(t *testing.T) {
 		}
 
 		cited := created.Evidence[1]
-		if cited.DocAudience.Visibility != entity.KnowledgeVisibilityPersonal || cited.DocAuthorID != fixture.authorID {
+		if cited.DocAudience.Visibility != entity.KnowledgeVisibilityPersonal || cited.DocAuthorID != fixture.authorID ||
+			cited.DocTitle != "Storage notes" {
 			return fmt.Errorf("a cited doc revision lost its doc's audience: %+v", cited)
 		}
 
