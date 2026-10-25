@@ -209,6 +209,21 @@ export type MemoryDetail =
 			recent: MemoryRevisionSummary[];
 	  };
 
+export type MemoryDraft =
+	| { kind: "loading" }
+	| { kind: "unavailable" }
+	| { kind: "not_found" }
+	| { kind: "read_only"; memory: Memory }
+	| { kind: "closed"; memory: Memory }
+	| { kind: "ready"; memory: Memory };
+
+export function memoryDraftOf(memory: Memory, supersedes: boolean): MemoryDraft {
+	if (memoryClosed(memory) || (supersedes && memory.status === "proposed")) return { kind: "closed", memory };
+	if (!memory.viewer.canEdit) return { kind: "read_only", memory };
+
+	return { kind: "ready", memory };
+}
+
 export type MemoryChosen = { kind: "ready"; revision: MemoryRevision } | { kind: "unavailable" };
 
 export type MemoryHistory =

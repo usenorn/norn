@@ -2,11 +2,13 @@ import type { Client } from "openapi-fetch";
 import type { paths } from "#lib/api/dashboard.gen.js";
 import type { Project } from "#lib/projects/projects.js";
 import {
+	memoryDraftOf,
 	memoryListParams,
 	memoryPageSize,
 	memoryRevisionPageSize,
 	type MemoryChosen,
 	type MemoryDetail,
+	type MemoryDraft,
 	type MemoryHistory,
 	type MemoryList,
 	type MemoryQuery,
@@ -54,6 +56,22 @@ export async function readMemory(api: Client<paths>, workspaceId: string, memory
 		lineage: lineage.data.memories,
 		recent: history.data.revisions,
 	};
+}
+
+export async function readMemoryDraft(
+	api: Client<paths>,
+	workspaceId: string,
+	memoryId: string,
+	supersedes: boolean
+): Promise<MemoryDraft> {
+	const { data, error, response } = await api.GET("/workspaces/{workspaceId}/memories/{memoryId}", {
+		params: { path: { workspaceId, memoryId } },
+	});
+
+	if (response.status === 404 || response.status === 400) return { kind: "not_found" };
+	if (error || !data) return { kind: "unavailable" };
+
+	return memoryDraftOf(data, supersedes);
 }
 
 export async function readMemoryHistory(
