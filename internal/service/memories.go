@@ -26,6 +26,7 @@ type MemoryContent struct {
 type CreateMemoryInput struct {
 	MemoryContent
 	Audience entity.KnowledgeAudience
+	Redacted bool
 }
 
 type CorrectMemoryInput struct {
@@ -41,6 +42,7 @@ type SupersedeMemoryInput struct {
 type ReshareMemoryInput struct {
 	ExpectedVersion int
 	Audience        entity.KnowledgeAudience
+	Redacted        bool
 }
 
 type MemoryWrite struct {

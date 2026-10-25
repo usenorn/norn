@@ -2,6 +2,7 @@ package memory_test
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -135,5 +136,143 @@ func TestAnUnavailableSourceIsConcealedEvenFromItsAuthor(t *testing.T) {
 
 	if got.Status != memory.Status {
 		t.Fatalf("stale evidence moved the memory from %s to %s", memory.Status, got.Status)
+	}
+}
+
+func (h *harness) personalDoc() entity.MemoryEvidence {
+	docID, revisionID := uuid.New(), uuid.New()
+	h.docs[docID] = entity.Doc{DocSummary: entity.DocSummary{
+		ID: docID, WorkspaceID: h.workspaceID, AuthorID: h.accountID, Audience: entity.PersonalAudience(),
+	}}
+	h.docRevisions[revisionID] = docID
+
+	return entity.MemoryEvidence{Kind: entity.MemoryEvidenceDocRevision, DocID: &docID, DocRevisionID: &revisionID}
+}
+
+func TestOnlyAnExplicitRedactionSharesAMemoryWiderThanItsDoc(t *testing.T) {
+	h := newHarness(t)
+	input := content("Use SQLite")
+	input.Evidence = []entity.MemoryEvidence{h.personalDoc()}
+
+	_, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
+		MemoryContent: input,
+		Audience:      entity.WorkspaceAudience(),
+	})
+	if !errors.Is(err, entity.ErrKnowledgeNotShareable) {
+		t.Fatalf("an unredacted workspace memory from a personal doc got %v, want ErrKnowledgeNotShareable", err)
+	}
+
+	written, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
+		MemoryContent: input,
+		Audience:      entity.WorkspaceAudience(),
+		Redacted:      true,
+	})
+	if err != nil {
+		t.Fatalf("a redacted workspace memory from a personal doc: %v", err)
+	}
+
+	if !written.Memory.Redacted || !h.revisionsOf(written.Memory.ID)[0].Redacted {
+		t.Fatalf("the redaction was not recorded on %+v", written.Memory)
+	}
+
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: uuid.New()}, entity.MembershipRoleMember)
+
+	got, err := h.service.Get(context.Background(), h.workspaceID, written.Memory.ID)
+	if err != nil {
+		t.Fatalf("a member reads the redacted memory: %v", err)
+	}
+
+	concealed := entity.MemoryEvidence{Kind: entity.MemoryEvidenceDocRevision, State: entity.MemoryEvidenceUnavailable}
+	if len(got.Evidence) != 1 || !reflect.DeepEqual(got.Evidence[0], concealed) {
+		t.Fatalf("a member sees the personal doc behind a redacted memory as %+v", got.Evidence)
+	}
+}
+
+func TestARedactionThatNoLongerWidensIsCleared(t *testing.T) {
+	h := newHarness(t)
+	input := content("Use SQLite")
+	input.Evidence = []entity.MemoryEvidence{h.personalDoc()}
+
+	written, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
+		MemoryContent: input,
+		Audience:      entity.WorkspaceAudience(),
+		Redacted:      true,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	reshared, err := h.service.Reshare(context.Background(), h.workspaceID, written.Memory.ID, service.ReshareMemoryInput{
+		ExpectedVersion: written.Memory.Version,
+		Audience:        entity.PersonalAudience(),
+		Redacted:        true,
+	})
+	if err != nil {
+		t.Fatalf("narrow to personal: %v", err)
+	}
+
+	if reshared.Redacted || reshared.Audience != entity.PersonalAudience() {
+		t.Fatalf("a personal memory citing a personal doc stayed redacted: %+v", reshared)
+	}
+
+	_, err = h.service.Reshare(context.Background(), h.workspaceID, written.Memory.ID, service.ReshareMemoryInput{
+		ExpectedVersion: reshared.Version,
+		Audience:        entity.WorkspaceAudience(),
+	})
+	if !errors.Is(err, entity.ErrKnowledgeNotShareable) {
+		t.Fatalf("widening again without redaction got %v, want ErrKnowledgeNotShareable", err)
+	}
+}
+
+func TestAnAgentCannotRedactAMemoryWiderThanItsSources(t *testing.T) {
+	h := newHarness(t)
+	h.actAsAgent(entity.AgentScopeMember)
+
+	input := content("Use SQLite")
+	input.Evidence = []entity.MemoryEvidence{h.personalDoc()}
+
+	_, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
+		MemoryContent: input,
+		Audience:      entity.WorkspaceAudience(),
+		Redacted:      true,
+	})
+	if !errors.Is(err, entity.ErrMemoryRedactionForbidden) {
+		t.Fatalf("an agent's redaction got %v, want ErrMemoryRedactionForbidden", err)
+	}
+}
+
+func TestAnAgentCannotAddANarrowerSourceToARedactedMemory(t *testing.T) {
+	h := newHarness(t)
+	first := h.personalDoc()
+	input := content("Use SQLite")
+	input.Evidence = []entity.MemoryEvidence{first}
+
+	written, err := h.service.Create(context.Background(), h.workspaceID, service.CreateMemoryInput{
+		MemoryContent: input,
+		Audience:      entity.WorkspaceAudience(),
+		Redacted:      true,
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	h.actAsAgent(entity.AgentScopeMember)
+
+	h.correct(t, written.Memory, "Use SQLite for prototypes", first)
+
+	corrected, err := h.service.Get(context.Background(), h.workspaceID, written.Memory.ID)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+
+	input = content("Use SQLite everywhere")
+	input.Evidence = []entity.MemoryEvidence{first, h.personalDoc()}
+
+	_, err = h.service.Correct(context.Background(), h.workspaceID, written.Memory.ID, service.CorrectMemoryInput{
+		MemoryContent:   input,
+		ExpectedVersion: corrected.Version,
+	})
+	if !errors.Is(err, entity.ErrMemoryRedactionForbidden) {
+		t.Fatalf("an agent citing a new personal doc got %v, want ErrMemoryRedactionForbidden", err)
 	}
 }

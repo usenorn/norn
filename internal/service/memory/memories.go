@@ -330,11 +330,16 @@ func (s *memoriesService) draft(
 		return entity.KnowledgeDecision{}, entity.Memory{}, err
 	}
 
+	if input.Redacted && decision.Reader.Identity.Agent {
+		return entity.KnowledgeDecision{}, entity.Memory{}, entity.ErrMemoryRedactionForbidden
+	}
+
 	now := time.Now().UTC()
 	memory := entity.Memory{
 		ID:          uuid.New(),
 		WorkspaceID: workspaceID,
 		Audience:    input.Audience,
+		Redacted:    input.Redacted,
 		Status:      entity.MemoryStatusAccepted,
 		AuthorID:    decision.Reader.Identity.Principal,
 		By:          entity.KnowledgeAttributionOf(decision),
@@ -415,7 +420,13 @@ func (s *memoriesService) write(
 		}
 	}
 
-	return s.cite(ctx, decision.Reader, memory, memory.Evidence[:submitted], prior)
+	if err := s.cite(ctx, decision.Reader, memory, memory.Evidence[:submitted], prior); err != nil {
+		return err
+	}
+
+	memory.Redacted = memory.Redacted && slices.ContainsFunc(memory.Evidence, memory.Widens)
+
+	return nil
 }
 
 func (s *memoriesService) withheld(
@@ -469,8 +480,8 @@ func (s *memoriesService) cite(
 				return err
 			}
 
-			if !memory.Audience.Within(evidence.DocAudience) {
-				return entity.ErrKnowledgeNotShareable
+			if err := redacts(reader, *memory, *evidence, prior); err != nil {
+				return err
 			}
 		}
 
@@ -482,6 +493,24 @@ func (s *memoriesService) cite(
 	}
 
 	return nil
+}
+
+func redacts(
+	reader entity.KnowledgeReader,
+	memory entity.Memory,
+	evidence entity.MemoryEvidence,
+	prior []entity.MemoryEvidence,
+) error {
+	switch {
+	case !memory.Widens(evidence):
+		return nil
+	case !memory.Redacted:
+		return entity.ErrKnowledgeNotShareable
+	case reader.Identity.Agent && !slices.ContainsFunc(prior, evidence.Cites):
+		return entity.ErrMemoryRedactionForbidden
+	default:
+		return nil
+	}
 }
 
 func (s *memoriesService) issueScope(ctx context.Context, workspaceID uuid.UUID) (entity.TeamScope, error) {
@@ -1039,7 +1068,20 @@ func (s *memoriesService) Reshare(
 
 	return s.revise(ctx, workspaceID, memoryID, input.ExpectedVersion, entity.MemoryRevisionReshared, reshare,
 		func(ctx context.Context, memory *entity.Memory, decision entity.KnowledgeDecision) (bool, error) {
-			if memory.Audience == input.Audience {
+			if input.Redacted && decision.Reader.Identity.Agent {
+				return false, entity.ErrMemoryRedactionForbidden
+			}
+
+			reshared := *memory
+			reshared.Audience = input.Audience
+			widens := slices.ContainsFunc(reshared.Evidence, reshared.Widens)
+			reshared.Redacted = input.Redacted && widens
+
+			if widens && !input.Redacted {
+				return false, entity.ErrKnowledgeNotShareable
+			}
+
+			if reshared.Audience == memory.Audience && reshared.Redacted == memory.Redacted {
 				return false, nil
 			}
 
@@ -1047,13 +1089,7 @@ func (s *memoriesService) Reshare(
 				return false, err
 			}
 
-			for _, evidence := range memory.Evidence {
-				if evidence.Kind == entity.MemoryEvidenceDocRevision && !input.Audience.Within(evidence.DocAudience) {
-					return false, entity.ErrKnowledgeNotShareable
-				}
-			}
-
-			memory.Audience = input.Audience
+			*memory = reshared
 
 			if memory.Status != entity.MemoryStatusAccepted || memory.SettledBy(decision.Reader) {
 				return true, nil

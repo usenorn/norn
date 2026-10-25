@@ -74,6 +74,7 @@ type MemoryRevision struct {
 	Rationale      string
 	Conditions     string
 	Audience       KnowledgeAudience
+	Redacted       bool
 	Applicability  KnowledgeApplicability
 	Basis          MemoryBasis
 	Evidence       []MemoryEvidence
@@ -98,6 +99,7 @@ func (m Memory) Revision(action MemoryRevisionAction, by KnowledgeAttribution) M
 		Rationale:      m.Rationale,
 		Conditions:     m.Conditions,
 		Audience:       m.Audience,
+		Redacted:       m.Redacted,
 		Applicability:  m.Applicability,
 		Basis:          m.Basis,
 		Evidence:       m.Evidence,

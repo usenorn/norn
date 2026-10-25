@@ -53,6 +53,7 @@ SELECT` + summaryColumns + `,
        r.conditions,
        r.visibility,
        coalesce(r.project_id::text, ''),
+       r.redacted,
        coalesce(r.applies_project_id::text, ''),
        r.component,
        r.basis,
@@ -139,6 +140,7 @@ func revisionToModel(revision entity.MemoryRevision) (*dbpostgres.WorkspaceMemor
 		Conditions:       revision.Conditions,
 		Visibility:       string(revision.Audience.Visibility),
 		ProjectID:        projectID,
+		Redacted:         revision.Redacted,
 		AppliesProjectID: optionalUUID(revision.Applicability.ProjectID),
 		Component:        revision.Applicability.Component,
 		Status:           string(revision.Status),
@@ -327,7 +329,7 @@ func (r *revisionRepository) GetByID(
 
 	if err := row.Scan(append(
 		raw.targets(&revision.MemoryRevisionSummary),
-		&kind, &revision.Rationale, &revision.Conditions, &visibility, &project, &appliesProject,
+		&kind, &revision.Rationale, &revision.Conditions, &visibility, &project, &revision.Redacted, &appliesProject,
 		&revision.Applicability.Component, &basis, &revision.EffectiveFrom, &effectiveUntil,
 	)...); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

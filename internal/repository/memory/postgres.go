@@ -26,6 +26,7 @@ const memoryColumns = `
        m.conditions,
        m.visibility,
        coalesce(m.project_id::text, ''),
+       m.redacted,
        coalesce(m.applies_project_id::text, ''),
        m.component,
        m.status,
@@ -167,6 +168,7 @@ func memoryToModel(memory entity.Memory) *dbpostgres.WorkspaceMemory {
 		Conditions:       memory.Conditions,
 		Visibility:       string(memory.Audience.Visibility),
 		ProjectID:        audienceProject(memory.Audience),
+		Redacted:         memory.Redacted,
 		AppliesProjectID: optionalUUID(memory.Applicability.ProjectID),
 		Component:        memory.Applicability.Component,
 		Status:           string(memory.Status),
@@ -237,7 +239,7 @@ func scanMemory(row scanner) (entity.Memory, error) {
 
 	if err := row.Scan(
 		&raw.id, &raw.workspace, &raw.kind, &memory.Statement, &memory.Rationale, &memory.Conditions,
-		&raw.visibility, &raw.project, &raw.appliesProject, &memory.Applicability.Component, &raw.status,
+		&raw.visibility, &raw.project, &memory.Redacted, &raw.appliesProject, &memory.Applicability.Component, &raw.status,
 		&raw.basis, &raw.author, &memory.AuthorName, &raw.agent, &raw.connection, &raw.token, &raw.source,
 		&memory.EffectiveFrom, &raw.effectiveUntil, &raw.supersedes, &raw.supersededBy, &memory.Version,
 		&memory.CreatedAt, &memory.UpdatedAt, &raw.contributors, &memory.AgentName,
@@ -496,6 +498,7 @@ func (r *memoryRepository) Update(ctx context.Context, memory entity.Memory, exp
 		dbpostgres.WorkspaceMemoryColumns.Conditions:       model.Conditions,
 		dbpostgres.WorkspaceMemoryColumns.Visibility:       model.Visibility,
 		dbpostgres.WorkspaceMemoryColumns.ProjectID:        model.ProjectID,
+		dbpostgres.WorkspaceMemoryColumns.Redacted:         model.Redacted,
 		dbpostgres.WorkspaceMemoryColumns.AppliesProjectID: model.AppliesProjectID,
 		dbpostgres.WorkspaceMemoryColumns.Component:        model.Component,
 		dbpostgres.WorkspaceMemoryColumns.Status:           model.Status,
