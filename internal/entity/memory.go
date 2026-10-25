@@ -147,14 +147,6 @@ func (s MemoryStatus) CanBecome(to MemoryStatus) bool {
 	}
 }
 
-func InitialMemoryStatus(audience KnowledgeAudience, kind ActorKind) MemoryStatus {
-	if audience.Visibility != KnowledgeVisibilityPersonal && kind == ActorKindAgent {
-		return MemoryStatusProposed
-	}
-
-	return MemoryStatusAccepted
-}
-
 type MemoryViewer struct {
 	Edits    bool
 	Reshares bool

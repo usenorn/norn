@@ -376,14 +376,14 @@ func TestAPersonalMemoryIsAcceptedOnCreation(t *testing.T) {
 	}
 }
 
-func TestWhoWritesASharedMemoryDecidesWhetherItIsAProposal(t *testing.T) {
+func TestAnAgentsSharedMemoryIsAcceptedAsItsOwnInference(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		agent bool
 		want  entity.MemoryStatus
 		basis entity.MemoryBasis
 	}{
 		"a person":                 {agent: false, want: entity.MemoryStatusAccepted, basis: entity.MemoryBasisObservation},
-		"an agent acting for them": {agent: true, want: entity.MemoryStatusProposed, basis: entity.MemoryBasisInference},
+		"an agent acting for them": {agent: true, want: entity.MemoryStatusAccepted, basis: entity.MemoryBasisInference},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)
@@ -672,7 +672,7 @@ func TestAnAcceptedReplacementSupersedesWithoutDeleting(t *testing.T) {
 	}
 }
 
-func TestAProposedReplacementLeavesTheAcceptedMemoryStanding(t *testing.T) {
+func TestAnAgentsReplacementRetiresTheMemoryItSupersedes(t *testing.T) {
 	h := newHarness(t)
 	replaced := h.create(t, "Use SQLite", entity.WorkspaceAudience())
 	h.actAsAgent(entity.AgentScopeMember)
@@ -682,23 +682,23 @@ func TestAProposedReplacementLeavesTheAcceptedMemoryStanding(t *testing.T) {
 		ExpectedVersion: 1,
 	})
 	if err != nil {
-		t.Fatalf("propose a replacement: %v", err)
+		t.Fatalf("supersede as an agent: %v", err)
 	}
 
-	if replacement.Status != entity.MemoryStatusProposed || replacement.SupersedesID == nil || *replacement.SupersedesID != replaced.ID {
-		t.Fatalf("the replacement read back as %s superseding %v", replacement.Status, replacement.SupersedesID)
+	if replacement.Status != entity.MemoryStatusAccepted || replacement.Basis != entity.MemoryBasisInference {
+		t.Fatalf("the replacement read back as %s on %s", replacement.Status, replacement.Basis)
 	}
 
-	if old := h.stored[replaced.ID]; old.Status != entity.MemoryStatusAccepted || old.Version != 1 {
-		t.Fatalf("a proposal moved the accepted memory to %s at version %d", old.Status, old.Version)
+	if old := h.stored[replaced.ID]; old.Status != entity.MemoryStatusSuperseded || old.SupersededByID == nil || *old.SupersededByID != replacement.ID {
+		t.Fatalf("the replaced memory is %s, replaced by %v", old.Status, old.SupersededByID)
 	}
 }
 
 func TestAProposalCannotBeSuperseded(t *testing.T) {
 	h := newHarness(t)
-	h.actAsAgent(entity.AgentScopeMember)
 	proposal := h.create(t, "Cache everything", entity.WorkspaceAudience())
-	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID}, entity.MembershipRoleMember)
+	proposal.Status = entity.MemoryStatusProposed
+	h.stored[proposal.ID] = proposal
 
 	_, err := h.service.Supersede(context.Background(), h.workspaceID, proposal.ID, service.SupersedeMemoryInput{
 		Replacement:     service.CreateMemoryInput{MemoryContent: content("Cache reads"), Audience: entity.WorkspaceAudience()},

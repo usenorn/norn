@@ -110,21 +110,13 @@ func (s *memoriesService) Supersede(
 		return entity.Memory{}, err
 	}
 
-	retires := replacement.Status == entity.MemoryStatusAccepted
-
 	err = s.transactor.WithTx(ctx, func(ctx context.Context) error {
 		replaced, err := s.memories.LockByID(ctx, workspaceID, memoryID)
 		if err != nil {
 			return err
 		}
 
-		if retires {
-			_, err = s.knowledge.Change(ctx, replaced.Access())
-		} else {
-			_, err = s.knowledge.Read(ctx, replaced.Access())
-		}
-
-		if err != nil {
+		if _, err := s.knowledge.Change(ctx, replaced.Access()); err != nil {
 			return concealed(err)
 		}
 
@@ -140,10 +132,6 @@ func (s *memoriesService) Supersede(
 
 		if replacement, err = s.insert(ctx, replacement, decision); err != nil {
 			return err
-		}
-
-		if !retires {
-			return nil
 		}
 
 		if err := replaced.SupersededBy(replacement.ID); err != nil {
@@ -180,12 +168,11 @@ func (s *memoriesService) draft(
 	}
 
 	now := time.Now().UTC()
-	actor := decision.Decision.Actor
 	memory := entity.Memory{
 		ID:          uuid.New(),
 		WorkspaceID: workspaceID,
 		Audience:    input.Audience,
-		Status:      entity.InitialMemoryStatus(input.Audience, actor.Kind),
+		Status:      entity.MemoryStatusAccepted,
 		AuthorID:    decision.Reader.Identity.Principal,
 		By:          entity.KnowledgeAttributionOf(decision),
 		Version:     1,
