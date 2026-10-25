@@ -348,3 +348,71 @@ func TestOnlyAReviewerMayRejectAndOnlyWithAReason(t *testing.T) {
 		})
 	}
 }
+
+func TestConfirmingEvidenceAnswersWithEachSourcesState(t *testing.T) {
+	memories, routes := memoryEdge(t)
+	workspaceID, memoryID, issueID := uuid.New(), uuid.New(), uuid.New()
+	pinned := 6
+
+	memories.EXPECT().ConfirmEvidence(gomock.Any(), workspaceID, memoryID, 3).
+		Return(entity.Memory{
+			ID:          memoryID,
+			WorkspaceID: workspaceID,
+			Kind:        entity.MemoryKindDecision,
+			Statement:   "Ship weekly",
+			Audience:    entity.WorkspaceAudience(),
+			Status:      entity.MemoryStatusAccepted,
+			Evidence: []entity.MemoryEvidence{
+				{Kind: entity.MemoryEvidenceIssue, IssueID: &issueID, IssueVersion: &pinned, State: entity.MemoryEvidenceCurrent},
+				{Kind: entity.MemoryEvidenceDocRevision, State: entity.MemoryEvidenceUnavailable},
+			},
+			Version: 4,
+		}, nil)
+
+	status, body := sendDoc(t, routes, http.MethodPost,
+		"/workspaces/"+workspaceID.String()+"/memories/"+memoryID.String()+"/confirm-evidence",
+		`{"expectedVersion":3}`,
+	)
+
+	if status != http.StatusOK {
+		t.Fatalf("confirm = %d %v", status, body)
+	}
+
+	evidence, _ := body["evidence"].([]any)
+	if len(evidence) != 2 {
+		t.Fatalf("confirm answered evidence %v", body["evidence"])
+	}
+
+	current, _ := evidence[0].(map[string]any)
+	unavailable, _ := evidence[1].(map[string]any)
+
+	if current["state"] != "current" || current["issueVersion"] != float64(6) {
+		t.Fatalf("a confirmed source reads %v", current)
+	}
+
+	if len(unavailable) != 2 || unavailable["state"] != "unavailable" || unavailable["kind"] != "doc_revision" {
+		t.Fatalf("an unavailable source reads %v, want only its kind and state", unavailable)
+	}
+}
+
+func TestARedactedShareReachesTheServiceAndAnAgentsIsForbidden(t *testing.T) {
+	memories, routes := memoryEdge(t)
+	workspaceID, memoryID := uuid.New(), uuid.New()
+
+	memories.EXPECT().
+		Reshare(gomock.Any(), workspaceID, memoryID, service.ReshareMemoryInput{
+			ExpectedVersion: 2,
+			Audience:        entity.WorkspaceAudience(),
+			Redacted:        true,
+		}).
+		Return(entity.Memory{}, entity.ErrMemoryRedactionForbidden)
+
+	status, problem := sendDoc(t, routes, http.MethodPost,
+		"/workspaces/"+workspaceID.String()+"/memories/"+memoryID.String()+"/share",
+		`{"expectedVersion":2,"audience":{"visibility":"workspace"},"redacted":true}`,
+	)
+
+	if status != http.StatusForbidden || problem["reason"] != "memory_redaction_forbidden" {
+		t.Fatalf("share = %d %v, want 403 memory_redaction_forbidden", status, problem)
+	}
+}

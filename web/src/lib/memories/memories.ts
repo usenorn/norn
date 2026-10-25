@@ -343,6 +343,7 @@ export const memoryRevisionActionLabels: Record<MemoryRevisionAction, string> = 
 	withdrawn: "Withdrew it",
 	rejected: "Rejected it",
 	reconciled: "Settled how it relates",
+	confirmed: "Confirmed its sources",
 };
 
 export type EvidenceLink = { label: string; detail?: string; href?: string; quote?: string };
@@ -428,7 +429,7 @@ export function memoryContentOf(fields: MemoryContentFields, evidence: MemoryEvi
 			...(fields.component ? { component: fields.component } : {}),
 		},
 		basis: fields.basis,
-		evidence: evidence.map((cited) => ({
+		evidence: evidence.filter((cited) => cited.state !== "unavailable").map((cited) => ({
 			kind: cited.kind,
 			issueId: cited.issueId,
 			commentId: cited.commentId,

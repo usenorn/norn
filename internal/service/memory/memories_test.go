@@ -61,6 +61,7 @@ type harness struct {
 	comments      map[uuid.UUID]entity.IssueComment
 	docs          map[uuid.UUID]entity.Doc
 	docRevisions  map[uuid.UUID]uuid.UUID
+	latest        map[uuid.UUID]uuid.UUID
 	scheduled     []uuid.UUID
 	searched      []repository.KnowledgeQuery
 	embedding     entity.KnowledgeSemantic
@@ -90,6 +91,7 @@ func newHarness(t *testing.T) *harness {
 		sourceStates:  map[uuid.UUID]entity.MemoryEvidenceState{},
 		docs:          map[uuid.UUID]entity.Doc{},
 		docRevisions:  map[uuid.UUID]uuid.UUID{},
+		latest:        map[uuid.UUID]uuid.UUID{},
 		embedding:     entity.KnowledgeSemanticUnconfigured,
 	}
 
@@ -196,6 +198,17 @@ func newHarness(t *testing.T) *harness {
 			}
 
 			return entity.DocRevision{}, nil
+		}).
+		AnyTimes()
+
+	docRevisions.EXPECT().List(gomock.Any(), h.workspaceID, gomock.Any(), entity.DocRevisionPage{Limit: 1}).
+		DoAndReturn(func(_ context.Context, _, docID uuid.UUID, _ entity.DocRevisionPage) ([]entity.DocRevisionSummary, error) {
+			revisionID, ok := h.latest[docID]
+			if !ok {
+				return nil, nil
+			}
+
+			return []entity.DocRevisionSummary{{ID: revisionID, DocID: docID}}, nil
 		}).
 		AnyTimes()
 

@@ -58,6 +58,21 @@ func (mr *MockMemoriesMockRecorder) Accept(ctx, workspaceID, memoryID, input any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accept", reflect.TypeOf((*MockMemories)(nil).Accept), ctx, workspaceID, memoryID, input)
 }
 
+// ConfirmEvidence mocks base method.
+func (m *MockMemories) ConfirmEvidence(ctx context.Context, workspaceID, memoryID uuid.UUID, expectedVersion int) (entity.Memory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfirmEvidence", ctx, workspaceID, memoryID, expectedVersion)
+	ret0, _ := ret[0].(entity.Memory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConfirmEvidence indicates an expected call of ConfirmEvidence.
+func (mr *MockMemoriesMockRecorder) ConfirmEvidence(ctx, workspaceID, memoryID, expectedVersion any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmEvidence", reflect.TypeOf((*MockMemories)(nil).ConfirmEvidence), ctx, workspaceID, memoryID, expectedVersion)
+}
+
 // Correct mocks base method.
 func (m *MockMemories) Correct(ctx context.Context, workspaceID, memoryID uuid.UUID, input service.CorrectMemoryInput) (entity.Memory, error) {
 	m.ctrl.T.Helper()

@@ -5845,6 +5845,34 @@ paths:
         '409': { $ref: '#/components/responses/MemoryConflict' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/memories/{memoryId}/confirm-evidence:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    post:
+      tags: [memories]
+      operationId: confirmWorkspaceMemoryEvidence
+      summary: Confirm that changed sources still support a memory
+      description: >-
+        Pins every changed source the caller can read to its current revision. Unavailable sources
+        are left for a correction, and the memory's status does not change.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmMemoryEvidenceRequest' }
+      responses:
+        '200':
+          description: The memory with its evidence confirmed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/memories/{memoryId}/accept:
     parameters:
       - $ref: '#/components/parameters/WorkspaceId'
@@ -12658,12 +12686,20 @@ components:
       type: string
       enum: [issue, comment, doc_revision, excerpt]
 
+    MemoryEvidenceState:
+      type: string
+      description: >-
+        changed means the cited source was edited or archived after the memory was derived from it.
+        unavailable means the source is gone or the caller may not read it.
+      enum: [current, changed, unavailable]
+
     MemoryEvidence:
       type: object
       description: >-
         One source the memory cites. An issue names issueId, a comment names commentId and is
         answered with its issue, a doc revision names docId and docRevisionId, and an excerpt
-        carries the pasted text. A source the caller may not read is left out of the response.
+        carries the pasted text. A source that is gone or that the caller may not read is
+        answered with only its kind and an unavailable state.
       required: [kind]
       properties:
         kind: { $ref: '#/components/schemas/MemoryEvidenceKind' }
@@ -12672,6 +12708,20 @@ components:
         docId: { type: string, format: uuid }
         docRevisionId: { type: string, format: uuid }
         excerpt: { type: string, maxLength: 2000 }
+        state:
+          allOf:
+            - $ref: '#/components/schemas/MemoryEvidenceState'
+          readOnly: true
+        issueVersion:
+          type: integer
+          format: int32
+          readOnly: true
+          description: The issue version the memory was derived from, on an issue source.
+        commentVersion:
+          type: integer
+          format: int32
+          readOnly: true
+          description: The comment version the memory was derived from, on a comment source.
         issueReference:
           type: string
           readOnly: true
@@ -12724,6 +12774,7 @@ components:
         - rationale
         - conditions
         - audience
+        - redacted
         - appliesTo
         - status
         - basis
@@ -12742,6 +12793,9 @@ components:
         rationale: { type: string }
         conditions: { type: string }
         audience: { $ref: '#/components/schemas/DocAudience' }
+        redacted:
+          type: boolean
+          description: Whether a person chose to share the memory wider than a doc it cites.
         appliesTo: { $ref: '#/components/schemas/MemoryApplicability' }
         status: { $ref: '#/components/schemas/MemoryStatus' }
         basis: { $ref: '#/components/schemas/MemoryBasis' }
@@ -12796,6 +12850,11 @@ components:
           required: [audience]
           properties:
             audience: { $ref: '#/components/schemas/DocAudience' }
+            redacted:
+              type: boolean
+              description: >-
+                Share the statement with an audience wider than a doc it cites. Only a person may
+                choose it; readers outside the doc's audience see that source as unavailable.
 
     CorrectMemoryRequest:
       allOf:
@@ -12923,13 +12982,25 @@ components:
       properties:
         expectedVersion: { type: integer, format: int32, minimum: 1 }
         audience: { $ref: '#/components/schemas/DocAudience' }
+        redacted:
+          type: boolean
+          description: >-
+            Share the statement with an audience wider than a doc it cites. Only a person may
+            choose it; readers outside the doc's audience see that source as unavailable.
+
+    ConfirmMemoryEvidenceRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
 
     MemoryRevisionAction:
       type: string
       description: >-
         reconciled records an author settling how a proposal relates to other memories while it
-        still waits for review.
-      enum: [created, corrected, reshared, accepted, disputed, superseded, withdrawn, rejected, reconciled]
+        still waits for review. confirmed records an editor confirming that changed sources still
+        support the memory.
+      enum: [created, corrected, reshared, accepted, disputed, superseded, withdrawn, rejected, reconciled, confirmed]
 
     MemoryRevisionSummary:
       type: object
@@ -12995,6 +13066,7 @@ components:
         rationale: { type: string }
         conditions: { type: string }
         audience: { $ref: '#/components/schemas/DocAudience' }
+        redacted: { type: boolean }
         appliesTo: { $ref: '#/components/schemas/MemoryApplicability' }
         basis: { $ref: '#/components/schemas/MemoryBasis' }
         evidence:
@@ -16142,6 +16214,7 @@ components:
                 - knowledge_not_editable
                 - knowledge_not_shareable
                 - memory_review_forbidden
+                - memory_redaction_forbidden
 
     SignUpClosedProblem:
       allOf:

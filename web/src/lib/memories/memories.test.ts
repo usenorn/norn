@@ -27,6 +27,7 @@ function memory(id: string, status: Memory["status"], appliesTo: Memory["applies
 		rationale: "",
 		conditions: "",
 		audience: { visibility: "workspace" },
+		redacted: false,
 		appliesTo,
 		status,
 		basis: "observation",
@@ -104,9 +105,12 @@ describe("where a memory came from", () => {
 });
 
 describe("a correction", () => {
-	it("round-trips the content and keeps the evidence without its display fields", () => {
+	it("round-trips the content and keeps the evidence it can still cite, without its display fields", () => {
 		const cited = memory("m1", "accepted", { projectId: "p1", component: "ledger" });
-		cited.evidence = [{ kind: "issue", issueId: "i1", issueReference: "NORN-7", issueTitle: "Fix rounding" }];
+		cited.evidence = [
+			{ kind: "issue", issueId: "i1", issueReference: "NORN-7", issueTitle: "Fix rounding", state: "changed", issueVersion: 3 },
+			{ kind: "doc_revision", state: "unavailable" },
+		];
 
 		const content = memoryContentOf(memoryContentFields(cited), cited.evidence);
 

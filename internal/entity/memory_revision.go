@@ -33,6 +33,7 @@ const (
 	MemoryRevisionWithdrawn  MemoryRevisionAction = "withdrawn"
 	MemoryRevisionRejected   MemoryRevisionAction = "rejected"
 	MemoryRevisionReconciled MemoryRevisionAction = "reconciled"
+	MemoryRevisionConfirmed  MemoryRevisionAction = "confirmed"
 )
 
 func MemoryRevisionActions() []MemoryRevisionAction {
@@ -46,6 +47,7 @@ func MemoryRevisionActions() []MemoryRevisionAction {
 		MemoryRevisionWithdrawn,
 		MemoryRevisionRejected,
 		MemoryRevisionReconciled,
+		MemoryRevisionConfirmed,
 	}
 }
 

@@ -276,3 +276,56 @@ func TestAnAgentCannotAddANarrowerSourceToARedactedMemory(t *testing.T) {
 		t.Fatalf("an agent citing a new personal doc got %v, want ErrMemoryRedactionForbidden", err)
 	}
 }
+
+func TestConfirmingRepinsChangedSourcesWithoutChangingTheStatus(t *testing.T) {
+	h := newHarness(t)
+	issueID, untouched := uuid.New(), uuid.New()
+	h.visibleIssues = []uuid.UUID{issueID, untouched}
+	doc := h.personalDoc()
+	h.docs[*doc.DocID] = entity.Doc{DocSummary: entity.DocSummary{
+		ID: *doc.DocID, WorkspaceID: h.workspaceID, AuthorID: h.accountID, Audience: entity.WorkspaceAudience(),
+	}}
+
+	memory := h.cite(t, "Deploys go out on Tuesdays",
+		entity.MemoryEvidence{Kind: entity.MemoryEvidenceIssue, IssueID: &issueID},
+		doc,
+		entity.MemoryEvidence{Kind: entity.MemoryEvidenceIssue, IssueID: &untouched},
+	)
+
+	edited := uuid.New()
+	h.issueVersions[issueID], h.issueVersions[untouched] = 6, 9
+	h.latest[*doc.DocID] = edited
+	h.sourceStates[issueID] = entity.MemoryEvidenceChanged
+	h.sourceStates[*doc.DocRevisionID] = entity.MemoryEvidenceChanged
+
+	confirmed, err := h.service.ConfirmEvidence(context.Background(), h.workspaceID, memory.ID, memory.Version)
+	if err != nil {
+		t.Fatalf("confirm: %v", err)
+	}
+
+	stored := h.stored[memory.ID].Evidence
+	if pinned(stored[0].IssueVersion) != 6 || *stored[1].DocRevisionID != edited || pinned(stored[2].IssueVersion) != 1 {
+		t.Fatalf("confirmation pinned %+v", stored)
+	}
+
+	revisions := h.revisionsOf(memory.ID)
+	if last := revisions[len(revisions)-1]; last.Action != entity.MemoryRevisionConfirmed || confirmed.Status != memory.Status {
+		t.Fatalf("confirmation recorded %s and left the memory %s, want confirmed and %s", last.Action, confirmed.Status, memory.Status)
+	}
+}
+
+func TestConfirmingCurrentEvidenceRecordsNothing(t *testing.T) {
+	h := newHarness(t)
+	issueID := uuid.New()
+	h.visibleIssues = []uuid.UUID{issueID}
+
+	memory := h.cite(t, "Deploys go out on Tuesdays", entity.MemoryEvidence{Kind: entity.MemoryEvidenceIssue, IssueID: &issueID})
+
+	if _, err := h.service.ConfirmEvidence(context.Background(), h.workspaceID, memory.ID, memory.Version); err != nil {
+		t.Fatalf("confirm: %v", err)
+	}
+
+	if revisions := h.revisionsOf(memory.ID); len(revisions) != 1 {
+		t.Fatalf("confirming current evidence recorded %d revisions", len(revisions))
+	}
+}
