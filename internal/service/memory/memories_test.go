@@ -19,8 +19,10 @@ import (
 	issuerepo "github.com/usenorn/norn/internal/repository/issue"
 	issuecommentrepo "github.com/usenorn/norn/internal/repository/issuecomment"
 	knowledgerepo "github.com/usenorn/norn/internal/repository/knowledge"
+	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	memoryrepo "github.com/usenorn/norn/internal/repository/memory"
 	memoryrevisionrepo "github.com/usenorn/norn/internal/repository/memoryrevision"
+	notificationeventrepo "github.com/usenorn/norn/internal/repository/notificationevent"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	"github.com/usenorn/norn/internal/service"
@@ -38,11 +40,15 @@ type harness struct {
 	search     *knowledgerepo.MockKnowledge
 	vectors    *knowledgeembeddingsvc.MockKnowledgeEmbeddings
 	transactor *transactorrepo.MockTransactor
+	notify     *notificationeventrepo.MockNotificationEvent
 	service    service.Memories
 
 	workspaceID   uuid.UUID
 	projectID     uuid.UUID
 	accountID     uuid.UUID
+	leadID        uuid.UUID
+	admins        []uuid.UUID
+	notified      []entity.NotificationEvent
 	actor         entity.Actor
 	reader        entity.KnowledgeReader
 	stored        map[uuid.UUID]entity.Memory
@@ -70,9 +76,11 @@ func newHarness(t *testing.T) *harness {
 		search:       knowledgerepo.NewMockKnowledge(ctrl),
 		vectors:      knowledgeembeddingsvc.NewMockKnowledgeEmbeddings(ctrl),
 		transactor:   transactorrepo.NewMockTransactor(ctrl),
+		notify:       notificationeventrepo.NewMockNotificationEvent(ctrl),
 		workspaceID:  uuid.New(),
 		projectID:    uuid.New(),
 		accountID:    uuid.New(),
+		leadID:       uuid.New(),
 		stored:       map[uuid.UUID]entity.Memory{},
 		comments:     map[uuid.UUID]entity.IssueComment{},
 		docs:         map[uuid.UUID]entity.Doc{},
@@ -87,14 +95,28 @@ func newHarness(t *testing.T) *harness {
 	docRevisions := docrevisionrepo.NewMockDocRevision(ctrl)
 	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
 	indexes := knowledgeindexsvc.NewMockKnowledgeIndexes(ctrl)
+	memberships := membershiprepo.NewMockMembership(ctrl)
+
+	h.admins = []uuid.UUID{h.accountID}
+
+	memberships.EXPECT().ListActiveAdminAccountIDs(gomock.Any(), h.workspaceID).
+		DoAndReturn(func(context.Context, uuid.UUID) ([]uuid.UUID, error) { return slices.Clone(h.admins), nil }).
+		AnyTimes()
+	h.notify.EXPECT().Record(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, event entity.NotificationEvent) error {
+			h.notified = append(h.notified, event)
+
+			return nil
+		}).
+		AnyTimes()
 
 	indexes.EXPECT().Schedule(gomock.Any(), gomock.Any()).
 		Do(func(_ context.Context, workspaceID uuid.UUID) { h.scheduled = append(h.scheduled, workspaceID) }).
 		AnyTimes()
 
 	h.service = memorysvc.New(
-		h.memories, h.revisions, projects, issues, comments, docs, docRevisions, h.search, h.knowledge, authorizer,
-		indexes, h.vectors, h.transactor, config.Knowledge{RelatedMinSimilarity: 0.85},
+		h.memories, h.revisions, projects, issues, comments, docs, docRevisions, h.search, h.notify, memberships,
+		h.knowledge, authorizer, indexes, h.vectors, h.transactor, config.Knowledge{RelatedMinSimilarity: 0.85},
 	)
 
 	h.transactor.EXPECT().
@@ -108,7 +130,7 @@ func newHarness(t *testing.T) *harness {
 				return entity.Project{}, entity.ErrProjectNotFound
 			}
 
-			return entity.Project{ID: projectID, WorkspaceID: h.workspaceID}, nil
+			return entity.Project{ID: projectID, WorkspaceID: h.workspaceID, LeadAccountID: h.leadID}, nil
 		}).
 		AnyTimes()
 
@@ -172,7 +194,7 @@ func newHarness(t *testing.T) *harness {
 		}).
 		AnyTimes()
 
-	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID}, entity.MembershipRoleMember)
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID}, entity.MembershipRoleAdmin)
 	h.store()
 	h.history()
 	h.judge()
@@ -243,6 +265,10 @@ func (h *harness) actAs(actor entity.Actor, role entity.MembershipRole) {
 		WorkspaceID: h.workspaceID,
 		Identity:    entity.KnowledgeIdentityOf(actor, role),
 		ProjectIDs:  []uuid.UUID{h.projectID},
+	}
+
+	if actor.AccountID == h.leadID {
+		h.reader.LedProjectIDs = []uuid.UUID{h.projectID}
 	}
 }
 
@@ -474,14 +500,14 @@ func TestAPersonalMemoryIsAcceptedOnCreation(t *testing.T) {
 	}
 }
 
-func TestAnAgentsSharedMemoryIsAcceptedAsItsOwnInference(t *testing.T) {
+func TestAnAgentsSharedMemoryIsProposedAsItsOwnInference(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		agent bool
 		want  entity.MemoryStatus
 		basis entity.MemoryBasis
 	}{
-		"a person":                 {agent: false, want: entity.MemoryStatusAccepted, basis: entity.MemoryBasisObservation},
-		"an agent acting for them": {agent: true, want: entity.MemoryStatusAccepted, basis: entity.MemoryBasisInference},
+		"an admin":                       {agent: false, want: entity.MemoryStatusAccepted, basis: entity.MemoryBasisObservation},
+		"an agent acting for that admin": {agent: true, want: entity.MemoryStatusProposed, basis: entity.MemoryBasisInference},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)
@@ -786,12 +812,28 @@ func TestAnAgentsReplacementRetiresTheMemoryItSupersedes(t *testing.T) {
 		t.Fatalf("supersede as an agent: %v", err)
 	}
 
-	if replacement.Status != entity.MemoryStatusAccepted || replacement.Basis != entity.MemoryBasisInference {
-		t.Fatalf("the replacement read back as %s on %s", replacement.Status, replacement.Basis)
+	if replacement.Status != entity.MemoryStatusProposed || replacement.Basis != entity.MemoryBasisInference ||
+		replacement.SupersedesID == nil || *replacement.SupersedesID != replaced.ID {
+		t.Fatalf("the replacement read back as %s on %s superseding %v", replacement.Status, replacement.Basis, replacement.SupersedesID)
 	}
 
-	if old := h.stored[replaced.ID]; old.Status != entity.MemoryStatusSuperseded || old.SupersededByID == nil || *old.SupersededByID != replacement.ID {
-		t.Fatalf("the replaced memory is %s, replaced by %v", old.Status, old.SupersededByID)
+	if old := h.stored[replaced.ID]; old.Status != entity.MemoryStatusAccepted || old.SupersededByID != nil {
+		t.Fatalf("the replaced memory is %s before anyone accepted its replacement", old.Status)
+	}
+
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID}, entity.MembershipRoleAdmin)
+
+	accepted, err := h.service.Accept(context.Background(), h.workspaceID, replacement.ID, service.AcceptMemoryInput{
+		ExpectedVersion: replacement.Version,
+	})
+	if err != nil {
+		t.Fatalf("accept the replacement: %v", err)
+	}
+
+	if old := h.stored[replaced.ID]; accepted.Status != entity.MemoryStatusAccepted ||
+		old.Status != entity.MemoryStatusSuperseded || old.SupersededByID == nil || *old.SupersededByID != replacement.ID {
+		t.Fatalf("after acceptance the replacement is %s and the replaced memory %s, replaced by %v",
+			accepted.Status, old.Status, old.SupersededByID)
 	}
 }
 

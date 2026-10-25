@@ -43,6 +43,21 @@ func (m *MockMemories) EXPECT() *MockMemoriesMockRecorder {
 	return m.recorder
 }
 
+// Accept mocks base method.
+func (m *MockMemories) Accept(ctx context.Context, workspaceID, memoryID uuid.UUID, input service.AcceptMemoryInput) (entity.Memory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accept", ctx, workspaceID, memoryID, input)
+	ret0, _ := ret[0].(entity.Memory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Accept indicates an expected call of Accept.
+func (mr *MockMemoriesMockRecorder) Accept(ctx, workspaceID, memoryID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accept", reflect.TypeOf((*MockMemories)(nil).Accept), ctx, workspaceID, memoryID, input)
+}
+
 // Correct mocks base method.
 func (m *MockMemories) Correct(ctx context.Context, workspaceID, memoryID uuid.UUID, input service.CorrectMemoryInput) (entity.Memory, error) {
 	m.ctrl.T.Helper()
@@ -131,6 +146,21 @@ func (m *MockMemories) Reconcile(ctx context.Context, workspaceID, memoryID uuid
 func (mr *MockMemoriesMockRecorder) Reconcile(ctx, workspaceID, memoryID, input any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockMemories)(nil).Reconcile), ctx, workspaceID, memoryID, input)
+}
+
+// Reject mocks base method.
+func (m *MockMemories) Reject(ctx context.Context, workspaceID, memoryID uuid.UUID, input service.RejectMemoryInput) (entity.Memory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reject", ctx, workspaceID, memoryID, input)
+	ret0, _ := ret[0].(entity.Memory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reject indicates an expected call of Reject.
+func (mr *MockMemoriesMockRecorder) Reject(ctx, workspaceID, memoryID, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reject", reflect.TypeOf((*MockMemories)(nil).Reject), ctx, workspaceID, memoryID, input)
 }
 
 // Related mocks base method.

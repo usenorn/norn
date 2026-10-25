@@ -49,6 +49,16 @@ type MemoryWrite struct {
 	Choices []entity.MemoryChoice
 }
 
+type AcceptMemoryInput struct {
+	ExpectedVersion int
+	Content         *MemoryContent
+}
+
+type RejectMemoryInput struct {
+	ExpectedVersion int
+	Reason          string
+}
+
 type MemoryTarget struct {
 	ID              uuid.UUID
 	ExpectedVersion int
@@ -106,6 +116,8 @@ type Memories interface {
 		workspaceID, memoryID uuid.UUID,
 		input ReconcileMemoryInput,
 	) (MemoryReconciliation, error)
+	Accept(ctx context.Context, workspaceID, memoryID uuid.UUID, input AcceptMemoryInput) (entity.Memory, error)
+	Reject(ctx context.Context, workspaceID, memoryID uuid.UUID, input RejectMemoryInput) (entity.Memory, error)
 	Withdraw(ctx context.Context, workspaceID, memoryID uuid.UUID, expectedVersion int) (entity.Memory, error)
 	Reshare(ctx context.Context, workspaceID, memoryID uuid.UUID, input ReshareMemoryInput) (entity.Memory, error)
 	Revisions(
