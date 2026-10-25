@@ -23,6 +23,9 @@ const memoryHeldReminder = " This memory relates to the memories listed and is h
 	"it to norn_reconcile_memory with this memory's version; a conditional relation is compatible and " +
 	"usually means keeping it independent."
 
+const memoryReviewReminder = " It is shared, so it waits as %s until a workspace admin or the project lead " +
+	"accepts it; recall leaves it out until then, and nothing more is asked of you."
+
 type memoryEvidenceInput struct {
 	Issue    string `json:"issue,omitempty" jsonschema:"an issue the memory rests on, by reference like ENG-42 or id"`
 	Comment  string `json:"comment,omitempty" jsonschema:"a comment id the memory rests on"`
@@ -43,23 +46,23 @@ type memoryContentInput struct {
 }
 
 type recallMemoryInput struct {
-	Workspace    string   `json:"workspace" jsonschema:"the workspace slug or id"`
-	Query        string   `json:"query" jsonschema:"what you are about to decide or change, in plain words"`
-	Project      string   `json:"project,omitempty" jsonschema:"the project the work is in, by slug or id"`
-	Component    string   `json:"component,omitempty" jsonschema:"the component the work touches"`
-	Kinds        []string `json:"kinds,omitempty" jsonschema:"only these kinds: decision, constraint, lesson, preference"`
-	AcceptedOnly bool     `json:"accepted_only,omitempty" jsonschema:"leave out proposed memories"`
-	Limit        int      `json:"limit,omitempty" jsonschema:"at most 50 results; 10 when omitted"`
+	Workspace       string   `json:"workspace" jsonschema:"the workspace slug or id"`
+	Query           string   `json:"query" jsonschema:"what you are about to decide or change, in plain words"`
+	Project         string   `json:"project,omitempty" jsonschema:"the project the work is in, by slug or id"`
+	Component       string   `json:"component,omitempty" jsonschema:"the component the work touches"`
+	Kinds           []string `json:"kinds,omitempty" jsonschema:"only these kinds: decision, constraint, lesson, preference"`
+	IncludeProposed bool     `json:"include_proposed,omitempty" jsonschema:"also return proposed memories that still wait for review; only accepted memories are returned when omitted"`
+	Limit           int      `json:"limit,omitempty" jsonschema:"at most 50 results; 10 when omitted"`
 }
 
 type listMemoriesInput struct {
-	Workspace    string   `json:"workspace" jsonschema:"the workspace slug or id"`
-	Project      string   `json:"project,omitempty" jsonschema:"the project, by slug or id; workspace-wide memories are included"`
-	Component    string   `json:"component,omitempty" jsonschema:"the component; memories for no particular component are included"`
-	Kinds        []string `json:"kinds,omitempty" jsonschema:"only these kinds: decision, constraint, lesson, preference"`
-	AcceptedOnly bool     `json:"accepted_only,omitempty" jsonschema:"leave out proposed memories"`
-	Cursor       string   `json:"cursor,omitempty" jsonschema:"the cursor returned by the previous page"`
-	Limit        int      `json:"limit,omitempty" jsonschema:"page size, at most 200"`
+	Workspace       string   `json:"workspace" jsonschema:"the workspace slug or id"`
+	Project         string   `json:"project,omitempty" jsonschema:"the project, by slug or id; workspace-wide memories are included"`
+	Component       string   `json:"component,omitempty" jsonschema:"the component; memories for no particular component are included"`
+	Kinds           []string `json:"kinds,omitempty" jsonschema:"only these kinds: decision, constraint, lesson, preference"`
+	IncludeProposed bool     `json:"include_proposed,omitempty" jsonschema:"also return proposed memories that still wait for review; only accepted memories are returned when omitted"`
+	Cursor          string   `json:"cursor,omitempty" jsonschema:"the cursor returned by the previous page"`
+	Limit           int      `json:"limit,omitempty" jsonschema:"page size, at most 200"`
 }
 
 type getMemoryInput struct {
@@ -158,7 +161,7 @@ func (t *toolset) recallMemory(
 		MemoryKinds:     memoryKinds(input.Kinds),
 		ProjectID:       projectID,
 		Component:       input.Component,
-		IncludeProposed: !input.AcceptedOnly,
+		IncludeProposed: input.IncludeProposed,
 		Limit:           input.Limit,
 	})
 	if err != nil {
@@ -197,7 +200,7 @@ func (t *toolset) listMemories(
 		MemoryKinds:     memoryKinds(input.Kinds),
 		ProjectID:       projectID,
 		Component:       input.Component,
-		IncludeProposed: !input.AcceptedOnly,
+		IncludeProposed: input.IncludeProposed,
 		Cursor:          input.Cursor,
 		Limit:           input.Limit,
 	})
@@ -246,7 +249,7 @@ func (t *toolset) getMemory(
 	output := memoryDetailOutput{
 		Memory:   memoryDTOFrom(memory),
 		Lineage:  make([]memoryLinkDTO, 0, len(lineage)),
-		Reminder: memoryReminder,
+		Reminder: memoryReminder + reviewReminder(memory),
 	}
 
 	for _, link := range lineage {
@@ -302,11 +305,21 @@ func (t *toolset) remember(
 }
 
 func heldReminder(written service.MemoryWrite) string {
-	if !written.Memory.Pending() || len(written.Related) == 0 {
-		return memoryReminder
+	reminder := memoryReminder
+
+	if written.Memory.Pending() && len(written.Related) > 0 {
+		reminder += fmt.Sprintf(memoryHeldReminder, written.Memory.Status)
 	}
 
-	return memoryReminder + fmt.Sprintf(memoryHeldReminder, written.Memory.Status)
+	return reminder + reviewReminder(written.Memory)
+}
+
+func reviewReminder(memory entity.Memory) string {
+	if !memory.Pending() || memory.Viewer.Reviews || memory.Audience.Visibility == entity.KnowledgeVisibilityPersonal {
+		return ""
+	}
+
+	return fmt.Sprintf(memoryReviewReminder, memory.Status)
 }
 
 func (t *toolset) reconcileMemory(
@@ -343,7 +356,10 @@ func (t *toolset) reconcileMemory(
 		return nil, reconcileOutput{}, toolFailure(ctx, err)
 	}
 
-	output := reconcileOutput{Memory: memoryDTOFrom(reconciled.Memory), Reminder: memoryReminder}
+	output := reconcileOutput{
+		Memory:   memoryDTOFrom(reconciled.Memory),
+		Reminder: memoryReminder + reviewReminder(reconciled.Memory),
+	}
 
 	if reconciled.Target != nil {
 		target := memoryDTOFrom(*reconciled.Target)
@@ -412,7 +428,7 @@ func (t *toolset) supersedeMemory(
 		return nil, memoryOutput{}, toolFailure(ctx, err)
 	}
 
-	return nil, memoryOutput{Memory: memoryDTOFrom(memory), Reminder: memoryReminder}, nil
+	return nil, memoryOutput{Memory: memoryDTOFrom(memory), Reminder: memoryReminder + reviewReminder(memory)}, nil
 }
 
 func (t *toolset) withdrawMemory(

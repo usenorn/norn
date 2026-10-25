@@ -39,6 +39,7 @@ candidates AS (
     WHERE (m.visibility = 'workspace'
            OR (m.visibility = 'project' AND ($2::boolean IS TRUE OR m.project_id = ANY($3::uuid[])))
            OR (m.visibility = 'personal' AND m.author_account_id = $4::uuid))
+      AND m.status <> 'rejected'
       AND l.status = ANY($6::text[])
       AND (cardinality($7::text[]) = 0 OR l.kind = ANY($7::text[]))
       AND l.effective_from <= $5::date

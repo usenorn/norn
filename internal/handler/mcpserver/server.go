@@ -198,8 +198,9 @@ func (t *toolset) register(tools *Tools) {
 		Name: "norn_recall_memory",
 		Description: "Before changing an architectural decision, a convention, or a constraint, or " +
 			"repeating something that went wrong before, recall what this workspace already " +
-			"decided or learned about it. Returns the best-matching memories and doc passages, " +
-			"each memory with its status, basis and author.",
+			"decided or learned about it. Returns the best-matching accepted memories and doc " +
+			"passages, each memory with its status, basis and author; proposals still waiting " +
+			"for review are left out unless include_proposed is set.",
 		Annotations: read,
 	}, t.recallMemory)
 
@@ -225,7 +226,9 @@ func (t *toolset) register(tools *Tools) {
 			"later work can recall it. It is compared with the memories you can read: when it " +
 			"duplicates one, restates its subject under other conditions, or contradicts an " +
 			"accepted decision, it is held as proposed or disputed and returned with those " +
-			"memories and the choices that settle it through norn_reconcile_memory.",
+			"memories and the choices that settle it through norn_reconcile_memory. A project or " +
+			"workspace memory an agent writes is proposed until a workspace admin or the project " +
+			"lead accepts it.",
 		Annotations: create,
 	}, t.remember)
 
@@ -249,14 +252,17 @@ func (t *toolset) register(tools *Tools) {
 	add(tools, &mcp.Tool{
 		Name: "norn_supersede_memory",
 		Description: "Record that a decision changed: write the replacement and retire the memory " +
-			"it replaces, keeping both linked so the history stays readable.",
+			"it replaces, keeping both linked so the history stays readable. A shared replacement " +
+			"an agent writes waits for review, and the memory it replaces stays in effect until " +
+			"the replacement is accepted.",
 		Annotations: create,
 	}, t.supersedeMemory)
 
 	add(tools, &mcp.Tool{
 		Name: "norn_withdraw_memory",
 		Description: "Withdraw a memory that was wrong or no longer applies and has no " +
-			"replacement. Recall stops returning it.",
+			"replacement. Recall stops returning it, and it stays in the history; content already " +
+			"delivered to an agent or another client cannot be recalled.",
 		Annotations: &mcp.ToolAnnotations{DestructiveHint: &destructive},
 	}, t.withdrawMemory)
 
