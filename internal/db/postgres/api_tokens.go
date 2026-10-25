@@ -185,17 +185,23 @@ var APITokenRels = struct {
 	Account                       string
 	TokenAPITokenGrants           string
 	ActorTokenWorkspaceActivities string
+	TokenWorkspaceMemories        string
+	TokenWorkspaceMemoryRevisions string
 }{
 	Account:                       "Account",
 	TokenAPITokenGrants:           "TokenAPITokenGrants",
 	ActorTokenWorkspaceActivities: "ActorTokenWorkspaceActivities",
+	TokenWorkspaceMemories:        "TokenWorkspaceMemories",
+	TokenWorkspaceMemoryRevisions: "TokenWorkspaceMemoryRevisions",
 }
 
 // apiTokenR is where relationships are stored.
 type apiTokenR struct {
-	Account                       *Account               `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
-	TokenAPITokenGrants           APITokenGrantSlice     `boil:"TokenAPITokenGrants" json:"TokenAPITokenGrants" toml:"TokenAPITokenGrants" yaml:"TokenAPITokenGrants"`
-	ActorTokenWorkspaceActivities WorkspaceActivitySlice `boil:"ActorTokenWorkspaceActivities" json:"ActorTokenWorkspaceActivities" toml:"ActorTokenWorkspaceActivities" yaml:"ActorTokenWorkspaceActivities"`
+	Account                       *Account                     `boil:"Account" json:"Account" toml:"Account" yaml:"Account"`
+	TokenAPITokenGrants           APITokenGrantSlice           `boil:"TokenAPITokenGrants" json:"TokenAPITokenGrants" toml:"TokenAPITokenGrants" yaml:"TokenAPITokenGrants"`
+	ActorTokenWorkspaceActivities WorkspaceActivitySlice       `boil:"ActorTokenWorkspaceActivities" json:"ActorTokenWorkspaceActivities" toml:"ActorTokenWorkspaceActivities" yaml:"ActorTokenWorkspaceActivities"`
+	TokenWorkspaceMemories        WorkspaceMemorySlice         `boil:"TokenWorkspaceMemories" json:"TokenWorkspaceMemories" toml:"TokenWorkspaceMemories" yaml:"TokenWorkspaceMemories"`
+	TokenWorkspaceMemoryRevisions WorkspaceMemoryRevisionSlice `boil:"TokenWorkspaceMemoryRevisions" json:"TokenWorkspaceMemoryRevisions" toml:"TokenWorkspaceMemoryRevisions" yaml:"TokenWorkspaceMemoryRevisions"`
 }
 
 // NewStruct creates a new relationship struct
@@ -249,6 +255,38 @@ func (r *apiTokenR) GetActorTokenWorkspaceActivities() WorkspaceActivitySlice {
 	}
 
 	return r.ActorTokenWorkspaceActivities
+}
+
+func (o *APIToken) GetTokenWorkspaceMemories() WorkspaceMemorySlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetTokenWorkspaceMemories()
+}
+
+func (r *apiTokenR) GetTokenWorkspaceMemories() WorkspaceMemorySlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.TokenWorkspaceMemories
+}
+
+func (o *APIToken) GetTokenWorkspaceMemoryRevisions() WorkspaceMemoryRevisionSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetTokenWorkspaceMemoryRevisions()
+}
+
+func (r *apiTokenR) GetTokenWorkspaceMemoryRevisions() WorkspaceMemoryRevisionSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.TokenWorkspaceMemoryRevisions
 }
 
 // apiTokenL is where Load methods for each relationship are stored.
@@ -606,6 +644,34 @@ func (o *APIToken) ActorTokenWorkspaceActivities(mods ...qm.QueryMod) workspaceA
 	return WorkspaceActivities(queryMods...)
 }
 
+// TokenWorkspaceMemories retrieves all the workspace_memory's WorkspaceMemories with an executor via token_id column.
+func (o *APIToken) TokenWorkspaceMemories(mods ...qm.QueryMod) workspaceMemoryQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_memories\".\"token_id\"=?", o.ID),
+	)
+
+	return WorkspaceMemories(queryMods...)
+}
+
+// TokenWorkspaceMemoryRevisions retrieves all the workspace_memory_revision's WorkspaceMemoryRevisions with an executor via token_id column.
+func (o *APIToken) TokenWorkspaceMemoryRevisions(mods ...qm.QueryMod) workspaceMemoryRevisionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_memory_revisions\".\"token_id\"=?", o.ID),
+	)
+
+	return WorkspaceMemoryRevisions(queryMods...)
+}
+
 // LoadAccount allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (apiTokenL) LoadAccount(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAPIToken any, mods queries.Applicator) error {
@@ -952,6 +1018,232 @@ func (apiTokenL) LoadActorTokenWorkspaceActivities(ctx context.Context, e boil.C
 	return nil
 }
 
+// LoadTokenWorkspaceMemories allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (apiTokenL) LoadTokenWorkspaceMemories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAPIToken any, mods queries.Applicator) error {
+	var slice []*APIToken
+	var object *APIToken
+
+	if singular {
+		var ok bool
+		object, ok = maybeAPIToken.(*APIToken)
+		if !ok {
+			object = new(APIToken)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAPIToken))
+			}
+		}
+	} else {
+		s, ok := maybeAPIToken.(*[]*APIToken)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAPIToken))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &apiTokenR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &apiTokenR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_memories`),
+		qm.WhereIn(`workspace_memories.token_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_memories")
+	}
+
+	var resultSlice []*WorkspaceMemory
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_memories")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_memories")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_memories")
+	}
+
+	if len(workspaceMemoryAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TokenWorkspaceMemories = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceMemoryR{}
+			}
+			foreign.R.Token = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.TokenID) {
+				local.R.TokenWorkspaceMemories = append(local.R.TokenWorkspaceMemories, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceMemoryR{}
+				}
+				foreign.R.Token = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTokenWorkspaceMemoryRevisions allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (apiTokenL) LoadTokenWorkspaceMemoryRevisions(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAPIToken any, mods queries.Applicator) error {
+	var slice []*APIToken
+	var object *APIToken
+
+	if singular {
+		var ok bool
+		object, ok = maybeAPIToken.(*APIToken)
+		if !ok {
+			object = new(APIToken)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAPIToken))
+			}
+		}
+	} else {
+		s, ok := maybeAPIToken.(*[]*APIToken)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAPIToken)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAPIToken))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &apiTokenR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &apiTokenR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_memory_revisions`),
+		qm.WhereIn(`workspace_memory_revisions.token_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_memory_revisions")
+	}
+
+	var resultSlice []*WorkspaceMemoryRevision
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_memory_revisions")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_memory_revisions")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_memory_revisions")
+	}
+
+	if len(workspaceMemoryRevisionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TokenWorkspaceMemoryRevisions = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceMemoryRevisionR{}
+			}
+			foreign.R.Token = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.TokenID) {
+				local.R.TokenWorkspaceMemoryRevisions = append(local.R.TokenWorkspaceMemoryRevisions, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceMemoryRevisionR{}
+				}
+				foreign.R.Token = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetAccount of the apiToken to the related item.
 // Sets o.R.Account to related.
 // Adds o to related.R.APITokens.
@@ -1172,6 +1464,260 @@ func (o *APIToken) RemoveActorTokenWorkspaceActivities(ctx context.Context, exec
 				o.R.ActorTokenWorkspaceActivities[i] = o.R.ActorTokenWorkspaceActivities[ln-1]
 			}
 			o.R.ActorTokenWorkspaceActivities = o.R.ActorTokenWorkspaceActivities[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddTokenWorkspaceMemories adds the given related objects to the existing relationships
+// of the api_token, optionally inserting them as new records.
+// Appends related to o.R.TokenWorkspaceMemories.
+// Sets related.R.Token appropriately.
+func (o *APIToken) AddTokenWorkspaceMemories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceMemory) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TokenID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_memories\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"token_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceMemoryPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TokenID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &apiTokenR{
+			TokenWorkspaceMemories: related,
+		}
+	} else {
+		o.R.TokenWorkspaceMemories = append(o.R.TokenWorkspaceMemories, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceMemoryR{
+				Token: o,
+			}
+		} else {
+			rel.R.Token = o
+		}
+	}
+	return nil
+}
+
+// SetTokenWorkspaceMemories removes all previously related items of the
+// api_token replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Token's TokenWorkspaceMemories accordingly.
+// Replaces o.R.TokenWorkspaceMemories with related.
+// Sets related.R.Token's TokenWorkspaceMemories accordingly.
+func (o *APIToken) SetTokenWorkspaceMemories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceMemory) error {
+	query := "update \"workspace_memories\" set \"token_id\" = null where \"token_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TokenWorkspaceMemories {
+			queries.SetScanner(&rel.TokenID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Token = nil
+		}
+		o.R.TokenWorkspaceMemories = nil
+	}
+
+	return o.AddTokenWorkspaceMemories(ctx, exec, insert, related...)
+}
+
+// RemoveTokenWorkspaceMemories relationships from objects passed in.
+// Removes related items from R.TokenWorkspaceMemories (uses pointer comparison, removal does not keep order)
+// Sets related.R.Token.
+func (o *APIToken) RemoveTokenWorkspaceMemories(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceMemory) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TokenID, nil)
+		if rel.R != nil {
+			rel.R.Token = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("token_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TokenWorkspaceMemories {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TokenWorkspaceMemories)
+			if ln > 1 && i < ln-1 {
+				o.R.TokenWorkspaceMemories[i] = o.R.TokenWorkspaceMemories[ln-1]
+			}
+			o.R.TokenWorkspaceMemories = o.R.TokenWorkspaceMemories[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddTokenWorkspaceMemoryRevisions adds the given related objects to the existing relationships
+// of the api_token, optionally inserting them as new records.
+// Appends related to o.R.TokenWorkspaceMemoryRevisions.
+// Sets related.R.Token appropriately.
+func (o *APIToken) AddTokenWorkspaceMemoryRevisions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceMemoryRevision) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.TokenID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_memory_revisions\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"token_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceMemoryRevisionPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.TokenID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &apiTokenR{
+			TokenWorkspaceMemoryRevisions: related,
+		}
+	} else {
+		o.R.TokenWorkspaceMemoryRevisions = append(o.R.TokenWorkspaceMemoryRevisions, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceMemoryRevisionR{
+				Token: o,
+			}
+		} else {
+			rel.R.Token = o
+		}
+	}
+	return nil
+}
+
+// SetTokenWorkspaceMemoryRevisions removes all previously related items of the
+// api_token replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Token's TokenWorkspaceMemoryRevisions accordingly.
+// Replaces o.R.TokenWorkspaceMemoryRevisions with related.
+// Sets related.R.Token's TokenWorkspaceMemoryRevisions accordingly.
+func (o *APIToken) SetTokenWorkspaceMemoryRevisions(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceMemoryRevision) error {
+	query := "update \"workspace_memory_revisions\" set \"token_id\" = null where \"token_id\" = $1"
+	values := []any{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.TokenWorkspaceMemoryRevisions {
+			queries.SetScanner(&rel.TokenID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Token = nil
+		}
+		o.R.TokenWorkspaceMemoryRevisions = nil
+	}
+
+	return o.AddTokenWorkspaceMemoryRevisions(ctx, exec, insert, related...)
+}
+
+// RemoveTokenWorkspaceMemoryRevisions relationships from objects passed in.
+// Removes related items from R.TokenWorkspaceMemoryRevisions (uses pointer comparison, removal does not keep order)
+// Sets related.R.Token.
+func (o *APIToken) RemoveTokenWorkspaceMemoryRevisions(ctx context.Context, exec boil.ContextExecutor, related ...*WorkspaceMemoryRevision) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.TokenID, nil)
+		if rel.R != nil {
+			rel.R.Token = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("token_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.TokenWorkspaceMemoryRevisions {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.TokenWorkspaceMemoryRevisions)
+			if ln > 1 && i < ln-1 {
+				o.R.TokenWorkspaceMemoryRevisions[i] = o.R.TokenWorkspaceMemoryRevisions[ln-1]
+			}
+			o.R.TokenWorkspaceMemoryRevisions = o.R.TokenWorkspaceMemoryRevisions[:ln-1]
 			break
 		}
 	}

@@ -49,6 +49,7 @@ type WorkspaceMemory struct {
 	UpdatedAt        time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	SearchDocument   null.String `boil:"search_document" json:"search_document,omitempty" toml:"search_document" yaml:"search_document,omitempty"`
 	ContentHash      []byte      `boil:"content_hash" json:"content_hash" toml:"content_hash" yaml:"content_hash"`
+	TokenID          null.String `boil:"token_id" json:"token_id,omitempty" toml:"token_id" yaml:"token_id,omitempty"`
 
 	R *workspaceMemoryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L workspaceMemoryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -80,6 +81,7 @@ var WorkspaceMemoryColumns = struct {
 	UpdatedAt        string
 	SearchDocument   string
 	ContentHash      string
+	TokenID          string
 }{
 	ID:               "id",
 	WorkspaceID:      "workspace_id",
@@ -106,6 +108,7 @@ var WorkspaceMemoryColumns = struct {
 	UpdatedAt:        "updated_at",
 	SearchDocument:   "search_document",
 	ContentHash:      "content_hash",
+	TokenID:          "token_id",
 }
 
 var WorkspaceMemoryTableColumns = struct {
@@ -134,6 +137,7 @@ var WorkspaceMemoryTableColumns = struct {
 	UpdatedAt        string
 	SearchDocument   string
 	ContentHash      string
+	TokenID          string
 }{
 	ID:               "workspace_memories.id",
 	WorkspaceID:      "workspace_memories.workspace_id",
@@ -160,6 +164,7 @@ var WorkspaceMemoryTableColumns = struct {
 	UpdatedAt:        "workspace_memories.updated_at",
 	SearchDocument:   "workspace_memories.search_document",
 	ContentHash:      "workspace_memories.content_hash",
+	TokenID:          "workspace_memories.token_id",
 }
 
 // Generated where
@@ -190,6 +195,7 @@ var WorkspaceMemoryWhere = struct {
 	UpdatedAt        whereHelpertime_Time
 	SearchDocument   whereHelpernull_String
 	ContentHash      whereHelper__byte
+	TokenID          whereHelpernull_String
 }{
 	ID:               whereHelperstring{field: "\"workspace_memories\".\"id\""},
 	WorkspaceID:      whereHelperstring{field: "\"workspace_memories\".\"workspace_id\""},
@@ -216,20 +222,24 @@ var WorkspaceMemoryWhere = struct {
 	UpdatedAt:        whereHelpertime_Time{field: "\"workspace_memories\".\"updated_at\""},
 	SearchDocument:   whereHelpernull_String{field: "\"workspace_memories\".\"search_document\""},
 	ContentHash:      whereHelper__byte{field: "\"workspace_memories\".\"content_hash\""},
+	TokenID:          whereHelpernull_String{field: "\"workspace_memories\".\"token_id\""},
 }
 
 // WorkspaceMemoryRels is where relationship names are stored.
 var WorkspaceMemoryRels = struct {
 	AuthorAccount string
+	Token         string
 	Workspace     string
 }{
 	AuthorAccount: "AuthorAccount",
+	Token:         "Token",
 	Workspace:     "Workspace",
 }
 
 // workspaceMemoryR is where relationships are stored.
 type workspaceMemoryR struct {
 	AuthorAccount *Account   `boil:"AuthorAccount" json:"AuthorAccount" toml:"AuthorAccount" yaml:"AuthorAccount"`
+	Token         *APIToken  `boil:"Token" json:"Token" toml:"Token" yaml:"Token"`
 	Workspace     *Workspace `boil:"Workspace" json:"Workspace" toml:"Workspace" yaml:"Workspace"`
 }
 
@@ -254,6 +264,22 @@ func (r *workspaceMemoryR) GetAuthorAccount() *Account {
 	return r.AuthorAccount
 }
 
+func (o *WorkspaceMemory) GetToken() *APIToken {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetToken()
+}
+
+func (r *workspaceMemoryR) GetToken() *APIToken {
+	if r == nil {
+		return nil
+	}
+
+	return r.Token
+}
+
 func (o *WorkspaceMemory) GetWorkspace() *Workspace {
 	if o == nil {
 		return nil
@@ -274,9 +300,9 @@ func (r *workspaceMemoryR) GetWorkspace() *Workspace {
 type workspaceMemoryL struct{}
 
 var (
-	workspaceMemoryAllColumns            = []string{"id", "workspace_id", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "author_account_id", "agent_id", "connection_id", "source", "effective_from", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash"}
+	workspaceMemoryAllColumns            = []string{"id", "workspace_id", "kind", "statement", "rationale", "conditions", "visibility", "project_id", "applies_project_id", "component", "status", "basis", "author_account_id", "agent_id", "connection_id", "source", "effective_from", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash", "token_id"}
 	workspaceMemoryColumnsWithoutDefault = []string{"workspace_id", "kind", "statement", "visibility", "status", "basis", "source", "effective_from"}
-	workspaceMemoryColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "author_account_id", "agent_id", "connection_id", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash"}
+	workspaceMemoryColumnsWithDefault    = []string{"id", "rationale", "conditions", "project_id", "applies_project_id", "component", "author_account_id", "agent_id", "connection_id", "effective_until", "supersedes_id", "superseded_by_id", "version", "created_at", "updated_at", "search_document", "content_hash", "token_id"}
 	workspaceMemoryPrimaryKeyColumns     = []string{"id"}
 	workspaceMemoryGeneratedColumns      = []string{"search_document", "content_hash"}
 )
@@ -597,6 +623,17 @@ func (o *WorkspaceMemory) AuthorAccount(mods ...qm.QueryMod) accountQuery {
 	return Accounts(queryMods...)
 }
 
+// Token pointed to by the foreign key.
+func (o *WorkspaceMemory) Token(mods ...qm.QueryMod) apiTokenQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.TokenID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return APITokens(queryMods...)
+}
+
 // Workspace pointed to by the foreign key.
 func (o *WorkspaceMemory) Workspace(mods ...qm.QueryMod) workspaceQuery {
 	queryMods := []qm.QueryMod{
@@ -724,6 +761,130 @@ func (workspaceMemoryL) LoadAuthorAccount(ctx context.Context, e boil.ContextExe
 					foreign.R = &accountR{}
 				}
 				foreign.R.AuthorAccountWorkspaceMemories = append(foreign.R.AuthorAccountWorkspaceMemories, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadToken allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (workspaceMemoryL) LoadToken(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspaceMemory any, mods queries.Applicator) error {
+	var slice []*WorkspaceMemory
+	var object *WorkspaceMemory
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspaceMemory.(*WorkspaceMemory)
+		if !ok {
+			object = new(WorkspaceMemory)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspaceMemory)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspaceMemory))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspaceMemory.(*[]*WorkspaceMemory)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspaceMemory)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspaceMemory))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceMemoryR{}
+		}
+		if !queries.IsNil(object.TokenID) {
+			args[object.TokenID] = struct{}{}
+		}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceMemoryR{}
+			}
+
+			if !queries.IsNil(obj.TokenID) {
+				args[obj.TokenID] = struct{}{}
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`api_tokens`),
+		qm.WhereIn(`api_tokens.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load APIToken")
+	}
+
+	var resultSlice []*APIToken
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice APIToken")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for api_tokens")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for api_tokens")
+	}
+
+	if len(apiTokenAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Token = foreign
+		if foreign.R == nil {
+			foreign.R = &apiTokenR{}
+		}
+		foreign.R.TokenWorkspaceMemories = append(foreign.R.TokenWorkspaceMemories, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.TokenID, foreign.ID) {
+				local.R.Token = foreign
+				if foreign.R == nil {
+					foreign.R = &apiTokenR{}
+				}
+				foreign.R.TokenWorkspaceMemories = append(foreign.R.TokenWorkspaceMemories, local)
 				break
 			}
 		}
@@ -927,6 +1088,86 @@ func (o *WorkspaceMemory) RemoveAuthorAccount(ctx context.Context, exec boil.Con
 			related.R.AuthorAccountWorkspaceMemories[i] = related.R.AuthorAccountWorkspaceMemories[ln-1]
 		}
 		related.R.AuthorAccountWorkspaceMemories = related.R.AuthorAccountWorkspaceMemories[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetToken of the workspaceMemory to the related item.
+// Sets o.R.Token to related.
+// Adds o to related.R.TokenWorkspaceMemories.
+func (o *WorkspaceMemory) SetToken(ctx context.Context, exec boil.ContextExecutor, insert bool, related *APIToken) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"workspace_memories\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"token_id"}),
+		strmangle.WhereClause("\"", "\"", 2, workspaceMemoryPrimaryKeyColumns),
+	)
+	values := []any{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.TokenID, related.ID)
+	if o.R == nil {
+		o.R = &workspaceMemoryR{
+			Token: related,
+		}
+	} else {
+		o.R.Token = related
+	}
+
+	if related.R == nil {
+		related.R = &apiTokenR{
+			TokenWorkspaceMemories: WorkspaceMemorySlice{o},
+		}
+	} else {
+		related.R.TokenWorkspaceMemories = append(related.R.TokenWorkspaceMemories, o)
+	}
+
+	return nil
+}
+
+// RemoveToken relationship.
+// Sets o.R.Token to nil.
+// Removes o from all passed in related items' relationships struct.
+func (o *WorkspaceMemory) RemoveToken(ctx context.Context, exec boil.ContextExecutor, related *APIToken) error {
+	var err error
+
+	queries.SetScanner(&o.TokenID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("token_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Token = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.TokenWorkspaceMemories {
+		if queries.Equal(o.TokenID, ri.TokenID) {
+			continue
+		}
+
+		ln := len(related.R.TokenWorkspaceMemories)
+		if ln > 1 && i < ln-1 {
+			related.R.TokenWorkspaceMemories[i] = related.R.TokenWorkspaceMemories[ln-1]
+		}
+		related.R.TokenWorkspaceMemories = related.R.TokenWorkspaceMemories[:ln-1]
 		break
 	}
 	return nil

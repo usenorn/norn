@@ -178,10 +178,11 @@ func (h *harness) actAs(actor entity.Actor, role entity.MembershipRole) {
 }
 
 func (h *harness) actAsAgent(scope entity.AgentScope) uuid.UUID {
-	agentID, connectionID := uuid.New(), uuid.New()
+	agentID, connectionID, tokenID := uuid.New(), uuid.New(), uuid.New()
 	h.actAs(entity.Actor{
 		Kind:           entity.ActorKindAgent,
 		AccountID:      uuid.New(),
+		TokenID:        &tokenID,
 		AgentID:        &agentID,
 		AgentScope:     scope,
 		OwnerAccountID: h.accountID,
@@ -403,7 +404,8 @@ func TestAnAgentsSharedMemoryIsAcceptedAsItsOwnInference(t *testing.T) {
 				t.Fatalf("the memory is authored by %s, want the person %s", memory.AuthorID, h.accountID)
 			}
 
-			if testCase.agent && (memory.By.AgentID == nil || *memory.By.AgentID != agentID || memory.By.ConnectionID == nil) {
+			if testCase.agent && (memory.By.AgentID == nil || *memory.By.AgentID != agentID ||
+				memory.By.ConnectionID == nil || memory.By.TokenID == nil || *memory.By.TokenID != *h.actor.TokenID) {
 				t.Fatalf("an agent's memory lost its provenance: %+v", memory.By)
 			}
 		})

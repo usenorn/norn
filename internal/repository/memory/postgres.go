@@ -34,6 +34,7 @@ const memoryColumns = `
        coalesce(a.display_name, ''),
        coalesce(m.agent_id::text, ''),
        coalesce(m.connection_id::text, ''),
+       coalesce(m.token_id::text, ''),
        m.source,
        m.effective_from,
        m.effective_until,
@@ -125,6 +126,7 @@ func memoryToModel(memory entity.Memory) *dbpostgres.WorkspaceMemory {
 		AuthorAccountID:  null.NewString(memory.AuthorID.String(), memory.AuthorID != uuid.Nil),
 		AgentID:          optionalUUID(memory.By.AgentID),
 		ConnectionID:     optionalUUID(memory.By.ConnectionID),
+		TokenID:          optionalUUID(memory.By.TokenID),
 		Source:           string(memory.By.Source),
 		EffectiveFrom:    memory.EffectiveFrom,
 		EffectiveUntil:   null.TimeFromPtr(memory.EffectiveUntil),
@@ -172,9 +174,9 @@ type scanner interface {
 }
 
 type memoryRow struct {
-	id, workspace, kind, visibility, project, appliesProject, status, basis   string
-	author, agent, connection, source, supersedes, supersededBy, contributors string
-	effectiveUntil                                                            sql.NullTime
+	id, workspace, kind, visibility, project, appliesProject, status, basis          string
+	author, agent, connection, token, source, supersedes, supersededBy, contributors string
+	effectiveUntil                                                                   sql.NullTime
 }
 
 func scanMemory(row scanner) (entity.Memory, error) {
@@ -186,7 +188,7 @@ func scanMemory(row scanner) (entity.Memory, error) {
 	if err := row.Scan(
 		&raw.id, &raw.workspace, &raw.kind, &memory.Statement, &memory.Rationale, &memory.Conditions,
 		&raw.visibility, &raw.project, &raw.appliesProject, &memory.Applicability.Component, &raw.status,
-		&raw.basis, &raw.author, &memory.AuthorName, &raw.agent, &raw.connection, &raw.source,
+		&raw.basis, &raw.author, &memory.AuthorName, &raw.agent, &raw.connection, &raw.token, &raw.source,
 		&memory.EffectiveFrom, &raw.effectiveUntil, &raw.supersedes, &raw.supersededBy, &memory.Version,
 		&memory.CreatedAt, &memory.UpdatedAt, &raw.contributors,
 	); err != nil {
@@ -230,6 +232,10 @@ func (row *memoryRow) fill(memory *entity.Memory) error {
 
 	if memory.By.ConnectionID, err = parseOptional(row.connection); err != nil {
 		return fmt.Errorf("parse memory connection id: %w", err)
+	}
+
+	if memory.By.TokenID, err = parseOptional(row.token); err != nil {
+		return fmt.Errorf("parse memory token id: %w", err)
 	}
 
 	if memory.SupersedesID, err = parseOptional(row.supersedes); err != nil {

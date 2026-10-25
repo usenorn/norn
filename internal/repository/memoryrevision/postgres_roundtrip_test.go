@@ -42,6 +42,19 @@ WITH workspace AS (
 )
 SELECT project.id FROM project, revision`
 
+const tokenFixtureQuery = `
+INSERT INTO api_tokens (id, account_id, name, token_hash, scopes)
+VALUES ($1, $2, 'Memory agent', $3, '{knowledge:manage}')`
+
+func layToken(ctx context.Context, client *postgres.Client, accountID uuid.UUID) (*uuid.UUID, error) {
+	tokenID := uuid.New()
+	if _, err := client.Querier(ctx).ExecContext(ctx, tokenFixtureQuery, tokenID, accountID, tokenID[:]); err != nil {
+		return nil, fmt.Errorf("lay token fixture: %w", err)
+	}
+
+	return &tokenID, nil
+}
+
 type memoryFixture struct {
 	workspaceID, authorID, projectID, docID, docRevisionID uuid.UUID
 }
@@ -145,7 +158,14 @@ func TestAMemoryRevisionKeepsTheEvidenceItWasRecordedWith(t *testing.T) {
 			return fmt.Errorf("create memory: %w", err)
 		}
 
-		by := entity.KnowledgeAttribution{AccountID: fixture.authorID, ConnectionID: &connectionID, Source: entity.RevisionSourceAgent}
+		tokenID, err := layToken(ctx, client, fixture.authorID)
+		if err != nil {
+			return err
+		}
+
+		by := entity.KnowledgeAttribution{
+			AccountID: fixture.authorID, ConnectionID: &connectionID, TokenID: tokenID, Source: entity.RevisionSourceAgent,
+		}
 		first := memory.Revision(entity.MemoryRevisionCreated, by)
 
 		memory.Version, memory.Status, memory.Evidence = 2, entity.MemoryStatusWithdrawn, nil
@@ -167,7 +187,8 @@ func TestAMemoryRevisionKeepsTheEvidenceItWasRecordedWith(t *testing.T) {
 			return fmt.Errorf("history read back as %+v", history)
 		}
 
-		if history[0].AccountName != "Rae" || history[0].By.ConnectionID == nil || *history[0].By.ConnectionID != connectionID {
+		if history[0].AccountName != "Rae" || history[0].By.ConnectionID == nil || *history[0].By.ConnectionID != connectionID ||
+			history[0].By.TokenID == nil || *history[0].By.TokenID != *tokenID {
 			return fmt.Errorf("history lost its attribution: %+v", history[0])
 		}
 

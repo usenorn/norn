@@ -43,6 +43,19 @@ WITH workspace AS (
 )
 SELECT project.id FROM project, revision`
 
+const tokenFixtureQuery = `
+INSERT INTO api_tokens (id, account_id, name, token_hash, scopes)
+VALUES ($1, $2, 'Memory agent', $3, '{knowledge:manage}')`
+
+func layToken(ctx context.Context, client *postgres.Client, accountID uuid.UUID) (*uuid.UUID, error) {
+	tokenID := uuid.New()
+	if _, err := client.Querier(ctx).ExecContext(ctx, tokenFixtureQuery, tokenID, accountID, tokenID[:]); err != nil {
+		return nil, fmt.Errorf("lay token fixture: %w", err)
+	}
+
+	return &tokenID, nil
+}
+
 type memoryFixture struct {
 	workspaceID, authorID, projectID, docID, docRevisionID uuid.UUID
 }
@@ -139,6 +152,13 @@ func TestAMemoryReadsBackWithItsEvidenceAndRefusesAStaleWrite(t *testing.T) {
 		draft.Applicability = entity.KnowledgeApplicability{ProjectID: &fixture.projectID, Component: "storage"}
 		draft.EffectiveUntil = &until
 		draft.By.AgentID = &agentID
+
+		tokenID, err := layToken(ctx, client, fixture.authorID)
+		if err != nil {
+			return err
+		}
+
+		draft.By.TokenID = tokenID
 		draft.Evidence = []entity.MemoryEvidence{
 			{Kind: entity.MemoryEvidenceExcerpt, Excerpt: "the build broke on SQLite"},
 			{Kind: entity.MemoryEvidenceDocRevision, DocID: &fixture.docID, DocRevisionID: &fixture.docRevisionID},
@@ -162,7 +182,8 @@ func TestAMemoryReadsBackWithItsEvidenceAndRefusesAStaleWrite(t *testing.T) {
 			return fmt.Errorf("effective dates read back as %v to %v", created.EffectiveFrom, created.EffectiveUntil)
 		}
 
-		if created.By.AgentID == nil || *created.By.AgentID != agentID || created.AuthorName != "Rae" {
+		if created.By.AgentID == nil || *created.By.AgentID != agentID || created.AuthorName != "Rae" ||
+			created.By.TokenID == nil || *created.By.TokenID != *draft.By.TokenID {
 			return fmt.Errorf("provenance read back as %+v by %q", created.By, created.AuthorName)
 		}
 
