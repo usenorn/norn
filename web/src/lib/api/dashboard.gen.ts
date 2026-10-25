@@ -3737,8 +3737,57 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Withdraw a memory, keeping its history */
+        /**
+         * Withdraw a memory, keeping its history
+         * @description A withdrawn memory is kept with its history and is no longer recalled. Content already delivered to an agent or another client cannot be recalled from it.
+         */
         post: operations["withdrawWorkspaceMemory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a proposed or disputed memory, optionally editing it first
+         * @description Only a workspace admin, or the lead of a project memory's project, accepts a memory, and only as a person. Edited content is recorded as a correction before the acceptance. A proposal that supersedes another memory retires that memory when it is accepted.
+         */
+        post: operations["acceptWorkspaceMemory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject a proposed or disputed memory with a reason
+         * @description A rejected memory is kept with its history and the reason, and is never recalled.
+         */
+        post: operations["rejectWorkspaceMemory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8069,8 +8118,11 @@ export interface components {
         };
         /** @enum {string} */
         MemoryKind: "decision" | "constraint" | "lesson" | "preference";
-        /** @enum {string} */
-        MemoryStatus: "proposed" | "accepted" | "disputed" | "superseded" | "withdrawn";
+        /**
+         * @description A project or workspace memory written by an agent, or by a person who is neither a workspace admin nor the project's lead, is proposed until one of them accepts or rejects it. Recall returns only accepted memories unless proposals are asked for, and never a rejected one.
+         * @enum {string}
+         */
+        MemoryStatus: "proposed" | "accepted" | "disputed" | "superseded" | "withdrawn" | "rejected";
         /**
          * @description Whether the memory records what was directly observed or what an agent inferred.
          * @enum {string}
@@ -8151,7 +8203,7 @@ export interface components {
             /** Format: int32 */
             version: number;
             contributorIds: string[];
-            viewer: components["schemas"]["DocViewer"];
+            viewer: components["schemas"]["MemoryViewer"];
             /**
              * Format: date-time
              * @description When the memory was recorded.
@@ -8159,6 +8211,13 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        /** @description What the caller may do with this memory under the permission model. */
+        MemoryViewer: {
+            canEdit: boolean;
+            canShare: boolean;
+            /** @description Whether the caller may accept or reject the memory while it is proposed or disputed. */
+            canReview: boolean;
         };
         MemoryPage: {
             memories: components["schemas"]["Memory"][];
@@ -8227,13 +8286,27 @@ export interface components {
             /** Format: int32 */
             expectedVersion: number;
         };
+        AcceptMemoryRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            /** @description The memory as it should read once accepted. Leave it out to accept it as it is; what the content leaves out is cleared. */
+            content?: components["schemas"]["MemoryContent"];
+        };
+        RejectMemoryRequest: {
+            /** Format: int32 */
+            expectedVersion: number;
+            reason: string;
+        };
         ShareMemoryRequest: {
             /** Format: int32 */
             expectedVersion: number;
             audience: components["schemas"]["DocAudience"];
         };
-        /** @enum {string} */
-        MemoryRevisionAction: "created" | "corrected" | "reshared" | "accepted" | "disputed" | "superseded" | "withdrawn";
+        /**
+         * @description reconciled records an author settling how a proposal relates to other memories while it still waits for review.
+         * @enum {string}
+         */
+        MemoryRevisionAction: "created" | "corrected" | "reshared" | "accepted" | "disputed" | "superseded" | "withdrawn" | "rejected" | "reconciled";
         MemoryRevisionSummary: {
             /** Format: uuid */
             id: string;
@@ -8247,6 +8320,8 @@ export interface components {
             action: components["schemas"]["MemoryRevisionAction"];
             status: components["schemas"]["MemoryStatus"];
             statement: string;
+            /** @description Why the memory was rejected, on a rejected revision. */
+            reason?: string;
             /** Format: uuid */
             accountId?: string;
             accountName?: string;
@@ -8268,6 +8343,8 @@ export interface components {
             action: components["schemas"]["MemoryRevisionAction"];
             status: components["schemas"]["MemoryStatus"];
             statement: string;
+            /** @description Why the memory was rejected, on a rejected revision. */
+            reason?: string;
             /** Format: uuid */
             accountId?: string;
             accountName?: string;
@@ -10205,7 +10282,7 @@ export interface components {
             /** @enum {string} */
             code: "forbidden";
             /** @enum {string} */
-            reason?: "role_lacks_action" | "auth_method_not_permitted" | "token_permission_missing" | "token_workspace_mismatch" | "instance_admin_required" | "knowledge_not_editable" | "knowledge_not_shareable";
+            reason?: "role_lacks_action" | "auth_method_not_permitted" | "token_permission_missing" | "token_workspace_mismatch" | "instance_admin_required" | "knowledge_not_editable" | "knowledge_not_shareable" | "memory_review_forbidden";
         };
         SignUpClosedProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
@@ -19345,6 +19422,72 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             409: components["responses"]["MemoryConflict"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    acceptWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The accepted memory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    rejectWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The rejected memory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            422: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
         };
     };

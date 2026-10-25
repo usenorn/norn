@@ -43,6 +43,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 						viewer: {
 							canEdit: true,
 							canShare: true,
+							canReview: false,
 						},
 						createdAt: "2026-10-25T09:00:00Z",
 						updatedAt: "2026-10-25T09:00:00Z",
@@ -70,6 +71,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 								viewer: {
 									canEdit: true,
 									canShare: true,
+									canReview: false,
 								},
 								createdAt: "2026-10-25T09:00:00Z",
 								updatedAt: "2026-10-25T09:00:00Z",
@@ -119,6 +121,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 						viewer: {
 							canEdit: true,
 							canShare: true,
+							canReview: false,
 						},
 						createdAt: "2026-10-25T09:00:00Z",
 						updatedAt: "2026-10-25T09:00:00Z",
@@ -146,6 +149,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 								viewer: {
 									canEdit: true,
 									canShare: true,
+									canReview: false,
 								},
 								createdAt: "2026-10-25T09:00:00Z",
 								updatedAt: "2026-10-25T09:00:00Z",
@@ -195,6 +199,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 						viewer: {
 							canEdit: true,
 							canShare: true,
+							canReview: false,
 						},
 						createdAt: "2026-10-25T09:00:00Z",
 						updatedAt: "2026-10-25T09:00:00Z",
@@ -222,6 +227,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 								viewer: {
 									canEdit: true,
 									canShare: true,
+									canReview: false,
 								},
 								createdAt: "2026-10-25T09:00:00Z",
 								updatedAt: "2026-10-25T09:00:00Z",
@@ -273,6 +279,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 						viewer: {
 							canEdit: true,
 							canShare: true,
+							canReview: false,
 						},
 						createdAt: "2026-10-25T09:00:00Z",
 						updatedAt: "2026-10-25T09:00:00Z",
@@ -306,6 +313,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 						viewer: {
 							canEdit: false,
 							canShare: false,
+							canReview: false,
 						},
 						createdAt: "2026-10-25T09:00:00Z",
 						updatedAt: "2026-10-25T09:00:00Z",
@@ -333,6 +341,7 @@ export const memoryPreviewStates: Record<string, MemoryPreview> = import.meta.en
 								viewer: {
 									canEdit: false,
 									canShare: false,
+									canReview: false,
 								},
 								createdAt: "2026-10-25T09:00:00Z",
 								updatedAt: "2026-10-25T09:00:00Z",

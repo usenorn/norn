@@ -279,3 +279,72 @@ func TestSupersedingAnswersWithTheReplacement(t *testing.T) {
 		t.Fatalf("supersede = %d %v", status, body)
 	}
 }
+
+func TestAcceptingPassesTheEditedContentAndReadsOutTheReview(t *testing.T) {
+	memories, routes := memoryEdge(t)
+	workspaceID, memoryID := uuid.New(), uuid.New()
+
+	memories.EXPECT().Accept(gomock.Any(), workspaceID, memoryID, gomock.Any()).
+		DoAndReturn(func(_ any, _, _ uuid.UUID, input service.AcceptMemoryInput) (entity.Memory, error) {
+			if input.ExpectedVersion != 2 || input.Content == nil || input.Content.Statement != "Ship the public API behind a flag" {
+				t.Fatalf("the acceptance reached the service as %+v", input)
+			}
+
+			return entity.Memory{
+				ID:            memoryID,
+				WorkspaceID:   workspaceID,
+				Kind:          entity.MemoryKindDecision,
+				Statement:     input.Content.Statement,
+				Audience:      entity.WorkspaceAudience(),
+				Status:        entity.MemoryStatusAccepted,
+				Basis:         entity.MemoryBasisInference,
+				EffectiveFrom: time.Date(2026, 10, 25, 0, 0, 0, 0, time.UTC),
+				Version:       4,
+				Viewer:        entity.MemoryViewer{Edits: true, Reviews: true},
+			}, nil
+		})
+
+	status, body := sendDoc(t, routes, http.MethodPost,
+		"/workspaces/"+workspaceID.String()+"/memories/"+memoryID.String()+"/accept",
+		`{"expectedVersion":2,"content":{"kind":"decision","statement":"Ship the public API behind a flag"}}`,
+	)
+
+	viewer, _ := body["viewer"].(map[string]any)
+
+	if status != http.StatusOK || body["status"] != "accepted" || viewer["canReview"] != true {
+		t.Fatalf("accept = %d %v", status, body)
+	}
+}
+
+func TestOnlyAReviewerMayRejectAndOnlyWithAReason(t *testing.T) {
+	for name, testCase := range map[string]struct {
+		err    error
+		status int
+		reason string
+	}{
+		"someone who is not a reviewer": {err: entity.ErrMemoryReviewForbidden, status: http.StatusForbidden, reason: "memory_review_forbidden"},
+		"a settled memory":              {err: entity.ErrMemoryNotPending, status: http.StatusConflict},
+		"a blank reason": {
+			err:    entity.NewValidationError(entity.FieldError{Field: entity.MemoryFieldReason, Code: entity.ValidationCodeRequired}),
+			status: http.StatusUnprocessableEntity,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			memories, routes := memoryEdge(t)
+			workspaceID, memoryID := uuid.New(), uuid.New()
+
+			memories.EXPECT().Reject(gomock.Any(), workspaceID, memoryID, service.RejectMemoryInput{
+				ExpectedVersion: 3, Reason: "contradicts the release freeze",
+			}).Return(entity.Memory{}, testCase.err)
+
+			status, problem := sendDoc(t, routes, http.MethodPost,
+				"/workspaces/"+workspaceID.String()+"/memories/"+memoryID.String()+"/reject",
+				`{"expectedVersion":3,"reason":"contradicts the release freeze"}`,
+			)
+
+			if status != testCase.status || (testCase.reason != "" && problem["reason"] != testCase.reason) {
+				t.Fatalf("reject = %d %v, want %d %s", status, problem, testCase.status, testCase.reason)
+			}
+		})
+	}
+}

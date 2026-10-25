@@ -3637,7 +3637,11 @@ func memoryDTO(memory entity.Memory) api.Memory {
 		SupersededById:  memory.SupersededByID,
 		Version:         int32(memory.Version),
 		ContributorIds:  contributors,
-		Viewer:          api.DocViewer{CanEdit: memory.Viewer.Edits, CanShare: memory.Viewer.Reshares},
+		Viewer: api.MemoryViewer{
+			CanEdit:   memory.Viewer.Edits,
+			CanShare:  memory.Viewer.Reshares,
+			CanReview: memory.Viewer.Reviews,
+		},
 		CreatedAt:       memory.CreatedAt,
 		UpdatedAt:       memory.UpdatedAt,
 	}
@@ -3704,6 +3708,7 @@ func memoryRevisionSummaryDTO(summary entity.MemoryRevisionSummary) api.MemoryRe
 		Action:       api.MemoryRevisionAction(summary.Action),
 		Status:       api.MemoryStatus(summary.Status),
 		Statement:    summary.Statement,
+		Reason:       nilIfEmpty(summary.Reason),
 		AccountId:    optionalUUIDDTO(summary.By.AccountID),
 		AccountName:  nilIfEmpty(summary.AccountName),
 		AgentId:      summary.By.AgentID,
@@ -3723,6 +3728,7 @@ func memoryRevisionDTO(revision entity.MemoryRevision) api.MemoryRevision {
 		Action:         summary.Action,
 		Status:         summary.Status,
 		Statement:      summary.Statement,
+		Reason:         summary.Reason,
 		AccountId:      summary.AccountId,
 		AccountName:    summary.AccountName,
 		AgentId:        summary.AgentId,

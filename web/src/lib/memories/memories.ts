@@ -71,6 +71,7 @@ export const memoryStatusLabels: Record<MemoryStatus, string> = {
 	disputed: "Disputed",
 	superseded: "Superseded",
 	withdrawn: "Withdrawn",
+	rejected: "Rejected",
 };
 
 export const memoryStatusTones: Record<MemoryStatus, PillTone> = {
@@ -79,6 +80,7 @@ export const memoryStatusTones: Record<MemoryStatus, PillTone> = {
 	disputed: "danger",
 	superseded: "muted",
 	withdrawn: "muted",
+	rejected: "muted",
 };
 
 export const memoryKindLabels: Record<MemoryKind, string> = {

@@ -770,6 +770,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrKnowledgeNotShareable):
 		return knowledgeForbidden(api.KnowledgeNotShareable, err), true
 
+	case errors.Is(err, entity.ErrMemoryReviewForbidden):
+		return knowledgeForbidden(api.MemoryReviewForbidden, err), true
+
 	case errors.Is(err, entity.ErrIntakeDomainUnset):
 		return intakeConflict(api.IntakeDomainUnset, err), true
 
@@ -3300,6 +3303,14 @@ func (r problemResponse) VisitSupersedeWorkspaceMemoryResponse(w http.ResponseWr
 }
 
 func (r problemResponse) VisitWithdrawWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitAcceptWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitRejectWorkspaceMemoryResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

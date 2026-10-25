@@ -5782,6 +5782,9 @@ paths:
       tags: [memories]
       operationId: withdrawWorkspaceMemory
       summary: Withdraw a memory, keeping its history
+      description: >-
+        A withdrawn memory is kept with its history and is no longer recalled. Content already
+        delivered to an agent or another client cannot be recalled from it.
       requestBody:
         required: true
         content:
@@ -5797,6 +5800,64 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
         '409': { $ref: '#/components/responses/MemoryConflict' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/accept:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    post:
+      tags: [memories]
+      operationId: acceptWorkspaceMemory
+      summary: Accept a proposed or disputed memory, optionally editing it first
+      description: >-
+        Only a workspace admin, or the lead of a project memory's project, accepts a memory, and
+        only as a person. Edited content is recorded as a correction before the acceptance. A
+        proposal that supersedes another memory retires that memory when it is accepted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AcceptMemoryRequest' }
+      responses:
+        '200':
+          description: The accepted memory
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/memories/{memoryId}/reject:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/MemoryId'
+    post:
+      tags: [memories]
+      operationId: rejectWorkspaceMemory
+      summary: Reject a proposed or disputed memory with a reason
+      description: >-
+        A rejected memory is kept with its history and the reason, and is never recalled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RejectMemoryRequest' }
+      responses:
+        '200':
+          description: The rejected memory
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Memory' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/MemoryConflict' }
+        '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /workspaces/{workspaceId}/memories/{memoryId}/share:
@@ -12538,7 +12599,12 @@ components:
 
     MemoryStatus:
       type: string
-      enum: [proposed, accepted, disputed, superseded, withdrawn]
+      description: >-
+        A project or workspace memory written by an agent, or by a person who is neither a
+        workspace admin nor the project's lead, is proposed until one of them accepts or rejects
+        it. Recall returns only accepted memories unless proposals are asked for, and never a
+        rejected one.
+      enum: [proposed, accepted, disputed, superseded, withdrawn, rejected]
 
     MemoryBasis:
       type: string
@@ -12646,12 +12712,23 @@ components:
         contributorIds:
           type: array
           items: { type: string, format: uuid }
-        viewer: { $ref: '#/components/schemas/DocViewer' }
+        viewer: { $ref: '#/components/schemas/MemoryViewer' }
         createdAt:
           type: string
           format: date-time
           description: When the memory was recorded.
         updatedAt: { type: string, format: date-time }
+
+    MemoryViewer:
+      type: object
+      description: What the caller may do with this memory under the permission model.
+      required: [canEdit, canShare, canReview]
+      properties:
+        canEdit: { type: boolean }
+        canShare: { type: boolean }
+        canReview:
+          type: boolean
+          description: Whether the caller may accept or reject the memory while it is proposed or disputed.
 
     MemoryPage:
       type: object
@@ -12763,6 +12840,25 @@ components:
       properties:
         expectedVersion: { type: integer, format: int32, minimum: 1 }
 
+    AcceptMemoryRequest:
+      type: object
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        content:
+          allOf:
+            - $ref: '#/components/schemas/MemoryContent'
+          description: >-
+            The memory as it should read once accepted. Leave it out to accept it as it is; what
+            the content leaves out is cleared.
+
+    RejectMemoryRequest:
+      type: object
+      required: [expectedVersion, reason]
+      properties:
+        expectedVersion: { type: integer, format: int32, minimum: 1 }
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+
     ShareMemoryRequest:
       type: object
       required: [expectedVersion, audience]
@@ -12772,7 +12868,10 @@ components:
 
     MemoryRevisionAction:
       type: string
-      enum: [created, corrected, reshared, accepted, disputed, superseded, withdrawn]
+      description: >-
+        reconciled records an author settling how a proposal relates to other memories while it
+        still waits for review.
+      enum: [created, corrected, reshared, accepted, disputed, superseded, withdrawn, rejected, reconciled]
 
     MemoryRevisionSummary:
       type: object
@@ -12787,6 +12886,9 @@ components:
         action: { $ref: '#/components/schemas/MemoryRevisionAction' }
         status: { $ref: '#/components/schemas/MemoryStatus' }
         statement: { type: string }
+        reason:
+          type: string
+          description: Why the memory was rejected, on a rejected revision.
         accountId: { type: string, format: uuid }
         accountName: { type: string }
         agentId: { type: string, format: uuid }
@@ -12820,6 +12922,9 @@ components:
         action: { $ref: '#/components/schemas/MemoryRevisionAction' }
         status: { $ref: '#/components/schemas/MemoryStatus' }
         statement: { type: string }
+        reason:
+          type: string
+          description: Why the memory was rejected, on a rejected revision.
         accountId: { type: string, format: uuid }
         accountName: { type: string }
         agentId: { type: string, format: uuid }
@@ -15976,6 +16081,7 @@ components:
                 - instance_admin_required
                 - knowledge_not_editable
                 - knowledge_not_shareable
+                - memory_review_forbidden
 
     SignUpClosedProblem:
       allOf:
