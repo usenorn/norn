@@ -74,17 +74,112 @@ func TestAMemoryIsRecordedFromItsContentAndReadsOutWithItsProvenance(t *testing.
 		t.Fatalf("create = %d %v", status, body)
 	}
 
-	if body["status"] != "proposed" || body["basis"] != "inference" || body["source"] != "agent" ||
-		body["agentId"] != agentID.String() || body["effectiveFrom"] != "2026-10-24" {
+	memory, _ := body["memory"].(map[string]any)
+
+	if memory["status"] != "proposed" || memory["basis"] != "inference" || memory["source"] != "agent" ||
+		memory["agentId"] != agentID.String() || memory["effectiveFrom"] != "2026-10-24" {
 		t.Fatalf("the memory read out as %v", body)
 	}
 
-	if evidence, ok := body["evidence"].([]any); !ok || len(evidence) != 2 {
-		t.Fatalf("the evidence read out as %v", body["evidence"])
+	if evidence, ok := memory["evidence"].([]any); !ok || len(evidence) != 2 {
+		t.Fatalf("the evidence read out as %v", memory["evidence"])
 	}
 
-	if contributors, ok := body["contributorIds"].([]any); !ok || len(contributors) != 0 {
-		t.Fatalf("contributors read out as %v, want an empty list", body["contributorIds"])
+	if contributors, ok := memory["contributorIds"].([]any); !ok || len(contributors) != 0 {
+		t.Fatalf("contributors read out as %v, want an empty list", memory["contributorIds"])
+	}
+
+	related, relatedOK := body["related"].([]any)
+	choices, choicesOK := body["choices"].([]any)
+
+	if !relatedOK || len(related) != 0 || !choicesOK || len(choices) != 0 {
+		t.Fatalf("a memory with nothing related read out with %v and %v, want empty lists", body["related"], body["choices"])
+	}
+}
+
+func TestAHeldMemoryAnswersWithItsRelatedMemoriesAndChoices(t *testing.T) {
+	memories, routes := memoryEdge(t)
+	workspaceID, draftID, existingID := uuid.New(), uuid.New(), uuid.New()
+
+	memories.EXPECT().Related(gomock.Any(), workspaceID, draftID).Return(service.MemoryWrite{
+		Memory: entity.Memory{ID: draftID, Kind: entity.MemoryKindDecision, Statement: "Production uses MySQL", Status: entity.MemoryStatusDisputed},
+		Related: []entity.RelatedMemory{{
+			Memory:   entity.Memory{ID: existingID, Kind: entity.MemoryKindDecision, Statement: "Production uses PostgreSQL", Status: entity.MemoryStatusAccepted},
+			Relation: entity.MemoryRelationConflict,
+		}},
+		Choices: []entity.MemoryChoice{
+			{Resolution: entity.MemoryResolutionIndependent},
+			{Resolution: entity.MemoryResolutionSupersede, TargetID: &existingID},
+			{Resolution: entity.MemoryResolutionNoChange},
+		},
+	}, nil)
+
+	status, body := sendDoc(t, routes, http.MethodGet,
+		"/workspaces/"+workspaceID.String()+"/memories/"+draftID.String()+"/related", "",
+	)
+
+	if status != http.StatusOK {
+		t.Fatalf("related = %d %v", status, body)
+	}
+
+	related, _ := body["related"].([]any)
+	first, _ := related[0].(map[string]any)
+	firstMemory, _ := first["memory"].(map[string]any)
+
+	if len(related) != 1 || first["relation"] != "conflict" || firstMemory["id"] != existingID.String() {
+		t.Fatalf("related read out as %v", body["related"])
+	}
+
+	choices, _ := body["choices"].([]any)
+	supersede, _ := choices[1].(map[string]any)
+
+	if len(choices) != 3 || supersede["resolution"] != "supersede" || supersede["targetId"] != existingID.String() {
+		t.Fatalf("choices read out as %v", body["choices"])
+	}
+}
+
+func TestReconcilingReachesTheServiceWithItsTargetAndAnswersWithBoth(t *testing.T) {
+	memories, routes := memoryEdge(t)
+	workspaceID, draftID, existingID := uuid.New(), uuid.New(), uuid.New()
+
+	memories.EXPECT().
+		Reconcile(gomock.Any(), workspaceID, draftID, service.ReconcileMemoryInput{
+			Resolution:      entity.MemoryResolutionSupersede,
+			ExpectedVersion: 1,
+			Target:          &service.MemoryTarget{ID: existingID, ExpectedVersion: 4},
+		}).
+		Return(service.MemoryReconciliation{
+			Memory: entity.Memory{ID: draftID, Status: entity.MemoryStatusAccepted, SupersedesID: &existingID, Version: 2},
+			Target: &entity.Memory{ID: existingID, Status: entity.MemoryStatusSuperseded, SupersededByID: &draftID, Version: 5},
+		}, nil)
+
+	status, body := sendDoc(t, routes, http.MethodPost,
+		"/workspaces/"+workspaceID.String()+"/memories/"+draftID.String()+"/reconcile",
+		`{"resolution":"supersede","expectedVersion":1,"target":{"memoryId":"`+existingID.String()+`","expectedVersion":4}}`,
+	)
+
+	memory, _ := body["memory"].(map[string]any)
+	target, _ := body["target"].(map[string]any)
+
+	if status != http.StatusOK || memory["supersedesId"] != existingID.String() || target["supersededById"] != draftID.String() {
+		t.Fatalf("reconcile = %d %v", status, body)
+	}
+}
+
+func TestReconcilingASettledMemoryIsAConflict(t *testing.T) {
+	memories, routes := memoryEdge(t)
+	workspaceID, memoryID := uuid.New(), uuid.New()
+
+	memories.EXPECT().Reconcile(gomock.Any(), workspaceID, memoryID, gomock.Any()).
+		Return(service.MemoryReconciliation{}, entity.ErrMemoryNotPending)
+
+	status, problem := sendDoc(t, routes, http.MethodPost,
+		"/workspaces/"+workspaceID.String()+"/memories/"+memoryID.String()+"/reconcile",
+		`{"resolution":"independent","expectedVersion":2}`,
+	)
+
+	if status != http.StatusConflict || problem["code"] != "memory_not_pending" {
+		t.Fatalf("reconcile = %d %v, want 409 memory_not_pending", status, problem)
 	}
 }
 

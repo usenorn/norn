@@ -3623,7 +3623,7 @@ export interface paths {
         put?: never;
         /**
          * Record a memory for an audience
-         * @description A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+         * @description The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
          */
         post: operations["createWorkspaceMemory"];
         delete?: never;
@@ -3650,6 +3650,52 @@ export interface paths {
          */
         put: operations["correctWorkspaceMemory"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/related": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Read the memories a pending memory relates to and the choices that reconcile it
+         * @description A proposed or disputed memory is compared again with the memories the caller can read. A settled memory answers with nothing related and no choices.
+         */
+        get: operations["getWorkspaceMemoryRelated"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/memories/{memoryId}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Settle a proposed or disputed memory against a related one
+         * @description independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+         */
+        post: operations["reconcileWorkspaceMemory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8133,6 +8179,50 @@ export interface components {
             expectedVersion: number;
             replacement: components["schemas"]["CreateMemoryRequest"];
         };
+        /**
+         * @description duplicate restates the memory, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
+         * @enum {string}
+         */
+        MemoryRelation: "duplicate" | "conditional" | "conflict";
+        /** @enum {string} */
+        MemoryResolution: "independent" | "update" | "supersede" | "no_change";
+        RelatedMemory: {
+            memory: components["schemas"]["Memory"];
+            relation: components["schemas"]["MemoryRelation"];
+        };
+        MemoryChoice: {
+            resolution: components["schemas"]["MemoryResolution"];
+            /**
+             * Format: uuid
+             * @description The related memory that update and supersede act on.
+             */
+            targetId?: string;
+        };
+        MemoryWrite: {
+            memory: components["schemas"]["Memory"];
+            related: components["schemas"]["RelatedMemory"][];
+            /** @description What the caller may do to settle the memory. Empty once it is settled. */
+            choices: components["schemas"]["MemoryChoice"][];
+        };
+        MemoryTarget: {
+            /** Format: uuid */
+            memoryId: string;
+            /** Format: int32 */
+            expectedVersion: number;
+        };
+        ReconcileMemoryRequest: {
+            resolution: components["schemas"]["MemoryResolution"];
+            /**
+             * Format: int32
+             * @description The version of the memory being settled.
+             */
+            expectedVersion: number;
+            target?: components["schemas"]["MemoryTarget"];
+        };
+        MemoryReconciliation: {
+            memory: components["schemas"]["Memory"];
+            target?: components["schemas"]["Memory"];
+        };
         WithdrawMemoryRequest: {
             /** Format: int32 */
             expectedVersion: number;
@@ -8206,7 +8296,7 @@ export interface components {
         };
         MemoryConflictProblem: components["schemas"]["Problem"] & {
             /** @enum {string} */
-            code: "memory_stale" | "memory_closed" | "memory_transition_invalid";
+            code: "memory_stale" | "memory_closed" | "memory_transition_invalid" | "memory_not_pending";
             /**
              * Format: int32
              * @description The version the memory is at now, when the write was against an older one.
@@ -19058,13 +19148,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The memory as recorded */
+            /** @description The memory as recorded, with what it relates to */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Memory"];
+                    "application/json": components["schemas"]["MemoryWrite"];
                 };
             };
             401: components["responses"]["Problem"];
@@ -19123,6 +19213,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Memory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["MemoryConflict"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    getWorkspaceMemoryRelated: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The memory with what it relates to */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryWrite"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    reconcileWorkspaceMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                memoryId: components["parameters"]["MemoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description The memory and the target after reconciliation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryReconciliation"];
                 };
             };
             401: components["responses"]["Problem"];

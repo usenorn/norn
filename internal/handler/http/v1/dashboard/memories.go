@@ -62,7 +62,39 @@ func (h *handler) CreateWorkspaceMemory(
 		return nil, err
 	}
 
-	return api.CreateWorkspaceMemory201JSONResponse(memoryDTO(written.Memory)), nil
+	return api.CreateWorkspaceMemory201JSONResponse(memoryWriteDTO(written)), nil
+}
+
+func (h *handler) GetWorkspaceMemoryRelated(
+	ctx context.Context,
+	request api.GetWorkspaceMemoryRelatedRequestObject,
+) (api.GetWorkspaceMemoryRelatedResponseObject, error) {
+	written, err := h.memories.Related(ctx, request.WorkspaceId, request.MemoryId)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.GetWorkspaceMemoryRelated200JSONResponse(memoryWriteDTO(written)), nil
+}
+
+func (h *handler) ReconcileWorkspaceMemory(
+	ctx context.Context,
+	request api.ReconcileWorkspaceMemoryRequestObject,
+) (api.ReconcileWorkspaceMemoryResponseObject, error) {
+	reconciled, err := h.memories.Reconcile(ctx, request.WorkspaceId, request.MemoryId, reconcileMemoryInputOf(*request.Body))
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.ReconcileWorkspaceMemory200JSONResponse(memoryReconciliationDTO(reconciled)), nil
 }
 
 func (h *handler) GetWorkspaceMemory(

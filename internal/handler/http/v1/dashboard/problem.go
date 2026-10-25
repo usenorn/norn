@@ -749,6 +749,9 @@ func problemFor(err error) (problemResponse, bool) {
 	case errors.Is(err, entity.ErrMemoryTransitionInvalid):
 		return memoryConflict(api.MemoryTransitionInvalid, err, nil), true
 
+	case errors.Is(err, entity.ErrMemoryNotPending):
+		return memoryConflict(api.MemoryNotPending, err, nil), true
+
 	case errors.Is(err, entity.ErrDocHasChildren):
 		return docConflict(api.DocHasChildren, err, nil), true
 
@@ -3281,6 +3284,14 @@ func (r problemResponse) VisitGetWorkspaceMemoryResponse(w http.ResponseWriter) 
 }
 
 func (r problemResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

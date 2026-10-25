@@ -3652,6 +3652,50 @@ func memoryPageDTO(list service.MemoryList) api.MemoryPage {
 	return api.MemoryPage{Memories: memories, NextCursor: nilIfEmpty(list.NextCursor)}
 }
 
+func memoryWriteDTO(written service.MemoryWrite) api.MemoryWrite {
+	related := make([]api.RelatedMemory, 0, len(written.Related))
+	for _, candidate := range written.Related {
+		related = append(related, api.RelatedMemory{
+			Memory:   memoryDTO(candidate.Memory),
+			Relation: api.MemoryRelation(candidate.Relation),
+		})
+	}
+
+	choices := make([]api.MemoryChoice, 0, len(written.Choices))
+	for _, choice := range written.Choices {
+		choices = append(choices, api.MemoryChoice{
+			Resolution: api.MemoryResolution(choice.Resolution),
+			TargetId:   choice.TargetID,
+		})
+	}
+
+	return api.MemoryWrite{Memory: memoryDTO(written.Memory), Related: related, Choices: choices}
+}
+
+func reconcileMemoryInputOf(body api.ReconcileMemoryRequest) service.ReconcileMemoryInput {
+	input := service.ReconcileMemoryInput{
+		Resolution:      entity.MemoryResolution(body.Resolution),
+		ExpectedVersion: int(body.ExpectedVersion),
+	}
+
+	if body.Target != nil {
+		input.Target = &service.MemoryTarget{ID: body.Target.MemoryId, ExpectedVersion: int(body.Target.ExpectedVersion)}
+	}
+
+	return input
+}
+
+func memoryReconciliationDTO(reconciled service.MemoryReconciliation) api.MemoryReconciliation {
+	dto := api.MemoryReconciliation{Memory: memoryDTO(reconciled.Memory)}
+
+	if reconciled.Target != nil {
+		target := memoryDTO(*reconciled.Target)
+		dto.Target = &target
+	}
+
+	return dto
+}
+
 func memoryRevisionSummaryDTO(summary entity.MemoryRevisionSummary) api.MemoryRevisionSummary {
 	return api.MemoryRevisionSummary{
 		Id:           summary.ID,

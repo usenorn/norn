@@ -3633,6 +3633,7 @@ func (e MemoryBasis) Valid() bool {
 // Defines values for MemoryConflictProblemCode.
 const (
 	MemoryClosed            MemoryConflictProblemCode = "memory_closed"
+	MemoryNotPending        MemoryConflictProblemCode = "memory_not_pending"
 	MemoryStale             MemoryConflictProblemCode = "memory_stale"
 	MemoryTransitionInvalid MemoryConflictProblemCode = "memory_transition_invalid"
 )
@@ -3641,6 +3642,8 @@ const (
 func (e MemoryConflictProblemCode) Valid() bool {
 	switch e {
 	case MemoryClosed:
+		return true
+	case MemoryNotPending:
 		return true
 	case MemoryStale:
 		return true
@@ -3693,6 +3696,51 @@ func (e MemoryKind) Valid() bool {
 	case MemoryKindLesson:
 		return true
 	case MemoryKindPreference:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryRelation.
+const (
+	MemoryRelationConditional MemoryRelation = "conditional"
+	MemoryRelationConflict    MemoryRelation = "conflict"
+	MemoryRelationDuplicate   MemoryRelation = "duplicate"
+)
+
+// Valid indicates whether the value is a known member of the MemoryRelation enum.
+func (e MemoryRelation) Valid() bool {
+	switch e {
+	case MemoryRelationConditional:
+		return true
+	case MemoryRelationConflict:
+		return true
+	case MemoryRelationDuplicate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MemoryResolution.
+const (
+	Independent MemoryResolution = "independent"
+	NoChange    MemoryResolution = "no_change"
+	Supersede   MemoryResolution = "supersede"
+	Update      MemoryResolution = "update"
+)
+
+// Valid indicates whether the value is a known member of the MemoryResolution enum.
+func (e MemoryResolution) Valid() bool {
+	switch e {
+	case Independent:
+		return true
+	case NoChange:
+		return true
+	case Supersede:
+		return true
+	case Update:
 		return true
 	default:
 		return false
@@ -9228,6 +9276,14 @@ type MemoryApplicability struct {
 // MemoryBasis Whether the memory records what was directly observed or what an agent inferred.
 type MemoryBasis string
 
+// MemoryChoice defines model for MemoryChoice.
+type MemoryChoice struct {
+	Resolution MemoryResolution `json:"resolution"`
+
+	// TargetId The related memory that update and supersede act on.
+	TargetId *openapi_types.UUID `json:"targetId,omitempty"`
+}
+
 // MemoryConflictProblem defines model for MemoryConflictProblem.
 type MemoryConflictProblem struct {
 	Code     MemoryConflictProblemCode `json:"code"`
@@ -9288,6 +9344,18 @@ type MemoryPage struct {
 	Memories   []Memory `json:"memories"`
 	NextCursor *string  `json:"nextCursor,omitempty"`
 }
+
+// MemoryReconciliation defines model for MemoryReconciliation.
+type MemoryReconciliation struct {
+	Memory Memory  `json:"memory"`
+	Target *Memory `json:"target,omitempty"`
+}
+
+// MemoryRelation duplicate restates the memory, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
+type MemoryRelation string
+
+// MemoryResolution defines model for MemoryResolution.
+type MemoryResolution string
 
 // MemoryRevision defines model for MemoryRevision.
 type MemoryRevision struct {
@@ -9351,6 +9419,20 @@ type MemoryRevisionSummary struct {
 
 // MemoryStatus defines model for MemoryStatus.
 type MemoryStatus string
+
+// MemoryTarget defines model for MemoryTarget.
+type MemoryTarget struct {
+	ExpectedVersion int32              `json:"expectedVersion"`
+	MemoryId        openapi_types.UUID `json:"memoryId"`
+}
+
+// MemoryWrite defines model for MemoryWrite.
+type MemoryWrite struct {
+	// Choices What the caller may do to settle the memory. Empty once it is settled.
+	Choices []MemoryChoice  `json:"choices"`
+	Memory  Memory          `json:"memory"`
+	Related []RelatedMemory `json:"related"`
+}
 
 // MentionTarget defines model for MentionTarget.
 type MentionTarget struct {
@@ -9732,6 +9814,14 @@ type ReassignTriageIssueRequest struct {
 	TeamId               openapi_types.UUID `json:"teamId"`
 }
 
+// ReconcileMemoryRequest defines model for ReconcileMemoryRequest.
+type ReconcileMemoryRequest struct {
+	// ExpectedVersion The version of the memory being settled.
+	ExpectedVersion int32            `json:"expectedVersion"`
+	Resolution      MemoryResolution `json:"resolution"`
+	Target          *MemoryTarget    `json:"target,omitempty"`
+}
+
 // RecordEvidenceRequest defines model for RecordEvidenceRequest.
 type RecordEvidenceRequest struct {
 	AttachmentId *openapi_types.UUID `json:"attachmentId,omitempty"`
@@ -9771,6 +9861,14 @@ type RegisterAgentRequest struct {
 type RegisteredAgent struct {
 	Agent Agent  `json:"agent"`
 	Value string `json:"value"`
+}
+
+// RelatedMemory defines model for RelatedMemory.
+type RelatedMemory struct {
+	Memory Memory `json:"memory"`
+
+	// Relation duplicate restates the memory, conditional covers the same subject under other conditions and stays compatible, and conflict contradicts an accepted decision under the same conditions.
+	Relation MemoryRelation `json:"relation"`
 }
 
 // RemoteFingerprint What a repository's remote is, without saying where it is. The hash identifies the remote well enough to recognise the same one on another machine; the host and path tail are for a person reading the screen. The full URL never leaves the machine.
@@ -12681,6 +12779,9 @@ type CreateWorkspaceMemoryJSONRequestBody = CreateMemoryRequest
 // CorrectWorkspaceMemoryJSONRequestBody defines body for CorrectWorkspaceMemory for application/json ContentType.
 type CorrectWorkspaceMemoryJSONRequestBody = CorrectMemoryRequest
 
+// ReconcileWorkspaceMemoryJSONRequestBody defines body for ReconcileWorkspaceMemory for application/json ContentType.
+type ReconcileWorkspaceMemoryJSONRequestBody = ReconcileMemoryRequest
+
 // ShareWorkspaceMemoryJSONRequestBody defines body for ShareWorkspaceMemory for application/json ContentType.
 type ShareWorkspaceMemoryJSONRequestBody = ShareMemoryRequest
 
@@ -15270,7 +15371,7 @@ type ClientInterface interface {
 
 	// CreateWorkspaceMemoryWithBody Record a memory for an audience
 	//
-	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -15279,7 +15380,7 @@ type ClientInterface interface {
 
 	// CreateWorkspaceMemory Record a memory for an audience
 	//
-	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -15308,6 +15409,31 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
 	CorrectWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ReconcileWorkspaceMemoryWithBody Settle a proposed or disputed memory against a related one
+	//
+	// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+	ReconcileWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ReconcileWorkspaceMemory Settle a proposed or disputed memory against a related one
+	//
+	// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+	ReconcileWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ReconcileWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWorkspaceMemoryRelated Read the memories a pending memory relates to and the choices that reconcile it
+	//
+	// A proposed or disputed memory is compared again with the memories the caller can read. A settled memory answers with nothing related and no choices.
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/related (the `GetWorkspaceMemoryRelated` operationId).
+	GetWorkspaceMemoryRelated(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
 	//
@@ -22375,7 +22501,7 @@ func (c *Client) ListWorkspaceMemories(ctx context.Context, workspaceId Workspac
 
 // CreateWorkspaceMemoryWithBody Record a memory for an audience
 //
-// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 //
 // Takes any type of body and a specified content type.
 //
@@ -22394,7 +22520,7 @@ func (c *Client) CreateWorkspaceMemoryWithBody(ctx context.Context, workspaceId 
 
 // CreateWorkspaceMemory Record a memory for an audience
 //
-// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -22454,6 +22580,61 @@ func (c *Client) CorrectWorkspaceMemoryWithBody(ctx context.Context, workspaceId
 // Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
 func (c *Client) CorrectWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCorrectWorkspaceMemoryRequest(c.Server, workspaceId, memoryId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ReconcileWorkspaceMemoryWithBody Settle a proposed or disputed memory against a related one
+//
+// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+func (c *Client) ReconcileWorkspaceMemoryWithBody(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReconcileWorkspaceMemoryRequestWithBody(c.Server, workspaceId, memoryId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ReconcileWorkspaceMemory Settle a proposed or disputed memory against a related one
+//
+// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+func (c *Client) ReconcileWorkspaceMemory(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ReconcileWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewReconcileWorkspaceMemoryRequest(c.Server, workspaceId, memoryId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetWorkspaceMemoryRelated Read the memories a pending memory relates to and the choices that reconcile it
+//
+// A proposed or disputed memory is compared again with the memories the caller can read. A settled memory answers with nothing related and no choices.
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/related (the `GetWorkspaceMemoryRelated` operationId).
+func (c *Client) GetWorkspaceMemoryRelated(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWorkspaceMemoryRelatedRequest(c.Server, workspaceId, memoryId)
 	if err != nil {
 		return nil, err
 	}
@@ -38133,6 +38314,101 @@ func NewCorrectWorkspaceMemoryRequestWithBody(server string, workspaceId Workspa
 	return req, nil
 }
 
+// NewReconcileWorkspaceMemoryRequest calls the generic ReconcileWorkspaceMemory builder with application/json body
+func NewReconcileWorkspaceMemoryRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, body ReconcileWorkspaceMemoryJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewReconcileWorkspaceMemoryRequestWithBody(server, workspaceId, memoryId, "application/json", bodyReader)
+}
+
+// NewReconcileWorkspaceMemoryRequestWithBody constructs an http.Request for the ReconcileWorkspaceMemory method, with any body, and a specified content type
+func NewReconcileWorkspaceMemoryRequestWithBody(server string, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/reconcile", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetWorkspaceMemoryRelatedRequest constructs an http.Request for the GetWorkspaceMemoryRelated method
+func NewGetWorkspaceMemoryRelatedRequest(server string, workspaceId WorkspaceId, memoryId MemoryId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "memoryId", memoryId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/memories/%s/related", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceMemoryRevisionsRequest constructs an http.Request for the ListWorkspaceMemoryRevisions method
 func NewListWorkspaceMemoryRevisionsRequest(server string, workspaceId WorkspaceId, memoryId MemoryId, params *ListWorkspaceMemoryRevisionsParams) (*http.Request, error) {
 	var err error
@@ -47592,7 +47868,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateWorkspaceMemoryWithBodyWithResponse Record a memory for an audience
 	//
-	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47601,7 +47877,7 @@ type ClientWithResponsesInterface interface {
 
 	// CreateWorkspaceMemoryWithResponse Record a memory for an audience
 	//
-	// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+	// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47632,6 +47908,33 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /workspaces/{workspaceId}/memories/{memoryId} (the `CorrectWorkspaceMemory` operationId).
 	CorrectWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body CorrectWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*CorrectWorkspaceMemoryResponse, error)
+
+	// ReconcileWorkspaceMemoryWithBodyWithResponse Settle a proposed or disputed memory against a related one
+	//
+	// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+	ReconcileWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReconcileWorkspaceMemoryResponse, error)
+
+	// ReconcileWorkspaceMemoryWithResponse Settle a proposed or disputed memory against a related one
+	//
+	// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+	ReconcileWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ReconcileWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*ReconcileWorkspaceMemoryResponse, error)
+
+	// GetWorkspaceMemoryRelatedWithResponse Read the memories a pending memory relates to and the choices that reconcile it
+	//
+	// A proposed or disputed memory is compared again with the memories the caller can read. A settled memory answers with nothing related and no choices.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/related (the `GetWorkspaceMemoryRelated` operationId).
+	GetWorkspaceMemoryRelatedWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*GetWorkspaceMemoryRelatedResponse, error)
 
 	// ListWorkspaceMemoryRevisionsWithResponse Read every change made to a memory, newest first
 	//
@@ -68080,7 +68383,7 @@ type CreateWorkspaceMemoryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	// JSON201 the response for an HTTP 201 `application/json` response
-	JSON201 *Memory
+	JSON201 *MemoryWrite
 	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
 	ApplicationproblemJSON401 *Problem
 	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
@@ -68092,7 +68395,7 @@ type CreateWorkspaceMemoryResponse struct {
 }
 
 // GetJSON201 returns the response for an HTTP 201 `application/json` response
-func (r CreateWorkspaceMemoryResponse) GetJSON201() *Memory {
+func (r CreateWorkspaceMemoryResponse) GetJSON201() *MemoryWrite {
 	return r.JSON201
 }
 
@@ -68291,6 +68594,158 @@ func (r CorrectWorkspaceMemoryResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CorrectWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ReconcileWorkspaceMemoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *MemoryReconciliation
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *MemoryConflict
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ReconcileWorkspaceMemoryResponse) GetJSON200() *MemoryReconciliation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ReconcileWorkspaceMemoryResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ReconcileWorkspaceMemoryResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r ReconcileWorkspaceMemoryResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r ReconcileWorkspaceMemoryResponse) GetApplicationproblemJSON409() *MemoryConflict {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r ReconcileWorkspaceMemoryResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ReconcileWorkspaceMemoryResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ReconcileWorkspaceMemoryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ReconcileWorkspaceMemoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ReconcileWorkspaceMemoryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ReconcileWorkspaceMemoryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetWorkspaceMemoryRelatedResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *MemoryWrite
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetWorkspaceMemoryRelatedResponse) GetJSON200() *MemoryWrite {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r GetWorkspaceMemoryRelatedResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r GetWorkspaceMemoryRelatedResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r GetWorkspaceMemoryRelatedResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r GetWorkspaceMemoryRelatedResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r GetWorkspaceMemoryRelatedResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWorkspaceMemoryRelatedResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWorkspaceMemoryRelatedResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetWorkspaceMemoryRelatedResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -83473,7 +83928,7 @@ func (c *ClientWithResponses) ListWorkspaceMemoriesWithResponse(ctx context.Cont
 
 // CreateWorkspaceMemoryWithBodyWithResponse Record a memory for an audience
 //
-// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83488,7 +83943,7 @@ func (c *ClientWithResponses) CreateWorkspaceMemoryWithBodyWithResponse(ctx cont
 
 // CreateWorkspaceMemoryWithResponse Record a memory for an audience
 //
-// A personal memory is accepted as soon as it is recorded. A shared memory recorded by an agent starts as a proposal.
+// The memory is compared with the memories the writer can read. With nothing related it is accepted. Otherwise it is held as a proposal, or as disputed when it contradicts an accepted decision under the same conditions, and answered with the related memories and the choices that reconcile it. Nothing is resolved automatically.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -83542,6 +83997,51 @@ func (c *ClientWithResponses) CorrectWorkspaceMemoryWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseCorrectWorkspaceMemoryResponse(rsp)
+}
+
+// ReconcileWorkspaceMemoryWithBodyWithResponse Settle a proposed or disputed memory against a related one
+//
+// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+func (c *ClientWithResponses) ReconcileWorkspaceMemoryWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReconcileWorkspaceMemoryResponse, error) {
+	rsp, err := c.ReconcileWorkspaceMemoryWithBody(ctx, workspaceId, memoryId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReconcileWorkspaceMemoryResponse(rsp)
+}
+
+// ReconcileWorkspaceMemoryWithResponse Settle a proposed or disputed memory against a related one
+//
+// independent accepts the memory as it is. update corrects the target with this memory's content and withdraws this one. supersede accepts this memory and moves the target to superseded, linking the two. no_change withdraws this memory.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile (the `ReconcileWorkspaceMemory` operationId).
+func (c *ClientWithResponses) ReconcileWorkspaceMemoryWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, body ReconcileWorkspaceMemoryJSONRequestBody, reqEditors ...RequestEditorFn) (*ReconcileWorkspaceMemoryResponse, error) {
+	rsp, err := c.ReconcileWorkspaceMemory(ctx, workspaceId, memoryId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseReconcileWorkspaceMemoryResponse(rsp)
+}
+
+// GetWorkspaceMemoryRelatedWithResponse Read the memories a pending memory relates to and the choices that reconcile it
+//
+// A proposed or disputed memory is compared again with the memories the caller can read. A settled memory answers with nothing related and no choices.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/memories/{memoryId}/related (the `GetWorkspaceMemoryRelated` operationId).
+func (c *ClientWithResponses) GetWorkspaceMemoryRelatedWithResponse(ctx context.Context, workspaceId WorkspaceId, memoryId MemoryId, reqEditors ...RequestEditorFn) (*GetWorkspaceMemoryRelatedResponse, error) {
+	rsp, err := c.GetWorkspaceMemoryRelated(ctx, workspaceId, memoryId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWorkspaceMemoryRelatedResponse(rsp)
 }
 
 // ListWorkspaceMemoryRevisionsWithResponse Read every change made to a memory, newest first
@@ -101439,7 +101939,7 @@ func ParseCreateWorkspaceMemoryResponse(rsp *http.Response) (*CreateWorkspaceMem
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest Memory
+		var dest MemoryWrite
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -101587,6 +102087,128 @@ func ParseCorrectWorkspaceMemoryResponse(rsp *http.Response) (*CorrectWorkspaceM
 			return nil, err
 		}
 		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseReconcileWorkspaceMemoryResponse parses an HTTP response from a ReconcileWorkspaceMemoryWithResponse call
+func ParseReconcileWorkspaceMemoryResponse(rsp *http.Response) (*ReconcileWorkspaceMemoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ReconcileWorkspaceMemoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MemoryReconciliation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest MemoryConflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetWorkspaceMemoryRelatedResponse parses an HTTP response from a GetWorkspaceMemoryRelatedWithResponse call
+func ParseGetWorkspaceMemoryRelatedResponse(rsp *http.Response) (*GetWorkspaceMemoryRelatedResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWorkspaceMemoryRelatedResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MemoryWrite
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -110711,6 +111333,12 @@ type ServerInterface interface {
 	// CorrectWorkspaceMemory Correct what a memory says against the version it was read at
 	// (PUT /workspaces/{workspaceId}/memories/{memoryId})
 	CorrectWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
+	// ReconcileWorkspaceMemory Settle a proposed or disputed memory against a related one
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile)
+	ReconcileWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
+	// GetWorkspaceMemoryRelated Read the memories a pending memory relates to and the choices that reconcile it
+	// (GET /workspaces/{workspaceId}/memories/{memoryId}/related)
+	GetWorkspaceMemoryRelated(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId)
 	// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
 	// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions)
 	ListWorkspaceMemoryRevisions(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId, params ListWorkspaceMemoryRevisionsParams)
@@ -112748,6 +113376,18 @@ func (_ Unimplemented) GetWorkspaceMemory(w http.ResponseWriter, r *http.Request
 // CorrectWorkspaceMemory Correct what a memory says against the version it was read at
 // (PUT /workspaces/{workspaceId}/memories/{memoryId})
 func (_ Unimplemented) CorrectWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// ReconcileWorkspaceMemory Settle a proposed or disputed memory against a related one
+// (POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile)
+func (_ Unimplemented) ReconcileWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetWorkspaceMemoryRelated Read the memories a pending memory relates to and the choices that reconcile it
+// (GET /workspaces/{workspaceId}/memories/{memoryId}/related)
+func (_ Unimplemented) GetWorkspaceMemoryRelated(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -122755,6 +123395,76 @@ func (siw *ServerInterfaceWrapper) CorrectWorkspaceMemory(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ReconcileWorkspaceMemory operation middleware
+func (siw *ServerInterfaceWrapper) ReconcileWorkspaceMemory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReconcileWorkspaceMemory(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceMemoryRelated operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceMemoryRelated(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "memoryId" -------------
+	var memoryId MemoryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "memoryId", chi.URLParam(r, "memoryId"), &memoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "memoryId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceMemoryRelated(w, r, workspaceId, memoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceMemoryRevisions operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceMemoryRevisions(w http.ResponseWriter, r *http.Request) {
 
@@ -128775,6 +129485,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}", wrapper.CorrectWorkspaceMemory)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/related", wrapper.GetWorkspaceMemoryRelated)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/reconcile", wrapper.ReconcileWorkspaceMemory)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/workspaces/{workspaceId}/memories/{memoryId}/supersede", wrapper.SupersedeWorkspaceMemory)
@@ -153452,7 +154168,7 @@ type CreateWorkspaceMemoryResponseObject interface {
 	VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error
 }
 
-type CreateWorkspaceMemory201JSONResponse Memory
+type CreateWorkspaceMemory201JSONResponse MemoryWrite
 
 func (response CreateWorkspaceMemory201JSONResponse) VisitCreateWorkspaceMemoryResponse(w http.ResponseWriter) error {
 
@@ -153712,6 +154428,203 @@ func (response CorrectWorkspaceMemory422ApplicationProblemPlusJSONResponse) Visi
 type CorrectWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
 
 func (response CorrectWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitCorrectWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileWorkspaceMemoryRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+	Body        *ReconcileWorkspaceMemoryJSONRequestBody
+}
+
+type ReconcileWorkspaceMemoryResponseObject interface {
+	VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error
+}
+
+type ReconcileWorkspaceMemory200JSONResponse MemoryReconciliation
+
+func (response ReconcileWorkspaceMemory200JSONResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileWorkspaceMemory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReconcileWorkspaceMemory401ApplicationProblemPlusJSONResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileWorkspaceMemory403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ReconcileWorkspaceMemory403ApplicationProblemPlusJSONResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileWorkspaceMemory404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReconcileWorkspaceMemory404ApplicationProblemPlusJSONResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileWorkspaceMemory409ApplicationProblemPlusJSONResponse struct {
+	MemoryConflictApplicationProblemPlusJSONResponse
+}
+
+func (response ReconcileWorkspaceMemory409ApplicationProblemPlusJSONResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileWorkspaceMemory422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReconcileWorkspaceMemory422ApplicationProblemPlusJSONResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileWorkspaceMemory500ApplicationProblemPlusJSONResponse Problem
+
+func (response ReconcileWorkspaceMemory500ApplicationProblemPlusJSONResponse) VisitReconcileWorkspaceMemoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRelatedRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	MemoryId    MemoryId    `json:"memoryId"`
+}
+
+type GetWorkspaceMemoryRelatedResponseObject interface {
+	VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceMemoryRelated200JSONResponse MemoryWrite
+
+func (response GetWorkspaceMemoryRelated200JSONResponse) VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRelated401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceMemoryRelated401ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRelated403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWorkspaceMemoryRelated403ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRelated404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceMemoryRelated404ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWorkspaceMemoryRelated500ApplicationProblemPlusJSONResponse Problem
+
+func (response GetWorkspaceMemoryRelated500ApplicationProblemPlusJSONResponse) VisitGetWorkspaceMemoryRelatedResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -167709,6 +168622,12 @@ type StrictServerInterface interface {
 	// CorrectWorkspaceMemory Correct what a memory says against the version it was read at
 	// (PUT /workspaces/{workspaceId}/memories/{memoryId})
 	CorrectWorkspaceMemory(ctx context.Context, request CorrectWorkspaceMemoryRequestObject) (CorrectWorkspaceMemoryResponseObject, error)
+	// ReconcileWorkspaceMemory Settle a proposed or disputed memory against a related one
+	// (POST /workspaces/{workspaceId}/memories/{memoryId}/reconcile)
+	ReconcileWorkspaceMemory(ctx context.Context, request ReconcileWorkspaceMemoryRequestObject) (ReconcileWorkspaceMemoryResponseObject, error)
+	// GetWorkspaceMemoryRelated Read the memories a pending memory relates to and the choices that reconcile it
+	// (GET /workspaces/{workspaceId}/memories/{memoryId}/related)
+	GetWorkspaceMemoryRelated(ctx context.Context, request GetWorkspaceMemoryRelatedRequestObject) (GetWorkspaceMemoryRelatedResponseObject, error)
 	// ListWorkspaceMemoryRevisions Read every change made to a memory, newest first
 	// (GET /workspaces/{workspaceId}/memories/{memoryId}/revisions)
 	ListWorkspaceMemoryRevisions(ctx context.Context, request ListWorkspaceMemoryRevisionsRequestObject) (ListWorkspaceMemoryRevisionsResponseObject, error)
@@ -175958,6 +176877,67 @@ func (sh *strictHandler) CorrectWorkspaceMemory(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CorrectWorkspaceMemoryResponseObject); ok {
 		if err := validResponse.VisitCorrectWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReconcileWorkspaceMemory operation middleware
+func (sh *strictHandler) ReconcileWorkspaceMemory(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request ReconcileWorkspaceMemoryRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	var body ReconcileWorkspaceMemoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReconcileWorkspaceMemory(ctx, request.(ReconcileWorkspaceMemoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReconcileWorkspaceMemory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReconcileWorkspaceMemoryResponseObject); ok {
+		if err := validResponse.VisitReconcileWorkspaceMemoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceMemoryRelated operation middleware
+func (sh *strictHandler) GetWorkspaceMemoryRelated(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, memoryId MemoryId) {
+	var request GetWorkspaceMemoryRelatedRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.MemoryId = memoryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceMemoryRelated(ctx, request.(GetWorkspaceMemoryRelatedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceMemoryRelated")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceMemoryRelatedResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceMemoryRelatedResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
