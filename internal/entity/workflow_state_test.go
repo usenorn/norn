@@ -165,3 +165,42 @@ func TestTwoTeamsWithDifferentStateNamesMapOntoTheSameFourCategories(t *testing.
 		t.Fatalf("the two teams share %d state names, so the test is not proving name-independence", shared)
 	}
 }
+
+func TestWorkHandsOffInALaterActiveStateOrOnCompletion(t *testing.T) {
+	defaults := entity.DefaultWorkflowStates(uuid.New(), uuid.New())
+
+	want := map[string]bool{
+		"Backlog":     false,
+		"Todo":        false,
+		"In progress": false,
+		"In review":   true,
+		"Done":        true,
+		"Canceled":    false,
+	}
+
+	for _, state := range defaults {
+		target := entity.IssueState{Name: state.Name, Category: state.Category, Position: state.Position}
+
+		if got := target.HandsOffWork(defaults); got != want[state.Name] {
+			t.Errorf("%s hands off work = %t, want %t", state.Name, got, want[state.Name])
+		}
+	}
+}
+
+func TestTheOnlyActiveStateNeverHandsOffWork(t *testing.T) {
+	states := []entity.WorkflowState{
+		{Name: "Queued", Category: entity.StateCategoryNotStarted, Position: 1},
+		{Name: "Doing", Category: entity.StateCategoryActive, Position: 2},
+		{Name: "Shipped", Category: entity.StateCategoryComplete, Position: 3},
+	}
+
+	doing := entity.IssueState{Name: "Doing", Category: entity.StateCategoryActive, Position: 2}
+	if doing.HandsOffWork(states) {
+		t.Fatal("the team's only active state handed off work")
+	}
+
+	shipped := entity.IssueState{Name: "Shipped", Category: entity.StateCategoryComplete, Position: 3}
+	if !shipped.HandsOffWork(states) {
+		t.Fatal("completing the issue did not hand off work")
+	}
+}

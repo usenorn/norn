@@ -127,6 +127,19 @@ func FirstActiveState(states []WorkflowState) (WorkflowState, bool) {
 	return earliest, found
 }
 
+func (s IssueState) HandsOffWork(states []WorkflowState) bool {
+	switch s.Category {
+	case StateCategoryComplete:
+		return true
+	case StateCategoryActive:
+		first, found := FirstActiveState(states)
+
+		return found && s.Position > first.Position
+	default:
+		return false
+	}
+}
+
 func LastActiveState(states []WorkflowState) (WorkflowState, bool) {
 	var (
 		latest WorkflowState
