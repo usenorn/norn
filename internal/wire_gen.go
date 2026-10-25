@@ -608,7 +608,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	mcpRegistry := mcpregistry.New(toolingclientClient)
 	agentCapabilities := agentcapability.New(repositoryAgent, agentSkill, agentMCPServer, agentMCPConnection, agentMCPOAuthState, skillSource, mcpRegistry, mcpAuthorizer, repositoryBlob, serviceAuthorizer, serviceAudit, postgresClient, instance)
 	retrievals := retrieval.New(repositoryKnowledge, repositoryMemory, memoryRevision, repositoryIssue, knowledgeEmbeddings, knowledgeAuthorizer, serviceAuthorizer, configKnowledge)
-	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs, docLinks, memories, retrievals)
+	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, cycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs, docLinks, memories, retrievals, app)
 	if err != nil {
 		cleanup8()
 		cleanup7()
@@ -1069,7 +1069,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	knowledgeEmbeddings := knowledgeembedding.New(aiProvider, aiModel, configKnowledge)
 	memories := memory2.New(repositoryMemory, memoryRevision, repositoryProject, repositoryIssue, issueComment, repositoryDoc, docRevision, repositoryKnowledge, notificationEvent, repositoryMembership, knowledgeAuthorizer, serviceAuthorizer, knowledgeIndexes, knowledgeEmbeddings, client, configKnowledge)
 	retrievals := retrieval.New(repositoryKnowledge, repositoryMemory, memoryRevision, repositoryIssue, knowledgeEmbeddings, knowledgeAuthorizer, serviceAuthorizer, configKnowledge)
-	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, serviceCycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs, docLinks, memories, retrievals)
+	tools, err := mcpserver.NewTools(issues, issueRelations, issueQuestions, agents, issueComments, projects, serviceCycles, teams, workspaces, workflowStates, labels, searches, serviceSourceControl, docs, docLinks, memories, retrievals, app)
 	if err != nil {
 		cleanup8()
 		cleanup7()

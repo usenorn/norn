@@ -53,6 +53,8 @@ var toolScopes = entity.APIScopeSet{
 	entity.NewAPIScope(entity.ResourceKnowledge, entity.ActionManage),
 }
 
+const testBaseURL = "https://norn.example"
+
 type harness struct {
 	issues        *issuesvc.MockIssues
 	relations     *issuerelationsvc.MockIssueRelations
@@ -121,13 +123,14 @@ func newHarness(t *testing.T) *harness {
 		h.docLinks,
 		h.memories,
 		h.retrievals,
+		config.App{Version: "test", BaseURL: testBaseURL},
 	)
 	if err != nil {
 		t.Fatalf("NewTools: %v", err)
 	}
 
 	h.tools = tools
-	h.edge = mcpserver.New(tools, config.App{Version: "test"}, config.MCP{Enabled: true})
+	h.edge = mcpserver.New(tools, config.App{Version: "test", BaseURL: testBaseURL}, config.MCP{Enabled: true})
 
 	h.questions.EXPECT().
 		List(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -450,6 +453,7 @@ func TestDisabledMCPAnswers404(t *testing.T) {
 		doclinksvc.NewMockDocLinks(ctrl),
 		memorysvc.NewMockMemories(ctrl),
 		retrievalsvc.NewMockRetrievals(ctrl),
+		config.App{Version: "test"},
 	)
 	if err != nil {
 		t.Fatalf("NewTools: %v", err)
@@ -486,6 +490,10 @@ func TestStartingAnIssueTellsTheAgentToUseTheBranchNameAsWritten(t *testing.T) {
 	h.issues.EXPECT().
 		GetByReference(gomock.Any(), workspace.ID, "GAM-6").
 		Return(issue, nil)
+
+	h.retrievals.EXPECT().
+		Retrieve(gomock.Any(), workspace.ID, gomock.Any()).
+		Return(entity.KnowledgeRetrieval{}, nil)
 
 	h.sourceControl.EXPECT().
 		BranchName(gomock.Any(), workspace.ID, issue.ID).

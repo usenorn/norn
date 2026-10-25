@@ -9,6 +9,7 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/usenorn/norn/internal/config"
 	"github.com/usenorn/norn/internal/entity"
 	"github.com/usenorn/norn/internal/service"
 )
@@ -51,6 +52,7 @@ func NewTools(
 	docLinks service.DocLinks,
 	memories service.Memories,
 	retrievals service.Retrievals,
+	app config.App,
 ) (*Tools, error) {
 	set := &toolset{
 		issues:         issues,
@@ -70,6 +72,7 @@ func NewTools(
 		docLinks:       docLinks,
 		memories:       memories,
 		retrievals:     retrievals,
+		baseURL:        app.BaseURL,
 	}
 
 	tools := &Tools{byName: map[string]hostedTool{}}
