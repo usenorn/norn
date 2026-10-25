@@ -23,6 +23,7 @@ import (
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
 	memorysvc "github.com/usenorn/norn/internal/service/memory"
 )
 
@@ -45,6 +46,7 @@ type harness struct {
 	comments      map[uuid.UUID]entity.IssueComment
 	docs          map[uuid.UUID]entity.Doc
 	docRevisions  map[uuid.UUID]uuid.UUID
+	scheduled     []uuid.UUID
 }
 
 func newHarness(t *testing.T) *harness {
@@ -72,9 +74,15 @@ func newHarness(t *testing.T) *harness {
 	docs := docrepo.NewMockDoc(ctrl)
 	docRevisions := docrevisionrepo.NewMockDocRevision(ctrl)
 	authorizer := authorizersvc.NewMockAuthorizer(ctrl)
+	indexes := knowledgeindexsvc.NewMockKnowledgeIndexes(ctrl)
+
+	indexes.EXPECT().Schedule(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, workspaceID uuid.UUID) { h.scheduled = append(h.scheduled, workspaceID) }).
+		AnyTimes()
 
 	h.service = memorysvc.New(
-		h.memories, h.revisions, projects, issues, comments, docs, docRevisions, h.knowledge, authorizer, h.transactor,
+		h.memories, h.revisions, projects, issues, comments, docs, docRevisions, h.knowledge, authorizer, indexes,
+		h.transactor,
 	)
 
 	h.transactor.EXPECT().
@@ -810,5 +818,19 @@ func TestTheListHidesEvidenceTheReaderCannotSee(t *testing.T) {
 
 	if filter := h.listed[0]; filter.PersonalAuthorID != h.reader.Identity.Principal || !slices.Equal(filter.ProjectIDs, []uuid.UUID{h.projectID}) {
 		t.Fatalf("the list asked the store for %+v", filter)
+	}
+}
+
+func TestEveryMemoryWriteSchedulesAKnowledgeRefresh(t *testing.T) {
+	h := newHarness(t)
+
+	memory := h.create(t, "Deploys go out on Tuesdays", entity.WorkspaceAudience())
+
+	if _, err := h.service.Withdraw(context.Background(), h.workspaceID, memory.ID, memory.Version); err != nil {
+		t.Fatalf("Withdraw: %v", err)
+	}
+
+	if !slices.Equal(h.scheduled, []uuid.UUID{h.workspaceID, h.workspaceID}) {
+		t.Fatalf("scheduled refreshes for %v, want one for the creation and one for the withdrawal", h.scheduled)
 	}
 }

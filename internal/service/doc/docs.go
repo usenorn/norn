@@ -18,8 +18,10 @@ import (
 type docsService struct {
 	docs       repository.Doc
 	revisions  repository.DocRevision
+	passages   repository.DocPassage
 	projects   repository.Project
 	knowledge  service.KnowledgeAuthorizer
+	indexes    service.KnowledgeIndexes
 	gate       *agenthold.Gate
 	transactor repository.Transactor
 }
@@ -27,16 +29,20 @@ type docsService struct {
 func New(
 	docs repository.Doc,
 	revisions repository.DocRevision,
+	passages repository.DocPassage,
 	projects repository.Project,
 	knowledge service.KnowledgeAuthorizer,
+	indexes service.KnowledgeIndexes,
 	gate *agenthold.Gate,
 	transactor repository.Transactor,
 ) service.Docs {
 	return &docsService{
 		docs:       docs,
 		revisions:  revisions,
+		passages:   passages,
 		projects:   projects,
 		knowledge:  knowledge,
+		indexes:    indexes,
 		gate:       gate,
 		transactor: transactor,
 	}
@@ -196,7 +202,7 @@ func (s *docsService) List(
 		WithinID:         input.WithinID,
 		AllProjects:      reader.AllProjects,
 		ProjectIDs:       reader.ProjectIDs,
-		PersonalAuthorID: personalAuthor(reader),
+		PersonalAuthorID: reader.PersonalAuthor(),
 	}
 
 	summaries, err := s.docs.List(ctx, workspaceID, filter, page.Lookahead())
@@ -245,7 +251,7 @@ func (s *docsService) Search(
 		Limit:            searchLimit(input.Limit),
 		AllProjects:      reader.AllProjects,
 		ProjectIDs:       reader.ProjectIDs,
-		PersonalAuthorID: personalAuthor(reader),
+		PersonalAuthorID: reader.PersonalAuthor(),
 	})
 	if err != nil {
 		return nil, err
@@ -271,14 +277,6 @@ func searchLimit(requested int) int {
 	default:
 		return requested
 	}
-}
-
-func personalAuthor(reader entity.KnowledgeReader) uuid.UUID {
-	if reader.Identity.Personal {
-		return reader.Identity.Principal
-	}
-
-	return uuid.Nil
 }
 
 func (s *docsService) Update(
@@ -650,6 +648,12 @@ func (s *docsService) record(
 	if err := s.revisions.Record(ctx, doc.Revision(action, entity.KnowledgeAttributionOf(decision))); err != nil {
 		return entity.Doc{}, err
 	}
+
+	if err := s.passages.Replace(ctx, doc); err != nil {
+		return entity.Doc{}, err
+	}
+
+	s.indexes.Schedule(ctx, doc.WorkspaceID)
 
 	return s.docs.GetByID(ctx, doc.WorkspaceID, doc.ID)
 }

@@ -24,6 +24,7 @@ type memoriesService struct {
 	docRevisions repository.DocRevision
 	knowledge    service.KnowledgeAuthorizer
 	authorizer   service.Authorizer
+	indexes      service.KnowledgeIndexes
 	transactor   repository.Transactor
 }
 
@@ -37,6 +38,7 @@ func New(
 	docRevisions repository.DocRevision,
 	knowledge service.KnowledgeAuthorizer,
 	authorizer service.Authorizer,
+	indexes service.KnowledgeIndexes,
 	transactor repository.Transactor,
 ) service.Memories {
 	return &memoriesService{
@@ -49,6 +51,7 @@ func New(
 		docRevisions: docRevisions,
 		knowledge:    knowledge,
 		authorizer:   authorizer,
+		indexes:      indexes,
 		transactor:   transactor,
 	}
 }
@@ -427,14 +430,19 @@ func (s *memoriesService) List(
 	}
 
 	reader := decision.Reader
+	var kinds []entity.MemoryKind
+	if input.Kind != nil {
+		kinds = []entity.MemoryKind{*input.Kind}
+	}
+
 	filter := repository.MemoryFilter{
-		Kind:             input.Kind,
+		Kinds:            kinds,
 		Statuses:         input.Statuses,
 		AppliesProjectID: input.ProjectID,
 		Component:        strings.TrimSpace(input.Component),
 		AllProjects:      reader.AllProjects,
 		ProjectIDs:       reader.ProjectIDs,
-		PersonalAuthorID: personalAuthor(reader),
+		PersonalAuthorID: reader.PersonalAuthor(),
 	}
 
 	memories, err := s.memories.List(ctx, workspaceID, filter, page.Lookahead())
@@ -464,14 +472,6 @@ func (s *memoriesService) List(
 	}
 
 	return list, nil
-}
-
-func personalAuthor(reader entity.KnowledgeReader) uuid.UUID {
-	if reader.Identity.Personal {
-		return reader.Identity.Principal
-	}
-
-	return uuid.Nil
 }
 
 func (s *memoriesService) Correct(
@@ -685,6 +685,8 @@ func (s *memoriesService) record(
 	if err := s.revisions.Record(ctx, memory.Revision(action, entity.KnowledgeAttributionOf(decision))); err != nil {
 		return entity.Memory{}, err
 	}
+
+	s.indexes.Schedule(ctx, memory.WorkspaceID)
 
 	return s.memories.GetByID(ctx, memory.WorkspaceID, memory.ID)
 }

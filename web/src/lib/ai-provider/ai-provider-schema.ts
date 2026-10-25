@@ -32,6 +32,7 @@ export const aiProviderSchema = z
 			.max(aiProviderKeyMaxLength, "That is longer than any key the provider issues.")
 			.default(""),
 		defaultModel: z.string().trim().max(aiProviderModelMaxLength).default(""),
+		embeddingModel: z.string().trim().max(aiProviderModelMaxLength).default(""),
 		keyStored: z.boolean().default(false),
 	})
 	.superRefine((value, ctx) => {

@@ -57,6 +57,21 @@ func (mr *MockMemoryMockRecorder) Create(ctx, memory any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockMemory)(nil).Create), ctx, memory)
 }
 
+// Enumerate mocks base method.
+func (m *MockMemory) Enumerate(ctx context.Context, workspaceID uuid.UUID, filter repository.MemoryFilter, after *uuid.UUID, limit int) ([]entity.Memory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Enumerate", ctx, workspaceID, filter, after, limit)
+	ret0, _ := ret[0].([]entity.Memory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Enumerate indicates an expected call of Enumerate.
+func (mr *MockMemoryMockRecorder) Enumerate(ctx, workspaceID, filter, after, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Enumerate", reflect.TypeOf((*MockMemory)(nil).Enumerate), ctx, workspaceID, filter, after, limit)
+}
+
 // GetByID mocks base method.
 func (m *MockMemory) GetByID(ctx context.Context, workspaceID, memoryID uuid.UUID) (entity.Memory, error) {
 	m.ctrl.T.Helper()
@@ -85,6 +100,21 @@ func (m *MockMemory) List(ctx context.Context, workspaceID uuid.UUID, filter rep
 func (mr *MockMemoryMockRecorder) List(ctx, workspaceID, filter, page any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockMemory)(nil).List), ctx, workspaceID, filter, page)
+}
+
+// ListByIDs mocks base method.
+func (m *MockMemory) ListByIDs(ctx context.Context, workspaceID uuid.UUID, memoryIDs []uuid.UUID) ([]entity.Memory, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByIDs", ctx, workspaceID, memoryIDs)
+	ret0, _ := ret[0].([]entity.Memory)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByIDs indicates an expected call of ListByIDs.
+func (mr *MockMemoryMockRecorder) ListByIDs(ctx, workspaceID, memoryIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByIDs", reflect.TypeOf((*MockMemory)(nil).ListByIDs), ctx, workspaceID, memoryIDs)
 }
 
 // LockByID mocks base method.

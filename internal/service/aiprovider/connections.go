@@ -3,6 +3,7 @@ package aiprovider
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -14,13 +15,17 @@ import (
 	"github.com/usenorn/norn/internal/service"
 )
 
-const auditResourceKind = "ai_provider"
+const (
+	auditResourceKind = "ai_provider"
+	embeddingProbe    = "norn"
+)
 
 type providers struct {
 	connections repository.AIProvider
 	models      repository.AIModel
 	authorizer  service.Authorizer
 	audit       service.Audit
+	indexes     service.KnowledgeIndexes
 	instance    config.Instance
 }
 
@@ -29,6 +34,7 @@ func New(
 	models repository.AIModel,
 	authorizer service.Authorizer,
 	audit service.Audit,
+	indexes service.KnowledgeIndexes,
 	instance config.Instance,
 ) service.AIProviders {
 	return &providers{
@@ -36,6 +42,7 @@ func New(
 		models:      models,
 		authorizer:  authorizer,
 		audit:       audit,
+		indexes:     indexes,
 		instance:    instance,
 	}
 }
@@ -66,19 +73,19 @@ func (s *providers) Get(ctx context.Context, workspaceID uuid.UUID) (entity.AIPr
 	return s.connections.Get(ctx, workspaceID)
 }
 
-func (s *providers) Models(ctx context.Context, workspaceID uuid.UUID) ([]string, error) {
+func (s *providers) Models(ctx context.Context, workspaceID uuid.UUID) (entity.AIProviderModels, error) {
 	if err := s.administers(ctx, workspaceID); err != nil {
-		return nil, err
+		return entity.AIProviderModels{}, err
 	}
 
 	connection, err := s.connections.Get(ctx, workspaceID)
 	if err != nil {
-		return nil, err
+		return entity.AIProviderModels{}, err
 	}
 
 	apiKey, err := s.connections.APIKey(ctx, workspaceID)
 	if err != nil {
-		return nil, err
+		return entity.AIProviderModels{}, err
 	}
 
 	return s.models.List(ctx, connection.Endpoint, apiKey)
@@ -112,9 +119,10 @@ func (s *providers) Configure(
 
 	keyChanged := input.APIKey != ""
 	modelChanged := input.DefaultModel != current.DefaultModel
+	embeddingChanged := input.EmbeddingModel != current.EmbeddingModel
 	endpointChanged := input.Endpoint != current.Endpoint
 
-	if configured && !keyChanged && !modelChanged && !endpointChanged {
+	if configured && !keyChanged && !modelChanged && !embeddingChanged && !endpointChanged {
 		return current, nil
 	}
 
@@ -135,16 +143,23 @@ func (s *providers) Configure(
 			return entity.AIProviderConnection{}, err
 		}
 
-		if input.DefaultModel != "" && !slices.Contains(models, input.DefaultModel) {
+		if input.DefaultModel != "" && !slices.Contains(models.Text, input.DefaultModel) {
 			return entity.AIProviderConnection{}, entity.ErrAIProviderModelUnavailable
 		}
 	}
 
+	if input.EmbeddingModel != "" && (keyChanged || endpointChanged || embeddingChanged) {
+		if err := s.embeds(ctx, input.Endpoint, apiKey, input.EmbeddingModel); err != nil {
+			return entity.AIProviderConnection{}, err
+		}
+	}
+
 	connection := entity.AIProviderConnection{
-		WorkspaceID:  workspaceID,
-		Provider:     input.Provider,
-		Endpoint:     input.Endpoint,
-		DefaultModel: input.DefaultModel,
+		WorkspaceID:    workspaceID,
+		Provider:       input.Provider,
+		Endpoint:       input.Endpoint,
+		DefaultModel:   input.DefaultModel,
+		EmbeddingModel: input.EmbeddingModel,
 	}
 
 	var saved entity.AIProviderConnection
@@ -157,6 +172,10 @@ func (s *providers) Configure(
 
 	if err != nil {
 		return entity.AIProviderConnection{}, err
+	}
+
+	if embeddingChanged || (saved.Embeds() && (keyChanged || endpointChanged)) {
+		s.indexes.Schedule(ctx, workspaceID)
 	}
 
 	if !configured {
@@ -172,6 +191,7 @@ func (s *providers) Configure(
 		{keyChanged, entity.AuditAIProviderKeyReplaced},
 		{endpointChanged, entity.AuditAIProviderEndpointChanged},
 		{modelChanged, entity.AuditAIProviderModelChanged},
+		{embeddingChanged, entity.AuditAIProviderEmbeddingModel},
 	} {
 		if change.changed {
 			s.record(ctx, saved, change.action)
@@ -179,6 +199,19 @@ func (s *providers) Configure(
 	}
 
 	return saved, nil
+}
+
+func (s *providers) embeds(
+	ctx context.Context,
+	endpoint entity.AIProviderEndpoint,
+	apiKey, model string,
+) error {
+	_, err := s.models.Embed(ctx, endpoint, apiKey, model, []string{embeddingProbe})
+	if errors.Is(err, entity.ErrAIProviderModelUnavailable) {
+		return fmt.Errorf("%w: %w", entity.ErrAIProviderEmbeddingUnavailable, err)
+	}
+
+	return err
 }
 
 func (s *providers) Test(ctx context.Context, workspaceID uuid.UUID) (entity.AIProviderConnection, error) {
@@ -234,6 +267,10 @@ func (s *providers) Remove(ctx context.Context, workspaceID uuid.UUID) error {
 		return err
 	}
 
+	if connection.Embeds() {
+		s.indexes.Schedule(ctx, workspaceID)
+	}
+
 	s.record(ctx, connection, entity.AuditAIProviderRemoved)
 
 	return nil
@@ -247,6 +284,10 @@ func (s *providers) record(
 	detail := map[string]string{}
 	if connection.DefaultModel != "" {
 		detail["model"] = connection.DefaultModel
+	}
+
+	if connection.EmbeddingModel != "" {
+		detail["embeddingModel"] = connection.EmbeddingModel
 	}
 
 	if connection.Endpoint.BaseURL != "" {

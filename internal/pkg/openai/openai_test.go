@@ -44,7 +44,7 @@ func answering(t *testing.T, handler http.HandlerFunc) *openai.Client {
 	return build(t, provider.URL+"/", loopback)
 }
 
-func TestTextModelsKeepsEveryModelThatAnswersText(t *testing.T) {
+func TestModelsSeparateTextModelsFromEmbeddingModels(t *testing.T) {
 	var offered, path string
 
 	client := answering(t, func(writer http.ResponseWriter, request *http.Request) {
@@ -58,18 +58,22 @@ func TestTextModelsKeepsEveryModelThatAnswersText(t *testing.T) {
 		]}`))
 	})
 
-	models, err := client.TextModels(context.Background(), entity.AIProviderEndpoint{}, "sk-test")
+	models, err := client.Models(context.Background(), entity.AIProviderEndpoint{}, "sk-test")
 	if err != nil {
-		t.Fatalf("TextModels: %v", err)
+		t.Fatalf("Models: %v", err)
 	}
 
 	want := []string{"gpt-6-astra", "gpt-6-luna", "gpt-6-sol", "gpt-oss-120b"}
-	if !slices.Equal(models, want) {
+	if !slices.Equal(models.Text, want) {
 		t.Errorf(
 			"models = %v, want %v: a new text model must appear without a code change, and a "+
 				"model that cannot answer a text request must not be offered as the default",
-			models, want,
+			models.Text, want,
 		)
+	}
+
+	if !slices.Equal(models.Embedding, []string{"text-embedding-3-small"}) {
+		t.Errorf("embedding models = %v, want only the model that embeds", models.Embedding)
 	}
 
 	if offered != "Bearer sk-test" {
@@ -129,16 +133,16 @@ func TestAWorkspaceEndpointReplacesTheDefaultOne(t *testing.T) {
 
 	client := build(t, "https://api.openai.invalid/v1", loopback)
 
-	models, err := client.TextModels(
+	models, err := client.Models(
 		context.Background(),
 		entity.AIProviderEndpoint{BaseURL: gateway.URL + "/openai/v1"},
 		"sk-test",
 	)
 	if err != nil {
-		t.Fatalf("TextModels: %v", err)
+		t.Fatalf("Models: %v", err)
 	}
 
-	if !reached || !slices.Equal(models, []string{"llama-4-scout"}) {
+	if !reached || !slices.Equal(models.Text, []string{"llama-4-scout"}) {
 		t.Fatalf("reached %v, models %v; the workspace's own endpoint must be the one asked", reached, models)
 	}
 }
@@ -208,8 +212,71 @@ func TestAnOversizedAnswerIsRefusedRatherThanTruncated(t *testing.T) {
 		_, _ = writer.Write([]byte(`{"data":[{"id":"` + strings.Repeat("x", 2<<20) + `"}]}`))
 	})
 
-	_, err := client.TextModels(context.Background(), entity.AIProviderEndpoint{}, "sk-test")
+	_, err := client.Models(context.Background(), entity.AIProviderEndpoint{}, "sk-test")
 	if !errors.Is(err, openai.ErrResponseTooLarge) || !errors.Is(err, entity.ErrAIProviderUnreachable) {
 		t.Fatalf("err = %v, want a named size refusal reported as the provider being unusable", err)
+	}
+}
+
+func TestEmbeddingsComeBackInTheOrderTheInputsWereSent(t *testing.T) {
+	var sent struct {
+		Model          string   `json:"model"`
+		Input          []string `json:"input"`
+		EncodingFormat string   `json:"encoding_format"`
+	}
+
+	var path string
+
+	client := answering(t, func(writer http.ResponseWriter, request *http.Request) {
+		path = request.URL.Path
+		_ = json.NewDecoder(request.Body).Decode(&sent)
+
+		_, _ = writer.Write([]byte(`{"data":[
+			{"index":1,"embedding":[0,1]},
+			{"index":0,"embedding":[1,0]}
+		]}`))
+	})
+
+	vectors, err := client.Embed(
+		context.Background(), entity.AIProviderEndpoint{}, "sk-test", "text-embedding-3-small",
+		[]string{"first", "second"},
+	)
+	if err != nil {
+		t.Fatalf("Embed: %v", err)
+	}
+
+	if path != "/embeddings" || sent.Model != "text-embedding-3-small" || sent.EncodingFormat != "float" ||
+		!slices.Equal(sent.Input, []string{"first", "second"}) {
+		t.Fatalf("sent %+v to %q, want both inputs as floats to /embeddings", sent, path)
+	}
+
+	if !slices.Equal(vectors[0], []float32{1, 0}) || !slices.Equal(vectors[1], []float32{0, 1}) {
+		t.Fatalf("vectors = %v, want each vector beside the input it embeds", vectors)
+	}
+}
+
+func TestEmbeddingsThatDoNotMatchTheInputsAreRefused(t *testing.T) {
+	cases := map[string]string{
+		"one missing":     `{"data":[{"index":0,"embedding":[1]}]}`,
+		"one repeated":    `{"data":[{"index":0,"embedding":[1]},{"index":0,"embedding":[1]}]}`,
+		"out of range":    `{"data":[{"index":0,"embedding":[1]},{"index":2,"embedding":[1]}]}`,
+		"empty vector":    `{"data":[{"index":0,"embedding":[1]},{"index":1,"embedding":[]}]}`,
+		"not json at all": `upstream`,
+	}
+
+	for name, body := range cases {
+		t.Run(name, func(t *testing.T) {
+			client := answering(t, func(writer http.ResponseWriter, _ *http.Request) {
+				_, _ = writer.Write([]byte(body))
+			})
+
+			_, err := client.Embed(
+				context.Background(), entity.AIProviderEndpoint{}, "sk-test", "text-embedding-3-small",
+				[]string{"first", "second"},
+			)
+			if !errors.Is(err, entity.ErrAIProviderUnreachable) {
+				t.Fatalf("err = %v, want the answer refused as the provider being unusable", err)
+			}
+		})
 	}
 }

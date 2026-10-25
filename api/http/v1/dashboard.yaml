@@ -6517,10 +6517,11 @@ paths:
     put:
       tags: [ai-provider]
       operationId: setWorkspaceAiProvider
-      summary: Save the provider, a new key, or a new default model
+      summary: Save the provider, a new key, or new default and embedding models
       description: >-
         A new key is proved against the provider before it is stored, so a key the provider
-        refuses never replaces one that works. Leaving apiKey out keeps the stored key. Any
+        refuses never replaces one that works. A new embedding model is proved with one
+        embedding request before it is stored. Leaving apiKey out keeps the stored key. Any
         change leaves the provider untested until it is tested again.
       requestBody:
         required: true
@@ -6555,7 +6556,7 @@ paths:
     get:
       tags: [ai-provider]
       operationId: listWorkspaceAiProviderModels
-      summary: List the chat models the stored key can use
+      summary: List the chat and embedding models the stored key can use
       responses:
         '200':
           description: The models, as the provider lists them for this key
@@ -13235,6 +13236,7 @@ components:
         - ai_provider.configured
         - ai_provider.key_replaced
         - ai_provider.model_changed
+        - ai_provider.embedding_model_changed
         - ai_provider.endpoint_changed
         - ai_provider.removed
         - audit.exported
@@ -14884,10 +14886,18 @@ components:
 
     AiProviderFailure:
       type: string
-      enum: [key_rejected, model_unavailable, quota_exceeded, rate_limited, unreachable, destination_refused]
+      enum:
+        - key_rejected
+        - model_unavailable
+        - embedding_model_unavailable
+        - quota_exceeded
+        - rate_limited
+        - unreachable
+        - destination_refused
       x-enum-varnames:
         - AiProviderKeyRejected
         - AiProviderModelUnavailable
+        - AiProviderEmbeddingModelUnavailable
         - AiProviderQuotaExceeded
         - AiProviderRateLimited
         - AiProviderUnreachable
@@ -14898,14 +14908,17 @@ components:
       description: >-
         The key is never returned; keyHint carries its last few characters so an
         administrator can tell which key is installed. An empty baseUrl means the provider's
-        own endpoint, as this instance is configured to reach it.
-      required: [provider, baseUrl, allowPrivateAddress, keyHint, defaultModel, status, createdAt, updatedAt]
+        own endpoint, as this instance is configured to reach it. An empty embeddingModel
+        means knowledge retrieval matches words only.
+      required:
+        [provider, baseUrl, allowPrivateAddress, keyHint, defaultModel, embeddingModel, status, createdAt, updatedAt]
       properties:
         provider: { $ref: '#/components/schemas/AiProviderKind' }
         baseUrl: { type: string }
         allowPrivateAddress: { type: boolean }
         keyHint: { type: string }
         defaultModel: { type: string }
+        embeddingModel: { type: string }
         status: { $ref: '#/components/schemas/AiProviderStatus' }
         failure: { $ref: '#/components/schemas/AiProviderFailure' }
         verifiedAt: { type: string, format: date-time }
@@ -14928,12 +14941,16 @@ components:
         allowPrivateAddress: { type: boolean }
         apiKey: { type: string, maxLength: 512 }
         defaultModel: { type: string, maxLength: 128 }
+        embeddingModel: { type: string, maxLength: 128 }
 
     AiProviderModelList:
       type: object
-      required: [models]
+      required: [models, embeddingModels]
       properties:
         models:
+          type: array
+          items: { type: string }
+        embeddingModels:
           type: array
           items: { type: string }
 

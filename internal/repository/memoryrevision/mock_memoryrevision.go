@@ -15,6 +15,7 @@ import (
 
 	uuid "github.com/google/uuid"
 	entity "github.com/usenorn/norn/internal/entity"
+	repository "github.com/usenorn/norn/internal/repository"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -55,6 +56,21 @@ func (m *MockMemoryRevision) GetByID(ctx context.Context, workspaceID, memoryID,
 func (mr *MockMemoryRevisionMockRecorder) GetByID(ctx, workspaceID, memoryID, revisionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMemoryRevision)(nil).GetByID), ctx, workspaceID, memoryID, revisionID)
+}
+
+// InEffect mocks base method.
+func (m *MockMemoryRevision) InEffect(ctx context.Context, workspaceID uuid.UUID, query repository.KnowledgeQuery) ([]entity.KnowledgeCandidate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InEffect", ctx, workspaceID, query)
+	ret0, _ := ret[0].([]entity.KnowledgeCandidate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InEffect indicates an expected call of InEffect.
+func (mr *MockMemoryRevisionMockRecorder) InEffect(ctx, workspaceID, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InEffect", reflect.TypeOf((*MockMemoryRevision)(nil).InEffect), ctx, workspaceID, query)
 }
 
 // List mocks base method.

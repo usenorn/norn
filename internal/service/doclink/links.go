@@ -226,10 +226,7 @@ func (s *linksService) backlinks(
 	reader := decision.Reader
 	filter.AllProjects = reader.AllProjects
 	filter.ProjectIDs = reader.ProjectIDs
-
-	if reader.Identity.Personal {
-		filter.PersonalAuthorID = reader.Identity.Principal
-	}
+	filter.PersonalAuthorID = reader.PersonalAuthor()
 
 	summaries, err := s.docs.List(ctx, workspaceID, filter, entity.DocPage{Limit: entity.DocPageMaxSize})
 	if err != nil {

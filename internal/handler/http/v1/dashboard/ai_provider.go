@@ -33,8 +33,9 @@ func (h *handler) SetWorkspaceAiProvider(
 			BaseURL:             optionalString(request.Body.BaseUrl),
 			AllowPrivateAddress: request.Body.AllowPrivateAddress != nil && *request.Body.AllowPrivateAddress,
 		},
-		APIKey:       optionalString(request.Body.ApiKey),
-		DefaultModel: optionalString(request.Body.DefaultModel),
+		APIKey:         optionalString(request.Body.ApiKey),
+		DefaultModel:   optionalString(request.Body.DefaultModel),
+		EmbeddingModel: optionalString(request.Body.EmbeddingModel),
 	})
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
@@ -75,7 +76,10 @@ func (h *handler) ListWorkspaceAiProviderModels(
 		return nil, err
 	}
 
-	return api.ListWorkspaceAiProviderModels200JSONResponse{Models: models}, nil
+	return api.ListWorkspaceAiProviderModels200JSONResponse{
+		Models:          models.Text,
+		EmbeddingModels: models.Embedding,
+	}, nil
 }
 
 func (h *handler) TestWorkspaceAiProvider(
@@ -101,6 +105,7 @@ func aiProviderDTO(connection entity.AIProviderConnection) api.WorkspaceAiProvid
 		AllowPrivateAddress: connection.Endpoint.AllowPrivateAddress,
 		KeyHint:             connection.KeyHint,
 		DefaultModel:        connection.DefaultModel,
+		EmbeddingModel:      connection.EmbeddingModel,
 		Status:              api.AiProviderStatus(connection.Status()),
 		VerifiedAt:          connection.VerifiedAt,
 		FailedAt:            connection.FailedAt,

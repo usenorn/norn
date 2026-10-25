@@ -56,11 +56,26 @@ func (mr *MockAIModelMockRecorder) Converse(ctx, endpoint, apiKey, request any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Converse", reflect.TypeOf((*MockAIModel)(nil).Converse), ctx, endpoint, apiKey, request)
 }
 
+// Embed mocks base method.
+func (m *MockAIModel) Embed(ctx context.Context, endpoint entity.AIProviderEndpoint, apiKey, model string, inputs []string) ([][]float32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Embed", ctx, endpoint, apiKey, model, inputs)
+	ret0, _ := ret[0].([][]float32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Embed indicates an expected call of Embed.
+func (mr *MockAIModelMockRecorder) Embed(ctx, endpoint, apiKey, model, inputs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Embed", reflect.TypeOf((*MockAIModel)(nil).Embed), ctx, endpoint, apiKey, model, inputs)
+}
+
 // List mocks base method.
-func (m *MockAIModel) List(ctx context.Context, endpoint entity.AIProviderEndpoint, apiKey string) ([]string, error) {
+func (m *MockAIModel) List(ctx context.Context, endpoint entity.AIProviderEndpoint, apiKey string) (entity.AIProviderModels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", ctx, endpoint, apiKey)
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].(entity.AIProviderModels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

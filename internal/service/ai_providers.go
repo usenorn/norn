@@ -12,7 +12,7 @@ import (
 
 type AIProviders interface {
 	Get(ctx context.Context, workspaceID uuid.UUID) (entity.AIProviderConnection, error)
-	Models(ctx context.Context, workspaceID uuid.UUID) ([]string, error)
+	Models(ctx context.Context, workspaceID uuid.UUID) (entity.AIProviderModels, error)
 	Configure(ctx context.Context, workspaceID uuid.UUID, input entity.AIProviderInput) (entity.AIProviderConnection, error)
 	Test(ctx context.Context, workspaceID uuid.UUID) (entity.AIProviderConnection, error)
 	Remove(ctx context.Context, workspaceID uuid.UUID) error

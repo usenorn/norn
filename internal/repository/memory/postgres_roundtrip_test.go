@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -237,7 +238,7 @@ func TestTheMemoryListHonoursTheReaderAndItsFilters(t *testing.T) {
 				want:   []string{"Freeze on Fridays", "Ship weekly"},
 			},
 			"preferences only": {
-				filter: repository.MemoryFilter{Kind: &preference, PersonalAuthorID: fixture.authorID},
+				filter: repository.MemoryFilter{Kinds: []entity.MemoryKind{preference}, PersonalAuthorID: fixture.authorID},
 				want:   []string{"I prefer tabs"},
 			},
 		} {
@@ -254,6 +255,79 @@ func TestTheMemoryListHonoursTheReaderAndItsFilters(t *testing.T) {
 			if strings.Join(got, "|") != strings.Join(testCase.want, "|") {
 				return fmt.Errorf("%s: listed %v, want %v", name, got, testCase.want)
 			}
+		}
+
+		return nil
+	})
+}
+
+func TestEnumerationPagesThroughEveryInEffectMemoryInAStableOrder(t *testing.T) {
+	withMemoryFixture(t, func(ctx context.Context, client *postgres.Client, fixture memoryFixture) error {
+		memories := New(client)
+		at := time.Now().UTC()
+		tomorrow := entity.MemoryDay(at.AddDate(0, 0, 1))
+
+		var want []uuid.UUID
+
+		for index := range 7 {
+			memory := draftMemory(fixture, fmt.Sprintf("Constraint %d", index), entity.WorkspaceAudience(), at)
+
+			switch index {
+			case 5:
+				memory.EffectiveFrom = tomorrow
+			case 6:
+				memory.Kind = entity.MemoryKindLesson
+			default:
+				want = append(want, memory.ID)
+			}
+
+			if err := memories.Create(ctx, memory); err != nil {
+				return err
+			}
+		}
+
+		slices.SortFunc(want, func(a, b uuid.UUID) int { return strings.Compare(a.String(), b.String()) })
+
+		filter := repository.MemoryFilter{
+			Kinds:      []entity.MemoryKind{entity.MemoryKindConstraint},
+			Statuses:   []entity.MemoryStatus{entity.MemoryStatusAccepted},
+			InEffectOn: &at,
+		}
+
+		var (
+			got   []uuid.UUID
+			after *uuid.UUID
+		)
+
+		for range len(want) {
+			page, err := memories.Enumerate(ctx, fixture.workspaceID, filter, after, 2)
+			if err != nil {
+				return err
+			}
+
+			if len(page) == 0 {
+				break
+			}
+
+			for _, memory := range page {
+				got = append(got, memory.ID)
+			}
+
+			last := page[len(page)-1].ID
+			after = &last
+		}
+
+		if !slices.Equal(got, want) {
+			return fmt.Errorf("enumerated %v, want every in-effect constraint once, in id order: %v", got, want)
+		}
+
+		hydrated, err := memories.ListByIDs(ctx, fixture.workspaceID, []uuid.UUID{want[0], uuid.New()})
+		if err != nil {
+			return err
+		}
+
+		if len(hydrated) != 1 || hydrated[0].ID != want[0] || hydrated[0].Statement == "" {
+			return fmt.Errorf("hydrated %+v, want only the memory that exists", hydrated)
 		}
 
 		return nil

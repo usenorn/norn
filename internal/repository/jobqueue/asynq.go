@@ -396,6 +396,12 @@ func (c *Client) EnqueueTelegramSettlement(ctx context.Context, decision entity.
 	)
 }
 
+func (c *Client) EnqueueKnowledgeRefresh(ctx context.Context, payload entity.KnowledgeRefreshPayload) error {
+	return c.enqueueOnce(
+		ctx, entity.TaskTypeKnowledgeRefresh, "knowledge-refresh:"+payload.WorkspaceID.String(), payload,
+	)
+}
+
 func telegramTaskID(prefix string, decision entity.TelegramDecision) string {
 	return fmt.Sprintf("%s:%s:%s:%s", prefix, decision.Kind, decision.Subject(), decision.Round)
 }

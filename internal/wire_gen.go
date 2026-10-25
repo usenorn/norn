@@ -72,6 +72,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/directory"
 	"github.com/usenorn/norn/internal/repository/doc"
 	"github.com/usenorn/norn/internal/repository/doclink"
+	"github.com/usenorn/norn/internal/repository/docpassage"
 	"github.com/usenorn/norn/internal/repository/docrevision"
 	"github.com/usenorn/norn/internal/repository/emailchange"
 	"github.com/usenorn/norn/internal/repository/eventstream"
@@ -98,6 +99,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/issuerevision"
 	"github.com/usenorn/norn/internal/repository/issuetemplate"
 	"github.com/usenorn/norn/internal/repository/jobqueue"
+	"github.com/usenorn/norn/internal/repository/knowledge"
 	"github.com/usenorn/norn/internal/repository/label"
 	"github.com/usenorn/norn/internal/repository/labelgroup"
 	"github.com/usenorn/norn/internal/repository/mailer"
@@ -189,6 +191,7 @@ import (
 	issuetemplate2 "github.com/usenorn/norn/internal/service/issuetemplate"
 	"github.com/usenorn/norn/internal/service/jobs"
 	"github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	"github.com/usenorn/norn/internal/service/knowledgeindex"
 	label2 "github.com/usenorn/norn/internal/service/label"
 	"github.com/usenorn/norn/internal/service/licensing"
 	memory2 "github.com/usenorn/norn/internal/service/memory"
@@ -197,6 +200,7 @@ import (
 	previewgateway2 "github.com/usenorn/norn/internal/service/previewgateway"
 	"github.com/usenorn/norn/internal/service/previewproxy"
 	project2 "github.com/usenorn/norn/internal/service/project"
+	"github.com/usenorn/norn/internal/service/retrieval"
 	roadmap2 "github.com/usenorn/norn/internal/service/roadmap"
 	runner2 "github.com/usenorn/norn/internal/service/runner"
 	runnerchannel2 "github.com/usenorn/norn/internal/service/runnerchannel"
@@ -514,8 +518,26 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	webhookDeliveries := webhook2.NewLog(repositoryWebhook, webhookDelivery, jobProducer, serviceAuthorizer, postgresClient)
 	repositoryDoc := doc.New(postgresClient)
 	docRevision := docrevision.New(postgresClient)
+	docPassage := docpassage.New(postgresClient)
 	knowledgeAuthorizer := knowledgeauthorizer.New(serviceAuthorizer, repositoryProject)
-	docs := doc2.New(repositoryDoc, docRevision, repositoryProject, knowledgeAuthorizer, gate, postgresClient)
+	knowledgeEmbedding := knowledge.NewEmbeddings(postgresClient)
+	aiProvider := aiprovider.New(postgresClient, crypterCrypter)
+	openAI := config.NewOpenAI(configConfig)
+	openaiClient, err := openai.New(openAI)
+	if err != nil {
+		cleanup8()
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	aiModel := aimodel.New(openaiClient)
+	knowledgeIndexes := knowledgeindex.New(repositoryDoc, docPassage, knowledgeEmbedding, aiProvider, aiModel, jobProducer, postgresClient)
+	docs := doc2.New(repositoryDoc, docRevision, docPassage, repositoryProject, knowledgeAuthorizer, knowledgeIndexes, gate, postgresClient)
 	agents := agent2.New(repositoryAgent, agentSetting, workspaceAgentSetting, agentProposal, repositoryAccount, repositoryMembership, repositoryProject, projectMember, apiToken, repositoryTeam, repositoryActivity, workflowState, issues, issueComments, docs, issueQuestion, serviceAuthorizer, postgresClient, serviceAudit)
 	oidc := config.NewOIDC(configConfig)
 	oidcState := oidcstate.New(client, oidc)
@@ -540,7 +562,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	docLinks := doclink2.New(repositoryDoc, docLink, repositoryIssue, repositoryProject, knowledgeAuthorizer, serviceAuthorizer)
 	repositoryMemory := memory.New(postgresClient)
 	memoryRevision := memoryrevision.New(postgresClient)
-	memories := memory2.New(repositoryMemory, memoryRevision, repositoryProject, repositoryIssue, issueComment, repositoryDoc, docRevision, knowledgeAuthorizer, serviceAuthorizer, postgresClient)
+	memories := memory2.New(repositoryMemory, memoryRevision, repositoryProject, repositoryIssue, issueComment, repositoryDoc, docRevision, knowledgeAuthorizer, serviceAuthorizer, knowledgeIndexes, postgresClient)
 	savedView := savedview.New(postgresClient)
 	issueFilterReference := issuefilterreference.New(postgresClient)
 	savedViews := savedview2.New(savedView, issueFilterReference, repositoryTeam, serviceAuthorizer, postgresClient)
@@ -574,22 +596,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	importsService := imports2.New(importRun, importCursor, importRecord, importMapping, importLedger, importReport, repositoryMembership, repositoryTeam, workflowState, repositoryLabel, repositoryProject, repositoryCycle, repositoryIssue, issueComment, issueRelation, labelGroup, teamMember, repositoryTriage, repositoryAttachment, repositoryBlob, issues, projects, cycles, labels, workflowStates, issueComments, teams, issueRelations, serviceAttachments, importSources, serviceAuthorizer, jobProducer, postgresClient, configImports)
 	serviceImports := imports2.NewImports(importsService)
 	sourceControlApps := scm2.NewApps(scmApp, scmConnection, scmAppState, forges, serviceAuthorizer, sourceControl)
-	aiProvider := aiprovider.New(postgresClient, crypterCrypter)
-	openAI := config.NewOpenAI(configConfig)
-	openaiClient, err := openai.New(openAI)
-	if err != nil {
-		cleanup8()
-		cleanup7()
-		cleanup6()
-		cleanup5()
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	aiModel := aimodel.New(openaiClient)
-	aiProviders := aiprovider2.New(aiProvider, aiModel, serviceAuthorizer, serviceAudit, instance)
+	aiProviders := aiprovider2.New(aiProvider, aiModel, serviceAuthorizer, serviceAudit, knowledgeIndexes, instance)
 	agentMCPOAuthState := agentmcpoauthstate.New(client, agentTooling)
 	skillSource := skillsource.New(toolingclientClient)
 	mcpRegistry := mcpregistry.New(toolingclientClient)
@@ -681,6 +688,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	executions := config.NewExecutions(configConfig)
 	questions := config.NewQuestions(configConfig)
 	configTelegram := config.NewTelegram(configConfig)
+	configKnowledge := config.NewKnowledge(configConfig)
 	asynq := config.NewAsynq(configConfig)
 	app := config.NewApp(configConfig)
 	logger, err := logging.New(app)
@@ -1037,8 +1045,11 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	aiModel := aimodel.New(openaiClient)
 	repositoryDoc := doc.New(client)
 	docRevision := docrevision.New(client)
+	docPassage := docpassage.New(client)
 	knowledgeAuthorizer := knowledgeauthorizer.New(serviceAuthorizer, repositoryProject)
-	docs := doc2.New(repositoryDoc, docRevision, repositoryProject, knowledgeAuthorizer, gate, client)
+	knowledgeEmbedding := knowledge.NewEmbeddings(client)
+	knowledgeIndexes := knowledgeindex.New(repositoryDoc, docPassage, knowledgeEmbedding, aiProvider, aiModel, jobProducer, client)
+	docs := doc2.New(repositoryDoc, docRevision, docPassage, repositoryProject, knowledgeAuthorizer, knowledgeIndexes, gate, client)
 	agents := agent2.New(repositoryAgent, agentSetting, workspaceAgentSetting, agentProposal, repositoryAccount, repositoryMembership, repositoryProject, projectMember, apiToken, repositoryTeam, repositoryActivity, workflowState, issues, issueComments, docs, issueQuestion, serviceAuthorizer, client, serviceAudit)
 	repositorySearch := search.New(client)
 	searches := search2.New(repositorySearch, repositoryIssue, serviceAuthorizer, knowledgeAuthorizer, client)
@@ -1064,8 +1075,10 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	telegramDecisionHandler := job.NewTelegramDecisionHandler(telegramUpdates)
 	telegramSettlementHandler := job.NewTelegramSettlementHandler(telegramUpdates)
 	telegramSweepHandler := job.NewTelegramSweepHandler(telegramUpdates)
-	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, signInCodeHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler, questionExpirySweepHandler, intakeDeliveryHandler, telegramUpdateHandler, telegramDecisionHandler, telegramSettlementHandler, telegramSweepHandler)
-	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, configImports, sourceControl, executions, questions, configTelegram, server, scheduler, inspector, serveMux, logger)
+	knowledgeRefreshHandler := job.NewKnowledgeRefreshHandler(knowledgeIndexes)
+	knowledgeSweepHandler := job.NewKnowledgeSweepHandler(knowledgeIndexes)
+	serveMux := NewServeMux(signUpVerificationHandler, emailChangeConfirmationHandler, signInCodeHandler, passwordResetHandler, passwordResetSSONoticeHandler, invitationHandler, workspacePurgeHandler, issuePurgeHandler, bulkApplyHandler, ssoCertificateSweepHandler, cycleGenerationHandler, attachmentReclaimHandler, notificationFanOutHandler, notificationDigestHandler, apiTokenExpirySweepHandler, auditSweepHandler, webhookFanOutHandler, webhookDeliverHandler, webhookSweepHandler, importStageHandler, importExecuteHandler, importRevertHandler, importRescueHandler, scmDeliveryHandler, scmReconcileHandler, scmBackfillHandler, scmResumeHandler, executionLeaseSweepHandler, questionExpirySweepHandler, intakeDeliveryHandler, telegramUpdateHandler, telegramDecisionHandler, telegramSettlementHandler, telegramSweepHandler, knowledgeRefreshHandler, knowledgeSweepHandler)
+	internalWorker := NewWorker(worker, saml, cycles, attachments, notifications, apiTokens, configAudit, webhooks, configImports, sourceControl, executions, questions, configTelegram, configKnowledge, server, scheduler, inspector, serveMux, logger)
 	return internalWorker, func() {
 		cleanup8()
 		cleanup7()
@@ -1235,7 +1248,7 @@ func InitGateway(cfgFile string) (*Gateway, error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, openai.Set, telegram.Set, toolingclient.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issuedraft.Set, issuecriterion.Set, issuerevision.Set, issuetemplate.Set, requestkey.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, executionplan.Set, executionreview.Set, executionsnapshot.Set, executionservice.Set, executionupload.Set, changeset.Set, preview.Set, previewshare.Set, previewgrant.Set, previewgateway.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, roadmap.Set, doc.Set, doclink.Set, docrevision.Set, memory.Set, memoryrevision.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, intake.Set, inboundmail.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, workspaceagentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, aimodel.Set, aiprovider.Set, telegrambot.Set, telegramaudience.Set, telegramconversation.Set, telegramupdate.Set, telegrammessenger.Set, agentskill.Set, agentmcpserver.Set, agentmcpconnection.Set, agentmcpoauthstate.Set, skillsource.Set, mcpregistry.Set, mcpauthorizer.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, roadmap2.Set, doc2.Set, doclink2.Set, memory2.Set, attachment2.Set, issuecomment2.Set, issuedraft2.Set, issuecriterion2.Set, issuetemplate2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, executionservice2.Set, executionupload2.Set, changeset2.Set, preview2.Set, previewgateway2.Set, previewgateway3.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, knowledgeauthorizer.Set, event.Set, search2.Set, triage2.Set, intake2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, aiprovider2.Set, hostedagent.Set, telegrambot2.Set, agentcapability.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, mcpoauth.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, inboundmail2.Set, telegram2.Set, mcpserver.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, openai.Set, telegram.Set, toolingclient.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issuedraft.Set, issuecriterion.Set, issuerevision.Set, issuetemplate.Set, requestkey.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, executionplan.Set, executionreview.Set, executionsnapshot.Set, executionservice.Set, executionupload.Set, changeset.Set, preview.Set, previewshare.Set, previewgrant.Set, previewgateway.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, roadmap.Set, doc.Set, doclink.Set, docrevision.Set, memory.Set, memoryrevision.Set, docpassage.Set, knowledge.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, intake.Set, inboundmail.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, workspaceagentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, aimodel.Set, aiprovider.Set, telegrambot.Set, telegramaudience.Set, telegramconversation.Set, telegramupdate.Set, telegrammessenger.Set, agentskill.Set, agentmcpserver.Set, agentmcpconnection.Set, agentmcpoauthstate.Set, skillsource.Set, mcpregistry.Set, mcpauthorizer.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, roadmap2.Set, doc2.Set, doclink2.Set, memory2.Set, attachment2.Set, issuecomment2.Set, issuedraft2.Set, issuecriterion2.Set, issuetemplate2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, executionservice2.Set, executionupload2.Set, changeset2.Set, preview2.Set, previewgateway2.Set, previewgateway3.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, knowledgeauthorizer.Set, knowledgeindex.Set, retrieval.Set, event.Set, search2.Set, triage2.Set, intake2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, aiprovider2.Set, hostedagent.Set, telegrambot2.Set, agentcapability.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, mcpoauth.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, inboundmail2.Set, telegram2.Set, mcpserver.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

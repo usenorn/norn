@@ -195,6 +195,14 @@ func (r KnowledgeReader) Reaches(projectID uuid.UUID) bool {
 	return projectID != uuid.Nil && (r.AllProjects || slices.Contains(r.ProjectIDs, projectID))
 }
 
+func (r KnowledgeReader) PersonalAuthor() uuid.UUID {
+	if r.Identity.Personal {
+		return r.Identity.Principal
+	}
+
+	return uuid.Nil
+}
+
 func (r KnowledgeReader) Sees(access KnowledgeAccess) bool {
 	if r.WorkspaceID == uuid.Nil || access.WorkspaceID != r.WorkspaceID {
 		return false

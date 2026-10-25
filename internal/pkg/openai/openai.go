@@ -21,6 +21,9 @@ import (
 const (
 	modelsPath          = "/models"
 	responsesPath       = "/responses"
+	embeddingsPath      = "/embeddings"
+	embeddingModelPart  = "embed"
+	floatEncoding       = "float"
 	probeInput          = "ping"
 	probeTokens         = 16
 	insufficientQuota   = "insufficient_quota"
@@ -96,32 +99,96 @@ type failure struct {
 	} `json:"error"`
 }
 
-func (c *Client) TextModels(
+type embeddingRequest struct {
+	Model          string   `json:"model"`
+	Input          []string `json:"input"`
+	EncodingFormat string   `json:"encoding_format"`
+}
+
+type embeddingList struct {
+	Data []struct {
+		Index     int       `json:"index"`
+		Embedding []float32 `json:"embedding"`
+	} `json:"data"`
+}
+
+func (c *Client) Models(
 	ctx context.Context,
 	endpoint entity.AIProviderEndpoint,
 	apiKey string,
-) ([]string, error) {
+) (entity.AIProviderModels, error) {
 	body, err := c.call(ctx, endpoint, http.MethodGet, modelsPath, apiKey, nil)
 	if err != nil {
-		return nil, err
+		return entity.AIProviderModels{}, err
 	}
 
 	var listed modelList
 	if err := json.Unmarshal(body, &listed); err != nil {
-		return nil, fmt.Errorf("%w: the model list was not JSON: %v", entity.ErrAIProviderUnreachable, err)
+		return entity.AIProviderModels{}, fmt.Errorf(
+			"%w: the model list was not JSON: %v", entity.ErrAIProviderUnreachable, err,
+		)
 	}
 
-	models := make([]string, 0, len(listed.Data))
+	models := entity.AIProviderModels{Text: []string{}, Embedding: []string{}}
 
 	for _, model := range listed.Data {
-		if generatesText(model.ID) {
-			models = append(models, model.ID)
+		switch {
+		case embeds(model.ID):
+			models.Embedding = append(models.Embedding, model.ID)
+		case generatesText(model.ID):
+			models.Text = append(models.Text, model.ID)
 		}
 	}
 
-	slices.Sort(models)
+	slices.Sort(models.Text)
+	slices.Sort(models.Embedding)
 
 	return models, nil
+}
+
+func (c *Client) Embed(
+	ctx context.Context,
+	endpoint entity.AIProviderEndpoint,
+	apiKey, model string,
+	inputs []string,
+) ([][]float32, error) {
+	payload, err := json.Marshal(embeddingRequest{Model: model, Input: inputs, EncodingFormat: floatEncoding})
+	if err != nil {
+		return nil, fmt.Errorf("encode embedding request: %w", err)
+	}
+
+	body, err := c.call(ctx, endpoint, http.MethodPost, embeddingsPath, apiKey, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	var listed embeddingList
+	if err := json.Unmarshal(body, &listed); err != nil {
+		return nil, fmt.Errorf("%w: the embeddings were not JSON: %v", entity.ErrAIProviderUnreachable, err)
+	}
+
+	if len(listed.Data) != len(inputs) {
+		return nil, fmt.Errorf(
+			"%w: asked for %d embeddings and received %d",
+			entity.ErrAIProviderUnreachable, len(inputs), len(listed.Data),
+		)
+	}
+
+	vectors := make([][]float32, len(inputs))
+
+	for _, item := range listed.Data {
+		if item.Index < 0 || item.Index >= len(inputs) || vectors[item.Index] != nil || len(item.Embedding) == 0 {
+			return nil, fmt.Errorf("%w: the embeddings did not match the inputs", entity.ErrAIProviderUnreachable)
+		}
+
+		vectors[item.Index] = item.Embedding
+	}
+
+	return vectors, nil
+}
+
+func embeds(model string) bool {
+	return strings.Contains(strings.ToLower(model), embeddingModelPart)
 }
 
 func (c *Client) Probe(

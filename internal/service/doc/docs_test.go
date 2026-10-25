@@ -16,6 +16,7 @@ import (
 	agentproposalrepo "github.com/usenorn/norn/internal/repository/agentproposal"
 	agentsettingrepo "github.com/usenorn/norn/internal/repository/agentsetting"
 	docrepo "github.com/usenorn/norn/internal/repository/doc"
+	docpassagerepo "github.com/usenorn/norn/internal/repository/docpassage"
 	docrevisionrepo "github.com/usenorn/norn/internal/repository/docrevision"
 	issuedelegationrepo "github.com/usenorn/norn/internal/repository/issuedelegation"
 	issuequestionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
@@ -28,6 +29,7 @@ import (
 	"github.com/usenorn/norn/internal/service/agenthold"
 	docsvc "github.com/usenorn/norn/internal/service/doc"
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
+	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
 )
 
 type harness struct {
@@ -49,6 +51,8 @@ type harness struct {
 	reader      entity.KnowledgeReader
 	stored      map[uuid.UUID]entity.Doc
 	recorded    []entity.DocRevision
+	passages    map[uuid.UUID]entity.Doc
+	scheduled   []uuid.UUID
 	listed      []repository.DocFilter
 	searched    []repository.DocSearch
 }
@@ -68,7 +72,22 @@ func newHarness(t *testing.T) *harness {
 		projectID:   uuid.New(),
 		accountID:   uuid.New(),
 		stored:      map[uuid.UUID]entity.Doc{},
+		passages:    map[uuid.UUID]entity.Doc{},
 	}
+
+	passages := docpassagerepo.NewMockDocPassage(ctrl)
+	passages.EXPECT().Replace(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, doc entity.Doc) error {
+			h.passages[doc.ID] = doc
+
+			return nil
+		}).
+		AnyTimes()
+
+	indexes := knowledgeindexsvc.NewMockKnowledgeIndexes(ctrl)
+	indexes.EXPECT().Schedule(gomock.Any(), gomock.Any()).
+		Do(func(_ context.Context, workspaceID uuid.UUID) { h.scheduled = append(h.scheduled, workspaceID) }).
+		AnyTimes()
 
 	workspaceSettings := workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl)
 	agents := agentrepo.NewMockAgent(ctrl)
@@ -104,7 +123,7 @@ func newHarness(t *testing.T) *harness {
 		notificationeventrepo.NewMockNotificationEvent(ctrl),
 	)
 
-	h.service = docsvc.New(h.docs, h.revisions, h.projects, h.knowledge, gate, h.transactor)
+	h.service = docsvc.New(h.docs, h.revisions, passages, h.projects, h.knowledge, indexes, gate, h.transactor)
 
 	h.transactor.EXPECT().
 		WithTx(gomock.Any(), gomock.Any()).
@@ -981,5 +1000,34 @@ func TestADocTellsWhoIsReadingItWhetherTheyMayEditOrReshareIt(t *testing.T) {
 
 	if narrowed.Viewer != (entity.DocViewer{Edits: true, Reshares: true}) {
 		t.Fatalf("the reshared doc reads as %+v for the admin who reshared it", narrowed.Viewer)
+	}
+}
+
+func TestEveryDocWriteRebuildsItsPassagesAndSchedulesARefresh(t *testing.T) {
+	h := newHarness(t)
+	h.actAs(entity.Actor{Kind: entity.ActorKindUser, AccountID: h.accountID}, entity.MembershipRoleMember)
+
+	doc := h.create(t, "Onboarding", entity.WorkspaceAudience(), nil)
+
+	if indexed, ok := h.passages[doc.ID]; !ok || indexed.Version != 1 || indexed.Markdown != doc.Markdown {
+		t.Fatalf("passages were rebuilt from %+v, want the created doc at version 1", indexed.DocSummary)
+	}
+
+	revised := "Onboarding body, revised"
+
+	edited, err := h.service.Update(context.Background(), h.workspaceID, doc.ID, service.UpdateDocInput{
+		Markdown:        &revised,
+		ExpectedVersion: doc.Version,
+	})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	if indexed := h.passages[doc.ID]; indexed.Version != edited.Version || indexed.Markdown != "Onboarding body, revised" {
+		t.Fatalf("passages were rebuilt from version %d %q, want the edit", indexed.Version, indexed.Markdown)
+	}
+
+	if !slices.Equal(h.scheduled, []uuid.UUID{h.workspaceID, h.workspaceID}) {
+		t.Fatalf("scheduled refreshes for %v, want one per write in this workspace", h.scheduled)
 	}
 }

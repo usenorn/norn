@@ -191,20 +191,21 @@ func TestTheRecordedOutcomeFollowsTheLatestTestAndClearsOnChange(t *testing.T) {
 		gateway := entity.AIProviderEndpoint{BaseURL: "http://10.0.4.12:8000/v1", AllowPrivateAddress: true}
 
 		changed, err := providers.Update(ctx, entity.AIProviderConnection{
-			WorkspaceID:  workspaceID,
-			Provider:     entity.AIProviderOpenAI,
-			Endpoint:     gateway,
-			DefaultModel: "gpt-6-sol",
+			WorkspaceID:    workspaceID,
+			Provider:       entity.AIProviderOpenAI,
+			Endpoint:       gateway,
+			DefaultModel:   "gpt-6-sol",
+			EmbeddingModel: "text-embedding-3-small",
 		})
 		if err != nil {
 			return err
 		}
 
-		if changed.DefaultModel != "gpt-6-sol" || changed.Endpoint != gateway ||
-			changed.Status() != entity.AIProviderUnverified {
+		if changed.DefaultModel != "gpt-6-sol" || changed.EmbeddingModel != "text-embedding-3-small" ||
+			changed.Endpoint != gateway || changed.Status() != entity.AIProviderUnverified {
 			t.Errorf(
-				"after a change: model %q endpoint %v status %q",
-				changed.DefaultModel, changed.Endpoint, changed.Status(),
+				"after a change: model %q embedding model %q endpoint %v status %q",
+				changed.DefaultModel, changed.EmbeddingModel, changed.Endpoint, changed.Status(),
 			)
 		}
 

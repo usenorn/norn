@@ -327,7 +327,7 @@ func TestAMalformedEndpointIsRefusedBeforeAnythingIsSent(t *testing.T) {
 
 func TestACloudWorkspaceCannotReachAPrivateNetwork(t *testing.T) {
 	h := newHarness(t)
-	h.service = aiprovidersvc.New(h.connections, h.models, h.authorizer, h.audit, config.Instance{})
+	h.service = aiprovidersvc.New(h.connections, h.models, h.authorizer, h.audit, h.indexes, config.Instance{})
 	workspaceID := h.workspace(entity.MembershipRoleAdmin)
 	h.offered["sk-gateway"] = []string{"llama-4-scout"}
 
@@ -347,5 +347,104 @@ func TestACloudWorkspaceCannotReachAPrivateNetwork(t *testing.T) {
 			"a shared instance dialled a private address a tenant named, which would put its own " +
 				"internal network one workspace setting away from every administrator",
 		)
+	}
+}
+
+func TestAnEmbeddingModelIsProvedBeforeItIsStored(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := h.workspace(entity.MembershipRoleAdmin)
+	h.configured(workspaceID, "sk-live", "gpt-6-luna")
+	h.embedder["sk-live"] = []string{"text-embedding-3-small"}
+
+	_, err := h.service.Configure(context.Background(), workspaceID, entity.AIProviderInput{
+		Provider:       entity.AIProviderOpenAI,
+		DefaultModel:   "gpt-6-luna",
+		EmbeddingModel: "text-embedding-ada-legacy",
+	})
+	if !errors.Is(err, entity.ErrAIProviderEmbeddingUnavailable) {
+		t.Fatalf("err = %v, want ErrAIProviderEmbeddingUnavailable", err)
+	}
+
+	if failure, _ := entity.AIProviderFailureOf(err); failure != entity.AIProviderFailureEmbeddingModel {
+		t.Errorf("failure = %q, want the embedding model named, not the default model", failure)
+	}
+
+	if h.store[workspaceID].connection.EmbeddingModel != "" {
+		t.Fatal("an embedding model the key cannot use was stored")
+	}
+
+	saved, err := h.service.Configure(context.Background(), workspaceID, entity.AIProviderInput{
+		Provider:       entity.AIProviderOpenAI,
+		DefaultModel:   "gpt-6-luna",
+		EmbeddingModel: "text-embedding-3-small",
+	})
+	if err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+
+	if saved.EmbeddingModel != "text-embedding-3-small" || h.store[workspaceID].apiKey != "sk-live" {
+		t.Errorf("saved embedding model %q key %q", saved.EmbeddingModel, h.store[workspaceID].apiKey)
+	}
+
+	if !slices.Equal(h.actions(), []entity.AuditAction{entity.AuditAIProviderEmbeddingModel}) {
+		t.Errorf("audited %v, want one embedding_model_changed entry", h.actions())
+	}
+}
+
+func TestAnUnchangedEmbeddingModelIsNotProvedAgain(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := h.workspace(entity.MembershipRoleAdmin)
+	h.configured(workspaceID, "sk-live", "gpt-6-luna")
+	h.offered["sk-live"] = []string{"gpt-6-luna", "gpt-6-sol"}
+	h.embedder["sk-live"] = []string{"text-embedding-3-small"}
+
+	row := h.store[workspaceID]
+	row.connection.EmbeddingModel = "text-embedding-3-small"
+	h.store[workspaceID] = row
+
+	if _, err := h.service.Configure(context.Background(), workspaceID, entity.AIProviderInput{
+		Provider:       entity.AIProviderOpenAI,
+		DefaultModel:   "gpt-6-sol",
+		EmbeddingModel: "text-embedding-3-small",
+	}); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+
+	if len(h.embedded) != 0 {
+		t.Errorf("embedded with %v when only the default model changed", h.embedded)
+	}
+
+	if h.store[workspaceID].connection.EmbeddingModel != "text-embedding-3-small" {
+		t.Error("changing the default model cleared the embedding model")
+	}
+}
+
+func TestOnlyAChangeThatMovesTheEmbeddingsSchedulesARefresh(t *testing.T) {
+	h := newHarness(t)
+	workspaceID := h.workspace(entity.MembershipRoleAdmin)
+	h.configured(workspaceID, "sk-live", "gpt-6-luna")
+	h.offered["sk-live"] = []string{"gpt-6-luna", "gpt-6-sol"}
+	h.embedder["sk-live"] = []string{"text-embedding-3-small"}
+
+	steps := []struct {
+		name  string
+		input entity.AIProviderInput
+		want  int
+	}{
+		{"choosing an embedding model", entity.AIProviderInput{DefaultModel: "gpt-6-luna", EmbeddingModel: "text-embedding-3-small"}, 1},
+		{"changing only the default model", entity.AIProviderInput{DefaultModel: "gpt-6-sol", EmbeddingModel: "text-embedding-3-small"}, 1},
+		{"clearing the embedding model", entity.AIProviderInput{DefaultModel: "gpt-6-sol"}, 2},
+	}
+
+	for _, step := range steps {
+		step.input.Provider = entity.AIProviderOpenAI
+
+		if _, err := h.service.Configure(context.Background(), workspaceID, step.input); err != nil {
+			t.Fatalf("%s: %v", step.name, err)
+		}
+
+		if len(h.scheduled) != step.want {
+			t.Fatalf("after %s: %d refreshes scheduled, want %d", step.name, len(h.scheduled), step.want)
+		}
 	}
 }

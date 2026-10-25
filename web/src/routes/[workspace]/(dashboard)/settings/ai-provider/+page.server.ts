@@ -19,7 +19,7 @@ type AiProviderForm = Infer<typeof aiProviderSchema>;
 
 const formId = "ai-provider-form";
 
-type AiProviderField = "apiKey" | "defaultModel" | "provider" | "baseUrl" | "allowPrivateAddress";
+type AiProviderField = "apiKey" | "defaultModel" | "embeddingModel" | "provider" | "baseUrl" | "allowPrivateAddress";
 
 const fieldMessages: Record<AiProviderField, Partial<Record<string, string>>> = {
 	apiKey: {
@@ -28,6 +28,9 @@ const fieldMessages: Record<AiProviderField, Partial<Record<string, string>>> = 
 	},
 	defaultModel: {
 		required: "Choose the model a test request is sent to.",
+		too_long: "That is longer than any model name the provider uses.",
+	},
+	embeddingModel: {
 		too_long: "That is longer than any model name the provider uses.",
 	},
 	provider: {
@@ -69,6 +72,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent, url
 				baseUrl: configured?.baseUrl ?? "",
 				allowPrivateAddress: configured?.allowPrivateAddress ?? false,
 				defaultModel: configured?.defaultModel ?? "",
+				embeddingModel: configured?.embeddingModel ?? "",
 				keyStored: configured !== undefined,
 			},
 			zod4(aiProviderSchema),
@@ -101,7 +105,9 @@ async function readModels(api: Client<paths>, workspaceId: string): Promise<AiPr
 
 	if (error) return { kind: "failed", failure: aiProviderFailure(error) };
 
-	return data ? { kind: "listed", models: data.models } : { kind: "failed", failure: { kind: "unavailable" } };
+	return data
+		? { kind: "listed", models: data.models, embeddingModels: data.embeddingModels }
+		: { kind: "failed", failure: { kind: "unavailable" } };
 }
 
 export const actions: Actions = {
@@ -127,12 +133,14 @@ export const actions: Actions = {
 				allowPrivateAddress: form.data.allowPrivateAddress,
 				apiKey: apiKey || undefined,
 				defaultModel: form.data.defaultModel || undefined,
+				embeddingModel: form.data.embeddingModel || undefined,
 			},
 		});
 
 		if (data) {
 			form.data.keyStored = true;
 			form.data.defaultModel = data.defaultModel;
+			form.data.embeddingModel = data.embeddingModel;
 			form.data.baseUrl = data.baseUrl;
 			form.data.allowPrivateAddress = data.allowPrivateAddress;
 
@@ -164,6 +172,10 @@ export const actions: Actions = {
 
 		if (failure.kind === "provider" && failure.code === "model_unavailable") {
 			setError(form, "defaultModel", failureTitle(failure, form.data.provider));
+		}
+
+		if (failure.kind === "provider" && failure.code === "embedding_model_unavailable") {
+			setError(form, "embeddingModel", failureTitle(failure, form.data.provider));
 		}
 
 		return message(form, { kind: "failed", failure }, { status: failure.kind === "forbidden" ? 403 : 400 });

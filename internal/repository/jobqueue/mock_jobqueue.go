@@ -182,6 +182,20 @@ func (mr *MockJobProducerMockRecorder) EnqueueIssuePurge(ctx, payload, processAt
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueIssuePurge", reflect.TypeOf((*MockJobProducer)(nil).EnqueueIssuePurge), ctx, payload, processAt)
 }
 
+// EnqueueKnowledgeRefresh mocks base method.
+func (m *MockJobProducer) EnqueueKnowledgeRefresh(ctx context.Context, payload entity.KnowledgeRefreshPayload) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnqueueKnowledgeRefresh", ctx, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnqueueKnowledgeRefresh indicates an expected call of EnqueueKnowledgeRefresh.
+func (mr *MockJobProducerMockRecorder) EnqueueKnowledgeRefresh(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueKnowledgeRefresh", reflect.TypeOf((*MockJobProducer)(nil).EnqueueKnowledgeRefresh), ctx, payload)
+}
+
 // EnqueuePasswordReset mocks base method.
 func (m *MockJobProducer) EnqueuePasswordReset(ctx context.Context, payload entity.PasswordResetPayload) error {
 	m.ctrl.T.Helper()

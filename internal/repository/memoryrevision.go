@@ -18,4 +18,5 @@ type MemoryRevision interface {
 		page entity.MemoryRevisionPage,
 	) ([]entity.MemoryRevisionSummary, error)
 	GetByID(ctx context.Context, workspaceID, memoryID, revisionID uuid.UUID) (entity.MemoryRevision, error)
+	InEffect(ctx context.Context, workspaceID uuid.UUID, query KnowledgeQuery) ([]entity.KnowledgeCandidate, error)
 }
