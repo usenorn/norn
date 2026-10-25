@@ -39,6 +39,11 @@
 
 		failure = outcome.kind === "unknown" ? "unknown" : readMemoryFailure(outcome.problem);
 	}
+
+	async function reload() {
+		failure = null;
+		await refreshMemory(workspaceId, memory.id);
+	}
 </script>
 
 <div class="flex flex-col gap-1.5">
@@ -56,7 +61,7 @@
 		<p role="alert" class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-destructive">
 			<span>{failure === "unknown" ? unknownLine : memoryFailureMessage(failure)}</span>
 			{#if failure !== "unknown" && failure.kind === "stale"}
-				<Button variant="link" size="xs" onclick={() => refreshMemory(workspaceId, memory.id)}>Reload</Button>
+				<Button variant="link" size="xs" onclick={reload}>Reload</Button>
 			{/if}
 		</p>
 	{/if}

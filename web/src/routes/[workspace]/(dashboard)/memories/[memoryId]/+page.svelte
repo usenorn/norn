@@ -152,6 +152,13 @@
 		withdrawFailure = outcome.kind === "unknown" ? "unknown" : readMemoryFailure(outcome.problem);
 	}
 
+	async function reload() {
+		if (!memory) return;
+
+		withdrawFailure = null;
+		await refreshMemory(data.workspace.id, memory.id);
+	}
+
 	function choose(resolution: MemoryResolution, target?: Memory) {
 		if (resolution === "supersede" || resolution === "no_change") {
 			confirming = { resolution, target };
@@ -213,7 +220,7 @@
 							Nothing was withdrawn. Reload to read where it stands now, then decide again.
 						</Alert.Description>
 						<Alert.Action>
-							<Button variant="secondary" size="sm" onclick={() => refreshMemory(data.workspace.id, memory.id)}>
+							<Button variant="secondary" size="sm" onclick={reload}>
 								Reload
 							</Button>
 						</Alert.Action>
