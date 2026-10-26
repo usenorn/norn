@@ -1,25 +1,13 @@
-import { sentrySvelteKit } from '@sentry/sveltekit';
 import tailwindcss from '@tailwindcss/vite';
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
-	const env = loadEnv(mode, '.', ['SENTRY_', 'NORN_']);
+	const env = loadEnv(mode, '.', ['NORN_']);
 
 	const api = env.NORN_DEV_API_ORIGIN ?? 'http://127.0.0.1:8080';
 	const port = Number(env.NORN_DEV_PORT ?? 5174);
-
-	const sourceMapUpload =
-		env.SENTRY_URL && env.SENTRY_ORG && env.SENTRY_PROJECT
-			? [
-					sentrySvelteKit({
-						org: env.SENTRY_ORG,
-						project: env.SENTRY_PROJECT,
-						sentryUrl: env.SENTRY_URL
-					})
-				]
-			: [];
 
 	const proxy = {
 		'/v1': {
@@ -59,7 +47,6 @@ export default defineConfig(({ mode }) => {
 			proxy
 		},
 		plugins: [
-			...sourceMapUpload,
 			tailwindcss(),
 			sveltekit({
 				experimental: {

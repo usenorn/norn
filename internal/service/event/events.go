@@ -72,8 +72,7 @@ func (s *eventsService) Subscribe(
 	scope := decision.Scope
 	target.scope.Store(&scope)
 
-	owner := s.hubFor(ctx, input.WorkspaceID, cursor)
-	owner.add(target)
+	owner := s.join(ctx, input.WorkspaceID, cursor, target)
 
 	go s.rescope(context.WithoutCancel(ctx), input.WorkspaceID, target)
 
@@ -165,15 +164,23 @@ func (s *eventsService) rescope(ctx context.Context, workspaceID uuid.UUID, targ
 	}
 }
 
-func (s *eventsService) hubFor(ctx context.Context, workspaceID uuid.UUID, cursor string) *hub {
+func (s *eventsService) join(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	cursor string,
+	target *subscriber,
+) *hub {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if existing, running := s.hubs[workspaceID]; running {
+		existing.add(target)
+
 		return existing
 	}
 
 	created := newHub(workspaceID, s.stream)
+	created.add(target)
 	created.start(ctx, cursor)
 	s.hubs[workspaceID] = created
 
