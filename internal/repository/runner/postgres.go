@@ -11,6 +11,7 @@ import (
 	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
@@ -295,6 +296,27 @@ func (r *runnerRepository) RecordVersion(
 	})
 	if err != nil {
 		return fmt.Errorf("record runner version: %w", err)
+	}
+
+	return nil
+}
+
+func (r *runnerRepository) SetAuthorityByAgent(
+	ctx context.Context,
+	agentID uuid.UUID,
+	authority entity.RequestedAuthority,
+) error {
+	_, err := dbpostgres.WorkspaceRunners(
+		dbpostgres.WorkspaceRunnerWhere.AgentID.EQ(agentID.String()),
+		dbpostgres.WorkspaceRunnerWhere.Status.NEQ(string(entity.RunnerStatusRevoked)),
+	).UpdateAll(ctx, r.db.Querier(ctx), dbpostgres.M{
+		dbpostgres.WorkspaceRunnerColumns.AllTeams:  authority.AllTeams,
+		dbpostgres.WorkspaceRunnerColumns.TeamIds:   types.StringArray(authority.TeamStrings()),
+		dbpostgres.WorkspaceRunnerColumns.Scopes:    types.StringArray(authority.ScopeStrings()),
+		dbpostgres.WorkspaceRunnerColumns.UpdatedAt: time.Now().UTC(),
+	})
+	if err != nil {
+		return fmt.Errorf("set an agent's runner authority: %w", err)
 	}
 
 	return nil

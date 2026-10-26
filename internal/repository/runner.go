@@ -23,4 +23,5 @@ type Runner interface {
 		ctx context.Context, workspaceID, runnerID uuid.UUID, pausedAt *time.Time,
 	) (entity.Runner, error)
 	RecordVersion(ctx context.Context, runnerID uuid.UUID, version string) error
+	SetAuthorityByAgent(ctx context.Context, agentID uuid.UUID, authority entity.RequestedAuthority) error
 }
