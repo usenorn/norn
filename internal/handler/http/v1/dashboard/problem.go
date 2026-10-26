@@ -1818,6 +1818,10 @@ func (r problemResponse) VisitSetWorkspaceAgentScopeResponse(w http.ResponseWrit
 	return r.write(w)
 }
 
+func (r problemResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
 func (r problemResponse) VisitSetWorkspaceAgentExecutionResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }

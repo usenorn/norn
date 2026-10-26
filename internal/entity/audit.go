@@ -73,6 +73,7 @@ const (
 	AuditAgentProposal     AuditAction = "agent.proposal_decided"
 	AuditAgentInstructions AuditAction = "agent.instructions_changed"
 	AuditAgentRescoped     AuditAction = "agent.scope_changed"
+	AuditAgentReauthorized AuditAction = "agent.authority_changed"
 	AuditAgentExecution    AuditAction = "agent.execution_changed"
 
 	AuditAgentSkillAdded           AuditAction = "agent.skill_added"
@@ -154,7 +155,8 @@ func AuditActions() []AuditAction {
 		AuditSSODomainAdded, AuditSSODomainVerified, AuditSSODomainRemoved,
 		AuditTokenMinted, AuditTokenRevoked,
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentEnabled, AuditAgentRotated,
-		AuditAgentProposal, AuditAgentInstructions, AuditAgentRescoped, AuditAgentExecution,
+		AuditAgentProposal, AuditAgentInstructions, AuditAgentRescoped, AuditAgentReauthorized,
+		AuditAgentExecution,
 		AuditAgentSkillAdded, AuditAgentSkillUpdated, AuditAgentSkillRemoved,
 		AuditAgentMCPServerAdded, AuditAgentMCPServerUpdated, AuditAgentMCPServerRemoved,
 		AuditAgentMCPConnected, AuditAgentMCPDisconnected,

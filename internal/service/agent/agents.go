@@ -3,6 +3,9 @@ package agent
 import (
 	"context"
 	"errors"
+	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +17,7 @@ import (
 
 type agentsService struct {
 	agents      repository.Agent
+	runners     repository.Runner
 	settings    repository.AgentSetting
 	workspace   repository.WorkspaceAgentSetting
 	proposals   repository.AgentProposal
@@ -36,6 +40,7 @@ type agentsService struct {
 
 func New(
 	agents repository.Agent,
+	runners repository.Runner,
 	settings repository.AgentSetting,
 	workspace repository.WorkspaceAgentSetting,
 	proposals repository.AgentProposal,
@@ -57,6 +62,7 @@ func New(
 ) service.Agents {
 	return &agentsService{
 		agents:      agents,
+		runners:     runners,
 		settings:    settings,
 		workspace:   workspace,
 		proposals:   proposals,
@@ -138,7 +144,7 @@ func (s *agentsService) Register(
 		return service.RegisteredAgent{}, err
 	}
 
-	grant, err := s.grant(ctx, input, decision)
+	grant, err := reach(input.WorkspaceID, input.AllTeams, input.TeamIDs, decision)
 	if err != nil {
 		return service.RegisteredAgent{}, err
 	}
@@ -249,26 +255,27 @@ func (s *agentsService) ownerMembership(
 	return membership, nil
 }
 
-func (s *agentsService) grant(
-	ctx context.Context,
-	input service.RegisterAgentInput,
+func reach(
+	workspaceID uuid.UUID,
+	allTeams bool,
+	teamIDs []uuid.UUID,
 	decision entity.Decision,
 ) (entity.APITokenGrant, error) {
-	if input.AllTeams {
-		return entity.APITokenGrant{WorkspaceID: input.WorkspaceID, AllTeams: true}, nil
+	if allTeams {
+		return entity.APITokenGrant{WorkspaceID: workspaceID, AllTeams: true}, nil
 	}
 
-	if len(input.TeamIDs) == 0 {
+	if len(teamIDs) == 0 {
 		return entity.APITokenGrant{}, entity.ErrAPITokenGrantInvalid
 	}
 
-	for _, teamID := range input.TeamIDs {
+	for _, teamID := range teamIDs {
 		if !decision.Scope.Covers(teamID) {
 			return entity.APITokenGrant{}, entity.ErrAPITokenGrantInvalid
 		}
 	}
 
-	return entity.APITokenGrant{WorkspaceID: input.WorkspaceID, TeamIDs: input.TeamIDs}, nil
+	return entity.APITokenGrant{WorkspaceID: workspaceID, TeamIDs: teamIDs}, nil
 }
 
 func (s *agentsService) GrantableScopes(
@@ -471,6 +478,118 @@ func (s *agentsService) Rescope(
 	})
 
 	return s.describe(ctx, saved)
+}
+
+func (s *agentsService) Reauthorize(
+	ctx context.Context,
+	input service.ReauthorizeAgentInput,
+) (service.OwnedAgent, error) {
+	decision, err := s.authorizer.Decide(ctx, entity.AccessRequest{
+		Resource:    entity.ResourceAgent,
+		Action:      entity.ActionManage,
+		WorkspaceID: input.WorkspaceID,
+		Scoped:      true,
+	})
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if decision.Actor.Kind != entity.ActorKindUser {
+		return service.OwnedAgent{}, entity.ErrAPITokenMintForbidden
+	}
+
+	agent, err := s.agents.GetByID(ctx, input.WorkspaceID, input.AgentID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if err := manageable(agent, decision); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if agent.Disabled() {
+		return service.OwnedAgent{}, entity.ErrAgentDisabled
+	}
+
+	granting, err := s.ownerMembership(ctx, input.WorkspaceID, decision.Actor.AccountID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	scopes := input.Scopes.Normalized()
+
+	if len(scopes) == 0 || len(scopes) != len(input.Scopes) {
+		return service.OwnedAgent{}, entity.ErrAPITokenScopeInvalid
+	}
+
+	if !scopes.SubsetOf(entity.AllowedAgentAPIScopesFor(granting.Role)) {
+		return service.OwnedAgent{}, entity.ErrAPITokenScopeExceeds
+	}
+
+	grant, err := reach(input.WorkspaceID, input.AllTeams, input.TeamIDs, decision)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	token, err := s.tokens.GetLatestByOwner(ctx, agent.AccountID)
+	if err != nil {
+		if errors.Is(err, entity.ErrAPITokenNotFound) {
+			return service.OwnedAgent{}, entity.ErrAgentAuthorityMissing
+		}
+
+		return service.OwnedAgent{}, err
+	}
+
+	held, err := agentAuthority(token, input.WorkspaceID)
+	if err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	if err := s.transactor.WithTx(ctx, func(ctx context.Context) error {
+		if err := s.tokens.SetAuthority(ctx, token.ID, scopes, grant); err != nil {
+			if errors.Is(err, entity.ErrAPITokenNotFound) {
+				return entity.ErrAgentAuthorityMissing
+			}
+
+			return err
+		}
+
+		return s.runners.SetAuthorityByAgent(ctx, agent.ID, entity.RequestedAuthority{
+			AllTeams: grant.AllTeams,
+			TeamIDs:  grant.TeamIDs,
+			Scopes:   scopes,
+		})
+	}); err != nil {
+		return service.OwnedAgent{}, err
+	}
+
+	s.audit.Record(ctx, entity.AuditEntry{
+		WorkspaceID:  input.WorkspaceID,
+		Action:       entity.AuditAgentReauthorized,
+		ResourceKind: string(entity.ResourceAgent),
+		ResourceID:   agent.ID,
+		ResourceName: agent.Name,
+		Detail: map[string]string{
+			"scopes_added":   strings.Join(missingFrom(held.Scopes, scopes).Strings(), ", "),
+			"scopes_removed": strings.Join(missingFrom(scopes, held.Scopes).Strings(), ", "),
+			"all_teams":      strconv.FormatBool(grant.AllTeams),
+			"team_ids":       strings.Join(entity.RequestedAuthority{TeamIDs: grant.TeamIDs}.TeamStrings(), ", "),
+		},
+	})
+
+	return s.describe(ctx, agent)
+}
+
+func missingFrom(held, wanted entity.APIScopeSet) entity.APIScopeSet {
+	missing := entity.APIScopeSet{}
+
+	for _, scope := range wanted {
+		if !slices.Contains(held, scope) {
+			missing = append(missing, scope)
+		}
+	}
+
+	return missing
 }
 
 func (s *agentsService) SetExecution(

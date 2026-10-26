@@ -143,6 +143,33 @@ func (h *handler) SetWorkspaceAgentScope(
 	return api.SetWorkspaceAgentScope200JSONResponse(workspaceAgentDTO(agent)), nil
 }
 
+func (h *handler) SetWorkspaceAgentAuthority(
+	ctx context.Context,
+	request api.SetWorkspaceAgentAuthorityRequestObject,
+) (api.SetWorkspaceAgentAuthorityResponseObject, error) {
+	input := service.ReauthorizeAgentInput{
+		WorkspaceID: request.WorkspaceId,
+		AgentID:     request.AgentId,
+		Scopes:      apiScopes(request.Body.Scopes),
+		AllTeams:    request.Body.AllTeams,
+	}
+
+	if request.Body.TeamIds != nil {
+		input.TeamIDs = append(input.TeamIDs, *request.Body.TeamIds...)
+	}
+
+	agent, err := h.agents.Reauthorize(ctx, input)
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
+	}
+
+	return api.SetWorkspaceAgentAuthority200JSONResponse(workspaceAgentDTO(agent)), nil
+}
+
 func (h *handler) SetWorkspaceAgentExecution(
 	ctx context.Context,
 	request api.SetWorkspaceAgentExecutionRequestObject,

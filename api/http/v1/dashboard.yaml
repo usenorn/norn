@@ -2403,6 +2403,37 @@ paths:
         '422': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /workspaces/{workspaceId}/agents/{agentId}/authority:
+    put:
+      tags: [agents]
+      operationId: setWorkspaceAgentAuthority
+      summary: Change what this agent may do and which teams it reaches
+      description: >-
+        Rewrites the permissions and team reach of the agent's current credential, so the agent
+        keeps its key and its next request is checked against the new authority. Enrolled runners
+        take the same authority. As at registration, an agent may never do more than the person
+        granting it, so a permission or team beyond the caller's own reach is refused.
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/AgentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetAgentAuthorityRequest' }
+      responses:
+        '200':
+          description: The agent, carrying the authority as it was saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceAgent' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/AgentUnusable' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /workspaces/{workspaceId}/agents/{agentId}/execution:
     put:
       tags: [agents]
@@ -13672,6 +13703,7 @@ components:
         - agent.proposal_decided
         - agent.instructions_changed
         - agent.scope_changed
+        - agent.authority_changed
         - agent.execution_changed
         - agent.skill_added
         - agent.skill_updated
@@ -14320,6 +14352,18 @@ components:
           type: string
           format: uuid
           description: Required when the scope is project, and refused otherwise.
+
+    SetAgentAuthorityRequest:
+      type: object
+      required: [scopes, allTeams]
+      properties:
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/APIScope' }
+        allTeams: { type: boolean }
+        teamIds:
+          type: array
+          items: { type: string, format: uuid }
 
     SetAgentExecutionRequest:
       type: object

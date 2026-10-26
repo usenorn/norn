@@ -207,6 +207,21 @@ func (mr *MockAgentsMockRecorder) List(ctx, workspaceID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockAgents)(nil).List), ctx, workspaceID)
 }
 
+// Reauthorize mocks base method.
+func (m *MockAgents) Reauthorize(ctx context.Context, input service.ReauthorizeAgentInput) (service.OwnedAgent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reauthorize", ctx, input)
+	ret0, _ := ret[0].(service.OwnedAgent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reauthorize indicates an expected call of Reauthorize.
+func (mr *MockAgentsMockRecorder) Reauthorize(ctx, input any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reauthorize", reflect.TypeOf((*MockAgents)(nil).Reauthorize), ctx, input)
+}
+
 // Register mocks base method.
 func (m *MockAgents) Register(ctx context.Context, input service.RegisterAgentInput) (service.RegisteredAgent, error) {
 	m.ctrl.T.Helper()

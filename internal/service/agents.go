@@ -17,6 +17,7 @@ type Agents interface {
 	Get(ctx context.Context, workspaceID, agentID uuid.UUID) (OwnedAgent, error)
 	SetInstructions(ctx context.Context, input SetAgentInstructionsInput) (OwnedAgent, error)
 	Rescope(ctx context.Context, input RescopeAgentInput) (OwnedAgent, error)
+	Reauthorize(ctx context.Context, input ReauthorizeAgentInput) (OwnedAgent, error)
 	SetExecution(ctx context.Context, input SetAgentExecutionInput) (OwnedAgent, error)
 	Delegatable(ctx context.Context, workspaceID, issueID uuid.UUID) ([]entity.Agent, error)
 	Disable(ctx context.Context, workspaceID, agentID uuid.UUID) error
