@@ -693,6 +693,7 @@
 					<DomainsPanel
 						{workspace}
 						domains={preview?.domains ?? data.domains}
+						tested={Boolean(connection?.verifiedAt ?? samlConnection?.verifiedAt)}
 						{busy}
 						onbusy={(working) => (domainsBusy = working)}
 					/>

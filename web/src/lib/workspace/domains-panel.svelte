@@ -18,6 +18,7 @@
 		domainFailure,
 		domainFailureCopy,
 		domainStatus,
+		emailRouting,
 		type DomainFailure,
 		type DomainList,
 		type WorkspaceDomain,
@@ -26,11 +27,13 @@
 	let {
 		workspace,
 		domains,
+		tested,
 		busy = false,
 		onbusy,
 	}: {
 		workspace: { id: string; name: string; timezone: string };
 		domains: DomainList;
+		tested: boolean;
 		busy?: boolean;
 		onbusy: (working: boolean) => void;
 	} = $props();
@@ -40,6 +43,7 @@
 	let copied = $state<string | null>(null);
 
 	const disabled = $derived(busy || working !== null);
+	const routing = $derived(emailRouting(domains, tested));
 
 	async function settle(run: () => Promise<{ error?: Parameters<typeof domainFailure>[0] }>, key: string) {
 		working = key;
@@ -126,6 +130,17 @@
 			they sign in. Prove you own a domain by publishing a DNS TXT record on it.
 		</p>
 	</div>
+
+	{#if routing.kind === "unrouted"}
+		<Alert.Root variant="warning">
+			<TriangleAlert aria-hidden="true" />
+			<Alert.Title>Email sign-in won't offer single sign-on yet</Alert.Title>
+			<Alert.Description>
+				Until a domain below is verified, people who enter their email on the sign-in page are asked
+				for a password instead of being sent to {workspace.name}'s provider.
+			</Alert.Description>
+		</Alert.Root>
+	{/if}
 
 	{#if failure}
 		<Alert.Root variant={failure === "unavailable" || failure === "lookup_failed" ? "destructive" : "warning"}>

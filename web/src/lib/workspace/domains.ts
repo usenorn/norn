@@ -12,6 +12,8 @@ export type DomainStatus =
 	| { kind: "waiting" }
 	| { kind: "not_found"; checkedAt: string };
 
+export type EmailRouting = { kind: "routed" } | { kind: "unrouted" } | { kind: "unknown" };
+
 type Problem = components["schemas"]["Problem"];
 
 export const domainFailureCopy: Record<DomainFailure, string> = {
@@ -35,6 +37,12 @@ export function domainStatus(domain: WorkspaceDomain): DomainStatus {
 	if (domain.checkedAt) return { kind: "not_found", checkedAt: domain.checkedAt };
 
 	return { kind: "waiting" };
+}
+
+export function emailRouting(domains: DomainList, tested: boolean): EmailRouting {
+	if (!tested || domains.kind === "unavailable") return { kind: "unknown" };
+
+	return domains.domains.some((domain) => domain.verifiedAt) ? { kind: "routed" } : { kind: "unrouted" };
 }
 
 export function domainFailure(problem: Problem): DomainFailure {
