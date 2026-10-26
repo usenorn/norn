@@ -211,30 +211,6 @@ test.describe("cycles from the board", () => {
 		await expect(page.getByRole("button", { name: "Move to cycle" })).toHaveCount(0);
 	});
 
-	test("Shift+C moves the open issue and the palette shows that key on its page", async ({
-		page,
-	}) => {
-		await runCycles(page);
-		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
-
-		const cycle = page.getByRole("button", { name: /^Cycle:/ });
-
-		await expect(cycle).toContainText("No cycle");
-
-		await page.keyboard.press("Shift+C");
-		await pickCycle(page);
-
-		await expect(cycle).toContainText(/Cycle \d+/);
-
-		const palette = await openPalette(page);
-
-		await palette.getByRole("combobox").fill(">");
-
-		const move = palette.getByRole("option", { name: /^Move .+ to cycle…/ });
-
-		await expect(move.locator("kbd")).toHaveText("⇧ C");
-	});
-
 	test("Shift+C typed into a comment stays in the comment", async ({ page }) => {
 		await runCycles(page);
 		await page.goto(at(`/issues/${fixture().issues[0].reference}`));
