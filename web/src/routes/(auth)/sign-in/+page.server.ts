@@ -82,7 +82,9 @@ export const actions: Actions = {
 			const returnTo = safeReturn(carriedURL(url, body).searchParams.get("return"));
 			const { data } = await beginSso(locals.api, provider, returnTo, email);
 
-			redirect(303, data ? data.authorizationUrl : ssoEntryPoint(provider.workspace, returnTo));
+			if (data) redirect(303, data.authorizationUrl, { external: true });
+
+			redirect(303, ssoEntryPoint(provider.workspace, returnTo));
 		}
 
 		const outcome: SignInOutcome = { step: stepFor(found.options, email) };

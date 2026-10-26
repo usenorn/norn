@@ -32,3 +32,10 @@ export function carriedURL(url: URL, body: FormData): URL {
 
 	return carried;
 }
+
+export function actionPath(from: ReadonlyURL, name: string): string {
+	const kept = [...from.searchParams].filter(([key]) => !key.startsWith("/"));
+	const query = new URLSearchParams(kept).toString();
+
+	return query ? `?/${name}&${query}` : `?/${name}`;
+}

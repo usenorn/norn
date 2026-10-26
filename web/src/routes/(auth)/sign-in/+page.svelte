@@ -18,7 +18,7 @@
 	import { identifySchema, signInSchema } from "#lib/auth/sign-in-schema.js";
 	import { clockTime } from "#lib/auth/sign-in.js";
 	import { methodGroups, type SignInOutcome } from "#lib/auth/sign-in-step.js";
-	import { authPath, safeReturn } from "#lib/auth/return-to.js";
+	import { actionPath, authPath, safeReturn } from "#lib/auth/return-to.js";
 	import { signInPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
 
@@ -82,7 +82,7 @@
 	const offersPassword = $derived(groups.some((group) => group.method === "password"));
 	const providers = $derived(groups.flatMap((group) => (group.method === "sso" ? group.workspaces : [])));
 	const ssoOnly = $derived(providers.length > 0 && !offersPassword);
-	const knownEmail = $derived(step.kind === "methods" ? step.email : "");
+	const knownEmail = $derived(step.kind === "identify" ? "" : step.email);
 	const workspaceName = $derived(entry.kind === "ready" ? entry.signIn.name : "");
 
 	const locked = $derived(failure?.kind === "account_locked" || failure?.kind === "rate_limited");
@@ -229,7 +229,7 @@
 				<form
 					id={identifyFormId}
 					method="POST"
-					action="?/identify"
+					action={actionPath(page.url, "identify")}
 					use:identifyEnhance
 					class="flex flex-col gap-4"
 				>
@@ -292,7 +292,7 @@
 						<form
 							id={passwordFormId}
 							method="POST"
-							action="?/password"
+							action={actionPath(page.url, "password")}
 							use:passwordEnhance
 							class="flex flex-col gap-4"
 						>
