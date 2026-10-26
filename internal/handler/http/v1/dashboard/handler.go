@@ -46,6 +46,8 @@ type handler struct {
 	agents            service.Agents
 	sessions          service.Sessions
 	ssoConnections    service.SSOConnections
+	signInMethods     service.SignInMethods
+	workspaceDomains  service.WorkspaceDomains
 	cycles            service.Cycles
 	projects          service.Projects
 	roadmaps          service.Roadmaps
@@ -107,6 +109,8 @@ func New(
 	agents service.Agents,
 	sessions service.Sessions,
 	ssoConnections service.SSOConnections,
+	signInMethods service.SignInMethods,
+	workspaceDomains service.WorkspaceDomains,
 	cycles service.Cycles,
 	projects service.Projects,
 	roadmaps service.Roadmaps,
@@ -167,6 +171,8 @@ func New(
 		agents:            agents,
 		sessions:          sessions,
 		ssoConnections:    ssoConnections,
+		signInMethods:     signInMethods,
+		workspaceDomains:  workspaceDomains,
 		cycles:            cycles,
 		projects:          projects,
 		roadmaps:          roadmaps,

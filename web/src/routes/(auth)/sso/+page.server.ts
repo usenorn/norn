@@ -1,5 +1,6 @@
 import { exchangeFrom } from "#lib/auth/sso.js";
 import { keys } from "#lib/api/keys.js";
+import { beginSso } from "#lib/auth/sign-in-step.js";
 import { reachWorkspaceSignIn } from "#lib/auth/workspace-sign-in.js";
 import type { SsoExchange } from "#lib/auth/types.js";
 import type { PageServerLoad } from "./$types";
@@ -18,7 +19,11 @@ export const load: PageServerLoad = async ({
 		? await reachWorkspaceSignIn(locals.api, workspace)
 		: ({ kind: "none" } as const);
 
-	const provider = entry.kind === "ready" ? (entry.signIn.host ?? "") : "";
+	const workspaceProvider =
+		entry.kind === "ready"
+			? (entry.signIn.options.find((option) => option.method === "sso")?.workspace ?? null)
+			: null;
+	const provider = workspaceProvider?.host ?? "";
 
 	const returned = exchangeFrom(url);
 	if (returned) return { exchange: returned, workspace, provider };
@@ -40,9 +45,11 @@ export const load: PageServerLoad = async ({
 		};
 	}
 
-	const { data, error } = await locals.api.POST("/sso/oidc/login", {
-		body: { workspace, returnTo: url.searchParams.get("return_to") ?? undefined },
-	});
+	const { data, error } = await beginSso(
+		locals.api,
+		{ workspace, protocol: workspaceProvider?.protocol },
+		url.searchParams.get("return_to") ?? ""
+	);
 
 	if (error) {
 		return {

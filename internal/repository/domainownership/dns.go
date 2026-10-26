@@ -30,7 +30,7 @@ func (o *dnsOwnership) PublishesTXT(ctx context.Context, domain, record string) 
 			return false, nil
 		}
 
-		return false, fmt.Errorf("look up txt records for %s: %w", domain, err)
+		return false, fmt.Errorf("%w: %s: %w", entity.ErrWorkspaceDomainLookupFailed, domain, err)
 	}
 
 	for _, value := range published {

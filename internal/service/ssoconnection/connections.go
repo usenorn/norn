@@ -22,7 +22,6 @@ import (
 
 type connectionsService struct {
 	connections repository.SSOConnection
-	policies    repository.WorkspaceAuthPolicy
 	identities  repository.SSOIdentity
 	states      repository.OIDCState
 	requests    repository.SAMLRequest
@@ -42,7 +41,6 @@ type connectionsService struct {
 
 func New(
 	connections repository.SSOConnection,
-	policies repository.WorkspaceAuthPolicy,
 	identities repository.SSOIdentity,
 	states repository.OIDCState,
 	requests repository.SAMLRequest,
@@ -61,7 +59,6 @@ func New(
 ) service.SSOConnections {
 	return &connectionsService{
 		connections: connections,
-		policies:    policies,
 		identities:  identities,
 		states:      states,
 		requests:    requests,
@@ -237,7 +234,7 @@ func (s *connectionsService) BeginTest(
 		return entity.SSOHandoff{}, err
 	}
 
-	return s.begin(ctx, connection, entity.SSOPurposeTest, uuid.Nil, "")
+	return s.begin(ctx, connection, entity.SSOPurposeTest, uuid.Nil, "", "")
 }
 
 func (s *connectionsService) BeginLogin(
@@ -262,7 +259,7 @@ func (s *connectionsService) BeginLogin(
 		return entity.SSOHandoff{}, entity.ErrSSONotVerified
 	}
 
-	return s.begin(ctx, connection, entity.SSOPurposeLogin, uuid.Nil, input.ReturnTo)
+	return s.begin(ctx, connection, entity.SSOPurposeLogin, uuid.Nil, input.ReturnTo, entity.SSOLoginHint(input.LoginHint))
 }
 
 func (s *connectionsService) BeginLink(
@@ -291,80 +288,7 @@ func (s *connectionsService) BeginLink(
 		return entity.SSOHandoff{}, err
 	}
 
-	return s.begin(ctx, connection, entity.SSOPurposeLink, account, "")
-}
-
-func (s *connectionsService) SignIn(
-	ctx context.Context,
-	slug string,
-) (entity.WorkspaceSignIn, error) {
-	workspace, err := s.workspaces.GetBySlug(ctx, slug)
-	if err != nil {
-		return entity.WorkspaceSignIn{}, err
-	}
-
-	policy, err := s.policies.Get(ctx, workspace.ID)
-	if err != nil {
-		return entity.WorkspaceSignIn{}, err
-	}
-
-	signIn := entity.WorkspaceSignIn{
-		Slug:     workspace.Slug,
-		Name:     workspace.Name,
-		Password: policy.Enforcement.Permits(entity.SessionAuthMethodPassword),
-	}
-
-	protocol, err := s.connections.Protocol(ctx, workspace.ID)
-	if err != nil {
-		if errors.Is(err, entity.ErrSSOConnectionNotFound) {
-			return signIn, nil
-		}
-
-		return entity.WorkspaceSignIn{}, err
-	}
-
-	signIn.Protocol = protocol
-
-	host, verified, err := s.providerHost(ctx, workspace.ID, protocol)
-	if err != nil {
-		return entity.WorkspaceSignIn{}, err
-	}
-
-	signIn.SSO = verified
-	signIn.Host = host
-
-	return signIn, nil
-}
-
-func (s *connectionsService) providerHost(
-	ctx context.Context,
-	workspaceID uuid.UUID,
-	protocol entity.SSOProtocol,
-) (string, bool, error) {
-	if protocol == entity.SSOProtocolSAML {
-		connection, err := s.connections.GetSAML(ctx, workspaceID)
-		if err != nil {
-			return "", false, err
-		}
-
-		return hostOf(connection.Descriptor.SSOURL), connection.Verified(), nil
-	}
-
-	connection, err := s.connections.GetOIDC(ctx, workspaceID)
-	if err != nil {
-		return "", false, err
-	}
-
-	return hostOf(connection.Endpoints.Issuer), connection.Verified(), nil
-}
-
-func hostOf(address string) string {
-	parsed, err := url.Parse(address)
-	if err != nil {
-		return ""
-	}
-
-	return parsed.Host
+	return s.begin(ctx, connection, entity.SSOPurposeLink, account, "", "")
 }
 
 func (s *connectionsService) begin(
@@ -372,7 +296,7 @@ func (s *connectionsService) begin(
 	connection entity.OIDCConnection,
 	purpose entity.SSOPurpose,
 	accountID uuid.UUID,
-	returnTo string,
+	returnTo, loginHint string,
 ) (entity.SSOHandoff, error) {
 	state, err := opaque()
 	if err != nil {
@@ -409,9 +333,10 @@ func (s *connectionsService) begin(
 
 	return entity.SSOHandoff{
 		AuthorizationURL: s.provider.AuthCodeURL(ctx, connection, entity.OIDCAuthorization{
-			State:    state,
-			Nonce:    nonce,
-			Verifier: verifier,
+			State:     state,
+			Nonce:     nonce,
+			Verifier:  verifier,
+			LoginHint: loginHint,
 		}),
 		Correlator: correlator,
 	}, nil

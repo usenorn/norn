@@ -154,7 +154,9 @@
 	]);
 
 	const action = $derived.by(() => {
-		if (ssoOnly) return { label: `Continue with ${provider}`, href: "/sso", form: null };
+		if (ssoOnly) {
+			return { label: `Continue with ${provider}`, href: authPath(page.url, "/sign-in"), form: null };
+		}
 		switch (reset.kind) {
 			case "request":
 				return { label: busy ? "Sending link" : "Send reset link", href: null, form: requestFormId };

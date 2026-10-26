@@ -17,6 +17,7 @@
 	import { Input } from "#lib/components/ui/input/index.js";
 	import InstanceLine from "#lib/components/norn/instance-line.svelte";
 	import { minPasswordLength } from "#lib/auth/sign-up-schema.js";
+	import { ssoEntryPoint } from "#lib/auth/workspace-sign-in.js";
 	import { acceptInvitationSchema } from "#lib/workspace/accept-invitation-schema.js";
 	import {
 		invitedHeadline,
@@ -227,7 +228,12 @@
 					onclick: null,
 				};
 			case "sso_required":
-				return { label: "Continue with single sign-on", href: "/sso", form: null, onclick: null };
+				return {
+					label: "Continue with single sign-on",
+					href: ssoEntryPoint(invitation.workspace.slug, `${page.url.pathname}${page.url.search}`),
+					form: null,
+					onclick: null,
+				};
 			case "sign_in_required":
 			case "already_accepted":
 				return { label: "Sign in", href: "/sign-in", form: null, onclick: null };

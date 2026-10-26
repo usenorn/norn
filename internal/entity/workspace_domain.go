@@ -21,9 +21,9 @@ const (
 )
 
 var (
-	ErrWorkspaceDomainNotFound   = errors.New("this workspace has not claimed that domain")
-	ErrWorkspaceDomainTaken      = errors.New("this workspace has already claimed that domain")
-	ErrWorkspaceDomainUnverified = errors.New("the verification record was not found on that domain")
+	ErrWorkspaceDomainNotFound     = errors.New("this workspace has not claimed that domain")
+	ErrWorkspaceDomainTaken        = errors.New("this workspace has already claimed that domain")
+	ErrWorkspaceDomainLookupFailed = errors.New("the domain's dns records could not be read")
 )
 
 var personalEmailProviders = map[string]bool{

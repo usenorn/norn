@@ -209,7 +209,11 @@
 	const action = $derived.by(() => {
 		if (closed) return { label: "Go to sign in", href: "/sign-in", onclick: null };
 		if (ssoDomain) {
-			return { label: `Continue with ${ssoDomain.provider}`, href: "/sso", onclick: null };
+			return {
+				label: `Continue with ${ssoDomain.provider}`,
+				href: authPath(page.url, "/sign-in"),
+				onclick: null,
+			};
 		}
 		if (outcome?.kind === "email_taken") {
 			return { label: "Sign in instead", href: "/sign-in", onclick: null };
@@ -490,7 +494,7 @@
 				{/if}
 
 				{#if showForm && !outcome && auth.sso}
-					<Button href="/sso" variant="outline" class="w-full">
+					<Button href={authPath(page.url, "/sign-in")} variant="outline" class="w-full">
 						Continue with {auth.sso.name}
 					</Button>
 				{/if}

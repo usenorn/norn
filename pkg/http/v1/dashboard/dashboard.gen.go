@@ -982,6 +982,9 @@ const (
 	AuditActionSsoAccountOpened                AuditAction = "sso.account_opened"
 	AuditActionSsoConnectionRemoved            AuditAction = "sso.connection_removed"
 	AuditActionSsoConnectionSaved              AuditAction = "sso.connection_saved"
+	AuditActionSsoDomainAdded                  AuditAction = "sso.domain_added"
+	AuditActionSsoDomainRemoved                AuditAction = "sso.domain_removed"
+	AuditActionSsoDomainVerified               AuditAction = "sso.domain_verified"
 	AuditActionSsoEnforcementChanged           AuditAction = "sso.enforcement_changed"
 	AuditActionSsoIdentityLinked               AuditAction = "sso.identity_linked"
 	AuditActionSsoIdentityRefused              AuditAction = "sso.identity_refused"
@@ -1121,6 +1124,12 @@ func (e AuditAction) Valid() bool {
 	case AuditActionSsoConnectionRemoved:
 		return true
 	case AuditActionSsoConnectionSaved:
+		return true
+	case AuditActionSsoDomainAdded:
+		return true
+	case AuditActionSsoDomainRemoved:
+		return true
+	case AuditActionSsoDomainVerified:
 		return true
 	case AuditActionSsoEnforcementChanged:
 		return true
@@ -4704,6 +4713,24 @@ func (e SignInCodeIncorrectProblemCode) Valid() bool {
 	}
 }
 
+// Defines values for SignInMethod.
+const (
+	SignInMethodPassword SignInMethod = "password"
+	SignInMethodSso      SignInMethod = "sso"
+)
+
+// Valid indicates whether the value is a known member of the SignInMethod enum.
+func (e SignInMethod) Valid() bool {
+	switch e {
+	case SignInMethodPassword:
+		return true
+	case SignInMethodSso:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SignUpClosedProblemCode.
 const (
 	SignUpClosed SignUpClosedProblemCode = "sign_up_closed"
@@ -6116,6 +6143,11 @@ type AddTeamMemberRequest struct {
 	AccountId openapi_types.UUID `json:"accountId"`
 }
 
+// AddWorkspaceDomainRequest defines model for AddWorkspaceDomainRequest.
+type AddWorkspaceDomainRequest struct {
+	Domain string `json:"domain"`
+}
+
 // Agent defines model for Agent.
 type Agent struct {
 	AccountId openapi_types.UUID `json:"accountId"`
@@ -6699,6 +6731,8 @@ type BaseRefPolicy string
 
 // BeginOidcLoginRequest defines model for BeginOidcLoginRequest.
 type BeginOidcLoginRequest struct {
+	// LoginHint The address the person already typed, passed to an OpenID Connect provider as login_hint so it can prefill it. A SAML sign-in ignores it, because a requested subject there is a demand the provider must satisfy, not a hint.
+	LoginHint *string `json:"loginHint,omitempty"`
 	ReturnTo  *string `json:"returnTo,omitempty"`
 	Workspace string  `json:"workspace"`
 }
@@ -7552,6 +7586,11 @@ type DirectoryUnlicensedProblemCode string
 // DiscoverOidcRequest defines model for DiscoverOidcRequest.
 type DiscoverOidcRequest struct {
 	Issuer string `json:"issuer"`
+}
+
+// DiscoverSignInRequest defines model for DiscoverSignInRequest.
+type DiscoverSignInRequest struct {
+	Email string `json:"email"`
 }
 
 // Doc defines model for Doc.
@@ -10899,10 +10938,34 @@ type SignInCodeIncorrectProblem struct {
 // SignInCodeIncorrectProblemCode defines model for SignInCodeIncorrectProblem.Code.
 type SignInCodeIncorrectProblemCode string
 
+// SignInMethod defines model for SignInMethod.
+type SignInMethod string
+
+// SignInOption defines model for SignInOption.
+type SignInOption struct {
+	Method    SignInMethod     `json:"method"`
+	Workspace *SignInWorkspace `json:"workspace,omitempty"`
+}
+
+// SignInOptions defines model for SignInOptions.
+type SignInOptions struct {
+	Options   []SignInOption `json:"options"`
+	Preferred *SignInMethod  `json:"preferred,omitempty"`
+}
+
 // SignInRequest defines model for SignInRequest.
 type SignInRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+// SignInWorkspace defines model for SignInWorkspace.
+type SignInWorkspace struct {
+	// Host The provider's host, so a person can see where they are being sent
+	Host      *string      `json:"host,omitempty"`
+	Name      string       `json:"name"`
+	Protocol  *SsoProtocol `json:"protocol,omitempty"`
+	Workspace string       `json:"workspace"`
 }
 
 // SignUpClosedProblem defines model for SignUpClosedProblem.
@@ -11816,6 +11879,17 @@ type WorkspaceDeletedProblem struct {
 // WorkspaceDeletedProblemCode defines model for WorkspaceDeletedProblem.Code.
 type WorkspaceDeletedProblemCode string
 
+// WorkspaceDomain defines model for WorkspaceDomain.
+type WorkspaceDomain struct {
+	CheckedAt *time.Time         `json:"checkedAt,omitempty"`
+	Domain    string             `json:"domain"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// Record The TXT record to publish on the domain
+	Record     string     `json:"record"`
+	VerifiedAt *time.Time `json:"verifiedAt,omitempty"`
+}
+
 // WorkspaceOidcConnection defines model for WorkspaceOidcConnection.
 type WorkspaceOidcConnection struct {
 	// AdminGroup Members of this provider group become administrators; everyone else a member.
@@ -11857,17 +11931,10 @@ type WorkspaceSamlConnection struct {
 
 // WorkspaceSignIn defines model for WorkspaceSignIn.
 type WorkspaceSignIn struct {
-	// Host The provider's host, so a person can see where they are being sent
-	Host *string `json:"host,omitempty"`
-	Name string  `json:"name"`
-
-	// Password False when the workspace admits nothing but its provider
-	Password bool         `json:"password"`
-	Protocol *SsoProtocol `json:"protocol,omitempty"`
-
-	// Sso True when a verified provider is ready to take a sign-in
-	Sso       bool   `json:"sso"`
-	Workspace string `json:"workspace"`
+	Name      string         `json:"name"`
+	Options   []SignInOption `json:"options"`
+	Preferred *SignInMethod  `json:"preferred,omitempty"`
+	Workspace string         `json:"workspace"`
 }
 
 // WorkspaceSsoProtocol defines model for WorkspaceSsoProtocol.
@@ -11961,6 +12028,9 @@ type DirectoryLimit = int32
 
 // DocId defines model for DocId.
 type DocId = openapi_types.UUID
+
+// DomainId defines model for DomainId.
+type DomainId = openapi_types.UUID
 
 // DraftId defines model for DraftId.
 type DraftId = openapi_types.UUID
@@ -12628,6 +12698,9 @@ type SetPasswordJSONRequestBody = SetPasswordRequest
 // ChangePasswordJSONRequestBody defines body for ChangePassword for application/json ContentType.
 type ChangePasswordJSONRequestBody = ChangePasswordRequest
 
+// DiscoverSignInJSONRequestBody defines body for DiscoverSignIn for application/json ContentType.
+type DiscoverSignInJSONRequestBody = DiscoverSignInRequest
+
 // SignInJSONRequestBody defines body for SignIn for application/json ContentType.
 type SignInJSONRequestBody = SignInRequest
 
@@ -13000,6 +13073,9 @@ type UpdateWorkspaceSourceControlRepositoryJSONRequestBody = UpdateSourceControl
 // AddWorkspaceSourceControlRouteJSONRequestBody defines body for AddWorkspaceSourceControlRoute for application/json ContentType.
 type AddWorkspaceSourceControlRouteJSONRequestBody = AddSourceControlRouteRequest
 
+// AddWorkspaceDomainJSONRequestBody defines body for AddWorkspaceDomain for application/json ContentType.
+type AddWorkspaceDomainJSONRequestBody = AddWorkspaceDomainRequest
+
 // SetWorkspaceOidcConnectionJSONRequestBody defines body for SetWorkspaceOidcConnection for application/json ContentType.
 type SetWorkspaceOidcConnectionJSONRequestBody = SetWorkspaceOidcConnectionRequest
 
@@ -13319,6 +13395,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /accounts/{accountId}/avatar (the `DownloadAccountAvatar` operationId).
 	DownloadAccountAvatar(ctx context.Context, accountId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DiscoverSignInWithBody Say how an address can sign in, from its domain alone
+	//
+	// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+	DiscoverSignInWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DiscoverSignIn Say how an address can sign in, from its domain alone
+	//
+	// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+	DiscoverSignIn(ctx context.Context, body DiscoverSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SignInWithBody Answer a password with a code sent to the address it belongs to
 	//
@@ -16281,6 +16375,35 @@ type ClientInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/sso (the `GetWorkspaceSsoProtocol` operationId).
 	GetWorkspaceSsoProtocol(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListWorkspaceDomains List the email domains this workspace has claimed for sign-in
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/sso/domains (the `ListWorkspaceDomains` operationId).
+	ListWorkspaceDomains(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddWorkspaceDomainWithBody Claim an email domain, pending its DNS verification record
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+	AddWorkspaceDomainWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddWorkspaceDomain Claim an email domain, pending its DNS verification record
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+	AddWorkspaceDomain(ctx context.Context, workspaceId WorkspaceId, body AddWorkspaceDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveWorkspaceDomain Withdraw a domain claim so it no longer routes sign-ins here
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/sso/domains/{domainId} (the `RemoveWorkspaceDomain` operationId).
+	RemoveWorkspaceDomain(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// VerifyWorkspaceDomain Look for the domain's verification record now
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/sso/domains/{domainId}/verify (the `VerifyWorkspaceDomain` operationId).
+	VerifyWorkspaceDomain(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/sso/identities (the `ListWorkspaceSsoIdentities` operationId).
@@ -17115,6 +17238,44 @@ func (c *Client) ListSignedInAccounts(ctx context.Context, reqEditors ...Request
 // Corresponds with GET /accounts/{accountId}/avatar (the `DownloadAccountAvatar` operationId).
 func (c *Client) DownloadAccountAvatar(ctx context.Context, accountId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDownloadAccountAvatarRequest(c.Server, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DiscoverSignInWithBody Say how an address can sign in, from its domain alone
+//
+// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+func (c *Client) DiscoverSignInWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDiscoverSignInRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DiscoverSignIn Say how an address can sign in, from its domain alone
+//
+// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+func (c *Client) DiscoverSignIn(ctx context.Context, body DiscoverSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDiscoverSignInRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -24656,6 +24817,85 @@ func (c *Client) GetWorkspaceSsoProtocol(ctx context.Context, workspaceId Worksp
 	return c.Client.Do(req)
 }
 
+// ListWorkspaceDomains List the email domains this workspace has claimed for sign-in
+//
+// Corresponds with GET /workspaces/{workspaceId}/sso/domains (the `ListWorkspaceDomains` operationId).
+func (c *Client) ListWorkspaceDomains(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWorkspaceDomainsRequest(c.Server, workspaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddWorkspaceDomainWithBody Claim an email domain, pending its DNS verification record
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+func (c *Client) AddWorkspaceDomainWithBody(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddWorkspaceDomainRequestWithBody(c.Server, workspaceId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddWorkspaceDomain Claim an email domain, pending its DNS verification record
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+func (c *Client) AddWorkspaceDomain(ctx context.Context, workspaceId WorkspaceId, body AddWorkspaceDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddWorkspaceDomainRequest(c.Server, workspaceId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveWorkspaceDomain Withdraw a domain claim so it no longer routes sign-ins here
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/sso/domains/{domainId} (the `RemoveWorkspaceDomain` operationId).
+func (c *Client) RemoveWorkspaceDomain(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveWorkspaceDomainRequest(c.Server, workspaceId, domainId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// VerifyWorkspaceDomain Look for the domain's verification record now
+//
+// Corresponds with POST /workspaces/{workspaceId}/sso/domains/{domainId}/verify (the `VerifyWorkspaceDomain` operationId).
+func (c *Client) VerifyWorkspaceDomain(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVerifyWorkspaceDomainRequest(c.Server, workspaceId, domainId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
 //
 // Corresponds with GET /workspaces/{workspaceId}/sso/identities (the `ListWorkspaceSsoIdentities` operationId).
@@ -26516,6 +26756,46 @@ func NewDownloadAccountAvatarRequest(server string, accountId openapi_types.UUID
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewDiscoverSignInRequest calls the generic DiscoverSignIn builder with application/json body
+func NewDiscoverSignInRequest(server string, body DiscoverSignInJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDiscoverSignInRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewDiscoverSignInRequestWithBody constructs an http.Request for the DiscoverSignIn method, with any body, and a specified content type
+func NewDiscoverSignInRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/discover")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -42652,6 +42932,169 @@ func NewGetWorkspaceSsoProtocolRequest(server string, workspaceId WorkspaceId) (
 	return req, nil
 }
 
+// NewListWorkspaceDomainsRequest constructs an http.Request for the ListWorkspaceDomains method
+func NewListWorkspaceDomainsRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/sso/domains", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddWorkspaceDomainRequest calls the generic AddWorkspaceDomain builder with application/json body
+func NewAddWorkspaceDomainRequest(server string, workspaceId WorkspaceId, body AddWorkspaceDomainJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddWorkspaceDomainRequestWithBody(server, workspaceId, "application/json", bodyReader)
+}
+
+// NewAddWorkspaceDomainRequestWithBody constructs an http.Request for the AddWorkspaceDomain method, with any body, and a specified content type
+func NewAddWorkspaceDomainRequestWithBody(server string, workspaceId WorkspaceId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/sso/domains", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveWorkspaceDomainRequest constructs an http.Request for the RemoveWorkspaceDomain method
+func NewRemoveWorkspaceDomainRequest(server string, workspaceId WorkspaceId, domainId DomainId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "domainId", domainId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/sso/domains/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewVerifyWorkspaceDomainRequest constructs an http.Request for the VerifyWorkspaceDomain method
+func NewVerifyWorkspaceDomainRequest(server string, workspaceId WorkspaceId, domainId DomainId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "domainId", domainId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/sso/domains/%s/verify", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListWorkspaceSsoIdentitiesRequest constructs an http.Request for the ListWorkspaceSsoIdentities method
 func NewListWorkspaceSsoIdentitiesRequest(server string, workspaceId WorkspaceId) (*http.Request, error) {
 	var err error
@@ -45927,6 +46370,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /accounts/{accountId}/avatar (the `DownloadAccountAvatar` operationId).
 	DownloadAccountAvatarWithResponse(ctx context.Context, accountId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadAccountAvatarResponse, error)
+
+	// DiscoverSignInWithBodyWithResponse Say how an address can sign in, from its domain alone
+	//
+	// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+	DiscoverSignInWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiscoverSignInResponse, error)
+
+	// DiscoverSignInWithResponse Say how an address can sign in, from its domain alone
+	//
+	// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+	DiscoverSignInWithResponse(ctx context.Context, body DiscoverSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*DiscoverSignInResponse, error)
 
 	// SignInWithBodyWithResponse Answer a password with a code sent to the address it belongs to
 	//
@@ -49313,6 +49774,41 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/sso (the `GetWorkspaceSsoProtocol` operationId).
 	GetWorkspaceSsoProtocolWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*GetWorkspaceSsoProtocolResponse, error)
 
+	// ListWorkspaceDomainsWithResponse List the email domains this workspace has claimed for sign-in
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /workspaces/{workspaceId}/sso/domains (the `ListWorkspaceDomains` operationId).
+	ListWorkspaceDomainsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceDomainsResponse, error)
+
+	// AddWorkspaceDomainWithBodyWithResponse Claim an email domain, pending its DNS verification record
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+	AddWorkspaceDomainWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddWorkspaceDomainResponse, error)
+
+	// AddWorkspaceDomainWithResponse Claim an email domain, pending its DNS verification record
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+	AddWorkspaceDomainWithResponse(ctx context.Context, workspaceId WorkspaceId, body AddWorkspaceDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*AddWorkspaceDomainResponse, error)
+
+	// RemoveWorkspaceDomainWithResponse Withdraw a domain claim so it no longer routes sign-ins here
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /workspaces/{workspaceId}/sso/domains/{domainId} (the `RemoveWorkspaceDomain` operationId).
+	RemoveWorkspaceDomainWithResponse(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*RemoveWorkspaceDomainResponse, error)
+
+	// VerifyWorkspaceDomainWithResponse Look for the domain's verification record now
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /workspaces/{workspaceId}/sso/domains/{domainId}/verify (the `VerifyWorkspaceDomain` operationId).
+	VerifyWorkspaceDomainWithResponse(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*VerifyWorkspaceDomainResponse, error)
+
 	// ListWorkspaceSsoIdentitiesWithResponse List the accounts linked to this workspace's provider
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -50794,6 +51290,75 @@ func (r DownloadAccountAvatarResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r DownloadAccountAvatarResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DiscoverSignInResponse429Headers the declared response headers of an HTTP 429 response for DiscoverSignIn
+type DiscoverSignInResponse429Headers struct {
+	RetryAfter *int32
+}
+
+type DiscoverSignInResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *SignInOptions
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON429 the response for an HTTP 429 `application/problem+json` response
+	ApplicationproblemJSON429 *TooManyAttempts
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// Headers429 the parsed response headers for an HTTP 429 response
+	Headers429 *DiscoverSignInResponse429Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DiscoverSignInResponse) GetJSON200() *SignInOptions {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r DiscoverSignInResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON429 returns the response for an HTTP 429 `application/problem+json` response
+func (r DiscoverSignInResponse) GetApplicationproblemJSON429() *TooManyAttempts {
+	return r.ApplicationproblemJSON429
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r DiscoverSignInResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r DiscoverSignInResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DiscoverSignInResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DiscoverSignInResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DiscoverSignInResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -75276,6 +75841,282 @@ func (r GetWorkspaceSsoProtocolResponse) ContentType() string {
 	return ""
 }
 
+type ListWorkspaceDomainsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]WorkspaceDomain
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListWorkspaceDomainsResponse) GetJSON200() *[]WorkspaceDomain {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r ListWorkspaceDomainsResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r ListWorkspaceDomainsResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r ListWorkspaceDomainsResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r ListWorkspaceDomainsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWorkspaceDomainsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWorkspaceDomainsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListWorkspaceDomainsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AddWorkspaceDomainResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *WorkspaceDomain
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *Problem
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AddWorkspaceDomainResponse) GetJSON201() *WorkspaceDomain {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r AddWorkspaceDomainResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r AddWorkspaceDomainResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r AddWorkspaceDomainResponse) GetApplicationproblemJSON409() *Problem {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r AddWorkspaceDomainResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r AddWorkspaceDomainResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r AddWorkspaceDomainResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddWorkspaceDomainResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddWorkspaceDomainResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddWorkspaceDomainResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type RemoveWorkspaceDomainResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r RemoveWorkspaceDomainResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r RemoveWorkspaceDomainResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r RemoveWorkspaceDomainResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r RemoveWorkspaceDomainResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveWorkspaceDomainResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveWorkspaceDomainResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveWorkspaceDomainResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveWorkspaceDomainResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type VerifyWorkspaceDomainResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceDomain
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+	// ApplicationproblemJSON503 the response for an HTTP 503 `application/problem+json` response
+	ApplicationproblemJSON503 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r VerifyWorkspaceDomainResponse) GetJSON200() *WorkspaceDomain {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r VerifyWorkspaceDomainResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r VerifyWorkspaceDomainResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r VerifyWorkspaceDomainResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r VerifyWorkspaceDomainResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetApplicationproblemJSON503 returns the response for an HTTP 503 `application/problem+json` response
+func (r VerifyWorkspaceDomainResponse) GetApplicationproblemJSON503() *Problem {
+	return r.ApplicationproblemJSON503
+}
+
+// GetBody returns the raw response body bytes
+func (r VerifyWorkspaceDomainResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r VerifyWorkspaceDomainResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r VerifyWorkspaceDomainResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r VerifyWorkspaceDomainResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListWorkspaceSsoIdentitiesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -80330,6 +81171,36 @@ func (c *ClientWithResponses) DownloadAccountAvatarWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseDownloadAccountAvatarResponse(rsp)
+}
+
+// DiscoverSignInWithBodyWithResponse Say how an address can sign in, from its domain alone
+//
+// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+func (c *ClientWithResponses) DiscoverSignInWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiscoverSignInResponse, error) {
+	rsp, err := c.DiscoverSignInWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDiscoverSignInResponse(rsp)
+}
+
+// DiscoverSignInWithResponse Say how an address can sign in, from its domain alone
+//
+// The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /auth/discover (the `DiscoverSignIn` operationId).
+func (c *ClientWithResponses) DiscoverSignInWithResponse(ctx context.Context, body DiscoverSignInJSONRequestBody, reqEditors ...RequestEditorFn) (*DiscoverSignInResponse, error) {
+	rsp, err := c.DiscoverSignIn(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDiscoverSignInResponse(rsp)
 }
 
 // SignInWithBodyWithResponse Answer a password with a code sent to the address it belongs to
@@ -86459,6 +87330,71 @@ func (c *ClientWithResponses) GetWorkspaceSsoProtocolWithResponse(ctx context.Co
 	return ParseGetWorkspaceSsoProtocolResponse(rsp)
 }
 
+// ListWorkspaceDomainsWithResponse List the email domains this workspace has claimed for sign-in
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /workspaces/{workspaceId}/sso/domains (the `ListWorkspaceDomains` operationId).
+func (c *ClientWithResponses) ListWorkspaceDomainsWithResponse(ctx context.Context, workspaceId WorkspaceId, reqEditors ...RequestEditorFn) (*ListWorkspaceDomainsResponse, error) {
+	rsp, err := c.ListWorkspaceDomains(ctx, workspaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWorkspaceDomainsResponse(rsp)
+}
+
+// AddWorkspaceDomainWithBodyWithResponse Claim an email domain, pending its DNS verification record
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+func (c *ClientWithResponses) AddWorkspaceDomainWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddWorkspaceDomainResponse, error) {
+	rsp, err := c.AddWorkspaceDomainWithBody(ctx, workspaceId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddWorkspaceDomainResponse(rsp)
+}
+
+// AddWorkspaceDomainWithResponse Claim an email domain, pending its DNS verification record
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/sso/domains (the `AddWorkspaceDomain` operationId).
+func (c *ClientWithResponses) AddWorkspaceDomainWithResponse(ctx context.Context, workspaceId WorkspaceId, body AddWorkspaceDomainJSONRequestBody, reqEditors ...RequestEditorFn) (*AddWorkspaceDomainResponse, error) {
+	rsp, err := c.AddWorkspaceDomain(ctx, workspaceId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddWorkspaceDomainResponse(rsp)
+}
+
+// RemoveWorkspaceDomainWithResponse Withdraw a domain claim so it no longer routes sign-ins here
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /workspaces/{workspaceId}/sso/domains/{domainId} (the `RemoveWorkspaceDomain` operationId).
+func (c *ClientWithResponses) RemoveWorkspaceDomainWithResponse(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*RemoveWorkspaceDomainResponse, error) {
+	rsp, err := c.RemoveWorkspaceDomain(ctx, workspaceId, domainId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveWorkspaceDomainResponse(rsp)
+}
+
+// VerifyWorkspaceDomainWithResponse Look for the domain's verification record now
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /workspaces/{workspaceId}/sso/domains/{domainId}/verify (the `VerifyWorkspaceDomain` operationId).
+func (c *ClientWithResponses) VerifyWorkspaceDomainWithResponse(ctx context.Context, workspaceId WorkspaceId, domainId DomainId, reqEditors ...RequestEditorFn) (*VerifyWorkspaceDomainResponse, error) {
+	rsp, err := c.VerifyWorkspaceDomain(ctx, workspaceId, domainId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVerifyWorkspaceDomainResponse(rsp)
+}
+
 // ListWorkspaceSsoIdentitiesWithResponse List the accounts linked to this workspace's provider
 //
 // Returns a wrapper object for the known response body format(s).
@@ -88285,6 +89221,66 @@ func ParseDownloadAccountAvatarResponse(rsp *http.Response) (*DownloadAccountAva
 			headers.Location = &value
 		}
 		response.Headers303 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDiscoverSignInResponse parses an HTTP response from a DiscoverSignInWithResponse call
+func ParseDiscoverSignInResponse(rsp *http.Response) (*DiscoverSignInResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DiscoverSignInResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SignInOptions
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest TooManyAttempts
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON429 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 429:
+		var headers DiscoverSignInResponse429Headers
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int32
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: "int32"}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		response.Headers429 = &headers
 	}
 
 	return response, nil
@@ -108002,6 +108998,225 @@ func ParseGetWorkspaceSsoProtocolResponse(rsp *http.Response) (*GetWorkspaceSsoP
 	return response, nil
 }
 
+// ParseListWorkspaceDomainsResponse parses an HTTP response from a ListWorkspaceDomainsWithResponse call
+func ParseListWorkspaceDomainsResponse(rsp *http.Response) (*ListWorkspaceDomainsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWorkspaceDomainsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []WorkspaceDomain
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddWorkspaceDomainResponse parses an HTTP response from a AddWorkspaceDomainWithResponse call
+func ParseAddWorkspaceDomainResponse(rsp *http.Response) (*AddWorkspaceDomainResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddWorkspaceDomainResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest WorkspaceDomain
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRemoveWorkspaceDomainResponse parses an HTTP response from a RemoveWorkspaceDomainWithResponse call
+func ParseRemoveWorkspaceDomainResponse(rsp *http.Response) (*RemoveWorkspaceDomainResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveWorkspaceDomainResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseVerifyWorkspaceDomainResponse parses an HTTP response from a VerifyWorkspaceDomainWithResponse call
+func ParseVerifyWorkspaceDomainResponse(rsp *http.Response) (*VerifyWorkspaceDomainResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &VerifyWorkspaceDomainResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceDomain
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON503 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListWorkspaceSsoIdentitiesResponse parses an HTTP response from a ListWorkspaceSsoIdentitiesWithResponse call
 func ParseListWorkspaceSsoIdentitiesResponse(rsp *http.Response) (*ListWorkspaceSsoIdentitiesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -111879,6 +113094,9 @@ type ServerInterface interface {
 	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 	// (GET /accounts/{accountId}/avatar)
 	DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID)
+	// DiscoverSignIn Say how an address can sign in, from its domain alone
+	// (POST /auth/discover)
+	DiscoverSignIn(w http.ResponseWriter, r *http.Request)
 	// SignIn Answer a password with a code sent to the address it belongs to
 	// (POST /auth/login)
 	SignIn(w http.ResponseWriter, r *http.Request)
@@ -112887,6 +114105,18 @@ type ServerInterface interface {
 	// GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
 	// (GET /workspaces/{workspaceId}/sso)
 	GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// ListWorkspaceDomains List the email domains this workspace has claimed for sign-in
+	// (GET /workspaces/{workspaceId}/sso/domains)
+	ListWorkspaceDomains(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// AddWorkspaceDomain Claim an email domain, pending its DNS verification record
+	// (POST /workspaces/{workspaceId}/sso/domains)
+	AddWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
+	// RemoveWorkspaceDomain Withdraw a domain claim so it no longer routes sign-ins here
+	// (DELETE /workspaces/{workspaceId}/sso/domains/{domainId})
+	RemoveWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, domainId DomainId)
+	// VerifyWorkspaceDomain Look for the domain's verification record now
+	// (POST /workspaces/{workspaceId}/sso/domains/{domainId}/verify)
+	VerifyWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, domainId DomainId)
 	// ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
 	// (GET /workspaces/{workspaceId}/sso/identities)
 	ListWorkspaceSsoIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId)
@@ -113175,6 +114405,12 @@ func (_ Unimplemented) ListSignedInAccounts(w http.ResponseWriter, r *http.Reque
 // DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 // (GET /accounts/{accountId}/avatar)
 func (_ Unimplemented) DownloadAccountAvatar(w http.ResponseWriter, r *http.Request, accountId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// DiscoverSignIn Say how an address can sign in, from its domain alone
+// (POST /auth/discover)
+func (_ Unimplemented) DiscoverSignIn(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -115194,6 +116430,30 @@ func (_ Unimplemented) GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// ListWorkspaceDomains List the email domains this workspace has claimed for sign-in
+// (GET /workspaces/{workspaceId}/sso/domains)
+func (_ Unimplemented) ListWorkspaceDomains(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// AddWorkspaceDomain Claim an email domain, pending its DNS verification record
+// (POST /workspaces/{workspaceId}/sso/domains)
+func (_ Unimplemented) AddWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RemoveWorkspaceDomain Withdraw a domain claim so it no longer routes sign-ins here
+// (DELETE /workspaces/{workspaceId}/sso/domains/{domainId})
+func (_ Unimplemented) RemoveWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, domainId DomainId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// VerifyWorkspaceDomain Look for the domain's verification record now
+// (POST /workspaces/{workspaceId}/sso/domains/{domainId}/verify)
+func (_ Unimplemented) VerifyWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, domainId DomainId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
 // (GET /workspaces/{workspaceId}/sso/identities)
 func (_ Unimplemented) ListWorkspaceSsoIdentities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
@@ -115804,6 +117064,20 @@ func (siw *ServerInterfaceWrapper) DownloadAccountAvatar(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DownloadAccountAvatar(w, r, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DiscoverSignIn operation middleware
+func (siw *ServerInterfaceWrapper) DiscoverSignIn(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DiscoverSignIn(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -127714,6 +128988,128 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceSsoProtocol(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkspaceDomains operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkspaceDomains(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkspaceDomains(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddWorkspaceDomain operation middleware
+func (siw *ServerInterfaceWrapper) AddWorkspaceDomain(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddWorkspaceDomain(w, r, workspaceId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveWorkspaceDomain operation middleware
+func (siw *ServerInterfaceWrapper) RemoveWorkspaceDomain(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "domainId" -------------
+	var domainId DomainId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domainId", chi.URLParam(r, "domainId"), &domainId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domainId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveWorkspaceDomain(w, r, workspaceId, domainId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VerifyWorkspaceDomain operation middleware
+func (siw *ServerInterfaceWrapper) VerifyWorkspaceDomain(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "domainId" -------------
+	var domainId DomainId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domainId", chi.URLParam(r, "domainId"), &domainId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domainId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VerifyWorkspaceDomain(w, r, workspaceId, domainId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListWorkspaceSsoIdentities operation middleware
 func (siw *ServerInterfaceWrapper) ListWorkspaceSsoIdentities(w http.ResponseWriter, r *http.Request) {
 
@@ -130208,6 +131604,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/login/verify", wrapper.VerifySignInCode)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/discover", wrapper.DiscoverSignIn)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/password-reset", wrapper.RequestPasswordReset)
 	})
 	r.Group(func(r chi.Router) {
@@ -130317,6 +131716,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/sso/identities/{accountId}", wrapper.UnlinkWorkspaceSsoIdentity)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspaces/{workspaceId}/sso/domains", wrapper.ListWorkspaceDomains)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/domains", wrapper.AddWorkspaceDomain)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspaces/{workspaceId}/sso/domains/{domainId}", wrapper.RemoveWorkspaceDomain)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspaces/{workspaceId}/sso/domains/{domainId}/verify", wrapper.VerifyWorkspaceDomain)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/sso/sign-in", wrapper.GetWorkspaceSignIn)
@@ -132524,6 +133935,77 @@ func (response DownloadAccountAvatar404ApplicationProblemPlusJSONResponse) Visit
 type DownloadAccountAvatar500ApplicationProblemPlusJSONResponse Problem
 
 func (response DownloadAccountAvatar500ApplicationProblemPlusJSONResponse) VisitDownloadAccountAvatarResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscoverSignInRequestObject struct {
+	Body *DiscoverSignInJSONRequestBody
+}
+
+type DiscoverSignInResponseObject interface {
+	VisitDiscoverSignInResponse(w http.ResponseWriter) error
+}
+
+type DiscoverSignIn200JSONResponse SignInOptions
+
+func (response DiscoverSignIn200JSONResponse) VisitDiscoverSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscoverSignIn422ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DiscoverSignIn422ApplicationProblemPlusJSONResponse) VisitDiscoverSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscoverSignIn429ApplicationProblemPlusJSONResponse struct {
+	TooManyAttemptsApplicationProblemPlusJSONResponse
+}
+
+func (response DiscoverSignIn429ApplicationProblemPlusJSONResponse) VisitDiscoverSignInResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DiscoverSignIn500ApplicationProblemPlusJSONResponse Problem
+
+func (response DiscoverSignIn500ApplicationProblemPlusJSONResponse) VisitDiscoverSignInResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -163668,6 +165150,345 @@ func (response GetWorkspaceSsoProtocol500ApplicationProblemPlusJSONResponse) Vis
 	return err
 }
 
+type ListWorkspaceDomainsRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+}
+
+type ListWorkspaceDomainsResponseObject interface {
+	VisitListWorkspaceDomainsResponse(w http.ResponseWriter) error
+}
+
+type ListWorkspaceDomains200JSONResponse []WorkspaceDomain
+
+func (response ListWorkspaceDomains200JSONResponse) VisitListWorkspaceDomainsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDomains401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDomains401ApplicationProblemPlusJSONResponse) VisitListWorkspaceDomainsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDomains403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response ListWorkspaceDomains403ApplicationProblemPlusJSONResponse) VisitListWorkspaceDomainsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListWorkspaceDomains500ApplicationProblemPlusJSONResponse Problem
+
+func (response ListWorkspaceDomains500ApplicationProblemPlusJSONResponse) VisitListWorkspaceDomainsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceDomainRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	Body        *AddWorkspaceDomainJSONRequestBody
+}
+
+type AddWorkspaceDomainResponseObject interface {
+	VisitAddWorkspaceDomainResponse(w http.ResponseWriter) error
+}
+
+type AddWorkspaceDomain201JSONResponse WorkspaceDomain
+
+func (response AddWorkspaceDomain201JSONResponse) VisitAddWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceDomain401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceDomain401ApplicationProblemPlusJSONResponse) VisitAddWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceDomain403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response AddWorkspaceDomain403ApplicationProblemPlusJSONResponse) VisitAddWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceDomain409ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceDomain409ApplicationProblemPlusJSONResponse) VisitAddWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceDomain422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceDomain422ApplicationProblemPlusJSONResponse) VisitAddWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddWorkspaceDomain500ApplicationProblemPlusJSONResponse Problem
+
+func (response AddWorkspaceDomain500ApplicationProblemPlusJSONResponse) VisitAddWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceDomainRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DomainId    DomainId    `json:"domainId"`
+}
+
+type RemoveWorkspaceDomainResponseObject interface {
+	VisitRemoveWorkspaceDomainResponse(w http.ResponseWriter) error
+}
+
+type RemoveWorkspaceDomain204Response struct {
+}
+
+func (response RemoveWorkspaceDomain204Response) VisitRemoveWorkspaceDomainResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveWorkspaceDomain401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceDomain401ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceDomain403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveWorkspaceDomain403ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceDomain404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceDomain404ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveWorkspaceDomain500ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveWorkspaceDomain500ApplicationProblemPlusJSONResponse) VisitRemoveWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceDomainRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	DomainId    DomainId    `json:"domainId"`
+}
+
+type VerifyWorkspaceDomainResponseObject interface {
+	VisitVerifyWorkspaceDomainResponse(w http.ResponseWriter) error
+}
+
+type VerifyWorkspaceDomain200JSONResponse WorkspaceDomain
+
+func (response VerifyWorkspaceDomain200JSONResponse) VisitVerifyWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceDomain401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response VerifyWorkspaceDomain401ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceDomain403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response VerifyWorkspaceDomain403ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceDomain404ApplicationProblemPlusJSONResponse Problem
+
+func (response VerifyWorkspaceDomain404ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceDomain500ApplicationProblemPlusJSONResponse Problem
+
+func (response VerifyWorkspaceDomain500ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VerifyWorkspaceDomain503ApplicationProblemPlusJSONResponse Problem
+
+func (response VerifyWorkspaceDomain503ApplicationProblemPlusJSONResponse) VisitVerifyWorkspaceDomainResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListWorkspaceSsoIdentitiesRequestObject struct {
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 }
@@ -169793,6 +171614,9 @@ type StrictServerInterface interface {
 	// DownloadAccountAvatar Trade a session for a short-lived link to an avatar
 	// (GET /accounts/{accountId}/avatar)
 	DownloadAccountAvatar(ctx context.Context, request DownloadAccountAvatarRequestObject) (DownloadAccountAvatarResponseObject, error)
+	// DiscoverSignIn Say how an address can sign in, from its domain alone
+	// (POST /auth/discover)
+	DiscoverSignIn(ctx context.Context, request DiscoverSignInRequestObject) (DiscoverSignInResponseObject, error)
 	// SignIn Answer a password with a code sent to the address it belongs to
 	// (POST /auth/login)
 	SignIn(ctx context.Context, request SignInRequestObject) (SignInResponseObject, error)
@@ -170801,6 +172625,18 @@ type StrictServerInterface interface {
 	// GetWorkspaceSsoProtocol Read which single sign-on protocol this workspace uses
 	// (GET /workspaces/{workspaceId}/sso)
 	GetWorkspaceSsoProtocol(ctx context.Context, request GetWorkspaceSsoProtocolRequestObject) (GetWorkspaceSsoProtocolResponseObject, error)
+	// ListWorkspaceDomains List the email domains this workspace has claimed for sign-in
+	// (GET /workspaces/{workspaceId}/sso/domains)
+	ListWorkspaceDomains(ctx context.Context, request ListWorkspaceDomainsRequestObject) (ListWorkspaceDomainsResponseObject, error)
+	// AddWorkspaceDomain Claim an email domain, pending its DNS verification record
+	// (POST /workspaces/{workspaceId}/sso/domains)
+	AddWorkspaceDomain(ctx context.Context, request AddWorkspaceDomainRequestObject) (AddWorkspaceDomainResponseObject, error)
+	// RemoveWorkspaceDomain Withdraw a domain claim so it no longer routes sign-ins here
+	// (DELETE /workspaces/{workspaceId}/sso/domains/{domainId})
+	RemoveWorkspaceDomain(ctx context.Context, request RemoveWorkspaceDomainRequestObject) (RemoveWorkspaceDomainResponseObject, error)
+	// VerifyWorkspaceDomain Look for the domain's verification record now
+	// (POST /workspaces/{workspaceId}/sso/domains/{domainId}/verify)
+	VerifyWorkspaceDomain(ctx context.Context, request VerifyWorkspaceDomainRequestObject) (VerifyWorkspaceDomainResponseObject, error)
 	// ListWorkspaceSsoIdentities List the accounts linked to this workspace's provider
 	// (GET /workspaces/{workspaceId}/sso/identities)
 	ListWorkspaceSsoIdentities(ctx context.Context, request ListWorkspaceSsoIdentitiesRequestObject) (ListWorkspaceSsoIdentitiesResponseObject, error)
@@ -171416,6 +173252,37 @@ func (sh *strictHandler) DownloadAccountAvatar(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DownloadAccountAvatarResponseObject); ok {
 		if err := validResponse.VisitDownloadAccountAvatarResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DiscoverSignIn operation middleware
+func (sh *strictHandler) DiscoverSignIn(w http.ResponseWriter, r *http.Request) {
+	var request DiscoverSignInRequestObject
+
+	var body DiscoverSignInJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DiscoverSignIn(ctx, request.(DiscoverSignInRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DiscoverSignIn")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DiscoverSignInResponseObject); ok {
+		if err := validResponse.VisitDiscoverSignInResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -181256,6 +183123,119 @@ func (sh *strictHandler) GetWorkspaceSsoProtocol(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetWorkspaceSsoProtocolResponseObject); ok {
 		if err := validResponse.VisitGetWorkspaceSsoProtocolResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkspaceDomains operation middleware
+func (sh *strictHandler) ListWorkspaceDomains(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request ListWorkspaceDomainsRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkspaceDomains(ctx, request.(ListWorkspaceDomainsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkspaceDomains")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkspaceDomainsResponseObject); ok {
+		if err := validResponse.VisitListWorkspaceDomainsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddWorkspaceDomain operation middleware
+func (sh *strictHandler) AddWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId) {
+	var request AddWorkspaceDomainRequestObject
+
+	request.WorkspaceId = workspaceId
+
+	var body AddWorkspaceDomainJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddWorkspaceDomain(ctx, request.(AddWorkspaceDomainRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddWorkspaceDomain")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddWorkspaceDomainResponseObject); ok {
+		if err := validResponse.VisitAddWorkspaceDomainResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveWorkspaceDomain operation middleware
+func (sh *strictHandler) RemoveWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, domainId DomainId) {
+	var request RemoveWorkspaceDomainRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DomainId = domainId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveWorkspaceDomain(ctx, request.(RemoveWorkspaceDomainRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveWorkspaceDomain")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveWorkspaceDomainResponseObject); ok {
+		if err := validResponse.VisitRemoveWorkspaceDomainResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VerifyWorkspaceDomain operation middleware
+func (sh *strictHandler) VerifyWorkspaceDomain(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, domainId DomainId) {
+	var request VerifyWorkspaceDomainRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.DomainId = domainId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifyWorkspaceDomain(ctx, request.(VerifyWorkspaceDomainRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifyWorkspaceDomain")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VerifyWorkspaceDomainResponseObject); ok {
+		if err := validResponse.VisitVerifyWorkspaceDomainResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

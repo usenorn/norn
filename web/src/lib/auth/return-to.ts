@@ -21,3 +21,14 @@ export function authPath(from: ReadonlyURL, path: string): string {
 
 	return `${base}?${params}`;
 }
+
+export function carriedURL(url: URL, body: FormData): URL {
+	const carried = new URL(url.pathname, url);
+
+	for (const key of ["add", "return"]) {
+		const value = body.get(key);
+		if (typeof value === "string" && value) carried.searchParams.set(key, value);
+	}
+
+	return carried;
+}
