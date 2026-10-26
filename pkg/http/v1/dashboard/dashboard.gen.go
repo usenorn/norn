@@ -929,6 +929,7 @@ const (
 	AuditActionAccountEmailChanged             AuditAction = "account.email_changed"
 	AuditActionAccountPasswordChanged          AuditAction = "account.password_changed"
 	AuditActionAccountPasswordReset            AuditAction = "account.password_reset"
+	AuditActionAgentAuthorityChanged           AuditAction = "agent.authority_changed"
 	AuditActionAgentCapabilityAttached         AuditAction = "agent.capability_attached"
 	AuditActionAgentCapabilityDetached         AuditAction = "agent.capability_detached"
 	AuditActionAgentDisabled                   AuditAction = "agent.disabled"
@@ -1018,6 +1019,8 @@ func (e AuditAction) Valid() bool {
 	case AuditActionAccountPasswordChanged:
 		return true
 	case AuditActionAccountPasswordReset:
+		return true
+	case AuditActionAgentAuthorityChanged:
 		return true
 	case AuditActionAgentCapabilityAttached:
 		return true
@@ -10767,6 +10770,13 @@ type SessionLocation struct {
 	CountryCode *string `json:"countryCode,omitempty"`
 }
 
+// SetAgentAuthorityRequest defines model for SetAgentAuthorityRequest.
+type SetAgentAuthorityRequest struct {
+	AllTeams bool                  `json:"allTeams"`
+	Scopes   []APIScope            `json:"scopes"`
+	TeamIds  *[]openapi_types.UUID `json:"teamIds,omitempty"`
+}
+
 // SetAgentExecutionRequest defines model for SetAgentExecutionRequest.
 type SetAgentExecutionRequest struct {
 	// Execution Where the agent works. runner is a Norn Runner its owner enrolled, taking delegated coding work; hosted is Norn itself, answering in conversation with the workspace's AI provider.
@@ -12779,6 +12789,9 @@ type RewriteAgentSkillJSONRequestBody = RewriteAgentSkillRequest
 // RegisterWorkspaceAgentJSONRequestBody defines body for RegisterWorkspaceAgent for application/json ContentType.
 type RegisterWorkspaceAgentJSONRequestBody = RegisterAgentRequest
 
+// SetWorkspaceAgentAuthorityJSONRequestBody defines body for SetWorkspaceAgentAuthority for application/json ContentType.
+type SetWorkspaceAgentAuthorityJSONRequestBody = SetAgentAuthorityRequest
+
 // ConverseWithWorkspaceAgentJSONRequestBody defines body for ConverseWithWorkspaceAgent for application/json ContentType.
 type ConverseWithWorkspaceAgentJSONRequestBody = AgentConversationRequest
 
@@ -13971,6 +13984,24 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/activity (the `ListWorkspaceAgentActivity` operationId).
 	ListWorkspaceAgentActivity(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, params *ListWorkspaceAgentActivityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentAuthorityWithBody Change what this agent may do and which teams it reaches
+	//
+	// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+	SetWorkspaceAgentAuthorityWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetWorkspaceAgentAuthority Change what this agent may do and which teams it reaches
+	//
+	// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+	SetWorkspaceAgentAuthority(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentAuthorityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAgentCapabilities List the skills and MCP servers an agent runs with
 	//
@@ -18694,6 +18725,44 @@ func (c *Client) GetWorkspaceAgent(ctx context.Context, workspaceId WorkspaceId,
 // Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/activity (the `ListWorkspaceAgentActivity` operationId).
 func (c *Client) ListWorkspaceAgentActivity(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, params *ListWorkspaceAgentActivityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListWorkspaceAgentActivityRequest(c.Server, workspaceId, agentId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentAuthorityWithBody Change what this agent may do and which teams it reaches
+//
+// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+func (c *Client) SetWorkspaceAgentAuthorityWithBody(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentAuthorityRequestWithBody(c.Server, workspaceId, agentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetWorkspaceAgentAuthority Change what this agent may do and which teams it reaches
+//
+// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+func (c *Client) SetWorkspaceAgentAuthority(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentAuthorityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetWorkspaceAgentAuthorityRequest(c.Server, workspaceId, agentId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -29279,6 +29348,60 @@ func NewListWorkspaceAgentActivityRequest(server string, workspaceId WorkspaceId
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewSetWorkspaceAgentAuthorityRequest calls the generic SetWorkspaceAgentAuthority builder with application/json body
+func NewSetWorkspaceAgentAuthorityRequest(server string, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentAuthorityJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetWorkspaceAgentAuthorityRequestWithBody(server, workspaceId, agentId, "application/json", bodyReader)
+}
+
+// NewSetWorkspaceAgentAuthorityRequestWithBody constructs an http.Request for the SetWorkspaceAgentAuthority method, with any body, and a specified content type
+func NewSetWorkspaceAgentAuthorityRequestWithBody(server string, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "workspaceId", workspaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "agentId", agentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/workspaces/%s/agents/%s/authority", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -47017,6 +47140,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /workspaces/{workspaceId}/agents/{agentId}/activity (the `ListWorkspaceAgentActivity` operationId).
 	ListWorkspaceAgentActivityWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, params *ListWorkspaceAgentActivityParams, reqEditors ...RequestEditorFn) (*ListWorkspaceAgentActivityResponse, error)
 
+	// SetWorkspaceAgentAuthorityWithBodyWithResponse Change what this agent may do and which teams it reaches
+	//
+	// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+	SetWorkspaceAgentAuthorityWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentAuthorityResponse, error)
+
+	// SetWorkspaceAgentAuthorityWithResponse Change what this agent may do and which teams it reaches
+	//
+	// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+	SetWorkspaceAgentAuthorityWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentAuthorityJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentAuthorityResponse, error)
+
 	// GetAgentCapabilitiesWithResponse List the skills and MCP servers an agent runs with
 	//
 	// Includes the agent's own items and the library items attached to it. Secret values are never returned; only the names of the variables and headers that hold them.
@@ -55590,6 +55731,89 @@ func (r ListWorkspaceAgentActivityResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListWorkspaceAgentActivityResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetWorkspaceAgentAuthorityResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *WorkspaceAgent
+	// ApplicationproblemJSON401 the response for an HTTP 401 `application/problem+json` response
+	ApplicationproblemJSON401 *Problem
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *Forbidden
+	// ApplicationproblemJSON404 the response for an HTTP 404 `application/problem+json` response
+	ApplicationproblemJSON404 *Problem
+	// ApplicationproblemJSON409 the response for an HTTP 409 `application/problem+json` response
+	ApplicationproblemJSON409 *AgentUnusable
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *Problem
+	// ApplicationproblemJSON500 the response for an HTTP 500 `application/problem+json` response
+	ApplicationproblemJSON500 *Problem
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetWorkspaceAgentAuthorityResponse) GetJSON200() *WorkspaceAgent {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSON401 returns the response for an HTTP 401 `application/problem+json` response
+func (r SetWorkspaceAgentAuthorityResponse) GetApplicationproblemJSON401() *Problem {
+	return r.ApplicationproblemJSON401
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r SetWorkspaceAgentAuthorityResponse) GetApplicationproblemJSON403() *Forbidden {
+	return r.ApplicationproblemJSON403
+}
+
+// GetApplicationproblemJSON404 returns the response for an HTTP 404 `application/problem+json` response
+func (r SetWorkspaceAgentAuthorityResponse) GetApplicationproblemJSON404() *Problem {
+	return r.ApplicationproblemJSON404
+}
+
+// GetApplicationproblemJSON409 returns the response for an HTTP 409 `application/problem+json` response
+func (r SetWorkspaceAgentAuthorityResponse) GetApplicationproblemJSON409() *AgentUnusable {
+	return r.ApplicationproblemJSON409
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r SetWorkspaceAgentAuthorityResponse) GetApplicationproblemJSON422() *Problem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSON500 returns the response for an HTTP 500 `application/problem+json` response
+func (r SetWorkspaceAgentAuthorityResponse) GetApplicationproblemJSON500() *Problem {
+	return r.ApplicationproblemJSON500
+}
+
+// GetBody returns the raw response body bytes
+func (r SetWorkspaceAgentAuthorityResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetWorkspaceAgentAuthorityResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetWorkspaceAgentAuthorityResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetWorkspaceAgentAuthorityResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -82347,6 +82571,36 @@ func (c *ClientWithResponses) ListWorkspaceAgentActivityWithResponse(ctx context
 	return ParseListWorkspaceAgentActivityResponse(rsp)
 }
 
+// SetWorkspaceAgentAuthorityWithBodyWithResponse Change what this agent may do and which teams it reaches
+//
+// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentAuthorityWithBodyWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentAuthorityResponse, error) {
+	rsp, err := c.SetWorkspaceAgentAuthorityWithBody(ctx, workspaceId, agentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentAuthorityResponse(rsp)
+}
+
+// SetWorkspaceAgentAuthorityWithResponse Change what this agent may do and which teams it reaches
+//
+// Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /workspaces/{workspaceId}/agents/{agentId}/authority (the `SetWorkspaceAgentAuthority` operationId).
+func (c *ClientWithResponses) SetWorkspaceAgentAuthorityWithResponse(ctx context.Context, workspaceId WorkspaceId, agentId AgentId, body SetWorkspaceAgentAuthorityJSONRequestBody, reqEditors ...RequestEditorFn) (*SetWorkspaceAgentAuthorityResponse, error) {
+	rsp, err := c.SetWorkspaceAgentAuthority(ctx, workspaceId, agentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetWorkspaceAgentAuthorityResponse(rsp)
+}
+
 // GetAgentCapabilitiesWithResponse List the skills and MCP servers an agent runs with
 //
 // Includes the agent's own items and the library items attached to it. Secret values are never returned; only the names of the variables and headers that hold them.
@@ -92688,6 +92942,74 @@ func ParseListWorkspaceAgentActivityResponse(rsp *http.Response) (*ListWorkspace
 			return nil, err
 		}
 		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON500 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetWorkspaceAgentAuthorityResponse parses an HTTP response from a SetWorkspaceAgentAuthorityWithResponse call
+func ParseSetWorkspaceAgentAuthorityResponse(rsp *http.Response) (*SetWorkspaceAgentAuthorityResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetWorkspaceAgentAuthorityResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest WorkspaceAgent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest AgentUnusable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest Problem
@@ -113280,6 +113602,9 @@ type ServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, params ListWorkspaceAgentActivityParams)
+	// SetWorkspaceAgentAuthority Change what this agent may do and which teams it reaches
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/authority)
+	SetWorkspaceAgentAuthority(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
 	// GetAgentCapabilities List the skills and MCP servers an agent runs with
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/capabilities)
 	GetAgentCapabilities(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId)
@@ -114777,6 +115102,12 @@ func (_ Unimplemented) GetWorkspaceAgent(w http.ResponseWriter, r *http.Request,
 // ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 // (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 func (_ Unimplemented) ListWorkspaceAgentActivity(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId, params ListWorkspaceAgentActivityParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SetWorkspaceAgentAuthority Change what this agent may do and which teams it reaches
+// (PUT /workspaces/{workspaceId}/agents/{agentId}/authority)
+func (_ Unimplemented) SetWorkspaceAgentAuthority(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -118602,6 +118933,41 @@ func (siw *ServerInterfaceWrapper) ListWorkspaceAgentActivity(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWorkspaceAgentActivity(w, r, workspaceId, agentId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetWorkspaceAgentAuthority operation middleware
+func (siw *ServerInterfaceWrapper) SetWorkspaceAgentAuthority(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "workspaceId" -------------
+	var workspaceId WorkspaceId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workspaceId", chi.URLParam(r, "workspaceId"), &workspaceId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workspaceId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId AgentId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetWorkspaceAgentAuthority(w, r, workspaceId, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -131949,6 +132315,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/scope", wrapper.SetWorkspaceAgentScope)
 	})
 	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/authority", wrapper.SetWorkspaceAgentAuthority)
+	})
+	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/workspaces/{workspaceId}/agents/{agentId}/execution", wrapper.SetWorkspaceAgentExecution)
 	})
 	r.Group(func(r chi.Router) {
@@ -139117,6 +139486,120 @@ func (response ListWorkspaceAgentActivity404ApplicationProblemPlusJSONResponse) 
 type ListWorkspaceAgentActivity500ApplicationProblemPlusJSONResponse Problem
 
 func (response ListWorkspaceAgentActivity500ApplicationProblemPlusJSONResponse) VisitListWorkspaceAgentActivityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentAuthorityRequestObject struct {
+	WorkspaceId WorkspaceId `json:"workspaceId"`
+	AgentId     AgentId     `json:"agentId"`
+	Body        *SetWorkspaceAgentAuthorityJSONRequestBody
+}
+
+type SetWorkspaceAgentAuthorityResponseObject interface {
+	VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error
+}
+
+type SetWorkspaceAgentAuthority200JSONResponse WorkspaceAgent
+
+func (response SetWorkspaceAgentAuthority200JSONResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentAuthority401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentAuthority401ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentAuthority403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentAuthority403ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentAuthority404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentAuthority404ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentAuthority409ApplicationProblemPlusJSONResponse struct {
+	AgentUnusableApplicationProblemPlusJSONResponse
+}
+
+func (response SetWorkspaceAgentAuthority409ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentAuthority422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentAuthority422ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetWorkspaceAgentAuthority500ApplicationProblemPlusJSONResponse Problem
+
+func (response SetWorkspaceAgentAuthority500ApplicationProblemPlusJSONResponse) VisitSetWorkspaceAgentAuthorityResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -171800,6 +172283,9 @@ type StrictServerInterface interface {
 	// ListWorkspaceAgentActivity Everything this agent has done, across every issue and project
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/activity)
 	ListWorkspaceAgentActivity(ctx context.Context, request ListWorkspaceAgentActivityRequestObject) (ListWorkspaceAgentActivityResponseObject, error)
+	// SetWorkspaceAgentAuthority Change what this agent may do and which teams it reaches
+	// (PUT /workspaces/{workspaceId}/agents/{agentId}/authority)
+	SetWorkspaceAgentAuthority(ctx context.Context, request SetWorkspaceAgentAuthorityRequestObject) (SetWorkspaceAgentAuthorityResponseObject, error)
 	// GetAgentCapabilities List the skills and MCP servers an agent runs with
 	// (GET /workspaces/{workspaceId}/agents/{agentId}/capabilities)
 	GetAgentCapabilities(ctx context.Context, request GetAgentCapabilitiesRequestObject) (GetAgentCapabilitiesResponseObject, error)
@@ -175013,6 +175499,40 @@ func (sh *strictHandler) ListWorkspaceAgentActivity(w http.ResponseWriter, r *ht
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListWorkspaceAgentActivityResponseObject); ok {
 		if err := validResponse.VisitListWorkspaceAgentActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetWorkspaceAgentAuthority operation middleware
+func (sh *strictHandler) SetWorkspaceAgentAuthority(w http.ResponseWriter, r *http.Request, workspaceId WorkspaceId, agentId AgentId) {
+	var request SetWorkspaceAgentAuthorityRequestObject
+
+	request.WorkspaceId = workspaceId
+	request.AgentId = agentId
+
+	var body SetWorkspaceAgentAuthorityJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetWorkspaceAgentAuthority(ctx, request.(SetWorkspaceAgentAuthorityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetWorkspaceAgentAuthority")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetWorkspaceAgentAuthorityResponseObject); ok {
+		if err := validResponse.VisitSetWorkspaceAgentAuthorityResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

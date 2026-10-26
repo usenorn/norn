@@ -84,28 +84,78 @@ func (r *apiTokenRepository) Create(ctx context.Context, token entity.APIToken) 
 	}
 
 	for _, grant := range token.Grants {
-		var grantID string
-
-		if err := executor.QueryRowContext(
-			ctx,
-			insertGrantQuery,
-			token.ID.String(),
-			grant.WorkspaceID.String(),
-			grant.AllTeams,
-		).Scan(&grantID); err != nil {
-			return entity.APIToken{}, fmt.Errorf("insert api token grant: %w", err)
-		}
-
-		for _, teamID := range grant.TeamIDs {
-			if _, err := executor.ExecContext(
-				ctx, insertGrantTeamQuery, grantID, teamID.String(),
-			); err != nil {
-				return entity.APIToken{}, fmt.Errorf("insert api token grant team: %w", err)
-			}
+		if err := r.insertGrant(ctx, token.ID, grant); err != nil {
+			return entity.APIToken{}, err
 		}
 	}
 
 	return r.GetByID(ctx, token.ID)
+}
+
+func (r *apiTokenRepository) insertGrant(ctx context.Context, tokenID uuid.UUID, grant entity.APITokenGrant) error {
+	executor := r.db.Querier(ctx)
+
+	var grantID string
+
+	if err := executor.QueryRowContext(
+		ctx,
+		insertGrantQuery,
+		tokenID.String(),
+		grant.WorkspaceID.String(),
+		grant.AllTeams,
+	).Scan(&grantID); err != nil {
+		return fmt.Errorf("insert api token grant: %w", err)
+	}
+
+	for _, teamID := range grant.TeamIDs {
+		if _, err := executor.ExecContext(
+			ctx, insertGrantTeamQuery, grantID, teamID.String(),
+		); err != nil {
+			return fmt.Errorf("insert api token grant team: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *apiTokenRepository) SetAuthority(
+	ctx context.Context,
+	tokenID uuid.UUID,
+	scopes entity.APIScopeSet,
+	grant entity.APITokenGrant,
+) error {
+	executor := r.db.Querier(ctx)
+
+	result, err := executor.ExecContext(
+		ctx,
+		`UPDATE api_tokens SET scopes = $2, updated_at = now()
+		 WHERE id = $1 AND revoked_at IS NULL`,
+		tokenID.String(),
+		types.StringArray(scopes.Strings()),
+	)
+	if err != nil {
+		return fmt.Errorf("set api token scopes: %w", err)
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("set api token scopes: %w", err)
+	}
+
+	if affected == 0 {
+		return entity.ErrAPITokenNotFound
+	}
+
+	if _, err := executor.ExecContext(
+		ctx,
+		`DELETE FROM api_token_grants WHERE token_id = $1 AND workspace_id = $2`,
+		tokenID.String(),
+		grant.WorkspaceID.String(),
+	); err != nil {
+		return fmt.Errorf("clear api token grant: %w", err)
+	}
+
+	return r.insertGrant(ctx, tokenID, grant)
 }
 
 func (r *apiTokenRepository) GetByTokenHash(ctx context.Context, tokenHash []byte) (entity.APIToken, error) {

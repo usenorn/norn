@@ -203,3 +203,17 @@ func (mr *MockAPITokenMockRecorder) RevokeAllByAccount(ctx, accountID, revokedAt
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeAllByAccount", reflect.TypeOf((*MockAPIToken)(nil).RevokeAllByAccount), ctx, accountID, revokedAt)
 }
+
+// SetAuthority mocks base method.
+func (m *MockAPIToken) SetAuthority(ctx context.Context, tokenID uuid.UUID, scopes entity.APIScopeSet, grant entity.APITokenGrant) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAuthority", ctx, tokenID, scopes, grant)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAuthority indicates an expected call of SetAuthority.
+func (mr *MockAPITokenMockRecorder) SetAuthority(ctx, tokenID, scopes, grant any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAuthority", reflect.TypeOf((*MockAPIToken)(nil).SetAuthority), ctx, tokenID, scopes, grant)
+}

@@ -1,4 +1,4 @@
-import type { WorkspaceAgent } from "./agents";
+import { failureMessage, type AgentPermission, type WorkspaceAgent } from "./agents";
 
 export type AgentRecord =
 	| { kind: "loading" }
@@ -32,5 +32,22 @@ export function agentLifecycleFailureMessage(failure: AgentLifecycleFailure): st
 			return "The agent's previous authority could not be restored. Register a new agent instead.";
 		case "unavailable":
 			return "The agent could not be changed. Try again in a moment.";
+	}
+}
+
+export type AgentAuthorityFailure =
+	| AgentLifecycleFailure
+	| { kind: "scope_exceeds"; scopes: AgentPermission[] }
+	| { kind: "scope_invalid" }
+	| { kind: "grant_invalid" };
+
+export function agentAuthorityFailureMessage(failure: AgentAuthorityFailure): string {
+	switch (failure.kind) {
+		case "scope_exceeds":
+		case "scope_invalid":
+		case "grant_invalid":
+			return failureMessage(failure);
+		default:
+			return agentLifecycleFailureMessage(failure);
 	}
 }

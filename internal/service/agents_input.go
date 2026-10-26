@@ -45,6 +45,14 @@ type RescopeAgentInput struct {
 	ProjectID   *uuid.UUID
 }
 
+type ReauthorizeAgentInput struct {
+	WorkspaceID uuid.UUID
+	AgentID     uuid.UUID
+	Scopes      entity.APIScopeSet
+	AllTeams    bool
+	TeamIDs     []uuid.UUID
+}
+
 type SetAgentExecutionInput struct {
 	WorkspaceID uuid.UUID
 	AgentID     uuid.UUID

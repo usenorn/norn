@@ -1676,6 +1676,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workspaces/{workspaceId}/agents/{agentId}/authority": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change what this agent may do and which teams it reaches
+         * @description Rewrites the permissions and team reach of the agent's current credential, so the agent keeps its key and its next request is checked against the new authority. Enrolled runners take the same authority. As at registration, an agent may never do more than the person granting it, so a permission or team beyond the caller's own reach is refused.
+         */
+        put: operations["setWorkspaceAgentAuthority"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/workspaces/{workspaceId}/agents/{agentId}/execution": {
         parameters: {
             query?: never;
@@ -8833,7 +8853,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "sso.domain_added" | "sso.domain_verified" | "sso.domain_removed" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "roadmap.published" | "roadmap.unpublished" | "roadmap.entry_removed" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.embedding_model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "sso.domain_added" | "sso.domain_verified" | "sso.domain_removed" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.authority_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "roadmap.published" | "roadmap.unpublished" | "roadmap.entry_removed" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.embedding_model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -9254,6 +9274,11 @@ export interface components {
              * @description Required when the scope is project, and refused otherwise.
              */
             projectId?: string;
+        };
+        SetAgentAuthorityRequest: {
+            scopes: components["schemas"]["APIScope"][];
+            allTeams: boolean;
+            teamIds?: string[];
         };
         SetAgentExecutionRequest: {
             execution: components["schemas"]["AgentExecution"];
@@ -15109,6 +15134,39 @@ export interface operations {
         };
         responses: {
             /** @description The agent, carrying the scope as it was saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceAgent"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["AgentUnusable"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setWorkspaceAgentAuthority: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                agentId: components["parameters"]["AgentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAgentAuthorityRequest"];
+            };
+        };
+        responses: {
+            /** @description The agent, carrying the authority as it was saved */
             200: {
                 headers: {
                     [name: string]: unknown;

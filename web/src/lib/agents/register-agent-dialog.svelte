@@ -12,19 +12,17 @@
 	import * as Form from "#lib/components/ui/form/index.js";
 	import * as RadioGroup from "#lib/components/ui/radio-group/index.js";
 	import { Button } from "#lib/components/ui/button/index.js";
-	import { Checkbox } from "#lib/components/ui/checkbox/index.js";
 	import { Input } from "#lib/components/ui/input/index.js";
 	import type { Project } from "#lib/projects/projects.js";
 	import type { Team } from "#lib/team/teams.js";
 	import { cn } from "#lib/utils.js";
 	import AgentIcon from "./agent-icon.svelte";
+	import AgentPermissionPicker from "./agent-permission-picker.svelte";
+	import AgentTeamReach from "./agent-team-reach.svelte";
 	import CredentialDialog from "./credential-dialog.svelte";
 	import {
 		agentIconLabels,
 		agentIcons,
-		agentPermissionGroups,
-		agentPermissionLabels,
-		agentPermissions,
 		agentScopes,
 		agentScopeHints,
 		agentScopeLabels,
@@ -32,7 +30,6 @@
 		failureMessage,
 		type Agent,
 		type AgentFailure,
-		type AgentPermission,
 		type AgentScope,
 		type APIScope,
 	} from "./agents";
@@ -42,7 +39,6 @@
 	type RegistrationOutcome = { kind: "issued"; agent: Agent; value: string } | AgentFailure;
 
 	const formId = "register-agent-form";
-	const withheldId = "agent-scopes-withheld";
 
 	let {
 		open,
@@ -96,7 +92,6 @@
 			? { kind: "scope_exceeds", scopes: beyondGrant($formData.scopes, grantable) }
 			: refused
 	);
-	const withheld = $derived(new Set(beyondGrant([...agentPermissions], grantable)));
 
 	$effect(() => {
 		if (!inline && open && !wasOpen) {
@@ -139,24 +134,6 @@
 				(scope !== "project" || projects.length > 0)
 		)
 	);
-
-	function toggleScope(scope: AgentPermission, checked: boolean) {
-		const next = new Set($formData.scopes);
-
-		if (checked) next.add(scope);
-		else next.delete(scope);
-
-		formData.update((entered) => ({ ...entered, scopes: [...next] }));
-	}
-
-	function toggleTeam(teamId: string, checked: boolean) {
-		const next = new Set($formData.teamIds);
-
-		if (checked) next.add(teamId);
-		else next.delete(teamId);
-
-		formData.update((entered) => ({ ...entered, teamIds: [...next] }));
-	}
 
 	function changeOpen(next: boolean) {
 		if (!next && !busy) onclose();
@@ -263,134 +240,9 @@
 			<Form.FieldErrors />
 		</Form.Field>
 
-		<Form.Fieldset {form} name="scopes">
-			<Form.Legend>Permissions</Form.Legend>
-			<div class="grid gap-3 sm:grid-cols-2">
-				{#each agentPermissionGroups as group (group.title)}
-					<fieldset class="flex min-w-0 flex-col gap-1.5">
-						<legend class="mb-2 text-xs font-medium tracking-snug text-ink-900">
-							{group.title}
-						</legend>
-						{#each group.permissions as scope (scope)}
-							<div class="flex items-start gap-2">
-								{#if inline}
-									<input
-										id={`agent-scope-${scope}`}
-										type="checkbox"
-										name="scopes"
-										value={scope}
-										disabled={busy || withheld.has(scope)}
-										checked={$formData.scopes.includes(scope)}
-										onchange={(event) => toggleScope(scope, event.currentTarget.checked)}
-										aria-describedby={withheld.has(scope) ? withheldId : undefined}
-										class="mt-0.5 size-3.5 accent-ink-900"
-									/>
-								{:else}
-									<Checkbox
-										id={`agent-scope-${scope}`}
-										disabled={busy || withheld.has(scope)}
-										checked={$formData.scopes.includes(scope)}
-										onCheckedChange={(checked) => toggleScope(scope, checked === true)}
-										aria-describedby={withheld.has(scope) ? withheldId : undefined}
-									/>
-								{/if}
-								<label
-									for={`agent-scope-${scope}`}
-									class={cn(
-										"text-xs leading-normal text-ink-600",
-										withheld.has(scope) && "text-ink-400"
-									)}
-								>
-									{agentPermissionLabels[scope] ?? scope}
-								</label>
-							</div>
-						{/each}
-					</fieldset>
-				{/each}
-			</div>
-			{#if withheld.size > 0}
-				<p id={withheldId} class="text-xs leading-normal text-muted-foreground">
-					An agent cannot do more than you can, so the greyed permissions need an administrator.
-				</p>
-			{/if}
-			<Form.FieldErrors />
-		</Form.Fieldset>
+		<AgentPermissionPicker {form} {grantable} {busy} {inline} />
 
-		<Form.Fieldset {form} name="allTeams">
-			<Form.Legend>Team access</Form.Legend>
-			<div class="flex flex-col gap-2">
-				<div class="flex items-center gap-2">
-					{#if inline}
-						<input
-							id="agent-all-teams"
-							type="checkbox"
-							name="allTeams"
-							value="true"
-							disabled={busy}
-							checked={$formData.allTeams}
-							onchange={(event) =>
-								formData.update((entered) => ({
-									...entered,
-									allTeams: event.currentTarget.checked,
-									teamIds: [],
-								}))}
-							class="size-3.5 accent-ink-900"
-						/>
-					{:else}
-						<Checkbox
-							id="agent-all-teams"
-							disabled={busy}
-							checked={$formData.allTeams}
-							onCheckedChange={(checked) =>
-								formData.update((entered) => ({
-									...entered,
-									allTeams: checked === true,
-									teamIds: [],
-								}))}
-						/>
-					{/if}
-					<label for="agent-all-teams" class="text-sm leading-normal text-ink-600">
-						Every team you can see
-					</label>
-				</div>
-
-				{#if inline || !$formData.allTeams}
-					{#if teams.length === 0}
-						<p class="text-xs text-muted-foreground">No teams are available.</p>
-					{:else}
-						<div class="grid gap-1.5 pl-6 sm:grid-cols-2">
-							{#each teams as team (team.id)}
-								<div class="flex items-center gap-2">
-									{#if inline}
-										<input
-											id={`agent-team-${team.id}`}
-											type="checkbox"
-											name="teamIds"
-											value={team.id}
-											disabled={busy}
-											checked={$formData.teamIds.includes(team.id)}
-											onchange={(event) => toggleTeam(team.id, event.currentTarget.checked)}
-											class="size-3.5 accent-ink-900"
-										/>
-									{:else}
-										<Checkbox
-											id={`agent-team-${team.id}`}
-											disabled={busy}
-											checked={$formData.teamIds.includes(team.id)}
-											onCheckedChange={(checked) => toggleTeam(team.id, checked === true)}
-										/>
-									{/if}
-									<label for={`agent-team-${team.id}`} class="text-sm text-ink-600">
-										{team.name}
-									</label>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				{/if}
-			</div>
-			<Form.FieldErrors />
-		</Form.Fieldset>
+		<AgentTeamReach {form} {teams} {busy} {inline} />
 
 		<Form.Fieldset {form} name="scope">
 			<Form.Legend>Who may hand it work</Form.Legend>

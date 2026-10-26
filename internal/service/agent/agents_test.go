@@ -21,6 +21,7 @@ import (
 	questionrepo "github.com/usenorn/norn/internal/repository/issuequestion"
 	membershiprepo "github.com/usenorn/norn/internal/repository/membership"
 	projectrepo "github.com/usenorn/norn/internal/repository/project"
+	runnerrepo "github.com/usenorn/norn/internal/repository/runner"
 	teamrepo "github.com/usenorn/norn/internal/repository/team"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workflowstaterepo "github.com/usenorn/norn/internal/repository/workflowstate"
@@ -35,6 +36,7 @@ import (
 
 type harness struct {
 	agents         *agentrepo.MockAgent
+	runners        *runnerrepo.MockRunner
 	accounts       *accountrepo.MockAccount
 	members        *membershiprepo.MockMembership
 	projects       *projectrepo.MockProject
@@ -48,6 +50,7 @@ type harness struct {
 	authorizer     *authorizersvc.MockAuthorizer
 	service        service.Agents
 	recorded       []entity.AuditEntry
+	reach          *entity.TeamScope
 
 	workspaceID uuid.UUID
 	adminID     uuid.UUID
@@ -60,6 +63,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 
 	h := &harness{
 		agents:         agentrepo.NewMockAgent(ctrl),
+		runners:        runnerrepo.NewMockRunner(ctrl),
 		accounts:       accountrepo.NewMockAccount(ctrl),
 		members:        membershiprepo.NewMockMembership(ctrl),
 		projects:       projectrepo.NewMockProject(ctrl),
@@ -86,10 +90,15 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 	h.authorizer.EXPECT().
 		Decide(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, request entity.AccessRequest) (entity.Decision, error) {
+			scope := entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true}
+			if h.reach != nil {
+				scope = *h.reach
+			}
+
 			return entity.Decision{
 				Actor: entity.Actor{Kind: entity.ActorKindUser, AccountID: h.adminID},
 				Role:  role,
-				Scope: entity.TeamScope{WorkspaceID: request.WorkspaceID, AllTeams: true},
+				Scope: scope,
 			}, nil
 		}).
 		AnyTimes()
@@ -104,6 +113,7 @@ func newHarness(t *testing.T, role entity.MembershipRole) *harness {
 
 	h.service = agentsvc.New(
 		h.agents,
+		h.runners,
 		agentsettingrepo.NewMockAgentSetting(ctrl),
 		h.workspace,
 		h.proposals,
@@ -646,6 +656,7 @@ func TestATokenMayNotRegisterOrApproveOnAnAgentsBehalf(t *testing.T) {
 
 	svc := agentsvc.New(
 		agentrepo.NewMockAgent(ctrl),
+		runnerrepo.NewMockRunner(ctrl),
 		agentsettingrepo.NewMockAgentSetting(ctrl),
 		workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
 		agentproposalrepo.NewMockAgentProposal(ctrl),
@@ -1024,6 +1035,7 @@ func TestAnAgentsOwnCredentialCannotAskWhatItMayGrant(t *testing.T) {
 
 	_, err := agentsvc.New(
 		h.agents,
+		h.runners,
 		agentsettingrepo.NewMockAgentSetting(ctrl),
 		workspaceagentsettingrepo.NewMockWorkspaceAgentSetting(ctrl),
 		h.proposals,
@@ -1651,5 +1663,206 @@ func TestOpeningAnAgentWithoutAuthorityStillSaysSo(t *testing.T) {
 
 	if _, err := h.service.Get(context.Background(), h.workspaceID, agent.ID); !errors.Is(err, entity.ErrAgentAuthorityMissing) {
 		t.Fatalf("Get error = %v, want ErrAgentAuthorityMissing", err)
+	}
+}
+
+func expectGrantor(h *harness, role entity.MembershipRole) {
+	h.members.EXPECT().
+		Get(gomock.Any(), h.workspaceID, h.adminID).
+		Return(entity.Membership{Role: role}, nil)
+	h.accounts.EXPECT().
+		GetByID(gomock.Any(), h.adminID).
+		Return(entity.Account{
+			ID:     h.adminID,
+			Kind:   entity.AccountKindPerson,
+			Status: entity.AccountStatusActive,
+		}, nil)
+}
+
+func ownAgent(h *harness) entity.Agent {
+	agent := entity.Agent{
+		ID:             uuid.New(),
+		WorkspaceID:    h.workspaceID,
+		AccountID:      uuid.New(),
+		OwnerAccountID: h.adminID,
+		Name:           "triage-bot",
+		Status:         entity.AgentStatusActive,
+	}
+
+	h.agents.EXPECT().GetByID(gomock.Any(), h.workspaceID, agent.ID).Return(agent, nil)
+
+	return agent
+}
+
+func TestAnOwnerChangesWhatTheirAgentMayDoWithoutANewCredential(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+	agent := ownAgent(h)
+	teamID := uuid.New()
+	tokenID := uuid.New()
+
+	widened := entity.APIScopeSet{
+		entity.NewAPIScope(entity.ResourceIssue, entity.ActionRead),
+		entity.NewAPIScope(entity.ResourceIssue, entity.ActionManage),
+	}
+
+	expectGrantor(h, entity.MembershipRoleMember)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), agent.AccountID).
+		Return(entity.APIToken{
+			ID:     tokenID,
+			Scopes: readScopes(),
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, AllTeams: true}},
+		}, nil)
+
+	var rewritten entity.APITokenGrant
+	var rewrittenScopes entity.APIScopeSet
+
+	h.tokens.EXPECT().
+		SetAuthority(gomock.Any(), tokenID, gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, scopes entity.APIScopeSet, grant entity.APITokenGrant) error {
+			rewrittenScopes, rewritten = scopes, grant
+
+			return nil
+		})
+
+	var runners entity.RequestedAuthority
+
+	h.runners.EXPECT().
+		SetAuthorityByAgent(gomock.Any(), agent.ID, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ uuid.UUID, authority entity.RequestedAuthority) error {
+			runners = authority
+
+			return nil
+		})
+
+	expectActivePerson(h, h.adminID)
+	h.tokens.EXPECT().
+		GetLatestByOwner(gomock.Any(), agent.AccountID).
+		Return(entity.APIToken{
+			ID:     tokenID,
+			Scopes: widened,
+			Grants: entity.APITokenGrants{{WorkspaceID: h.workspaceID, TeamIDs: []uuid.UUID{teamID}}},
+		}, nil)
+
+	owned, err := h.service.Reauthorize(context.Background(), service.ReauthorizeAgentInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     agent.ID,
+		Scopes:      widened,
+		TeamIDs:     []uuid.UUID{teamID},
+	})
+	if err != nil {
+		t.Fatalf("Reauthorize: %v", err)
+	}
+
+	if !reflect.DeepEqual(rewrittenScopes, widened.Normalized()) {
+		t.Fatalf("credential scopes = %v, want %v", rewrittenScopes, widened.Normalized())
+	}
+
+	if rewritten.WorkspaceID != h.workspaceID || rewritten.AllTeams ||
+		!reflect.DeepEqual(rewritten.TeamIDs, []uuid.UUID{teamID}) {
+		t.Fatalf("credential reach = %+v, want only team %s in this workspace", rewritten, teamID)
+	}
+
+	if !reflect.DeepEqual(runners.Scopes, rewrittenScopes) || runners.AllTeams ||
+		!reflect.DeepEqual(runners.TeamIDs, []uuid.UUID{teamID}) {
+		t.Fatalf("enrolled runners kept %+v, want the credential's new authority", runners)
+	}
+
+	if owned.Authority.AllTeams || len(owned.Authority.Scopes) != len(widened) {
+		t.Fatalf("returned authority = %+v, want the saved one", owned.Authority)
+	}
+
+	if len(h.recorded) != 1 || h.recorded[0].Action != entity.AuditAgentReauthorized {
+		t.Fatalf("audit = %v, want one agent.authority_changed entry", h.recorded)
+	}
+
+	if added := h.recorded[0].Detail["scopes_added"]; added != "issue:manage" {
+		t.Fatalf("recorded scopes_added = %q, want issue:manage", added)
+	}
+
+	if removed := h.recorded[0].Detail["scopes_removed"]; removed != "" {
+		t.Fatalf("recorded scopes_removed = %q, want none", removed)
+	}
+}
+
+func TestAnAgentCannotBeGivenMoreThanThePersonEditingItHolds(t *testing.T) {
+	for name, scopes := range map[string]entity.APIScopeSet{
+		"an administrator's permission": adminOnlyScopes(),
+		"team management":               {entity.NewAPIScope(entity.ResourceTeam, entity.ActionManage)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t, entity.MembershipRoleMember)
+			agent := ownAgent(h)
+
+			expectGrantor(h, entity.MembershipRoleMember)
+
+			_, err := h.service.Reauthorize(context.Background(), service.ReauthorizeAgentInput{
+				WorkspaceID: h.workspaceID,
+				AgentID:     agent.ID,
+				Scopes:      scopes,
+				AllTeams:    true,
+			})
+
+			if !errors.Is(err, entity.ErrAPITokenScopeExceeds) {
+				t.Fatalf("Reauthorize returned %v, want %v", err, entity.ErrAPITokenScopeExceeds)
+			}
+		})
+	}
+}
+
+func TestAnAgentCannotReachATeamThePersonEditingItCannot(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+	agent := ownAgent(h)
+	h.reach = &entity.TeamScope{WorkspaceID: h.workspaceID, TeamIDs: []uuid.UUID{uuid.New()}}
+
+	expectGrantor(h, entity.MembershipRoleMember)
+
+	_, err := h.service.Reauthorize(context.Background(), service.ReauthorizeAgentInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     agent.ID,
+		Scopes:      readScopes(),
+		TeamIDs:     []uuid.UUID{uuid.New()},
+	})
+
+	if !errors.Is(err, entity.ErrAPITokenGrantInvalid) {
+		t.Fatalf("Reauthorize returned %v, want %v", err, entity.ErrAPITokenGrantInvalid)
+	}
+}
+
+func TestOnlyTheOwnerOrAnAdministratorMayChangeWhatAnAgentMayDo(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleMember)
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(entity.Agent{OwnerAccountID: uuid.New()}, nil)
+
+	_, err := h.service.Reauthorize(context.Background(), service.ReauthorizeAgentInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     uuid.New(),
+		Scopes:      readScopes(),
+		AllTeams:    true,
+	})
+
+	if !errors.Is(err, entity.ErrAgentNotFound) {
+		t.Fatalf("Reauthorize of somebody else's agent returned %v, want %v", err, entity.ErrAgentNotFound)
+	}
+}
+
+func TestADisabledAgentKeepsTheAuthorityItWasDisabledWith(t *testing.T) {
+	h := newHarness(t, entity.MembershipRoleAdmin)
+
+	h.agents.EXPECT().
+		GetByID(gomock.Any(), h.workspaceID, gomock.Any()).
+		Return(entity.Agent{OwnerAccountID: h.adminID, Status: entity.AgentStatusDisabled}, nil)
+
+	_, err := h.service.Reauthorize(context.Background(), service.ReauthorizeAgentInput{
+		WorkspaceID: h.workspaceID,
+		AgentID:     uuid.New(),
+		Scopes:      readScopes(),
+		AllTeams:    true,
+	})
+
+	if !errors.Is(err, entity.ErrAgentDisabled) {
+		t.Fatalf("Reauthorize of a disabled agent returned %v, want %v", err, entity.ErrAgentDisabled)
 	}
 }

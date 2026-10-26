@@ -160,6 +160,20 @@ func (mr *MockRunnerMockRecorder) Revoke(ctx, workspaceID, runnerID, revokedAt a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revoke", reflect.TypeOf((*MockRunner)(nil).Revoke), ctx, workspaceID, runnerID, revokedAt)
 }
 
+// SetAuthorityByAgent mocks base method.
+func (m *MockRunner) SetAuthorityByAgent(ctx context.Context, agentID uuid.UUID, authority entity.RequestedAuthority) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAuthorityByAgent", ctx, agentID, authority)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAuthorityByAgent indicates an expected call of SetAuthorityByAgent.
+func (mr *MockRunnerMockRecorder) SetAuthorityByAgent(ctx, agentID, authority any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAuthorityByAgent", reflect.TypeOf((*MockRunner)(nil).SetAuthorityByAgent), ctx, agentID, authority)
+}
+
 // SetPaused mocks base method.
 func (m *MockRunner) SetPaused(ctx context.Context, workspaceID, runnerID uuid.UUID, pausedAt *time.Time) (entity.Runner, error) {
 	m.ctrl.T.Helper()
