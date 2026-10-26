@@ -14,6 +14,7 @@ import (
 const (
 	KnowledgeRetrieveDefaultSize  = 10
 	KnowledgeRetrieveMaxSize      = 50
+	KnowledgeBriefingSize         = 5
 	KnowledgeEnumerateDefaultSize = 50
 	KnowledgeEnumerateMaxSize     = 200
 	KnowledgeLaneSize             = 50

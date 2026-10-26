@@ -50,6 +50,7 @@ type toolset struct {
 	docLinks       service.DocLinks
 	memories       service.Memories
 	retrievals     service.Retrievals
+	baseURL        string
 }
 
 type Edge struct {
@@ -351,7 +352,8 @@ func (t *toolset) register(tools *Tools) {
 		Name: "norn_change_issue_state",
 		Description: "Move an issue to another workflow state by state name or id. Reads the " +
 			"current version automatically unless expected_version is given. Closing an issue " +
-			"that still has open sub-issues needs acknowledge_open_children.",
+			"that still has open sub-issues needs acknowledge_open_children. Moving it on to " +
+			"review or done answers with a reminder to record what the work established.",
 		Annotations: update,
 	}, t.changeIssueState)
 
@@ -412,8 +414,9 @@ func (t *toolset) register(tools *Tools) {
 		Name: "norn_start_issue",
 		Description: "Claim an issue and begin. It moves the issue into the team's first " +
 			"active state and answers with the branch name to use, what done means so far, " +
-			"and any question still open on it. Call this before writing code, and create the " +
-			"branch under exactly the name it returns.",
+			"any question still open on it, and the few accepted memories and doc passages " +
+			"that bear on its project and subject, each with a link for reading more. Call " +
+			"this before writing code, and create the branch under exactly the name it returns.",
 		Annotations: update,
 	}, t.startIssue)
 }

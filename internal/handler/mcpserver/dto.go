@@ -1,6 +1,7 @@
 package mcpserver
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -721,4 +722,39 @@ func knowledgeHitDTOFrom(hit entity.KnowledgeHit) knowledgeHitDTO {
 	}
 
 	return dto
+}
+
+type briefingItemDTO struct {
+	Kind       string `json:"kind"`
+	ID         string `json:"id"`
+	MemoryKind string `json:"memoryKind,omitempty"`
+	Statement  string `json:"statement,omitempty"`
+	Title      string `json:"title,omitempty"`
+	Heading    string `json:"heading,omitempty"`
+	Status     string `json:"status,omitempty"`
+	Conditions string `json:"conditions,omitempty"`
+	Link       string `json:"link"`
+}
+
+func briefingItemDTOFrom(baseURL, workspaceSlug string, hit entity.KnowledgeHit) (briefingItemDTO, error) {
+	dto := briefingItemDTO{Kind: string(hit.Kind)}
+
+	var err error
+
+	switch {
+	case hit.Memory != nil:
+		dto.ID = hit.Memory.ID.String()
+		dto.MemoryKind = string(hit.Memory.Kind)
+		dto.Statement = hit.Memory.Statement
+		dto.Status = string(hit.Memory.Status)
+		dto.Conditions = hit.Memory.Conditions
+		dto.Link, err = url.JoinPath(baseURL, workspaceSlug, "memories", dto.ID)
+	case hit.Passage != nil:
+		dto.ID = hit.Passage.DocID.String()
+		dto.Title = hit.Passage.DocTitle
+		dto.Heading = hit.Passage.Heading
+		dto.Link, err = url.JoinPath(baseURL, workspaceSlug, "docs", dto.ID)
+	}
+
+	return dto, err
 }
