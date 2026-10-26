@@ -17,6 +17,7 @@ const (
 	ValidationCodeReused           = "reused"
 	ValidationCodeTaken            = "taken"
 	ValidationCodePinned           = "pinned"
+	ValidationCodePersonalDomain   = "personal_domain"
 )
 
 type FieldError struct {
