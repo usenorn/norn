@@ -19,6 +19,7 @@
 	import AgentExecutionForm from "#lib/agents/agent-execution-form.svelte";
 	import AgentIcon from "#lib/agents/agent-icon.svelte";
 	import AgentInstructionsForm from "#lib/agents/agent-instructions-form.svelte";
+	import AgentAuthorityForm from "#lib/agents/agent-authority-form.svelte";
 	import AgentScopeForm from "#lib/agents/agent-scope-form.svelte";
 	import AgentTelegramPanel from "#lib/agents/agent-telegram-panel.svelte";
 	import AgentTestConversation from "#lib/agents/agent-test-conversation.svelte";
@@ -30,6 +31,7 @@
 	import {
 		agentExecutionLabels,
 		agentPermissionLabels,
+		beyondGrant,
 		reachSummary,
 		type AgentExecution,
 		type AgentScope,
@@ -43,10 +45,13 @@
 		type AgentCapabilities,
 		type AgentLibraryListing,
 	} from "#lib/agents/agent-capabilities.js";
+	import type { AgentAuthorityInput } from "#lib/agents/agent-authority-schema.js";
 	import { agentInstructionsMessage } from "#lib/agents/instructions.js";
 	import { deploymentPreview } from "#lib/auth/preview.js";
 	import {
+		agentAuthorityFailureMessage,
 		agentLifecycleFailureMessage,
+		type AgentAuthorityFailure,
 		type AgentLifecycleAction,
 		type AgentLifecycleFailure,
 	} from "#lib/agents/agent-record.js";
@@ -76,6 +81,8 @@
 	let savingInstructions = $state(false);
 	let scopeFailure = $state<AgentLifecycleFailure | { kind: "invalid"; message: string } | null>(null);
 	let savingScope = $state(false);
+	let authorityFailure = $state<AgentAuthorityFailure | null>(null);
+	let savingAuthority = $state(false);
 	let executionFailure = $state<AgentLifecycleFailure | null>(null);
 	let savingExecution = $state(false);
 	let issuedAgent = $state.raw<Agent | null>(null);
@@ -95,6 +102,9 @@
 		(preview?.role ?? data.members.find((member) => member.accountId === data.member.id)?.role) === "admin"
 	);
 	const teams = $derived(data.teams ?? []);
+	const activeTeams = $derived(teams.filter((team) => team.status === "active"));
+	const grantable = $derived(preview?.grantable !== undefined ? preview.grantable : data.grantable);
+	const shownAuthorityFailure = $derived(authorityFailure ?? preview?.authorityFailure ?? null);
 	const projects = $derived(preview?.projects ?? data.projects);
 	const mutationAnnouncement = $derived(
 		mutation === "rotate"
@@ -124,6 +134,8 @@
 		savingInstructions = false;
 		scopeFailure = null;
 		savingScope = false;
+		authorityFailure = null;
+		savingAuthority = false;
 		executionFailure = null;
 		savingExecution = false;
 		issuedAgent = null;
@@ -300,6 +312,62 @@
 			return false;
 		} finally {
 			savingScope = false;
+		}
+	}
+
+	function authorityProblem(
+		error: object | undefined,
+		status: number,
+		attempted: AgentAuthorityInput
+	): AgentAuthorityFailure {
+		if (error && "code" in error) {
+			if (error.code === "token_scope_exceeds") {
+				return { kind: "scope_exceeds", scopes: beyondGrant(attempted.scopes, grantable) };
+			}
+
+			if (error.code === "token_scope_invalid") return { kind: "scope_invalid" };
+			if (error.code === "token_grant_invalid" || error.code === "token_grant_missing") {
+				return { kind: "grant_invalid" };
+			}
+		}
+
+		return lifecycleProblem(error, status);
+	}
+
+	async function saveAuthority(input: AgentAuthorityInput) {
+		if (!agent) return false;
+
+		authorityFailure = null;
+		savingAuthority = true;
+
+		try {
+			const { data: saved, error, response } = await api.PUT(
+				"/workspaces/{workspaceId}/agents/{agentId}/authority",
+				{
+					params: { path: { workspaceId: workspace.id, agentId: agent.agent.id } },
+					body: {
+						scopes: input.scopes,
+						allTeams: input.allTeams,
+						teamIds: input.allTeams ? undefined : input.teamIds,
+					},
+				}
+			);
+
+			if (error || !saved) {
+				authorityFailure = authorityProblem(error, response.status, input);
+
+				return false;
+			}
+
+			refreshAfterMutation();
+
+			return true;
+		} catch {
+			authorityFailure = { kind: "unavailable" };
+
+			return false;
+		} finally {
+			savingAuthority = false;
 		}
 	}
 
@@ -740,6 +808,44 @@
 							locked={savingScope}
 							onsave={saveScope}
 						/>
+
+						<section class="flex flex-col gap-4" aria-labelledby="agent-authority-title">
+							<div>
+								<h2 id="agent-authority-title" class="text-md font-semibold tracking-snug text-ink-900">
+									Authority
+								</h2>
+								<p class="mt-1 text-sm leading-normal text-muted-foreground text-pretty">
+									What the agent may do and which teams it reaches. It keeps its credential, and its
+									next request is checked against what you save.
+								</p>
+							</div>
+
+							{#if shownAuthorityFailure}
+								<Alert.Root variant="destructive">
+									<CircleAlert aria-hidden="true" />
+									<Alert.Title>Not saved</Alert.Title>
+									<Alert.Description>{agentAuthorityFailureMessage(shownAuthorityFailure)}</Alert.Description>
+								</Alert.Root>
+							{/if}
+
+							{#if agent.agent.status !== "active"}
+								<p class="text-sm leading-normal text-muted-foreground text-pretty">
+									This agent is disabled. Enable it before changing what it may do.
+								</p>
+							{/if}
+
+							{#key agent.agent.id}
+								<AgentAuthorityForm
+									scopes={agent.authority.scopes}
+									allTeams={agent.authority.allTeams}
+									teamIds={agent.authority.teamIds}
+									teams={activeTeams}
+									{grantable}
+									locked={savingAuthority || agent.agent.status !== "active"}
+									onsave={saveAuthority}
+								/>
+							{/key}
+						</section>
 					</div>
 				</Tabs.Content>
 

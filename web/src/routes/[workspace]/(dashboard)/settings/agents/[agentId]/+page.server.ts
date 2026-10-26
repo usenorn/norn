@@ -11,6 +11,7 @@ import { connectMcpServer, mcpConnectForm, type McpConnectForm } from "#lib/agen
 import { connectTelegram, telegramConnectForm, type TelegramConnectForm } from "#lib/agents/telegram-connect.server.js";
 import type { TelegramPanel } from "#lib/agents/telegram.js";
 import type { AgentRecord } from "#lib/agents/agent-record.js";
+import type { APIScope } from "#lib/agents/agents.js";
 import type { Project } from "#lib/projects/projects.js";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -24,6 +25,7 @@ export type AgentRecordData = {
 	telegram: TelegramPanel;
 	telegramForm: TelegramConnectForm;
 	projects: Project[];
+	grantable: APIScope[] | null;
 };
 
 export const load: PageServerLoad = async ({
@@ -41,7 +43,7 @@ export const load: PageServerLoad = async ({
 
 	const path = { workspaceId: workspace.id, agentId: params.agentId };
 
-	const [agent, activity, capabilities, library, instance, connectForm, telegram, telegramForm] = await Promise.all([
+	const [agent, activity, capabilities, library, instance, connectForm, telegram, telegramForm, grants] = await Promise.all([
 		locals.api.GET("/workspaces/{workspaceId}/agents/{agentId}", { params: { path } }),
 		locals.api.GET("/workspaces/{workspaceId}/agents/{agentId}/activity", {
 			params: { path, query: { limit: 50 } },
@@ -54,6 +56,9 @@ export const load: PageServerLoad = async ({
 		mcpConnectForm(workspace.id, `${url.pathname}?tab=capabilities`),
 		locals.api.GET("/workspaces/{workspaceId}/agents/{agentId}/telegram", { params: { path } }),
 		telegramConnectForm(workspace.id, params.agentId),
+		locals.api.GET("/workspaces/{workspaceId}/agents/grantable-scopes", {
+			params: { path: { workspaceId: workspace.id } },
+		}),
 	]);
 
 	const listedCapability: AgentCapabilities = capabilities.data
@@ -84,6 +89,7 @@ export const load: PageServerLoad = async ({
 		telegram: telegramPanel,
 		telegramForm,
 		projects: projects.filter((project) => !project.archived),
+		grantable: grants.data?.scopes ?? null,
 	};
 
 	if (agent.error || !agent.data) {

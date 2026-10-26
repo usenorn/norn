@@ -5,7 +5,8 @@ import type {
 	CapabilityDialogPreview,
 	McpConnectOutcome,
 } from "#lib/agents/agent-capabilities.js";
-import type { AgentRecord } from "#lib/agents/agent-record.js";
+import type { AgentAuthorityFailure, AgentRecord } from "#lib/agents/agent-record.js";
+import type { APIScope } from "#lib/agents/agents.js";
 import type { HostedConversation } from "#lib/agents/hosted.js";
 import type { TelegramOutcome, TelegramPanel } from "#lib/agents/telegram.js";
 import type { Project } from "#lib/projects/projects.js";
@@ -33,6 +34,8 @@ export type AgentRecordPreview = {
 	conversation?: HostedConversation;
 	telegram?: TelegramPanel;
 	telegramOutcome?: TelegramOutcome;
+	grantable?: APIScope[] | null;
+	authorityFailure?: AgentAuthorityFailure;
 };
 
 export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = import.meta.env.DEV
@@ -379,6 +382,142 @@ export const agentRecordPreviewStates: Record<string, AgentRecordPreview> = impo
 						ownerEmail: "rae@northwind.co",
 						authority: {
 							scopes: ["issue:read"],
+							allTeams: true,
+							teamIds: [],
+						},
+						authorityMissing: false,
+					},
+				},
+				activity: { kind: "empty" },
+				capabilities: { kind: "empty" },
+			},
+			authority_withheld: {
+				tab: "scope",
+				role: "member",
+				grantable: [
+					"issue:read",
+					"issue:manage",
+					"cycle:read",
+					"label:read",
+					"project:read",
+					"project:manage",
+					"team:read",
+					"membership:read",
+					"comment:read",
+					"comment:manage",
+					"notification:read",
+					"notification:manage",
+					"knowledge:read",
+					"knowledge:manage",
+				],
+			},
+			authority_exceeds: {
+				tab: "scope",
+				role: "member",
+				grantable: [
+					"issue:read",
+					"issue:manage",
+					"cycle:read",
+					"label:read",
+					"project:read",
+					"project:manage",
+					"team:read",
+					"membership:read",
+					"comment:read",
+					"comment:manage",
+					"notification:read",
+					"notification:manage",
+					"knowledge:read",
+					"knowledge:manage",
+				],
+				authorityFailure: { kind: "scope_exceeds", scopes: ["label:manage"] },
+			},
+			authority_team_refused: {
+				tab: "scope",
+				role: "member",
+				grantable: [
+					"issue:read",
+					"issue:manage",
+					"cycle:read",
+					"label:read",
+					"project:read",
+					"project:manage",
+					"team:read",
+					"membership:read",
+					"comment:read",
+					"comment:manage",
+					"notification:read",
+					"notification:manage",
+					"knowledge:read",
+					"knowledge:manage",
+				],
+				authorityFailure: { kind: "grant_invalid" },
+			},
+			authority_forbidden: {
+				tab: "scope",
+				role: "member",
+				grantable: [
+					"issue:read",
+					"issue:manage",
+					"cycle:read",
+					"label:read",
+					"project:read",
+					"project:manage",
+					"team:read",
+					"membership:read",
+					"comment:read",
+					"comment:manage",
+					"notification:read",
+					"notification:manage",
+					"knowledge:read",
+					"knowledge:manage",
+				],
+				authorityFailure: { kind: "forbidden" },
+			},
+			authority_unavailable: {
+				tab: "scope",
+				role: "member",
+				grantable: [
+					"issue:read",
+					"issue:manage",
+					"cycle:read",
+					"label:read",
+					"project:read",
+					"project:manage",
+					"team:read",
+					"membership:read",
+					"comment:read",
+					"comment:manage",
+					"notification:read",
+					"notification:manage",
+					"knowledge:read",
+					"knowledge:manage",
+				],
+				authorityFailure: { kind: "unavailable" },
+			},
+			authority_disabled: {
+				tab: "scope",
+				record: {
+					kind: "ready",
+					value: {
+						agent: {
+							id: "00000000-0000-4000-8000-0000000009c2",
+							workspaceId: "00000000-0000-4000-8000-0000000009a1",
+							accountId: "00000000-0000-4000-8000-0000000009d2",
+							ownerAccountId: "00000000-0000-4000-8000-0000000009e1",
+							name: "release-notes",
+							icon: "pencil",
+							status: "disabled",
+							scope: "member",
+							execution: "runner",
+							actionLimit: 30,
+							disabledAt: "2026-08-01T11:00:00Z",
+							createdAt: "2026-05-14T09:00:00Z",
+						},
+						ownerName: "Rae Chen",
+						ownerEmail: "rae@northwind.co",
+						authority: {
+							scopes: ["issue:read", "comment:read"],
 							allTeams: true,
 							teamIds: [],
 						},
