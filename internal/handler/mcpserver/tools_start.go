@@ -2,11 +2,13 @@ package mcpserver
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/usenorn/norn/internal/entity"
+	"github.com/usenorn/norn/internal/observability/logging"
 	"github.com/usenorn/norn/internal/service"
 )
 
@@ -47,11 +49,6 @@ func (t *toolset) startIssue(
 		return nil, startIssueOutput{}, toolFailure(ctx, err)
 	}
 
-	knowledge, err := t.briefing(ctx, workspace, issue)
-	if err != nil {
-		return nil, startIssueOutput{}, toolFailure(ctx, err)
-	}
-
 	started := issue
 
 	if issue.State.Category != entity.StateCategoryActive {
@@ -79,6 +76,8 @@ func (t *toolset) startIssue(
 		return nil, startIssueOutput{}, toolFailure(ctx, err)
 	}
 
+	knowledge := t.briefing(ctx, workspace, issue)
+
 	output := startIssueOutput{
 		Issue:     issueDTOFrom(started),
 		Branch:    branch,
@@ -95,6 +94,24 @@ func (t *toolset) startIssue(
 }
 
 func (t *toolset) briefing(
+	ctx context.Context,
+	workspace entity.Workspace,
+	issue entity.Issue,
+) []briefingItemDTO {
+	items, err := t.briefingItems(ctx, workspace, issue)
+	if err != nil {
+		var denied entity.AccessDeniedError
+		if !errors.As(err, &denied) {
+			logging.From(ctx).WarnContext(ctx, "issue briefing failed", "error", err.Error())
+		}
+
+		return nil
+	}
+
+	return items
+}
+
+func (t *toolset) briefingItems(
 	ctx context.Context,
 	workspace entity.Workspace,
 	issue entity.Issue,

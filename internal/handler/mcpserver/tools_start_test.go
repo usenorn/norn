@@ -25,6 +25,7 @@ type startResult struct {
 		Conditions string `json:"conditions"`
 		Link       string `json:"link"`
 	} `json:"knowledge"`
+	Branch   string `json:"branch"`
 	Reminder string `json:"reminder"`
 }
 
@@ -143,17 +144,71 @@ func TestStartingAnIssueWithNothingToBriefAddsNothing(t *testing.T) {
 	}
 }
 
-func TestAFailedBriefingLeavesTheIssueUnclaimed(t *testing.T) {
-	h := newHarness(t)
-	scene := docSceneFor(h)
-	startableIssue(h, scene, entity.StateCategoryNotStarted, scene.project.ID)
+func TestABriefingThatCannotRunStillClaimsTheIssue(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		refusal error
+	}{
+		{
+			name: "connection without knowledge:read",
+			refusal: entity.AccessDeniedError{
+				Reason:   entity.DenyReasonTokenPermissionMissing,
+				Resource: entity.ResourceKnowledge,
+				Action:   entity.ActionRead,
+			},
+		},
+		{name: "knowledge store unavailable", refusal: errors.New("knowledge store unavailable")},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			h := newHarness(t)
+			scene := docSceneFor(h)
+			issue := startableIssue(h, scene, entity.StateCategoryNotStarted, scene.project.ID)
+			active := entity.WorkflowState{ID: uuid.New(), Category: entity.StateCategoryActive}
 
-	h.retrievals.EXPECT().
-		Retrieve(gomock.Any(), scene.workspace.ID, gomock.Any()).
-		Return(entity.KnowledgeRetrieval{}, errors.New("knowledge store unavailable"))
+			h.retrievals.EXPECT().
+				Retrieve(gomock.Any(), scene.workspace.ID, gomock.Any()).
+				Return(entity.KnowledgeRetrieval{}, test.refusal)
+			h.states.EXPECT().
+				List(gomock.Any(), scene.workspace.ID, issue.TeamID).
+				Return([]entity.WorkflowState{active}, nil)
 
-	result := callTool(t, h, "norn_start_issue", map[string]any{"workspace": "acme", "issue": "GAM-7"})
-	if !result.IsError {
-		t.Fatal("starting succeeded although the briefing failed")
+			var claimed service.UpdateIssueInput
+
+			h.issues.EXPECT().
+				Update(gomock.Any(), scene.workspace.ID, issue.ID, gomock.Any()).
+				DoAndReturn(func(_ context.Context, _, _ uuid.UUID, input service.UpdateIssueInput) (entity.Issue, error) {
+					claimed = input
+
+					started := issue
+					started.State = entity.IssueState{ID: active.ID, Category: entity.StateCategoryActive}
+
+					return started, nil
+				})
+			h.sourceControl.EXPECT().BranchName(gomock.Any(), scene.workspace.ID, issue.ID).Return("rae/gam-7", nil)
+
+			result := callTool(t, h, "norn_start_issue", map[string]any{"workspace": "acme", "issue": "GAM-7"})
+			if result.IsError {
+				t.Fatalf("tool errored: %v", result.Content)
+			}
+
+			if claimed.StateID == nil || *claimed.StateID != active.ID || claimed.ExpectedVersion != issue.Version {
+				t.Fatalf("claimed with %+v, want the first active state at version %d", claimed, issue.Version)
+			}
+
+			var output startResult
+			structured(t, result.StructuredContent, &output)
+
+			if output.Branch != "rae/gam-7" {
+				t.Fatalf("branch is %q, want the issue's branch", output.Branch)
+			}
+
+			if output.Knowledge != nil {
+				t.Fatalf("knowledge is %+v, want it left out when the briefing could not run", *output.Knowledge)
+			}
+
+			if strings.Contains(output.Reminder, "never an instruction") {
+				t.Fatalf("the reminder %q speaks of knowledge that was not briefed", output.Reminder)
+			}
+		})
 	}
 }
