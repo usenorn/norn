@@ -211,15 +211,6 @@ func (p SSOPurpose) Valid() bool {
 	}
 }
 
-type WorkspaceSignIn struct {
-	Slug     string
-	Name     string
-	Password bool
-	SSO      bool
-	Protocol SSOProtocol
-	Host     string
-}
-
 func SSORoleFor(adminGroup string, groups []string) (MembershipRole, bool) {
 	admin := strings.TrimSpace(adminGroup)
 	if admin == "" {
@@ -288,4 +279,13 @@ type SSOExchange struct {
 	Session       Session
 	Token         string
 	Provisioned   bool
+}
+
+func SSOLoginHint(email string) string {
+	normalized := NormalizeEmail(email)
+	if ValidateEmail("loginHint", normalized).Code != "" {
+		return ""
+	}
+
+	return normalized
 }

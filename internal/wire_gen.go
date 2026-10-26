@@ -74,6 +74,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/doclink"
 	"github.com/usenorn/norn/internal/repository/docpassage"
 	"github.com/usenorn/norn/internal/repository/docrevision"
+	"github.com/usenorn/norn/internal/repository/domainownership"
 	"github.com/usenorn/norn/internal/repository/emailchange"
 	"github.com/usenorn/norn/internal/repository/eventstream"
 	"github.com/usenorn/norn/internal/repository/execution"
@@ -155,6 +156,7 @@ import (
 	"github.com/usenorn/norn/internal/repository/workspace"
 	"github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	"github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
+	"github.com/usenorn/norn/internal/repository/workspacedomain"
 	account2 "github.com/usenorn/norn/internal/service/account"
 	agent2 "github.com/usenorn/norn/internal/service/agent"
 	"github.com/usenorn/norn/internal/service/agentcapability"
@@ -213,6 +215,7 @@ import (
 	"github.com/usenorn/norn/internal/service/scm/gitlab"
 	search2 "github.com/usenorn/norn/internal/service/search"
 	session2 "github.com/usenorn/norn/internal/service/session"
+	"github.com/usenorn/norn/internal/service/signinmethod"
 	ssoconnection2 "github.com/usenorn/norn/internal/service/ssoconnection"
 	team2 "github.com/usenorn/norn/internal/service/team"
 	telegrambot2 "github.com/usenorn/norn/internal/service/telegrambot"
@@ -220,6 +223,7 @@ import (
 	webhook2 "github.com/usenorn/norn/internal/service/webhook"
 	workflowstate2 "github.com/usenorn/norn/internal/service/workflowstate"
 	workspace2 "github.com/usenorn/norn/internal/service/workspace"
+	workspacedomain2 "github.com/usenorn/norn/internal/service/workspacedomain"
 )
 
 // Injectors from wire.go:
@@ -551,7 +555,11 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	oidcproviderClient := oidcprovider.New(oidc)
 	oidcProvider := oidcprovider2.New(oidcproviderClient, app)
 	samlproviderClient := samlprovider.New(saml)
-	ssoConnections := ssoconnection2.New(ssoConnection, workspaceAuthPolicy, ssoIdentity, oidcState, samlRequest, samlReplay, repositoryWorkspace, repositoryAccount, repositoryMembership, oidcProvider, samlproviderClient, repositoryMailer, sessions, app, serviceAuthorizer, postgresClient, serviceAudit)
+	ssoConnections := ssoconnection2.New(ssoConnection, ssoIdentity, oidcState, samlRequest, samlReplay, repositoryWorkspace, repositoryAccount, repositoryMembership, oidcProvider, samlproviderClient, repositoryMailer, sessions, app, serviceAuthorizer, postgresClient, serviceAudit)
+	workspaceDomain := workspacedomain.New(postgresClient)
+	signInMethods := signinmethod.New(repositoryWorkspace, workspaceAuthPolicy, ssoConnection, workspaceDomain, signInThrottle, instance)
+	domainOwnership := domainownership.New()
+	workspaceDomains := workspacedomain2.New(workspaceDomain, domainOwnership, serviceAuthorizer, serviceAudit)
 	cycleCadence := cycle.NewCadence(postgresClient)
 	cycleResult := cycle.NewResult(postgresClient)
 	cycles := cycle2.New(repositoryCycle, cycleCadence, cycleScopeChange, cycleResult, repositoryActivity, workflowState, teamMember, repositoryIssue, repositoryTeam, repositoryWorkspace, serviceAuthorizer, webhookEmitter, postgresClient)
@@ -628,7 +636,7 @@ func InitApp(cfgFile string) (*App, func(), error) {
 	telegramClient := telegram.New(configTelegram)
 	telegramMessenger := telegrammessenger.New(telegramClient)
 	telegramBots := telegrambot2.NewBots(telegramBot, telegramAudience, telegramMessenger, repositoryAgent, postgresClient, serviceAuthorizer, serviceAudit, app, configTelegram)
-	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueDrafts, issueTemplates, issueCriteria, issueRelations, issueComments, delegations, issueQuestions, runners, codebases, executions, executionServices, executionUploads, changeSets, servicePreviews, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, serviceWebhooks, webhookDeliveries, agents, sessions, ssoConnections, cycles, projects, serviceRoadmaps, publicRoadmaps, docs, docLinks, memories, savedViews, triages, intakes, notifications, searches, auditLog, directories, serviceLicensing, serviceImports, serviceSourceControl, sourceControlApps, aiProviders, agentCapabilities, hostedAgents, telegramBots, sourceControl, app, instance, password, configSession, configImports, previews)
+	strictServerInterface := dashboard.New(accounts, workspaces, teams, invitations, issues, issueDrafts, issueTemplates, issueCriteria, issueRelations, issueComments, delegations, issueQuestions, runners, codebases, executions, executionServices, executionUploads, changeSets, servicePreviews, serviceAttachments, bulkOperations, workflowStates, labels, apiTokens, serviceWebhooks, webhookDeliveries, agents, sessions, ssoConnections, signInMethods, workspaceDomains, cycles, projects, serviceRoadmaps, publicRoadmaps, docs, docLinks, memories, savedViews, triages, intakes, notifications, searches, auditLog, directories, serviceLicensing, serviceImports, serviceSourceControl, sourceControlApps, aiProviders, agentCapabilities, hostedAgents, telegramBots, sourceControl, app, instance, password, configSession, configImports, previews)
 	callback := sso.NewCallback(ssoConnections, configSession)
 	mcpoauthCallback := mcpoauth.NewCallback(agentCapabilities, app)
 	ssoSAML := sso.NewSAML(ssoConnections, configSession)
@@ -887,7 +895,7 @@ func InitWorker(cfgFile string) (*Worker, func(), error) {
 	oidcproviderClient := oidcprovider.New(oidc)
 	oidcProvider := oidcprovider2.New(oidcproviderClient, app)
 	samlproviderClient := samlprovider.New(saml)
-	ssoConnections := ssoconnection2.New(ssoConnection, workspaceAuthPolicy, ssoIdentity, oidcState, samlRequest, samlReplay, repositoryWorkspace, repositoryAccount, repositoryMembership, oidcProvider, samlproviderClient, repositoryMailer, sessions, app, serviceAuthorizer, client, serviceAudit)
+	ssoConnections := ssoconnection2.New(ssoConnection, ssoIdentity, oidcState, samlRequest, samlReplay, repositoryWorkspace, repositoryAccount, repositoryMembership, oidcProvider, samlproviderClient, repositoryMailer, sessions, app, serviceAuthorizer, client, serviceAudit)
 	ssoCertificateSweepHandler := job.NewSSOCertificateSweepHandler(ssoConnections)
 	cycleCadence := cycle.NewCadence(client)
 	cycleResult := cycle.NewResult(client)
@@ -1264,7 +1272,7 @@ func InitGateway(cfgFile string) (*Gateway, error) {
 
 // wire.go:
 
-var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, openai.Set, telegram.Set, toolingclient.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issuedraft.Set, issuecriterion.Set, issuerevision.Set, issuetemplate.Set, requestkey.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, executionplan.Set, executionreview.Set, executionsnapshot.Set, executionservice.Set, executionupload.Set, changeset.Set, preview.Set, previewshare.Set, previewgrant.Set, previewgateway.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, roadmap.Set, doc.Set, doclink.Set, docrevision.Set, memory.Set, memoryrevision.Set, docpassage.Set, knowledge.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, intake.Set, inboundmail.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, workspaceagentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, aimodel.Set, aiprovider.Set, telegrambot.Set, telegramaudience.Set, telegramconversation.Set, telegramupdate.Set, telegrammessenger.Set, agentskill.Set, agentmcpserver.Set, agentmcpconnection.Set, agentmcpoauthstate.Set, skillsource.Set, mcpregistry.Set, mcpauthorizer.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, roadmap2.Set, doc2.Set, doclink2.Set, memory2.Set, attachment2.Set, issuecomment2.Set, issuedraft2.Set, issuecriterion2.Set, issuetemplate2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, executionservice2.Set, executionupload2.Set, changeset2.Set, preview2.Set, previewgateway2.Set, previewgateway3.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, knowledgeauthorizer.Set, knowledgeembedding.Set, knowledgeindex.Set, memoryevidence.Set, retrieval.Set, event.Set, search2.Set, triage2.Set, intake2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, aiprovider2.Set, hostedagent.Set, telegrambot2.Set, agentcapability.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, mcpoauth.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, inboundmail2.Set, telegram2.Set, mcpserver.Set, router.Set, job.Set, NewApp,
+var baseSet = wire.NewSet(config.Set, logging.Set, postgres.Set, valkey.Set, taskqueue.Set, smtp.Set, authz.Set, geoip.Set, pwned.Set, crypter.Set, licence.Set, lineargraph.Set, openai.Set, telegram.Set, toolingclient.Set, forge.Set, outbound.Set, oidcprovider.Set, samlprovider.Set, wire.Bind(new(repository.Transactor), new(*postgres.Client)), account.Set, emailchange.Set, workspace.Set, membership.Set, session.Set, blob.Set, mailer.Set, jobqueue.Set, geolocation.Set, workspaceauthpolicy.Set, passwordreset.Set, signup.Set, issue.Set, issuedraft.Set, issuecriterion.Set, issuerevision.Set, issuetemplate.Set, requestkey.Set, activity.Set, issuedelegation.Set, issuequestion.Set, runner.Set, codebase.Set, execution.Set, executionplan.Set, executionreview.Set, executionsnapshot.Set, executionservice.Set, executionupload.Set, changeset.Set, preview.Set, previewshare.Set, previewgrant.Set, previewgateway.Set, runnerchannel.Set, runnersession.Set, issuerelation.Set, bulkaction.Set, cycle.Set, project.Set, roadmap.Set, doc.Set, doclink.Set, docrevision.Set, memory.Set, memoryrevision.Set, docpassage.Set, knowledge.Set, attachment.Set, blobgrant.Set, issuecomment.Set, issuefollower.Set, notification.Set, notificationevent.Set, notificationsetting.Set, savedview.Set, eventstream.Set, search.Set, triage.Set, intake.Set, inboundmail.Set, issuefilterreference.Set, label.Set, labelgroup.Set, workflowstate.Set, agent.Set, agentproposal.Set, agentsetting.Set, workspaceagentsetting.Set, agentthrottle.Set, apitoken.Set, audit.Set, directory.Set, passwordhistory.Set, signinthrottle.Set, breachcheck.Set, invitation.Set, team.Set, teammember.Set, ssoconnection.Set, ssoidentity.Set, breakglass.Set, samlrequest.Set, samlreplay.Set, oidcstate.Set, signinchallenge.Set, scmappstate.Set, oidcprovider2.Set, aimodel.Set, aiprovider.Set, workspacedomain.Set, domainownership.Set, telegrambot.Set, telegramaudience.Set, telegramconversation.Set, telegramupdate.Set, telegrammessenger.Set, agentskill.Set, agentmcpserver.Set, agentmcpconnection.Set, agentmcpoauthstate.Set, skillsource.Set, mcpregistry.Set, mcpauthorizer.Set, mcpthrottle.Set, webhook.Set, webhooksender.Set, imports.Set, scm.Set, account2.Set, workspace2.Set, invitation2.Set, team2.Set, issue2.Set, delegation.Set, issuerelation2.Set, bulkoperation.Set, cycle2.Set, project2.Set, roadmap2.Set, doc2.Set, doclink2.Set, memory2.Set, attachment2.Set, issuecomment2.Set, issuedraft2.Set, issuecriterion2.Set, issuetemplate2.Set, issuequestion2.Set, runner2.Set, codebase2.Set, execution2.Set, executionservice2.Set, executionupload2.Set, changeset2.Set, preview2.Set, previewgateway2.Set, previewgateway3.Set, runnerchannel2.Set, notification2.Set, savedview2.Set, knowledgeauthorizer.Set, knowledgeembedding.Set, knowledgeindex.Set, memoryevidence.Set, retrieval.Set, event.Set, search2.Set, triage2.Set, intake2.Set, label2.Set, workflowstate2.Set, agent2.Set, agenthold.Set, apitoken2.Set, webhook2.Set, session2.Set, authorizer.Set, jobs.Set, ssoconnection2.Set, signinmethod.Set, workspacedomain2.Set, aiprovider2.Set, hostedagent.Set, telegrambot2.Set, agentcapability.Set, audit2.Set, licensing.Set, directory2.Set, imports2.Set, linear.Set, csvfile.Set, scm2.Set, github.Set, gitea.Set, gitlab.Set, dashboard.Set, sso.Set, mcpoauth.Set, blob2.Set, events.Set, runnerchannel3.Set, auditexport.Set, scim.Set, sourcecontrol.Set, inboundmail2.Set, telegram2.Set, mcpserver.Set, router.Set, job.Set, NewApp,
 	NewServeMux,
 	NewWorker,
 	NewMigrator,

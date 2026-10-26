@@ -106,6 +106,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say how an address can sign in, from its domain alone
+         * @description The answer depends only on the address's domain and the policies of the workspaces that verified it, never on whether an account exists, and it always takes the same time.
+         */
+        post: operations["discoverSignIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/password-reset": {
         parameters: {
             query?: never;
@@ -569,6 +589,66 @@ export interface paths {
         post?: never;
         /** Unlink an account from its provider identity */
         delete: operations["unlinkWorkspaceSsoIdentity"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        /** List the email domains this workspace has claimed for sign-in */
+        get: operations["listWorkspaceDomains"];
+        put?: never;
+        /** Claim an email domain, pending its DNS verification record */
+        post: operations["addWorkspaceDomain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/domains/{domainId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                domainId: components["parameters"]["DomainId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Withdraw a domain claim so it no longer routes sign-ins here */
+        delete: operations["removeWorkspaceDomain"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workspaces/{workspaceId}/sso/domains/{domainId}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                domainId: components["parameters"]["DomainId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Look for the domain's verification record now */
+        post: operations["verifyWorkspaceDomain"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -8753,7 +8833,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "roadmap.published" | "roadmap.unpublished" | "roadmap.entry_removed" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.embedding_model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
+        AuditAction: "session.signed_in" | "session.sign_in_failed" | "session.sign_in_code_sent" | "session.signed_out" | "session.revoked" | "account.password_changed" | "account.password_reset" | "account.email_changed" | "account.deactivated" | "account.deleted" | "membership.added" | "membership.role_changed" | "membership.removed" | "membership.audit_access_changed" | "team_membership.added" | "team_membership.removed" | "invitation.created" | "invitation.revoked" | "invitation.accepted" | "sso.connection_saved" | "sso.connection_removed" | "sso.enforcement_changed" | "sso.recovery_codes_issued" | "sso.recovery_code_redeemed" | "sso.identity_unlinked" | "sso.identity_linked" | "sso.identity_refused" | "sso.account_opened" | "sso.domain_added" | "sso.domain_verified" | "sso.domain_removed" | "token.minted" | "token.revoked" | "agent.registered" | "runner.enrolled" | "runner.revoked" | "codebase.connected" | "codebase.disconnected" | "agent.disabled" | "agent.enabled" | "agent.proposal_decided" | "agent.instructions_changed" | "agent.scope_changed" | "agent.execution_changed" | "agent.skill_added" | "agent.skill_updated" | "agent.skill_removed" | "agent.mcp_server_added" | "agent.mcp_server_updated" | "agent.mcp_server_removed" | "agent.mcp_connected" | "agent.mcp_disconnected" | "agent.capability_attached" | "agent.capability_detached" | "agent.telegram_connected" | "agent.telegram_disconnected" | "agent.telegram_group_bound" | "agent.telegram_group_unbound" | "webhook.registered" | "webhook.removed" | "webhook.disabled" | "roadmap.published" | "roadmap.unpublished" | "roadmap.entry_removed" | "workspace.updated" | "workspace.deletion_requested" | "workspace.restored" | "workspace.purged" | "directory.connected" | "directory.disconnected" | "directory.token_rotated" | "ai_provider.configured" | "ai_provider.key_replaced" | "ai_provider.model_changed" | "ai_provider.embedding_model_changed" | "ai_provider.endpoint_changed" | "ai_provider.removed" | "audit.exported" | "access.denied";
         /** @enum {string} */
         AuditOutcome: "succeeded" | "failed" | "denied";
         /** @enum {string} */
@@ -10685,6 +10765,8 @@ export interface components {
         BeginOidcLoginRequest: {
             workspace: string;
             returnTo?: string;
+            /** @description The address the person already typed, passed to an OpenID Connect provider as login_hint so it can prefill it. A SAML sign-in ignores it, because a requested subject there is a demand the provider must satisfy, not a hint. */
+            loginHint?: string;
         };
         OidcAuthorization: {
             authorizationUrl: string;
@@ -10698,13 +10780,43 @@ export interface components {
         WorkspaceSignIn: {
             workspace: string;
             name: string;
-            /** @description False when the workspace admits nothing but its provider */
-            password: boolean;
-            /** @description True when a verified provider is ready to take a sign-in */
-            sso: boolean;
+            options: components["schemas"]["SignInOption"][];
+            preferred?: components["schemas"]["SignInMethod"];
+        };
+        /** @enum {string} */
+        SignInMethod: "password" | "sso";
+        SignInWorkspace: {
+            workspace: string;
+            name: string;
             protocol?: components["schemas"]["SsoProtocol"];
             /** @description The provider's host, so a person can see where they are being sent */
             host?: string;
+        };
+        SignInOption: {
+            method: components["schemas"]["SignInMethod"];
+            workspace?: components["schemas"]["SignInWorkspace"];
+        };
+        SignInOptions: {
+            options: components["schemas"]["SignInOption"][];
+            /** @description Absent only when no method is open to this address */
+            preferred?: components["schemas"]["SignInMethod"];
+        };
+        DiscoverSignInRequest: {
+            email: string;
+        };
+        WorkspaceDomain: {
+            /** Format: uuid */
+            id: string;
+            domain: string;
+            /** @description The TXT record to publish on the domain */
+            record: string;
+            /** Format: date-time */
+            verifiedAt?: string;
+            /** Format: date-time */
+            checkedAt?: string;
+        };
+        AddWorkspaceDomainRequest: {
+            domain: string;
         };
         WorkspaceSsoProtocol: {
             /** Format: uuid */
@@ -11608,6 +11720,7 @@ export interface components {
     };
     parameters: {
         WorkspaceId: string;
+        DomainId: string;
         AccountId: string;
         InvitationId: string;
         TokenId: string;
@@ -11836,6 +11949,33 @@ export interface operations {
             };
             401: components["responses"]["SignInCodeRejected"];
             409: components["responses"]["Problem"];
+            429: components["responses"]["TooManyAttempts"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    discoverSignIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverSignInRequest"];
+            };
+        };
+        responses: {
+            /** @description The ways this address can sign in, the preferred one first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignInOptions"];
+                };
+            };
+            422: components["responses"]["Problem"];
             429: components["responses"]["TooManyAttempts"];
             500: components["responses"]["Problem"];
         };
@@ -12785,6 +12925,115 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["Problem"];
             500: components["responses"]["Problem"];
+        };
+    };
+    listWorkspaceDomains: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The claimed domains */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDomain"][];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    addWorkspaceDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddWorkspaceDomainRequest"];
+            };
+        };
+        responses: {
+            /** @description The claim and the record to publish */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDomain"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    removeWorkspaceDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                domainId: components["parameters"]["DomainId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The claim was withdrawn */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    verifyWorkspaceDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspaceId: components["parameters"]["WorkspaceId"];
+                domainId: components["parameters"]["DomainId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The claim after the check, verified or not */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDomain"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     getWorkspaceSignIn: {

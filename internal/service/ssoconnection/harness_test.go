@@ -22,7 +22,6 @@ import (
 	identityrepo "github.com/usenorn/norn/internal/repository/ssoidentity"
 	transactorrepo "github.com/usenorn/norn/internal/repository/transactor"
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
-	policyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
 	"github.com/usenorn/norn/internal/service"
 	authorizersvc "github.com/usenorn/norn/internal/service/authorizer"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
@@ -31,7 +30,6 @@ import (
 
 type harness struct {
 	connections *connectionrepo.MockSSOConnection
-	policies    *policyrepo.MockWorkspaceAuthPolicy
 	identities  *identityrepo.MockSSOIdentity
 	requests    *samlrequestrepo.MockSAMLRequest
 	replays     *samlreplayrepo.MockSAMLReplay
@@ -86,7 +84,6 @@ func newHarnessWithoutLinking(t *testing.T) *harness {
 
 	h := &harness{
 		connections: connectionrepo.NewMockSSOConnection(ctrl),
-		policies:    policyrepo.NewMockWorkspaceAuthPolicy(ctrl),
 		identities:  identityrepo.NewMockSSOIdentity(ctrl),
 		requests:    samlrequestrepo.NewMockSAMLRequest(ctrl),
 		replays:     samlreplayrepo.NewMockSAMLReplay(ctrl),
@@ -110,7 +107,6 @@ func newHarnessWithoutLinking(t *testing.T) *harness {
 
 	h.service = ssosvc.New(
 		h.connections,
-		h.policies,
 		h.identities,
 		h.states,
 		h.requests,

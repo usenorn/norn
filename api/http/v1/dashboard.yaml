@@ -161,6 +161,30 @@ paths:
         '429': { $ref: '#/components/responses/TooManyAttempts' }
         '500': { $ref: '#/components/responses/Problem' }
 
+  /auth/discover:
+    post:
+      tags: [auth]
+      operationId: discoverSignIn
+      summary: Say how an address can sign in, from its domain alone
+      description: >-
+        The answer depends only on the address's domain and the policies of the workspaces that
+        verified it, never on whether an account exists, and it always takes the same time.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DiscoverSignInRequest' }
+      responses:
+        '200':
+          description: The ways this address can sign in, the preferred one first
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SignInOptions' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/TooManyAttempts' }
+        '500': { $ref: '#/components/responses/Problem' }
+
   /auth/password-reset:
     post:
       tags: [auth]
@@ -807,6 +831,81 @@ paths:
         '401': { $ref: '#/components/responses/Problem' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/domains:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [sso]
+      operationId: listWorkspaceDomains
+      summary: List the email domains this workspace has claimed for sign-in
+      responses:
+        '200':
+          description: The claimed domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkspaceDomain' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [sso]
+      operationId: addWorkspaceDomain
+      summary: Claim an email domain, pending its DNS verification record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddWorkspaceDomainRequest' }
+      responses:
+        '201':
+          description: The claim and the record to publish
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceDomain' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/domains/{domainId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DomainId'
+    delete:
+      tags: [sso]
+      operationId: removeWorkspaceDomain
+      summary: Withdraw a domain claim so it no longer routes sign-ins here
+      responses:
+        '204':
+          description: The claim was withdrawn
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '500': { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/sso/domains/{domainId}/verify:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/DomainId'
+    post:
+      tags: [sso]
+      operationId: verifyWorkspaceDomain
+      summary: Look for the domain's verification record now
+      responses:
+        '200':
+          description: The claim after the check, verified or not
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceDomain' }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/Problem' }
+        '503': { $ref: '#/components/responses/Problem' }
         '500': { $ref: '#/components/responses/Problem' }
 
   /sso/sign-in:
@@ -9003,6 +9102,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    DomainId:
+      name: domainId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     AccountId:
       name: accountId
       in: path
@@ -13553,6 +13657,9 @@ components:
         - sso.identity_linked
         - sso.identity_refused
         - sso.account_opened
+        - sso.domain_added
+        - sso.domain_verified
+        - sso.domain_removed
         - token.minted
         - token.revoked
         - agent.registered
@@ -16698,6 +16805,12 @@ components:
       properties:
         workspace: { type: string }
         returnTo: { type: string }
+        loginHint:
+          type: string
+          description: >-
+            The address the person already typed, passed to an OpenID Connect provider as login_hint
+            so it can prefill it. A SAML sign-in ignores it, because a requested subject there is a
+            demand the provider must satisfy, not a hint.
 
     OidcAuthorization:
       type: object
@@ -16717,20 +16830,71 @@ components:
 
     WorkspaceSignIn:
       type: object
-      required: [workspace, name, password, sso]
+      required: [workspace, name, options]
       properties:
         workspace: { type: string }
         name: { type: string }
-        password:
-          type: boolean
-          description: False when the workspace admits nothing but its provider
-        sso:
-          type: boolean
-          description: True when a verified provider is ready to take a sign-in
+        options:
+          type: array
+          items: { $ref: '#/components/schemas/SignInOption' }
+        preferred: { $ref: '#/components/schemas/SignInMethod' }
+
+    SignInMethod:
+      type: string
+      enum: [password, sso]
+
+    SignInWorkspace:
+      type: object
+      required: [workspace, name]
+      properties:
+        workspace: { type: string }
+        name: { type: string }
         protocol: { $ref: '#/components/schemas/SsoProtocol' }
         host:
           type: string
           description: The provider's host, so a person can see where they are being sent
+
+    SignInOption:
+      type: object
+      required: [method]
+      properties:
+        method: { $ref: '#/components/schemas/SignInMethod' }
+        workspace: { $ref: '#/components/schemas/SignInWorkspace' }
+
+    SignInOptions:
+      type: object
+      required: [options]
+      properties:
+        options:
+          type: array
+          items: { $ref: '#/components/schemas/SignInOption' }
+        preferred:
+          $ref: '#/components/schemas/SignInMethod'
+          description: Absent only when no method is open to this address
+
+    DiscoverSignInRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+
+    WorkspaceDomain:
+      type: object
+      required: [id, domain, record]
+      properties:
+        id: { type: string, format: uuid }
+        domain: { type: string }
+        record:
+          type: string
+          description: The TXT record to publish on the domain
+        verifiedAt: { type: string, format: date-time }
+        checkedAt: { type: string, format: date-time }
+
+    AddWorkspaceDomainRequest:
+      type: object
+      required: [domain]
+      properties:
+        domain: { type: string }
 
     WorkspaceSsoProtocol:
       type: object

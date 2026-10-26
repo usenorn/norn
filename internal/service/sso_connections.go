@@ -12,7 +12,6 @@ import (
 
 type SSOConnections interface {
 	Protocol(ctx context.Context, workspaceID uuid.UUID) (entity.SSOProtocol, error)
-	SignIn(ctx context.Context, slug string) (entity.WorkspaceSignIn, error)
 	Remove(ctx context.Context, workspaceID uuid.UUID) error
 
 	Get(ctx context.Context, workspaceID uuid.UUID) (entity.OIDCConnection, error)
@@ -48,6 +47,7 @@ type SaveOIDCConnectionInput struct {
 type BeginOIDCLoginInput struct {
 	WorkspaceSlug string
 	ReturnTo      string
+	LoginHint     string
 }
 
 type CompleteOIDCInput struct {

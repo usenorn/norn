@@ -147,7 +147,7 @@ func (h *handler) GetWorkspaceSignIn(
 	ctx context.Context,
 	request api.GetWorkspaceSignInRequestObject,
 ) (api.GetWorkspaceSignInResponseObject, error) {
-	signIn, err := h.ssoConnections.SignIn(ctx, request.Params.Workspace)
+	signIn, err := h.signInMethods.ForWorkspace(ctx, request.Params.Workspace)
 	if err != nil {
 		if problem, ok := problemFor(err); ok {
 			return problem, nil
@@ -156,24 +156,66 @@ func (h *handler) GetWorkspaceSignIn(
 		return nil, err
 	}
 
-	body := api.GetWorkspaceSignIn200JSONResponse{
+	options := signInOptionsDTO(signIn.SignInOptions)
+
+	return api.GetWorkspaceSignIn200JSONResponse{
 		Workspace: signIn.Slug,
 		Name:      signIn.Name,
-		Password:  signIn.Password,
-		Sso:       signIn.SSO,
+		Options:   options.Options,
+		Preferred: options.Preferred,
+	}, nil
+}
+
+func (h *handler) DiscoverSignIn(
+	ctx context.Context,
+	request api.DiscoverSignInRequestObject,
+) (api.DiscoverSignInResponseObject, error) {
+	options, err := h.signInMethods.Discover(ctx, service.DiscoverSignInInput{
+		Email:  request.Body.Email,
+		Client: middleware.ClientFrom(ctx),
+	})
+	if err != nil {
+		if problem, ok := problemFor(err); ok {
+			return problem, nil
+		}
+
+		return nil, err
 	}
 
-	if signIn.Protocol != "" {
-		protocol := api.SsoProtocol(signIn.Protocol)
-		body.Protocol = &protocol
+	return api.DiscoverSignIn200JSONResponse(signInOptionsDTO(options)), nil
+}
+
+func signInOptionsDTO(options entity.SignInOptions) api.SignInOptions {
+	dto := api.SignInOptions{Options: make([]api.SignInOption, 0, len(options.Options))}
+
+	for _, option := range options.Options {
+		item := api.SignInOption{Method: api.SignInMethod(option.Method)}
+
+		if option.Workspace != nil {
+			workspace := api.SignInWorkspace{Workspace: option.Workspace.Slug, Name: option.Workspace.Name}
+
+			if option.Workspace.Protocol != "" {
+				protocol := api.SsoProtocol(option.Workspace.Protocol)
+				workspace.Protocol = &protocol
+			}
+
+			if option.Workspace.Host != "" {
+				host := option.Workspace.Host
+				workspace.Host = &host
+			}
+
+			item.Workspace = &workspace
+		}
+
+		dto.Options = append(dto.Options, item)
 	}
 
-	if signIn.Host != "" {
-		host := signIn.Host
-		body.Host = &host
+	if options.Preferred != "" {
+		preferred := api.SignInMethod(options.Preferred)
+		dto.Preferred = &preferred
 	}
 
-	return body, nil
+	return dto
 }
 
 func (h *handler) BeginOidcLogin(
@@ -184,6 +226,10 @@ func (h *handler) BeginOidcLogin(
 
 	if request.Body.ReturnTo != nil {
 		input.ReturnTo = *request.Body.ReturnTo
+	}
+
+	if request.Body.LoginHint != nil {
+		input.LoginHint = *request.Body.LoginHint
 	}
 
 	handoff, err := h.ssoConnections.BeginLogin(ctx, input)
@@ -292,6 +338,10 @@ func (r problemResponse) VisitLinkWorkspaceOidcIdentityResponse(w http.ResponseW
 }
 
 func (r problemResponse) VisitGetWorkspaceSignInResponse(w http.ResponseWriter) error {
+	return r.write(w)
+}
+
+func (r problemResponse) VisitDiscoverSignInResponse(w http.ResponseWriter) error {
 	return r.write(w)
 }
 

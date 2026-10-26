@@ -163,9 +163,10 @@ type OIDCState struct {
 }
 
 type OIDCAuthorization struct {
-	State    string
-	Nonce    string
-	Verifier string
+	State     string
+	Nonce     string
+	Verifier  string
+	LoginHint string
 }
 
 type OIDCRedemption struct {

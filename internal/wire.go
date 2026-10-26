@@ -71,6 +71,7 @@ import (
 	doclinkrepo "github.com/usenorn/norn/internal/repository/doclink"
 	docpassagerepo "github.com/usenorn/norn/internal/repository/docpassage"
 	docrevisionrepo "github.com/usenorn/norn/internal/repository/docrevision"
+	domainownershiprepo "github.com/usenorn/norn/internal/repository/domainownership"
 	emailchangerepo "github.com/usenorn/norn/internal/repository/emailchange"
 	eventstreamrepo "github.com/usenorn/norn/internal/repository/eventstream"
 	executionrepo "github.com/usenorn/norn/internal/repository/execution"
@@ -152,6 +153,7 @@ import (
 	workspacerepo "github.com/usenorn/norn/internal/repository/workspace"
 	workspaceagentsettingrepo "github.com/usenorn/norn/internal/repository/workspaceagentsetting"
 	workspaceauthpolicyrepo "github.com/usenorn/norn/internal/repository/workspaceauthpolicy"
+	workspacedomainrepo "github.com/usenorn/norn/internal/repository/workspacedomain"
 	accountsvc "github.com/usenorn/norn/internal/service/account"
 	agentsvc "github.com/usenorn/norn/internal/service/agent"
 	agentcapabilitysvc "github.com/usenorn/norn/internal/service/agentcapability"
@@ -190,10 +192,10 @@ import (
 	knowledgeauthorizersvc "github.com/usenorn/norn/internal/service/knowledgeauthorizer"
 	knowledgeembeddingsvc "github.com/usenorn/norn/internal/service/knowledgeembedding"
 	knowledgeindexsvc "github.com/usenorn/norn/internal/service/knowledgeindex"
-	memoryevidencesvc "github.com/usenorn/norn/internal/service/memoryevidence"
 	labelsvc "github.com/usenorn/norn/internal/service/label"
 	licensingsvc "github.com/usenorn/norn/internal/service/licensing"
 	memorysvc "github.com/usenorn/norn/internal/service/memory"
+	memoryevidencesvc "github.com/usenorn/norn/internal/service/memoryevidence"
 	notificationsvc "github.com/usenorn/norn/internal/service/notification"
 	previewsvc "github.com/usenorn/norn/internal/service/preview"
 	previewgatewaysvc "github.com/usenorn/norn/internal/service/previewgateway"
@@ -210,6 +212,7 @@ import (
 	gitlabsvc "github.com/usenorn/norn/internal/service/scm/gitlab"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
+	signinmethodsvc "github.com/usenorn/norn/internal/service/signinmethod"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
 	telegrambotsvc "github.com/usenorn/norn/internal/service/telegrambot"
@@ -217,6 +220,7 @@ import (
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
+	workspacedomainsvc "github.com/usenorn/norn/internal/service/workspacedomain"
 )
 
 var baseSet = wire.NewSet(
@@ -333,6 +337,8 @@ var baseSet = wire.NewSet(
 	oidcproviderrepo.Set,
 	aimodelrepo.Set,
 	aiproviderrepo.Set,
+	workspacedomainrepo.Set,
+	domainownershiprepo.Set,
 	telegrambotrepo.Set,
 	telegramaudiencerepo.Set,
 	telegramconversationrepo.Set,
@@ -402,6 +408,8 @@ var baseSet = wire.NewSet(
 	authorizersvc.Set,
 	jobssvc.Set,
 	ssoconnectionsvc.Set,
+	signinmethodsvc.Set,
+	workspacedomainsvc.Set,
 	aiprovidersvc.Set,
 	hostedagentsvc.Set,
 	telegrambotsvc.Set,

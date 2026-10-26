@@ -49,6 +49,7 @@ import (
 	scmsvc "github.com/usenorn/norn/internal/service/scm"
 	searchsvc "github.com/usenorn/norn/internal/service/search"
 	sessionsvc "github.com/usenorn/norn/internal/service/session"
+	signinmethodsvc "github.com/usenorn/norn/internal/service/signinmethod"
 	ssoconnectionsvc "github.com/usenorn/norn/internal/service/ssoconnection"
 	teamsvc "github.com/usenorn/norn/internal/service/team"
 	telegrambotsvc "github.com/usenorn/norn/internal/service/telegrambot"
@@ -56,6 +57,7 @@ import (
 	webhooksvc "github.com/usenorn/norn/internal/service/webhook"
 	workflowstatesvc "github.com/usenorn/norn/internal/service/workflowstate"
 	workspacesvc "github.com/usenorn/norn/internal/service/workspace"
+	workspacedomainsvc "github.com/usenorn/norn/internal/service/workspacedomain"
 	api "github.com/usenorn/norn/pkg/http/v1/dashboard"
 )
 
@@ -73,6 +75,9 @@ type edgeServices struct {
 	agents            service.Agents
 	hostedAgents      service.HostedAgents
 	telegramBots      service.TelegramBots
+	sessions          service.Sessions
+	signInMethods     service.SignInMethods
+	workspaceDomains  service.WorkspaceDomains
 }
 
 func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
@@ -128,6 +133,18 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		services.telegramBots = telegrambotsvc.NewMockTelegramBots(ctrl)
 	}
 
+	if services.sessions == nil {
+		services.sessions = sessionsvc.NewMockSessions(ctrl)
+	}
+
+	if services.signInMethods == nil {
+		services.signInMethods = signinmethodsvc.NewMockSignInMethods(ctrl)
+	}
+
+	if services.workspaceDomains == nil {
+		services.workspaceDomains = workspacedomainsvc.NewMockWorkspaceDomains(ctrl)
+	}
+
 	edge := dashboard.New(
 		accountsvc.NewMockAccounts(ctrl),
 		services.workspaces,
@@ -156,8 +173,10 @@ func newEdge(ctrl *gomock.Controller, services edgeServices) http.Handler {
 		webhooksvc.NewMockWebhooks(ctrl),
 		webhooksvc.NewMockWebhookDeliveries(ctrl),
 		services.agents,
-		sessionsvc.NewMockSessions(ctrl),
+		services.sessions,
 		ssoconnectionsvc.NewMockSSOConnections(ctrl),
+		services.signInMethods,
+		services.workspaceDomains,
 		cyclesvc.NewMockCycles(ctrl),
 		services.projects,
 		services.roadmaps,

@@ -39,7 +39,7 @@ func (r *providerRepository) AuthCodeURL(
 ) string {
 	return r.client.
 		For(ctx, connection, r.redirectURI()).
-		AuthCodeURL(attempt.State, attempt.Nonce, attempt.Verifier)
+		AuthCodeURL(attempt)
 }
 
 func (r *providerRepository) Exchange(

@@ -158,6 +158,7 @@ var WorkspaceRels = struct {
 	WorkspaceCodeLinks                 string
 	WorkspaceCommentMirrors            string
 	WorkspaceDocs                      string
+	WorkspaceDomains                   string
 	WorkspaceExecutionArtifacts        string
 	WorkspaceExecutionChanges          string
 	WorkspaceExecutionPlans            string
@@ -218,6 +219,7 @@ var WorkspaceRels = struct {
 	WorkspaceCodeLinks:                 "WorkspaceCodeLinks",
 	WorkspaceCommentMirrors:            "WorkspaceCommentMirrors",
 	WorkspaceDocs:                      "WorkspaceDocs",
+	WorkspaceDomains:                   "WorkspaceDomains",
 	WorkspaceExecutionArtifacts:        "WorkspaceExecutionArtifacts",
 	WorkspaceExecutionChanges:          "WorkspaceExecutionChanges",
 	WorkspaceExecutionPlans:            "WorkspaceExecutionPlans",
@@ -281,6 +283,7 @@ type workspaceR struct {
 	WorkspaceCodeLinks                 WorkspaceCodeLinkSlice                 `boil:"WorkspaceCodeLinks" json:"WorkspaceCodeLinks" toml:"WorkspaceCodeLinks" yaml:"WorkspaceCodeLinks"`
 	WorkspaceCommentMirrors            WorkspaceCommentMirrorSlice            `boil:"WorkspaceCommentMirrors" json:"WorkspaceCommentMirrors" toml:"WorkspaceCommentMirrors" yaml:"WorkspaceCommentMirrors"`
 	WorkspaceDocs                      WorkspaceDocSlice                      `boil:"WorkspaceDocs" json:"WorkspaceDocs" toml:"WorkspaceDocs" yaml:"WorkspaceDocs"`
+	WorkspaceDomains                   WorkspaceDomainSlice                   `boil:"WorkspaceDomains" json:"WorkspaceDomains" toml:"WorkspaceDomains" yaml:"WorkspaceDomains"`
 	WorkspaceExecutionArtifacts        WorkspaceExecutionArtifactSlice        `boil:"WorkspaceExecutionArtifacts" json:"WorkspaceExecutionArtifacts" toml:"WorkspaceExecutionArtifacts" yaml:"WorkspaceExecutionArtifacts"`
 	WorkspaceExecutionChanges          WorkspaceExecutionChangeSlice          `boil:"WorkspaceExecutionChanges" json:"WorkspaceExecutionChanges" toml:"WorkspaceExecutionChanges" yaml:"WorkspaceExecutionChanges"`
 	WorkspaceExecutionPlans            WorkspaceExecutionPlanSlice            `boil:"WorkspaceExecutionPlans" json:"WorkspaceExecutionPlans" toml:"WorkspaceExecutionPlans" yaml:"WorkspaceExecutionPlans"`
@@ -675,6 +678,22 @@ func (r *workspaceR) GetWorkspaceDocs() WorkspaceDocSlice {
 	}
 
 	return r.WorkspaceDocs
+}
+
+func (o *Workspace) GetWorkspaceDomains() WorkspaceDomainSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetWorkspaceDomains()
+}
+
+func (r *workspaceR) GetWorkspaceDomains() WorkspaceDomainSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.WorkspaceDomains
 }
 
 func (o *Workspace) GetWorkspaceExecutionArtifacts() WorkspaceExecutionArtifactSlice {
@@ -1864,6 +1883,20 @@ func (o *Workspace) WorkspaceDocs(mods ...qm.QueryMod) workspaceDocQuery {
 	)
 
 	return WorkspaceDocs(queryMods...)
+}
+
+// WorkspaceDomains retrieves all the workspace_domain's WorkspaceDomains with an executor.
+func (o *Workspace) WorkspaceDomains(mods ...qm.QueryMod) workspaceDomainQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"workspace_domains\".\"workspace_id\"=?", o.ID),
+	)
+
+	return WorkspaceDomains(queryMods...)
 }
 
 // WorkspaceExecutionArtifacts retrieves all the workspace_execution_artifact's WorkspaceExecutionArtifacts with an executor.
@@ -4903,6 +4936,119 @@ func (workspaceL) LoadWorkspaceDocs(ctx context.Context, e boil.ContextExecutor,
 				local.R.WorkspaceDocs = append(local.R.WorkspaceDocs, foreign)
 				if foreign.R == nil {
 					foreign.R = &workspaceDocR{}
+				}
+				foreign.R.Workspace = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadWorkspaceDomains allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (workspaceL) LoadWorkspaceDomains(ctx context.Context, e boil.ContextExecutor, singular bool, maybeWorkspace any, mods queries.Applicator) error {
+	var slice []*Workspace
+	var object *Workspace
+
+	if singular {
+		var ok bool
+		object, ok = maybeWorkspace.(*Workspace)
+		if !ok {
+			object = new(Workspace)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeWorkspace))
+			}
+		}
+	} else {
+		s, ok := maybeWorkspace.(*[]*Workspace)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeWorkspace)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeWorkspace))
+			}
+		}
+	}
+
+	args := make(map[any]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &workspaceR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &workspaceR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]any, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`workspace_domains`),
+		qm.WhereIn(`workspace_domains.workspace_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load workspace_domains")
+	}
+
+	var resultSlice []*WorkspaceDomain
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice workspace_domains")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on workspace_domains")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for workspace_domains")
+	}
+
+	if len(workspaceDomainAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.WorkspaceDomains = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &workspaceDomainR{}
+			}
+			foreign.R.Workspace = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.WorkspaceID {
+				local.R.WorkspaceDomains = append(local.R.WorkspaceDomains, foreign)
+				if foreign.R == nil {
+					foreign.R = &workspaceDomainR{}
 				}
 				foreign.R.Workspace = local
 				break
@@ -10254,6 +10400,59 @@ func (o *Workspace) AddWorkspaceDocs(ctx context.Context, exec boil.ContextExecu
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &workspaceDocR{
+				Workspace: o,
+			}
+		} else {
+			rel.R.Workspace = o
+		}
+	}
+	return nil
+}
+
+// AddWorkspaceDomains adds the given related objects to the existing relationships
+// of the workspace, optionally inserting them as new records.
+// Appends related to o.R.WorkspaceDomains.
+// Sets related.R.Workspace appropriately.
+func (o *Workspace) AddWorkspaceDomains(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*WorkspaceDomain) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.WorkspaceID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"workspace_domains\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"workspace_id"}),
+				strmangle.WhereClause("\"", "\"", 2, workspaceDomainPrimaryKeyColumns),
+			)
+			values := []any{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.WorkspaceID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &workspaceR{
+			WorkspaceDomains: related,
+		}
+	} else {
+		o.R.WorkspaceDomains = append(o.R.WorkspaceDomains, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &workspaceDomainR{
 				Workspace: o,
 			}
 		} else {

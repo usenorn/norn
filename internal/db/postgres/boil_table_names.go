@@ -48,6 +48,7 @@ var TableNames = struct {
 	WorkspaceDocPassages                   string
 	WorkspaceDocRevisions                  string
 	WorkspaceDocs                          string
+	WorkspaceDomains                       string
 	WorkspaceExecutionArtifacts            string
 	WorkspaceExecutionChanges              string
 	WorkspaceExecutionEvents               string
@@ -184,6 +185,7 @@ var TableNames = struct {
 	WorkspaceDocPassages:                   "workspace_doc_passages",
 	WorkspaceDocRevisions:                  "workspace_doc_revisions",
 	WorkspaceDocs:                          "workspace_docs",
+	WorkspaceDomains:                       "workspace_domains",
 	WorkspaceExecutionArtifacts:            "workspace_execution_artifacts",
 	WorkspaceExecutionChanges:              "workspace_execution_changes",
 	WorkspaceExecutionEvents:               "workspace_execution_events",

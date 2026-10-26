@@ -132,7 +132,12 @@ func (s *sessionsService) SignIn(ctx context.Context, input service.SignInInput)
 
 	matches, err := entity.VerifyPassword(account.PasswordHash, input.Password)
 	if err != nil {
-		return service.IssuedChallenge{}, err
+		if !errors.Is(err, entity.ErrPasswordHashMalformed) {
+			return service.IssuedChallenge{}, err
+		}
+
+		logging.From(ctx).ErrorContext(ctx, "stored password hash is malformed", "account_id", account.ID.String())
+		entity.BurnPasswordGuess(input.Password)
 	}
 
 	if !matches {

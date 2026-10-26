@@ -14,13 +14,16 @@
 	import InstanceLine from "#lib/components/norn/instance-line.svelte";
 	import { Button } from "#lib/components/ui/button/index.js";
 	import { Input } from "#lib/components/ui/input/index.js";
-	import { signInSchema } from "#lib/auth/sign-in-schema.js";
+	import SignInProviders from "#lib/auth/sign-in-providers.svelte";
+	import { identifySchema, signInSchema } from "#lib/auth/sign-in-schema.js";
 	import { clockTime } from "#lib/auth/sign-in.js";
-	import { authPath, safeReturn } from "#lib/auth/return-to.js";
-	import type { SignInFailure } from "#lib/auth/types.js";
-	import { ssoEntryPoint } from "#lib/auth/workspace-sign-in.js";
+	import { methodGroups, type SignInOutcome } from "#lib/auth/sign-in-step.js";
+	import { actionPath, authPath, safeReturn } from "#lib/auth/return-to.js";
 	import { signInPreviewStates } from "./preview";
 	import type { PageProps } from "./$types";
+
+	const identifyFormId = "sign-in-identify";
+	const passwordFormId = "sign-in-password";
 
 	let { data }: PageProps = $props();
 
@@ -29,39 +32,77 @@
 	);
 
 	const returnTo = $derived(safeReturn(page.url.searchParams.get("return")));
+	const carried = $derived({
+		add: page.url.searchParams.get("add") ?? "",
+		return: page.url.searchParams.get("return") ?? "",
+	});
 
 	const auth = $derived({ ...data.auth, ...preview?.auth });
 	const entry = $derived(preview?.entry ?? data.entry);
-	const workspace = $derived(entry.kind === "ready" ? entry.signIn : null);
-	const provider = $derived(
-		auth.sso?.name ?? (workspace?.sso ? (workspace.host ?? "single sign-on") : "")
-	);
+
 	// svelte-ignore state_referenced_locally
-	const form = superForm(data.form, {
+	const identifyForm = superForm(data.identifyForm, {
+		id: identifyFormId,
+		validators: zod4Client(identifySchema),
+		resetForm: false,
+	});
+	const {
+		form: identifyData,
+		enhance: identifyEnhance,
+		submitting: identifying,
+		message: identifyMessage,
+	} = identifyForm;
+
+	// svelte-ignore state_referenced_locally
+	const passwordForm = superForm(data.passwordForm, {
+		id: passwordFormId,
 		validators: zod4Client(signInSchema),
 		resetForm: false,
 	});
-	const { form: formData, enhance, submitting, message } = form;
+	const {
+		form: passwordData,
+		enhance: passwordEnhance,
+		submitting: signingIn,
+		message: passwordMessage,
+	} = passwordForm;
 
-	const failure = $derived<SignInFailure | null>($message ?? preview?.failure ?? null);
+	const outcome = $derived<SignInOutcome>(
+		$passwordMessage ?? $identifyMessage ?? preview?.outcome ?? { step: data.step }
+	);
+	const step = $derived(outcome.step);
+	const failure = $derived(outcome.failure ?? null);
 
-	const showSso = $derived(workspace ? workspace.sso : Boolean(auth.sso));
-	const showPassword = $derived(workspace ? workspace.password : auth.password);
-	const ssoOnly = $derived(showSso && !showPassword);
-	const showDivider = $derived(showPassword && showSso);
+	$effect(() => {
+		if (step.kind !== "methods" || !step.email) return;
+		const { email } = step;
+		passwordData.update((current) => ({ ...current, email }), { taint: false });
+	});
+
+	const groups = $derived(step.kind === "methods" ? methodGroups(step.options) : []);
+	const offersPassword = $derived(groups.some((group) => group.method === "password"));
+	const providers = $derived(groups.flatMap((group) => (group.method === "sso" ? group.workspaces : [])));
+	const ssoOnly = $derived(providers.length > 0 && !offersPassword);
+	const knownEmail = $derived(step.kind === "identify" ? "" : step.email);
+	const workspaceName = $derived(entry.kind === "ready" ? entry.signIn.name : "");
 
 	const locked = $derived(failure?.kind === "account_locked" || failure?.kind === "rate_limited");
+	const busy = $derived($identifying || $signingIn);
 	const credentialError = $derived(
 		failure?.kind === "invalid_credentials" ? "Email or password is wrong." : null
 	);
 
-	const lede = $derived(
-		ssoOnly
-			? `${workspace?.name ?? "This instance"} signs in through ${provider}. Password sign-in is off for this workspace.`
-			: showSso
-				? "Use your email, or your identity provider."
-				: "Use the email you signed up with."
-	);
+	const lede = $derived.by(() => {
+		if (step.kind === "identify") return "Enter your email. We'll take you to the way your workspace signs in.";
+		if (step.kind === "closed") return "Nothing on this instance accepts a sign-in from this address.";
+		if (ssoOnly && providers.length > 1) {
+			return "More than one workspace signs people in from your domain. Choose the one you want.";
+		}
+		if (ssoOnly) {
+			return `${workspaceName || "This workspace"} signs in through ${providers[0].host ?? "single sign-on"}. Password sign-in is off for this workspace.`;
+		}
+		if (providers.length > 0) return "Use your identity provider, or your password.";
+		return knownEmail ? "Enter your password to continue." : "Use the email you signed up with.";
+	});
 
 	const notice = $derived.by(() => {
 		if (failure?.kind === "account_locked") {
@@ -93,7 +134,15 @@
 				variant: "destructive" as const,
 				icon: CircleX,
 				title: "Single sign-on isn't answering",
-				body: `${auth.sso?.name} is configured but its metadata URL returns 404. Password sign-in still works while you fix it.`,
+				body: `${auth.sso?.name ?? "Your provider"} is configured but its metadata URL returns 404. Password sign-in still works while you fix it.`,
+			};
+		}
+		if (step.kind === "closed") {
+			return {
+				variant: "muted" as const,
+				icon: CircleDashed,
+				title: "No way in from this address",
+				body: "Password sign-in is off here and no workspace has verified your email domain. Ask your admin for an invitation link.",
 			};
 		}
 		if (!auth.signupsOpen) {
@@ -173,16 +222,21 @@
 			{/if}
 
 			{#if diagnostics}
-				<Diagnostics
-					label="Provider response"
-					entries={diagnostics}
-					keyWidth="w-16 sm:w-21"
-				/>
+				<Diagnostics label="Provider response" entries={diagnostics} keyWidth="w-16 sm:w-21" />
 			{/if}
 
-			{#if showPassword}
-				<form method="POST" use:enhance class="flex flex-col gap-4">
-					<Form.Field {form} name="email">
+			{#if step.kind === "identify"}
+				<form
+					id={identifyFormId}
+					method="POST"
+					action={actionPath(page.url, "identify")}
+					use:identifyEnhance
+					class="flex flex-col gap-4"
+				>
+					<input type="hidden" name="add" value={carried.add} />
+					<input type="hidden" name="return" value={carried.return} />
+
+					<Form.Field form={identifyForm} name="email">
 						<Form.Control>
 							{#snippet children({ props })}
 								<Form.Label>Email</Form.Label>
@@ -190,91 +244,133 @@
 									{...props}
 									type="email"
 									inputmode="email"
-									autocomplete="email"
+									autocomplete="username"
 									autocapitalize="none"
 									spellcheck="false"
 									placeholder="you@example.com"
-									disabled={locked}
-									aria-invalid={credentialError ? "true" : undefined}
-									bind:value={$formData.email}
+									disabled={busy || locked}
+									bind:value={$identifyData.email}
 								/>
 							{/snippet}
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
 
-					<Form.Field {form} name="password">
-						<Form.Control>
-							{#snippet children({ props })}
-								<div class="flex flex-wrap items-baseline justify-between gap-x-2">
-									<Form.Label>Password</Form.Label>
-									<a
-										href={authPath(page.url, "/reset-password")}
-										class="text-sm text-link hover:text-link-hover hover:underline"
-									>
-										Forgot password?
-									</a>
-								</div>
-								<Input
-									{...props}
-									type="password"
-									autocomplete="current-password"
-									disabled={locked}
-									aria-invalid={credentialError ? "true" : undefined}
-									bind:value={$formData.password}
-								/>
-							{/snippet}
-						</Form.Control>
-						<Form.FieldErrors />
-						{#if credentialError}
-							<p class="flex items-center gap-1.5 text-sm text-destructive" role="alert">
-								<CircleAlert class="size-icon-row shrink-0" aria-hidden="true" />
-								{credentialError}
-							</p>
-						{/if}
-					</Form.Field>
-
-					<Form.Button class="w-full" disabled={locked || $submitting}>
-						{$submitting ? "Signing in" : "Sign in"}
+					<Form.Button class="w-full" disabled={busy || locked}>
+						{$identifying ? "Checking" : "Continue"}
 					</Form.Button>
 				</form>
-			{/if}
 
-			{#if showDivider}
-				<div class="flex items-center gap-2.5">
-					<span class="h-px flex-1 bg-line-subtle"></span>
-					<Eyebrow>or</Eyebrow>
-					<span class="h-px flex-1 bg-line-subtle"></span>
-				</div>
-			{/if}
-
-			{#if showSso}
-				<div class="flex flex-col gap-2">
-					<Button
-						href={workspace ? ssoEntryPoint(workspace.workspace, returnTo) : "/sso"}
-						variant={ssoOnly ? "default" : "secondary"}
-						class="w-full"
-					>
-						Continue with {provider || "single sign-on"}
-					</Button>
-					{#if ssoOnly}
-						<p class="text-center text-sm leading-normal text-muted-foreground">
-							Wrong workspace?
-							<a href="/sign-in" class="text-link hover:text-link-hover hover:underline">
-								Sign in somewhere else
-							</a>
-						</p>
-					{/if}
-				</div>
-			{/if}
-
-			{#if !showSso}
 				<a
 					href={authPath(page.url, "/sign-in/sso")}
 					class="text-center text-sm text-link hover:text-link-hover hover:underline"
 				>
-					Sign in with single sign-on
+					Sign in with your workspace address
 				</a>
+			{:else}
+				{#if knownEmail}
+					<p class="flex flex-wrap items-baseline justify-between gap-x-2 text-md text-ink-900">
+						<span class="min-w-0 break-all">{knownEmail}</span>
+						<a href={authPath(page.url, "/sign-in")} class="text-sm text-link hover:text-link-hover hover:underline">
+							Not you?
+						</a>
+					</p>
+				{/if}
+
+				{#each groups as group, index (group.method)}
+					{#if index > 0}
+						<div class="flex items-center gap-2.5">
+							<span class="h-px flex-1 bg-line-subtle"></span>
+							<Eyebrow>or</Eyebrow>
+							<span class="h-px flex-1 bg-line-subtle"></span>
+						</div>
+					{/if}
+
+					{#if group.method === "sso"}
+						<SignInProviders workspaces={group.workspaces} {returnTo} preferred={index === 0} />
+					{:else}
+						<form
+							id={passwordFormId}
+							method="POST"
+							action={actionPath(page.url, "password")}
+							use:passwordEnhance
+							class="flex flex-col gap-4"
+						>
+							<input type="hidden" name="add" value={carried.add} />
+							<input type="hidden" name="return" value={carried.return} />
+							<input type="hidden" name="workspace" value={step.kind === "methods" ? step.workspace : ""} />
+
+							{#if knownEmail}
+								<input type="hidden" name="email" value={knownEmail} />
+							{:else}
+								<Form.Field form={passwordForm} name="email">
+									<Form.Control>
+										{#snippet children({ props })}
+											<Form.Label>Email</Form.Label>
+											<Input
+												{...props}
+												type="email"
+												inputmode="email"
+												autocomplete="username"
+												autocapitalize="none"
+												spellcheck="false"
+												placeholder="you@example.com"
+												disabled={busy || locked}
+												aria-invalid={credentialError ? "true" : undefined}
+												bind:value={$passwordData.email}
+											/>
+										{/snippet}
+									</Form.Control>
+									<Form.FieldErrors />
+								</Form.Field>
+							{/if}
+
+							<Form.Field form={passwordForm} name="password">
+								<Form.Control>
+									{#snippet children({ props })}
+										<div class="flex flex-wrap items-baseline justify-between gap-x-2">
+											<Form.Label>Password</Form.Label>
+											<a
+												href={authPath(page.url, "/reset-password")}
+												class="text-sm text-link hover:text-link-hover hover:underline"
+											>
+												Forgot password?
+											</a>
+										</div>
+										<Input
+											{...props}
+											type="password"
+											autocomplete="current-password"
+											disabled={busy || locked}
+											aria-invalid={credentialError ? "true" : undefined}
+											bind:value={$passwordData.password}
+										/>
+									{/snippet}
+								</Form.Control>
+								<Form.FieldErrors />
+								{#if credentialError}
+									<p class="flex items-center gap-1.5 text-sm text-destructive" role="alert">
+										<CircleAlert class="size-icon-row shrink-0" aria-hidden="true" />
+										{credentialError}
+									</p>
+								{/if}
+							</Form.Field>
+
+							<Form.Button class="w-full" disabled={busy || locked}>
+								{$signingIn ? "Signing in" : "Sign in"}
+							</Form.Button>
+						</form>
+					{/if}
+				{/each}
+
+				{#if ssoOnly && !knownEmail}
+					<p class="text-center text-sm leading-normal text-muted-foreground">
+						Wrong workspace?
+						<a href={authPath(page.url, "/sign-in")} class="text-link hover:text-link-hover hover:underline">
+							Sign in somewhere else
+						</a>
+					</p>
+				{/if}
 			{/if}
 		</div>
 	</div>

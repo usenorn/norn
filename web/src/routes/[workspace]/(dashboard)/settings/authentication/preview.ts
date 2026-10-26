@@ -1,3 +1,4 @@
+import type { DomainList } from "#lib/workspace/domains.js";
 import type {
 	Enforcement,
 	RecoveryCodes,
@@ -11,6 +12,7 @@ export type AuthenticationPreview = {
 	discovering?: boolean;
 	enforcement?: Enforcement;
 	codes?: RecoveryCodes;
+	domains?: DomainList;
 };
 
 export const authenticationPreviewStates: Record<string, AuthenticationPreview> = import.meta.env
@@ -71,6 +73,168 @@ export const authenticationPreviewStates: Record<string, AuthenticationPreview> 
 					},
 				},
 				outcome: { kind: "verified" },
+			},
+			domains_empty: {
+				configuration: {
+					kind: "oidc",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						endpoints: {
+							issuer: "https://login.northwind.co/realms/staff",
+							authorizationEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/auth",
+							tokenEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/token",
+							jwksUri: "https://login.northwind.co/realms/staff/protocol/openid-connect/certs",
+						},
+						discovered: true,
+						clientId: "norn-dashboard",
+						secretSet: true,
+						scopes: ["openid", "email", "profile", "groups"],
+						groupsClaim: "groups",
+						provisioning: true,
+						redirectUri: "https://norn.northwind.co/v1/sso/oidc/callback",
+						verifiedAt: "2026-08-03T10:22:00Z",
+						updatedAt: "2026-08-03T10:15:00Z",
+					},
+				},
+				outcome: { kind: "verified" },
+				domains: { kind: "available", domains: [] },
+			},
+			domains_pending: {
+				configuration: {
+					kind: "oidc",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						endpoints: {
+							issuer: "https://login.northwind.co/realms/staff",
+							authorizationEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/auth",
+							tokenEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/token",
+							jwksUri: "https://login.northwind.co/realms/staff/protocol/openid-connect/certs",
+						},
+						discovered: true,
+						clientId: "norn-dashboard",
+						secretSet: true,
+						scopes: ["openid", "email", "profile", "groups"],
+						groupsClaim: "groups",
+						provisioning: true,
+						redirectUri: "https://norn.northwind.co/v1/sso/oidc/callback",
+						verifiedAt: "2026-08-03T10:22:00Z",
+						updatedAt: "2026-08-03T10:15:00Z",
+					},
+				},
+				outcome: { kind: "verified" },
+				domains: {
+					kind: "available",
+					domains: [
+						{ id: "6f1c2a4e-0000-4000-8000-000000000001", domain: "northwind.co", record: "norn-verification=Qm9uZC1kb21haW4tdG9rZW4tZXhhbXBsZQ" },
+					],
+				},
+			},
+			domains_not_found: {
+				configuration: {
+					kind: "oidc",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						endpoints: {
+							issuer: "https://login.northwind.co/realms/staff",
+							authorizationEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/auth",
+							tokenEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/token",
+							jwksUri: "https://login.northwind.co/realms/staff/protocol/openid-connect/certs",
+						},
+						discovered: true,
+						clientId: "norn-dashboard",
+						secretSet: true,
+						scopes: ["openid", "email", "profile", "groups"],
+						groupsClaim: "groups",
+						provisioning: true,
+						redirectUri: "https://norn.northwind.co/v1/sso/oidc/callback",
+						verifiedAt: "2026-08-03T10:22:00Z",
+						updatedAt: "2026-08-03T10:15:00Z",
+					},
+				},
+				outcome: { kind: "verified" },
+				domains: {
+					kind: "available",
+					domains: [
+						{
+							id: "6f1c2a4e-0000-4000-8000-000000000001",
+							domain: "northwind.co",
+							record: "norn-verification=Qm9uZC1kb21haW4tdG9rZW4tZXhhbXBsZQ",
+							checkedAt: "2026-10-26T09:12:00Z",
+						},
+					],
+				},
+			},
+			domains_verified: {
+				configuration: {
+					kind: "oidc",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						endpoints: {
+							issuer: "https://login.northwind.co/realms/staff",
+							authorizationEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/auth",
+							tokenEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/token",
+							jwksUri: "https://login.northwind.co/realms/staff/protocol/openid-connect/certs",
+						},
+						discovered: true,
+						clientId: "norn-dashboard",
+						secretSet: true,
+						scopes: ["openid", "email", "profile", "groups"],
+						groupsClaim: "groups",
+						provisioning: true,
+						redirectUri: "https://norn.northwind.co/v1/sso/oidc/callback",
+						verifiedAt: "2026-08-03T10:22:00Z",
+						updatedAt: "2026-08-03T10:15:00Z",
+					},
+				},
+				outcome: { kind: "verified" },
+				domains: {
+					kind: "available",
+					domains: [
+						{
+							id: "6f1c2a4e-0000-4000-8000-000000000001",
+							domain: "northwind.co",
+							record: "norn-verification=Qm9uZC1kb21haW4tdG9rZW4tZXhhbXBsZQ",
+							checkedAt: "2026-10-26T09:12:00Z",
+							verifiedAt: "2026-10-26T09:12:00Z",
+						},
+						{ id: "6f1c2a4e-0000-4000-8000-000000000002", domain: "eu.northwind.co", record: "norn-verification=Qm9uZC1kb21haW4tdG9rZW4tZXhhbXBsZQ" },
+					],
+				},
+			},
+			domains_unavailable: {
+				configuration: {
+					kind: "oidc",
+					connection: {
+						workspaceId: "00000000-0000-4000-8000-000000000000",
+						endpoints: {
+							issuer: "https://login.northwind.co/realms/staff",
+							authorizationEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/auth",
+							tokenEndpoint:
+								"https://login.northwind.co/realms/staff/protocol/openid-connect/token",
+							jwksUri: "https://login.northwind.co/realms/staff/protocol/openid-connect/certs",
+						},
+						discovered: true,
+						clientId: "norn-dashboard",
+						secretSet: true,
+						scopes: ["openid", "email", "profile", "groups"],
+						groupsClaim: "groups",
+						provisioning: true,
+						redirectUri: "https://norn.northwind.co/v1/sso/oidc/callback",
+						verifiedAt: "2026-08-03T10:22:00Z",
+						updatedAt: "2026-08-03T10:15:00Z",
+					},
+				},
+				outcome: { kind: "verified" },
+				domains: { kind: "unavailable" },
 			},
 			manual: {
 				configuration: {

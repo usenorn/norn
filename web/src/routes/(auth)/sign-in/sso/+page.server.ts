@@ -33,7 +33,7 @@ export const actions: Actions = {
 
 		redirect(
 			303,
-			entry.signIn.sso
+			entry.signIn.preferred === "sso"
 				? ssoEntryPoint(entry.signIn.workspace, safeReturn(url.searchParams.get("return")))
 				: `/sign-in?workspace=${entry.signIn.workspace}`
 		);

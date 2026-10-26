@@ -55,6 +55,9 @@ const (
 	AuditSSOIdentityLinked    AuditAction = "sso.identity_linked"
 	AuditSSOIdentityRefused   AuditAction = "sso.identity_refused"
 	AuditSSOAccountOpened     AuditAction = "sso.account_opened"
+	AuditSSODomainAdded       AuditAction = "sso.domain_added"
+	AuditSSODomainVerified    AuditAction = "sso.domain_verified"
+	AuditSSODomainRemoved     AuditAction = "sso.domain_removed"
 
 	AuditTokenMinted  AuditAction = "token.minted"
 	AuditTokenRevoked AuditAction = "token.revoked"
@@ -148,6 +151,7 @@ func AuditActions() []AuditAction {
 		AuditSSOConnectionSaved, AuditSSOConnectionRemoved, AuditSSOEnforcement,
 		AuditRecoveryCodesIssued, AuditRecoveryCodeRedeemed, AuditSSOIdentityUnlinked,
 		AuditSSOIdentityLinked, AuditSSOIdentityRefused, AuditSSOAccountOpened,
+		AuditSSODomainAdded, AuditSSODomainVerified, AuditSSODomainRemoved,
 		AuditTokenMinted, AuditTokenRevoked,
 		AuditAgentRegistered, AuditAgentDisabled, AuditAgentEnabled, AuditAgentRotated,
 		AuditAgentProposal, AuditAgentInstructions, AuditAgentRescoped, AuditAgentExecution,

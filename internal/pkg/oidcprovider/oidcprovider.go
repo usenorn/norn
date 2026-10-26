@@ -168,13 +168,18 @@ func (c *Client) For(ctx context.Context, connection entity.OIDCConnection, redi
 	}
 }
 
-func (s *Session) AuthCodeURL(state, nonce, verifier string) string {
-	return s.config.AuthCodeURL(
-		state,
-		oidc.Nonce(nonce),
+func (s *Session) AuthCodeURL(attempt entity.OIDCAuthorization) string {
+	options := []oauth2.AuthCodeOption{
+		oidc.Nonce(attempt.Nonce),
 		oauth2.AccessTypeOffline,
-		oauth2.S256ChallengeOption(verifier),
-	)
+		oauth2.S256ChallengeOption(attempt.Verifier),
+	}
+
+	if attempt.LoginHint != "" {
+		options = append(options, oauth2.SetAuthURLParam("login_hint", attempt.LoginHint))
+	}
+
+	return s.config.AuthCodeURL(attempt.State, options...)
 }
 
 func (s *Session) Exchange(ctx context.Context, code, verifier, nonce string) (entity.OIDCClaims, error) {
