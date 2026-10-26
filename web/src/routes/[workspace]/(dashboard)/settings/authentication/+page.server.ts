@@ -4,6 +4,7 @@ import { message, setError, superValidate, type Infer } from "sveltekit-superfor
 import { zod4 } from "sveltekit-superforms/adapters";
 import { keys } from "#lib/api/keys.js";
 import type { paths } from "#lib/api/dashboard.gen.js";
+import { readDomains } from "#lib/workspace/domains.js";
 import { samlConnectionSchema } from "#lib/workspace/saml-schema.js";
 import { ssoConnectionSchema } from "#lib/workspace/sso-schema.js";
 import {
@@ -32,6 +33,7 @@ export const load: PageServerLoad = async ({ depends, route, locals, parent }) =
 	return {
 		configuration: await readConfiguration(locals.api, workspace.id),
 		enforcement: await readEnforcement(locals.api, workspace.id),
+		domains: await readDomains(locals.api, workspace.id),
 		oidcForm: await superValidate<OidcForm, SsoOutcome>(zod4(ssoConnectionSchema), {
 			id: oidcFormId,
 		}),
