@@ -16,6 +16,8 @@ const (
 	WorkspaceDomainLabelMaxLen = 63
 	WorkspaceDomainTokenBytes  = 24
 	WorkspaceDomainRecordName  = "norn-verification"
+
+	WorkspaceDomainLookupTimeout = 5 * time.Second
 )
 
 var (
