@@ -33,7 +33,7 @@ export type AgentFailure =
 	| { kind: "disabled" }
 	| { kind: "active" }
 	| { kind: "authority_missing" }
-	| { kind: "scope_exceeds"; scopes: AgentPermission[] }
+	| { kind: "scope_exceeds"; scopes: APIScope[] }
 	| { kind: "scope_invalid" }
 	| { kind: "scope_forbidden" }
 	| { kind: "grant_invalid" }
@@ -93,14 +93,24 @@ export const agentPermissions = [
 	"project:manage",
 	"label:read",
 	"label:manage",
-	"team:read",
-	"membership:read",
 	"comment:read",
 	"comment:manage",
-	"notification:read",
-	"notification:manage",
 	"knowledge:read",
 	"knowledge:manage",
+	"roadmap:read",
+	"roadmap:manage",
+	"team:read",
+	"team_membership:read",
+	"team_membership:manage",
+	"membership:read",
+	"membership:manage",
+	"invitation:read",
+	"invitation:manage",
+	"workspace:read",
+	"workspace:update",
+	"audit_log:read",
+	"notification:read",
+	"notification:manage",
 ] as const satisfies readonly APIScope[];
 
 export type AgentPermission = (typeof agentPermissions)[number];
@@ -179,29 +189,51 @@ export const agentPermissionGroups: { title: string; permissions: AgentPermissio
 	{ title: "Cycles", permissions: ["cycle:read"] },
 	{ title: "Projects", permissions: ["project:read", "project:manage"] },
 	{ title: "Labels", permissions: ["label:read", "label:manage"] },
-	{ title: "Teams", permissions: ["team:read"] },
-	{ title: "Members", permissions: ["membership:read"] },
 	{ title: "Comments", permissions: ["comment:read", "comment:manage"] },
+	{ title: "Docs", permissions: ["knowledge:read", "knowledge:manage"] },
+	{ title: "Roadmap", permissions: ["roadmap:read", "roadmap:manage"] },
+	{ title: "Teams", permissions: ["team:read"] },
+	{ title: "Team rosters", permissions: ["team_membership:read", "team_membership:manage"] },
+	{ title: "Members", permissions: ["membership:read", "membership:manage"] },
+	{ title: "Invitations", permissions: ["invitation:read", "invitation:manage"] },
+	{ title: "Workspace", permissions: ["workspace:read", "workspace:update"] },
+	{ title: "Audit log", permissions: ["audit_log:read"] },
 	{ title: "Its own inbox", permissions: ["notification:read", "notification:manage"] },
 ];
 
-export const agentPermissionLabels: Record<string, string> = {
-	"issue:read": "Read issues",
+export const agentPermissionLabels: Record<AgentPermission, string> = {
+	"issue:read": "Read issues and memory",
 	"issue:manage": "Raise and change issues",
 	"cycle:read": "Read cycles",
 	"project:read": "Read projects",
 	"project:manage": "Create and change projects",
 	"label:read": "Read labels",
 	"label:manage": "Create and change labels",
-	"team:read": "Read teams",
-	"membership:read": "Read members",
 	"comment:read": "Read comments",
 	"comment:manage": "Leave comments",
-	"notification:read": "Read what it has been assigned or mentioned in",
-	"notification:manage": "Mark its own inbox as read",
 	"knowledge:read": "Read docs",
 	"knowledge:manage": "Write and edit docs",
+	"roadmap:read": "Read the roadmap",
+	"roadmap:manage": "Change the roadmap",
+	"team:read": "Read teams",
+	"team_membership:read": "Read team rosters",
+	"team_membership:manage": "Change team rosters",
+	"membership:read": "Read members",
+	"membership:manage": "Add and remove members",
+	"invitation:read": "Read invitations",
+	"invitation:manage": "Send and revoke invitations",
+	"workspace:read": "Read workspace settings",
+	"workspace:update": "Change workspace settings",
+	"audit_log:read": "Read the audit log",
+	"notification:read": "Read what it has been assigned or mentioned in",
+	"notification:manage": "Mark its own inbox as read",
 };
+
+export function permissionLabel(scope: APIScope): string {
+	const labels: Partial<Record<APIScope, string>> = agentPermissionLabels;
+
+	return labels[scope] ?? scope;
+}
 
 export function reachSummary(agent: Agent, projectName?: string): string {
 	switch (agent.scope) {
@@ -216,10 +248,7 @@ export function reachSummary(agent: Agent, projectName?: string): string {
 	}
 }
 
-export function beyondGrant(
-	permissions: AgentPermission[],
-	grantable: APIScope[] | null
-): AgentPermission[] {
+export function beyondGrant(permissions: APIScope[], grantable: APIScope[] | null): APIScope[] {
 	if (!grantable) return [];
 
 	return permissions.filter((permission) => !grantable.includes(permission));
@@ -287,7 +316,7 @@ export function failureMessage(failure: AgentFailure): string {
 			return failure.scopes.length === 0
 				? "An agent cannot do more than you can. Choose fewer permissions."
 				: `An agent cannot do more than you can, and ${listed(
-						failure.scopes.map((permission) => agentPermissionLabels[permission] ?? permission)
+						failure.scopes.map(permissionLabel)
 					)} ${failure.scopes.length === 1 ? "is" : "are"} beyond what your role allows. ` +
 					"Clear those to carry on, or ask an administrator to raise your role.";
 		case "scope_invalid":

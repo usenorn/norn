@@ -30,7 +30,7 @@
 	import { onDate, onDateAndTime } from "#lib/time.js";
 	import {
 		agentExecutionLabels,
-		agentPermissionLabels,
+		permissionLabel,
 		beyondGrant,
 		reachSummary,
 		type AgentExecution,
@@ -631,7 +631,7 @@
 									<ul class="mt-3 divide-y divide-line-subtle border border-line-subtle bg-paper-1">
 										{#each agent.authority.scopes as scope (scope)}
 											<li class="flex flex-col gap-0.5 p-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-												<span class="text-sm text-ink-900">{agentPermissionLabels[scope] ?? scope}</span>
+												<span class="text-sm text-ink-900">{permissionLabel(scope)}</span>
 												<code class="font-mono text-xs text-muted-foreground">{scope}</code>
 											</li>
 										{/each}
