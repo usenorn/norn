@@ -45,7 +45,7 @@
 		type AgentCapabilities,
 		type AgentLibraryListing,
 	} from "#lib/agents/agent-capabilities.js";
-	import type { AgentAuthorityInput } from "#lib/agents/agent-authority-schema.js";
+	import type { AgentAuthority } from "#lib/agents/agent-authority-schema.js";
 	import { agentInstructionsMessage } from "#lib/agents/instructions.js";
 	import { deploymentPreview } from "#lib/auth/preview.js";
 	import {
@@ -318,7 +318,7 @@
 	function authorityProblem(
 		error: object | undefined,
 		status: number,
-		attempted: AgentAuthorityInput
+		attempted: AgentAuthority
 	): AgentAuthorityFailure {
 		if (error && "code" in error) {
 			if (error.code === "token_scope_exceeds") {
@@ -334,7 +334,7 @@
 		return lifecycleProblem(error, status);
 	}
 
-	async function saveAuthority(input: AgentAuthorityInput) {
+	async function saveAuthority(input: AgentAuthority) {
 		if (!agent) return false;
 
 		authorityFailure = null;
