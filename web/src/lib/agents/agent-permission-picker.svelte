@@ -81,7 +81,7 @@
 							for={`agent-scope-${scope}`}
 							class={cn("text-xs leading-normal text-ink-600", withheld.has(scope) && "text-ink-400")}
 						>
-							{agentPermissionLabels[scope] ?? scope}
+							{agentPermissionLabels[scope]}
 						</label>
 					</div>
 				{/each}

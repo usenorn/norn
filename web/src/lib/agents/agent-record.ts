@@ -1,4 +1,4 @@
-import { failureMessage, type AgentPermission, type WorkspaceAgent } from "./agents";
+import { failureMessage, type APIScope, type WorkspaceAgent } from "./agents";
 
 export type AgentRecord =
 	| { kind: "loading" }
@@ -37,7 +37,7 @@ export function agentLifecycleFailureMessage(failure: AgentLifecycleFailure): st
 
 export type AgentAuthorityFailure =
 	| AgentLifecycleFailure
-	| { kind: "scope_exceeds"; scopes: AgentPermission[] }
+	| { kind: "scope_exceeds"; scopes: APIScope[] }
 	| { kind: "scope_invalid" }
 	| { kind: "grant_invalid" };
 

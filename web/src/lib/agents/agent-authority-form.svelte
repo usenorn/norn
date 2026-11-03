@@ -5,7 +5,11 @@
 	import type { Team } from "#lib/team/teams.js";
 	import AgentPermissionPicker from "./agent-permission-picker.svelte";
 	import AgentTeamReach from "./agent-team-reach.svelte";
-	import { agentAuthoritySchema, type AgentAuthorityInput } from "./agent-authority-schema";
+	import {
+		agentAuthoritySchema,
+		type AgentAuthority,
+		type AgentAuthorityInput,
+	} from "./agent-authority-schema";
 	import { agentPermissions, type AgentPermission, type APIScope } from "./agents";
 
 	let {
@@ -23,17 +27,22 @@
 		teams: Team[];
 		grantable: APIScope[] | null;
 		locked?: boolean;
-		onsave: (input: AgentAuthorityInput) => Promise<boolean>;
+		onsave: (input: AgentAuthority) => Promise<boolean>;
 	} = $props();
+
+	function offered(scope: APIScope): scope is AgentPermission {
+		return (agentPermissions as readonly APIScope[]).includes(scope);
+	}
 
 	// svelte-ignore state_referenced_locally
 	const opened: AgentAuthorityInput = {
-		scopes: scopes.filter((scope): scope is AgentPermission =>
-			(agentPermissions as readonly APIScope[]).includes(scope)
-		),
+		scopes: scopes.filter(offered),
 		allTeams,
 		teamIds: allTeams ? [] : teamIds,
 	};
+
+	// svelte-ignore state_referenced_locally
+	const kept = scopes.filter((scope) => !offered(scope));
 
 	let held = $state(opened);
 
@@ -46,7 +55,9 @@
 		onUpdate: async ({ form: pending }) => {
 			if (!pending.valid) return;
 
-			if (await onsave(pending.data)) held = { ...pending.data };
+			if (await onsave({ ...pending.data, scopes: [...pending.data.scopes, ...kept] })) {
+				held = { ...pending.data };
+			}
 		},
 	});
 

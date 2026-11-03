@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { agentPermissions } from "./agents";
+import { agentPermissions, type APIScope } from "./agents";
 
 export const agentAuthorityShape = {
 	scopes: z
@@ -26,3 +26,5 @@ export function refineTeamReach(
 export const agentAuthoritySchema = z.object(agentAuthorityShape).superRefine(refineTeamReach);
 
 export type AgentAuthorityInput = z.infer<typeof agentAuthoritySchema>;
+
+export type AgentAuthority = Omit<AgentAuthorityInput, "scopes"> & { scopes: APIScope[] };
