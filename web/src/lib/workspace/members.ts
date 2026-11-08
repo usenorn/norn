@@ -131,6 +131,26 @@ export function memberName(member: Membership): string {
 	return member.displayName || member.email || member.accountId;
 }
 
+export type PersonDetail = {
+	accountId: string;
+	name: string;
+	standing: string;
+	email?: string;
+};
+
+export function personDetail(member: Membership): PersonDetail | null {
+	const name = member.displayName || member.email;
+
+	if (!name) return null;
+
+	return {
+		accountId: member.accountId,
+		name,
+		standing: member.kind === "agent" ? "Agent" : roleLabels[member.role],
+		email: member.displayName ? member.email : undefined,
+	};
+}
+
 export function isDeactivated(member: Membership): boolean {
 	return Boolean(member.deactivatedAt);
 }

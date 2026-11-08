@@ -61,7 +61,8 @@
 	} from "#lib/agents/delegation.js";
 	import { totalIssues } from "#lib/issues/board.js";
 	import { cyclingTeams } from "#lib/cycles/cycles.js";
-	import { assignees } from "#lib/workspace/members.js";
+	import { assignees, personDetail } from "#lib/workspace/members.js";
+	import Watchers from "#lib/issues/watchers.svelte";
 	import { Button } from "#lib/components/ui/button/index.js";
 	import { api } from "#lib/api/index.js";
 	import { useShortcuts } from "#lib/shortcuts/registry.svelte.js";
@@ -1422,9 +1423,12 @@
 	);
 
 	const watchers = $derived(
-		(ready?.watchers ?? [])
-			.map((accountId) => ({ accountId, name: nameOf(accountId) }))
-			.filter((watcher) => watcher.name)
+		(ready?.watchers ?? []).flatMap((accountId) => {
+			const member = ready?.members.find((candidate) => candidate.accountId === accountId);
+			const detail = member ? personDetail(member) : null;
+
+			return detail ? [detail] : [];
+		})
 	);
 
 	const reporter = $derived(
@@ -3259,28 +3263,7 @@
 						>
 							Watching
 						</span>
-						{#if watchers.length > 0}
-							<span class="flex min-w-0 flex-1 -space-x-1.5">
-								{#each watchers.slice(0, 5) as watcher (watcher.accountId)}
-									<PersonAvatar
-										accountId={watcher.accountId}
-										name={watcher.name}
-										size="xs"
-										title={watcher.name}
-										class="ring-1 ring-card"
-									/>
-								{/each}
-								{#if watchers.length > 5}
-									<span
-										class="inline-flex size-icon-row items-center justify-center rounded-full bg-paper-2 tabular-nums text-2xs text-muted-foreground ring-1 ring-card"
-									>
-										+{watchers.length - 5}
-									</span>
-								{/if}
-							</span>
-						{:else}
-							<span class="flex-1 truncate text-md text-muted-foreground">Nobody yet</span>
-						{/if}
+						<Watchers {watchers} />
 					</div>
 
 					<div class="flex min-h-7 items-center gap-2">

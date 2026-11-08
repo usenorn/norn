@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { kindsFor, managesTeams, roleOf, segmentFrom, type Membership } from "./members";
+import {
+	kindsFor,
+	managesTeams,
+	personDetail,
+	roleOf,
+	segmentFrom,
+	type Membership,
+} from "./members";
 
 function member(accountId: string, role: Membership["role"]): Membership {
 	return {
@@ -46,5 +53,34 @@ describe("which segment the page is on", () => {
 	it("asks the server for both machine kinds under agents, and people alone otherwise", () => {
 		expect(kindsFor("agents")).toEqual(["agent", "integration"]);
 		expect(kindsFor("people")).toEqual(["person"]);
+	});
+});
+
+describe("what somebody's details say about them", () => {
+	it("names a person with their role and email", () => {
+		expect(
+			personDetail({ ...member("rae", "admin"), displayName: "Rae Okafor", email: "rae@northwind.co" })
+		).toEqual({ accountId: "rae", name: "Rae Okafor", standing: "Admin", email: "rae@northwind.co" });
+	});
+
+	it("calls an agent an agent, whatever role its membership carries", () => {
+		const detail = personDetail({ ...member("bot", "member"), kind: "agent", displayName: "Rae's agent" });
+
+		expect(detail?.standing).toBe("Agent");
+	});
+
+	it("leaves the email out when the member has none", () => {
+		expect(personDetail({ ...member("jun", "viewer"), displayName: "Jun Park" })?.email).toBeUndefined();
+	});
+
+	it("does not repeat an email that already stands in for the name", () => {
+		const detail = personDetail({ ...member("ana", "member"), email: "ana@northwind.co" });
+
+		expect(detail?.name).toBe("ana@northwind.co");
+		expect(detail?.email).toBeUndefined();
+	});
+
+	it("has nothing to show for a member with neither a name nor an email", () => {
+		expect(personDetail(member("ghost", "member"))).toBeNull();
 	});
 });
